@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 930 325" width="930" height="325"><rect width="930" height="325" rx="18" fill="#111827"/><text x="26" y="42" font-family="Arial" fill="#fff" font-size="24" font-weight="bold">A / B / C — perspectivă și identitatea soluției</text>
+<rect x="28" y="66" width="280" height="222" rx="13" fill="#1f2937" stroke="#526073"/><rect x="340" y="66" width="280" height="222" rx="13" fill="#1f2937" stroke="#526073"/><rect x="652" y="66" width="280" height="222" rx="13" fill="#1f2937" stroke="#526073"/>
+<text x="45" y="98" font-family="Arial" fill="#fff" font-size="18">A. Organism local</text>
+<text x="357" y="98" font-family="Arial" fill="#fff" font-size="18">B. Observator global</text>
+<text x="670" y="98" font-family="Arial" fill="#fff" font-size="18">C. Identitatea soluției</text>
+<path d="M 70 128 H 246 M 70 128 V 246 M 70 246 H 160 M 123 128 V 206 H 205 V 246" fill="none" stroke="#93a3a8" stroke-width="8" stroke-linecap="round"/>
+<circle cx="89" cy="225" r="12" fill="#e3ab55"/><path d="M 89 225 L 110 225" fill="none" stroke="#e3ab55" stroke-width="3" stroke-dasharray="4 3"/>
+<path d="M 386 128 H 568 M 386 128 V 248 M 386 248 H 485 M 432 128 V 201 H 534 V 246" fill="none" stroke="#93a3a8" stroke-width="8" stroke-linecap="round"/>
+<path d="M 391 227 L 412 253 L 565 253 L 565 220" fill="none" stroke="#38b995" stroke-width="5" stroke-linecap="round"/>
+<circle cx="391" cy="227" r="10" fill="#e3ab55"/><circle cx="565" cy="220" r="10" fill="#38b995"/>
+<ellipse cx="788" cy="201" rx="100" ry="65" fill="none" stroke="#a89bff" stroke-width="2"/>
+<ellipse cx="788" cy="201" rx="100" ry="32" fill="none" stroke="#a89bff" stroke-width="2" transform="rotate(-37 788 201)"/>
+<ellipse cx="788" cy="201" rx="37" ry="67" fill="none" stroke="#a89bff" stroke-width="2" transform="rotate(25 788 201)"/>
+<circle cx="813" cy="181" r="9" fill="#38b995"/><path d="M813 181L844 157" stroke="#38b995" stroke-width="2"/><circle cx="844" cy="157" r="5" fill="#38b995"/>
+<text x="45" y="309" fill="#aab8cb" font-family="Arial" font-size="13">Diagramă reconstituită după prezentarea inițială; nu este export pixel-perfect</text></svg>
