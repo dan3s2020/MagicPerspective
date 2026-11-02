@@ -1,0 +1,8 @@
+{
+  "status": "measured locally, Node 22, no pretrained weights",
+  "training": { "seed": 20261102, "episodes": 240, "mazeSize": 11, "learningRate": 0.009 },
+  "heldOut": { "seed": 910001, "count": 30, "mazeSize": 11 },
+  "before": { "modelBCE": 0.66615, "baselineBCE": 0.50715, "modelIoU": 0.11989, "baselineIoU": 0.14044 },
+  "after": { "modelBCE": 0.42726, "baselineBCE": 0.50715, "modelIoU": 0.16861, "baselineIoU": 0.14044 },
+  "conclusion": "Improvement over this fixed geometric baseline on seeded unseen mazes; does not demonstrate arbitrary-task transfer or P=NP."
+}

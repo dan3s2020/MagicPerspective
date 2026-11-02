@@ -1,0 +1,9 @@
+{
+  "name":"magicperspective",
+  "version":"1.0.0",
+  "private":true,
+  "type":"module",
+  "description":"Trainable perspective and solution-shape prediction research lab. No external runtime dependencies.",
+  "scripts":{"start":"node server.js","test":"node --test tests/*.test.js","bench":"node scripts/benchmark.js"},
+  "engines":{"node":">=18"}
+}
