@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 82" role="img">
+<title>C. Observator al identității soluției</title><rect width="100" height="82" fill="white"/>
+<ellipse cx="50" cy="41" rx="40" ry="27" fill="none" stroke="#7A93D9" stroke-width="1.5"/>
+<ellipse cx="50" cy="41" rx="40" ry="12" fill="none" stroke="#7A93D9" stroke-opacity=".6" transform="rotate(-35 50 41)"/>
+<ellipse cx="50" cy="41" rx="12" ry="31" fill="none" stroke="#7A93D9" stroke-opacity=".7" transform="rotate(25 50 41)"/>
+<circle cx="63" cy="29" r="6" fill="#36A882"/><path d="M63 29L77 18" stroke="#36A882" stroke-width="1.5"/><circle cx="77" cy="18" r="3" fill="#36A882"/></svg>

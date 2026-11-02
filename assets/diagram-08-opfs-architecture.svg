@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 500" role="img"><title>Arhitectura organului de predicție a formei soluției</title>
+<rect width="540" height="500" fill="#fff"/>
+<rect x="45" y="20" width="450" height="74" rx="12" fill="#E9EFF0"/>
+<text x="270" y="45" fill="#19242D" font-size="17" text-anchor="middle" font-weight="700">PERCEPȚIE</text>
+<text x="270" y="69" fill="#52616B" font-size="12" text-anchor="middle">Ce vede, ce face și ce consecințe observă</text>
+<path d="M270 94V125" stroke="#6F7D86" stroke-width="2"/><path d="M263 115L270 125L277 115" fill="none" stroke="#6F7D86" stroke-width="2"/>
+<rect x="45" y="130" width="450" height="74" rx="12" fill="#fff" stroke="#CCD5D9"/>
+<text x="270" y="155" fill="#19242D" font-size="17" text-anchor="middle" font-weight="700">MEMORIE SPAȚIALĂ ȘI CAUZALĂ</text>
+<text x="270" y="178" fill="#52616B" font-size="12" text-anchor="middle">Construiește relații între locuri, acțiuni și reguli</text>
+<path d="M270 204V237" stroke="#6F7D86" stroke-width="2"/><path d="M263 227L270 237L277 227" fill="none" stroke="#6F7D86" stroke-width="2"/>
+<rect x="45" y="242" width="450" height="84" rx="12" fill="#F2EAFB" stroke="#987AC9" stroke-width="2"/>
+<text x="270" y="269" fill="#443061" font-size="17" text-anchor="middle" font-weight="700">ORGANUL FORMEI SOLUȚIEI</text>
+<text x="270" y="291" fill="#52616B" font-size="12" text-anchor="middle">Produce un latent al traiectoriei viitoare</text>
+<text x="270" y="307" fill="#52616B" font-size="12" text-anchor="middle">și al incertitudinii sale</text>
+<path d="M270 326V359" stroke="#6F7D86" stroke-width="2"/><path d="M263 349L270 359L277 349" fill="none" stroke="#6F7D86" stroke-width="2"/>
+<rect x="45" y="364" width="450" height="74" rx="12" fill="#fff" stroke="#CCD5D9"/>
+<text x="270" y="389" fill="#19242D" font-size="17" text-anchor="middle" font-weight="700">DECIZIE ȘI MIȘCARE</text>
+<text x="270" y="413" fill="#52616B" font-size="12" text-anchor="middle">Alege acțiuni ghidate de forma anticipată</text>
+<path d="M45 401H23V166H45" stroke="#219B90" stroke-width="2" stroke-dasharray="6 5" fill="none"/>
+<text x="270" y="476" fill="#52616B" font-size="13" text-anchor="middle">Feedback către memorie și predicție</text>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 82" role="img">
+<title>B. Observator global</title><rect x="3" y="3" width="94" height="76" rx="4" fill="white" stroke="#202020" stroke-opacity=".35"/>
+<path d="M15 16H82 M15 16V63 M15 63H50 M35 16V44H68 V63" fill="none" stroke="#202020" stroke-width="5" stroke-linecap="round" opacity=".65"/>
+<path d="M23 55L27 70L75 70L77 55" fill="none" stroke="#36A882" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="23" cy="55" r="5" fill="#D99B49"/><circle cx="77" cy="55" r="5" fill="#36A882"/></svg>

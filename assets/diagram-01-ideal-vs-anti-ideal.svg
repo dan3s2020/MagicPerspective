@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 210" role="img">
+<title>Grafic conceptual: obiecte și direcția către ideal</title>
+<rect width="330" height="210" fill="#ffffff"/>
+<line x1="34" y1="175" x2="310" y2="175" stroke="#202020" stroke-opacity=".5"/>
+<line x1="34" y1="175" x2="34" y2="14" stroke="#202020" stroke-opacity=".5"/>
+<circle cx="65" cy="145" r="5.5" fill="#DC9865"/>
+<circle cx="87" cy="154" r="5.5" fill="#DC9865"/>
+<circle cx="106" cy="125" r="5.5" fill="#DC9865"/>
+<circle cx="124" cy="133" r="5.5" fill="#6F9ECE"/>
+<circle cx="153" cy="106" r="5.5" fill="#6F9ECE"/>
+<circle cx="167" cy="121" r="5.5" fill="#6F9ECE"/>
+<circle cx="202" cy="76" r="5.5" fill="#6F9ECE"/>
+<circle cx="226" cy="90" r="5.5" fill="#3FA883"/>
+<circle cx="243" cy="57" r="5.5" fill="#3FA883"/>
+<circle cx="268" cy="43" r="5.5" fill="#3FA883"/>
+<line x1="53" y1="159" x2="281" y2="33" stroke="#9CA3AF" stroke-width="1.6" stroke-dasharray="5 4"/>
+<circle cx="53" cy="159" r="9" stroke="#DC9865" fill="none" stroke-width="2"/>
+<circle cx="281" cy="33" r="9" stroke="#3FA883" fill="none" stroke-width="2"/>
+<text x="53" y="192" font-size="11" fill="#202020">Anti-ideal</text>
+<text x="248" y="18" font-size="11" fill="#202020">Ideal</text>
+<text x="125" y="202" font-size="10" fill="#202020" opacity=".7">Spațiu multidimensional proiectat în 2D</text>
+</svg>
