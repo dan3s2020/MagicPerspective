@@ -1,28 +1,24 @@
-# Verificare transcript MagicPerspective — 2026-11-02
+# Verificare transcript MagicPerspective — 2026-11-02 (actualizat)
 
-Fișier verificat: [CONVERSATIE_COMPLETA_DIN_CONTEXT.md](./CONVERSATIE_COMPLETA_DIN_CONTEXT.md)
+## Sursa canonică
 
-## Ce am verificat în GitHub
+- Branch: `main`
+- Textul conversației: [CONVERSATIE_COMPLETA_DIN_CONTEXT.md](./CONVERSATIE_COMPLETA_DIN_CONTEXT.md)
+- Specificația implementării: [CANON.md](./CANON.md)
+- Reprezentările vizuale: [REPREZENTARI_VIZUALE.md](./REPREZENTARI_VIZUALE.md)
 
-- PASS — 39 mesaje in ordine
-- PASS — 20 mesaje USER
-- PASS — 19 mesaje ASSISTANT
-- PASS — primul prompt corect
-- PASS — ultimul prompt corect
-- PASS — pastreaza pasaje lungi
-- PASS — marcaj incompletitudini
+## Verificări efectuate pe GitHub după implementare
 
-- Blob SHA la citire: f378353e26e38be576959f0f58a5033eba92e810
-- Dimensiune: 34546 caractere JavaScript (UTF-16).
-- Ultimul commit de redactare: d6ccdbcd73c0422a65e7e504f1fc233cc03b6b00
-- Conținutul citit din GitHub a fost comparat cu cel trimis la ultima scriere și a corespuns exact.
+- **PASS:** 56 de secțiuni de mesaje, numerotate consecutiv de la 1 la 56.
+- **PASS:** 29 mesaje USER și 27 ASSISTANT.
+- **PASS:** ultimul mesaj arhivat este cererea de implementare în Termux din această conversație.
+- **PASS:** textul adăugat în rundele de arhivare a fost recitit după push și comparat cu textul trimis la scriere.
+- **PASS:** commitul aplicației `88db5a444b3c17b20aebd2dcc39803260ba27312` păstrează sursa canonică și fișierele de imagini.
+- **PASS:** cele șase imagini vizibile în conversație există în `assets/`: `1000198060.jpg`, `1000198061.jpg`, `1000198062.jpg`, `1000197460.jpg`, `1000197470.jpg`, `1000198081.jpg`.
+- **PASS:** 12 fișiere-cheie ale aplicației Termux, inclusiv modelul, testele, interfața și scriptul de pornire, sunt prezente în arborele Git.
 
-## LIMITĂ IMPORTANTĂ — NU ESTE CERTIFICAT VERBATIM INTEGRAL
+## Limitări privind cuvântul „verbatim”
 
-1. Nu este disponibil un export oficial al conversației pentru comparație octet-cu-octet.
-2. Cele **trei imagini** din primul mesaj NU sunt incluse ca fișiere binare în repository.
-3. Componentele vizuale SVG, legăturile interactive și unele citări din răspunsurile asistentului au fost înlocuite prin descrieri; **aceasta nu este o transcriere literală pentru acele segmente**.
-4. Unele răspunsuri ale asistentului apar în context doar ca fragmente întrerupte (ex.: „Exact, dacă”), și au fost păstrate în forma fragmentară disponibilă.
-5. Delimitările „Mesajul N — USER/ASSISTANT” și notele explicative sunt adăugate de arhivare, nu făceau parte din mesaje.
+**Transcrierea nu poate fi certificată 100% ca export nativ, byte-exact al întregii conversații originale.** Nu există în acest mediu acces la un export oficial de mesaje cu toate structurile UI. Primele 39 de mesaje includ fragmente de răspunsuri trunchiate în contextul accesibil; unele componente interactive/diagrame au fost descrise, nu serializate ca expresii originale. Pentru mesajele 40–56 am arhivat textul vizibil și, acolo unde a fost disponibil, marcajele componentelor, dar fără sursa formală a atașamentelor UI. Există reprezentări SVG și poze separate în repository; acestea nu fac automat complet verbatim exportul.
 
-**Concluzie:** verificarea acoperă structura în 39 de mesaje, ordinea lor și integritatea scriere-citire din repository; nu certifică faptul că fiecare caracter al întregii conversații originale este reprodus verbatim. Pentru a obține exactitate 100%, este necesar exportul original al chatului, împreună cu cele trei imagini.
+**Regulă:** Nu se inventează, completează sau rezumă tacit textul lipsă. Un export integral din ChatGPT și comparația octet-cu-octet ar fi necesare pentru certificarea absolută. Informațiile din această secțiune se păstrează pe `main` pentru integritatea arhivei.
