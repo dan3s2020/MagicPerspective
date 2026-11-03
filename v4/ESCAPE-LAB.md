@@ -1,6 +1,6 @@
 # MagicPerspective V4 — Perspective Escape extensions
 
-This additive research laboratory lives next to the existing V4 Perspective Forge, which remains untouched. It uses separate sources, separate checkpoint (data/escape-checkpoint.json), separate tests, and port 3034. V1/V2/V3/V4 applications and checkpoints are not migrated or overwritten.
+This additive research laboratory lives next to the existing V4 Perspective Forge, which remains untouched. It uses separate sources, separate checkpoint (data/escape-checkpoint.json), separate tests, and port 3035. V1/V2/V3/V4/V5 applications and checkpoints are not migrated or overwritten.
 
 ## Termux install and run
 
@@ -15,7 +15,7 @@ git pull --ff-only origin main
 bash v4/run-escape-termux.sh
 ```
 
-Open http://127.0.0.1:3034 in the same phone browser.
+Open http://127.0.0.1:3035 in the same phone browser.
 
 ## Three scientific experiments
 
