@@ -50,7 +50,7 @@ export function evaluate(model,{seed=980001,count=36,n=11,family='all',navigatio
     // Causal model is frozen during evaluation; don't mutate the original training model.
     const opt=shortestPath(w,w.start,w.goal).cost;
     for(let j=0;j<n*n*5&&!agent.finished;j++){
-     const action=agent.act();if(action.type==='no-route'||action.type==='invalid')break;
+     const action=agent.act();if(action.event==='no-route'||action.event==='invalid')break;
     }
     if(agent.finished){solved++;cost+=agent.effort;oracle+=opt;steps+=agent.steps}else miss++;
    }
