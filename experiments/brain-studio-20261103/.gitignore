@@ -1,2 +1,6 @@
 data/*
 !data/.gitkeep
+
+# CUDA live state is user data, never source code
+cuda/data/*
+!cuda/data/.gitkeep
