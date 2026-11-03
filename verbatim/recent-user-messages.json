@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "completeness": "PARTIAL (not a continuous conversation export)",
+  "provenance": "User-visible exact text in current conversation; textual content preserved, source completeness unverified.",
+  "messages": [
+    {
+      "ref": "RECENT-A",
+      "role": "USER",
+      "text": "Adica ai obținut ceva ca bellman? Înseamnă că nu s a respectat toată conversația în verbatim "
+    },
+    {
+      "ref": "RECENT-B",
+      "role": "USER",
+      "text": "Deci nu am construit absolut nimic din tot ce am cerut si ai făcut doar doar numai ce ai vrut tu fără sa verifici niciodată fata de Verbatim dacă ai implementat tot corect . "
+    },
+    {
+      "ref": "RECENT-C",
+      "role": "USER",
+      "text": "\"motorul MagicPerspective dorit: un sistem care învață reprezentarea problemei, generează ipoteze despre forma soluției, descoperă transformările necesare și transferă mecanismul între domenii. \" nu ,iar ai simplificat tot . Ce am cerut este fiecare cuvânt din verbatim, până la ultimul cuvânt trebuie implementa ,fiecare cuvânt din verbatim din toată conversația de sus până jos,acela este \"motorul\" si ceea ce tu trebuie sa faci fara greșeli "
+    }
+  ]
+}

@@ -1,0 +1,413 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
+    "git_blob_sha": "16c78ede5a004ee78d778524e0bfad6b6b24bec2",
+    "message_count": 56,
+    "complete_export_verified": false
+  },
+  "claim_policy": {
+    "all_words_and_requirements_accounted_for": false,
+    "atomic_clause_index_complete": false,
+    "all_implementations_verified": false,
+    "full_transcript_source_available": false
+  },
+  "messages": [
+    {
+      "id": 1,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 2,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 3,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 4,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 5,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 6,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 7,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 8,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 9,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 10,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 11,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 12,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 13,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 14,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 15,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 16,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 17,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 18,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 19,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 20,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 21,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 22,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 23,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 24,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 25,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 26,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 27,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 28,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 29,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 30,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 31,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 32,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 33,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 34,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 35,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 36,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 37,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 38,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 39,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 40,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 41,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 42,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 43,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 44,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 45,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 46,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 47,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 48,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 49,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 50,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 51,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 52,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 53,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 54,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 55,
+      "role": "ASSISTANT",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    },
+    {
+      "id": 56,
+      "role": "USER",
+      "coverage": "UNVERIFIED",
+      "evidence": [],
+      "tests": []
+    }
+  ],
+  "known_gaps": [
+    "Messages after archive #56 are not covered as a continuous source.",
+    "Some of original #1-#56 content and media are not byte-exact according to VERIFICARE_TRANSCRIPT.md."
+  ]
+}
