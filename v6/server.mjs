@@ -5,10 +5,11 @@ import path from 'node:path';import {fileURLToPath} from 'node:url';
 import {createWorld,TOOLS,senseProbes,encodeContext,generateTask,parseGoal} from './engine/world.mjs';
 import {CausalNet} from './engine/model.mjs';
 import {SPLITS,train,evaluate,predictedPlan,testPlan} from './engine/training.mjs';
+import {evaluateHypotheses} from './engine/hypotheses.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url)),HOST=process.env.HOST||'127.0.0.1';
 const PORT=Number(process.env.PORT||3036),check=path.join(root,'data','best-model.json');
 if(!Number.isInteger(PORT)||PORT<1||PORT>65535)throw Error('Invalid port');
-let model=new CausalNet(17),bestQuality=-Infinity,task=null,evaluation=null,lastTraining=null,stopRequested=false;
+let model=new CausalNet(17),bestQuality=-Infinity,task=null,evaluation=null,hypothesisEvaluation=null,lastTraining=null,stopRequested=false;
 let sceneSeed=88003,world=createWorld(sceneSeed),probes=senseProbes(world),context=encodeContext(probes);
 let challenge=generateTask(world,sceneSeed+73),demonstration=null;
 try{
@@ -33,6 +34,7 @@ function view(){
  const predicted=Object.fromEntries(TOOLS.map(tool=>[tool,model.predict(challenge.start,tool,context)]));
  return {version:'6.0.0-experiment',model:{episodes:model.episodes,steps:model.steps,samples:model.samples,bestQuality:
   Number.isFinite(bestQuality)?bestQuality:null},training:task,evaluation,lastTraining,
+  hypothesisEvaluation,
   scene:{seed:sceneSeed,start:challenge.start,goal:challenge.goal,text:challenge.text,
    probes:probes.map(e=>({tool:e.tool,from:e.from,to:e.to})),predicted,
    teacherOnly:world.teacher(), // Not used by model. Human diagnostic only.
@@ -84,6 +86,10 @@ const server=http.createServer(async(req,res)=>{
      worlds:int(arg.worlds,3,120,30),statesPerTool:7,goalsPerWorld:3,maxSteps:5});
     return respond(res,view());
    }
+   if(p==='/api/evaluate-hypotheses'){
+    hypothesisEvaluation=evaluateHypotheses({worlds:int(arg.worlds,3,120,30),extra:int(arg.extra,0,24,6),goalsPerWorld:3});
+    return respond(res,view());
+   }
    if(p==='/api/plan'){
     // The learner's plan sees only its observed context plus text goal.
     const goal=parseGoal(challenge.text);
@@ -93,7 +99,7 @@ const server=http.createServer(async(req,res)=>{
    }
    if(p==='/api/reset'){
     if(arg.confirm!=='RESET V6')return respond(res,{error:'Exact reset confirmation required'},400);
-    model=new CausalNet(17);bestQuality=-Infinity;task=null;evaluation=null;lastTraining=null;
+    model=new CausalNet(17);bestQuality=-Infinity;task=null;evaluation=null;hypothesisEvaluation=null;lastTraining=null;
     newScene(sceneSeed+911);if(existsSync(check))await unlink(check);
     return respond(res,view());
    }
