@@ -22,11 +22,15 @@
       "exact_source_span": "14 milioane de exercitii unice si diferite",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Unique problem counting with reproducible episode identifiers across domains",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "CPU smoke: SQLite holds content-hash-unique completed episodes, not 14M; uniqueness test passes. Long run not done.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-02",
@@ -34,11 +38,15 @@
       "exact_source_span": "insula",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Track persistent solution-shape patterns; tests on new worlds and causal ablations",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Persistent motifs and cross-domain reused nodes exist; identity of universal solution form not established.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-03",
@@ -46,11 +54,16 @@
       "exact_source_span": "gata cu demo-ul",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Real training and measured held-out evaluation without toy success claims",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/server.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Real multi-domain environment actions, gradients, and blind controls tested on CPU, not long-run CUDA or positive transfer.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-04",
@@ -58,11 +71,16 @@
       "exact_source_span": "SA MA UIT LA GRAF SI SA INTELEG TOT CE SE INTAMPLA PRIN PATTERNURILE PE CARE LE VAD",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Event-sourced 3D viewer: activations, prediction, actual action, error impulses, weight updates",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Action/activation/message/error/gradient frames generated from actual outcomes and weights; browser headless visual test blocked by environment.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-05",
@@ -70,11 +88,15 @@
       "exact_source_span": "GRAF 4D",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "3D spatial layout + time trajectory + higher dimensional state projections",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Spatial 3D canvas projection and time-stacked event frames implemented; higher-dimensional latent projection incomplete.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-06",
@@ -82,11 +104,15 @@
       "exact_source_span": "CONCEPTUL DE POLYMATH",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Persistent morphable graph trained across domains; structural growth, selective merging, non-destructive retention",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Shared model/optimizer/graph persists across five physical domains and optional byte-text; autonomous functional merging and transfer unproven.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-07",
@@ -94,11 +120,15 @@
       "exact_source_span": "graful e si lumea,e si forma solutie",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Map world, controller, observations, constraints and predicted solution within one computational graph, with a separate environment truth contract",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "World/observation/action/outcome represented as typed nodes in one persistent graph; hidden physical truth remains separate for honest evaluation.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-08",
@@ -106,11 +136,15 @@
       "exact_source_span": "as above as below",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Correspondence test between graph-predicted transitions and real observed state transitions",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Predicted action-quality compared to observed reward, mismatch and gradient recorded; physical 4D claim not made.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     },
     {
       "id": "REQ-09",
@@ -118,11 +152,16 @@
       "exact_source_span": "versiunile trebuie sa se oglindeasca in ea",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Source-to-code-to-test-to-evidence mapping for each release on main",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/README.md",
+        "experiments/portal-universal-20261103/VERBATIM_MAPPING.md"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Partial evidence linked to source; original full archival gate must remain BLOCKED.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
     }
   ],
   "versions": [
@@ -202,6 +241,14 @@
       "in_repo": false,
       "state": "EXTERNAL_NOT_AUDITED",
       "verified_requirement_ids": []
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V10",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "PARTIAL_CPU_TESTED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
+      "verified_requirement_ids": [],
+      "notes": "One persistent PyTorch model+graph across 5 physical/symbolic worlds and optional real byte-text. Seven local CPU tests passed; no 14M, no proven cross-domain gains, no full transcript coverage."
     }
   ]
 }
