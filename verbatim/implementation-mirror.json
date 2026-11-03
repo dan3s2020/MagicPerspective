@@ -248,7 +248,7 @@
       "in_repo": true,
       "state": "PARTIAL_CPU_TESTED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
       "verified_requirement_ids": [],
-      "notes": "One persistent PyTorch model+graph across 5 physical/symbolic worlds and optional real byte-text. Seven local CPU tests passed; no 14M, no proven cross-domain gains, no full transcript coverage."
+      "notes": "One persistent PyTorch model+graph across 5 physical/symbolic worlds and optional real byte-text. Eight local CPU tests passed; no 14M, no proven cross-domain gains, no full transcript coverage."
     }
   ]
 }
