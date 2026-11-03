@@ -121,3 +121,17 @@ jobs:
             throw 'PowerShell launcher failed parser validation'
           }
           Write-Host 'POWERSHELL_CUDA_LAUNCHER_PARSE_OK'
+      - name: Validate Portal Universal Windows PowerShell launcher syntax
+        shell: powershell
+        run: |
+          $path = (Resolve-Path './experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1').Path
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            $path, [ref]$tokens, [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'Portal Universal CUDA launcher parse failed'
+          }
+          Write-Host 'PORTAL_UNIVERSAL_POWERSHELL_5_1_PARSE_OK'
