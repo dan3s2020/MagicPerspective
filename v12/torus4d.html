@@ -34,10 +34,18 @@
 <div class="panel" id="panel">
   <div class="head"><h1>Torul 4D</h1><button id="fold" aria-label="Ascunde sau arată panoul">—</button></div>
   <div class="body">
-    <p>Un tor care trăiește în 4 dimensiuni. Pe ecran vezi umbra lui: întâi proiectată din 4D în 3D, apoi din 3D pe ecranul 2D. Când îl rotești în planele care conțin axa W, inelele trec unele prin altele și forma umbrei se schimbă, deși obiectul 4D rămâne același.</p>
+    <p>Tori care trăiesc în 4 dimensiuni. Pe ecran vezi umbra lor: întâi proiectată din 4D în 3D, apoi din 3D pe ecranul 2D.</p>
+    <p>Inelele sunt cercurile fibrației Hopf. Fiecare punct al spațiului 4D (al sferei S³) stă pe exact un astfel de cerc. Oricare două inele sunt înlănțuite o singură dată, iar inelele de pe același tor formează împreună torul 4D. Le desenez ca tuburi.</p>
+    <p>Când rotești în planele care conțin axa W, inelele trec unele prin altele și se umflă când trec pe lângă polul proiecției. Forma umbrei se schimbă, deși obiectul 4D rămâne același.</p>
 
     <h2>Forma</h2>
     <div class="chips" id="shapes"></div>
+
+    <div id="tubeopts">
+      <label class="s">Inele<input id="nfib" type="range" min="4" max="40" step="1" value="16"><output id="nfibo"></output></label>
+      <label class="s">Grosime<input id="trad" type="range" min="0.02" max="0.2" step="0.005" value="0.075"><output id="trado"></output></label>
+      <div class="row"><button id="grow" class="on">Arată cum se creează</button></div>
+    </div>
 
     <h2>Rotire în 4D (viteză pe fiecare plan)</h2>
     <div id="planes"></div>
@@ -49,7 +57,7 @@
     <div class="row">
       <button data-proj="persp" class="on">Perspectivă</button><button data-proj="stereo">Stereografică</button><button data-proj="ortho">Ortogonală</button>
     </div>
-    <label class="s">Distanța<input id="d4" type="range" min="1.6" max="6" step="0.05" value="2.6"><output id="d4o"></output></label>
+    <label class="s">Distanța<input id="d4" type="range" min="1.4" max="6" step="0.05" value="2.2"><output id="d4o"></output></label>
 
     <h2>Desen</h2>
     <label class="s">Densitate<input id="dens" type="range" min="12" max="72" step="2" value="40"><output id="denso"></output></label>
@@ -66,110 +74,139 @@
 'use strict';
 const cv = document.getElementById('c'), g = cv.getContext('2d');
 const $ = id => document.getElementById(id);
-
-// ---------- 4D shapes: lists of polylines, each point = [x, y, z, w] ----------
-// Clifford torus (duotor): T² ⊂ S³ ⊂ R⁴ — the flat torus of 4D; with stereographic projection it is the
-// classic "rings turning inside out". Tiger and ditorus are 3D surfaces of 4D (toratopes): drawn as nested layers.
 const TAU = Math.PI * 2;
-const SHAPES = {
-  clifford: {name: 'Tor Clifford', layers: 1, f: (u, v) => [Math.cos(u) / Math.SQRT2, Math.sin(u) / Math.SQRT2, Math.cos(v) / Math.SQRT2, Math.sin(v) / Math.SQRT2]},
-  hopf: {name: 'Inele Hopf', layers: 5, f: (u, v, k, K) => { const a = (0.2 + 0.6 * k / Math.max(1, K - 1)) * Math.PI / 2;   // nested Clifford tori: the "flower" of tubes
-    return [Math.cos(a) * Math.cos(u), Math.cos(a) * Math.sin(u), Math.sin(a) * Math.cos(v), Math.sin(a) * Math.sin(v)]; }},
-  tiger: {name: 'Tigru', layers: 6, f: (u, v, k, K) => { const t = TAU * k / K, R = 0.62, r = 0.26;
-    return [(R + r * Math.cos(t)) * Math.cos(u), (R + r * Math.cos(t)) * Math.sin(u), (R + r * Math.sin(t)) * Math.cos(v), (R + r * Math.sin(t)) * Math.sin(v)]; }},
-  ditorus: {name: 'Ditor', layers: 6, f: (u, v, k, K) => { const t = TAU * k / K, R = 0.7, r1 = 0.32, r2 = 0.13, a = r1 + r2 * Math.cos(t);
-    return [(R + a * Math.cos(v)) * Math.cos(u), (R + a * Math.cos(v)) * Math.sin(u), a * Math.sin(v), r2 * Math.sin(t) * 2.2]; }},
-};
-let shape = 'clifford', lines = [], dens = 40;
-function build() {
-  const S = SHAPES[shape], K = S.layers, n = dens, m = Math.max(24, Math.round(dens * 1.8)); lines = [];
-  for (let k = 0; k < K; k++) {
-    for (let i = 0; i < n; i++) { const u = TAU * i / n, pl = []; for (let j = 0; j <= m; j++) pl.push(S.f(u, TAU * j / m, k, K)); lines.push(pl); }
-    for (let i = 0; i < n; i++) { const v = TAU * i / n, pl = []; for (let j = 0; j <= m; j++) pl.push(S.f(TAU * j / m, v, k, K)); lines.push(pl); }
-  }
-  // flat buffer for speed
-  let total = 0; for (const l of lines) total += l.length;
-  P = new Float32Array(total * 4); L = []; let o = 0;
-  for (const l of lines) { L.push([o / 4, l.length]); for (const p of l) { P.set(p, o); o += 4; } }
-  T = new Float32Array(total * 3); B = new Float32Array(total);
-}
-let P, L, T, B;
 
-// ---------- 4D rotation: one 4×4 matrix, turned in the 6 planes ----------
+// ---------------- the 4D objects ----------------
+// TUBE shapes: Hopf fibres of S³. A fibre through (z1, z2) = (cos η e^{iα}, sin η e^{iβ}) is the circle (z1 e^{it}, z2 e^{it}).
+// All fibres with the same η lie on one Clifford-type torus of 4D; two different fibres are always linked once.
+// Each fibre is projected to 3D and drawn as a tube (rings + lengthwise lines), like the reference images.
+// SURFACE shapes: the 2D surfaces / 3D toratopes drawn as a grid of circles.
+const SHAPES = {
+  flower: {name: 'Floarea de inele', tubes: () => [Math.PI / 4]},
+  ball:   {name: 'Sfera de inele', tubes: () => [0.42, Math.PI / 4, 1.15]},
+  cage:   {name: 'Colivia', tubes: () => [0.22, 0.55, 0.9, 1.25]},
+  clifford: {name: 'Tor Clifford (grilă)', layers: 1, f: (u, v) => [Math.cos(u) / Math.SQRT2, Math.sin(u) / Math.SQRT2, Math.cos(v) / Math.SQRT2, Math.sin(v) / Math.SQRT2]},
+  tiger: {name: 'Tigru (grilă)', layers: 6, f: (u, v, k, K) => { const t = TAU * k / K, R = 0.62, r = 0.26;
+    return [(R + r * Math.cos(t)) * Math.cos(u), (R + r * Math.cos(t)) * Math.sin(u), (R + r * Math.sin(t)) * Math.cos(v), (R + r * Math.sin(t)) * Math.sin(v)]; }},
+};
+let shape = 'flower', dens = 40, nfib = 16, trad = 0.075, growOn = true, growT = 0;
+let SURF = null, FIB = null;   // SURF: flat 4D points of grid circles; FIB: 4D points of every fibre
+const FM = 120;               // points along a fibre
+function build() {
+  const S = SHAPES[shape];
+  if (S.tubes) {
+    const etas = S.tubes(), per = Math.max(2, Math.round(nfib / etas.length)); FIB = [];
+    etas.forEach((eta, ti) => { for (let k = 0; k < per; k++) { const a = TAU * k / per + ti * 0.37, pts = new Float32Array(FM * 4);
+      for (let j = 0; j < FM; j++) { const t = TAU * j / FM; pts.set([Math.cos(eta) * Math.cos(a + t), Math.cos(eta) * Math.sin(a + t), Math.sin(eta) * Math.cos(t), Math.sin(eta) * Math.sin(t)], j * 4); }
+      FIB.push(pts); } });
+    SURF = null;
+  } else {
+    const K = S.layers, n = dens, m = Math.max(24, Math.round(dens * 1.8)), lines = [];
+    for (let k = 0; k < K; k++) {
+      for (let i = 0; i < n; i++) { const u = TAU * i / n, pl = []; for (let j = 0; j <= m; j++) pl.push(S.f(u, TAU * j / m, k, K)); lines.push(pl); }
+      for (let i = 0; i < n; i++) { const v = TAU * i / n, pl = []; for (let j = 0; j <= m; j++) pl.push(S.f(TAU * j / m, v, k, K)); lines.push(pl); } }
+    SURF = lines.map(l => Float32Array.from(l.flat())); FIB = null;
+  }
+  $('tubeopts').style.display = S.tubes ? '' : 'none'; growT = 0;
+}
+
+// ---------------- 4D rotation: one 4×4 matrix turned in the 6 planes ----------------
 const PLANES = [['XY', 0, 1], ['XZ', 0, 2], ['YZ', 1, 2], ['XW', 0, 3], ['YW', 1, 3], ['ZW', 2, 3]];
-const speeds = {XY: 0, XZ: 0.08, YZ: 0.0, XW: 0.32, YW: 0.0, ZW: 0.21};
+const speeds = {XY: 0.0, XZ: 0.05, YZ: 0.0, XW: 0.22, YW: 0.0, ZW: 0.15};
 let M = id4();
 function id4() { return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]; }
-function rot(a, b, t) {   // M ← R(a,b,t) · M
-  const c = Math.cos(t), s = Math.sin(t);
-  for (let j = 0; j < 4; j++) { const x = M[a * 4 + j], y = M[b * 4 + j]; M[a * 4 + j] = c * x - s * y; M[b * 4 + j] = s * x + c * y; }
-}
-function ortho() {   // keep M a rotation (Gram–Schmidt on rows) so tiny errors never accumulate
-  for (let i = 0; i < 4; i++) { for (let k = 0; k < i; k++) { let d = 0; for (let j = 0; j < 4; j++) d += M[i * 4 + j] * M[k * 4 + j]; for (let j = 0; j < 4; j++) M[i * 4 + j] -= d * M[k * 4 + j]; }
-    let n = 0; for (let j = 0; j < 4; j++) n += M[i * 4 + j] ** 2; n = Math.sqrt(n); for (let j = 0; j < 4; j++) M[i * 4 + j] /= n; }
+function rot(a, b, t) { const c = Math.cos(t), s = Math.sin(t);
+  for (let j = 0; j < 4; j++) { const x = M[a * 4 + j], y = M[b * 4 + j]; M[a * 4 + j] = c * x - s * y; M[b * 4 + j] = s * x + c * y; } }
+function ortho() { for (let i = 0; i < 4; i++) { for (let k = 0; k < i; k++) { let d = 0; for (let j = 0; j < 4; j++) d += M[i * 4 + j] * M[k * 4 + j]; for (let j = 0; j < 4; j++) M[i * 4 + j] -= d * M[k * 4 + j]; }
+  let n = 0; for (let j = 0; j < 4; j++) n += M[i * 4 + j] ** 2; n = Math.sqrt(n); for (let j = 0; j < 4; j++) M[i * 4 + j] /= n; } }
+
+let yaw = 0.5, pitch = -0.35, zoom = 1, proj = 'persp', D4 = 2.2, glow = 1, wcol = false, drag4 = false, paused = false;
+
+// 4D point -> 3D shadow [x, y, z, k]  (k = how much the projection magnifies there)
+function to3(x, y, z, w, out, o) {
+  const X = M[0] * x + M[1] * y + M[2] * z + M[3] * w, Y = M[4] * x + M[5] * y + M[6] * z + M[7] * w,
+        Z = M[8] * x + M[9] * y + M[10] * z + M[11] * w, Wv = M[12] * x + M[13] * y + M[14] * z + M[15] * w;
+  let k = 1;
+  if (proj === 'persp') k = D4 / Math.max(0.08, D4 - Wv);
+  else if (proj === 'stereo') { const r = Math.hypot(X, Y, Z, Wv) || 1; k = 1 / Math.max(0.02, 1 - Wv / r) / r; }
+  out[o] = X * k; out[o + 1] = Y * k; out[o + 2] = Z * k; out[o + 3] = k;
 }
 
-// ---------- 3D view ----------
-let yaw = 0.5, pitch = -0.35, zoom = 1, proj = 'persp', D4 = 2.6, glow = 1, wcol = false, drag4 = false, paused = false;
-
+// ---------------- frame ----------------
+const segs = [];   // 3D segments [x1,y1,z1,x2,y2,z2] collected per frame
 function frame(dt) {
   if (!paused) { for (const [nm, a, b] of PLANES) if (speeds[nm]) rot(a, b, speeds[nm] * dt); ortho(); }
+  growT += dt;
   const W = cv.width, H = cv.height, dpr = W / cv.clientWidth;
   g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
   const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
   const pan = $('panel'), open = !pan.classList.contains('closed') && innerWidth > 760, left = open ? (pan.getBoundingClientRect().right + 12) * dpr : 0;
-  const scale = Math.min(W - left, H) * 0.3 * zoom, cx0 = left + (W - left) / 2, cy0 = H / 2, D3 = 3.4;
-  const n = P.length / 4;
-  for (let i = 0; i < n; i++) {
-    const x = P[i * 4], y = P[i * 4 + 1], z = P[i * 4 + 2], w = P[i * 4 + 3];
-    const X = M[0] * x + M[1] * y + M[2] * z + M[3] * w, Y = M[4] * x + M[5] * y + M[6] * z + M[7] * w,
-          Z = M[8] * x + M[9] * y + M[10] * z + M[11] * w, Wv = M[12] * x + M[13] * y + M[14] * z + M[15] * w;
-    // 4D → 3D: the shadow
-    let k = 1;
-    if (proj === 'persp') k = D4 / Math.max(0.08, D4 - Wv);
-    else if (proj === 'stereo') { const r = Math.hypot(X, Y, Z, Wv) || 1; k = 1 / Math.max(0.03, 1 - Wv / r) / r; }
-    let x3 = X * k, y3 = Y * k, z3 = Z * k;
-    // 3D → 2D
-    const xa = cy * x3 + sy * z3, za = -sy * x3 + cy * z3, yb = cp * y3 - sp * za, zb = sp * y3 + cp * za;
-    const q = D3 / (D3 + zb);
-    T[i * 3] = cx0 + xa * scale * q; T[i * 3 + 1] = cy0 + yb * scale * q; T[i * 3 + 2] = (Math.abs(x3) > 5 || Math.abs(y3) > 5 || Math.abs(z3) > 5 || q < 0) ? NaN : q;
-    B[i] = Wv;
-  }
-  // draw in brightness buckets (few strokes, many segments): nearer = brighter
-  g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
-  const NB = 7, base = Math.max(0.5, dpr * 0.75);
-  for (let b = 0; b < NB; b++) {
-    g.beginPath(); let any = false;
-    for (const [s, len] of L) for (let j = s; j < s + len - 1; j++) {
-      const q1 = T[j * 3 + 2], q2 = T[j * 3 + 5]; if (!(q1 > 0) || !(q2 > 0)) continue;
-      const qq = (q1 + q2) / 2, bb = Math.min(NB - 1, Math.max(0, Math.floor((qq - 0.62) / 0.7 * NB)));
-      if (bb !== b) continue;
-      const dx = T[j * 3 + 3] - T[j * 3], dy = T[j * 3 + 4] - T[j * 3 + 1]; if (dx * dx + dy * dy > (W * 0.4) ** 2) continue;
-      g.moveTo(T[j * 3], T[j * 3 + 1]); g.lineTo(T[j * 3 + 3], T[j * 3 + 4]); any = true;
+  const scale = Math.min(W - left, H) * 0.25 * zoom, cx0 = left + (W - left) / 2, cy0 = H / 2, D3 = 4.2, LIM = 3.2;
+  const P2 = (x, y, z) => { const xa = cy * x + sy * z, za = -sy * x + cy * z, yb = cp * y - sp * za, zb = sp * y + cp * za, q = D3 / (D3 + zb); return [cx0 + xa * scale * q, cy0 + yb * scale * q, q]; };
+  const buckets = Array.from({length: 7}, () => []);
+  const put = (a, b) => { if (Math.abs(a[0]) > LIM || Math.abs(a[1]) > LIM || Math.abs(a[2]) > LIM || Math.abs(b[0]) > LIM || Math.abs(b[1]) > LIM || Math.abs(b[2]) > LIM) return;
+    const p = P2(a[0], a[1], a[2]), r = P2(b[0], b[1], b[2]); if (p[2] <= 0 || r[2] <= 0) return;
+    const q = (p[2] + r[2]) / 2, bb = Math.min(6, Math.max(0, Math.floor((q - 0.6) / 0.75 * 7))); buckets[bb].push(p[0], p[1], r[0], r[1]); };
+  let count = 0;
+  if (SURF) {
+    const tmp = new Float32Array(4), A = [0, 0, 0], Bp = [0, 0, 0];
+    for (const pl of SURF) { const n = pl.length / 4; let prev = null;
+      for (let j = 0; j < n; j++) { to3(pl[j * 4], pl[j * 4 + 1], pl[j * 4 + 2], pl[j * 4 + 3], tmp, 0); const cur = [tmp[0], tmp[1], tmp[2]]; if (prev) put(prev, cur); prev = cur; } count++; }
+  } else {
+    // creation: the rings appear one after another, each drawn as it is born, then the whole knot keeps turning
+    const per = 1.1, total = FIB.length, shown = growOn ? Math.min(total, growT / per) : total;
+    const S = 10, c3 = new Float32Array(FM * 4);
+    for (let f = 0; f < total && f < shown; f++) {
+      const part = Math.min(1, shown - f), pts = FIB[f];
+      for (let j = 0; j < FM; j++) to3(pts[j * 4], pts[j * 4 + 1], pts[j * 4 + 2], pts[j * 4 + 3], c3, j * 4);
+      // rotation-minimising frame along the projected circle
+      const T = [], N = [], Bn = [];
+      for (let j = 0; j < FM; j++) { const a = ((j + 1) % FM) * 4, b = ((j - 1 + FM) % FM) * 4; let t = [c3[a] - c3[b], c3[a + 1] - c3[b + 1], c3[a + 2] - c3[b + 2]]; const l = Math.hypot(...t) || 1; T.push(t.map(v => v / l)); }
+      let n0 = Math.abs(T[0][0]) < .9 ? [1, 0, 0] : [0, 1, 0]; const d0 = n0[0] * T[0][0] + n0[1] * T[0][1] + n0[2] * T[0][2]; n0 = n0.map((v, i) => v - d0 * T[0][i]); let ln = Math.hypot(...n0); N.push(n0.map(v => v / ln));
+      for (let j = 1; j < FM; j++) { const p = N[j - 1], t = T[j], d = p[0] * t[0] + p[1] * t[1] + p[2] * t[2]; let v = [p[0] - d * t[0], p[1] - d * t[1], p[2] - d * t[2]]; const l = Math.hypot(...v) || 1; N.push(v.map(x => x / l)); }
+      // close the tube without a seam: spread the frame's leftover twist evenly along the circle
+      { const t0 = T[0], e = N[FM - 1], d = e[0] * t0[0] + e[1] * t0[1] + e[2] * t0[2]; let ep = [e[0] - d * t0[0], e[1] - d * t0[1], e[2] - d * t0[2]]; const le = Math.hypot(...ep) || 1; ep = ep.map(v => v / le);
+        const n0 = N[0], cr = [ep[1] * n0[2] - ep[2] * n0[1], ep[2] * n0[0] - ep[0] * n0[2], ep[0] * n0[1] - ep[1] * n0[0]];
+        const phi = Math.atan2(cr[0] * t0[0] + cr[1] * t0[1] + cr[2] * t0[2], ep[0] * n0[0] + ep[1] * n0[1] + ep[2] * n0[2]);
+        for (let j = 0; j < FM; j++) { const a = phi * j / FM, t = T[j], n = N[j], b = [t[1] * n[2] - t[2] * n[1], t[2] * n[0] - t[0] * n[2], t[0] * n[1] - t[1] * n[0]], c = Math.cos(a), sn = Math.sin(a);
+          N[j] = [c * n[0] + sn * b[0], c * n[1] + sn * b[1], c * n[2] + sn * b[2]]; } }
+      for (let j = 0; j < FM; j++) { const t = T[j], n = N[j]; Bn.push([t[1] * n[2] - t[2] * n[1], t[2] * n[0] - t[0] * n[2], t[0] * n[1] - t[1] * n[0]]); }
+      const ring = (j, s) => { const r = trad * Math.min(6, c3[j * 4 + 3]), th = TAU * s / S, cs = Math.cos(th), sn = Math.sin(th), n = N[j], b = Bn[j];
+        return [c3[j * 4] + r * (cs * n[0] + sn * b[0]), c3[j * 4 + 1] + r * (cs * n[1] + sn * b[1]), c3[j * 4 + 2] + r * (cs * n[2] + sn * b[2])]; };
+      const upto = Math.max(2, Math.floor(FM * part));
+      for (let j = 0; j < upto; j++) {
+        const R0 = []; for (let s = 0; s < S; s++) R0.push(ring(j, s));
+        for (let s = 0; s < S; s++) put(R0[s], R0[(s + 1) % S]);                         // the cross-section rings
+        if (j + 1 < upto || part >= 1) { const j2 = (j + 1) % FM; for (let s = 0; s < S; s++) put(R0[s], ring(j2, s)); }   // lengthwise lines
+      }
+      count++;
     }
-    if (!any) continue;
-    const a = Math.min(1, (0.12 + 0.13 * b) * glow);
-    g.strokeStyle = wcol ? `hsla(${200 - b * 14},90%,${70 + b * 4}%,${a})` : `rgba(226,246,255,${a})`;
-    g.lineWidth = base * (0.7 + b * 0.12); g.stroke();
   }
-  $('hint').textContent = `${SHAPES[shape].name} · ${L.length} cercuri · ${n} puncte · proiecție ${({persp: 'perspectivă', stereo: 'stereografică', ortho: 'ortogonală'})[proj]}`;
+  g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+  const base = Math.max(0.5, dpr * 0.7);
+  buckets.forEach((arr, b) => { if (!arr.length) return; g.beginPath(); for (let i = 0; i < arr.length; i += 4) { g.moveTo(arr[i], arr[i + 1]); g.lineTo(arr[i + 2], arr[i + 3]); }
+    const a = Math.min(1, (0.1 + 0.12 * b) * glow); g.strokeStyle = wcol ? `hsla(${205 - b * 12},85%,${68 + b * 4}%,${a})` : `rgba(226,246,255,${a})`; g.lineWidth = base * (0.65 + b * 0.12); g.stroke(); });
+  $('hint').textContent = `${SHAPES[shape].name} · ${count} ${FIB ? 'inele' : 'cercuri'} · proiecție ${({persp: 'perspectivă', stereo: 'stereografică', ortho: 'ortogonală'})[proj]}`;
 }
 
-// ---------- UI ----------
+// ---------------- UI ----------------
 function resize() { const d = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(innerWidth * d); cv.height = Math.round(innerHeight * d); }
 addEventListener('resize', resize); resize();
-for (const [k, s] of Object.entries(SHAPES)) { const b = document.createElement('button'); b.textContent = s.name; b.dataset.s = k; if (k === shape) b.classList.add('on');
+for (const [k, s] of Object.entries(SHAPES)) { const b = document.createElement('button'); b.textContent = s.name; if (k === shape) b.classList.add('on');
   b.onclick = () => { shape = k; document.querySelectorAll('#shapes button').forEach(x => x.classList.toggle('on', x === b)); build(); }; $('shapes').append(b); }
-for (const [nm] of PLANES) { const l = document.createElement('label'); l.className = 's'; l.innerHTML = `${nm}<input type="range" min="-1" max="1" step="0.01" value="${speeds[nm]}"><output>${speeds[nm].toFixed(2)}</output>`;
-  const inp = l.querySelector('input'), out = l.querySelector('output'); inp.oninput = () => { speeds[nm] = Number(inp.value); out.textContent = speeds[nm].toFixed(2); }; l.dataset.p = nm; $('planes').append(l); }
+for (const [nm] of PLANES) { const l = document.createElement('label'); l.className = 's'; l.dataset.p = nm; l.innerHTML = `${nm}<input type="range" min="-1" max="1" step="0.01" value="${speeds[nm]}"><output>${speeds[nm].toFixed(2)}</output>`;
+  const inp = l.querySelector('input'), out = l.querySelector('output'); inp.oninput = () => { speeds[nm] = Number(inp.value); out.textContent = speeds[nm].toFixed(2); }; $('planes').append(l); }
 function syncPlanes() { document.querySelectorAll('#planes label').forEach(l => { const nm = l.dataset.p; l.querySelector('input').value = speeds[nm]; l.querySelector('output').textContent = speeds[nm].toFixed(2); }); }
 const bind = (id, fn, fmt = v => v.toFixed(2)) => { const e = $(id), o = $(id + 'o'); const f = () => { fn(Number(e.value)); o.textContent = fmt(Number(e.value)); }; e.oninput = f; f(); };
 bind('d4', v => D4 = v); bind('glow', v => glow = v); bind('zoom', v => zoom = v);
-bind('dens', v => { dens = v; build(); }, v => String(v));
+bind('dens', v => { dens = v; if (SURF) build(); }, v => String(v));
+bind('nfib', v => { nfib = v; if (FIB) build(); }, v => String(v));
+bind('trad', v => trad = v, v => v.toFixed(3));
 document.querySelectorAll('[data-proj]').forEach(b => b.onclick = () => { proj = b.dataset.proj; document.querySelectorAll('[data-proj]').forEach(x => x.classList.toggle('on', x === b)); });
+$('grow').onclick = () => { growOn = true; growT = 0; $('grow').classList.add('on'); };
 $('pause').onclick = () => { paused = !paused; $('pause').textContent = paused ? 'Pornește' : 'Pauză'; };
-$('reset').onclick = () => { M = id4(); yaw = 0.5; pitch = -0.35; };
-$('rand').onclick = () => { for (const [nm] of PLANES) speeds[nm] = Math.round((Math.random() * 2 - 1) * 0.5 * 100) / 100; syncPlanes(); };
+$('reset').onclick = () => { M = id4(); yaw = 0.5; pitch = -0.35; growT = 0; };
+$('rand').onclick = () => { for (const [nm] of PLANES) speeds[nm] = Math.round((Math.random() * 2 - 1) * 0.45 * 100) / 100; syncPlanes(); };
 $('wcol').onclick = () => { wcol = !wcol; $('wcol').classList.toggle('on', wcol); };
 $('drag4').onclick = () => { drag4 = !drag4; $('drag4').classList.toggle('on', drag4); };
 $('fold').onclick = () => { $('panel').classList.toggle('closed'); $('fold').textContent = $('panel').classList.contains('closed') ? '+' : '—'; };
@@ -179,7 +216,6 @@ cv.addEventListener('pointermove', e => { if (!dr) return; const dx = (e.clientX
   if (dr.four || e.shiftKey) { rot(0, 3, dx); rot(1, 3, dy); } else { yaw += dx; pitch = Math.max(-1.5, Math.min(1.5, pitch + dy)); } });
 cv.addEventListener('pointerup', () => dr = null);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(0.4, Math.min(3, zoom * (e.deltaY < 0 ? 1.08 : 0.93))); $('zoom').value = zoom; $('zoomo').textContent = zoom.toFixed(2); }, {passive: false});
-
 build();
 let last = performance.now();
 (function loop(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; frame(dt); requestAnimationFrame(loop); })(last);
