@@ -27,7 +27,7 @@ export const score=m=>m.match0+m.meanMatch-2*((m.ratio??3)-1)-.03*m.surprises-.0
 // Moments of its life worth keeping, so we can later see how its imagination formed.
 export const MILESTONES=[0,5,15,40,100,250,600,1500,4000,10000,20000];
 export function lightSnapshot(org){const s=JSON.parse(JSON.stringify(org.snapshot()));const strip=o=>{if(o&&typeof o==='object'){delete o.m;delete o.v;for(const v of Object.values(o))strip(v);}};strip(s);return s;}
-export async function train(org,{episodes=200,size=15,validationCount=24,onProgress=()=>{},cancel=()=>false,onMilestone=()=>{},seedOffset=null,onEpisode=()=>{},previewEvery=10}={}){
+export async function train(org,{episodes=200,size=15,validationCount=24,onProgress=()=>{},cancel=()=>false,onMilestone=()=>{},seedOffset=null,onEpisode=null,previewEvery=10}={}){
   if(MILESTONES.includes(org.episodes))onMilestone(org.episodes,lightSnapshot(org));
   if(!Number.isInteger(episodes)||episodes<1||episodes>20000)throw Error('Invalid number of episodes');
   const every=Math.max(10,Math.floor(episodes/15)),history=[],snaps=[];let best=null,bestSnapshot=null;
