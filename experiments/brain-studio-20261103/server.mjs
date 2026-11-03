@@ -19,8 +19,8 @@ await vault.setup();
 let kind='universal',brain=makeBrain(kind,19),selection='unsaved',readOnlyArchive=null;
 let history=[],last=null,preview=null,lastTest=null,notes='Creier partajat inițializat.',revision=0;
 let run={status:'stopped',unlimited:false,done:0,target:0,domains:DOMAINS.slice(),size:11,
- autosaveEvery:10,previewEvery:2,delayMs:40,started:null,error:null,savedAt:null};
-let startAt=Date.now(),last25=[],training=null,writeTail=Promise.resolve(),shuttingDown=false;
+ autosaveEvery:10,previewEvery:2,delayMs:40,seedCursor:1000000,reservedUntil:1000000,started:null,error:null,savedAt:null};
+let startAt=Date.now(),last25=[],recentOutcomes=[],training=null,writeTail=Promise.resolve(),shuttingDown=false;
 const bounded=(v,lo,hi,otherwise)=>Number.isInteger(Number(v))&&Number(v)>=lo&&Number(v)<=hi?Number(v):otherwise;
 const chosenDomains=raw=>Array.isArray(raw)&&raw.every(x=>DOMAINS.includes(x))&&raw.length?
  [...new Set(raw)]:DOMAINS.slice();
@@ -49,7 +49,7 @@ function save(){
  run.savedAt=new Date().toISOString();
  const snapshot={schema:'studio-1',kind,selection,
   snapshot:brain?.snapshot()||readOnlyArchive,
-  history:history.slice(-300),notes,run:{...run,status:'paused'},lastTest,revision};
+  history:history.slice(-300),recentOutcomes:recentOutcomes.slice(-100),notes,run:{...run,status:'paused'},lastTest,revision};
  writeTail=writeTail.catch(e=>console.error('Previous checkpoint failed',e))
   .then(()=>atomic(activeFile,snapshot));
  return writeTail;
@@ -59,9 +59,13 @@ if(existsSync(activeFile)){
   const stored=JSON.parse(await readFile(activeFile,'utf8'));
   const restored=detect(stored.snapshot);
   kind=stored.kind;
-  if(kind!==restored.kind||!KINDS.includes(kind))throw Error('Active brain schema mismatch');
-  brain=restoreBrain(kind,restored.snapshot);selection=stored.selection||'autosaved';
+  if(kind==='archive'){brain=null;readOnlyArchive=restored.snapshot;selection=stored.selection||'archive';}
+  else{
+   if(kind!==restored.kind||!KINDS.includes(kind))throw Error('Active brain schema mismatch');
+   brain=restoreBrain(kind,restored.snapshot);selection=stored.selection||'autosaved';
+  }
   history=Array.isArray(stored.history)?stored.history.slice(-300):[];
+  recentOutcomes=Array.isArray(stored.recentOutcomes)?stored.recentOutcomes.slice(-100):[];
   lastTest=stored.lastTest||null;notes='Creier restaurat din checkpoint local.';
   run={...run,...stored.run,status:'paused',error:null};
  }catch(e){notes='Checkpoint anterior incompatibil (nu este șters): '+e.message;
@@ -78,7 +82,7 @@ function nextDomain(index){
 }
 function trial(){
  if(!brain)throw Error('No compatible brain selected');
- const seed=((33000001+Math.imul((brain.episodes||0)+run.done+revision,7919))>>>0);
+ const seed=((33000001+Math.imul(run.seedCursor++,7919))>>>0);
  const domain=nextDomain(run.done);
  const before=sampleWeights();
  const t0=performance.now();
@@ -88,15 +92,16 @@ function trial(){
  last25.push(elapsed);if(last25.length>25)last25.shift();
  const delta=weightDistance(before,sampleWeights());
  run.done++;revision++;
+ recentOutcomes.push(output.outcome.solved?1:0);if(recentOutcomes.length>100)recentOutcomes.shift();
  last={episode:brain.episodes,domain,seed,outcome:output.outcome,
   elapsedMs:+elapsed.toFixed(2),weightDelta:+delta.toFixed(6)};
  if(run.done===1||run.done%run.previewEvery===0)
   preview={meta:output.meta,outcome:output.outcome,
    frames:output.frames.slice(-90),lastInput:output.lastInput};
  if(run.done===1||run.done%5===0){
-  const recent=history.slice(-30).map(x=>x.outcome?.solved?1:0);
+  const recent=recentOutcomes;
   history.push({episode:brain.episodes,runEpisode:run.done,at:new Date().toISOString(),domain,
-   success:+mean([output.outcome.solved?1:0,...recent]).toFixed(4),
+   success:+mean(recent).toFixed(4),
    loss:output.outcome.loss,weightDelta:+delta.toFixed(6),
    millisecondsPerEpisode:+elapsed.toFixed(2),
    episodesPerSecond:elapsed>0?+(1000/elapsed).toFixed(3):null,outcome:output.outcome});
@@ -111,6 +116,10 @@ async function execute(){
   try{
    while(run.status==='running'&&!shuttingDown){
     if(!run.unlimited&&run.done>=run.target){run.status='stopped';notes='Training complet';break;}
+    if(run.seedCursor>=run.reservedUntil){
+     run.reservedUntil=run.seedCursor+1000;
+     await save(); // Reserve 1000 future world seeds before executing them.
+    }
     trial();
     if(run.done%run.autosaveEvery===0)await save();
     if(run.done%Math.max(20,run.autosaveEvery*2)===0){
@@ -188,10 +197,11 @@ const server=http.createServer(async(req,res)=>{
    if(run.status==='running')return send(res,{error:'Pause training before selecting, saving, importing, or resetting'},409);
    if(endpoint==='/api/brains/select'){
     if(typeof input.id!=='string')throw Error('Brain ID required');
-    await save(); // always preserve the previously active brain, never erase it
+    await save();
+    if(brain)await vault.saveBrain(kind,brain,'Autosave înainte de selectare · '+kind+' · '+brain.episodes+' ep');
     const loaded=await vault.load(input.id);
     kind=loaded.kind;brain=loaded.brain||null;readOnlyArchive=brain?null:loaded.snapshot;
-    selection=input.id;history=[];last=null;preview=null;lastTest=null;
+    selection=input.id;history=[];recentOutcomes=[];last=null;preview=null;lastTest=null;
     run={...run,status:'paused',done:0,target:0,error:null};revision++;
     notes=loaded.trainable?'Creier original încărcat ca o copie în Studio. Fișierul sursă rămâne intact.':
      'Arhivă selectată: arhitectura nu are adaptor de antrenare. Disponibilă pentru inspecție/export.';
@@ -199,8 +209,10 @@ const server=http.createServer(async(req,res)=>{
    }
    if(endpoint==='/api/brains/new'){
     if(!KINDS.includes(input.kind))throw Error('Unknown brain type');
-    await save();kind=input.kind;brain=makeBrain(kind,bounded(input.seed,1,2147483646,19));
-    selection='new:'+kind;readOnlyArchive=null;history=[];last=null;preview=null;lastTest=null;
+    await save();
+    if(brain)await vault.saveBrain(kind,brain,'Autosave înainte de creier nou · '+kind+' · '+brain.episodes+' ep');
+    kind=input.kind;brain=makeBrain(kind,bounded(input.seed,1,2147483646,19));
+    selection='new:'+kind;readOnlyArchive=null;history=[];recentOutcomes=[];last=null;preview=null;lastTest=null;
     run={...run,status:'paused',done:0,target:0,error:null};notes='Creier nou';revision++;
     await save();return send(res,copyState());
    }
