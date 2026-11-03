@@ -17,7 +17,8 @@ const port=Number(process.env.PORT||3044);
 if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid port');
 await vault.setup();
 let kind='universal',brain=makeBrain(kind,19),selection='unsaved',readOnlyArchive=null;
-let history=[],last=null,preview=null,lastTest=null,notes='Creier partajat inițializat.',revision=0;
+let history=[],last=null,preview=null,lastTest=null,validation=null,bestFitness=Infinity,
+ notes='Creier partajat inițializat.',revision=0;
 let run={status:'stopped',unlimited:false,done:0,target:0,domains:DOMAINS.slice(),size:11,
  autosaveEvery:10,previewEvery:2,delayMs:40,seedCursor:1000000,reservedUntil:1000000,started:null,error:null,savedAt:null};
 let startAt=Date.now(),last25=[],recentOutcomes=[],training=null,writeTail=Promise.resolve(),shuttingDown=false;
@@ -37,7 +38,8 @@ const copyState=()=>{
   notes,model,run:{...run},timing:{elapsedSeconds:+dt.toFixed(2),
    episodesPerSecond:rolling?+(1000/rolling).toFixed(3):0,
    millisecondsPerEpisode:rolling?+rolling.toFixed(1):null},
-  history:history.slice(-240),last,preview,lastTest,
+  history:history.slice(-240),last,preview,lastTest,validation,
+  bestFitness:Number.isFinite(bestFitness)?bestFitness:null,
   functionCurve:brain?functionSamples(kind,brain,{domain:run.domains[0]}):[],
   weightsDelta:history.at(-1)?.weightDelta??0,revision};
 };
@@ -49,7 +51,8 @@ function save(){
  run.savedAt=new Date().toISOString();
  const snapshot={schema:'studio-1',kind,selection,
   snapshot:brain?.snapshot()||readOnlyArchive,
-  history:history.slice(-300),recentOutcomes:recentOutcomes.slice(-100),notes,run:{...run,status:'paused'},lastTest,revision};
+  history:history.slice(-300),recentOutcomes:recentOutcomes.slice(-100),notes,
+  run:{...run,status:'paused'},lastTest,validation,bestFitness,revision};
  writeTail=writeTail.catch(e=>console.error('Previous checkpoint failed',e))
   .then(()=>atomic(activeFile,snapshot));
  return writeTail;
@@ -66,7 +69,9 @@ if(existsSync(activeFile)){
   }
   history=Array.isArray(stored.history)?stored.history.slice(-300):[];
   recentOutcomes=Array.isArray(stored.recentOutcomes)?stored.recentOutcomes.slice(-100):[];
-  lastTest=stored.lastTest||null;notes='Creier restaurat din checkpoint local.';
+  lastTest=stored.lastTest||null;validation=stored.validation||null;
+  bestFitness=Number.isFinite(stored.bestFitness)?stored.bestFitness:Infinity;
+  notes='Creier restaurat din checkpoint local.';
   run={...run,...stored.run,status:'paused',error:null};
  }catch(e){notes='Checkpoint anterior incompatibil (nu este șters): '+e.message;
   console.error(notes);brain=makeBrain('universal',19);kind='universal';selection='unsaved';}
@@ -124,9 +129,22 @@ async function execute(){
     if(run.done%run.autosaveEvery===0)await save();
     if(run.done%Math.max(20,run.autosaveEvery*2)===0){
      try{
-      // Held-out checks on fresh seed families; they never update the selected brain.
+      // Validation uses a FIXED seed family, distinct from the user-invoked blind test.
+      // This selects a best checkpoint without ever replacing the active working brain.
       const domains=kind==='universal'?run.domains:undefined;
-      lastTest=blindTest(kind,brain,{count:3,size:run.size,seed:918273+Math.floor(run.done/20)*111,domains});
+      validation=blindTest(kind,brain,{count:3,size:run.size,seed:811001,domains});
+      const rows=Object.values(validation.domains);
+      const fitness=rows.reduce((sum,r)=>{
+       if(r.metric==='costMAE')return sum+r.meanCost;
+       return sum+4*(1-(r.success??0))+Math.max(0,r.meanCost||0)/Math.max(10,run.size*15);
+      },0);
+      if(fitness<bestFitness-1e-7){
+       bestFitness=fitness;
+       await vault.atomic(path.join(data,'best.json'),{schema:'studio-1',kind,
+        snapshot:brain.snapshot(),savedAt:new Date().toISOString(),
+        validationFitness:fitness,label:'STUDIO · BEST VALIDATION'});
+       notes='Best actualizat după validare: '+fitness.toFixed(5);
+      }
      }catch(e){notes='Test incomplet: '+e.message;console.error(e);}
     }
     await pauseTick();if(run.delayMs)await sleep(run.delayMs);
@@ -202,6 +220,7 @@ const server=http.createServer(async(req,res)=>{
     const loaded=await vault.load(input.id);
     kind=loaded.kind;brain=loaded.brain||null;readOnlyArchive=brain?null:loaded.snapshot;
     selection=input.id;history=[];recentOutcomes=[];last=null;preview=null;lastTest=null;
+    validation=null;bestFitness=Infinity;
     run={...run,status:'paused',done:0,target:0,error:null};revision++;
     notes=loaded.trainable?'Creier original încărcat ca o copie în Studio. Fișierul sursă rămâne intact.':
      'Arhivă selectată: arhitectura nu are adaptor de antrenare. Disponibilă pentru inspecție/export.';
@@ -213,6 +232,7 @@ const server=http.createServer(async(req,res)=>{
     if(brain)await vault.saveBrain(kind,brain,'Autosave înainte de creier nou · '+kind+' · '+brain.episodes+' ep');
     kind=input.kind;brain=makeBrain(kind,bounded(input.seed,1,2147483646,19));
     selection='new:'+kind;readOnlyArchive=null;history=[];recentOutcomes=[];last=null;preview=null;lastTest=null;
+    validation=null;bestFitness=Infinity;
     run={...run,status:'paused',done:0,target:0,error:null};notes='Creier nou';revision++;
     await save();return send(res,copyState());
    }
