@@ -75,3 +75,24 @@ jobs:
         run: node experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs 90 6 19
       - name: Active causal hypothesis versus random-query benchmark
         run: node --input-type=module -e "import {evaluateHypotheses} from './experiments/causal-text/engine/hypotheses.mjs'; for (const extra of [0,2,4,6,9]) console.log('CAUSAL_BENCH',JSON.stringify(evaluateHypotheses({worlds:60,seed:6300019,extra,goalsPerWorld:3})))"
+
+  windows-powershell-parse:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate one-command Windows CUDA launcher syntax (GPU runs only on user hardware)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './START_MAGIC_CUDA.ps1').Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'PowerShell launcher failed parser validation'
+          }
+          Write-Host 'POWERSHELL_CUDA_LAUNCHER_PARSE_OK'
