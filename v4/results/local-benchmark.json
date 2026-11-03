@@ -1,0 +1,273 @@
+{
+  "version": "v4",
+  "testSeed": 4040500,
+  "validationSeed": 3030301,
+  "trainSeed": 2000001,
+  "episodes": 200,
+  "size": 9,
+  "count": 12,
+  "before": {
+    "seed": 4040500,
+    "count": 12,
+    "size": 9,
+    "worlds": {},
+    "modes": {
+      "learned-online": {
+        "count": 12,
+        "solved": 12,
+        "success": 1,
+        "failures": 0,
+        "firstShapeF1": 0.1307,
+        "meanCost": 30.417,
+        "meanEfficiency": 0.7706,
+        "beamRate": 1,
+        "onlineUpdates": 875
+      },
+      "learned-frozen": {
+        "count": 12,
+        "solved": 12,
+        "success": 1,
+        "failures": 0,
+        "firstShapeF1": 0.1307,
+        "meanCost": 30.417,
+        "meanEfficiency": 0.7706,
+        "beamRate": 1,
+        "onlineUpdates": 0
+      },
+      "neutral": {
+        "count": 12,
+        "solved": 12,
+        "success": 1,
+        "failures": 0,
+        "firstShapeF1": 0.1793,
+        "meanCost": 27.833,
+        "meanEfficiency": 0.7749,
+        "beamRate": 1,
+        "onlineUpdates": 0
+      }
+    },
+    "independent": true
+  },
+  "after": {
+    "seed": 4040500,
+    "count": 12,
+    "size": 9,
+    "worlds": {},
+    "modes": {
+      "learned-online": {
+        "count": 12,
+        "solved": 12,
+        "success": 1,
+        "failures": 0,
+        "firstShapeF1": 0.1585,
+        "meanCost": 32.75,
+        "meanEfficiency": 0.7513,
+        "beamRate": 1,
+        "onlineUpdates": 933
+      },
+      "learned-frozen": {
+        "count": 12,
+        "solved": 12,
+        "success": 1,
+        "failures": 0,
+        "firstShapeF1": 0.1585,
+        "meanCost": 32.667,
+        "meanEfficiency": 0.7587,
+        "beamRate": 1,
+        "onlineUpdates": 0
+      },
+      "neutral": {
+        "count": 12,
+        "solved": 12,
+        "success": 1,
+        "failures": 0,
+        "firstShapeF1": 0.1793,
+        "meanCost": 27.833,
+        "meanEfficiency": 0.7749,
+        "beamRate": 1,
+        "onlineUpdates": 0
+      }
+    },
+    "independent": true
+  },
+  "best": {
+    "episode": 13,
+    "policyError": 0.4569,
+    "heldoutF1": 0.2222,
+    "neutralF1": 0.2222,
+    "heldoutSuccess": 1,
+    "heldoutCost": 33,
+    "controlCost": 33.667,
+    "onlineCost": 33,
+    "score": 1077.9930000000002
+  },
+  "history": [
+    {
+      "episode": 13,
+      "policyError": 0.4569,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 33,
+      "controlCost": 33.667,
+      "onlineCost": 33
+    },
+    {
+      "episode": 26,
+      "policyError": 0.3268,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 33,
+      "controlCost": 33.667,
+      "onlineCost": 33
+    },
+    {
+      "episode": 39,
+      "policyError": 0.2458,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 52,
+      "policyError": 0.3367,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 65,
+      "policyError": 0.3264,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 78,
+      "policyError": 0.216,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 91,
+      "policyError": 0.2909,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 104,
+      "policyError": 0.2841,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 117,
+      "policyError": 0.2709,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 130,
+      "policyError": 0.2177,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 143,
+      "policyError": 0.3294,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 156,
+      "policyError": 0.2259,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 169,
+      "policyError": 0.1576,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 182,
+      "policyError": 0.1378,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 195,
+      "policyError": 0.2645,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    },
+    {
+      "episode": 200,
+      "policyError": 0.2249,
+      "heldoutF1": 0.2222,
+      "neutralF1": 0.2222,
+      "heldoutSuccess": 1,
+      "heldoutCost": 31,
+      "controlCost": 33.667,
+      "onlineCost": 31
+    }
+  ],
+  "limitations": [
+    "Beam search may require explicit model-based fallback",
+    "Public potential-edge scaffold is known",
+    "Training uses oracle next-transition supervision",
+    "No proof of domain-general perspective invention",
+    "Cost and shape improvements are not presumed"
+  ]
+}
