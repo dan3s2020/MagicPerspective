@@ -1,0 +1,207 @@
+{
+  "schema": 1,
+  "full_implementation_conformity_verified": false,
+  "meaning": "This is a REQUIREMENT TRACKING STRUCTURE; technical mapping is a proposal not original Verbatim and no version is certified fully compliant.",
+  "sources": [
+    "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
+    "verbatim/recent-user-messages.json"
+  ],
+  "required_evidence_fields": [
+    "source_ref",
+    "exact_source_span",
+    "code_paths",
+    "test_paths",
+    "measured_result",
+    "regression_check",
+    "status"
+  ],
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
+      "exact_source_span": "14 milioane de exercitii unice si diferite",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Unique problem counting with reproducible episode identifiers across domains",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-02",
+      "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
+      "exact_source_span": "insula",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Track persistent solution-shape patterns; tests on new worlds and causal ablations",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-03",
+      "source_ref": "2026-11-03-USER-NO-MORE-DEMOS",
+      "exact_source_span": "gata cu demo-ul",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Real training and measured held-out evaluation without toy success claims",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-04",
+      "source_ref": "2026-11-03-USER-ANIMATED-GRAPH-UI",
+      "exact_source_span": "SA MA UIT LA GRAF SI SA INTELEG TOT CE SE INTAMPLA PRIN PATTERNURILE PE CARE LE VAD",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Event-sourced 3D viewer: activations, prediction, actual action, error impulses, weight updates",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-05",
+      "source_ref": "2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
+      "exact_source_span": "GRAF 4D",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "3D spatial layout + time trajectory + higher dimensional state projections",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-06",
+      "source_ref": "2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
+      "exact_source_span": "CONCEPTUL DE POLYMATH",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Persistent morphable graph trained across domains; structural growth, selective merging, non-destructive retention",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-07",
+      "source_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
+      "exact_source_span": "graful e si lumea,e si forma solutie",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Map world, controller, observations, constraints and predicted solution within one computational graph, with a separate environment truth contract",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-08",
+      "source_ref": "2026-11-03-USER-AS-ABOVE-AS-BELOW-QUESTION",
+      "exact_source_span": "as above as below",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Correspondence test between graph-predicted transitions and real observed state transitions",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-09",
+      "source_ref": "2026-11-03-USER-VERBATIM-MIRROR-MAIN",
+      "exact_source_span": "versiunile trebuie sa se oglindeasca in ea",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Source-to-code-to-test-to-evidence mapping for each release on main",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    }
+  ],
+  "versions": [
+    {
+      "id": "V1",
+      "path": "src",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V2",
+      "path": "v2",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V3",
+      "path": "v3",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V4",
+      "path": "v4",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V5",
+      "path": "v5",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V6",
+      "path": "v6",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V7",
+      "path": "v7",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V8",
+      "path": "v8",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V9",
+      "path": "v9",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "BRAIN-STUDIO",
+      "path": "experiments/brain-studio-20261103",
+      "in_repo": true,
+      "state": "EXPERIMENT_NOT_FULLY_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "PORTAL4D-CUDA-A-I",
+      "path": "<external-local-project-not-under-MagicPerspective-main>",
+      "in_repo": false,
+      "state": "EXTERNAL_NOT_AUDITED",
+      "verified_requirement_ids": []
+    }
+  ]
+}
