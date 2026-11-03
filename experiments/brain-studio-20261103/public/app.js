@@ -196,7 +196,7 @@ function drawWorld(id,truth=false){
    g.fillRect(28+x*cell,28+y*cell,cell-1,cell-1);
   }
  }else{
-  if(truth&&allEdges.length)for(const e of allEdges){if(Number.isInteger(e.a)&&Number.isInteger(e.b)&&positions[e.a]&&positions[e.b])
+  if(truth&&allEdges.length)for(const e of allEdges){if(e.open===false)continue;if(Number.isInteger(e.a)&&Number.isInteger(e.b)&&positions[e.a]&&positions[e.b])
     edge(g,positions,e.a,e.b,'rgba(95,191,171,.42)',1.4)}
   if(!truth)for(const e of allEdges){if(positions[e.a]&&positions[e.b])
     edge(g,positions,e.a,e.b,'rgba(113,220,200,.66)',2)}
@@ -263,7 +263,7 @@ function drawFunction(){
 }
 function drawLearning(){
  const history=(S?.history||[]).slice(-130);
- const success=history.map(x=>x.success??0),loss=history.map(x=>x.loss??0);
+ const success=history.map(x=>x.success??0),loss=history.map(x=>x.loss);
  const nonempty=loss.filter(Number.isFinite),maxLoss=Math.max(1,...nonempty);
  plotLine('learning-canvas',[
   {name:'Succes recent (0–1)',color:COLORS.mint,values:success},
@@ -317,11 +317,16 @@ function drawTest(){
  for(const [domain,r] of Object.entries(S.lastTest.domains||{})){
   const box=document.createElement('div');box.className='test-item';
   const h=document.createElement('b');h.textContent=domain.toUpperCase();
-  const a=document.createElement('strong');a.textContent=number(100*r.success,1)+'%';
-  const s=document.createElement('small');s.textContent='Antrenat '+r.solved+'/'+r.count+
-   ' · neantrenat '+r.baselineSolved+'/'+r.count;
-  const c=document.createElement('small');c.textContent='Cost mediu '+r.meanCost+
-   ' vs '+r.baselineCost+' (mai mic e mai bun)';
+  const a=document.createElement('strong');
+  a.textContent=r.metric==='costMAE'?number(r.meanCost,3)+' MAE':number(100*r.success,1)+'%';
+  const s=document.createElement('small');
+  s.textContent=r.metric==='costMAE'?'Eroare neantrenat '+number(r.baselineCost,3)+
+   ' · mai mic este mai bun':
+   (r.metric==='exactTransition'?'Tranziții exacte: ':'Obiective: ')+
+   'antrenat '+r.solved+'/'+r.count+' · neantrenat '+r.baselineSolved+'/'+r.count;
+  const c=document.createElement('small');
+  c.textContent=r.metric==='costMAE'?'Evaluare pe conexiuni cu costuri nevăzute':
+   'Cost/eroare '+r.meanCost+' vs '+r.baselineCost;
   box.append(h,a,s,c);root.append(box);
  }
 }
