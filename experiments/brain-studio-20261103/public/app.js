@@ -20,16 +20,16 @@ async function api(route,payload){
 function status(t,ok=true){$('connection').textContent=t;$('connection').style.color=ok?COLORS.mint:COLORS.red;}
 function setBusy(value){busy=value;controls()}
 function controls(){
- const running=S?.run?.status==='running'||cudaRunning;
+ const running=S?.run?.status==='running',locked=running||cudaRunning;
  for(const id of ['load','create','save','import','test','start','resume','pause','stop','export']){
   const b=$(id);if(b)b.disabled=busy;
  }
- $('start').disabled=busy||running||!S?.trainable;
- $('resume').disabled=busy||running||!S?.trainable;
+ $('start').disabled=busy||locked||!S?.trainable;
+ $('resume').disabled=busy||locked||!S?.trainable;
  $('pause').disabled=busy||!running;
  $('stop').disabled=busy||!running;
- for(const id of ['load','create','import','test'])$(id).disabled=busy||running;
- $('save').disabled=busy||running||!S?.trainable;
+ for(const id of ['load','create','import','test'])$(id).disabled=busy||locked;
+ $('save').disabled=busy||locked||!S?.trainable;
 }
 async function action(route,payload,label){
  if(busy)return;setBusy(true);status(label+'…');
