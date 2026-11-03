@@ -86,7 +86,7 @@ async function runBlindEvaluation(){
 }
 $('evaluate').onclick=runBlindEvaluation;
 $('evaluate-control').onclick=runBlindEvaluation;
-$('reset').onclick=()=>guard(async()=>{if(confirm('Reset learned model and permanently remove saved V2 checkpoint?')){stopAuto();render(await api('reset',{}))}});
+$('reset').onclick=()=>guard(async()=>{if(confirm('Reset learned model and permanently remove saved V3 checkpoints?')){stopAuto();render(await api('reset',{}))}});
 $('belief').addEventListener('click',event=>guard(async()=>{if(!state||state.task?.running||state.episode.finished)return;
  const canvas=$('belief'),rect=canvas.getBoundingClientRect(),X=(event.clientX-rect.left)/rect.width*560,Y=(event.clientY-rect.top)/rect.height*560,n=state.episode.n,side=536/n;
  const x=Math.floor((X-12)/side),y=Math.floor((Y-12)/side);if(x<0||x>=n||y<0||y>=n)return;

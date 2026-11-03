@@ -1,0 +1,32 @@
+name: MagicPerspective regression and Perspective Escape
+on:
+  push:
+    branches:
+      - main
+      - feature/V4-PERSPECTIVE-ESCAPE-20261103
+  pull_request:
+    branches:
+      - main
+jobs:
+  node-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V1 baseline tests
+        run: node --test tests/*.test.js
+      - name: V2 baseline tests
+        run: node --test v2/tests/*.test.mjs
+      - name: V3 baseline and online tests
+        run: node --test v3/tests/*.test.mjs
+      - name: V4 existing Forge tests
+        run: node --test v4/tests/*.test.mjs
+      - name: V5 existing shape-organ tests
+        run: node --test v5/tests/*.test.mjs
+      - name: Perspective Escape unit and HTTP tests
+        run: node --test v4/escape-tests/*.test.mjs
+      - name: Escape held-out numeric and projection benchmark
+        run: node v4/scripts-escape-benchmark.mjs 100 100
