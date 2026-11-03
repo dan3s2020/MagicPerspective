@@ -38,7 +38,8 @@ test('Actual unique observed exercises grow permanent graph topology and reinfor
  assert.equal(g.stats().total_edges,4);
  assert.equal(g.stats().learned_steps,1);
  assert.equal(g.stats().unique_problems,1);
- assert.equal(g.stats().directed_density,4/6);
+ assert.equal(g.stats().unique_directed_pairs,2);
+ assert.equal(g.stats().directed_density,2/6);
  assert.equal(g.view().edges.some(e=>e.kind==='prediction'),false,
   'A predicted solution is not a confirmed learned connection');
  const duplicate=g.ingest(first);
