@@ -1,0 +1,7 @@
+data/*.json
+data/*.tmp
+data/*.bak
+node_modules/
+
+results/latest-benchmark.json
+tmp-test/

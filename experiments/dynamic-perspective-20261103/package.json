@@ -1,0 +1,1 @@
+{"name":"magicperspective-dynamic-perspective","private":true,"version":"0.1.0","type":"module","scripts":{"test":"node --test tests/*.test.mjs","benchmark":"node scripts-benchmark.mjs"},"engines":{"node":">=18"}}

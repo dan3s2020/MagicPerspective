@@ -1,0 +1,234 @@
+{
+  "protocol": {
+    "episodes": 200,
+    "n": 33,
+    "count": 24,
+    "seed": 17,
+    "validationSeed": 880000,
+    "testSeed": 920000,
+    "dynamic": true
+  },
+  "initialMAE": 1.7776,
+  "finalMAE": 0.67111,
+  "initialRoute": {
+    "learned": {
+      "success": 1,
+      "cost": 13.651,
+      "firstF1": 0.8542,
+      "initialConnected": 1,
+      "steps": 2.125,
+      "changedEndpoints": 5.08
+    },
+    "bellman": {
+      "success": 1,
+      "cost": 13.651,
+      "firstF1": 0.8958,
+      "initialConnected": 1,
+      "steps": 2.125,
+      "changedEndpoints": 5.08
+    }
+  },
+  "finalRoute": {
+    "count": 24,
+    "n": 33,
+    "seed": 920000,
+    "changed": true,
+    "modes": {
+      "learned": {
+        "success": 1,
+        "cost": 13.651,
+        "firstF1": 0.8958,
+        "initialConnected": 1,
+        "steps": 2.125,
+        "changedEndpoints": 5.08
+      },
+      "bellman": {
+        "success": 1,
+        "cost": 13.651,
+        "firstF1": 0.8958,
+        "initialConnected": 1,
+        "steps": 2.125,
+        "changedEndpoints": 5.08
+      },
+      "off": {
+        "success": 1,
+        "cost": 67.535,
+        "firstF1": 0,
+        "initialConnected": 0,
+        "steps": 9.625,
+        "changedEndpoints": 44.5
+      },
+      "shuffled": {
+        "success": 1,
+        "cost": 41.773,
+        "firstF1": 0.1424,
+        "initialConnected": 0.0417,
+        "steps": 7.292,
+        "changedEndpoints": 28.88
+      },
+      "untrained": {
+        "success": 1,
+        "cost": 13.651,
+        "firstF1": 0.8542,
+        "initialConnected": 1,
+        "steps": 2.125,
+        "changedEndpoints": 5.08
+      }
+    },
+    "byFamily": {
+      "clusters": {
+        "learned": {
+          "success": 1,
+          "cost": 18.56,
+          "firstF1": 0.8125,
+          "initialConnected": 1,
+          "steps": 2.875,
+          "changedEndpoints": 7.25
+        },
+        "bellman": {
+          "success": 1,
+          "cost": 18.56,
+          "firstF1": 0.8125,
+          "initialConnected": 1,
+          "steps": 2.875,
+          "changedEndpoints": 7.25
+        },
+        "off": {
+          "success": 1,
+          "cost": 33.783,
+          "firstF1": 0,
+          "initialConnected": 0,
+          "steps": 6.25,
+          "changedEndpoints": 19.88
+        },
+        "shuffled": {
+          "success": 1,
+          "cost": 64.755,
+          "firstF1": 0.2604,
+          "initialConnected": 0,
+          "steps": 12,
+          "changedEndpoints": 42.38
+        },
+        "untrained": {
+          "success": 1,
+          "cost": 18.56,
+          "firstF1": 0.8125,
+          "initialConnected": 1,
+          "steps": 2.875,
+          "changedEndpoints": 7.25
+        }
+      },
+      "bridges": {
+        "learned": {
+          "success": 1,
+          "cost": 12.656,
+          "firstF1": 0.875,
+          "initialConnected": 1,
+          "steps": 1.875,
+          "changedEndpoints": 4.5
+        },
+        "bellman": {
+          "success": 1,
+          "cost": 12.656,
+          "firstF1": 0.875,
+          "initialConnected": 1,
+          "steps": 1.875,
+          "changedEndpoints": 4.5
+        },
+        "off": {
+          "success": 1,
+          "cost": 151.503,
+          "firstF1": 0,
+          "initialConnected": 0,
+          "steps": 19.625,
+          "changedEndpoints": 102.13
+        },
+        "shuffled": {
+          "success": 1,
+          "cost": 15.184,
+          "firstF1": 0.125,
+          "initialConnected": 0.125,
+          "steps": 2.75,
+          "changedEndpoints": 9.13
+        },
+        "untrained": {
+          "success": 1,
+          "cost": 12.656,
+          "firstF1": 0.875,
+          "initialConnected": 1,
+          "steps": 1.875,
+          "changedEndpoints": 4.5
+        }
+      },
+      "dense": {
+        "learned": {
+          "success": 1,
+          "cost": 9.737,
+          "firstF1": 1,
+          "initialConnected": 1,
+          "steps": 1.625,
+          "changedEndpoints": 3.5
+        },
+        "bellman": {
+          "success": 1,
+          "cost": 9.737,
+          "firstF1": 1,
+          "initialConnected": 1,
+          "steps": 1.625,
+          "changedEndpoints": 3.5
+        },
+        "off": {
+          "success": 1,
+          "cost": 17.32,
+          "firstF1": 0,
+          "initialConnected": 0,
+          "steps": 3,
+          "changedEndpoints": 11.5
+        },
+        "shuffled": {
+          "success": 1,
+          "cost": 45.379,
+          "firstF1": 0.0417,
+          "initialConnected": 0,
+          "steps": 7.125,
+          "changedEndpoints": 35.13
+        },
+        "untrained": {
+          "success": 1,
+          "cost": 9.737,
+          "firstF1": 0.875,
+          "initialConnected": 1,
+          "steps": 1.625,
+          "changedEndpoints": 3.5
+        }
+      }
+    }
+  },
+  "parameters": {
+    "schema": 2,
+    "seed": 17,
+    "cost": [
+      0.44657565071272287,
+      1.8518076058399358,
+      -0.33676282605367336,
+      0.374084179693845
+    ],
+    "score": [
+      0.08981505638919766,
+      -0.8923580022928317,
+      -0.28377953922721677
+    ],
+    "gate": [
+      0.10158837288508202,
+      0.38597613443835915,
+      -0.2099231373505381
+    ],
+    "temperature": 2.113120854128422,
+    "bias": -0.2333565924971483,
+    "costUpdates": 516,
+    "ruleUpdates": 516,
+    "costLoss": 528.5874925920294,
+    "ruleLoss": 842.1349159805657,
+    "episodes": 200
+  }
+}
