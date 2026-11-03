@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - feature/V4-PERSPECTIVE-ESCAPE-20261103
+      - feature/BRAIN-STUDIO-UNIVERSAL-TRAINING-20261103
       - experiment/CAUSAL-TEXT-LAB-20261103
   pull_request:
     branches:
@@ -44,5 +45,15 @@ jobs:
           node experiments/causal-text/benchmark.mjs 120 9 17
           node experiments/causal-text/benchmark.mjs 2000 30 17
           node experiments/causal-text/benchmark.mjs 2000 30 23
+      - name: Brain Studio syntax and original native-model compatible adapters
+        run: |
+          node --check experiments/brain-studio-20261103/server.mjs
+          node --check experiments/brain-studio-20261103/engine/studio.mjs
+          node --check experiments/brain-studio-20261103/engine/vault.mjs
+          node --check experiments/brain-studio-20261103/public/app.js
+      - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
+        run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
+      - name: Brain Studio three-domain transfer benchmark with fixed held-out worlds
+        run: node experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs 90 6 19
       - name: Active causal hypothesis versus random-query benchmark
         run: node --input-type=module -e "import {evaluateHypotheses} from './experiments/causal-text/engine/hypotheses.mjs'; for (const extra of [0,2,4,6,9]) console.log('CAUSAL_BENCH',JSON.stringify(evaluateHypotheses({worlds:60,seed:6300019,extra,goalsPerWorld:3})))"
