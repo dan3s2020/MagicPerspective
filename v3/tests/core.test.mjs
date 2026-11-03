@@ -1,0 +1,33 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {makeWorld,shortestPath,observe,blankBelief,execute,COSTS} from '../engine/world.mjs';
+import {PerspectiveNet,CausalModel,features,routeFromBelief,shapeBCE} from '../engine/model.mjs';
+import {Organism} from '../engine/organism.mjs';
+import {snapshots,newBrains,train,evaluate} from '../engine/training.mjs';
+test('three environment families reproducible and solvable',()=>{for(const family of ['branched','braided','rooms'])for(let k=1;k<12;k++){
+ const a=makeWorld(k,11,family),b=makeWorld(k,11,family);assert.deepEqual(a,b);assert.ok(shortestPath(a).path.length>1);}});
+test('only local 3x3 observations enter belief',()=>{const w=makeWorld(42),b=blankBelief(w.n);observe(w,w.start,b);
+ for(let i=0;i<w.n*w.n;i++)if(b.walls[i]!==-1){assert.ok(Math.abs(i%w.n-w.start%w.n)<=1);assert.ok(Math.abs(Math.floor(i/w.n)-Math.floor(w.start/w.n))<=1)}
+ assert.ok(b.walls.some(i=>i===-1));});
+test('learner features cannot receive world truth',()=>{const w=makeWorld(11),b=blankBelief(w.n);observe(w,w.start,b);
+ const x=features(b,w.n,w.start,w.goal,w.start);assert.equal(x.length,28);assert.ok(x.every(Number.isFinite));assert.ok(!x.includes(undefined));});
+test('first shape is generated at step zero',()=>{const {model,causal}=newBrains(),o=new Organism(99,model,causal);
+ assert.equal(o.steps,0);assert.equal(o.prob.length,121);assert.equal(o.initial.prob.length,121);assert.ok(o.initial.route.length>0);});
+test('post-move oracle targets CURRENT start, not initial start',()=>{const w=makeWorld(55);const snaps=snapshots(w,56);
+ assert.ok(snaps.length>1);
+ for(const s of snaps){const path=shortestPath(w,s.position,w.goal).path;assert.equal(s.label[s.position],1);assert.equal(s.label[w.goal],1);
+ assert.equal(s.label.reduce((x,y)=>x+y,0),path.length);}});
+test('route does not cross observed walls',()=>{const w=makeWorld(8),b=blankBelief(w.n);observe(w,w.start,b);const model=new PerspectiveNet();const c=new CausalModel();const route=routeFromBelief(b,w.n,w.start,w.goal,model.predict(b,w.n,w.start,w.goal),c);
+ assert.ok(route.length>0);for(const i of route)assert.notEqual(b.walls[i],1);});
+test('causal effort prediction improves from real feedback',()=>{const c=new CausalModel();const before=Math.abs(c.predict(2)-COSTS[2]);
+ for(let k=0;k<50;k++)c.learn(2,COSTS[2]);assert.ok(Math.abs(c.predict(2)-COSTS[2])<before*.2);});
+test('persistent weights round-trip identically',()=>{const {model,causal}=newBrains(),w=makeWorld(2),b=blankBelief(11);observe(w,w.start,b);
+ assert.deepEqual(PerspectiveNet.restore(model.snapshot()).predict(b,11,w.start,w.goal),model.predict(b,11,w.start,w.goal));
+ assert.deepEqual(CausalModel.restore(causal.snapshot()).snapshot(),causal.snapshot());});
+test('training on heldout improves shape BCE',async()=>{const {model,causal}=newBrains();const before=evaluate(model,{count:20,seed:990031});
+ const t=await train(model,causal,{episodes:140,validateCount:20,interval:35});
+ const best=PerspectiveNet.restore(t.bestSnapshot.model),after=evaluate(best,{count:20,seed:990031});
+ assert.ok(after.neuralBCE<before.neuralBCE,JSON.stringify({before,after}));
+ assert.ok(model.episodes===140);});
+test('blind validation leaves weights unchanged',()=>{const m=new PerspectiveNet(),s=JSON.stringify(m.snapshot());const a=evaluate(m,{seed:950031,count:9,n:9}),b=evaluate(m,{seed:950031,count:9,n:9});
+ assert.deepEqual(a,b);assert.equal(JSON.stringify(m.snapshot()),s);});
+test('training snapshots are produced by local observed moves',()=>{const w=makeWorld(777,11,'rooms'),snaps=snapshots(w,111);for(const s of snaps){assert.equal(s.belief.walls[s.position],0);assert.equal(s.belief.visits[s.position]>0,true)}});

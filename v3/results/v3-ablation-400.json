@@ -1,0 +1,235 @@
+{
+  "episodes": 400,
+  "trainingMs": 31379,
+  "onlineTrainingUpdates": 10597,
+  "before": {
+    "count": 24,
+    "n": 11,
+    "family": "all",
+    "seed": 990031,
+    "neuralBCE": 0.98364,
+    "geometricBCE": 0.40446,
+    "neuralIoU": 0.14807,
+    "geometricIoU": 0.20863,
+    "neuralRecall": 1,
+    "improved": false,
+    "navigation": {
+      "shape": {
+        "count": 24,
+        "success": 1,
+        "averageCost": 36,
+        "averageOptimalCost": 26.05,
+        "averageSteps": 22.67,
+        "failures": 0,
+        "meanOnlineEvents": 22.67
+      },
+      "frozenShape": {
+        "count": 24,
+        "success": 1,
+        "averageCost": 36.067,
+        "averageOptimalCost": 26.05,
+        "averageSteps": 22.67,
+        "failures": 0,
+        "meanOnlineEvents": 0
+      },
+      "geometric": {
+        "count": 24,
+        "success": 1,
+        "averageCost": 35.55,
+        "averageOptimalCost": 26.05,
+        "averageSteps": 22.42,
+        "failures": 0,
+        "meanOnlineEvents": 22.42
+      },
+      "neutral": {
+        "count": 24,
+        "success": 1,
+        "averageCost": 39.25,
+        "averageOptimalCost": 26.05,
+        "averageSteps": 23.92,
+        "failures": 0,
+        "meanOnlineEvents": 23.92
+      }
+    }
+  },
+  "best": {
+    "episode": 200,
+    "trainLoss": 0.22646,
+    "heldoutBCE": 0.35317,
+    "baselineBCE": 0.35947,
+    "heldoutIoU": 0.21126,
+    "bySize": [
+      {
+        "n": 7,
+        "bce": 0.30428,
+        "baselineBCE": 0.2991,
+        "iou": 0.3703
+      },
+      {
+        "n": 11,
+        "bce": 0.40436,
+        "baselineBCE": 0.44757,
+        "iou": 0.15399
+      },
+      {
+        "n": 15,
+        "bce": 0.35088,
+        "baselineBCE": 0.33175,
+        "iou": 0.1095
+      }
+    ],
+    "elapsedMs": 5621
+  },
+  "suites": {
+    "7": {
+      "count": 24,
+      "n": 7,
+      "family": "all",
+      "seed": 990031,
+      "neuralBCE": 0.41243,
+      "geometricBCE": 0.40163,
+      "neuralIoU": 0.29411,
+      "geometricIoU": 0.34028,
+      "neuralRecall": 0.35813,
+      "improved": false,
+      "navigation": {
+        "shape": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 14.717,
+          "averageOptimalCost": 13.583,
+          "averageSteps": 8.92,
+          "failures": 0,
+          "meanOnlineEvents": 8.92
+        },
+        "frozenShape": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 14.717,
+          "averageOptimalCost": 13.583,
+          "averageSteps": 8.92,
+          "failures": 0,
+          "meanOnlineEvents": 0
+        },
+        "geometric": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 17.667,
+          "averageOptimalCost": 13.583,
+          "averageSteps": 10.67,
+          "failures": 0,
+          "meanOnlineEvents": 10.67
+        },
+        "neutral": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 18.917,
+          "averageOptimalCost": 13.583,
+          "averageSteps": 11.08,
+          "failures": 0,
+          "meanOnlineEvents": 11.08
+        }
+      }
+    },
+    "11": {
+      "count": 24,
+      "n": 11,
+      "family": "all",
+      "seed": 990031,
+      "neuralBCE": 0.39571,
+      "geometricBCE": 0.40446,
+      "neuralIoU": 0.16471,
+      "geometricIoU": 0.20863,
+      "neuralRecall": 0.18289,
+      "improved": true,
+      "navigation": {
+        "shape": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 35.567,
+          "averageOptimalCost": 26.05,
+          "averageSteps": 22.5,
+          "failures": 0,
+          "meanOnlineEvents": 22.5
+        },
+        "frozenShape": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 35.567,
+          "averageOptimalCost": 26.05,
+          "averageSteps": 22.5,
+          "failures": 0,
+          "meanOnlineEvents": 0
+        },
+        "geometric": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 35.65,
+          "averageOptimalCost": 26.05,
+          "averageSteps": 22.58,
+          "failures": 0,
+          "meanOnlineEvents": 22.58
+        },
+        "neutral": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 39.25,
+          "averageOptimalCost": 26.05,
+          "averageSteps": 23.92,
+          "failures": 0,
+          "meanOnlineEvents": 23.92
+        }
+      }
+    },
+    "15": {
+      "count": 24,
+      "n": 15,
+      "family": "all",
+      "seed": 990031,
+      "neuralBCE": 0.38848,
+      "geometricBCE": 0.42291,
+      "neuralIoU": 0.08295,
+      "geometricIoU": 0.1572,
+      "neuralRecall": 0.08503,
+      "improved": true,
+      "navigation": {
+        "shape": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 68.958,
+          "averageOptimalCost": 49.392,
+          "averageSteps": 42.79,
+          "failures": 0,
+          "meanOnlineEvents": 42.79
+        },
+        "frozenShape": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 68.992,
+          "averageOptimalCost": 49.392,
+          "averageSteps": 42.79,
+          "failures": 0,
+          "meanOnlineEvents": 0
+        },
+        "geometric": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 72.442,
+          "averageOptimalCost": 49.392,
+          "averageSteps": 45.04,
+          "failures": 0,
+          "meanOnlineEvents": 45.04
+        },
+        "neutral": {
+          "count": 24,
+          "success": 1,
+          "averageCost": 73.692,
+          "averageOptimalCost": 49.392,
+          "averageSteps": 44.29,
+          "failures": 0,
+          "meanOnlineEvents": 44.29
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+import {newBrains,train,evaluate} from './engine/training.mjs';
+import {PerspectiveNet,CausalModel} from './engine/model.mjs';
+const episodes=Number(process.argv[2]||400);
+const {model,causal}=newBrains(19);
+const start=Date.now();
+const before=evaluate(model,{seed:990031,count:24,n:11,navigation:true,causal});
+const report=await train(model,causal,{episodes,seed:20261103,interval:Math.max(20,Math.floor(episodes/4)),validateCount:24,onProgress:x=>console.log('VALIDATION',JSON.stringify({episode:x.latest.episode,bce:x.latest.heldoutBCE,iou:x.latest.heldoutIoU}))});
+const brain=PerspectiveNet.restore(report.bestSnapshot.model),physics=CausalModel.restore(report.bestSnapshot.causal);
+const suites={};for(const n of [7,11,15])suites[n]=evaluate(brain,{seed:990031,count:24,n,navigation:true,causal:physics});
+const output={episodes,trainingMs:Date.now()-start,onlineTrainingUpdates:brain.onlineUpdates,before,best:report.best,suites};
+console.log('ONLINE_ABLATION',JSON.stringify(output));

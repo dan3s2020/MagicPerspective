@@ -1,0 +1,1 @@
+{"name":"magicperspective-v3","private":true,"type":"module","version":"3.0.0-experimental","scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs","bench":"node scripts-benchmark.mjs"},"engines":{"node":">=18"}}
