@@ -1,0 +1,1 @@
+si cum o sa arate ui-ul? descrie,nu genera poze. cum o sa functioneze animatiile,ce culori o sa fie,ce o sa simbolizeze fiecare culoare/animatie? vreua sa vedem si impulsuri in zona grafului cand se ia o decizie gresita a predictiei fata de realitate,etc ,vreau sa vad cum e "viu" SA MA UIT LA GRAF SI SA INTELEG TOT CE SE INTAMPLA PRIN PATTERNURILE PE CARE LE VAD
