@@ -18,6 +18,7 @@ if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid port');
 await vault.setup();
 let kind='universal',brain=makeBrain(kind,19),selection='unsaved',readOnlyArchive=null;
 let history=[],last=null,preview=null,lastTest=null,validation=null,bestFitness=Infinity,
+ traceSequence=0,traces=[],previewOrigin=null,
  notes='Creier partajat inițializat.',revision=0;
 let run={status:'stopped',unlimited:false,done:0,target:0,domains:DOMAINS.slice(),size:11,
  autosaveEvery:10,previewEvery:2,delayMs:40,seedCursor:1000000,reservedUntil:1000000,started:null,error:null,savedAt:null};
@@ -38,7 +39,7 @@ const copyState=()=>{
   notes,model,run:{...run},timing:{elapsedSeconds:+dt.toFixed(2),
    episodesPerSecond:rolling?+(1000/rolling).toFixed(3):0,
    millisecondsPerEpisode:rolling?+rolling.toFixed(1):null},
-  history:history.slice(-240),last,preview,lastTest,validation,
+  history:history.slice(-240),last,preview,previewOrigin,traceSequence,lastTest,validation,
   bestFitness:Number.isFinite(bestFitness)?bestFitness:null,
   functionCurve:brain?functionSamples(kind,brain,{domain:run.domains[0]}):[],
   weightsDelta:history.at(-1)?.weightDelta??0,revision};
@@ -104,9 +105,14 @@ function trial(){
  recentOutcomes.push(output.outcome.solved?1:0);if(recentOutcomes.length>100)recentOutcomes.shift();
  last={episode:brain.episodes,domain,seed,outcome:output.outcome,
   elapsedMs:+elapsed.toFixed(2),weightDelta:+delta.toFixed(6)};
- if(run.done===1||run.done%run.previewEvery===0)
-  preview={meta:output.meta,outcome:output.outcome,
-   frames:output.frames.slice(-90),lastInput:output.lastInput};
+ if(run.done===1||run.done%run.previewEvery===0){
+  preview={meta:output.meta,outcome:output.outcome,frames:output.frames.slice(-90),
+   lastInput:output.lastInput,episode:brain.episodes};
+  previewOrigin='training';
+  const item={id:++traceSequence,kind,episode:brain.episodes,
+   preview};
+  traces.push(item);if(traces.length>32)traces.shift();
+ }
  if(run.done===1||run.done%5===0){
   const recent=recentOutcomes;
   history.push({episode:brain.episodes,runEpisode:run.done,at:new Date().toISOString(),domain,
@@ -204,6 +210,15 @@ const server=http.createServer(async(req,res)=>{
    return send(res,{ok:true,port,kind,status:run.status,episodes:brain?.episodes||0});
   if(req.method==='GET'&&endpoint==='/api/state')return send(res,copyState());
   if(req.method==='GET'&&endpoint==='/api/brains')return send(res,{brains:await vault.list(),selected:selection});
+  if(req.method==='GET'&&endpoint==='/api/traces'){
+   const after=bounded(new URL(req.url,'http://localhost').searchParams.get('after'),0,2147483647,0);
+   const oldest=traces[0]?.id??traceSequence+1;
+   const pending=traces.filter(t=>t.id>after);
+   return send(res,{status:run.status,sequence:traceSequence,
+    dropped:Math.max(0,oldest-after-1),
+    traces:pending.slice(0,8),
+    hasMore:pending.length>8});
+  }
   if(req.method==='GET'&&endpoint==='/api/export'){
    res.setHeader('Content-Disposition','attachment; filename="brain-studio-checkpoint.json"');
    return send(res,{schema:'studio-1',kind,selection,brain:brain?.snapshot()||readOnlyArchive,
@@ -215,6 +230,22 @@ const server=http.createServer(async(req,res)=>{
    if(endpoint==='/api/pause')return send(res,await stop('paused'));
    if(endpoint==='/api/stop')return send(res,await stop('stopped'));
    if(endpoint==='/api/start')return send(res,start(input));
+   if(endpoint==='/api/probe'){
+    if(run.status==='running')return send(res,{error:'Pause training before inspection'},409);
+    if(!brain)throw Error('Select a compatible brain');
+    const copy=restoreBrain(kind,brain.snapshot());
+    const domain=kind==='universal'?
+     (DOMAINS.includes(input.domain)?input.domain:'maze'):
+     kind==='causal'?'text':(kind==='v6'||kind==='v7')?'maze':'network';
+    const seed=bounded(input.seed,1,2147483646,471993);
+    const episode=oneEpisode(kind,copy,{domain,seed,size:bounded(input.size,9,19,run.size),
+     learn:kind==='dynamic',explore:0});
+    preview={meta:episode.meta,outcome:episode.outcome,
+     frames:episode.frames.slice(-90),lastInput:episode.lastInput,episode:brain.episodes};
+    previewOrigin=kind==='dynamic'?'inspecție cu adaptare pe COPIE':'inspecție fără antrenare';
+    revision++;
+    return send(res,copyState());
+   }
    if(endpoint==='/api/resume')return send(res,start({...input,resetRun:false}));
    if(run.status==='running')return send(res,{error:'Pause training before selecting, saving, importing, or resetting'},409);
    if(endpoint==='/api/brains/select'){
@@ -223,7 +254,8 @@ const server=http.createServer(async(req,res)=>{
     if(brain)await vault.saveBrain(kind,brain,'Autosave înainte de selectare · '+kind+' · '+brain.episodes+' ep');
     const loaded=await vault.load(input.id);
     kind=loaded.kind;brain=loaded.brain||null;readOnlyArchive=brain?null:loaded.snapshot;
-    selection=input.id;history=[];recentOutcomes=[];last=null;preview=null;lastTest=null;
+    selection=input.id;history=[];recentOutcomes=[];last=null;preview=null;previewOrigin=null;
+    traces=[];traceSequence=0;lastTest=null;
     validation=null;bestFitness=Infinity;
     run={...run,status:'paused',done:0,target:0,error:null};revision++;
     notes=loaded.trainable?'Creier original încărcat ca o copie în Studio. Fișierul sursă rămâne intact.':
@@ -235,7 +267,8 @@ const server=http.createServer(async(req,res)=>{
     await save();
     if(brain)await vault.saveBrain(kind,brain,'Autosave înainte de creier nou · '+kind+' · '+brain.episodes+' ep');
     kind=input.kind;brain=makeBrain(kind,bounded(input.seed,1,2147483646,19));
-    selection='new:'+kind;readOnlyArchive=null;history=[];recentOutcomes=[];last=null;preview=null;lastTest=null;
+    selection='new:'+kind;readOnlyArchive=null;history=[];recentOutcomes=[];last=null;preview=null;previewOrigin=null;
+    traces=[];traceSequence=0;lastTest=null;
     validation=null;bestFitness=Infinity;
     run={...run,status:'paused',done:0,target:0,error:null};notes='Creier nou';revision++;
     await save();return send(res,copyState());
@@ -264,7 +297,7 @@ const server=http.createServer(async(req,res)=>{
   }
   if(req.method!=='GET')return send(res,{error:'Method not allowed'},405);
   const file=endpoint==='/'?'index.html':endpoint.slice(1);
-  if(!['index.html','app.js','style.css'].includes(file))return send(res,{error:'Not found'},404);
+  if(!['index.html','app.js','graph-render.js','style.css'].includes(file))return send(res,{error:'Not found'},404);
   const absolute=path.join(root,'public',file);
   res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache',
    'X-Content-Type-Options':'nosniff'});

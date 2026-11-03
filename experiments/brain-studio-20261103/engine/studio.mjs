@@ -10,10 +10,12 @@ import {makeWorld as makeGraph,sense as graphSense,act as graphAct} from '../../
 import {Episode as GraphEpisode} from '../../graph-dance-20261103/engine/agent.mjs';
 import {MessageBrain} from '../../dynamic-perspective-20261103/engine/brain.mjs';
 import {trainEpisode as trainMessages,costMAE} from '../../dynamic-perspective-20261103/engine/experiment.mjs';
+import {predictedPlan} from '../../causal-text/engine/training.mjs';
 import {CausalNet} from '../../causal-text/engine/model.mjs';
 import {buildExperience} from '../../causal-text/engine/training.mjs';
-import {createWorld as makeSymbolic,generateTask,TOOLS,senseProbes,encodeContext} from '../../causal-text/engine/world.mjs';
+import {createWorld as makeSymbolic,generateTask,TOOLS,senseProbes,encodeContext,features as causalFeatures} from '../../causal-text/engine/world.mjs';
 import {MLP} from '../../../v7/engine/nn.mjs';
+import {attachAbstractGraph} from './abstract-graph.mjs';
 
 export const KINDS=['universal','v7','v6','graph','dynamic','causal'];
 export const DOMAINS=['maze','network','text'];
@@ -131,20 +133,20 @@ function createEpisode(domain,seed,size){
    for(const j of [x+1<n?i+1:-1,y+1<n?i+n:-1])if(j>=0&&w.h[j]<=.82)truth.push({a:i,b:j});
   }
   return {domain,seed,start:w.start,goal:w.goal,current:w.start,positions,
-   truth,visited:Array(n*n).fill(0),walked:[w.start],observed:new Map(),world:w,
+   truth,visited:Array(n*n).fill(0),walked:[w.start],observed:new Map(),observedCells:new Map(),observedLinks:new Map(),transitions:new Map(),world:w,
    activeState:()=>w.start,limit:n*n};
  }
  if(domain==='network'){
   const w=makeGraph(seed,Math.max(13,Math.min(65,size*2+3)),['local','hierarchical','mixed'][seed%3]);
   return {domain,seed,start:w.start,goal:w.goal,current:w.start,positions:w.positions,
    truth:w.edges.filter(e=>e.open).map(e=>({a:e.a,b:e.b})),visited:Array(w.n).fill(0),
-   walked:[w.start],observed:new Map(),world:w,limit:w.n*4};
+   walked:[w.start],observed:new Map(),observedCells:new Map(),observedLinks:new Map(),transitions:new Map(),world:w,limit:w.n*4};
  }
  if(domain==='text'){
   const w=makeSymbolic(seed),task=generateTask(w,seed+77,{minSteps:2,maxSteps:5});
   const start=symbolicNode(task.start),goal=symbolicNode(task.goal);
   return {domain,seed,start,goal,current:start,positions:positionsForSymbolic(),
-   truth:[],visited:Array(49).fill(0),walked:[start],observed:new Map(),world:w,
+   truth:[],visited:Array(49).fill(0),walked:[start],observed:new Map(),observedCells:new Map(),observedLinks:new Map(),transitions:new Map(),world:w,
    text:task.text,limit:15};
  }
  throw Error('Unknown domain');
@@ -154,17 +156,63 @@ function options(ep){
   const p=ep.current,n=ep.world.n;
   const s=terrainSense(ep.world,p); // 3×3 local window is the ONLY maze terrain input.
   const heights=new Map(s.window.map(x=>[x.i,x.h]));
+  for(const [i,h] of heights)ep.observedCells.set(i,h);
+  // Edges are inferred from LOCAL measured cells only; unobserved walls stay hidden.
+  for(const [i,h] of ep.observedCells)if(h<=.82){
+   const x=i%n,y=Math.floor(i/n);
+   const adj=[x+1<n?i+1:-1,y+1<n?i+n:-1];
+   for(const j of adj)if(j>=0&&ep.observedCells.get(j)<=.82){
+    const key=i+':'+j;ep.observedLinks.set(key,{a:i,b:j,open:true,action:null});
+   }
+  }
   const next=[p%n>0?p-1:-1,p%n<n-1?p+1:-1,p>=n?p-n:-1,p<n*(n-1)?p+n:-1];
   return next.map((to,action)=>({to,action,cost:heights.has(to)?1+8*heights.get(to):2}))
    .filter(x=>x.to>=0&&heights.get(x.to)<=.82);
  }
  if(ep.domain==='network'){
   const sensed=graphSense(ep.world,ep.current);
+  for(const link of sensed.links){
+   const a=Math.min(ep.current,link.to),b=Math.max(ep.current,link.to);
+   ep.observedLinks.set(a+':'+b,{a,b,open:link.open,cost:link.cost,action:null});
+  }
   return sensed.links.filter(x=>x.open).map((x,i)=>({to:x.to,action:i%5,cost:x.cost}));
  }
- return TOOLS.map((tool,action)=>({tool,to:null,action,cost:2}));
+ return TOOLS.map((tool,action)=>({tool,to:null,action,cost:2,
+  expectedTo:ep.transitions.get(ep.current+':'+tool)??null}));
 }
-function observedList(ep){return [...ep.observed.entries()].map(([key,e])=>({a:e.a,b:e.b,open:true}))}
+function observedList(ep){return [...ep.observedLinks.values()]}
+function pathThroughObserved(ep,start,goal,preferred){
+ // Explicit shortest-hop path over ONLY observed connections, not hidden truth.
+ const adj=new Map();
+ for(const edge of ep.observedLinks.values()){
+  if(edge.open===false)continue;
+  if(!adj.has(edge.a))adj.set(edge.a,[]);
+  adj.get(edge.a).push(edge.b);
+  if(ep.domain!=='text'){
+   if(!adj.has(edge.b))adj.set(edge.b,[]);
+   adj.get(edge.b).push(edge.a);
+  }
+ }
+ const queue=[start],prev=new Map([[start,null]]);
+ for(let k=0;k<queue.length;k++){
+  const u=queue[k];if(u===goal)break;
+  for(const v of adj.get(u)||[])if(!prev.has(v)){prev.set(v,u);queue.push(v);}
+ }
+ if(prev.has(goal)){
+  const path=[];for(let u=goal;u!==null;u=prev.get(u))path.push(u);
+  return {path:path.reverse(),source:'BFS only on observed links'};
+ }
+ return {path:Number.isInteger(preferred)?[start,preferred]:[start],
+  source:'1-step neural candidate; unknown future'};
+}
+function graphFrame(ep){
+ const observedNodes=ep.domain==='maze'?[...ep.observedCells.keys()]:
+   [...new Set([ep.start,...ep.walked,...ep.observedLinks.values()].flatMap(x=>
+    typeof x==='number'?[x]:[x?.a,x?.b]).filter(Number.isInteger))];
+ return {observedNodes,observedEdges:observedList(ep).slice(-550),
+   predictedPath:[ep.current],predictedNext:null,planSource:'No prediction evaluated yet',
+   candidates:[],chosen:null,actual:null};
+}
 export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=true,explore=.18}={}){
  if(!(brain instanceof SharedBrain))throw Error('Expected SharedBrain');
  const ep=createEpisode(domain,seed,size),rand=RNG(seed^brain.seed^0x1ca1);
@@ -173,9 +221,10 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
  const capture=({action=null,activation=null,score=null}={})=>{
   const last=ep.walked.slice(-40);
   frames.push({step:trajectory.length,current:ep.current,walked:last,
-   learnedEdges:observedList(ep).slice(-250),action,activation,score,cost,solved});
+   learnedEdges:observedList(ep).slice(-250),action,activation,score,cost,solved,
+   graph:graphFrame(ep)});
  };
- ep.visited[ep.current]++;capture();
+ ep.visited[ep.current]++;options(ep);capture();
  for(let t=0;t<ep.limit&&!solved;t++){
   const candidates=options(ep);if(!candidates.length)break;
   const rated=candidates.map(c=>{
@@ -188,6 +237,19 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
   });
   rated.sort((a,b)=>b.utility-a.utility||a.action-b.action);
   const select=learn&&rand()<explore?rated[Math.floor(rand()*rated.length)]:rated[0];
+  // Snapshot the model's belief BEFORE execution. This is the actual score used
+  // by the policy; next-state for unseen symbolic actions remains explicitly unknown.
+  const priorFrame=frames.at(-1),nextPredicted=rated[0]?.expectedTo??rated[0]?.to??null;
+  const knownPlan=pathThroughObserved(ep,ep.current,ep.goal,nextPredicted);
+  priorFrame.graph={...graphFrame(ep),predictedPath:knownPlan.path,
+   predictedNext:nextPredicted,planSource:knownPlan.source,
+   candidates:rated.map(x=>({from:ep.current,to:x.expectedTo??x.to??null,
+    action:x.tool??String(x.action),q:+x.neural.toFixed(6),
+    utility:+x.utility.toFixed(6),knownDestination:x.to!==null||x.expectedTo!=null})),
+   chosen:{action:select.tool??String(select.action),from:ep.current,
+    to:select.expectedTo??select.to??null,
+    q:+select.neural.toFixed(6),utility:+select.utility.toFixed(6)},
+   actual:null};
   let to,stepCost=select.cost;
   if(domain==='text'){
    const previous=[Math.floor(ep.current/7),ep.current%7],event=ep.world.intervene(previous,select.tool);
@@ -195,28 +257,36 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
   }else if(domain==='network'){
    const outcome=graphAct(ep.world,ep.current,select.to);to=outcome.position;stepCost=outcome.cost;
   }else to=select.to;
+  if(domain==='text')ep.transitions.set(ep.current+':'+select.tool,to);
   if(to===ep.current)blocked++;
   const previous=ep.current,oldDist=posDistance(ep.positions[previous],ep.positions[ep.goal]),
     newDist=posDistance(ep.positions[to],ep.positions[ep.goal]),repeat=ep.visited[to];
   ep.current=to;ep.visited[to]++;ep.walked.push(to);cost+=stepCost;
   ep.observed.set(previous+':'+to,{a:previous,b:to});
+  if(domain==='text')ep.observedLinks.set(previous+':'+to+':'+select.tool,
+   {a:previous,b:to,action:select.tool,open:true,cost:1});
   solved=ep.current===ep.goal;
   const reward=clamp(2*(oldDist-newDist)-.035*stepCost-.045*repeat+(solved?1.8:0),-2.5,2.5);
   trajectory.push({features:select.features,score:select.neural,
    action:select.tool??select.action,from:previous,to,domain,reward});
+  priorFrame.graph.actual={from:previous,to,action:select.tool??String(select.action),
+   reward:+reward.toFixed(5),cost:stepCost,
+   predictionKnown:priorFrame.graph.predictedNext!==null,
+   matched:priorFrame.graph.predictedNext===to};
+  options(ep); // reveal only local observations at the NEW position
   capture({action:select.tool??select.action,activation:brain.hidden(select.features),
    score:select.neural});
  }
  const loss=learn?brain.learn(trajectory,solved):null;
  if(learn){brain.episodes++;brain.domainCounts[domain]++;}
  const trimmed=frames.length<=96?frames:frames.filter((_,i)=>i%Math.ceil(frames.length/96)===0||i===frames.length-1);
- return {
+ return attachAbstractGraph({
   meta:{domain,seed,kind:'universal',text:ep.text||null,start:ep.start,goal:ep.goal,
    positions:ep.positions,truth:ep.truth,learnerInput:'Only local observations and known goal'},
   outcome:{solved,steps:trajectory.length,cost,blocked,loss,domain,
    observedEdges:ep.observed.size},frames:trimmed,trajectory,
   lastInput:trajectory.at(-1)?.features||Array(INPUT).fill(0)
- };
+ },ep.world,domain);
 }
 export function runNativeEpisode(kind,brain,{seed=1,size=11,learn=true}={}){
  if(kind==='v7'||kind==='v6'){
@@ -224,49 +294,81 @@ export function runNativeEpisode(kind,brain,{seed=1,size=11,learn=true}={}){
   const ep=new TerrainEpisode(w,brain,{mode:'organ',online:learn,record:true,imagine:4});
   ep.run();if(learn)brain.episodes++;
   const summary=ep.summary();
-  return {meta:{domain,kind,seed,text:null,start:w.start,goal:w.goal,
+  return attachAbstractGraph({meta:{domain,kind,seed,text:null,start:w.start,goal:w.goal,
    positions:positionsForMaze(w.n),truth:Array.from(w.h,(h,i)=>({i,h}))},
    outcome:{solved:summary.solved,steps:summary.steps,cost:summary.effort,
-    loss:null,match:summary.match0},frames:ep.frames.slice(-70),lastInput:null};
+    loss:null,match:summary.match0},frames:ep.frames.slice(-70),lastInput:null},w,domain);
  }
  if(kind==='graph'){
   const w=makeGraph(seed,Math.max(13,Math.min(65,size*2+3)),['local','hierarchical','mixed'][seed%3]);
   const ep=new GraphEpisode(w,brain,{online:learn,dance:true});ep.run();
   if(learn)brain.episodes++;
   const summary=ep.summary();
-  return {meta:{kind,domain:'network',seed,start:w.start,goal:w.goal,positions:w.positions,
+  return attachAbstractGraph({meta:{kind,domain:'network',seed,start:w.start,goal:w.goal,positions:w.positions,
    truth:w.edges.filter(e=>e.open).map(x=>({a:x.a,b:x.b}))},
    outcome:{solved:summary.solved,steps:summary.steps,cost:summary.cost,
     loss:ep.collective.lastError,match:summary.initialF1},
-   frames:ep.history.slice(-70),lastInput:null};
+   frames:ep.history.slice(-70),lastInput:null},w,'network');
  }
  if(kind==='dynamic'){
   const r=trainMessages(brain,brain.episodes,{n:Math.max(16,Math.min(60,size*2+3)),seed,trace:true});
   if(!learn)throw Error('Dynamic native evaluation requires a frozen snapshot');
-  return {meta:{kind,domain:'network',seed:r.live.seed,start:r.live.info.start,goal:r.live.info.goal,
+  return attachAbstractGraph({meta:{kind,domain:'network',seed:r.live.seed,start:r.live.info.start,goal:r.live.info.goal,
    positions:r.live.info.positions,truth:r.live.initialTruth.links,
-   text:null},outcome:{solved:r.solved,steps:r.live.outcome.steps,cost:r.cost,
-   loss:r.ruleMAE,match:r.live.initialF1},frames:r.live.frames,lastInput:null};
+   referencePath:r.live.initialTruth.optimal,text:null},outcome:{solved:r.solved,steps:r.live.outcome.steps,cost:r.cost,
+   loss:r.ruleMAE,match:r.live.initialF1},frames:r.live.frames,lastInput:null},null,'network');
  }
  if(kind==='causal'){
   const w=makeSymbolic(seed),data=buildExperience(w,seed^0x1919,5);
-  const before=data.samples.map(sample=>brain.forward(sample.input).p);
+  // A real update from measured interventions; candidate plans are then
+  // generated by the NEURAL dynamics, not fixed arbitrary action demonstrations.
   const loss=learn?brain.trainBatch(data.samples):null;
   if(learn)brain.episodes++;
   const task=generateTask(w,seed+77,{minSteps:2,maxSteps:5});
-  let current=task.start.slice(),cost=0;const frames=[],visited=[],known=[];
-  for(const action of TOOLS){
-   const event=w.intervene(current,action);
-   const from=symbolicNode(current),to=symbolicNode(event.to);
-   visited.push(from,to);known.push({a:from,b:to});
-   frames.push({step:frames.length+1,current:to,walked:visited.slice(),learnedEdges:known.slice(),
-    score:brain.predict(current,action,data.context)?.confidence?.[0]??null});
-   current=event.to;cost++;
+  const predict=(state,action)=>brain.predict(state,action,data.context).state;
+  const plan=predictedPlan(task.start,task.goal,predict,task.maxSteps);
+  const frames=[],actual=[task.start[0]*7+task.start[1]],observed=data.events.map(e=>({
+   a:symbolicNode(e.from),b:symbolicNode(e.to),action:e.tool,open:true}));
+  let current=task.start.slice(),cost=0;
+  const framesOf=(chosen=null,actualTransition=null)=>{
+   const at=symbolicNode(current);
+   const predictedCandidates=TOOLS.map(tool=>{
+    const p=brain.predict(current,tool,data.context);
+    return {from:at,to:symbolicNode(p.state),action:tool,
+     q:+Math.min(...p.confidence).toFixed(5),source:'neural dynamics'};
+   });
+   const futurePath=[at];let look=current.slice();
+   for(const tool of plan.actions.slice(cost)){
+    look=predict(look,tool);futurePath.push(symbolicNode(look));
+   }
+   const neural=chosen?brain.forward(causalFeatures(current,chosen,data.context)).h:null;
+   frames.push({step:cost,current:at,walked:actual.slice(),
+    activation:neural?Array.from(neural).slice(0,32):null,
+    learnedEdges:observed.slice(),score:chosen?Math.min(...brain.predict(current,chosen,data.context).confidence):null,
+    graph:{observedNodes:[...new Set(observed.flatMap(e=>[e.a,e.b]))],
+     observedEdges:observed.slice(),predictedPath:futurePath,
+     predictedNext:futurePath[1]??null,planSource:'Neural predicted dynamics',
+     candidates:predictedCandidates,chosen:chosen?{from:at,action:chosen,
+      to:symbolicNode(predict(current,chosen))}:null,
+     actual:actualTransition}
+   });
+  };
+  framesOf();
+  for(const action of plan.actions){
+   const before=current.slice(),predicted=predict(before,action);
+   const event=w.intervene(before,action);current=event.to;cost++;
+   const from=symbolicNode(before),to=symbolicNode(event.to);
+   observed.push({a:from,b:to,action,open:true});actual.push(to);
+   frames.at(-1).graph.actual={from,to,action,matched:predicted[0]===current[0]&&predicted[1]===current[1],
+    predictionKnown:true,cost:1,reward:to===symbolicNode(task.goal)?1:0};
+   framesOf(action);
   }
-  return {meta:{kind,domain:'text',seed,text:task.text,start:symbolicNode(task.start),
-   goal:symbolicNode(task.goal),positions:positionsForSymbolic(),truth:[]},
-   outcome:{solved:current[0]===task.goal[0]&&current[1]===task.goal[1],steps:cost,cost,loss,
-    observed:data.samples.length},frames,lastInput:null};
+  const solved=plan.found&&current[0]===task.goal[0]&&current[1]===task.goal[1];
+  return attachAbstractGraph({meta:{kind,domain:'text',seed,text:task.text,
+    start:symbolicNode(task.start),goal:symbolicNode(task.goal),
+    positions:positionsForSymbolic(),truth:[],planFound:plan.found,
+    expanded:plan.expanded},outcome:{solved,steps:cost,cost,loss,
+    observed:data.samples.length,planFound:plan.found},frames,lastInput:null},w,'text');
  }
  throw Error('Invalid native brain kind');
 }

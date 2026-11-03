@@ -5,6 +5,7 @@ on:
       - main
       - feature/V4-PERSPECTIVE-ESCAPE-20261103
       - feature/BRAIN-STUDIO-UNIVERSAL-TRAINING-20261103
+      - feature/REAL-ABSTRACT-GRAPH-TRACE-20261103
       - experiment/CAUSAL-TEXT-LAB-20261103
   pull_request:
     branches:
@@ -51,6 +52,8 @@ jobs:
           node --check experiments/brain-studio-20261103/engine/studio.mjs
           node --check experiments/brain-studio-20261103/engine/vault.mjs
           node --check experiments/brain-studio-20261103/public/app.js
+          node --check experiments/brain-studio-20261103/engine/abstract-graph.mjs
+          node --check experiments/brain-studio-20261103/public/graph-render.js
       - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
         run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
       - name: Brain Studio three-domain transfer benchmark with fixed held-out worlds
