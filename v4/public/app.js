@@ -16,6 +16,7 @@ function plot(history){const c=canvasContext('chart',580,220);const axes={left:4
 function render(s){state=s;const e=s.episode,p=e.perspective;
  drawWorld('truth',e,true);drawWorld('dream',e,false);
  const selected=e.spec.kind;
+ $('kind').value=selected;
  for(const kind of ['maze','braided','graph']){
   const card=$('choose-'+kind);
   card.classList.toggle('selected',kind===selected);
@@ -37,6 +38,7 @@ function render(s){state=s;const e=s.episode,p=e.perspective;
   const detail=document.createElement('div');detail.textContent=`expected ${fmt(ev.expected,2)} / actual ${fmt(ev.realCost,2)} · mismatch ${fmt(ev.disagreement,3)} · +${ev.newEvidence} relations · neural Δ ${fmt(ev.neuralDelta,5)}`;
   entry.append(name,detail);journal.appendChild(entry);}
  const running=!!s.task?.running;
+ $('kind').disabled=running;$('size').disabled=running;
  for(const id of ['new','step','auto','evaluate','run-test','train'])$(id).disabled=running||((id==='step'||id==='auto')&&e.finished);
  $('cancel').disabled=!running;
  $('status').textContent=running?`Training active: ${s.task.done}/${s.task.total} episodes`:e.finished?'Goal reached ✓':`Step ${e.steps} · ${e.plan.source} · ${e.plan.edges.length} forecast edges`;
@@ -69,13 +71,16 @@ async function loadGallery(){
  for(const world of response.worlds)drawWorld('preview-'+world.kind,world,true,{mini:true});
  $('gallery-status').textContent='All three independent example worlds rendered · '+selectedSize+' scale. Tap a card to create an active world.';
 }
-for(const kind of ['maze','braided','graph']){
- $('choose-'+kind).onclick=()=>guard(async()=>{
-  if(state?.task?.running)return;
-  stopAuto();$('kind').value=kind;
+async function selectWorld(kind){
+ if(state?.task?.running)return;
+ await guard(async()=>{
+  stopAuto();
+  $('kind').value=kind;
   render(await api('new',{kind,size:Number($('size').value),online:$('online').value==='true'}));
  });
 }
+for(const kind of ['maze','braided','graph'])$('choose-'+kind).onclick=()=>selectWorld(kind);
+$('kind').addEventListener('change',()=>selectWorld($('kind').value));
 $('size').addEventListener('change',()=>loadGallery().catch(err=>{
  $('gallery-status').textContent='Preview error: '+err.message;
 }));
