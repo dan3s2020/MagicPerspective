@@ -28,7 +28,7 @@ const json=(res,obj,status=200)=>{res.writeHead(status,{'Content-Type':'applicat
 async function payload(req){let data='';for await(const chunk of req){data+=chunk;if(data.length>30000)throw Error('Request too large');}return data?JSON.parse(data):{};}
 const state=()=>({version:'6.0.0-graph-dance',options,
  episode:progress?.running&&progress.preview?progress.preview:episode.payload(),
- model:{...rule.snapshot(),best,trainingCursor},progress,assessment,notice});
+ model:{...rule.snapshot(),best,trainingCursor},progress:progress?{...progress,preview:undefined}:null,assessment,notice});
 // Infinite is a STOP-CONTROLLED LOOP, not an arbitrarily large finite demo.
 async function startUnlimited(input){
  const n=integer(input.n,13,65,options.n);cancel=false;
@@ -41,7 +41,13 @@ async function startUnlimited(input){
    trainingCursor+=batch;await save(livePath); // reserve worlds before sampling
    const result=await train(working,{n,episodes:batch,seedOffset:offset,
      cancel:()=>cancel,
-     onEpisode:e=>{progress.preview=e.payload();progress.previewSeed=e.world.seed;},
+     onEpisode:e=>{
+       const payload=e.payload();
+       // Send sampled REAL frames once per response, not twice via progress + episode.
+       const jump=Math.max(1,Math.ceil(payload.history.length/70));
+       payload.history=payload.history.filter((_,i)=>i%jump===0||i===payload.history.length-1).slice(-70);
+       progress.preview=payload;progress.previewSeed=e.world.seed;
+     },
      onProgress:x=>{
        progress.done=previousDone+x.done;
        progress.history=[...progress.history,x.latest].slice(-80);
