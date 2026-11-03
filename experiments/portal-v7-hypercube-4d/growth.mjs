@@ -195,14 +195,19 @@ export class EvidenceGraph{
  }
  stats(){
   const n=this.nodes.size,e=this.edges.size;
+  // Confirmed edges are a labeled multigraph; density must count each
+  // ordered pair ONCE so it can never exceed 100%.
+  const simplePairs=new Set([...this.edges.values()]
+   .map(edge=>JSON.stringify([edge.from,edge.to]))).size;
   let crossDomainNodes=0,crossDomainEdges=0;
   for(const node of this.nodes.values())if(node.domains.length>1)crossDomainNodes++;
   for(const edge of this.edges.values())if(edge.domains.length>1)crossDomainEdges++;
   return {
    sequence:this.sequence,unique_problems:this.problems.size,
-   total_nodes:n,total_edges:e,observed_actions:this.sequence,
+   total_nodes:n,total_edges:e,unique_directed_pairs:simplePairs,
+   observed_actions:this.sequence,
    edges_per_node:n?e/n:0,
-   directed_density:n>1?e/(n*(n-1)):0,
+   directed_density:n>1?simplePairs/(n*(n-1)):0,
    learned_steps:this.learnedSteps,
    cross_domain_nodes:crossDomainNodes,
    cross_domain_edges:crossDomainEdges,
