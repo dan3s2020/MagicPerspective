@@ -67,24 +67,45 @@ export function brainStats(kind,brain){
 }
 export class SharedBrain{
  constructor(seed=19){this.schema=1;this.seed=seed;this.net=new MLP(INPUT,24,seed,{lr:.003});
-  this.episodes=0;this.samples=0;this.domainCounts={maze:0,network:0,text:0};}
+  this.episodes=0;this.samples=0;this.domainCounts={maze:0,network:0,text:0};
+  this.replay=[];this.replayCursor=0;}
  predict(x){return this.net.forward(x)}
  hidden(x){return Array.from(this.net.hiddenOf(x))}
  learn(trajectory,solved){
-  // Monte-Carlo return targets from ACTUAL executed actions, never a teacher's plan.
-  const samples=[];for(let i=0;i<trajectory.length;i++){
-   const future=trajectory.length-i-1;
-   const positive=solved?.9*Math.pow(.94,future):.05;
-   samples.push({x:trajectory[i].features,y:positive,w:1});
+  // Credit assignment uses only observed progress, experienced cost and actual
+  // goal arrival. Even failed episodes can contain useful positive local evidence.
+  let future=solved?1.2:0;const samples=[];
+  for(let i=trajectory.length-1;i>=0;i--){
+   const t=trajectory[i];
+   future=clamp(t.reward+.9*future,-2.5,2.5);
+   samples.push({x:t.features,y:clamp(.5+future/5,.025,.975),
+    w:clamp(1+Math.abs(t.reward),1,2.5)});
   }
-  this.samples+=samples.length;return samples.length?this.net.trainBatch(samples):null;
+  this.samples+=samples.length;
+  // Real inter-domain replay: all domains use the SAME synapses and memory buffer.
+  for(const x of samples){
+   if(this.replay.length<4096)this.replay.push(x);
+   else{this.replay[this.replayCursor]=x;this.replayCursor=(this.replayCursor+1)%4096;}
+  }
+  if(!samples.length)return null;
+  const replay=[];
+  for(let k=0;k<Math.min(96,this.replay.length);k++){
+   const index=(this.samples*53+k*157)%this.replay.length;
+   replay.push(this.replay[index]);
+  }
+  return this.net.trainBatch([...samples,...replay]);
  }
  snapshot(){return {schema:1,seed:this.seed,episodes:this.episodes,samples:this.samples,
-  domainCounts:{...this.domainCounts},net:this.net.snapshot()}}
+  domainCounts:{...this.domainCounts},replay:this.replay.slice(),replayCursor:this.replayCursor,
+  net:this.net.snapshot()}}
  static restore(s){if(s?.schema!==1||!s.net||s.net.I!==INPUT||s.net.H!==24)
    throw Error('Incompatible SharedBrain checkpoint');
   const b=new SharedBrain(s.seed);b.net=MLP.restore(s.net);b.episodes=s.episodes||0;
-  b.samples=s.samples||0;b.domainCounts={...b.domainCounts,...s.domainCounts};return b}
+  b.samples=s.samples||0;b.domainCounts={...b.domainCounts,...s.domainCounts};
+  if(Array.isArray(s.replay))b.replay=s.replay.slice(-4096).filter(x=>Array.isArray(x.x)&&x.x.length===INPUT&&
+   x.x.every(Number.isFinite)&&Number.isFinite(x.y)&&x.y>=0&&x.y<=1);
+  b.replayCursor=Number.isInteger(s.replayCursor)&&s.replayCursor>=0?s.replayCursor%b.replay.length||0:0;
+  return b}
 }
 function positionsForMaze(n){return Array.from({length:n*n},(_,i)=>({x:(i%n+.5)/n,y:(Math.floor(i/n)+.5)/n}))}
 function positionsForSymbolic(){
@@ -175,12 +196,14 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
    const outcome=graphAct(ep.world,ep.current,select.to);to=outcome.position;stepCost=outcome.cost;
   }else to=select.to;
   if(to===ep.current)blocked++;
-  const previous=ep.current;ep.current=to;
-  ep.visited[to]++;ep.walked.push(to);cost+=stepCost;
+  const previous=ep.current,oldDist=posDistance(ep.positions[previous],ep.positions[ep.goal]),
+    newDist=posDistance(ep.positions[to],ep.positions[ep.goal]),repeat=ep.visited[to];
+  ep.current=to;ep.visited[to]++;ep.walked.push(to);cost+=stepCost;
   ep.observed.set(previous+':'+to,{a:previous,b:to});
-  trajectory.push({features:select.features,score:select.neural,action:select.tool??select.action,
-   from:previous,to,domain});
   solved=ep.current===ep.goal;
+  const reward=clamp(2*(oldDist-newDist)-.035*stepCost-.045*repeat+(solved?1.8:0),-2.5,2.5);
+  trajectory.push({features:select.features,score:select.neural,
+   action:select.tool??select.action,from:previous,to,domain,reward});
   capture({action:select.tool??select.action,activation:brain.hidden(select.features),
    score:select.neural});
  }
