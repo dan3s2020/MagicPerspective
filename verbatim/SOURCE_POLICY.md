@@ -26,3 +26,13 @@ node --test tests/verbatim-gate.test.mjs
 ```
 
 `--report` is diagnostic; `--gate` must return nonzero until all conditions truly pass.
+
+## Binding main-branch mirror — 2026-11-03
+
+The original chronological conversation, **not this written policy or any assistant summary**, is the authoritative specification for MagicPerspective. `VERBATIM_ROOT.md` is the main-branch entry point. Preserve every original word, every user correction, every ASSISTANT reply, and original media. Keep gaps visibly missing.
+
+For each new version or change, publish a source-to-implementation mirror in `verbatim/implementation-mirror.json`: source message ID and **literal** span, affected code paths, acceptance tests, actual measured evidence, regression guard, compliance status. Versions without all required verified source clauses are **NOT_VERIFIED**; do not infer implementation from file names, UI labels, benchmarks, or conceptual descriptions. Earlier versions and checkpoint directories must not be destroyed.
+
+Run `node scripts/verbatim-mirror-gate.mjs` for chronological source integrity; it must return `gate: BLOCKED` while the full historical conversation and assistant/media originals are missing. Run `node scripts/verbatim-mirror-gate.mjs --gate` for a deliberately failing full-coverage release gate, in addition to the existing historic `node scripts/verbatim-gate.mjs --gate`. Never turn either gate green by editing flags without genuine recovered source and independent implementation evidence.
+
+The newly archived later USER messages are **not** proof that all ASSISTANT replies were recovered. `verbatim/continuation-index.json` declares these gaps and the unarchived input image explicitly.
