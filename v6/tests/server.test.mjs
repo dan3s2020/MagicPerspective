@@ -40,6 +40,9 @@ test('V6 HTTP server: real train progress, blind test, text goal and isolated re
   response=await post('evaluate',{worlds:3});
   assert.equal(response.status,200);
   assert.ok(response.data.evaluation.modes.learned);
+  response=await post('evaluate-hypotheses',{worlds:3,extra:6});
+  assert.equal(response.status,200);
+  assert.ok(response.data.hypothesisEvaluation.modes.active);
   response=await post('plan',{});
   assert.equal(response.status,200);
   assert.ok(response.data.scene.demonstration);
@@ -56,7 +59,7 @@ test('V6 HTTP server: real train progress, blind test, text goal and isolated re
 test('UI buttons have real callbacks and progress chart is live',async()=>{
  const h=await readFile(path.join(dir,'public/index.html'),'utf8');
  const j=await readFile(path.join(dir,'public/app.js'),'utf8');
- for(const id of ['train','cancel','evaluate','new','reset','plan']){
+ for(const id of ['train','cancel','evaluate','hypothesis','new','reset','plan']){
   assert.ok(h.includes('id="'+id+'"'),'Missing '+id);
   assert.ok(j.includes("$('"+id+"').onclick"),'Inert control '+id);
  }
