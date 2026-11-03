@@ -75,9 +75,7 @@ export async function createGrowthServer({
    }
    if(req.method==='GET'&&url.pathname==='/api/history')
     return json(res,200,{stats:journal.stats(),
-     history:recent.map(x=>({sequence:x.sequence,stats:x.stats,
-      added_nodes:x.growth?.nodes.length||0,
-      added_edges:x.growth?.edges.length||0}))});
+     history:journal.graph.history.map(x=>({sequence:x.sequence,stats:x.stats}))});
    if(req.method==='POST'&&url.pathname==='/api/experience'){
     const input=await getBody(req);
     const result=await journal.ingest(input);
