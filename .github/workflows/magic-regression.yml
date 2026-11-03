@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - feature/V4-PERSPECTIVE-ESCAPE-20261103
+      - experiment/V6-CAUSAL-TEXT-WORLDS-20261103
   pull_request:
     branches:
       - main
@@ -30,3 +31,7 @@ jobs:
         run: node --test v4/escape-tests/*.test.mjs
       - name: Escape held-out numeric and projection benchmark
         run: node v4/scripts-escape-benchmark.mjs 100 100
+      - name: V6 causal-text world and HTTP regression tests
+        run: node --test v6/tests/*.test.mjs
+      - name: V6 blind causal-text benchmark
+        run: node v6/benchmark.mjs 120 9 17
