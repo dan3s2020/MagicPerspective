@@ -1,0 +1,126 @@
+{
+  "schema": 1,
+  "historical_segment": "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
+  "historical_indexed_messages": 56,
+  "complete_original_transcript": false,
+  "full_native_transcript_verified": false,
+  "scope": "Ordered recovered USER messages only; assistant text between them and external chat segments not fully captured. No chronological claims across unknown gaps.",
+  "time_note": "Order derived from the visible chat; no fabricated per-message timestamps.",
+  "media_gaps": [
+    {
+      "related_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
+      "description": "User supplied an image of the network in this turn; original binary/asset URI not yet archived in GitHub.",
+      "status": "MISSING_BINARY"
+    }
+  ],
+  "entries": [
+    {
+      "order": 1,
+      "ref": "RECENT-A",
+      "role": "USER",
+      "source_path": null,
+      "user_text": "verbatim/recent-user-messages.json#RECENT-A",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 2,
+      "ref": "RECENT-B",
+      "role": "USER",
+      "source_path": null,
+      "user_text": "verbatim/recent-user-messages.json#RECENT-B",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 3,
+      "ref": "RECENT-C",
+      "role": "USER",
+      "source_path": null,
+      "user_text": "verbatim/recent-user-messages.json#RECENT-C",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 4,
+      "ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
+      "role": "USER",
+      "source_path": null,
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 5,
+      "ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 6,
+      "ref": "2026-11-03-USER-NO-MORE-DEMOS",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-NO-MORE-DEMOS",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 7,
+      "ref": "2026-11-03-USER-ANIMATED-GRAPH-UI",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-ANIMATED-GRAPH-UI",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 8,
+      "ref": "2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 9,
+      "ref": "2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 10,
+      "ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 11,
+      "ref": "2026-11-03-USER-AS-ABOVE-AS-BELOW-QUESTION",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-AS-ABOVE-AS-BELOW-QUESTION",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 12,
+      "ref": "2026-11-03-USER-VERBATIM-MIRROR-MAIN",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-VERBATIM-MIRROR-MAIN",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    }
+  ]
+}
