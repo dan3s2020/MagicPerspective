@@ -34,4 +34,7 @@ jobs:
       - name: V6 causal-text world and HTTP regression tests
         run: node --test v6/tests/*.test.mjs
       - name: V6 blind causal-text benchmark
-        run: node v6/benchmark.mjs 120 9 17
+        run: |
+          node v6/benchmark.mjs 120 9 17
+          node v6/benchmark.mjs 2000 30 17
+          node v6/benchmark.mjs 2000 30 23
