@@ -76,6 +76,21 @@ function display(s,redraw=true){
  $('metric-shape').textContent=(frame.route.length-1)+' · '+(ep.current.verified?'confirmat':'ipotetic');
  $('results').innerHTML=resultTable(s.assessment);
  $('family').value=s.options.family;$('nodes').value=String(s.options.n);$('dance').value=s.options.dance?'yes':'no';$('online').value=s.options.online?'yes':'no';
+ $('task-status').textContent=s.externalTask
+  ? 'Date externe active: '+s.externalTask.name+' · '+s.externalTask.nodeCount+
+    ' noduri · '+s.externalTask.edgeCount+' legături · traseu '+(s.externalTask.reachable?'existent':'inexistent')
+  : 'Nicio problemă importată. Încă sunt active lumile generate.';
+ $('task-load').disabled=!!p?.running;
+ $('task-compare').disabled=!!p?.running||!s.externalTask;
+ const comparison=s.externalComparison;
+ $('task-report').textContent=!comparison?''
+  : !comparison.reachable?'Traseu imposibil: '+comparison.reason
+  : ['Cost optim: '+comparison.optimalCost,
+     ...Object.entries(comparison.modes).map(([name,row])=>
+       name+' · '+(row.solved?'REUȘIT':'EȘUAT')+
+       ' · cost: '+row.cost+' · cost în plus: '+(row.excessCost??'—')+
+       ' · pași: '+row.steps+' · F1 inițial: '+row.initialF1.toFixed(3))
+    ].join('\n');
  const taskBusy=!!p?.running;for(const id of ['new','step','auto','run','train','test','family','nodes','dance','online','episodes'])$(id).disabled=taskBusy;
  $('stop').disabled=!taskBusy;$('step').disabled=taskBusy||ep.solved;
  if(p){$('progress').style.width=p.unlimited?'100%':(100*p.done/Math.max(1,p.total))+'%';
@@ -100,6 +115,26 @@ $('step').onclick=()=>guard(async()=>{replayIndex=-1;await next();});
 $('run').onclick=()=>guard(async()=>{pause();replayIndex=-1;display(await post('run',{steps:600}));});
 $('auto').onclick=()=>{if(auto){pause();return;}if(!state||state.progress?.running||state.episode.solved)return;
  auto=setInterval(()=>guard(async()=>{replayIndex=-1;await next();}),420);$('auto').textContent='■ Pauză';};
+$('task-file').onchange=async()=>{
+ const file=$('task-file').files?.[0];
+ if(!file)return;
+ if(file.size>150000){$('task-status').textContent='Fișier prea mare (maximum 150 KB)';return}
+ $('task-json').value=await file.text();
+ $('task-status').textContent='Fișier încărcat în editor; apasă Importă problema mea.';
+};
+$('task-load').onclick=()=>guard(async()=>{
+ pause();replayIndex=-1;selectedNode=0;
+ const content=$('task-json').value.trim();
+ if(!content)throw Error('Selectează un fișier JSON sau lipește definiția problemei');
+ let problem;try{problem=JSON.parse(content)}catch(e){throw Error('JSON invalid: '+e.message)}
+ display(await post('task/import',{problem}));
+ $('external-task').open=true;
+});
+$('task-compare').onclick=()=>guard(async()=>{
+ pause();
+ display(await post('task/compare',{}));
+ $('external-task').open=true;
+});
 $('train').onclick=()=>guard(async()=>{pause();await post('train',{episodes:Number($('episodes').value),n:Number($('nodes').value)});const r=await get();display(r);});
 $('stop').onclick=()=>guard(async()=>{await post('stop');$('status').textContent='Oprire solicitată…';});
 $('test').onclick=()=>guard(async()=>{pause();$('status').textContent='Blind evaluation rulează pe 12 lumi noi…';const r=await post('test',{count:12,n:Number($('nodes').value)});display(r);});
