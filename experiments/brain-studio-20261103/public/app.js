@@ -1,10 +1,13 @@
 'use strict';
+import {drawAbstract,graphFacts} from './graph-render.js';
 const $=id=>document.getElementById(id);
 const number=(v,d=2)=>Number.isFinite(Number(v))&&v!==null?Number(v).toFixed(d):'—';
 const comma=v=>Number(v||0).toLocaleString('ro-RO');
 const COLORS={mint:'#71dcc8',amber:'#f8c17b',blue:'#7abfff',purple:'#baa3fc',red:'#f094a7',muted:'#a8bdd3'};
 let S=null,archive=[],busy=false,polling=false,frames=[],frameNo=0,framePlaying=true,
  lastPreviewStamp=null,animation=0,revision=-1,lastFile=null;
+let displayed=null,displaySource=null,traceCursor=0,traceQueue=[],traceDropped=0,
+ tracePolling=false;
 async function api(route,payload){
  const isPost=payload!==undefined;
  const response=await fetch('/api/'+route,{method:isPost?'POST':'GET',
@@ -99,6 +102,11 @@ $('file').onchange=async()=>{
  if(result?.id)await action('brains/select',{id:result.id},'Activare creier importat');
  $('file').value='';
 };
+$('probe').onclick=async()=>{
+ const result=await action('probe',{domain:$('probe-domain').value,size:Number($('size').value),
+  seed:Math.floor(150000+Date.now()%700000)},'Se execută problema cu un creier copiat');
+ if(result?.preview){showDisplayed(result.preview,result.previewOrigin||'inspecție fără antrenare');}
+};
 $('test').onclick=async()=>{
  try{await action('test',{count:12,size:Number($('size').value),domains:selectedDomains()},'Test orb pe lumi noi')}
  catch(e){status(e.message,false)}
@@ -109,8 +117,23 @@ $('replay-toggle').onclick=()=>{
 $('replay-start').onclick=()=>{frameNo=0;framePlaying=true;$('replay-toggle').textContent='Ⅱ PAUZĂ REPLAY';drawAll()};
 $('replay').oninput=()=>{frameNo=Number($('replay').value);framePlaying=false;
  $('replay-toggle').textContent='▶ CONTINUĂ REPLAY';drawAll()};
+function showDisplayed(preview,source){
+ if(!preview?.meta?.abstract)return;
+ displayed=preview;displaySource=source;frames=preview.frames||[];frameNo=0;
+ lastPreviewStamp=preview.meta.seed+'-'+preview.outcome.steps+'-'+preview.meta.kind;
+ $('replay').max=String(Math.max(0,frames.length-1));
+ $('episode-id').textContent=preview.meta.domain.toUpperCase()+' · seed '+preview.meta.seed;
+ $('world-desc').textContent=(preview.meta.text?preview.meta.text+' · ':'')+
+  'CREIER '+preview.meta.kind.toUpperCase()+' · '+source+' · '+
+  (preview.outcome.solved?'ȚINTĂ ATINSĂ':'ȚINTĂ NEATINSĂ')+
+  ' · '+preview.outcome.steps+' acțiuni, cost '+number(preview.outcome.cost,2);
+}
 function apply(s){
+ const previousSelection=S?.selected;
  S=s;
+ if(previousSelection&&previousSelection!==s.selected){
+  displayed=null;traceQueue=[];traceCursor=0;traceDropped=0;frames=[];
+ }
  if(!s)return;
  const run=s.run||{},m=s.model||{},t=s.timing||{},out=s.last?.outcome||{};
  const isRunning=run.status==='running';
@@ -137,17 +160,10 @@ function apply(s){
  $('bar-inner').classList.toggle('infinite',isRunning&&!!run.unlimited);
  $('bar').setAttribute('aria-valuenow',Math.round(progress));
  const preview=s.preview;
- if(preview){
-  const stamp=preview.meta.seed+'-'+preview.outcome.steps+'-'+s.kind;
-  if(stamp!==lastPreviewStamp){
-   lastPreviewStamp=stamp;frames=preview.frames||[];frameNo=0;
-   $('replay').max=String(Math.max(0,frames.length-1));
-  }
-  $('episode-id').textContent=preview.meta.domain.toUpperCase()+' · seed '+preview.meta.seed;
-  $('world-desc').textContent=(preview.meta.text?preview.meta.text+' · ':'')+
-   (preview.outcome.solved?'Obiectiv atins':'Obiectiv neatins')+
-   ' · '+preview.outcome.steps+' pași · cost '+number(preview.outcome.cost,2);
- }
+ if(preview&&!displayed)showDisplayed(preview,s.previewOrigin||'episod real');
+ // A state poll must never restart an episode replay; new training traces arrive
+ // through the independently sequenced /api/traces channel.
+ if(!preview&&!s.trainable){displayed=null;frames=[];}
  drawLearning();drawFunction();drawTest();controls();
 }
 function canvas(id){
@@ -181,62 +197,42 @@ const parseKnown=frame=>{
  return out;
 };
 function drawWorld(id,truth=false){
- const {g,w,h}=canvas(id),p=S?.preview,meta=p?.meta;
- if(!meta){text(g,'Aștept episoade reale…',55,120);return}
- const frame=frames[Math.min(frameNo,frames.length-1)]||frames.at(-1)||{};
- const positions=meta.positions||[],domain=meta.domain,truthData=meta.truth||[];
- const allEdges=truth?truthData:parseKnown(frame);
- const n=Math.round(Math.sqrt(positions.length));
- const terrain=truthData.length&&truthData[0]?.h!==undefined;
- if(terrain){
-  for(const e of truthData){
-   if(!Number.isFinite(e.h))continue;
-   const x=e.i%n,y=Math.floor(e.i/n),cell=(w-56)/n;
-   const known=truth||Array.isArray(frame.known)&&frame.known[e.i]>=0;
-   g.fillStyle=known?(e.h>.82?'#6c778b':`hsl(${140-e.h*110} 25% ${35+e.h*25}%)`):'#19263a';
-   g.fillRect(28+x*cell,28+y*cell,cell-1,cell-1);
-  }
- }else{
-  if(truth&&allEdges.length)for(const e of allEdges){if(e.open===false)continue;if(Number.isInteger(e.a)&&Number.isInteger(e.b)&&positions[e.a]&&positions[e.b])
-    edge(g,positions,e.a,e.b,'rgba(95,191,171,.42)',1.4)}
-  if(!truth)for(const e of allEdges){if(positions[e.a]&&positions[e.b])
-    edge(g,positions,e.a,e.b,'rgba(113,220,200,.66)',2)}
- }
- if(terrain&&domain==='maze'&&!truth&&Array.isArray(frame.known)){
-  // The learner displays ONLY measured terrain, not global evaluator hidden walls.
-  for(let i=0;i<frame.known.length;i++)if(frame.known[i]>=0){
-   const a=positions[i];if(!a)continue;
-   g.fillStyle='rgba(113,220,200,.27)';const v=xy(positions,i);
-   g.fillRect(v.x-2,v.y-2,4,4);
-  }
- }
- const walk=frame.walked||frame.walk||[];
- stroke(g,walk,positions,COLORS.blue,3.8);
- if(Array.isArray(frame.route))stroke(g,frame.route,positions,COLORS.amber,2,[7,4]);
- if(Array.isArray(frame.shape))stroke(g,frame.shape,positions,COLORS.amber,2,[7,4]);
- const active=frame.current??frame.position??meta.start;
- for(let i=0;i<positions.length;i++){
-  if(!positions[i])continue;
-  if(positions.length>200&&!([meta.start,meta.goal,active].includes(i)))continue;
-  const a=xy(positions,i),delta=frame.values?.[i],energ=Number.isFinite(delta)?
-   Math.min(1,1/(1+Math.abs(delta)/10)):.16;
-  g.beginPath();g.arc(a.x,a.y,positions.length>200?1.6:2.5+3*energ,0,Math.PI*2);
-  g.fillStyle=truth?'#5c7294':'rgba(174,159,245,'+(.22+energ*.7)+')';g.fill();
- }
- const marker=(i,color,label)=>{if(i==null||!positions[i])return;const a=xy(positions,i);
-  g.beginPath();g.arc(a.x,a.y,12,0,Math.PI*2);g.fillStyle=color;g.fill();
-  g.textAlign='center';g.textBaseline='middle';text(g,label,a.x-4,a.y+4,'#0b1830',11);
-  g.textAlign='start';g.textBaseline='alphabetic';
- };
- marker(meta.start,COLORS.blue,'S');marker(meta.goal,COLORS.mint,'G');
- const pulse=1.8+1.7*Math.sin(animation/3);
- if(positions[active]){
-  const a=xy(positions,active);g.beginPath();g.arc(a.x,a.y,16+pulse,0,Math.PI*2);
-  g.strokeStyle=COLORS.amber;g.lineWidth=2;g.stroke();
-  marker(active,COLORS.amber,'●');
- }
- text(g,truth?'Evaluator: hartă completă':'Organism: măsurători + acțiuni',17,20,truth?COLORS.mint:COLORS.purple,12);
+ drawAbstract($(id),displayed?.meta||null,frames[Math.min(frameNo,frames.length-1)]||null,
+  {truth,animation});
 }
+function drawGraphFacts(){
+ const p=displayed,frame=frames[Math.min(frameNo,frames.length-1)]||null,
+  facts=graphFacts(p?.meta,frame);
+ if(!facts){
+  for(const id of ['graph-domain','graph-prediction','graph-actual','graph-solution'])$(id).textContent='—';
+  $('candidate-list').textContent='În așteptarea unui graf de stări real.';
+  $('graph-explanation').textContent='Apasă INSPECTEAZĂ sau START ∞ pentru o problemă executată efectiv.';
+  return;
+ }
+ $('graph-domain').textContent=facts.domain;
+ $('graph-prediction').textContent=facts.prediction;
+ $('graph-actual').textContent=facts.execution;
+ $('graph-solution').textContent=facts.solution;
+ $('graph-explanation').textContent='Plan: '+facts.source+' · SOLUȚIE EXACTĂ (evaluator numai): '+
+  facts.reference+' · predicțiile nu citesc acest traseu.';
+ const root=$('candidate-list');root.replaceChildren();
+ if(!facts.candidates.length){
+  const cell=document.createElement('div');cell.className='decision';cell.textContent=
+   'Modelul n-a furnizat candidați pentru cadrul curent. Vezi traseul nativ sau rezultatul.';
+  root.append(cell);
+ }
+ for(const [i,c] of facts.candidates.slice(0,8).entries()){
+  const el=document.createElement('div');el.className='decision'+(i===0?' best':'');
+  el.textContent=(i===0?'★ ':'')+c.action+' · Q='+c.score+
+   ' · '+c.from+' → '+c.to+(c.known?'':' (destinație necunoscută)');
+  root.append(el);
+ }
+ $('trace-indicator').textContent='Cadre reale: '+frames.length+' · sursă: '+displaySource+
+  ' · procesate: '+comma(S?.run?.done)+' episoade · coadă replay: '+traceQueue.length+
+  ' · episoade ratate la transfer: '+traceDropped+
+  ' (când motorul rulează mai repede decât telefonul).';
+}
+
 function plotLine(id,series,labels,min=0,max=1){
  const {g,w,h}=canvas(id),left=54,right=w-20,top=35,bottom=h-38;
  for(let k=0;k<=4;k++){
@@ -333,7 +329,8 @@ function drawTest(){
 }
 function drawAll(){
  if(!S)return;
- drawWorld('learner-canvas',false);drawWorld('truth-canvas',true);drawBrain();
+ drawWorld('learner-canvas',false);drawWorld('truth-canvas',true);
+ drawGraphFacts();drawBrain();
  $('replay').value=String(frameNo);
  $('frame-number').textContent=(frames.length?frameNo+1:0)+' / '+frames.length;
  const f=frames[frameNo]||{},out=S.preview?.outcome||{};
