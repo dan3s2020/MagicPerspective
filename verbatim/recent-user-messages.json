@@ -7,25 +7,29 @@
       "ref": "RECENT-A",
       "role": "USER",
       "text": "Adica ai obținut ceva ca bellman? Înseamnă că nu s a respectat toată conversația în verbatim ",
-      "order_in_recoverable_user_sequence": 1
+      "order_in_recoverable_user_sequence": 1,
+      "source_path": "verbatim/2026-11-03-recent-a-USER-VERBATIM.txt"
     },
     {
       "ref": "RECENT-B",
       "role": "USER",
       "text": "Deci nu am construit absolut nimic din tot ce am cerut si ai făcut doar doar numai ce ai vrut tu fără sa verifici niciodată fata de Verbatim dacă ai implementat tot corect . ",
-      "order_in_recoverable_user_sequence": 2
+      "order_in_recoverable_user_sequence": 2,
+      "source_path": "verbatim/2026-11-03-recent-b-USER-VERBATIM.txt"
     },
     {
       "ref": "RECENT-C",
       "role": "USER",
       "text": "\"motorul MagicPerspective dorit: un sistem care învață reprezentarea problemei, generează ipoteze despre forma soluției, descoperă transformările necesare și transferă mecanismul între domenii. \" nu ,iar ai simplificat tot . Ce am cerut este fiecare cuvânt din verbatim, până la ultimul cuvânt trebuie implementa ,fiecare cuvânt din verbatim din toată conversația de sus până jos,acela este \"motorul\" si ceea ce tu trebuie sa faci fara greșeli ",
-      "order_in_recoverable_user_sequence": 3
+      "order_in_recoverable_user_sequence": 3,
+      "source_path": "verbatim/2026-11-03-recent-c-USER-VERBATIM.txt"
     },
     {
       "ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
       "role": "USER",
       "text": "pai nu stiu cum sa-ti zic,dar trebuie sa ghiceasca forma solutiei din perspectiva a 14 milioane de exercitii unice si diferite care include control printr-un singur abstract network care sa controleze fie forma solutiei intr-un labirint 3d,fie forma solutiei grafului care da raspuns text-ul cu eroarea cat mai mica,fie este pus in alt joc,sa controleze o masina,etc,o sa vada ce parti si actiuni si secvente ding raf produc anumite actiuni in lumea pe care o experimenteaza. noteaza si asta in verbatim",
-      "order_in_recoverable_user_sequence": 4
+      "order_in_recoverable_user_sequence": 4,
+      "source_path": "verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt"
     },
     {
       "ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
