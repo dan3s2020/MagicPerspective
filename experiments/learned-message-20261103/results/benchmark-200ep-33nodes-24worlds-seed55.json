@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-03",
+  "config": {
+    "episodes": 200,
+    "n": 33,
+    "count": 24,
+    "seed": 55
+  },
+  "beforeMAE": 4.0675,
+  "afterMAE": 0.9118,
+  "before": {
+    "learned": {
+      "success": 1,
+      "cost": 26.4583,
+      "f1": 0.7519,
+      "connected": 1,
+      "efficiency": 0.9826,
+      "coherence": 0.9481,
+      "phaseCoherence": 0.8914,
+      "steps": 4.625
+    },
+    "bellman": {
+      "success": 1,
+      "cost": 26.4167,
+      "f1": 0.7322,
+      "connected": 1,
+      "efficiency": 0.9843,
+      "coherence": 1,
+      "phaseCoherence": 0.9261,
+      "steps": 4.6667
+    },
+    "off": {
+      "success": 1,
+      "cost": 58.9167,
+      "f1": 0,
+      "connected": 0,
+      "efficiency": 0.6125,
+      "coherence": 0,
+      "phaseCoherence": -0.088,
+      "steps": 11.4167
+    },
+    "shuffled": {
+      "success": 1,
+      "cost": 106.8333,
+      "f1": 0.1276,
+      "connected": 0,
+      "efficiency": 0.4358,
+      "coherence": 0.7887,
+      "phaseCoherence": 0.8081,
+      "steps": 20.3333
+    },
+    "untrained": {
+      "success": 1,
+      "cost": 26.4583,
+      "f1": 0.7519,
+      "connected": 1,
+      "efficiency": 0.9826,
+      "coherence": 0.9481,
+      "phaseCoherence": 0.8914,
+      "steps": 4.625
+    }
+  },
+  "after": {
+    "learned": {
+      "success": 1,
+      "cost": 26.4583,
+      "f1": 0.7262,
+      "connected": 1,
+      "efficiency": 0.9828,
+      "coherence": 0.9811,
+      "phaseCoherence": 0.0204,
+      "steps": 4.7083
+    },
+    "bellman": {
+      "success": 1,
+      "cost": 26.375,
+      "f1": 0.7512,
+      "connected": 1,
+      "efficiency": 0.9856,
+      "coherence": 1,
+      "phaseCoherence": 0.0375,
+      "steps": 4.7083
+    },
+    "off": {
+      "success": 1,
+      "cost": 78.875,
+      "f1": 0,
+      "connected": 0,
+      "efficiency": 0.5335,
+      "coherence": 0,
+      "phaseCoherence": -0.088,
+      "steps": 15.5833
+    },
+    "shuffled": {
+      "success": 0.9583,
+      "cost": 252.7917,
+      "f1": 0.1157,
+      "connected": 0,
+      "efficiency": 0.2884,
+      "coherence": 0.387,
+      "phaseCoherence": 0.0236,
+      "steps": 41.4167
+    },
+    "untrained": {
+      "success": 1,
+      "cost": 26.4583,
+      "f1": 0.7519,
+      "connected": 1,
+      "efficiency": 0.9826,
+      "coherence": 0.9481,
+      "phaseCoherence": 0.8914,
+      "steps": 4.625
+    }
+  },
+  "messageUpdates": 200,
+  "messageWeightDelta": [
+    -0.017159,
+    -0.012824,
+    0.000296,
+    -0.03041,
+    -0.000176,
+    0.019009,
+    0.015166,
+    -0.00786,
+    -0.009696,
+    0.006535,
+    0.075613,
+    0.004922
+  ],
+  "caveat": "Fixed local message skeleton and objective; 12 trained weights controlling message correction, attention, temperature, damping. Targets from actual trajectories. Baselines use same worlds, message rounds and sensors. Does not demonstrate emerging general intelligence or transfer to SAT."
+}
