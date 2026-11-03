@@ -108,6 +108,23 @@ class PortalTests(unittest.TestCase):
             self.assertEqual(p.status()['unique_worlds_verified_sqlite'],3)
             p.close();corpus.close()
 
+    def test_selected_corpus_is_restored_for_text_training(self):
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/'source.txt'
+            path.write_text('Portal universal graphs learn from actual text. '*10,encoding='utf-8')
+            e=PortalEngine(Path(d)/'state','cpu',capacity=2048)
+            control=Control(e)
+            meta=control.set_corpus(str(path))
+            self.assertEqual(meta['sha256'],control.engine.corpus.digest)
+            self.assertTrue((e.folder/'corpus.json').is_file())
+            e.close();control.engine.corpus.close()
+            restored=PortalEngine(Path(d)/'state','cpu',capacity=2048)
+            control2=Control(restored)
+            self.assertEqual(control2.engine.corpus.digest,meta['sha256'])
+            restored.episode_many(['text'],batch_size=1)
+            self.assertEqual(restored.status()['unique_worlds_verified_sqlite'],1)
+            restored.close();control2.engine.corpus.close()
+
     def test_real_http_start_stop_trace_and_save(self):
         with tempfile.TemporaryDirectory() as d:
             e=PortalEngine(d,'cpu',capacity=2048)
