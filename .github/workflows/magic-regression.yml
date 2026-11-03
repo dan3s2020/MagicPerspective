@@ -24,6 +24,8 @@ jobs:
         run: node --test v3/tests/*.test.mjs
       - name: V4 existing Forge tests
         run: node --test v4/tests/*.test.mjs
+      - name: V5 existing shape-organ tests
+        run: node --test v5/tests/*.test.mjs
       - name: Perspective Escape unit and HTTP tests
         run: node --test v4/escape-tests/*.test.mjs
       - name: Escape held-out numeric and projection benchmark
