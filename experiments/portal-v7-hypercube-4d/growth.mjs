@@ -122,6 +122,7 @@ export class EvidenceGraph{
   this.edges=new Map();
   this.events=new Map();
   this.problems=new Set();
+  this.pairs=new Set();this.crossDomainNodes=0;this.crossDomainEdges=0;
   this.sequence=0;
   this.learnedSteps=0;
   this.eventsByDomain=new Map();
@@ -151,6 +152,7 @@ export class EvidenceGraph{
    }
    node.uses++;
    node.lastSeenEvent=this.sequence+1;
+   if(node.domains.length===1&&!node.domains.includes(data.domain))this.crossDomainNodes++;
    node.domains=unique([...node.domains,data.domain]);
    if(item.activity!==null){node.activity=item.activity;active.push(item.id);}
   }
@@ -161,13 +163,16 @@ export class EvidenceGraph{
     edge={from:item.from,to:item.to,kind:item.kind,
      count:0,total_strength:0,strength_samples:0,
      domains:[],createdAtEvent:this.sequence+1,lastSeenEvent:0};
-    this.edges.set(key,edge);addedEdges.push({from:item.from,to:item.to,kind:item.kind});
+    this.edges.set(key,edge);
+    this.pairs.add(JSON.stringify([item.from,item.to]));
+    addedEdges.push({from:item.from,to:item.to,kind:item.kind});
    }else updatedEdges.push({from:item.from,to:item.to,kind:item.kind});
    edge.count++;
    if(item.strength!==null){
     edge.total_strength+=item.strength;
     edge.strength_samples++;
    }
+   if(edge.domains.length===1&&!edge.domains.includes(data.domain))this.crossDomainEdges++;
    edge.domains=unique([...edge.domains,data.domain]);
    edge.lastSeenEvent=this.sequence+1;
   }
@@ -195,13 +200,12 @@ export class EvidenceGraph{
  }
  stats(){
   const n=this.nodes.size,e=this.edges.size;
-  // Confirmed edges are a labeled multigraph; density must count each
-  // ordered pair ONCE so it can never exceed 100%.
-  const simplePairs=new Set([...this.edges.values()]
-   .map(edge=>JSON.stringify([edge.from,edge.to]))).size;
-  let crossDomainNodes=0,crossDomainEdges=0;
-  for(const node of this.nodes.values())if(node.domains.length>1)crossDomainNodes++;
-  for(const edge of this.edges.values())if(edge.domains.length>1)crossDomainEdges++;
+  // O(1) live metrics over a persistent labeled multigraph. Track each
+  // distinct confirmed directed pair once; no inflated density and no
+  // O(all edges) scan after every action.
+  const simplePairs=this.pairs.size;
+  const crossDomainNodes=this.crossDomainNodes,
+   crossDomainEdges=this.crossDomainEdges;
   return {
    sequence:this.sequence,unique_problems:this.problems.size,
    total_nodes:n,total_edges:e,unique_directed_pairs:simplePairs,
@@ -272,6 +276,10 @@ export class EvidenceGraph{
   graph.problems=new Set(payload.problems);
   graph.eventsByDomain=new Map(payload.eventsByDomain);
   graph.history=(payload.history||[]).map(copy);
+  graph.pairs=new Set([...graph.edges.values()]
+   .map(e=>JSON.stringify([e.from,e.to])));
+  graph.crossDomainNodes=[...graph.nodes.values()].filter(n=>n.domains.length>1).length;
+  graph.crossDomainEdges=[...graph.edges.values()].filter(e=>e.domains.length>1).length;
   if(graph.events.size!==graph.sequence)
    throw Error('Graph snapshot sequence/events mismatch');
   for(const e of graph.edges.values())
