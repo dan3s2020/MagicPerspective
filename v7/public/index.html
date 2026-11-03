@@ -14,7 +14,7 @@
   <label>Teren<select id="kind"><option value="relief">Relief cu munți</option><option value="maze">Labirint (fără indicii)</option></select></label>
   <label>Organismul din stânga<select id="left"><option value="v7">Creierul V7</option><option value="v6">Creierul tău V6</option></select></label>
   <label>Mărime<select id="size"><option value="11">11 × 11</option><option value="15" selected>15 × 15</option><option value="19">19 × 19</option></select></label>
-  <div class="buttons"><button id="new">Teren nou</button><button id="step">Un pas</button><button id="auto" class="primary">Pornește</button><button id="run">Până la capăt</button></div>
+  <div class="buttons"><button id="new">Teren nou</button><button id="step">Un pas</button><button id="auto" class="primary">Pornește</button><button id="run">Până la capăt</button><a class="network-link" href="http://127.0.0.1:3040/" target="_blank" rel="noopener">Abstract Networks ↗</a></div>
 </section>
 
 <section class="duel">
@@ -37,7 +37,7 @@
 
 <section class="block"><h2>Învățare</h2>
   <p>Organismul trăiește sute de terenuri. De fiecare dată când fereastra îi arată o celulă, compară ce își imaginase cu ce e acolo și se corectează. Nimeni nu-i arată harta sau drumul corect.</p>
-  <div class="row"><label>Terenuri de trăit<select id="episodes"><option value="150">150 · un minut</option><option value="300" selected>300</option><option value="800">800</option><option value="2000">2000</option></select></label>
+  <div class="row"><label>Terenuri de trăit<select id="episodes"><option value="150">150 · un minut</option><option value="300" selected>300</option><option value="800">800</option><option value="2000">2000</option><option value="0">∞ Nelimitat · până apăs Oprește</option></select></label>
     <button id="train" class="primary">Antrenează</button><button id="cancel" disabled>Oprește</button></div>
   <div class="meter"><div id="progress"></div></div><p class="small" id="train-status">Creierul nu a fost antrenat în această sesiune.</p>
   <canvas id="curve" class="curve" aria-label="Cât din drumul real ghicește la pasul 0, pe terenuri de verificare"></canvas>
