@@ -130,7 +130,8 @@ function apply(s){
  $('training-status').textContent='Status: '+run.status+' · '+comma(run.done)+' episoade în sesiune'+
   (run.unlimited?' · fără limită de episoade':' / '+comma(run.target))+
   ' · ultimul checkpoint '+(run.savedAt||'încă nu există')+
-  (run.error?' · EROARE: '+run.error:'');
+  (run.error?' · EROARE: '+run.error:'')+
+  (Number.isFinite(s.bestFitness)?' · cel mai bun scor validat '+number(s.bestFitness,3):'');
  const progress=run.unlimited?100:run.target?Math.min(100,run.done/run.target*100):0;
  $('bar-inner').style.width=progress+'%';
  $('bar-inner').classList.toggle('infinite',isRunning&&!!run.unlimited);
@@ -356,6 +357,7 @@ setInterval(()=>{if(!S||document.hidden)return;animation++;
  if(framePlaying&&frames.length){frameNo=(frameNo+1)%frames.length}
  drawAll();},220);
 setInterval(refresh,950);
+setInterval(()=>{if(S&&!busy&&document.visibilityState==='visible')loadLibrary().catch(()=>{});},15000);
 (async()=>{
  try{await refresh();await loadLibrary();drawAll();}
  catch(e){status('Conexiune eșuată: '+e.message,false)}
