@@ -30,6 +30,8 @@ class Control:
         self.last_batch=None
         self.completed_batches=0
         self.corpus_meta=None
+        self.ingest_worker=None
+        self.corpus_ingest={'state':'idle','progress':0.0}
         # The source corpus is part of the training state; restore it on restart.
         meta_file=self.engine.folder/'corpus.json'
         if meta_file.is_file():
@@ -39,14 +41,60 @@ class Control:
                 if self.engine.corpus.digest!=meta['sha256']:
                     raise ValueError('Corpus cache checksum changed')
                 self.corpus_meta=meta
+                self.corpus_ingest={'state':'ready','progress':1.0, **meta}
             except (OSError,ValueError,KeyError):
                 if self.engine.corpus is not None:
                     self.engine.corpus.close();self.engine.corpus=None
                 self.corpus_meta={'error':'Saved corpus missing or corrupted; reload original file'}
+                self.corpus_ingest={'state':'error','progress':0.0,
+                                    'error':self.corpus_meta['error']}
+
+    def _progress_ingest(self,progress):
+        with self.lock:
+            self.corpus_ingest=dict(progress)
+
+    def begin_corpus(self,path):
+        """Acknowledges immediately; UI can poll actual Parquet row-group progress."""
+        with self.lock:
+            if self.state in ('running','stopping'):
+                raise RuntimeError('Stop training before loading another corpus')
+            if self.ingest_worker and self.ingest_worker.is_alive():
+                raise RuntimeError('Corpus import already active')
+            source=Path(path).expanduser()
+            if not source.is_file():raise FileNotFoundError(str(source))
+            if source.suffix.lower() not in ('.parquet','.jsonl','.txt','.md'):
+                raise ValueError('Supported corpora: TXT / MD / JSONL / Parquet')
+            self.corpus_ingest={'state':'queued','progress':0.0,
+                                'source':str(source.resolve()),'source_bytes':source.stat().st_size}
+            self.ingest_worker=threading.Thread(target=self._corpus_worker,
+                                               args=(str(source),),daemon=True)
+            self.ingest_worker.start()
+            return self.corpus_ingest.copy()
+
+    def _corpus_worker(self,path):
+        try:
+            meta=ingest(path,self.engine.folder/'corpora',on_progress=self._progress_ingest)
+            new=Corpus(meta['path'])
+            with self.lock:
+                old=self.engine.corpus
+                self.engine.corpus=new
+                self.corpus_meta=meta
+                target=self.engine.folder/'corpus.json'
+                temporary=target.with_suffix('.json.tmp')
+                temporary.write_text(json.dumps(meta,ensure_ascii=False),encoding='utf-8')
+                temporary.replace(target)
+                self.corpus_ingest={'state':'ready','progress':1.0,**meta}
+                if old is not None and hasattr(old,'close'):old.close()
+        except Exception as exc:
+            with self.lock:
+                self.corpus_ingest={**self.corpus_ingest,'state':'error',
+                                    'error':str(exc)}
 
     def start(self,config):
         with self.lock:
             if self.worker and self.worker.is_alive():raise RuntimeError('Training already active')
+            if self.ingest_worker and self.ingest_worker.is_alive():
+                raise RuntimeError('Corpus is still importing: wait for ready status')
             domains=config.get('domains',self.config['domains'])
             if (not isinstance(domains,list) or not domains or
                     any(d not in KINDS for d in domains)):raise ValueError('Choose valid training domains')
@@ -91,7 +139,8 @@ class Control:
             d=self.engine.status()
             d.update({'state':self.state,'error':self.error,'config':self.config,
                       'last_batch':self.last_batch,'saved_at':self.saved_at,
-                      'batches':self.completed_batches,'corpus':self.corpus_meta})
+                      'batches':self.completed_batches,'corpus':self.corpus_meta,
+                      'corpus_ingest':self.corpus_ingest})
             return d
 
     def set_corpus(self,path):
@@ -100,6 +149,7 @@ class Control:
             meta=ingest(path,self.engine.folder/'corpora')
             if self.engine.corpus is not None and hasattr(self.engine.corpus,'close'):self.engine.corpus.close()
             self.engine.corpus=Corpus(meta['path']);self.corpus_meta=meta
+            self.corpus_ingest={'state':'ready','progress':1.0,**meta}
             target=self.engine.folder/'corpus.json';temp=target.with_suffix('.json.tmp')
             temp.write_text(json.dumps(meta,ensure_ascii=False),encoding='utf-8')
             temp.replace(target)
@@ -128,6 +178,7 @@ class Handler(BaseHTTPRequestHandler):
             if p.parent!=(HERE/'web').resolve() or not p.is_file():self.send_error(404);return
             data=p.read_bytes();typ=mimetypes.guess_type(p.name)[0] or 'text/plain'
             self.send_response(200);self.send_header('Content-Type',typ+'; charset=utf-8')
+            self.send_header('Cache-Control','no-store')
             self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
         c=self.control
         if path=='/api/health':self._json(200,{'ok':True,'training':c.state,'device':str(c.engine.device)});return
@@ -166,7 +217,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/corpus':
                 source=data.get('path')
                 if not isinstance(source,str):raise ValueError('path must be a local TXT, MD, JSONL or Parquet file')
-                meta=c.set_corpus(source);self._json(200,meta);return
+                meta=c.begin_corpus(source);self._json(202,meta);return
             self._json(404,{'error':'Unknown route'})
         except (RuntimeError,ValueError,OSError,TypeError) as e:
             self._json(400,{'error':str(e)})
