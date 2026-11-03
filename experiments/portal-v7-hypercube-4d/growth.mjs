@@ -112,6 +112,10 @@ function signalValues(nodes,domain){
   active.push(n.id);
  return active;
 }
+export function validateEvidence(event,graph){
+ if(!(graph instanceof EvidenceGraph))throw Error('Expected evidence graph');
+ return validateEvent(event,graph.nodes);
+}
 export class EvidenceGraph{
  constructor(){
   this.nodes=new Map();
@@ -172,6 +176,7 @@ export class EvidenceGraph{
   this.eventsByDomain.set(data.domain,(this.eventsByDomain.get(data.domain)||0)+1);
   if(data.model_update&&data.model_update.weight_delta>0)this.learnedSteps++;
   const growth={nodes:addedNodes,edges:addedEdges,updated_edges:updatedEdges};
+  this.last={growth};
   const result={accepted:true,duplicate:false,sequence:this.sequence,growth,
    event:data,stats:this.stats(),frame:{
     step:data.step,domain:data.domain,problem_id:data.problem_id,
@@ -208,7 +213,7 @@ export class EvidenceGraph{
    const recent=this.sequence-node.lastSeenEvent;
    return (node.domains.length>1?1e5:0)+
     Math.min(node.uses,10000)*4+
-    (recent<10?5e4-recent*100:0);
+    (recent<10?1e6-recent*100:0);
   };
   const selected=[...this.nodes.values()]
    .sort((a,b)=>importance(b)-importance(a)||a.id.localeCompare(b.id))
