@@ -20,6 +20,7 @@ const controls=[
  '<label><span>Secțiune 3D pe axa W</span><input type="checkbox" data-role="slice"></label>',
  '<label>Lățime secțiune <output data-role="sliceLabel">0.70</output></label>',
  '<input type="range" min=".05" max="2" step=".05" value=".70" data-role="sliceWidth">',
+ '<div class="p4readout" data-role="growth">0 NODURI · 0 LEGĂTURI · 0 EXPERIENȚE · SURSA NECONECTATĂ</div>',
  '<div class="p4readout" data-role="position"></div>',
  '<div class="p4readout" data-role="selected">Nod selectat: niciunul</div>',
  '<button type="button" data-role="reset">◎ CENTREAZĂ CAMERA</button>',
@@ -67,12 +68,27 @@ export function createTesseractViewer(target,{graph=null}={}){
    (slice?' | SECȚIUNE 3D W ±'+sliceWidth.toFixed(2):' | PROIECȚIE 4D');
  }
  function setGraph(value){
-  const data=parseGraph(value),computedBounds=graphBounds(data.nodes);
-  // The data truly has 4 coordinates. Normalization does not invent W.
-  parsed={...data,nodes:normalizeNodes(data.nodes,computedBounds)};
-  bounds=computedBounds;frame=null;selected=null;locations=new Map();
-  el('status').textContent='GRAF 4D CONECTAT · '+parsed.nodes.length+' NODURI';
-  el('warning').textContent='Sursa este graful original furnizat prin setGraph(). Cadrul de training este separat.';
+  const data=parseGraph(value),first=!parsed;
+  // Keep the initial four-dimensional reference frame stable while memories
+  // grow; do NOT recenter and teleport all existing nodes after each update.
+  if(!bounds&&data.nodes.length)bounds=graphBounds(data.nodes);
+  parsed={...data,nodes:normalizeNodes(data.nodes,bounds||
+   {center:[0,0,0,0],radius:1})};
+  if(first){frame=null;selected=null;locations=new Map();}
+  else if(selected&&!parsed.nodes.some(n=>n.id===selected))selected=null;
+  const g=parsed.meta||{};
+  el('status').textContent=g.schema?
+   'GRAF ASIMILAT · '+(g.total_nodes??parsed.nodes.length)+' NODURI':
+   'GRAF 4D CONECTAT · '+parsed.nodes.length+' NODURI';
+  el('growth').textContent=g.schema?
+   (g.total_nodes??0)+' NODURI · '+(g.total_edges??0)+' LEGĂTURI · '+
+   (g.unique_problems??0)+' PROBLEME UNICE · '+
+   (g.observed_actions??0)+' EXPERIENȚE · '+
+   (g.learned_steps??0)+' UPDATES · '+
+   (g.cross_domain_edges??0)+' LEGĂTURI MULTIDOMENIU · '+
+   (g.sampled?'VIZUALIZARE PARȚIALĂ A DATELOR':'TOATE DATELE VIZIBILE'):
+   'GRAF CONECTAT · '+parsed.nodes.length+' NODURI · '+parsed.edges.length+' MUCHII';
+  el('warning').textContent='Noduri și legături numai din observațiile confirmate. Predicțiile nu adaugă automat legături.';
   draw();
  }
  function setFrame(value){
@@ -87,7 +103,13 @@ export function createTesseractViewer(target,{graph=null}={}){
    messages:edges(value.messages),predictedEdges:edges(value.predictedEdges),
    executed:value.executed?edges([value.executed])[0]||null:null,
    step:value.step??null,domain:value.domain??null,
-   outcome:value.outcome??null
+   outcome:value.outcome??null,
+   event_seq:value.event_seq??null,reward:value.reward??null,
+   model_update:value.model_update??null,
+   growth:{nodes:Array.isArray(value.growth?.nodes)?
+    value.growth.nodes.map(String):[],
+    edges:Array.isArray(value.growth?.edges)?
+     value.growth.edges.map(e=>({from:String(e.from),to:String(e.to),kind:String(e.kind)})):[]}
   };
   lastFrameAt=performance.now();draw();
  }
@@ -127,9 +149,16 @@ export function createTesseractViewer(target,{graph=null}={}){
    locations=new Map();return;
   }
   const points=nodesProjected(),byId=new Map(parsed.nodes.map(n=>[n.id,n]));
+  const growing=frame&&performance.now()-lastFrameAt<2600;
+  const bornNodes=new Set(growing?(frame.growth?.nodes||[]):[]);
+  const bornEdges=new Set(growing?(frame.growth?.edges||[])
+    .map(e=>JSON.stringify([e.from,e.to,e.kind])):[]);
   for(const e of parsed.edges){
    const p=points.get(e.from),q=points.get(e.to);
-   segment(ctx,p,q,COLORS.edge,1.3,.49);
+   const born=bornEdges.has(JSON.stringify([e.from,e.to,e.kind]));
+   const reinforced=Math.min(3,Math.log1p(Math.max(1,e.count||1))*.55);
+   segment(ctx,p,q,born?COLORS.active:COLORS.edge,
+    born?3.3:1+reinforced,born?1:.38+Math.min(.4,reinforced*.11));
    if(slice&&!p&&!q){
     const a=byId.get(e.from)?.normalized,b=byId.get(e.to)?.normalized;
     if(a&&b){
@@ -150,6 +179,10 @@ export function createTesseractViewer(target,{graph=null}={}){
    const p=points.get(n.id),active=!!frame?.activeNodes.includes(n.id);
    dot(ctx,p,active?7+Math.sin(phase*.11)*1.5:3.6,
     active?COLORS.active:COLORS.w,active?1:.67);
+   if(bornNodes.has(n.id)&&p){
+    ctx.beginPath();ctx.arc(p.x,p.y,11+4*Math.sin(phase*.12),0,Math.PI*2);
+    ctx.lineWidth=2.7;ctx.strokeStyle=COLORS.active;ctx.stroke();
+   }
    if(selected===n.id&&p){
     ctx.beginPath();ctx.arc(p.x,p.y,12,0,2*Math.PI);
     ctx.strokeStyle=COLORS.active;ctx.lineWidth=2;ctx.stroke();
@@ -164,9 +197,16 @@ export function createTesseractViewer(target,{graph=null}={}){
    }
   }
   locations=points;
-  el('overlay').textContent=parsed.nodes.length+' noduri 4D · '+parsed.edges.length+
-   ' legături reale · '+(frame?.step===undefined||frame?.step===null?
-   'fără eveniment de training':'acțiune executată #'+frame.step)+
+  el('overlay').textContent=(parsed.meta?.total_nodes??parsed.nodes.length)+
+   ' NODURI · '+(parsed.meta?.total_edges??parsed.edges.length)+
+   ' LEGĂTURI CONFIRMATE · '+(frame?.growth?
+    '+'+frame.growth.nodes.length+' NODURI / +'+frame.growth.edges.length+
+    ' LEGĂTURI în EXPERIENȚA #'+frame.event_seq:
+    'în așteptarea evenimentelor reale')+
+   (frame?.model_update?
+    ' · Δponderi '+Number(frame.model_update.weight_delta).toFixed(7):'')+
+   ' · '+(frame?.step===undefined||frame?.step===null?
+   'fără eveniment de training':'pas '+frame.step)+
    (slice?' · secțiune 3D w='+camera[3].toFixed(2):' · proiecție 4D completă');
  }
  function resize(){
@@ -206,7 +246,8 @@ export function createTesseractViewer(target,{graph=null}={}){
  observer?.observe(canvas);on(window,'resize',resize);
  function tick(){
   if(disposed)return;
-  if(frame?.messages.length&&performance.now()-lastFrameAt<2300){phase++;draw();}
+  if(frame&&(frame.messages.length||frame.growth?.nodes.length||
+   frame.growth?.edges.length)&&performance.now()-lastFrameAt<2600){phase++;draw();}
   raf=requestAnimationFrame(tick);
  }
  updatePosition();resize();tick();
