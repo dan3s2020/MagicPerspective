@@ -197,3 +197,41 @@ de observații confirmate, evoluția reală a grafului, persistența după
 restart și HTTP zero-noduri fără sursă. Gate-ul complet VERBATIM
 rămâne **BLOCKED** până la conformitate cu întreaga conversație și
 toate cerințele originale.
+
+## Correctly starting the ORIGINAL V7 training (not just the 4D observer)
+
+The original user-visible problem was that the read-only observer on port
+**8791** showed zero exercises and no START button. This was expected because
+it has no training process. Never call that status a running trainer.
+
+On the exact Windows computer with the installed V7 application and saved
+`D:\training\Portal4D-v7-UniversalGraph\universal_brain_latest.pt`, use
+the repo root launcher:
+
+```powershell
+$repo = "$env:USERPROFILE\Downloads\MagicPerspective"
+git -C $repo pull --ff-only origin main
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$repo\START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1"
+```
+
+This script:
+- launches the exact local `Portal4D_V7_RUN\Portal_4D_v7_Universal_Graph\START_PORTAL_4D_v7.ps1` at **8788**, reusing an existing listener rather than creating a conflicting second V7;
+- launches the separate **8791** 4D evidence service if it was not already running;
+- opens the combined 8791 page that embeds the real original 8788 V7 START 1 / START 2 / A–H controls in a frame, plus a permanent **DESCHIDE TRAININGUL ORIGINAL** link;
+- never kills existing Python/Node processes, resets V7 model weights or rewrites checkpoints;
+- cannot bypass framing restrictions that the original V7 may impose; if browser framing fails, the original 8788 link still provides full native controls.
+
+The integrated page has a paginated **exercise journal** using the original
+`/api/experience` evidence records. `/api/exercises?after=0&limit=30`
+displays exercises actually received, not hardcoded tasks or simulated data.
+These records survive journal checkpoints. The old original V7 simulator
+**has not been instrumented to POST these events** in this repository.
+Hence the new journal honestly reports zero and its source remains
+unverified until the 11 original V7 files from
+`Portal4D_V7_SOURCE_20261103_211029.zip` are supplied and the model
+is instrumented at actual decision, update and per-exercise boundaries.
+
+**Do not claim the original V7 exercise feed or automatic unified 4D graph
+is fully integrated yet.** The 8791 page displays original 8788 controls
+for immediate training, while the native per-step 4D telemetry is still
+a separately tracked requirement.
