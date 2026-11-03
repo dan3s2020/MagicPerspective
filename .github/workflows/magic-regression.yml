@@ -153,6 +153,35 @@ jobs:
             throw 'Exact V7 launcher parse error'
           }
           Write-Host 'EXACT_V7_DUAL_PORT_LAUNCHER_PASS'
+      - name: Recovery smoke test for missing exact V7 launcher (do not overwrite existing venv or source)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $testRoot = Join-Path $env:RUNNER_TEMP 'portal-exact-v7-recovery'
+          $zipRoot = Join-Path $testRoot 'zip-build'
+          $pkg = Join-Path $zipRoot 'Portal_4D_v7_Universal_Graph'
+          $existing = Join-Path $testRoot 'user-v7\Portal_4D_v7_Universal_Graph'
+          $venv = Join-Path $existing '.venv\Scripts'
+          New-Item -ItemType Directory -Path $pkg -Force | Out-Null
+          New-Item -ItemType Directory -Path $venv -Force | Out-Null
+          Set-Content -LiteralPath (Join-Path $pkg 'START_PORTAL_4D_v7.ps1') -Value 'Write-Host original-v7-launcher' -Encoding ASCII
+          Set-Content -LiteralPath (Join-Path $pkg 'server.py') -Value 'original-v7-source' -Encoding ASCII
+          Set-Content -LiteralPath (Join-Path $existing 'server.py') -Value 'user-modified-v7-source' -Encoding ASCII
+          Set-Content -LiteralPath (Join-Path $venv 'python.exe') -Value 'existing-virtualenv-sentinel' -Encoding ASCII
+          $zip = Join-Path $testRoot 'original-v7.zip'
+          Compress-Archive -LiteralPath $pkg -DestinationPath $zip
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File './START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1' -V7Root $existing -RepoRoot (Get-Location).Path -OriginalZip $zip -ResolveOnly
+          if ($LASTEXITCODE -ne 0) { throw 'V7 recovery failed' }
+          if (-not (Test-Path -LiteralPath (Join-Path $existing 'START_PORTAL_4D_v7.ps1'))) {
+            throw 'Original V7 launcher was not recovered'
+          }
+          if ((Get-Content -LiteralPath (Join-Path $existing 'server.py') -Raw).Trim() -ne 'user-modified-v7-source') {
+            throw 'Existing user V7 source was overwritten'
+          }
+          if ((Get-Content -LiteralPath (Join-Path $venv 'python.exe') -Raw).Trim() -ne 'existing-virtualenv-sentinel') {
+            throw 'Existing CUDA venv was modified'
+          }
+          Write-Host 'EXACT_V7_RECOVERED_WITHOUT_OVERWRITE_PASS'
       - name: Validate Portal Universal Windows PowerShell launcher syntax
         shell: powershell
         run: |
