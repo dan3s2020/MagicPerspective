@@ -43,3 +43,17 @@ Reproduce a small seeded training/evaluation run: `node scripts-benchmark.mjs 20
 `engine/world.mjs` — two world categories and private physics/teacher; `engine/perspective.mjs` — learned representation weighting; `engine/model.mjs` — neural causal/shape heads; `engine/imagination.mjs` — complete hypothetical routes and fallback; `engine/agent.mjs` — experience loop; `engine/training.mjs` — independent training/validation/test controls; `server.mjs` — local app and checkpoints; `public/` — visual laboratory; `tests/` — consistency and anti-leakage tests.
 
 Data stays on the phone at `v4/data/best-brain.json` and `v4/data/live-brain.json`, excluded from Git. The first is selected by independent validation; the second preserves exploration state weights without replacing the selected best. The app reset button affects **V4 only**.
+
+## World-specific visualizations (V4 UI update, 2026-11-03)
+
+The V4 UI now uses two distinct rendering grammars rather than drawing every world as a line graph:
+
+- 2D maze: tile grid with walkable corridors and walls; the observer pane shows discovery and hypotheses, not the unseen truth.
+- Braided 2D: spatial maze with loops and extra connections, still keeping local observations separate from evaluator truth.
+- Abstract network: proper node-link layout, distinguishing passable, blocked and unknown relations and overlaying connected paths.
+
+The World Atlas simultaneously shows three independent seeded evaluator-only miniature example worlds. These are not the active world or training inputs. Tapping a card or changing the World selector creates a new world of that kind. Switching is disabled during training and does not reset checkpoints.
+
+The main pair of canvases always displays the active world: evaluator-only truth versus organism's limited perspective. The endpoint /api/gallery?size=9 exists only for human viewer previews and is not called from agent or training code. The learner canvas does not require a teacher/truth object.
+
+Verification: cd ~/MagicPerspective/v4 && npm test. The regression suite tests all three world families, six render cases, evaluator/learner separation and UI wiring. These changes do not modify training objectives or prove any navigation improvement.
