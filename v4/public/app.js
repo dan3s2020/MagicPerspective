@@ -62,7 +62,7 @@ async function refresh(){const s=await api('state');render(s);$('health').textCo
 function stopAuto(){automatic=false;if(autoTimer){clearInterval(autoTimer);autoTimer=null;}$('auto').textContent='▶ Auto explore';}
 $('new').onclick=()=>guard(async()=>{stopAuto();render(await api('new',{kind:$('kind').value,size:Number($('size').value),online:$('online').value==='true'}));});
 $('step').onclick=()=>guard(async()=>{stopAuto();render(await api('step',{}));});
-$('auto').onclick=()=>{if(automatic){stopAuto();return;}automatic=true;$('auto').textContent='■ Pause';autoTimer=setInterval(()=>{if(busy)return;guard(async()=>{const s=await api('step',{});render(s);if(s.episode.finished||s.event?.type==='invalid')stopAuto();});},260);};
+$('auto').onclick=()=>{if(automatic){stopAuto();return;}automatic=true;$('auto').textContent='■ Pause';autoTimer=setInterval(()=>{if(busy)return;guard(async()=>{try{const s=await api('step',{});render(s);if(s.episode.finished||s.event?.type==='invalid')stopAuto();}catch(error){stopAuto();throw error;}});},260);};
 $('train').onclick=()=>guard(async()=>{stopAuto();await api('train',{episodes:Number($('episodes').value),size:Number($('size').value)});await refresh();});
 $('cancel').onclick=()=>guard(async()=>{await api('cancel',{});$('training-status').textContent='Stop requested. Current weights are safe.';});
 async function blind(){await guard(async()=>{stopAuto();$('test-status').textContent='Evaluating paired unseen worlds…';await nextFrame();const s=await api('evaluate',{count:12,size:Number($('size').value)});render(s);});}
