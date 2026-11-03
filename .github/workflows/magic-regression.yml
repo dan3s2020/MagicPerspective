@@ -38,3 +38,5 @@ jobs:
           node v6/benchmark.mjs 120 9 17
           node v6/benchmark.mjs 2000 30 17
           node v6/benchmark.mjs 2000 30 23
+      - name: Active causal hypothesis versus random-query benchmark
+        run: node --input-type=module -e "import {evaluateHypotheses} from './v6/engine/hypotheses.mjs'; for (const extra of [0,2,4,6,9]) console.log('CAUSAL_BENCH',JSON.stringify(evaluateHypotheses({worlds:60,seed:6300019,extra,goalsPerWorld:3})))"
