@@ -1,0 +1,12 @@
+{
+  "name":"magicperspective-v6-causal-text",
+  "private":true,
+  "type":"module",
+  "version":"6.0.0-experiment",
+  "engines":{"node":">=22"},
+  "scripts":{
+    "start":"node server.mjs",
+    "test":"node --test tests/*.test.mjs",
+    "bench":"node benchmark.mjs"
+  }
+}
