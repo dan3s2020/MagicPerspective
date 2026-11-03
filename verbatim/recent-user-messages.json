@@ -142,6 +142,20 @@
       "text": "rezolva intai ce ti-am zis !",
       "order_in_recoverable_user_sequence": 20,
       "source_path": "verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt"
+    },
+    {
+      "ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "role": "USER",
+      "text": "nu se intampla nicioa nimatie in graf in timpul trainingului,si nu avem buton de reset,sa curete tot ce a mai lasat si replays sau ceva. si cred ca graful trebuie sa fie interiorul unui toroid 4d a in poza atasata si [4D Aether — In2Infinity](https://in2infinity.com/theory/4d-aether/) ,dar noi pe ecran,vedem doar un sclice din acel torus/toroid 4d nu il vedem ca in poza atasata,ca e doar o reprezentare 3d in una 2d,tu ai nevoie de hypercube sau ceva sa vezi un slice din interiorul acestui torus/toroid 4d,si peste tot in interior sunt grafuri formate in toate dimensiunile",
+      "source_path": "verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt",
+      "order_in_recoverable_user_sequence": 21
+    },
+    {
+      "ref": "2026-11-03-USER-TOROID-BUILD-COMMAND",
+      "role": "USER",
+      "text": "nu ai nevoie de nicio dovada,iti poruncesc sa-l construiesti asa",
+      "source_path": "verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt",
+      "order_in_recoverable_user_sequence": 22
     }
   ]
 }

@@ -272,6 +272,58 @@
       "status": "TESTED_CPU_NOT_FULLY_VERBATIM_AUDITED",
       "measured_result": "Recent actually created nodes/links prioritized in viewport; model includes grown learned memory",
       "regression_check": "old V10 UI style kept"
+    },
+    {
+      "id": "REQ-V12-TOROID-SLICE",
+      "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "exact_source_span": "graful trebuie sa fie interiorul unui toroid 4d",
+      "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
+      "experimental_mapping": "Place persistent actual graph nodes in a 4D solid torus S1×B3 and render interior w slices; do not use replay time as w.",
+      "code_paths": [
+        "experiments/portal-universal-20261103/toroid.py",
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v12.py"
+      ],
+      "measured_result": "20 CPU regression tests passed with 1 optional PyArrow test skipped in local runtime; browser JavaScript produced real event animation with no page errors in static live-trace probe",
+      "regression_check": "python -m unittest discover -s tests -p test_*.py"
+    },
+    {
+      "id": "REQ-V12-ANIMATED-REAL-EVENTS",
+      "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "exact_source_span": "nu se intampla nicioa nimatie in graf in timpul trainingului",
+      "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
+      "experimental_mapping": "Release training lock per actual environment step and replay actual messages, decision, mismatch, weight update, and graph birth phases.",
+      "code_paths": [
+        "experiments/portal-universal-20261103/server.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v12.py"
+      ],
+      "measured_result": "Step frames available through incremental HTTP query before batch completion; browser static trace uses real stored events",
+      "regression_check": "python -m unittest discover -s tests -p test_*.py"
+    },
+    {
+      "id": "REQ-V12-FULL-RESET",
+      "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "exact_source_span": "buton de reset,sa curete tot ce a mai lasat si replays",
+      "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
+      "experimental_mapping": "Typed confirmation RESET TOT clears this experiment's weights, graph, SQLite ledger, replay, checkpoints and imported corpus cache without deleting any external source file.",
+      "code_paths": [
+        "experiments/portal-universal-20261103/server.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/index.html",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v12.py"
+      ],
+      "measured_result": "Reset tests pass before and after server restart; rejects reset during training or without explicit phrase",
+      "regression_check": "python -m unittest discover -s tests -p test_*.py"
     }
   ],
   "versions": [
@@ -367,6 +419,26 @@
       "state": "PARTIAL_CPU_TESTED_PENDING_USER_PARQUET_CUDA_AND_FULL_VERBATIM",
       "verified_requirement_ids": [],
       "notes": "V10 backward compatible fixes; 14 CPU tests (one actual pyarrow test skipped locally), requires real shard and CUDA verification on user machine."
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V12",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "LOCAL_CPU_TESTED_FULL_VERBATIM_NOT_CERTIFIED",
+      "verified_requirement_ids": [],
+      "changes": [
+        "toroid.py",
+        "engine.py",
+        "server.py",
+        "web/app.js",
+        "web/index.html",
+        "web/style.css",
+        "tests/test_v12.py"
+      ],
+      "source_refs": [
+        "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+        "2026-11-03-USER-TOROID-BUILD-COMMAND"
+      ]
     }
   ]
 }

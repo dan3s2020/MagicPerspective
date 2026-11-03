@@ -16,6 +16,11 @@
       "related_ref": "2026-11-03-USER-4D-NOT-PROJECTION-CORPUS-UI",
       "description": "Screenshot provided in chat; its original image bytes have not been committed to GitHub",
       "status": "MISSING_BINARY"
+    },
+    {
+      "related_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "description": "Two toroidal-geometry reference images were provided in the conversation. Original binary images not yet archived on GitHub.",
+      "status": "MISSING_BINARY"
     }
   ],
   "entries": [
@@ -196,6 +201,24 @@
       "role": "USER",
       "source_path": "verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt",
       "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-FIX-PRIORITY",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 21,
+      "ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 22,
+      "ref": "2026-11-03-USER-TOROID-BUILD-COMMAND",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-TOROID-BUILD-COMMAND",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
     }
