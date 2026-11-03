@@ -115,6 +115,6 @@ setInterval(async()=>{if(busy)return;try{const s=await get();if(s.progress?.runn
 get().then(s=>{display(s);requestAnimationFrame(animate);}).catch(e=>{$('status').textContent='Server inaccesibil: '+e.message;});
 
 // Replay REAL graph worlds encountered by training, on the original animated network canvas.
-setInterval(()=>{if(!state?.progress?.running||!state.progress.preview||busy||replayIndex<0)return;
+setInterval(()=>{if(!state?.progress?.running||state.progress.previewSeed==null||busy||replayIndex<0)return;
  if(replayIndex<state.episode.history.length-1){replayIndex++;paint(performance.now());}
 },130);
