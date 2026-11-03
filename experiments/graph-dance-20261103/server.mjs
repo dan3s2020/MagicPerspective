@@ -11,21 +11,62 @@ import {train,evaluate,linkBCE} from './engine/training.mjs';
 const home=path.dirname(fileURLToPath(import.meta.url));
 const host=process.env.HOST||'127.0.0.1',port=Number(process.env.PORT||3040);
 const bestPath=path.join(home,'data','best-rule.json'),livePath=path.join(home,'data','live-rule.json');
-let rule=new AssociationRule(19),best=Infinity,progress=null,assessment=null,cancel=false,notice='';
+let rule=new AssociationRule(19),best=Infinity,progress=null,assessment=null,cancel=false,notice='',trainingCursor=0;
 let options={seed:20261103,n:33,family:'mixed',dance:true,online:true},episode;
 try{const p=existsSync(livePath)?livePath:existsSync(bestPath)?bestPath:null;
- if(p){const snapshot=JSON.parse(await readFile(p,'utf8'));rule=AssociationRule.restore(snapshot.rule);best=snapshot.best??Infinity;notice='Model restaurat din '+path.basename(p);}
+ if(p){const snapshot=JSON.parse(await readFile(p,'utf8'));rule=AssociationRule.restore(snapshot.rule);best=snapshot.best??Infinity;
+    trainingCursor=Number.isInteger(snapshot.trainingCursor)&&snapshot.trainingCursor>=0?snapshot.trainingCursor:rule.episodes;
+    notice='Model restaurat din '+path.basename(p);}
 }catch(e){notice='Checkpoint incompatibil: '+e.message;console.error(e);}
 function buildEpisode(){episode=new Episode(makeWorld(options.seed,options.n,options.family),rule,{dance:options.dance,online:options.online});}
 buildEpisode();
 async function save(file){await mkdir(path.dirname(file),{recursive:true});const tmp=file+'.tmp';
- await writeFile(tmp,JSON.stringify({schema:7,rule:rule.snapshot(),best,at:new Date().toISOString()}));await rename(tmp,file);
+ await writeFile(tmp,JSON.stringify({schema:7,rule:rule.snapshot(),best,trainingCursor,at:new Date().toISOString()}));await rename(tmp,file);
 }
 const integer=(x,min,max,fallback)=>Number.isInteger(Number(x))&&Number(x)>=min&&Number(x)<=max?Number(x):fallback;
 const json=(res,obj,status=200)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(obj));};
 async function payload(req){let data='';for await(const chunk of req){data+=chunk;if(data.length>30000)throw Error('Request too large');}return data?JSON.parse(data):{};}
-const state=()=>({version:'6.0.0-graph-dance',options,episode:episode.payload(),model:{...rule.snapshot(),best},progress,assessment,notice});
+const state=()=>({version:'6.0.0-graph-dance',options,
+ episode:progress?.running&&progress.preview?progress.preview:episode.payload(),
+ model:{...rule.snapshot(),best,trainingCursor},progress,assessment,notice});
+// Infinite is a STOP-CONTROLLED LOOP, not an arbitrarily large finite demo.
+async function startUnlimited(input){
+ const n=integer(input.n,13,65,options.n);cancel=false;
+ progress={running:true,unlimited:true,done:0,total:null,history:[],error:null,
+   best:null,selected:null,preview:null,previewSeed:null};
+ const working=AssociationRule.restore(rule.snapshot());
+ (async()=>{try{
+  while(!cancel){
+   const batch=60,offset=trainingCursor,previousDone=progress.done;
+   trainingCursor+=batch;await save(livePath); // reserve worlds before sampling
+   const result=await train(working,{n,episodes:batch,seedOffset:offset,
+     cancel:()=>cancel,
+     onEpisode:e=>{progress.preview=e.payload();progress.previewSeed=e.world.seed;},
+     onProgress:x=>{
+       progress.done=previousDone+x.done;
+       progress.history=[...progress.history,x.latest].slice(-80);
+       progress.best=x.best;
+     }});
+   progress.done=previousDone+result.done;
+   const candidate=AssociationRule.restore(result.checkpoint),
+     current=linkBCE(rule,{seed:800008,count:9,n}).balanced,
+     next=linkBCE(candidate,{seed:800008,count:9,n}).balanced;
+   if(next<current){rule=candidate;best=next;
+     progress.selected='Checkpoint nou · eroare BCE '+next.toFixed(4);await save(bestPath);}
+   else progress.selected='Checkpoint anterior păstrat · organismul continuă';
+   await save(livePath);
+   if(!result.done&&!cancel)throw Error('No world processed in training batch');
+  }
+  assessment=evaluate(rule,{count:12,n,seed:990000});
+  options.seed+=911;buildEpisode();notice='Antrenare nelimitată oprită; checkpoint păstrat.';
+  await save(livePath);
+ }catch(err){progress.error=String(err.stack||err);console.error(err);}
+ finally{progress.running=false;progress.stopped=true;progress.completed=new Date().toISOString();}
+ })();
+ return {started:true,unlimited:true,n};
+}
 async function startTraining(input){if(progress?.running)throw Error('Training is already running');
+ if(input.episodes===0||input.continuous===true)return startUnlimited(input);
  const n=integer(input.n,13,65,options.n),episodes=integer(input.episodes,1,10000,200);cancel=false;
  progress={running:true,done:0,total:episodes,history:[],error:null,best:null,selected:null};
  const temporary=AssociationRule.restore(rule.snapshot());
