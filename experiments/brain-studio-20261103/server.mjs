@@ -304,6 +304,17 @@ const server=http.createServer(async(req,res)=>{
   createReadStream(absolute).pipe(res);
  }catch(e){console.error('HTTP',e);send(res,{error:String(e.message||e)},400);}
 });
+server.on('error',error=>{
+ if(error.code==='EADDRINUSE'){
+  console.error('Brain Studio: port '+port+' deja ocupat la '+host+'.');
+  console.error('Oprește serverul vechi din Termux cu Ctrl+C pentru a salva checkpointul,');
+  console.error('apoi repornește. Nu rula două instanțe pe aceleași date.');
+  process.exitCode=98;
+  return;
+ }
+ console.error('Brain Studio: eroare la pornirea serverului:',error);
+ process.exitCode=1;
+});
 server.listen(port,host,()=>console.log('MagicPerspective Brain Studio http://'+host+':'+port));
 async function shutdown(){
  shuttingDown=true;run.status='paused';
