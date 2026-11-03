@@ -18,7 +18,7 @@
       "order": 1,
       "ref": "RECENT-A",
       "role": "USER",
-      "source_path": null,
+      "source_path": "verbatim/2026-11-03-recent-a-USER-VERBATIM.txt",
       "user_text": "verbatim/recent-user-messages.json#RECENT-A",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
@@ -27,7 +27,7 @@
       "order": 2,
       "ref": "RECENT-B",
       "role": "USER",
-      "source_path": null,
+      "source_path": "verbatim/2026-11-03-recent-b-USER-VERBATIM.txt",
       "user_text": "verbatim/recent-user-messages.json#RECENT-B",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
@@ -36,7 +36,7 @@
       "order": 3,
       "ref": "RECENT-C",
       "role": "USER",
-      "source_path": null,
+      "source_path": "verbatim/2026-11-03-recent-c-USER-VERBATIM.txt",
       "user_text": "verbatim/recent-user-messages.json#RECENT-C",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
@@ -45,7 +45,7 @@
       "order": 4,
       "ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
       "role": "USER",
-      "source_path": null,
+      "source_path": "verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt",
       "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
