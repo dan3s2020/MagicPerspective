@@ -241,7 +241,7 @@ export class EvidenceGraph{
     count:e.count,domains:[...e.domains],
     strength:e.strength_samples?e.total_strength/e.strength_samples:null,
     createdAtEvent:e.createdAtEvent})),
-   meta:{schema:GROWTH_SCHEMA,source:'real original model evidence only',
+   meta:{schema:GROWTH_SCHEMA,source:'engine-reported evidence; original V7 origin not yet independently authenticated',
     ...stats,visible_nodes:selected.length,visible_edges:selectedEdges.length,
     sampled:selected.length<stats.total_nodes||selectedEdges.length<stats.total_edges}
   };
