@@ -45,3 +45,7 @@ node benchmark.mjs 300 24 31
 ```
 
 The benchmark creates raw JSON reports in `results/local-v6-<seed>-<episodes>.json`. Do not treat success on one seed or one fixed rule library as generalization to unrestricted problems. Next experiments should test new rule families, variable numbers of tools, noisy probes, transfer to graph problems, and learning to interpret text rather than supplying the parser.
+
+## Experimental hypothesis search (separate from neural training)
+
+`engine/hypotheses.mjs` contains an explicit finite family of causal rules, an observation-filtered version space and a choice of interventions by expected information gain. The experiment compares the same number of active vs random probes, then verifies predicted transitions and multi-step plans. It intentionally does not claim that the neural network learned these rules. Its purpose is to test whether reliable causal abstraction must be added before scaling gradient training.
