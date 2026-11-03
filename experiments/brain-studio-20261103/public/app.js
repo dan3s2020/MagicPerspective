@@ -213,7 +213,7 @@ function drawGraphFacts(){
  $('graph-prediction').textContent=facts.prediction;
  $('graph-actual').textContent=facts.execution;
  $('graph-solution').textContent=facts.solution;
- $('graph-explanation').textContent='Plan: '+facts.source+' · SOLUȚIE EXACTĂ (evaluator numai): '+
+ $('graph-explanation').textContent='Plan: '+facts.source+' · SOLUȚIE DE REFERINȚĂ (evaluator numai'+(p?.meta?.abstract?.solution?.initialOnly?', inițială':'')+'): '+
   facts.reference+' · predicțiile nu citesc acest traseu.';
  const root=$('candidate-list');root.replaceChildren();
  if(!facts.candidates.length){
