@@ -33,6 +33,10 @@ jobs:
         run: node v4/scripts-escape-benchmark.mjs 100 100
       - name: Existing V6 horizon world regression tests
         run: node --test v6/tests/*.test.mjs
+      - name: V7 original organism regression tests
+        run: node --test v7/tests/*.test.mjs
+      - name: Graph Dance original regression tests
+        run: node --test experiments/graph-dance-20261103/tests/*.test.mjs
       - name: Causal Text Lab and HTTP regression tests
         run: node --test experiments/causal-text/tests/*.test.mjs
       - name: V6 blind causal-text benchmark
