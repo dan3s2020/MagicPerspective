@@ -111,16 +111,27 @@ class Control:
             self.worker.start()
 
     def _work(self):
+        """Release the control lock after EVERY genuine environment action tick.
+
+        Previously one lock covered all 64 worlds until the last finished,
+        starving /api/graph and /api/traces of live updates.
+        """
         try:
             while not self.stop.is_set():
                 with self.lock:
-                    self.last_batch=self.engine.episode_many(self.config['domains'],
-                        self.config['batch_size'],self.config['epsilon'],self.config['capture'])
+                    session=self.engine.begin_episode_many(self.config['domains'],
+                                                           self.config['batch_size'])
+                while not session['complete']:
+                    with self.lock:
+                        tick=self.engine.advance_episode_many(session,
+                                 self.config['epsilon'],self.config['capture'])
+                    # UI can get exact frames between real CUDA/CPU updates.
+                    time.sleep(.002)
+                with self.lock:
+                    self.last_batch=session['result']
                     self.completed_batches+=1
                     if self.completed_batches%self.config['autosave_every']==0:
                         self.engine.save();self.saved_at=time.time()
-                # Yield the GIL / HTTP response server between real batches.
-                time.sleep(.002)
         except Exception as exc:
             with self.lock:self.error=str(exc);self.state='error'
         finally:
@@ -128,6 +139,19 @@ class Control:
                 try:self.engine.save();self.saved_at=time.time()
                 except Exception as exc:self.error=(self.error or '')+' checkpoint error: '+str(exc)
                 if self.state!='error':self.state='stopped'
+
+    def reset_all(self):
+        with self.lock:
+            if self.state in ('running','stopping') or (self.worker and self.worker.is_alive()):
+                raise RuntimeError('STOP + SAVE training before RESET TOT')
+            if self.ingest_worker and self.ingest_worker.is_alive():
+                raise RuntimeError('Wait until the corpus import finishes before resetting')
+            old=self.engine.reset_all()
+            self.state='idle';self.stop.clear();self.error=None
+            self.saved_at=None;self.completed_batches=0;self.last_batch=None
+            self.corpus_meta=None;self.corpus_ingest={'state':'idle','progress':0.0}
+            self.config['domains']=['maze3d','network','symbols','yesno','car']
+            return old
 
     def stop_and_save(self):
         self.stop.set()
@@ -184,14 +208,22 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/health':self._json(200,{'ok':True,'training':c.state,'device':str(c.engine.device)});return
         if path=='/api/status':self._json(200,c.status());return
         if path=='/api/graph':
+            query=parse_qs(parsed.query)
             with c.lock:
                 last=c.engine.last_trace
                 active=last.get('active',[]) if last else []
-                self._json(200,c.engine.graph.view(active=active,limit=500))
+                raw=query.get('focus',[''])[0]
+                focus=[int(x) for x in raw.split(',')[:45] if x.strip().isdigit()]
+                limit=min(900,max(100,int(query.get('limit',['650'])[0])))
+                self._json(200,c.engine.graph.view(active=list(active)+focus,limit=limit))
             return
         if path=='/api/traces':
             query=parse_qs(parsed.query)
-            with c.lock:self._json(200,c.engine.recent(int(query.get('limit',['50'])[0])))
+            with c.lock:
+                if 'after' in query:
+                    self._json(200,c.engine.traces_since(int(query['after'][0]),
+                        int(query.get('limit',['32'])[0])))
+                else:self._json(200,c.engine.recent(int(query.get('limit',['50'])[0])))
             return
         self._json(404,{'error':'Unknown route'})
 
@@ -202,6 +234,9 @@ class Handler(BaseHTTPRequestHandler):
             if n<0 or n>1048576:raise ValueError('Body too large')
             data=json.loads(self.rfile.read(n)) if n else {}
             path=urlsplit(self.path).path;c=self.control
+            if path=='/api/reset':
+                if data.get('confirm')!='RESET TOT':raise ValueError('Type RESET TOT to confirm permanent reset')
+                self._json(200,c.reset_all());return
             if path=='/api/start':c.start(data);self._json(200,{'state':'running','config':c.config});return
             if path=='/api/stop':c.stop_and_save();self._json(200,{'state':c.state});return
             if path=='/api/save':
@@ -242,7 +277,7 @@ def main(argv=None):
     if args.corpus:control.set_corpus(args.corpus)
     Handler.control=control
     srv=ThreadingHTTPServer((args.host,args.port),Handler)
-    print('PORTAL V10 device='+str(engine.device)+' URL=http://'+args.host+':'+str(args.port),flush=True)
+    print('PORTAL V12 device='+str(engine.device)+' URL=http://'+args.host+':'+str(args.port),flush=True)
     try:srv.serve_forever(poll_interval=.2)
     except KeyboardInterrupt:pass
     finally:

@@ -7,6 +7,8 @@ import copy
 import json
 import math
 import random
+import secrets
+import shutil
 import sqlite3
 import threading
 import time
@@ -14,6 +16,7 @@ from collections import deque
 from pathlib import Path
 
 import torch
+from toroid import solid_torus4_position
 from torch import nn
 import torch.nn.functional as F
 
@@ -56,6 +59,7 @@ class Graph:
         self.growth_events = 0
         self.cross_domain_links = 0
         self.last_growth = []
+        self.last_edge_events = []
         self.ensure('UNKNOWN', 'unknown', 'system')
 
     def ensure(self, label, role, domain, dimension=None, evidence=None):
@@ -71,7 +75,7 @@ class Graph:
             i = len(self.nodes)
             self.by_label[label] = i
             self.nodes.append({'id':i,'label':label,'role':role,
-                               'pos':position(label),'dimension':dimension,
+                               'pos':position(label),'p4':solid_torus4_position(label),'dimension':dimension,
                                'w':round(math.log1p(self.experience_step),5) if dimension==4 else 0.0,
                                'born_at':self.experience_step,'origin':evidence or {'domain':domain, 'observation':role},
                                'uses':0,'domains':[]})
@@ -89,6 +93,7 @@ class Graph:
         if v is None:
             v={'count':0,'strength':0.0,'domains':[], 'born_at':self.experience_step}
             self.edges[key]=v
+            self.last_edge_events.append({'from':int(a),'to':int(b),'type':role,'born_at':self.experience_step})
         v['count']+=1
         self.neighbors.setdefault(int(a),set()).add(int(b))
         self.neighbors.setdefault(int(b),set()).add(int(a))
@@ -103,6 +108,7 @@ class Graph:
         # ALL new structures must correspond to a real observed transition.
         self.experience_step += 1
         self.last_growth = []
+        self.last_edge_events = []
         evidence = evidence or {'domain':domain,'step':self.experience_step}
         world,_=self.ensure('WORLD/'+domain, 'world', domain, evidence=evidence)
         action_id,_=self.ensure('ACTION/'+action, 'action', domain, evidence=evidence)
@@ -145,7 +151,8 @@ class Graph:
             self.link(relation_id,temporal_id,'temporal_context',domain=domain)
         return {'action_id':action_id,'effect_id':effect_id,'motif_id':motif_id,
                 'relation_id':relation_id,'temporal_id':temporal_id,
-                'born':self.last_growth[:], 'node_count':len(self.nodes),
+                'born':self.last_growth[:], 'edges_born':self.last_edge_events[:],
+                'node_count':len(self.nodes),
                 'edge_count':len(self.edges),'dimension':4 if temporal_id is not None else 3,
                 'evidence':evidence}
 
@@ -203,6 +210,7 @@ class Graph:
         nodes=[{'id':n['id'],'label':n['label'],'role':n['role'],'pos':n['pos'],
                 'uses':n['uses'],'domains':n['domains'],
                 'dimension':n.get('dimension',1),'w':n.get('w',0.0),
+                'p4':n.get('p4',solid_torus4_position(n['label'])),
                 'born_at':n.get('born_at',0), 'origin':n.get('origin')}
                for n in self.nodes if n['id'] in keep]
         edges=[]
@@ -236,6 +244,8 @@ class Graph:
     def restore(cls, d):
         g=cls(d['capacity'])
         g.nodes=copy.deepcopy(d['nodes'])
+        for node in g.nodes:
+            node.setdefault('p4',solid_torus4_position(node['label']))
         g.by_label={n['label']:n['id'] for n in g.nodes}
         g.edges={(int(a),int(b),k):copy.deepcopy(v) for a,b,k,v in d['edges']}
         g.link_counts={}
@@ -249,6 +259,7 @@ class Graph:
             g.neighbors.setdefault(a,set()).add(b)
             g.neighbors.setdefault(b,set()).add(a)
         g.last_growth=[]
+        g.last_edge_events=[]
         return g
 
 
@@ -640,29 +651,90 @@ class PortalEngine:
             self.history.extend(frame)
         return frame
 
-    def episode_many(self,domains,batch_size=8,epsilon=.18,capture=True):
+    def begin_episode_many(self,domains,batch_size=8):
+        """Create one group of unique worlds; caller may interleave live HTTP reads."""
         if not domains:raise ValueError('Choose at least one world domain')
         if 'text' in domains and self.corpus is None:raise ValueError('Text corpus not loaded')
         selected=[domains[(self.episodes+j)%len(domains)] for j in range(batch_size)]
         worlds=[self.new_world(k) for k in selected]
-        accumulated={w.fingerprint:0.0 for w in worlds}
-        while any(not w.done for w in worlds):
-            active=[w for w in worlds if not w.done]
+        return {'worlds':worlds,'accumulated':{w.fingerprint:0. for w in worlds},
+                'result':None,'complete':False}
+
+    def advance_episode_many(self,session,epsilon=.18,capture=True):
+        """One actual simulator/GNN time step; no continuous batch-wide UI lock."""
+        if session['complete']:return {'complete':True,'frames':[],'result':session['result']}
+        worlds=session['worlds']
+        active=[w for w in worlds if not w.done]
+        if active:
             frames=self.step_many(active,epsilon,capture)
-            for w,f in zip(active,frames):accumulated[w.fingerprint]+=f['reward']
+            for w,f in zip(active,frames):session['accumulated'][w.fingerprint]+=f['reward']
             if capture:
                 for f in frames:
-                    self.db.execute('INSERT INTO trace(episode,frame) VALUES(?,?)',(self.episodes+1,canonical(f)))
-        for w in worlds:
-            success=(w.last_effect in ('goal','correct'))
-            self.db.execute('INSERT INTO episodes(world_hash,domain,steps,reward,success) VALUES(?,?,?,?,?)',
-                            (w.fingerprint,w.kind,w.t,accumulated[w.fingerprint],int(success)))
-        self.episodes+=len(worlds)
-        self._meta_set('seq',self.seq)
+                    self.db.execute('INSERT INTO trace(episode,frame) VALUES(?,?)',
+                                    (self.episodes+1,canonical(f)))
+        else:frames=[]
+        if all(w.done for w in worlds):
+            for w in worlds:
+                success=w.last_effect in ('goal','correct')
+                self.db.execute('INSERT INTO episodes(world_hash,domain,steps,reward,success) VALUES(?,?,?,?,?)',
+                                (w.fingerprint,w.kind,w.t,session['accumulated'][w.fingerprint],int(success)))
+            self.episodes+=len(worlds)
+            self._meta_set('seq',self.seq)
+            self.db.commit()
+            session['result']={'episodes':len(worlds),'steps':sum(w.t for w in worlds),
+                               'successes':sum(w.last_effect in ('goal','correct') for w in worlds),
+                               'loss':self.loss_mean,'error':self.error_mean}
+            session['complete']=True
+        return {'complete':session['complete'],'frames':frames,'result':session['result']}
+
+    def episode_many(self,domains,batch_size=8,epsilon=.18,capture=True):
+        session=self.begin_episode_many(domains,batch_size)
+        while not session['complete']:
+            self.advance_episode_many(session,epsilon,capture)
+        return session['result']
+
+    def traces_since(self,after=0,limit=36,backlog=320):
+        """Incremental recorded frames. Report gaps instead of fabricating continuity."""
+        after=max(0,int(after));limit=max(1,min(100,int(limit)))
+        latest=self.db.execute('SELECT IFNULL(MAX(id),0) FROM trace').fetchone()[0]
+        cursor=max(after,latest-backlog)
+        skipped=max(0,cursor-after)
+        rows=self.db.execute('SELECT id,frame FROM trace WHERE id>? ORDER BY id ASC LIMIT ?',
+                             (cursor,limit)).fetchall()
+        frames=[]
+        for identifier,raw in rows:
+            f=json.loads(raw);f['trace_id']=identifier;frames.append(f)
+        return {'frames':frames,'latest_id':latest,'skipped':skipped,
+                'next_cursor':frames[-1]['trace_id'] if frames else cursor}
+
+    def reset_all(self):
+        """Destroy ONLY this engine's training data, never an external source corpus."""
+        had={'episodes':self.episodes,'steps':self.steps,'nodes':len(self.graph.nodes),
+             'edges':len(self.graph.edges)}
+        source=self.corpus
+        self.corpus=None
+        if source is not None and hasattr(source,'close'):source.close()
+        # Never traverse directories outside the dedicated engine data folder.
+        cache=self.folder/'corpora'
+        if cache.exists() and not cache.is_symlink():shutil.rmtree(cache)
+        for name in ('brain.pt','brain.pt.tmp','corpus.json','corpus.json.tmp'):
+            target=self.folder/name
+            if target.is_file() or target.is_symlink():target.unlink()
+        for table in ('trace','episodes','worlds','meta'):
+            self.db.execute('DELETE FROM '+table)
+        self.db.execute("DELETE FROM sqlite_sequence WHERE name IN ('trace','episodes')")
         self.db.commit()
-        return {'episodes':len(worlds),'steps':sum(w.t for w in worlds),
-                'successes':sum(w.last_effect in ('goal','correct') for w in worlds),
-                'loss':self.loss_mean,'error':self.error_mean}
+        self.db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+        self.graph=Graph(self.graph.capacity)
+        torch.manual_seed(secrets.randbits(31))
+        self.model=GraphController(self.graph.capacity).to(self.device)
+        self.optimizer=torch.optim.AdamW(self.model.parameters(),lr=.001)
+        self.seq=0;self.steps=0;self.episodes=0
+        self.error_mean=0.;self.loss_mean=0.
+        self.last_trace=None;self.history.clear()
+        return {'old':had,'now':self.status(),
+                'external_source_corpus_deleted':False,
+                'project_data_cleared':True}
 
     def status(self):
         created=self.db.execute('SELECT COUNT(*) FROM worlds').fetchone()[0]

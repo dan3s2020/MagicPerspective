@@ -1,155 +1,295 @@
-/* Real graph event explorer; no simulated activation frames. */
-const $=id=>document.getElementById(id);
-let graph={nodes:[],edges:[],total_nodes:0,total_edges:0},traces=[],frame=0,follow=true,mode='3d',yaw=.48,pitch=-.22,zoom=1,drag=null,selected=null;
-let replayAt=0,lastError='',lastTraceSeq=0,activePulse=null,loadedCorpusDigest=null;
-const cols={activation:'#55d4e7',prediction:'#b497ff',decision:'#f7c95d',error:'#ee5e7e',learning:'#f3985e',confirmed:'#52cfa6',growth:'#eef5ff'};
-const canvas=$('graph'),ctx=canvas.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1);
-function resize(){const r=canvas.getBoundingClientRect();canvas.width=r.width*dpr;canvas.height=r.height*dpr}
+/* Portal V12: real event-sourced graph animation within a four-SPATIAL-dimensional
+   solid torus S¹×B³. No torus nodes/links are fabricated for the viewer.
+   4D section = w=constant with configurable thickness; time is a REPLAY control.
+   Event phases interpolate recorded step ordering, not physical substep timestamps. */
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas=$('graph'),ctx=canvas.getContext('2d');
+const dpr=Math.min(2,window.devicePixelRatio||1);
+const colors={activation:'#55d4e7',prediction:'#b497ff',decision:'#f7c95d',error:'#ee5e7e',learning:'#f3985e',confirmed:'#52cfa6',growth:'#eef5ff'};
+const MAJOR=1.75,MINOR=.92;
+let graph={nodes:[],edges:[],total_nodes:0,total_edges:0},nodeMap=new Map(),graphVersion=0;
+let traces=[],pending=[],frame=-1,follow=true,mode='3d',yaw=.48,pitch=-.22,zoom=1,drag=null,selected=null;
+let since=0,skipped=0,lastError='',loadedCorpusDigest=null,phaseStarted=performance.now(),frameDuration=1160;
+let sliceW=0,sliceThickness=.34,torusTheta=0,followSlice=true,lastStatus=null;
+let statusBusy=false,traceBusy=false,graphBusy=false,graphFetched=0;
+const phaseLabels=[
+  '01 • PERCEPȚIE — noduri activate în lumea curentă',
+  '02 • MESAJE — propagări măsurate între noduri',
+  '03 • DECIZIE — acțiunea aleasă de controller',
+  '04 • REZULTAT — predicție comparată cu lumea',
+  '05 • ÎNVĂȚARE — gradient, conexiuni și memorie'
+];
+function resize(){const r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr)}
 new ResizeObserver(resize).observe(canvas);resize();
-function selectedTrace(){return traces[frame]||null}
-function project(p){
-  // Stable 3D display coordinates. '4D' represents REAL temporal-memory
-  // nodes connected to the same graph, never shifted time ghost sprites.
-  let [x,y,z]=p;
+function clamp(v,min,max){return Math.min(max,Math.max(min,v))}
+function wrap(a){return ((a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI}
+function toroidalLocal(p){
+  const theta=Math.atan2(p[1],p[0]);
+  // Inside-camera coordinates of the *actual 4D graph node*. These are
+  // a 3D cross-section, not a projection of time into a fourth axis.
+  return [Math.hypot(p[0],p[1])-MAJOR,p[2],wrap(theta-torusTheta)*MAJOR*1.2];
+}
+function visible4(n){return n.p4 && Math.abs(n.p4[3]-sliceW)<=sliceThickness}
+function nodePosition(n){return mode==='4d'?toroidalLocal(n.p4):n.pos}
+function project(v){
+  if(!v)return null;
+  let [x,y,z]=v;
   const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
   let xx=x*cy-z*sy,zz=x*sy+z*cy,yy=y*cp-zz*sp;
   zz=y*sp+zz*cp;
-  const s=Math.min(canvas.width,canvas.height)*.28*zoom/(1+zz*.18);
+  const s=Math.min(canvas.width,canvas.height)*(mode==='4d'?.31:.28)*zoom/(1+zz*.16);
   return {x:canvas.width/2+xx*s,y:canvas.height/2-yy*s,z:zz,s};
 }
-function color(role){return role==='temporal'?'#b497ff':role==='relation'?'#5b80b9':role==='action'?cols.decision:role==='motif'?'#bb9afa':role==='effect'?cols.confirmed:role==='world'?'#63b6ff':'#526f9a'}
-function draw(ts){
- const W=canvas.width,H=canvas.height;
- ctx.clearRect(0,0,W,H);
- const f=selectedTrace();const now=performance.now();
- if(!f) {ctx.fillStyle='#6d849f';ctx.textAlign='center';ctx.font=`${13*dpr}px monospace`;ctx.fillText('Așteaptă acțiuni reale din antrenare',W/2,H/2);requestAnimationFrame(draw);return;}
- const nodeMap=new Map(graph.nodes.map(n=>[n.id,n]));
- const active=new Set(f.active||[]),born=new Set(f.growth?.born||[]);
- const amplitude=new Map((f.activations?.at(-1)?.nodes||[]).map(n=>[n.id,n.amplitude]));
- const projections=new Map(graph.nodes.map(n=>[n.id,project(n.pos)]));
- // In 4D STRUCTURE mode, 4D-level nodes have their OWN identities and
- // real temporal connections, grown only from successive actual events.
- // Replay time stays on the timeline beneath the graph, not on a fake axis.
- // Edges never move; they use the actual persisted topology.
- for(const e of graph.edges){const a=projections.get(e.from),b=projections.get(e.to);if(!a||!b)continue;
-   const isActive=active.has(e.from)&&active.has(e.to);
-   const temporal=(nodeMap.get(e.from)?.dimension===4||nodeMap.get(e.to)?.dimension===4);
-   ctx.strokeStyle=mode==='4d'&&temporal?(isActive?'rgba(180,151,255,.8)':'rgba(180,151,255,.35)'):
-     isActive?'rgba(94,205,226,.48)':'rgba(67,89,128,.16)';
-   ctx.lineWidth=(mode==='4d'&&temporal?1.1:isActive?1.2:.62)*dpr;
-   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
- }
- // Meaningful pulse travels only on message edges present in the actual recorded trace.
- const elapsed=activePulse&&activePulse.seq===f.event_seq?Math.max(0,now-activePulse.at):99999;
- if(elapsed<1200){const progress=elapsed/1200;
-   for(const m of (f.messages||[])){
-     const a=projections.get(m.from),b=projections.get(m.to);
-     if(!a||!b)continue;
-     const q=(progress*(.8)+((m.round||1)-1)*.13)%1;
-     const x=a.x+(b.x-a.x)*q,y=a.y+(b.y-a.y)*q;
-     ctx.beginPath();ctx.fillStyle=`rgba(85,212,231,${Math.min(.98,Math.max(.2,(m.strength||.1)*2))})`;
-     ctx.arc(x,y,Math.max(1.3,2.7*(m.strength||.5))*dpr,0,Math.PI*2);ctx.fill();
-   }
-   const err=Math.min(1,(f.error||0));
-   if(err>.03){const id=f.growth?.action_id,p=projections.get(id);
-     if(p){ctx.strokeStyle=`rgba(238,94,126,${(1-progress)*(.25+.7*err)})`;ctx.lineWidth=2*dpr;
-       ctx.beginPath();ctx.arc(p.x,p.y,(8+40*progress)*dpr,0,Math.PI*2);ctx.stroke();}
-   }
- }
- // Nodes use measured activation amplitudes. Births are marked only when graph truly grew.
- for(const n of graph.nodes){const p=projections.get(n.id),isOn=active.has(n.id),a=amplitude.get(n.id)||0;
-   const radius=(isOn?3+Math.min(6,a*18):1.7+Math.log1p(n.uses)*.4)*dpr;
-   ctx.beginPath();ctx.fillStyle=isOn?cols.activation:color(n.role);ctx.globalAlpha=isOn?1:.62;
-   ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
-   if(mode==='4d'&&n.dimension===4){ctx.strokeStyle='#b497ff';ctx.lineWidth=1.4*dpr;
-     ctx.beginPath();ctx.arc(p.x,p.y,radius+3*dpr,0,Math.PI*2);ctx.stroke();}
-   if(born.has(n.id)){ctx.beginPath();ctx.strokeStyle=cols.growth;ctx.lineWidth=2*dpr;
-     ctx.arc(p.x,p.y,radius+4*dpr,0,Math.PI*2);ctx.stroke();}
-   if(n.id===selected){ctx.beginPath();ctx.strokeStyle='#ffffff';ctx.lineWidth=2*dpr;ctx.arc(p.x,p.y,radius+7*dpr,0,Math.PI*2);ctx.stroke();}
- }
- // Actual chosen action and predicted output are explicit overlays, not graph-layout decorations.
- const action=projections.get(f.growth?.action_id),effect=projections.get(f.growth?.effect_id);
- if(action){ctx.strokeStyle=cols.decision;ctx.lineWidth=2.8*dpr;ctx.beginPath();ctx.arc(action.x,action.y,10*dpr,0,Math.PI*2);ctx.stroke();}
- if(effect){ctx.strokeStyle=f.error>.15?cols.error:cols.confirmed;ctx.lineWidth=2.3*dpr;
-   ctx.beginPath();ctx.arc(effect.x,effect.y,10*dpr,0,Math.PI*2);ctx.stroke();}
- requestAnimationFrame(draw);
+function projectNode(n){return project(nodePosition(n))}
+function roleColor(role){return role==='temporal'?'#b497ff':role==='relation'?'#5b80b9':role==='action'?colors.decision:role==='motif'?'#bb9afa':role==='effect'?colors.confirmed:role==='world'?'#63b6ff':'#526f9a'}
+function selectedTrace(){return frame>=0?traces[frame]||null:null}
+function normalizedPhase(now){return clamp((now-phaseStarted)/frameDuration,0,1)}
+function phaseIndex(v){return v<.18?0:v<.56?1:v<.68?2:v<.88?3:4}
+function drawTorusSectionGuide(){
+  // Mathematical SECTION boundary, not graph nodes/edges. Looking from
+  // inside the toroidal corridor along the theta direction: radial u and
+  // vertical z span a disk with radius sqrt(r²-w²). Time plays no part.
+  const radius=Math.sqrt(Math.max(0,MINOR*MINOR-sliceW*sliceW));
+  if(radius<.03)return;
+  for(const depth of [-2.6,-1.5,0,1.5,2.6]){
+    ctx.beginPath();let started=false;
+    for(let i=0;i<=80;i++){
+      const phi=2*Math.PI*i/80;
+      const point=project([radius*Math.cos(phi),radius*Math.sin(phi),depth]);
+      if(!point)continue;
+      if(!started){ctx.moveTo(point.x,point.y);started=true}else ctx.lineTo(point.x,point.y);
+    }
+    ctx.strokeStyle='rgba(116,113,195,.13)';ctx.lineWidth=1*dpr;
+    ctx.setLineDash([4*dpr,12*dpr]);ctx.stroke();ctx.setLineDash([]);
+  }
+}
+function sectionIntersects(a,b){
+  if(!a?.p4||!b?.p4)return null;
+  const w1=a.p4[3],w2=b.p4[3];
+  if(w1===w2||sliceW<Math.min(w1,w2)||sliceW>Math.max(w1,w2))return null;
+  const t=(sliceW-w1)/(w2-w1);
+  const p=a.p4.map((v,i)=>v+(b.p4[i]-v)*t);
+  return project(toroidalLocal(p));
+}
+function circle(p,r,fill,alpha=1){
+  if(!p)return;
+  ctx.globalAlpha=alpha;ctx.beginPath();ctx.fillStyle=fill;ctx.arc(p.x,p.y,r,0,2*Math.PI);ctx.fill();ctx.globalAlpha=1;
+}
+function ring(p,r,color,width=1.4,alpha=1){
+  if(!p)return;
+  ctx.globalAlpha=alpha;ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=width*dpr;ctx.arc(p.x,p.y,r,0,2*Math.PI);ctx.stroke();ctx.globalAlpha=1;
+}
+function draw(){
+  const now=performance.now();
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if(!W||!H){requestAnimationFrame(draw);return}
+  if(mode==='4d')drawTorusSectionGuide();
+  const f=selectedTrace(),p=normalizedPhase(now),idx=phaseIndex(p);
+  // The set of existing graph nodes is fetched separately from events. Only
+  // persisted nodes are rendered. The ring itself contributes NO fake cells.
+  const active=new Set(f?.active||[]),born=new Set(f?.growth?.born||[]);
+  const amplitudes=new Map((f?.activations||[]).flatMap(l=>l.nodes||[]).map(n=>[n.id,n.amplitude]));
+  const projections=new Map();const visible=new Set();
+  for(const n of graph.nodes){
+    if(mode==='4d'&&!visible4(n))continue;
+    projections.set(n.id,projectNode(n));visible.add(n.id);
+  }
+  if(mode==='4d')$('sliceCount').textContent=`Secțiune 4D W=${sliceW.toFixed(2)} ±${sliceThickness.toFixed(2)} · ${visible.size} noduri reale din ${graph.total_nodes.toLocaleString('ro-RO')}`;
+  // Render persistent links using topology returned by the learning engine.
+  for(const e of graph.edges){
+    const a=projections.get(e.from),b=projections.get(e.to);
+    if(!a||!b){
+      if(mode==='4d'){
+        // An edge piercing the slice gets a dot, NOT a fabricated node.
+        const intersection=sectionIntersects(nodeMap.get(e.from),nodeMap.get(e.to));
+        if(intersection)circle(intersection,.85*dpr,'#4d547c',.36);
+      }
+      continue;
+    }
+    const isActive=active.has(e.from)&&active.has(e.to);
+    const temporal=nodeMap.get(e.from)?.dimension===4||nodeMap.get(e.to)?.dimension===4;
+    ctx.strokeStyle=isActive?'rgba(91,225,236,.64)':temporal?'rgba(180,151,255,.28)':'rgba(66,89,126,.23)';
+    ctx.lineWidth=(isActive?1.8:temporal?1.15:.6)*dpr;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  // Sensory activity is real: a recorded active set, not a random blinking field.
+  for(const n of graph.nodes){const screen=projections.get(n.id);if(!screen)continue;
+    const on=active.has(n.id),a=amplitudes.get(n.id)||0;
+    const r=(on?3.2+Math.min(5.5,a*18):1.5+Math.log1p(n.uses||0)*.38)*dpr;
+    circle(screen,r,on?colors.activation:roleColor(n.role),on?1:.65);
+    if(mode==='4d'&&n.dimension===4)ring(screen,r+3*dpr,colors.prediction,1.2,.86);
+    if(born.has(n.id)&&idx===4)ring(screen,r+(4+4*Math.sin(p*Math.PI*5)**2)*dpr,colors.growth,2);
+    if(selected===n.id)ring(screen,r+7*dpr,'#ffffff',2);
+  }
+  if(f){
+    // MESSAGE PHASE: pulse order follows recorded message-round index. Timing
+    // within an action is interpolation for human eyes, not measured latency.
+    if(idx===1){
+      const msgs=f.messages||[],rounds=Math.max(1,...msgs.map(x=>x.round||1));
+      const local=(p-.18)/.38,sub=clamp(local*rounds,0,rounds-.00001);
+      const activeRound=Math.floor(sub)+1,amount=sub-Math.floor(sub);
+      for(const m of msgs){if((m.round||1)!==activeRound)continue;
+        const a=projections.get(m.from),b=projections.get(m.to);
+        if(!a||!b)continue;
+        const strength=clamp(Number(m.strength)||0,0,2);
+        circle({x:a.x+(b.x-a.x)*amount,y:a.y+(b.y-a.y)*amount},
+          (1.6+Math.min(3.3,strength*2))*dpr,colors.activation,clamp(.4+strength*.4,.4,1));
+      }
+    }
+    const action=projections.get(f.growth?.action_id),effect=projections.get(f.growth?.effect_id);
+    if(idx===2&&action){ring(action,(8+(p-.56)*28)*dpr,colors.decision,2.6);circle(action,4*dpr,colors.decision)}
+    if(idx===3){
+      const err=clamp(Number(f.error)||0,0,1),q=clamp((p-.68)/.2,0,1);
+      const anchor=effect||action;
+      if(anchor){
+        if(err>.03){ring(anchor,(8+45*q)*dpr,colors.error,2.5,(1-q)*(.3+err*.7));ring(anchor,(12+29*q)*dpr,colors.error,1.1,(1-q)*.6)}
+        else ring(anchor,(8+25*q)*dpr,colors.confirmed,2,(1-q));
+      }
+    }
+    if(idx===4){
+      const strength=clamp((Number(f.update_norm)||0)*500,0,1);
+      if(action)ring(action,(8+10*Math.sin(p*14)**2)*dpr,colors.learning,2,.3+strength*.65);
+      // Only actually *new* edges get growth highlights.
+      for(const e of (f.growth?.edges_born||[]).slice(0,70)){
+        const a=projections.get(e.from),b=projections.get(e.to);if(!a||!b)continue;
+        ctx.strokeStyle='rgba(243,152,94,.84)';ctx.lineWidth=1.9*dpr;
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      }
+    }
+    if(follow && p>=1 && pending.length){showNext()}
+  }
+  requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
+function setPhaseText(){const f=selectedTrace();const idx=phaseIndex(normalizedPhase(performance.now()));
+  $('eventPhase').textContent=f?`${phaseLabels[idx]} · acțiune #${f.event_seq} · ${f.domain}`:'Așteaptă evenimente reale';
+}
+setInterval(setPhaseText,110);
 function highlightFrame(){const f=selectedTrace();if(!f)return;
- $('frameN').textContent=(frame+1)+'/'+traces.length;
- $('timeline').max=Math.max(0,traces.length-1);$('timeline').value=frame;
- $('world').textContent=`${f.domain} / #${f.seed} / step ${f.step}`;
- $('action').textContent=`${f.action} · P=${Number(f.prediction).toFixed(3)}`;
- $('actual').textContent=`${f.actual?.effect} · reward=${f.reward} · ${JSON.stringify(f.actual?.before)} → ${JSON.stringify(f.actual?.after)}`;
- $('mismatch').textContent=`${(100*Number(f.error||0)).toFixed(1)}% · target=${f.target}`;
- $('update').textContent=`||ΔW||=${f.update_norm} · ||∇||=${f.gradient_norm}`;
- $('growth').textContent=`+${(f.growth?.born||[]).length} noduri · ${f.growth?.node_count} în total · ${f.growth?.dimension||1}D observat`;
- $('frameInfo').textContent=`Trace #${f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
- activePulse={seq:f.event_seq,at:performance.now()};
+  $('frameN').textContent=`${frame+1}/${traces.length}`;
+  $('timeline').max=Math.max(0,traces.length-1);$('timeline').value=frame;
+  $('world').textContent=`${f.domain} / #${f.seed} / step ${f.step}`;
+  $('action').textContent=`${f.action} · P=${Number(f.prediction).toFixed(3)}`;
+  $('actual').textContent=`${f.actual?.effect} · reward=${f.reward} · ${JSON.stringify(f.actual?.before)} → ${JSON.stringify(f.actual?.after)}`;
+  $('mismatch').textContent=`${(100*Number(f.error||0)).toFixed(1)}% · target=${f.target}`;
+  $('update').textContent=`||ΔW||=${f.update_norm} · ||∇||=${f.gradient_norm}`;
+  $('growth').textContent=`+${(f.growth?.born||[]).length} noduri · ${f.growth?.node_count} în total · ${f.growth?.dimension||1}D · ${(f.growth?.edges_born||[]).length} conexiuni noi`;
+  $('frameInfo').textContent=`Trace #${f.trace_id||f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
+  phaseStarted=performance.now();
+  if(mode==='4d'&&followSlice){
+    const current=nodeMap.get(f.growth?.action_id);
+    if(current?.p4){sliceW=clamp(current.p4[3],-.86,.86);$('sliceW').value=sliceW;$('sliceWValue').textContent=sliceW.toFixed(2)}
+  }
 }
-function inspect(id){selected=id;const n=graph.nodes.find(x=>x.id===id);
- if(!n){$('nodeInfo').textContent='Nodul nu este în proiecția actuală.';return;}
- const relations=graph.edges.filter(e=>e.from===id||e.to===id);
- $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nDimensiune structurală: ${n.dimension||1}D\nNăscut la eveniment: ${n.born_at||0}\nOrigine: ${JSON.stringify(n.origin||{})}\nFolosiri: ${n.uses}\nDomenii: ${n.domains.join(', ')}\nPoziție 3D: ${n.pos.join(', ')}\nCoordonată temporală internă: ${n.w||0}\nLegături vizibile: ${relations.length}\n\n${relations.slice(0,10).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
+function pushTrace(f){traces.push(f);if(traces.length>300){traces.shift();if(!follow&&frame>0)frame--}if(follow){frame=traces.length-1;highlightFrame()}}
+function showNext(){if(!follow||!pending.length)return;
+  const next=pending.shift();pushTrace(next);
+  // New geometry is not invented; the next /api/graph fetch catches up.
 }
-canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY, moved:false}});
-canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
- if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
- yaw+=dx*.006;pitch=Math.max(-1.5,Math.min(1.5,pitch+dy*.006));drag.x=e.clientX;drag.y=e.clientY;});
+function inspect(id){selected=id;const n=nodeMap.get(id);
+ if(!n){$('nodeInfo').textContent='Nodul nu este în secțiunea actuală.';return;}
+ const rel=graph.edges.filter(e=>e.from===id||e.to===id);
+ $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nDimensiune structurală: ${n.dimension||1}D\nNăscut la eveniment: ${n.born_at||0}\nOrigine REALĂ: ${JSON.stringify(n.origin||{})}\nFolosiri: ${n.uses}\nDomenii: ${(n.domains||[]).join(', ')}\nPoziție afișare 3D: ${n.pos.join(', ')}\nPoziție TOROID 4D (x,y,z,w): ${(n.p4||[]).join(', ')}\nLegături vizibile: ${rel.length}\n${rel.slice(0,18).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
+}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,moved:false}});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;let dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
+ yaw+=dx*.006;pitch=clamp(pitch+dy*.006,-1.5,1.5);drag.x=e.clientX;drag.y=e.clientY});
 canvas.addEventListener('pointerup',e=>{if(!drag)return;const moved=drag.moved;drag=null;if(moved)return;
- const rect=canvas.getBoundingClientRect(),x=(e.clientX-rect.left)*dpr,y=(e.clientY-rect.top)*dpr;
+ const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*dpr,y=(e.clientY-r.top)*dpr;
  let best=null,dist=14*dpr;
- for(const n of graph.nodes){const p=project(n.pos),d=Math.hypot(x-p.x,y-p.y);
-  if(d<dist){dist=d;best=n.id;}}
- if(best!=null)inspect(best);
+ for(const n of graph.nodes){if(mode==='4d'&&!visible4(n))continue;const p=projectNode(n),d=Math.hypot(x-p.x,y-p.y);if(d<dist){dist=d;best=n.id}}
+ if(best!==null)inspect(best);
 });
-canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.3,Math.min(4,zoom*Math.exp(-e.deltaY*.001)))},{passive:false});
-$('center').onclick=()=>{yaw=.48;pitch=-.22;zoom=1};
-for(const b of document.querySelectorAll('[data-mode]'))b.onclick=()=>{mode=b.dataset.mode;for(const x of document.querySelectorAll('[data-mode]'))x.classList.toggle('active',x===b);$('axis').textContent=mode==='4d'?'X · Y · Z · noduri 4D conectate (timp în replay)':'X · Y · Z'};
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom*Math.exp(-e.deltaY*.001),.3,4)},{passive:false});
+$('center').onclick=()=>{yaw=mode==='4d'?0:.48;pitch=mode==='4d'?-.07:-.22;zoom=mode==='4d'?1.22:1;torusTheta=0;$('torusTheta').value=0;$('thetaValue').textContent='0.00'};
+for(const b of document.querySelectorAll('[data-mode]'))b.onclick=()=>{mode=b.dataset.mode;for(const other of document.querySelectorAll('[data-mode]'))other.classList.toggle('active',other===b);
+ $('sliceTools').hidden=mode!=='4d';
+ yaw=mode==='4d'?0:.48;pitch=mode==='4d'?-.07:-.22;zoom=mode==='4d'?1.22:1;
+ $('axis').textContent=mode==='4d'?'SECȚIUNE W DIN TOROID 4D · TIMPUL E DOAR REPLAY':'X · Y · Z';
+};
+$('sliceW').oninput=()=>{sliceW=+$('sliceW').value;followSlice=false;$('followSlice').checked=false;$('sliceWValue').textContent=sliceW.toFixed(2)};
+$('sliceThickness').oninput=()=>{sliceThickness=+$('sliceThickness').value;$('thicknessValue').textContent=sliceThickness.toFixed(2)};
+$('torusTheta').oninput=()=>{torusTheta=+$('torusTheta').value;$('thetaValue').textContent=torusTheta.toFixed(2)};
+$('followSlice').onchange=()=>{followSlice=$('followSlice').checked};
 $('batch').oninput=()=>{$('batchValue').textContent=$('batch').value};
-$('timeline').oninput=()=>{follow=false;frame=+$('timeline').value;highlightFrame()};
-$('prev').onclick=()=>{follow=false;frame=Math.max(0,frame-1);highlightFrame()};
-$('next').onclick=()=>{follow=false;frame=Math.min(traces.length-1,frame+1);highlightFrame()};
-$('play').onclick=()=>{follow=!follow;$('play').textContent=follow?'❚❚':'▶';if(follow){frame=traces.length-1;highlightFrame()}};
-document.onkeydown=e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'){e.preventDefault();$('play').click()}};
+$('timeline').oninput=()=>{follow=false;frame=+$('timeline').value;highlightFrame();$('play').textContent='▶'};
+$('prev').onclick=()=>{follow=false;frame=Math.max(0,frame-1);highlightFrame();$('play').textContent='▶'};
+$('next').onclick=()=>{follow=false;frame=Math.min(traces.length-1,frame+1);highlightFrame();$('play').textContent='▶'};
+$('play').onclick=()=>{follow=!follow;$('play').textContent=follow?'❚❚':'▶';if(follow){
+ if(pending.length>24){skipped+=pending.length-24;pending.splice(0,pending.length-24);$('skipped').textContent=skipped.toLocaleString('ro-RO')}
+ if(pending.length)showNext();else if(traces.length){frame=traces.length-1;highlightFrame()}
+ }};
+document.onkeydown=e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();$('play').click()}};
 async function post(url,obj={}){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
-async function act(cb){try{await cb();lastError='';}catch(e){lastError=e.message;$('statusline').textContent='EROARE: '+lastError}}
+async function act(cb){try{const out=await cb();lastError='';return out}catch(e){lastError=e.message;$('statusline').textContent='EROARE: '+lastError;return null}}
 $('start').onclick=()=>act(()=>post('/api/start',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),batch_size:+$('batch').value,autosave_every:+$('autosave').value,epsilon:+$('epsilon').value,capture:$('capture').checked}));
 $('stop').onclick=()=>act(()=>post('/api/stop'));
 $('save').onclick=()=>act(()=>post('/api/save'));
-$('evaluate').onclick=()=>act(async()=>{const d=await post('/api/evaluate',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),count:24});$('evaluation').textContent=JSON.stringify(d,null,2)});
-$('loadCorpus').onclick=()=>act(async()=>{
- $('corpusState').textContent='Se verifică fișierul…';
- const d=await post('/api/corpus',{path:$('corpus').value});
- $('corpusState').textContent=`Import ${d.state} · 0% · ${d.source||''}`;
+$('evaluate').onclick=()=>act(async()=>{const x=await post('/api/evaluate',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),count:24});$('evaluation').textContent=JSON.stringify(x,null,2)});
+$('loadCorpus').onclick=()=>act(async()=>{$('corpusState').textContent='Se verifică fișierul…';const x=await post('/api/corpus',{path:$('corpus').value});$('corpusState').textContent=`Import ${x.state} · 0% · ${x.source||''}`});
+const dialog=$('resetDialog');
+$('reset').onclick=()=>{if(lastStatus?.state==='running'||lastStatus?.state==='stopping')return; $('resetPhrase').value='';$('confirmReset').disabled=true;dialog.showModal()};
+$('cancelReset').onclick=()=>dialog.close();
+$('resetPhrase').oninput=()=>{$('confirmReset').disabled=$('resetPhrase').value!=='RESET TOT'};
+$('confirmReset').onclick=()=>act(async()=>{
+ $('confirmReset').disabled=true;
+ await post('/api/reset',{confirm:$('resetPhrase').value});dialog.close();
+ graph={nodes:[],edges:[],total_nodes:0,total_edges:0};nodeMap.clear();
+ traces=[];pending=[];since=0;frame=-1;skipped=0;follow=true;selected=null;
+ loadedCorpusDigest=null;lastError='';$('corpusState').textContent='Textul cere un corpus real.';
+ $('timeline').value=0;$('timeline').max=0;$('frameN').textContent='0/0';$('frameInfo').textContent='Fără evenimente de antrenare';
+ $('skipped').textContent='0';$('nodeInfo').textContent='Alege un nod din graf.';
+ document.querySelector('.domain[value="text"]').checked=false;
+ $('evaluation').textContent='Niciun test efectuat după RESET TOT.';
+ $('statusline').textContent='RESET COMPLET · Greutăți noi · Graf nou · Replay gol · Corpusul-sursă neatins.';
+ await Promise.all([refreshStatus(),refreshGraph(),refreshTraces()]);
 });
-async function refresh(){try{
- const [s,g,t]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/graph').then(r=>r.json()),fetch('/api/traces?limit=120').then(r=>r.json())]);
- graph=g;const old=traces.at(-1)?.event_seq||0;traces=t;
- if(follow||!traces.length){frame=Math.max(0,traces.length-1);if(traces.length&&old!==traces.at(-1).event_seq)highlightFrame()}
- else frame=Math.min(frame,Math.max(0,traces.length-1));
- $('unique').textContent=s.unique_worlds_verified_sqlite.toLocaleString('ro-RO');
- $('episodes').textContent=s.episodes.toLocaleString('ro-RO');$('steps').textContent=s.steps.toLocaleString('ro-RO');
+async function refreshStatus(){if(statusBusy)return;statusBusy=true;try{
+ const r=await fetch('/api/status');if(!r.ok)throw Error('Status '+r.status);
+ const s=await r.json();lastStatus=s;
+ $('unique').textContent=Number(s.unique_worlds_verified_sqlite).toLocaleString('ro-RO');
+ $('episodes').textContent=Number(s.episodes).toLocaleString('ro-RO');
+ $('steps').textContent=Number(s.steps).toLocaleString('ro-RO');
  $('nodes').textContent=`${s.graph.nodes.toLocaleString('ro-RO')} / ${s.graph.edges.toLocaleString('ro-RO')}`;
- $('error').textContent=Number(s.prediction_error).toFixed(4);$('loss').textContent=Number(s.loss).toFixed(4);
+ $('error').textContent=Number(s.prediction_error).toFixed(4);
+ $('loss').textContent=Number(s.loss).toFixed(4);
  $('device').textContent='DEVICE: '+s.device.toUpperCase();$('runState').textContent=s.state.toUpperCase();
  $('dataStatus').textContent=s.saved_at?'SAVED '+new Date(s.saved_at*1000).toLocaleTimeString('ro-RO'):'NOT YET SAVED';
  const ci=s.corpus_ingest||{state:'idle',progress:0};
- if(ci.state==='reading'||ci.state==='queued'){
-   $('corpusState').textContent=`IMPORTĂ ${Math.round((ci.progress||0)*100)}% · ${Number(ci.rows_read||0).toLocaleString('ro-RO')} rânduri · ${(Number(ci.bytes_written||0)/1048576).toFixed(1)} MiB · ${ci.columns_selected?.join(', ')||'detectare schemă'}`;
- }else if(ci.state==='error'){
-   $('corpusState').textContent='EROARE CORPUS: '+(ci.error||'necunoscută');
- }else if(ci.state==='ready'){
-   $('corpusState').textContent=`ÎNCĂRCAT · ${(Number(ci.bytes||0)/1048576).toFixed(1)} MiB · ${Number(ci.rows_with_text||0).toLocaleString('ro-RO')} rânduri · ${ci.columns_selected?.join(', ')||ci.source_format||''}`;
-   if(ci.sha256&&ci.sha256!==loadedCorpusDigest){
-     loadedCorpusDigest=ci.sha256;
-     const textBox=document.querySelector('.domain[value="text"]');
-     if(textBox)textBox.checked=true;
-   }
+ if(ci.state==='reading'||ci.state==='queued')$('corpusState').textContent=`IMPORTĂ ${Math.round((ci.progress||0)*100)}% · ${Number(ci.rows_read||0).toLocaleString('ro-RO')} rânduri · ${(Number(ci.bytes_written||0)/1048576).toFixed(1)} MiB · ${(ci.columns_selected||[]).join(', ')||'detectare schemă'}`;
+ else if(ci.state==='error')$('corpusState').textContent='EROARE CORPUS: '+(ci.error||'necunoscută');
+ else if(ci.state==='ready'){
+  $('corpusState').textContent=`ÎNCĂRCAT · ${(Number(ci.bytes||0)/1048576).toFixed(1)} MiB · ${Number(ci.rows_with_text||0).toLocaleString('ro-RO')} rânduri · ${(ci.columns_selected||[]).join(', ')||ci.source_format||''}`;
+  if(ci.sha256&&ci.sha256!==loadedCorpusDigest){loadedCorpusDigest=ci.sha256;document.querySelector('.domain[value="text"]').checked=true}
  }
- $('loadCorpus').disabled=s.state==='running'||s.state==='stopping'||ci.state==='reading'||ci.state==='queued';
- $('statusline').textContent=lastError?'EROARE: '+lastError:`${s.state} · ${s.config.batch_size} lumi per lot · ${g.total_nodes} noduri reale / ${g.total_edges} legături · ${s.graph.cross_domain_links} conexiuni multi-domeniu · 1D:${s.graph.dimension_counts?.['1']||0} 2D:${s.graph.dimension_counts?.['2']||0} 3D:${s.graph.dimension_counts?.['3']||0} 4D:${s.graph.dimension_counts?.['4']||0}${s.error?' · SERVER ERROR: '+s.error:''}`;
- $('domainStats').innerHTML=Object.entries(s.domains).map(([k,v])=>`<div>${k}: ${v.episodes} exerciții · ${(100*v.success_rate).toFixed(1)}% succes</div>`).join('');
- $('start').disabled=s.state==='running'||s.state==='stopping'||ci.state==='queued'||ci.state==='reading';$('stop').disabled=s.state!=='running';$('evaluate').disabled=s.state==='running'||s.state==='stopping'||ci.state==='reading';
- }catch(e){$('statusline').textContent='Conexiune întreruptă: '+e.message}}
-refresh();setInterval(refresh,900);
+ const isBusy=s.state==='running'||s.state==='stopping';
+ $('start').disabled=isBusy||ci.state==='queued'||ci.state==='reading';
+ $('stop').disabled=s.state!=='running';$('save').disabled=isBusy;
+ $('reset').disabled=isBusy||ci.state==='queued'||ci.state==='reading';
+ $('loadCorpus').disabled=isBusy||ci.state==='queued'||ci.state==='reading';
+ $('evaluate').disabled=isBusy||ci.state==='reading';
+ $('statusline').textContent=lastError?'EROARE: '+lastError:`${s.state} · ${s.config.batch_size} lumi / lot · ${s.graph.nodes} noduri existente · ${s.graph.edges} legături existente · 1D:${s.graph.dimension_counts?.['1']||0} 2D:${s.graph.dimension_counts?.['2']||0} 3D:${s.graph.dimension_counts?.['3']||0} 4D:${s.graph.dimension_counts?.['4']||0}${s.error?' · SERVER ERROR: '+s.error:''} · Graf redat din jurnal real`;
+ $('domainStats').innerHTML=Object.entries(s.domains||{}).map(([k,v])=>`<div>${k}: ${v.episodes} exerciții · ${(100*v.success_rate).toFixed(1)}% succes</div>`).join('');
+ }catch(e){$('statusline').textContent='Conexiune status întreruptă: '+e.message}finally{statusBusy=false}}
+async function refreshGraph(){if(graphBusy)return;graphBusy=true;try{
+ const focus=selectedTrace();const ids=(focus?.active||[]).concat(focus?.growth?.born||[]).slice(0,40).join(',');
+ const url='/api/graph?limit=750'+(ids?'&focus='+encodeURIComponent(ids):'');
+ const r=await fetch(url);if(!r.ok)throw Error('Graph '+r.status);
+ const data=await r.json();graph=data;nodeMap=new Map(data.nodes.map(n=>[n.id,n]));
+ graphFetched=Date.now();
+ }catch(e){$('statusline').textContent='Vizualizarea grafului: '+e.message}finally{graphBusy=false}}
+async function refreshTraces(){if(traceBusy)return;traceBusy=true;try{
+ const r=await fetch('/api/traces?after='+since+'&limit=48');if(!r.ok)throw Error('Traces '+r.status);
+ const data=await r.json();
+ if(data.skipped){skipped+=data.skipped;$('skipped').textContent=skipped.toLocaleString('ro-RO')}
+ since=data.next_cursor;
+ for(const f of (data.frames||[]))pending.push(f);
+ if(pending.length>90){skipped+=pending.length-90;pending.splice(0,pending.length-90);$('skipped').textContent=skipped.toLocaleString('ro-RO')}
+ if(follow && frame===-1 && pending.length)showNext();
+ }catch(e){$('statusline').textContent='Jurnal evenimente: '+e.message}finally{traceBusy=false}}
+refreshStatus();refreshGraph();refreshTraces();
+setInterval(refreshStatus,900);
+setInterval(refreshTraces,350);
+setInterval(refreshGraph,1550);

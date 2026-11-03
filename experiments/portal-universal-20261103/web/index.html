@@ -3,7 +3,7 @@
 <header><div><div class="brand">MAGICPERSPECTIVE <span>PORTAL / 4D</span></div><div class="subtitle">UNIVERSAL GRAPH LABORATORY · Un singur creier persistent · Evenimente reale</div></div><div class="tags"><span id="device">DEVICE: …</span><span id="runState">IDLE</span><span id="dataStatus">CHECKPOINT: …</span></div></header>
 <main>
 <section class="toolbar">
-  <button id="start">▶ START — TRAIN</button><button id="stop" class="secondary">■ STOP + SAVE</button><button id="save" class="secondary">SAVE</button><button id="evaluate" class="secondary">TEST ORB (BLIND)</button>
+  <button id="start">▶ START — TRAIN</button><button id="stop" class="secondary">■ STOP + SAVE</button><button id="save" class="secondary">SAVE</button><button id="reset" class="danger">RESET TOT</button><button id="evaluate" class="secondary">TEST ORB (BLIND)</button>
   <label>Lumi simultane <input id="batch" type="range" min="1" max="64" value="8"><output id="batchValue">8</output></label>
   <label>Auto-save / loturi <input id="autosave" type="number" min="1" max="1000" value="20"></label>
   <label>Explorare <input id="epsilon" type="number" min="0" max="1" step="0.01" value="0.18"></label>
@@ -27,14 +27,30 @@
 <div><span>LOSS</span><strong id="loss">—</strong><small>Backprop real</small></div>
 </section>
 <div class="layout"><section class="brain panel">
-  <div class="panelhead"><h2>01 / TEMPLUL — REȚEAUA PERSISTENTĂ</h2><div class="modes"><button class="mode active" data-mode="3d">3D LIVE</button><button class="mode" data-mode="4d">4D NODURI</button><button id="center" class="mode">CENTREAZĂ</button></div></div>
-  <div class="viewport"><canvas id="graph"></canvas><div class="viewhint">TRAGE: rotește · SCROLL: zoom · CLICK: inspectează nod · SPACE: pauză replay</div><div class="axis" id="axis">X · Y · Z</div></div>
+  <div class="panelhead"><h2>01 / TEMPLUL — REȚEAUA PERSISTENTĂ</h2><div class="modes"><button class="mode active" data-mode="3d">3D LIVE</button><button class="mode" data-mode="4d">4D · SECȚIUNE INTERIOARĂ</button><button id="center" class="mode">CENTREAZĂ</button></div></div>
+  <div class="viewport"><canvas id="graph"></canvas>
+  <div id="sliceTools" class="sliceTools" hidden>
+   <strong>INTERIOR TOROID 4D · S¹ × B³</strong>
+   <label>Secțiune W <input id="sliceW" type="range" min="-0.86" max="0.86" step="0.01" value="0"><output id="sliceWValue">0.00</output></label>
+   <label>Grosime secțiune <input id="sliceThickness" type="range" min="0.08" max="0.8" step="0.01" value="0.34"><output id="thicknessValue">0.34</output></label>
+   <label>Unghi interior θ <input id="torusTheta" type="range" min="0" max="6.28" step="0.02" value="0"><output id="thetaValue">0.00</output></label>
+   <label><input id="followSlice" type="checkbox" checked> Urmărește acțiunea</label>
+   <small id="sliceCount">Secțiunea conține exclusiv noduri și legături reale.</small>
+  </div>
+  <div id="eventPhase" class="eventPhase" aria-live="polite">Așteaptă evenimente reale</div><div class="viewhint">TRAGE: rotește · SCROLL: zoom · CLICK: inspectează nod · SPACE: pauză replay</div><div class="axis" id="axis">X · Y · Z</div></div>
   <div class="legend"><span><i style="background:#55d4e7"></i> activări</span><span><i style="background:#b497ff"></i> predicție</span><span><i style="background:#f7c95d"></i> decizie</span><span><i style="background:#ee5e7e"></i> eroare</span><span><i style="background:#f3985e"></i> gradient / învățare</span><span><i style="background:#52cfa6"></i> rezultat confirmat</span><span><i style="background:#eef5ff"></i> creștere</span></div>
-  <div class="under"><div><h3>02 / AXA TIMPULUI</h3><p>Fiecare cadru provine dintr-o acțiune executată, nu din animații generate artificial.</p></div><div class="replaycontrols"><button id="prev" class="mode">◀</button><button id="play" class="mode">❚❚</button><button id="next" class="mode">▶</button><span id="frameN">0/0</span></div></div>
-  <input type="range" id="timeline" min="0" max="0" value="0"><div class="timelineinfo"><span id="frameInfo">Fără evenimente de antrenare</span><span id="timeMode">T / pas</span></div>
+  <div class="under"><div><h3>02 / AXA TIMPULUI</h3><p>Fiecare cadru și impuls provine dintr-o acțiune reală; duratele vizuale sunt interpolări pentru observare.</p></div><div class="replaycontrols"><button id="prev" class="mode">◀</button><button id="play" class="mode">❚❚</button><button id="next" class="mode">▶</button><span id="frameN">0/0</span></div></div>
+  <input type="range" id="timeline" min="0" max="0" value="0"><div class="timelineinfo"><span id="frameInfo">Fără evenimente de antrenare</span><span id="timeMode">T / pas · <span id="skipped">0</span> cadre sărite, raportate</span></div>
 </section>
 <aside class="right"><section class="panel detail"><h2>03 / CE A FĂCUT CORPUL</h2><div class="item"><span>WORLD / seed / pas</span><strong id="world">—</strong></div><div class="item"><span>Predicție → acțiune</span><strong id="action">—</strong></div><div class="item"><span>Ce s-a întâmplat</span><strong id="actual">—</strong></div><div class="item"><span>Eroare (roșu)</span><strong id="mismatch">—</strong></div><div class="item"><span>Gradient / modificare reală</span><strong id="update">—</strong></div><div class="item"><span>Creștere structurală</span><strong id="growth">—</strong></div></section>
 <section class="panel inspector"><h2>04 / INSPECTOR NOD</h2><pre id="nodeInfo">Alege un nod din graf.</pre></section>
 <section class="panel"><h2>05 / CE ESTE PROBAT</h2><p>Acțiuni reale, feedback, gradient și noduri persistente. Reutilizarea ponderilor între lumi nu dovedește transfer pozitiv. Încă nu există 14 milioane de exerciții antrenate sau limbaj conversațional.</p><div id="domainStats"></div><pre id="evaluation">Testul blind compară ponderile antrenate cu un model nou, pe alte lumi.</pre></section></aside></div>
 <div class="statusline" id="statusline">Se conectează la server…</div>
-</main><script src="app.js"></script></body></html>
+</main>
+<dialog id="resetDialog" aria-labelledby="resetTitle">
+ <h2 id="resetTitle">RESET TOTAL — OPERAȚIE IREVERSIBILĂ</h2>
+ <p>Vor fi eliminate definitiv modelul actual, checkpointul, graful învățat, toate exercițiile, jurnalul și replay-urile, plus cache-ul corpusului din proiect. Fișierele corpusului-sursă aflate în afara proiectului NU vor fi șterse. Celelalte versiuni MagicPerspective rămân intacte.</p>
+ <label>Scrie exact <strong>RESET TOT</strong> pentru confirmare:
+ <input id="resetPhrase" type="text" autocomplete="off" placeholder="RESET TOT"></label>
+ <div class="resetButtons"><button id="cancelReset" class="secondary">ANULEAZĂ</button><button id="confirmReset" class="danger" disabled>ȘTERGE TOT ȘI REIA DE LA ZERO</button></div>
+</dialog><script src="app.js"></script></body></html>

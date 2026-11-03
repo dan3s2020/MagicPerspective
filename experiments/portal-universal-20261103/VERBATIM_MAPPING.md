@@ -28,3 +28,11 @@ User 2026-11-03 latest corrections (original text must be stored separately as-i
 | Keep current checkpoint/UI | `Graph.restore`, minimal existing web UI label changes | `test_restore_legacy_graph_without_dimension_fields`, V10 regressions | CPU test passed; Windows CUDA pending |
 
 The broader Verbatim completeness gate remains BLOCKED.
+
+## V12 Source → change → test (not a complete Verbatim-compliance certificate)
+
+- **User instruction, 2026-11-03:** “nu se intampla nicioa nimatie in graf in timpul trainingului,si nu avem buton de reset,sa curete tot ce a mai lasat si replays sau ceva.” Implementation: `server.py` `Control._work()` releases the lock after each actual GNN step; `engine.py` `traces_since()` uses incremental persistent events; `web/app.js` renders real message/decision/error/learning phases; `Control.reset_all()` + `PortalEngine.reset_all()` permanently clear this experiment's state after typed confirmation, preserving external source corpus. Tests `tests/test_v12.py` live traces, safe reset and HTTP confirmation.
+- **User correction:** “graful trebuie sa fie interiorul unui toroid 4d ... noi pe ecran,vedem doar un sclice din acel torus/toroid 4d” and “nu ai nevoie de nicio dovada,iti poruncesc sa-l construiesti asa”. Implementation: `toroid.py` uses a four-SPATIAL-dimensional solid torus `S¹ × B³`, with 3D hyperplane slices at `w = const`. Real persisted graph nodes and existing links are displayed inside; `web/app.js` uses cut/thickness/θ navigation and actual edge intersections; `engine.py` persists `p4` with backward compatibility. Tests: V12 torus geometry, stable restore, slice intersection; `node --check web/app.js`.
+- **Non-negotiable original intent:** no fabricated graph nodes or fake learned synapses. The background chamber is a geometric guide, not a cognitive structure, and colors encode recorded events. Temporal event replay is separate from spatial dimension 4. Structural node `dimension` fields (1–4) and the torus embedding coordinates represent different properties; neither by itself proves cross-domain transfer or a physical fourth spatial dimension.
+
+**Status:** V12 implementation + local CPU regression tests; full historical Verbatim and full performance claims remain unverified under repository gates.
