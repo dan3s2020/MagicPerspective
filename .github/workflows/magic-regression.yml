@@ -23,6 +23,8 @@ jobs:
           node-version: '22'
       - name: V1 baseline tests
         run: node --test tests/*.test.js
+      - name: Verbatim historic and main-branch mirror integrity (completeness intentionally BLOCKED)
+        run: node --test tests/verbatim-gate.test.mjs tests/verbatim-mirror.test.mjs
       - name: V2 baseline tests
         run: node --test v2/tests/*.test.mjs
       - name: V3 baseline and online tests
