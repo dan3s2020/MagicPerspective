@@ -255,11 +255,14 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
   priorFrame.graph={...graphFrame(ep),compute:computation,predictedPath:knownPlan.path,
    predictedNext:nextPredicted,planSource:knownPlan.source,
    candidates:rated.map(x=>({from:ep.current,to:x.expectedTo??x.to??null,
-    action:x.tool??String(x.action),q:+x.neural.toFixed(6),
+    action:x.tool??String(x.action),q:+(cellular?x.q:x.neural).toFixed(6),
     utility:+x.utility.toFixed(6),knownDestination:x.to!==null||x.expectedTo!=null})),
    chosen:{action:select.tool??String(select.action),from:ep.current,
     to:select.expectedTo??select.to??null,
-    q:+select.neural.toFixed(6),utility:+select.utility.toFixed(6)},
+    q:+(cellular?select.q:select.neural).toFixed(6),utility:+select.utility.toFixed(6)},
+   contribution:cellular?{logit:+select.logit.toFixed(6),votes:select.net.votes,
+    action:select.net.action,cost:select.net.cost,revisit:select.net.revisit,
+    unknown:select.net.unknown}:null,
    actual:null};
   let to,stepCost=select.cost;
   if(domain==='text'){
