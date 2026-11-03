@@ -1,0 +1,64 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b1124">
+<title>MagicPerspective V5 — Organul formei soluției</title><link rel="stylesheet" href="style.css"></head>
+<body><div class="shell">
+<header class="header"><div class="mark">◈</div><div><div class="brand">MAGICPERSPECTIVE <span>V5</span></div><div class="sub">ORGANUL FORMEI SOLUȚIEI</div></div><div class="health" id="health" role="status">Conectare…</div></header>
+
+<section class="card controls">
+  <div class="field"><label for="kind">LUME</label><select id="kind"><option value="maze">Labirint 2D</option><option value="braided">Labirint cu bucle</option><option value="graph">Rețea abstractă</option></select></div>
+  <div class="field"><label for="size">MĂRIME</label><select id="size"><option value="5">5 × 5</option><option value="7">7 × 7</option><option value="9" selected>9 × 9</option><option value="11">11 × 11</option><option value="13">13 × 13</option><option value="15">15 × 15</option></select></div>
+  <div class="field wide"><label for="mode">ORGANISM</label><select id="mode"><option value="organ-online">Organ antrenat · corecție online</option><option value="organ-frozen">Organ antrenat · înghețat</option><option value="organ-untrained">Organ neantrenat (aceeași arhitectură)</option><option value="classic">Fără organ · planificator clasic</option></select></div>
+  <div class="toolbar"><button id="new">↻ Lume nouă</button><button id="replay" title="Aceeași lume, organismul ales acum">⟲ Reia lumea</button><button id="step">→ Un pas</button><button id="auto" class="accent">▶ Automat</button><button id="run">⏭ Până la final</button></div>
+  <div class="status" id="status" role="status" aria-live="polite">Pregătesc lumea…</div>
+</section>
+
+<section class="card map-card">
+  <div class="section-head"><div><span class="eyebrow">ACEEAȘI HARTĂ · ORGANISM + EVALUATOR</span><h2>Forma prezisă vs. forma reală</h2></div><span class="tag" id="world-tag">LABIRINT</span></div>
+  <div class="layers" role="group" aria-label="Straturi afișate">
+    <button class="chip on" data-layer="cloud" aria-pressed="true"><i class="sw cloud"></i>Norul formei</button>
+    <button class="chip on" data-layer="initial" aria-pressed="true"><i class="sw initial"></i>Predicția pas 0</button>
+    <button class="chip on" data-layer="route" aria-pressed="true"><i class="sw route"></i>Predicția curentă</button>
+    <button class="chip on" data-layer="optimal" aria-pressed="true"><i class="sw optimal"></i>Traseul real</button>
+    <button class="chip on" data-layer="walked" aria-pressed="true"><i class="sw walked"></i>Drum parcurs</button>
+    <button class="chip" data-layer="truth" aria-pressed="false"><i class="sw truth"></i>Harta reală</button>
+  </div>
+  <canvas id="map" aria-label="Harta cu norul formei, predicțiile și traseul real"></canvas>
+  <div class="timeline"><button id="play" class="icon" aria-label="Redă pașii">▶</button><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Pasul afișat"><span id="scrub-label">pas 0 / 0</span></div>
+  <p class="muted small" id="frame-note">Organismul vede doar zona locală parcursă. „Traseul real” și „Harta reală” sunt doar pentru tine (evaluator) — nu intră niciodată în organism.</p>
+</section>
+
+<section class="stats-grid">
+  <div class="card stat"><span>F1 FORMĂ · PAS 0</span><strong id="f1-0">—</strong><small>predicție înainte de mișcare</small></div>
+  <div class="card stat"><span>EROARE NOR · PAS 0</span><strong id="bce-0">—</strong><small>BCE, mai mic = mai bine</small></div>
+  <div class="card stat"><span>F1 LA PASUL AFIȘAT</span><strong id="f1-t">—</strong><small>față de traseul real de acolo</small></div>
+  <div class="card stat"><span>REZISTENȚE</span><strong id="resist">—</strong><small>relații contrazise de lume</small></div>
+  <div class="card stat"><span>EFORT / OPTIM</span><strong id="effort">—</strong><small>cost parcurs vs. cost minim</small></div>
+  <div class="card stat"><span>CALIBRARE · PAS 0</span><strong id="ece">—</strong><small>ECE, mai mic = mai bine</small></div>
+</section>
+
+<section class="two">
+  <article class="card"><div class="section-head"><div><span class="eyebrow">EVOLUȚIA ERORII PE PAȘI</span><h2>Perspectiva se corectează?</h2></div></div>
+    <canvas id="steps-chart" class="chart" aria-label="F1 și eroarea norului la fiecare pas"></canvas>
+    <div class="legend"><span><i class="sw route"></i>F1 formă</span><span><i class="sw cloud"></i>Eroare nor (BCE)</span><span><i class="sw resist"></i>Rezistență</span></div></article>
+  <article class="card"><div class="section-head"><div><span class="eyebrow">PREDICȚIE → ACȚIUNE → REZISTENȚĂ → CORECȚIE</span><h2>Jurnal</h2></div></div><div class="journal" id="journal"></div></article>
+</section>
+
+<section class="card">
+  <div class="section-head"><div><span class="eyebrow">ANTRENARE · PROFESORUL VEDE HARTA, ORGANISMUL NU</span><h2>Antrenează organul formei</h2></div></div>
+  <div class="controls inline"><div class="field"><label for="episodes">EPISOADE</label><select id="episodes"><option value="100">100 · rapid</option><option value="300" selected>300 · standard</option><option value="1000">1.000 · lung</option><option value="3000">3.000 · cercetare</option></select></div>
+    <div class="toolbar"><button id="train" class="accent">✦ Antrenează</button><button id="cancel" disabled>■ Oprește</button></div></div>
+  <div class="progress"><div id="progress"></div></div><p class="muted small" id="train-status">Neantrenat în această sesiune.</p>
+  <canvas id="train-chart" class="chart" aria-label="Validare: organ vs planificator clasic"></canvas>
+  <div class="legend"><span><i class="sw route"></i>Organ · F1 pas 0</span><span><i class="sw dashed"></i>Clasic · F1 pas 0</span><span><i class="sw cloud"></i>Organ · F1 mediu pe parcurs</span><span><i class="sw dashed2"></i>Clasic · F1 mediu</span></div>
+</section>
+
+<section class="card">
+  <div class="section-head"><div><span class="eyebrow">TEST ORB · LUMI NEVĂZUTE · ACELEAȘI SEMINȚE</span><h2>Ajută organul formei?</h2></div><button id="evaluate" class="accent">◎ Rulează testul</button></div>
+  <p class="muted small" id="test-status">Patru organisme pe exact aceleași lumi, aceeași fereastră 3×3, aceeași țintă. Fără profesor în timpul testului.</p>
+  <div class="table-wrap"><table><thead><tr><th>Organism</th><th>Succes</th><th>F1 pas 0</th><th>Eroare nor 0</th><th>Rută validă 0</th><th>F1 mediu</th><th>Calibrare</th><th>Eficiență</th><th>Rezistențe</th></tr></thead><tbody id="test-body"></tbody></table></div>
+  <div class="table-wrap"><table class="fam"><thead><tr><th>F1 pas 0 pe familii</th><th>Labirint</th><th>Cu bucle</th><th>Rețea</th></tr></thead><tbody id="family-body"></tbody></table></div>
+</section>
+
+<section class="card note"><span class="eyebrow">CE ESTE ȘI CE NU ESTE</span>
+  <p>Organul formei prezice un nor de probabilitate peste toată soluția înainte de primul pas, din fereastra 3×3 și indiciul țintei; decodorul trasează drumul cel mai probabil prin nor. Organul de trecere învață singur din ce dezvăluie fereastra. Profesorul (harta completă) dă eroarea formei doar la antrenare. Rezultatele se judecă numai în testul orb, față de organismul fără organ.</p>
+  <div class="toolbar"><button id="reset" class="danger">Resetează doar creierul V5</button><a href="/api/export" download="magicperspective-v5-organ.json">Exportă creierul</a></div></section>
+</div><script type="module" src="app.js"></script></body></html>
