@@ -51,7 +51,7 @@ The output is a machine-readable JSON report containing optimum (evaluator only)
 - schema must be 1; nodes must be 3–65 unique IDs (nonempty string up to 64 chars or nonnegative integer). Optional x/y positions range 0..1; otherwise a deterministic circle is used.
 - Edges must be 1–1500 unique undirected pairs. Optional cost defaults to 1, must be finite and positive; optional open defaults to true.
 - Start and goal are distinct known IDs. Invalid links, duplicates, negative or infinite costs, and malformed inputs are rejected.
-- The weights represent your own comparable costs. This can encode logistics, dependencies and finite state changes, but does not understand real-world actions beyond that representation.
+- The weights represent your own comparable costs. The current implementation supports **undirected/bidirectional** links only; it cannot faithfully represent one-way dependencies or arbitrary irreversible workflows. It does not understand real-world actions beyond that representation.
 - An unreachable goal is explicitly reported; no fabricated route or score.
 - The evaluator sees the complete supplied graph to compute a true optimum; an organism receives node-local feedback. There is no access to the evaluator route in training.
 - The imported graph does not itself train a new universal policy. Continuous training still uses generated worlds. External problem mode is an honest transfer/utility test, not evidence of emergent intelligence.
