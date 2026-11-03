@@ -20,13 +20,16 @@
 <button id="reset" class="danger">Reset doar V6</button>
 </section>
 <section class="stats">
-<div class="stat"><span>Episoade învățate</span><strong id="episodes-trained">0</strong></div>
-<div class="stat"><span>Exemple observate</span><strong id="samples">0</strong></div>
-<div class="stat"><span>Actualizări neuronale</span><strong id="updates">0</strong></div>
-<div class="stat"><span>Cel mai bun test de validare</span><strong id="quality">—</strong></div></section>
+<div class="stat"><span>Episoade executate, contorizate</span><strong id="episodes-trained">0</strong></div>
+<div class="stat"><span>Exemple NN în checkpoint</span><strong id="samples">0</strong></div>
+<div class="stat"><span>Actualizări în checkpoint</span><strong id="updates">0</strong></div>
+<div class="stat"><span>Scor compozit (nu procent)</span><strong id="quality">—</strong></div>
+<div class="stat"><span>Episoade păstrate în checkpoint</span><strong id="selected-episodes">0</strong></div>
+<div class="stat"><span>Exemple reale / deduse, rulate</span><strong id="example-ledger">0 / 0</strong></div></section>
 <section class="card"><div class="heading"><h2>Învață, episod cu episod</h2><span class="tag" id="phase">Pregătit</span></div>
 <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><div id="progress-inner"></div></div>
 <div class="subtitle" id="progress-label">Apasă butonul de antrenament.</div>
+<div class="subtitle" id="ledger-note">Sesiunile viitoare folosesc semințe noi de lumi. Datele vechi fără registru nu sunt inventate.</div>
 <canvas id="learning" role="img" aria-label="Graficul exactității predicțiilor în validare și al comparației cu modelele martor"></canvas>
 <p class="note">Curbele provin din evaluări reale, pe semințe diferite de cele folosite la antrenare. O actualizare a ponderilor nu garantează rezolvarea unei probleme.</p></section>
 <section class="cols">
@@ -44,6 +47,9 @@
 </article></section>
 <section class="card"><div class="heading"><h2>Evaluare oarbă pe domenii și obiective noi</h2><span class="tag">Semințe separate</span></div>
 <div id="results" class="result-grid"><p class="note">Rezultatele apar după apăsarea „Test orb”.</p></div>
+<h3>Compară rețeaua neuronală cu organul cauzal integrat</h3>
+<div id="hybrid-results" class="result-grid"><p class="note">Compararea se execută odată cu testul orb. Datele folosite la test sunt excluse din tranzițiile evaluate.</p></div>
+<p class="note">Predicțiile hibridului pot folosi o bibliotecă EXPLICITĂ de 13 reguli candidate. Procentajul hibridului nu măsoară învățarea neuronală. Metodele cu două intervenții suplimentare sunt comparate la același buget.</p>
 <div id="hypothesis-results" class="result-grid"><p class="note">Aici apar rezultatele comparației dintre întrebările informative și întrebările aleatorii.</p></div>
 <p class="note">Experimentul cu ipoteze deduce reguli din observații folosind o bibliotecă finită, independent de rețeaua neuronală. Nu îl vom prezenta drept învățare neurală.</p>
 <p class="note">Indicatorii sunt separați: precizia unei tranziții și succesul unui plan cu 2–5 acțiuni. Textele sunt interpretate de o gramatică fixă; modelul nu a învățat încă limbaj natural general.</p>

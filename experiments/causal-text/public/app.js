@@ -35,11 +35,20 @@ function chart(history){
  g.fillStyle='#9cb0c8';g.fillText('Episoade '+maxEp,left,bottom+22);
 }
 function renderTraining(s){
- const completed=s.training?.running?s.model.episodes+s.training.done:(s.lastTraining?.episodes??s.model.episodes);
+ // Three distinct quantities: executed sessions, selected checkpoint, and gradients.
+ // Do not infer old discarded episodes from a legacy checkpoint without a ledger.
+ const l=s.ledger||{},completed=(l.completedEpisodes||0)+(s.training?.running?s.training.done:0);
  $('episodes-trained').textContent=completed.toLocaleString('ro-RO');
+ $('selected-episodes').textContent=s.model.episodes.toLocaleString('ro-RO');
  $('samples').textContent=s.model.samples.toLocaleString('ro-RO');
  $('updates').textContent=s.model.steps.toLocaleString('ro-RO');
+ $('example-ledger').textContent=(l.observedExamples||0).toLocaleString('ro-RO')+
+   ' / '+(l.inferredExamples||0).toLocaleString('ro-RO');
  $('quality').textContent=s.model.bestQuality===null?'—':s.model.bestQuality.toFixed(3);
+ $('ledger-note').textContent='Lumi noi rezervate: '+(l.nextWorldIndex||0)+
+  ' · sesiuni finalizate: '+(l.completedRuns||0)+
+  (l.legacyHistoryUnknown?
+    ' · istoric anterior fără registru (minimum '+(l.legacyCheckpointEpisodes||0)+' episoade păstrate)':'');
  const t=s.training,done=t?.done||0,total=t?.total||1,progress=t?Math.round(done/total*100):0;
  $('progress-inner').style.width=progress+'%';
  $('progress').setAttribute('aria-valuenow',progress);
@@ -82,11 +91,14 @@ function renderScene(s){
  const d=v.demonstration,el=$('plan-result');
  if(!d){el.className='message';el.textContent='Nicio încercare de planificare. Apasă „Propune și verifică planul”.'}
  else{
-  el.className='message '+(d.success?'ok':'fail');
-  el.textContent=(d.success?'OBIECTIV ATINS':'OBIECTIV NEATINS')+
-   ' · Plan: '+(d.actions.length?d.actions.join(' → '):'(fără plan)')+
-   ' · Stare obținută: ['+d.actual.join(', ')+']'+
-   ' · Stare cerută: ['+d.goal.join(', ')+']';
+  const neural=d.neural||d,hybrid=d.hybrid;
+  const describe=(label,trial)=>label+': '+(trial.success?'OBIECTIV ATINS':'OBIECTIV NEATINS')+
+    ' · Plan '+(trial.actions.length?trial.actions.join(' → '):'(fără plan)')+
+    ' · Rezultat ['+trial.actual.join(', ')+']';
+  el.className='message '+(hybrid?.success?'ok':'fail');
+  el.textContent=describe('Doar NN',neural)+(hybrid?
+   ' | '+describe('Hibrid cauzal + NN',hybrid):
+   '')+' · Țintă ['+neural.goal.join(', ')+']';
  }
 }
 function renderEvaluation(data){
@@ -120,8 +132,28 @@ function renderHypothesis(data){
   root.append(block);
  }
 }
+function renderHybridEvaluation(data){
+ const root=$('hybrid-results');root.replaceChildren();
+ if(!data){root.append(makeNode('p','note','Apasă „Test orb” pentru compararea celor patru metode.'));return}
+ const titles={'neural-only':'Rețea neuronală singură',
+  'hybrid-probes':'Hibrid: 9 probe inițiale',
+  'hybrid-active':'Hibrid: + intervenții informative',
+  'hybrid-random':'Hibrid: + intervenții aleatorii'};
+ for(const [name,item] of Object.entries(data.models)){
+  const card=makeNode('div','result','');
+  card.append(makeNode('h3','',titles[name]||name),
+   makeNode('strong','',percent(item.exactTransition)),
+   makeNode('p','','Predicție exactă pe tranziții neinterogate'),
+   makeNode('strong','',percent(item.planningSuccess)),
+   makeNode('p','','Planuri reușite '+item.solved+'/'+item.attempted),
+   makeNode('p','','Probe per lume: '+item.observationsPerWorld+
+     ' · predicții cauzale: '+item.causalPredictions));
+  root.append(card);
+ }
+}
 function render(s){
- state=s;renderTraining(s);renderScene(s);renderEvaluation(s.evaluation);renderHypothesis(s.hypothesisEvaluation);
+ state=s;renderTraining(s);renderScene(s);renderEvaluation(s.evaluation);
+ renderHybridEvaluation(s.hybridEvaluation);renderHypothesis(s.hypothesisEvaluation);
  if(s.training?.error)status('Eroare: '+s.training.error,false);
  else status('● Motor local activ');
 }

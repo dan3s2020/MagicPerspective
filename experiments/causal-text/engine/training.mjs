@@ -3,6 +3,7 @@
 import {BASE,RNG,TOOLS,PROBES,INPUTS,createWorld,senseProbes,encodeContext,features,
  generateTask,parseGoal,shortestOracle} from './world.mjs';
 import {CausalNet} from './model.mjs';
+import {makeBelief,hybridPrediction,observeExtra,inferTrainingSamples} from './hybrid.mjs';
 export const SPLITS={train:6000011,validation:6100013,test:6200017};
 const seedOf=(base,i)=>((base>>>0)+i*7919)>>>0;
 const key=s=>s[0]*BASE+s[1];
@@ -19,7 +20,7 @@ export function buildExperience(world,seed=77,extraPerTool=5){
  const events=senseProbes(world),context=encodeContext(events),rng=new RNG(seed);
  // Independent random interventions with their true *observed* outcomes.
  // No shortest-path teacher, laws, goal or future hidden state is supplied.
- const samples=[];
+ const samples=[],additionalEvents=[];
  for(const tool of TOOLS){
   const chosen=new Set(PROBES.map(s=>key(s)));
   for(let j=0;j<extraPerTool;j++){
@@ -29,10 +30,11 @@ export function buildExperience(world,seed=77,extraPerTool=5){
    }
    chosen.add(key(state));
    const e=world.intervene(state,tool);
-   samples.push({input:features(e.from,e.tool,context),target:e.to});
+   additionalEvents.push(e);
+   samples.push({input:features(e.from,e.tool,context),target:e.to,provenance:'measured'});
   }
  }
- return {events,context,samples};
+ return {events,context,samples,observedEvents:[...events,...additionalEvents]};
 }
 export function predictedPlan(start,goal,predict,maxDepth=5){
  if(![start,goal].every(s=>Array.isArray(s)&&s.length===2))throw Error('Invalid plan states');
@@ -105,17 +107,25 @@ export async function train(model,{
 }={}){
  if(!Number.isInteger(episodes)||episodes<1||episodes>20000)throw Error('Training episodes must be 1..20000');
  const history=[],start=Date.now();let best=null,bestSnapshot=null,lastLoss=null;
+ let measuredExamples=0,inferredExamples=0;
  // Do not consult test split during training or checkpoint selection.
  for(let ep=0;ep<episodes;ep++){
   if(cancel())break;
   const world=createWorld(seedOf(seed,ep)),experience=buildExperience(world,seedOf(seed^135,ep),5);
-  lastLoss=model.trainBatch(experience.samples);model.episodes++;
+  // The causal organ distills only unanimous predictions from observed evidence.
+  // Neural weights remain the mechanism being optimized; explicit hypotheses
+  // are separately measured rather than falsely attributed to the NN.
+  const synthetic=inferTrainingSamples(experience.observedEvents,experience.context,
+   {perTool:18,seed:seedOf(seed^0x715371,ep)}).samples;
+  lastLoss=model.trainBatch([...experience.samples,...synthetic]);model.episodes++;
+  measuredExamples+=experience.samples.length;inferredExamples+=synthetic.length;
   if((ep+1)%validateEvery===0||ep===episodes-1){
    const evaluation=evaluate(model,{seed:SPLITS.validation,worlds:validationWorlds,
     statesPerTool:4,goalsPerWorld:2,includePlans:true});
    const a=evaluation.modes.learned;
    const quality=a.exactTransition+.3*a.planningSuccess;
-   const rec={episode:ep+1,loss:+lastLoss.toFixed(5),validationExact:a.exactTransition,
+   const rec={episode:ep+1,loss:+lastLoss.toFixed(5),measuredExamples,inferredExamples,
+    validationExact:a.exactTransition,
     validationPlan:a.planningSuccess,untrainedExact:evaluation.modes.untrained.exactTransition,
     nearestExact:evaluation.modes['nearest-probe'].exactTransition,
     elapsedMs:Date.now()-start,quality:+quality.toFixed(5)};
@@ -126,5 +136,5 @@ export async function train(model,{
   if(ep%2===0)await new Promise(resolve=>setImmediate(resolve));
  }
  return {history,best,bestSnapshot,episodesCompleted:model.episodes,elapsedMs:Date.now()-start,
-  interrupted:cancel()};
+  measuredExamples,inferredExamples,interrupted:cancel()};
 }
