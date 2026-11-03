@@ -1,0 +1,1 @@
+ok,deci acum stii ce trebuie implementat? si unde ar intra as above as below in templul nostru
