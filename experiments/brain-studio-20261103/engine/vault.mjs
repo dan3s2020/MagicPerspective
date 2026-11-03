@@ -55,6 +55,17 @@ export class Vault{
      source:'Original • read-only',episodes:snapshot.episodes||0});
    }catch(e){result.push({id,label,kind:'archive',trainable:false,source:'Original • invalid: '+e.message})}
   }
+  if(existsSync(path.join(this.home,'best.json'))){
+   try{
+    const raw=await readGuarded(path.join(this.home,'best.json'));
+    const {kind,snapshot}=detect(raw);
+    if(kind!=='archive')restoreBrain(kind,snapshot);
+    result.push({id:'studio-best',label:'STUDIO · BEST VALIDATION',kind,
+     trainable:kind!=='archive',source:'Studio · held-out validation',
+     episodes:snapshot.episodes||0,savedAt:raw.savedAt||null});
+   }catch(e){result.push({id:'studio-best',label:'Best checkpoint unreadable',
+    kind:'archive',trainable:false,source:e.message})}
+  }
   for(const name of (await readdir(this.dir)).filter(n=>n.endsWith('.json')&&safeId(n))){
    try{
     const item=await readGuarded(path.join(this.dir,name)),{kind,snapshot}=detect(item);
@@ -68,7 +79,8 @@ export class Vault{
  }
  async load(id){
   let file;
-  if(id.startsWith('saved:')){
+  if(id==='studio-best')file=path.join(this.home,'best.json');
+  else if(id.startsWith('saved:')){
    const name=id.slice(6);if(!safeId(name))throw Error('Invalid saved brain identifier');
    file=path.join(this.dir,name+'.json');
   }else{
