@@ -139,7 +139,8 @@ test('visual controls have actual handlers and three independent world diagrams'
  for(const id of ['truth','views','rule-canvas','train','evaluate','front','side','top','suggest',
   'amber','violet','auto-rule','plan','chem-plan','new','reset']){
   assert.ok(html.includes('id="'+id+'"'),'Missing '+id);
-  if(!['truth','views','rule-canvas'].includes(id))assert.ok(js.includes("$('"+id+"').onclick"),'Inert '+id);
+  if(!['truth','views','rule-canvas','front','side','top'].includes(id))assert.ok(js.includes("$('"+id+"').onclick"),'Inert '+id);
  }
  assert.ok(js.includes('drawSolid(')&&js.includes('drawProjections(')&&js.includes('drawNumberLab('));
+ assert.ok(js.includes("for(const view of ['front','side','top'])$(view).onclick"));
 });
