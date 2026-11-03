@@ -14,7 +14,7 @@ async function run(action,label='Working'){
  document.querySelectorAll('button').forEach(b=>b.disabled=true);
  try{state=await action();render(state);$('status').textContent='● Local experimental engine online'}
  catch(e){$('status').textContent='Error: '+e.message;console.error(e)}
- finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);renderButtons()}
+ finally{busy=false;if(state)render(state)}
 }
 function canvas(id,width=640,height=365){
  const c=$(id),dpr=Math.min(2,window.devicePixelRatio||1);
