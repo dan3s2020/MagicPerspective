@@ -9,19 +9,19 @@ if (-not (Test-Path $python)) {
     if ($LASTEXITCODE -ne 0) { throw 'Python 3.12 required: py -3.12' }
 }
 
-& $python -m pip install --disable-pip-version-check numpy
-if ($LASTEXITCODE -ne 0) { throw 'NumPy installation failed' }
+& $python -m pip install --disable-pip-version-check numpy pyarrow
+if ($LASTEXITCODE -ne 0) { throw 'NumPy/Parquet dependencies installation failed' }
 
 # Reuse existing CUDA torch, otherwise install NVIDIA wheels in THIS local venv.
-& $python (Join-Path $PSScriptRoot 'cuda_probe.py') *> $null
-if ($LASTEXITCODE -ne 0) {
-    & $python -m pip install --index-url https://download.pytorch.org/whl/cu128 torch
+$oldPreference = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+try {
+    & $python (Join-Path $PSScriptRoot 'cuda_probe.py') *> $null
+    $probeExit = $LASTEXITCODE
+} finally { $ErrorActionPreference = $oldPreference }
+if ($probeExit -ne 0) {
+    & $python -m pip install --upgrade --index-url https://download.pytorch.org/whl/cu128 torch
     if ($LASTEXITCODE -ne 0) { throw 'PyTorch CUDA installation failed' }
-}
-
-if ($env:PORTAL_INSTALL_PARQUET -eq '1') {
-    & $python -m pip install pyarrow
-    if ($LASTEXITCODE -ne 0) { throw 'Optional pyarrow installation failed' }
 }
 
 $device = 'cuda'
