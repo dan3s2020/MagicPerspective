@@ -50,20 +50,28 @@ async function startTraining(req){if(task?.running)throw Error('Training already
  cancelTraining=false;evalResult=null;
  task={running:true,total:count,done:0,loss:null,best:null,history:[],cancelled:false,error:null};
  (async()=>{try{
-  const result=await train(model,causal,{episodes:count,n,lr,seed:trainSeed,
+  // Train a copy: the live online brain is preserved if a candidate fails validation.
+  const candidateModel=PerspectiveNet.restore(model.snapshot());
+  const candidateCausal=CausalModel.restore(causal.snapshot());
+  const result=await train(candidateModel,candidateCausal,{episodes:count,n,lr,seed:trainSeed,
    interval:Math.max(10,Math.floor(count/30)),validateCount:30,cancel:()=>cancelTraining,
    onProgress:x=>{task.done=x.done;task.loss=x.latest.trainLoss;task.best=x.best;task.history=x.history;}});
   task.cancelled=result.interrupted;
+  let promoted=false;
   if(result.bestSnapshot&&result.best.heldoutBCE<bestValidation){
    bestValidation=result.best.heldoutBCE;bestSnapshot=result.bestSnapshot;
    await saveBest({seed:trainSeed,n,learningRate:lr,episodes:result.best.episode,
     trainedTotal:initCount+result.best.episode,created:new Date().toISOString()});
+   // A newly validated candidate is derived from the current online model.
+   model=PerspectiveNet.restore(bestSnapshot.model);
+   causal=CausalModel.restore(bestSnapshot.causal);
+   promoted=true;
   }
-  // Only the best measured checkpoint becomes active and persistent.
-  if(bestSnapshot){model=PerspectiveNet.restore(bestSnapshot.model);causal=CausalModel.restore(bestSnapshot.causal)}
+  // Failed candidates never roll back active online learning to an older checkpoint.
   evalResult=evaluate(model,{seed:990031,count:42,n,navigation:true,causal});
   episode=new Organism((seed+=991),model,causal,n,'branched');await saveLive();
-  runInfo={trained:result.trained,elapsedMs:result.elapsedMs,lastTraining:{count,seed:trainSeed,n},
+  runInfo={trained:result.trained,elapsedMs:result.elapsedMs,promoted,
+   livePreserved:!promoted,lastTraining:{count,seed:trainSeed,n},
    finalEvaluation:evalResult};
  }catch(e){task.error=String(e.stack||e)}finally{task.running=false;task.completed=new Date().toISOString()}})();
  return {started:true,count,seed:trainSeed};
@@ -84,7 +92,7 @@ const server=http.createServer(async(req,res)=>{try{
    const n=intArg(arg.n,7,21,11),family=String(arg.family||'branched');
    episode=new Organism(seed,model,causal,n,family,'shape',arg.online!==false);return response(res,state());
   }
-  if(pathname==='/api/step'){const action=episode.act(arg.next===undefined?undefined:Number(arg.next));if(episode.online&&action.type!=='invalid'&&action.type!=='no-route'&&action.type!=='finished')await saveLive();return response(res,{action,...state()})}
+  if(pathname==='/api/step'){const action=episode.act(arg.next===undefined?undefined:Number(arg.next));if(episode.online&&action.event!=='invalid'&&action.event!=='no-route'&&action.event!=='finished')await saveLive();return response(res,{action,...state()})}
   if(pathname==='/api/evaluate'){
    const n=intArg(arg.n,7,21,11),count=intArg(arg.count,6,120,36);
    evalResult=evaluate(model,{seed:990031,count,n,navigation:true,causal});return response(res,state());
