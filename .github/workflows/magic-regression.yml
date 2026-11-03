@@ -58,6 +58,8 @@ jobs:
           node --check experiments/brain-studio-20261103/public/graph-render.js
       - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
         run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
+      - name: Graph Cells actual learning, gradients, cross-domain controls and blind evaluation
+        run: node experiments/brain-studio-20261103/scripts-cells-benchmark.mjs 36 3
       - name: Brain Studio three-domain transfer benchmark with fixed held-out worlds
         run: node experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs 90 6 19
       - name: Active causal hypothesis versus random-query benchmark
