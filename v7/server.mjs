@@ -17,7 +17,7 @@ let life={runs:[],tests:[],milestones:[]};let trainingCursor=0;
 const cfg={seed:20261103,kind:'relief',size:15,left:'v7'};let world,pair;
 try{const f=existsSync(liveFile)?liveFile:existsSync(bestFile)?bestFile:null;
   if(f){const s=JSON.parse(await readFile(f,'utf8'));org=Organism7.restore(s.brain);bestScore=s.bestScore??-Infinity;test=s.test??null;life=s.life??life;
-    trainingCursor=Number.isInteger(s.trainingCursor)&&s.trainingCursor>=0?s.trainingCursor:org.episodes;
+    trainingCursor=Number.isInteger(s.trainingCursor)&&s.trainingCursor>=0?s.trainingCursor:1000000+org.episodes;
     note='Creier V7 restaurat';}}
 catch(e){console.error(e);note='Checkpoint V7 incompatibil — creier nou';}
 async function loadV6(){for(const f of v6Files)if(existsSync(f)){try{const s=JSON.parse(await readFile(f,'utf8'));v6brain=restoreBrain(s.brain);return;}catch(e){console.error('V6 brain unreadable:',e.message);}}v6brain=null;}
