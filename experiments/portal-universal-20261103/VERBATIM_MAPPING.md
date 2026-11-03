@@ -15,3 +15,16 @@
 | `2026-11-03-USER-VERBATIM-MIRROR-MAIN` | This file + `verbatim/implementation-mirror.json` and mirror gates. | PARTIAL: full transcript & clause indexing not available |
 
 No original code was rewritten. The new experiment folder is opt-in; former launchers, checkpoint paths, tests and branch are preserved.
+
+## V11 implementation ledger (NOT full Verbatim certification)
+
+User 2026-11-03 latest corrections (original text must be stored separately as-is): restore selected OpenThoughts3 Parquet conversation fields; report import progress; allow text to participate in same universal graph; do not redraw the working UI; derive nodes/links from experienced worlds, including real ordered temporal events as connected 4D nodes, not time-axis projections.
+
+| Source clause | Code | Acceptance | State |
+| -- | -- | -- | -- |
+| Parquet error on fixed fields | `corpus.py` schema discovery and recursive conversion | `tests/test_v11.py::test_parquet_schema_reader_discovers_conversations_not_a_fixed_allowlist` | Tested with schema-mocked reader; user shard decode not tested locally |
+| No visible import progress | `server.py`, `web/app.js` | `test_async_corpus_import_reports_progress_and_enables_real_text` | CPU test passed |
+| 4D real nodes connected to 1D–3D and reused for control | `engine.py` Graph memory retrieval, event-based temporal edges; `web/app.js` | `test_4d_nodes_are_born_after_temporal_experience_and_used_by_brain` | CPU test passed |
+| Keep current checkpoint/UI | `Graph.restore`, minimal existing web UI label changes | `test_restore_legacy_graph_without_dimension_fields`, V10 regressions | CPU test passed; Windows CUDA pending |
+
+The broader Verbatim completeness gate remains BLOCKED.
