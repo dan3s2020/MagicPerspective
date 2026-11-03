@@ -85,7 +85,8 @@ class Cells(nn.Module):
             state["exp_avg_sq"] = torch.tensor((s.get("v") or {}).get(k, [0.] * param.numel()),
                 dtype=torch.float32, device=device).reshape(param.shape)
     def snapshot(self):
-        torch.cuda.synchronize()
+        if self.device_name.type == "cuda":
+            torch.cuda.synchronize()
         parameters = {k: p.detach().flatten().cpu().tolist() for k, p in self.p.items()}
         m = {k: self.optimizer.state[p]["exp_avg"].detach().flatten().cpu().tolist()
             for k, p in self.p.items()}
@@ -147,9 +148,9 @@ class Batch:
         maze_adj = near.unsqueeze(0) & floors[:, :, None] & floors[:, None, :]
         links = torch.rand(batch, N, N, device=device) < .062
         links = torch.triu(links, diagonal=1)
-        links |= links.transpose(1, 2)
+        links = links | links.transpose(1, 2)
         chain = torch.diag(torch.ones(N-1, dtype=torch.bool, device=device), 1)
-        chain |= chain.T
+        chain = chain | chain.T
         net_adj = links | chain
         self.truth = torch.where(self.maze[:, None, None], maze_adj, net_adj)
         self.truth &= ~self.text[:, None, None]
@@ -282,7 +283,7 @@ def oracle_path(adj, start, goal):
         node = prev[node]
     return route[::-1]
 
-def make_trace(batch, records, model, index, loss, weight_delta):
+def make_trace(batch, records, model, index, loss, weight_delta, decision_weights):
     """Only record actually executed GPU transitions and pre-action activations.
     The oracle graph is serialized after execution, never used for the policy.
     """
@@ -347,7 +348,7 @@ def make_trace(batch, records, model, index, loss, weight_delta):
             "inbox": [], "activity": float(math.sqrt(sum(x*x for x in layers[-1][node]))),
             "gradient": None} for node in visibility]
         messages = []
-        p_message = model.p["message"].detach().cpu().tolist()
+        p_message = decision_weights["message"].detach().cpu().tolist()
         for a,b in adj.nonzero().tolist():
             if a == b:
                 continue
@@ -369,8 +370,8 @@ def make_trace(batch, records, model, index, loss, weight_delta):
         if chosen:
             own = layers[-1][src]
             tar = layers[-1][candidate_ids[act]] if candidate_ids[act]>=0 else [0]*CHANNELS
-            weights_a = model.p["readCurrent"].detach().cpu().tolist()
-            weights_b = model.p["readTarget"].detach().cpu().tolist()
+            weights_a = decision_weights["readCurrent"].detach().cpu().tolist()
+            weights_b = decision_weights["readTarget"].detach().cpu().tolist()
             chosen["contribution"]={"votes":[
                 {"cell":src,"channel":k,"role":"current",
                  "value":round(own[k]*weights_a[k],6)} for k in range(CHANNELS)
@@ -542,6 +543,7 @@ class Controller:
     def train_batch(self, count, settings):
         model=self.model
         device=self.device
+        decision_weights={k:model.p[k].detach().clone() for k in ("message","readCurrent","readTarget")}
         batch=Batch(count,settings["domains"],model.seed+model.episodes*7919,device)
         records=[]
         rewards=[]
@@ -622,7 +624,7 @@ class Controller:
         trace=None
         if (self.info["batches"] % 3)==0:
             trace=make_trace(batch,records,model,settings["inspectIndex"],
-                loss_value,round(delta_value,7))
+                loss_value,round(delta_value,7),decision_weights)
         return {"loss":loss_value,"success":successes,"trace":trace}
 
 class API(BaseHTTPRequestHandler):
@@ -697,8 +699,20 @@ def main():
         assert logits.shape==(6,5)
         assert all(layer.device.type==device.type for layer in layers)
         assert bool(torch.isfinite(logits[valid]).all().item())
+        choice=torch.zeros(6,dtype=torch.long,device=device)
+        target=torch.full((6,),.8,device=device)
+        model.optimizer.zero_grad(set_to_none=True)
+        loss=F.binary_cross_entropy_with_logits(
+            logits.gather(1,choice[:,None]).squeeze(1),target)
+        loss.backward()
+        assert any(p.grad is not None and bool(torch.isfinite(p.grad).all().item())
+            for p in model.parameters())
+        model.optimizer.step()
+        assert model.snapshot()["parameters"]["in"]
         print("CUDA_GRAPH_SELFTEST_PASS",device,torch.__version__,flush=True)
         return
+    if args.cpu_test:
+        raise SystemExit("CPU is allowed ONLY with --self-test; live CUDA training never falls back.")
     API.controller=Controller(device)
     server=ThreadingHTTPServer(("127.0.0.1",args.port),API)
     print("CUDA_GRAPH_READY "+torch.cuda.get_device_name(0)+" port="+str(args.port),flush=True)
