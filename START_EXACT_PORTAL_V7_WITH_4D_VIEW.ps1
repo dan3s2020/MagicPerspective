@@ -96,6 +96,9 @@ function RestoreMissingV7Source([string]$Zip, [string]$Target) {
     Write-Host "Restored $restored MISSING original V7 source files; existing CUDA venv and checkpoints preserved." -ForegroundColor Green
     return $launcherAtTarget
 }
+# Already-running V7 does not require its old launcher path to exist.
+$launcher = $null
+if (-not (IsListening 8788) -or $ResolveOnly) {
 $launcher = FindV7Launcher $V7Root
 if (-not $launcher) {
     $download = Join-Path $env:USERPROFILE "Downloads"
@@ -118,6 +121,7 @@ $V7Root = Split-Path -Parent $launcher
 if ($ResolveOnly) {
     Write-Host "V7_LAUNCHER_RESOLVED: $launcher" -ForegroundColor Green
     return
+}
 }
 $growthServer = Join-Path $RepoRoot "experiments\portal-v7-hypercube-4d\growth-server.mjs"
 if (-not (Test-Path -LiteralPath $growthServer)) {
