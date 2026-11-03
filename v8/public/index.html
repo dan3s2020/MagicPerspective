@@ -1,0 +1,79 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#e6ecef">
+<title>MagicPerspective V8</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head>
+<body><main class="page">
+<header class="top"><div class="logo" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 4v24M4 16h24" stroke="currentColor" stroke-width="1" opacity=".5"/><path d="M9 22c4-1 5-9 13-12" fill="none" stroke="#c2185b" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+  <div><h1>MagicPerspective <span>V8</span></h1><p class="tag">Relief, labirinturi și rețele: fiecare nod are orizontul lui</p></div><p class="health" id="health">se conectează…</p></header>
+
+<section class="lead"><h2>Aceeași lume. Unul își imaginează harta, celălalt nu.</h2>
+<p>Pe teren, ambii văd 3×3 celule și orizontul în 16 direcții. Într-o rețea, un nod vede legăturile lui, iar fiecare legătură e o direcție proprie: dincolo de ea, la 1, 2 și 3 pași, cât de scump e, cât e blocat, cât de aglomerat și cât de tare ajunge unda țintei. Organismul cu organ a învățat singur să citească aceste semne, își imaginează harta, iar nodurile lui dansează (faze și unda țintei) ca să cadă de acord unde e ținta.</p></section>
+
+<section class="bar" aria-label="Control">
+  <label>Teren<select id="kind"><option value="relief">Relief cu munți</option><option value="network">Rețea abstractă</option><option value="braided">Labirint cu bucle</option><option value="maze">Labirint (fără indicii)</option></select></label>
+  <label>Organismul din stânga<select id="left"><option value="v8">Creierul V8</option><option value="v7">Creierul tău V7</option><option value="v6">Creierul tău V6</option></select></label>
+  <label>Mărime<select id="size"><option value="11">11 × 11</option><option value="15" selected>15 × 15</option><option value="19">19 × 19</option></select></label>
+  <div class="buttons"><button id="new">Teren nou</button><button id="step">Un pas</button><button id="auto" class="primary">Pornește</button><button id="run">Până la capăt</button></div>
+</section>
+
+<section class="duel">
+  <article class="side organ"><header><h3 id="left-title">Cu organ</h3><p id="left-sub">își imaginează harta din orizont</p></header>
+    <canvas id="map-organ" aria-label="Harta organismului cu organ"></canvas>
+    <p class="hint" id="dance-line"></p>
+    <dl class="nums"><div><dt>Drum ghicit la pas 0</dt><dd id="o-match">—</dd></div><div><dt>Surprize</dt><dd id="o-surp">—</dd></div><div><dt>Cost / minim (la final)</dt><dd id="o-cost">—</dd></div></dl></article>
+  <article class="side classic"><header><h3>Fără organ</h3><p>presupune că necunoscutul e ca ce a văzut</p></header>
+    <canvas id="map-classic" aria-label="Harta organismului fără organ"></canvas>
+    <dl class="nums"><div><dt>Drum ghicit la pas 0</dt><dd id="c-match">—</dd></div><div><dt>Surprize</dt><dd id="c-surp">—</dd></div><div><dt>Cost / minim (la final)</dt><dd id="c-cost">—</dd></div></dl></article>
+</section>
+
+<section class="viewbar">
+  <div class="seg" role="group" aria-label="Ce arată ceața"><button id="v-imag" class="on" aria-pressed="true">Ce își imaginează</button><button id="v-real" aria-pressed="false">Terenul real</button></div>
+  <div class="time"><button id="play" class="icon" aria-label="Redă de la început">▶</button><input id="scrub" type="range" min="0" max="0" value="0" aria-label="Pasul afișat"><output id="scrub-out">pasul 0</output></div>
+  <ul class="key">
+    <li><i class="k-guess"></i>drumul ghicit acum</li><li><i class="k-first"></i>drumul ghicit la pasul 0</li><li><i class="k-cloud"></i>variante imaginate</li>
+    <li><i class="k-true"></i>drumul cel mai ieftin real</li><li><i class="k-walk"></i>drumul mers</li><li><i class="k-surp"></i>surpriză</li><li id="key-dance"><i class="k-dance"></i>rețea: culoarea nodului = faza dansului, aura = unda țintei</li></ul>
+  <p class="hint" id="hint">Ceața hașurată e ce organismul n-a văzut. „Terenul real” îl vezi doar tu, de sus.</p>
+</section>
+
+<section class="block"><h2>Învățare</h2>
+  <p>Organismul trăiește sute de lumi, pe rând: relief, labirint, labirint cu bucle, rețea. De fiecare dată când fereastra îi arată o celulă, compară ce își imaginase cu ce e acolo și se corectează. Nimeni nu-i arată harta sau drumul corect.</p>
+  <div class="row"><label>Terenuri de trăit<select id="episodes"><option value="150">150 · un minut</option><option value="300" selected>300</option><option value="800">800</option><option value="2000">2000</option></select></label>
+    <button id="train" class="primary">Antrenează</button><button id="cancel" disabled>Oprește</button></div>
+  <div class="meter"><div id="progress"></div></div><p class="small" id="train-status">Creierul nu a fost antrenat în această sesiune.</p>
+  <canvas id="curve" class="curve" aria-label="Cât din drumul real ghicește la pasul 0, pe terenuri de verificare"></canvas>
+  <p class="small">Cât din drumul real ghicește înainte de primul pas, pe terenuri de verificare: <b class="c-organ">cu organ</b> și <b class="c-classic">fără organ</b>.</p>
+</section>
+
+<section class="block"><h2>Test pe terenuri noi</h2>
+  <p>Organismele rulează pe exact aceleași 80 de lumi pe care nu le-au văzut niciodată: câte 20 din fiecare tip. Creierele tale V6 și V7 de pe telefon intră și ele, pe terenuri (pe rețele nu au organ). Cifrele de mai jos sunt pe tipul ales.</p>
+  <div class="row"><button id="evaluate" class="primary">Rulează testul</button><div class="seg small-seg" role="group" aria-label="Tip de teren"><button id="t-relief" class="on" aria-pressed="true">Relief</button><button id="t-network" aria-pressed="false">Rețea</button><button id="t-braided" aria-pressed="false">Cu bucle</button><button id="t-maze" aria-pressed="false">Labirint</button></div></div>
+  <p class="verdict" id="verdict">Niciun test încă.</p>
+  <div id="bars" class="bars"></div>
+</section>
+
+
+<section class="block life"><h2>Ce a învățat</h2>
+  <p>Tot ce a strâns creierul V8 de-a lungul vieții lui, păstrat în fișierul creierului.</p>
+  <h3>Cum și-a format imaginația</h3>
+  <p class="small">Aceeași lume, privită de la start, înainte de primul pas, de creierul lui din diferite momente ale vieții. Prima hartă e lumea reală.</p>
+  <div class="seg" role="group" aria-label="Terenul de vitrină" id="show-tabs"></div>
+  <div class="strip" id="strip"></div>
+  <h3>Tipuri de lumi descoperite</h3>
+  <p class="small">Nimeni nu i-a spus ce tipuri de lumi există. Le-a grupat după ce vede: cât de stâncos e în jur și cum arată orizontul.</p>
+  <div class="kinds" id="kinds"></div>
+  <h3>Toată viața lui</h3>
+  <canvas id="life-curve" class="curve" aria-label="Cât din drum ghicește la pasul 0 de-a lungul întregii vieți"></canvas>
+  <p class="small">Drum ghicit la pasul 0 pe terenurile de verificare, la fiecare antrenare: <b class="c-organ">creierul V8</b> și <b class="c-classic">fără organ</b>.</p>
+  <div class="table-wrap"><table class="tests"><thead><tr><th>Testat</th><th>Lumi trăite</th><th>Drum ghicit (relief)</th><th>Drum ghicit (rețea)</th><th>Cost (relief)</th><th>Cost (rețea)</th><th>Cost (cu bucle)</th><th>Cost (labirint)</th></tr></thead><tbody id="tests-body"></tbody></table></div>
+</section>
+<details class="block how"><summary>Cum funcționează</summary>
+  <ol><li><b>Ce vede.</b> Celulele din jur exact, plus orizontul: în 16 direcții, cel mai înalt relief aproape, mai departe și foarte departe.</li>
+  <li><b>Ce fel de lume e.</b> Din primele priviri își face o „semnătură” a lumii și alege specialistul care a trăit lumi asemănătoare; o lume nouă primește un specialist liber.</li>
+  <li><b>Ce reconstruiește.</b> Organul de reconstrucție al specialistului ghicește înălțimea fiecărei celule nevăzute din toate orizonturile văzute până atunci. Organul de îndoială estimează cât de greșită poate fi ghicirea.</li>
+  <li><b>Ce prezice.</b> Organismul se uită „de sus” la harta lui imaginată și trasează drumul cel mai ieftin. Variantele imaginate ale hărții (după îndoială) dau norul de drumuri posibile.</li>
+  <li><b>În rețea.</b> Organul de rețea ghicește pentru fiecare legătură nevăzută dacă e deschisă și cât costă, din orizonturile nodurilor vizitate, din numele și adresa nodurilor și din dans. Dansul: fiecare nod are o fază; vecinii se trag unul pe altul, ținta are faza 0, iar unda ei, pornită din ce a perceput fiecare nod, trece prin legăturile văzute deschise și prin cele imaginate, după cât de sigur e de ele.</li>
+  <li><b>Rezistență și corecție.</b> Când fereastra arată o celulă, ghicirea de dinainte e comparată cu realitatea și ambele organe se corectează. Asta e singura lui sursă de învățare.</li></ol>
+  <p>În labirint orizontul nu spune nimic despre coridoare, deci acolo organul nu are ce învăța. Labirintul rămâne în test ca martor cinstit.</p>
+  <div class="row"><button id="reset" class="danger">Șterge creierul V8</button><a href="/api/export" download="magicperspective-v8.json">Descarcă creierul</a></div></details>
+</main><script type="module" src="app.js"></script><script type="module" src="life.js"></script></body></html>
