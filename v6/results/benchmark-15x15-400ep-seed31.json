@@ -1,0 +1,360 @@
+{
+  "version": "v6",
+  "seed": 31,
+  "episodes": 400,
+  "size": 15,
+  "count": 40,
+  "seconds": 68,
+  "selected": {
+    "episode": 26,
+    "match0": 0.5878,
+    "dev0": 0.9888,
+    "meanMatch": 0.8138,
+    "ratio": 1.0297,
+    "surprises": 0.2,
+    "classic": {
+      "match0": 0.2668,
+      "dev0": 1.5497,
+      "ratio": 1.0826,
+      "meanMatch": 0.6037
+    },
+    "score": 1.3225
+  },
+  "test": {
+    "seed": 6121211,
+    "count": 40,
+    "size": 15,
+    "kind": "all",
+    "modes": {
+      "organ": {
+        "worlds": 40,
+        "solved": 1,
+        "match0": 0.2445,
+        "dev0": 2.3069,
+        "meanMatch": 0.6492,
+        "surprises": 20.3,
+        "ratio": 1.5487
+      },
+      "organ-untrained": {
+        "worlds": 40,
+        "solved": 1,
+        "match0": 0.1715,
+        "dev0": 2.4198,
+        "meanMatch": 0.5667,
+        "surprises": 45.4,
+        "ratio": 1.6697
+      },
+      "classic": {
+        "worlds": 40,
+        "solved": 1,
+        "match0": 0.1417,
+        "dev0": 2.3798,
+        "meanMatch": 0.5137,
+        "surprises": 18.15,
+        "ratio": 1.5783
+      }
+    },
+    "kinds": {
+      "relief": {
+        "organ": {
+          "worlds": 20,
+          "solved": 1,
+          "match0": 0.3387,
+          "dev0": 1.971,
+          "meanMatch": 0.7238,
+          "surprises": 0.8,
+          "ratio": 1.396
+        },
+        "organ-untrained": {
+          "worlds": 20,
+          "solved": 1,
+          "match0": 0.1867,
+          "dev0": 2.2592,
+          "meanMatch": 0.5823,
+          "surprises": 9.6,
+          "ratio": 1.5764
+        },
+        "classic": {
+          "worlds": 20,
+          "solved": 1,
+          "match0": 0.1491,
+          "dev0": 2.2252,
+          "meanMatch": 0.5019,
+          "surprises": 9.5,
+          "ratio": 1.5748
+        }
+      },
+      "maze": {
+        "organ": {
+          "worlds": 20,
+          "solved": 1,
+          "match0": 0.1503,
+          "dev0": 2.6428,
+          "meanMatch": 0.5747,
+          "surprises": 39.8,
+          "ratio": 1.7014
+        },
+        "organ-untrained": {
+          "worlds": 20,
+          "solved": 1,
+          "match0": 0.1564,
+          "dev0": 2.5805,
+          "meanMatch": 0.5511,
+          "surprises": 81.2,
+          "ratio": 1.7629
+        },
+        "classic": {
+          "worlds": 20,
+          "solved": 1,
+          "match0": 0.1342,
+          "dev0": 2.5345,
+          "meanMatch": 0.5255,
+          "surprises": 26.8,
+          "ratio": 1.5818
+        }
+      }
+    }
+  },
+  "history": [
+    {
+      "episode": 26,
+      "match0": 0.5878,
+      "dev0": 0.9888,
+      "meanMatch": 0.8138,
+      "ratio": 1.0297,
+      "surprises": 0.2,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.3225
+    },
+    {
+      "episode": 52,
+      "match0": 0.5558,
+      "dev0": 1.0188,
+      "meanMatch": 0.7909,
+      "ratio": 1.053,
+      "surprises": 0.7,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2428
+    },
+    {
+      "episode": 78,
+      "match0": 0.5558,
+      "dev0": 0.9535,
+      "meanMatch": 0.7822,
+      "ratio": 1.0614,
+      "surprises": 1.5,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2289
+    },
+    {
+      "episode": 104,
+      "match0": 0.5219,
+      "dev0": 1.045,
+      "meanMatch": 0.7889,
+      "ratio": 1.0545,
+      "surprises": 0.4,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2041
+    },
+    {
+      "episode": 130,
+      "match0": 0.5112,
+      "dev0": 1.0552,
+      "meanMatch": 0.7719,
+      "ratio": 1.0789,
+      "surprises": 0.7,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.1514
+    },
+    {
+      "episode": 156,
+      "match0": 0.5621,
+      "dev0": 1.0213,
+      "meanMatch": 0.764,
+      "ratio": 1.0787,
+      "surprises": 0.7,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.1963
+    },
+    {
+      "episode": 182,
+      "match0": 0.5669,
+      "dev0": 0.9403,
+      "meanMatch": 0.7777,
+      "ratio": 1.0452,
+      "surprises": 0.7,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2524
+    },
+    {
+      "episode": 208,
+      "match0": 0.5613,
+      "dev0": 0.967,
+      "meanMatch": 0.7649,
+      "ratio": 1.0798,
+      "surprises": 0.4,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.198
+    },
+    {
+      "episode": 234,
+      "match0": 0.561,
+      "dev0": 1.0003,
+      "meanMatch": 0.7908,
+      "ratio": 1.0696,
+      "surprises": 0.9,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2322
+    },
+    {
+      "episode": 260,
+      "match0": 0.5727,
+      "dev0": 0.9347,
+      "meanMatch": 0.7544,
+      "ratio": 1.0529,
+      "surprises": 1.2,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2275
+    },
+    {
+      "episode": 286,
+      "match0": 0.4902,
+      "dev0": 1.0129,
+      "meanMatch": 0.7329,
+      "ratio": 1.092,
+      "surprises": 2.2,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.0805
+    },
+    {
+      "episode": 312,
+      "match0": 0.6249,
+      "dev0": 0.8487,
+      "meanMatch": 0.7492,
+      "ratio": 1.0763,
+      "surprises": 0.7,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2554
+    },
+    {
+      "episode": 338,
+      "match0": 0.5689,
+      "dev0": 0.9549,
+      "meanMatch": 0.7375,
+      "ratio": 1.0559,
+      "surprises": 2,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.2028
+    },
+    {
+      "episode": 364,
+      "match0": 0.6135,
+      "dev0": 0.8595,
+      "meanMatch": 0.7731,
+      "ratio": 1.0466,
+      "surprises": 0.4,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.297
+    },
+    {
+      "episode": 390,
+      "match0": 0.5622,
+      "dev0": 0.9698,
+      "meanMatch": 0.729,
+      "ratio": 1.0663,
+      "surprises": 1.3,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.1764
+    },
+    {
+      "episode": 400,
+      "match0": 0.4498,
+      "dev0": 1.0402,
+      "meanMatch": 0.7297,
+      "ratio": 1.0619,
+      "surprises": 1.1,
+      "classic": {
+        "match0": 0.2668,
+        "dev0": 1.5497,
+        "ratio": 1.0826,
+        "meanMatch": 0.6037
+      },
+      "score": 1.0656
+    }
+  ]
+}
