@@ -16,8 +16,9 @@ import {buildExperience} from '../../causal-text/engine/training.mjs';
 import {createWorld as makeSymbolic,generateTask,TOOLS,senseProbes,encodeContext,features as causalFeatures} from '../../causal-text/engine/world.mjs';
 import {MLP} from '../../../v7/engine/nn.mjs';
 import {attachAbstractGraph} from './abstract-graph.mjs';
+import {GraphCellsBrain} from './cells.mjs';
 
-export const KINDS=['universal','v7','v6','graph','dynamic','causal'];
+export const KINDS=['cells','universal','v7','v6','graph','dynamic','causal'];
 export const DOMAINS=['maze','network','text'];
 export const INPUT=16;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -26,6 +27,7 @@ const RNG=s=>{let v=(s>>>0)||1;return ()=>{v^=v<<13;v^=v>>>17;v^=v<<5;v>>>=0;ret
 const mean=a=>a.length?a.reduce((p,c)=>p+c,0)/a.length:0;
 export function makeBrain(kind='universal',seed=19){
  switch(kind){
+  case 'cells':return new GraphCellsBrain(seed);
   case 'universal':return new SharedBrain(seed);
   case 'v7':return new Organism7(seed);
   case 'v6':return new Organism(seed);
@@ -37,6 +39,7 @@ export function makeBrain(kind='universal',seed=19){
 }
 export function restoreBrain(kind,snapshot){
  switch(kind){
+  case 'cells':return GraphCellsBrain.restore(snapshot);
   case 'universal':return SharedBrain.restore(snapshot);
   case 'v7':return Organism7.restore(snapshot);
   case 'v6':return Organism.restore(snapshot);
@@ -51,17 +54,20 @@ const kindOf=(brain)=>brain instanceof SharedBrain?'universal':
  brain instanceof MessageBrain?'dynamic':brain instanceof CausalNet?'causal':null;
 export function brainStats(kind,brain){
  const s=brain.snapshot();return {kind,episodes:brain.episodes||0,
-  updates:kind==='universal'?brain.net.updates:kind==='v7'?brain.experts.reduce((n,e)=>n+e.recon.updates+e.doubt.updates,0):
+  updates:kind==='cells'?brain.steps:kind==='universal'?brain.net.updates:kind==='v7'?brain.experts.reduce((n,e)=>n+e.recon.updates+e.doubt.updates,0):
    kind==='v6'?brain.recon.updates+brain.doubt.updates:
    kind==='graph'?brain.updates:kind==='dynamic'?brain.costUpdates+brain.ruleUpdates:brain.steps,
-  samples:kind==='universal'?brain.samples:brain.samples??brain.costUpdates??0,
-  weights:kind==='universal'?{W1:s.net.W1,b1:s.net.b1,W2:s.net.W2,b2:s.net.b2}:kind==='v7'?
+  samples:kind==='cells'?brain.samples:kind==='universal'?brain.samples:brain.samples??brain.costUpdates??0,
+  weights:kind==='cells'?{W1:s.parameters.in,b1:s.parameters.bias,
+    W2:[...s.parameters.readCurrent,...s.parameters.readTarget],b2:s.parameters.action}:
+   kind==='universal'?{W1:s.net.W1,b1:s.net.b1,W2:s.net.W2,b2:s.net.b2}:kind==='v7'?
    {W1:s.experts[0].recon.W1,b1:s.experts[0].recon.b1,W2:s.experts[0].recon.W2,b2:s.experts[0].recon.b2}:
    kind==='v6'?{W1:s.recon.W1,b1:s.recon.b1,W2:s.recon.W2,b2:s.recon.b2}:
    kind==='graph'?{W1:s.w,b1:[],W2:[],b2:[]}:kind==='dynamic'?
    {W1:s.cost,b1:s.score,W2:s.gate,b2:[s.bias,s.temperature]}:
    {W1:s.w1,b1:s.b1,W2:s.w2,b2:s.b2},
-  architecture:kind==='universal'?'16 → 24 → 1 • shared across domains':
+  architecture:kind==='cells'?'ONE GRAPH · observed state cells × 8 channels × 3 message rounds → real actions':
+   kind==='universal'?'16 → 24 → 1 • shared across domains':
    kind==='v7'?'3 specialists × 13 → {24,16} → 1':kind==='v6'?'13 → {24,16} → 1':
    kind==='graph'?'9 learned edge associations':
    kind==='dynamic'?'4 cost + 3 attention + 3 gate + 2':
@@ -214,7 +220,8 @@ function graphFrame(ep){
    candidates:[],chosen:null,actual:null};
 }
 export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=true,explore=.18}={}){
- if(!(brain instanceof SharedBrain))throw Error('Expected SharedBrain');
+ if(!(brain instanceof SharedBrain)&&!(brain instanceof GraphCellsBrain))throw Error('Expected shared/cellular graph brain');
+ const cellular=brain instanceof GraphCellsBrain;
  const ep=createEpisode(domain,seed,size),rand=RNG(seed^brain.seed^0x1ca1);
  const trajectory=[],frames=[],scorePath=[];
  let cost=0,solved=ep.current===ep.goal,blocked=0;
@@ -227,21 +234,25 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
  ep.visited[ep.current]++;options(ep);capture();
  for(let t=0;t<ep.limit&&!solved;t++){
   const candidates=options(ep);if(!candidates.length)break;
-  const rated=candidates.map(c=>{
+  let rated=candidates.map(c=>{
    const x=features(domain,ep.positions,ep.current,ep.goal,c.action,c.to,c.cost,ep.visited,c.to==null);
-   const neural=brain.predict(x);
+   const neural=cellular?0:brain.predict(x);
    const h=ep.domain==='text'?0:clamp((posDistance(ep.positions[ep.current],ep.positions[ep.goal])-
         posDistance(ep.positions[c.to],ep.positions[ep.goal])), -1,1);
    const revisit=ep.visited[c.to??ep.current]||0;
    return {...c,features:x,neural,utility:neural+.15*h-.025*revisit-.012*c.cost};
   });
-  rated.sort((a,b)=>b.utility-a.utility||a.action-b.action);
+  let computation=null,cellTape=null;
+  if(cellular){
+   const analysis=brain.rank(ep,rated);
+   rated=analysis.candidates;computation=analysis.trace;cellTape=analysis.tape;
+  }else rated.sort((a,b)=>b.utility-a.utility||a.action-b.action);
   const select=learn&&rand()<explore?rated[Math.floor(rand()*rated.length)]:rated[0];
   // Snapshot the model's belief BEFORE execution. This is the actual score used
   // by the policy; next-state for unseen symbolic actions remains explicitly unknown.
   const priorFrame=frames.at(-1),nextPredicted=rated[0]?.expectedTo??rated[0]?.to??null;
   const knownPlan=pathThroughObserved(ep,ep.current,ep.goal,nextPredicted);
-  priorFrame.graph={...graphFrame(ep),predictedPath:knownPlan.path,
+  priorFrame.graph={...graphFrame(ep),compute:computation,predictedPath:knownPlan.path,
    predictedNext:nextPredicted,planSource:knownPlan.source,
    candidates:rated.map(x=>({from:ep.current,to:x.expectedTo??x.to??null,
     action:x.tool??String(x.action),q:+x.neural.toFixed(6),
@@ -267,23 +278,38 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
    {a:previous,b:to,action:select.tool,open:true,cost:1});
   solved=ep.current===ep.goal;
   const reward=clamp(2*(oldDist-newDist)-.035*stepCost-.045*repeat+(solved?1.8:0),-2.5,2.5);
-  trajectory.push({features:select.features,score:select.neural,
-   action:select.tool??select.action,from:previous,to,domain,reward});
+  trajectory.push({features:select.features,score:cellular?select.q:select.neural,
+   action:select.tool??select.action,from:previous,to,domain,reward,
+   cellDecision:cellular?{tape:cellTape,net:select.net,logit:select.logit}:null});
   priorFrame.graph.actual={from:previous,to,action:select.tool??String(select.action),
    reward:+reward.toFixed(5),cost:stepCost,
    predictionKnown:priorFrame.graph.predictedNext!==null,
    matched:priorFrame.graph.predictedNext===to};
   options(ep); // reveal only local observations at the NEW position
-  capture({action:select.tool??select.action,activation:brain.hidden(select.features),
-   score:select.neural});
+  capture({action:select.tool??select.action,
+   activation:cellular?computation?.cells.find(x=>x.id===previous)?.activations.at(-1):brain.hidden(select.features),
+   score:cellular?select.q:select.neural});
  }
- const loss=learn?brain.learn(trajectory,solved):null;
+ const learning=learn?brain.learn(trajectory,solved):null;
+ const loss=cellular?learning?.loss??null:learning;
+ if(cellular&&learning?.perStep){
+  for(let i=0;i<trajectory.length;i++){
+   const info=learning.perStep[i],trace=frames[i]?.graph?.compute;
+   if(!trace||!info)continue;
+   trace.learning={target:+info.target.toFixed(6),prediction:+info.prediction.toFixed(6),
+    loss:+info.loss.toFixed(6),gradientNorm:+info.gradientNorm.toFixed(6),
+    weightDelta:learning.weightDelta,updatedWeights:brain.steps};
+   const gradients=new Map(info.cells.map(c=>[c.id,c.gradient]));
+   for(const cell of trace.cells)cell.gradient=gradients.get(cell.id)||0;
+  }
+ }
  if(learn){brain.episodes++;brain.domainCounts[domain]++;}
- const trimmed=frames.length<=96?frames:frames.filter((_,i)=>i%Math.ceil(frames.length/96)===0||i===frames.length-1);
+ const trimmed=cellular?frames:(frames.length<=96?frames:frames.filter((_,i)=>i%Math.ceil(frames.length/96)===0||i===frames.length-1));
  return attachAbstractGraph({
   meta:{domain,seed,kind:'universal',text:ep.text||null,start:ep.start,goal:ep.goal,
    positions:ep.positions,truth:ep.truth,learnerInput:'Only local observations and known goal'},
   outcome:{solved,steps:trajectory.length,cost,blocked,loss,domain,
+   learning:cellular?(learning?{...brain.lastLearning,steps:brain.steps}:null):null,
    observedEdges:ep.observed.size},frames:trimmed,trajectory,
   lastInput:trajectory.at(-1)?.features||Array(INPUT).fill(0)
  },ep.world,domain);
@@ -373,7 +399,7 @@ export function runNativeEpisode(kind,brain,{seed=1,size=11,learn=true}={}){
  throw Error('Invalid native brain kind');
 }
 export function oneEpisode(kind,brain,args){
- return kind==='universal'?runSharedEpisode(brain,args):runNativeEpisode(kind,brain,args);
+ return (kind==='cells'||kind==='universal')?runSharedEpisode(brain,args):runNativeEpisode(kind,brain,args);
 }
 export function blindTest(kind,brain,{count=12,size=11,seed=918273,domains=DOMAINS}={}){
  if(!Number.isInteger(count)||count<3||count>120)throw Error('Invalid test count');
@@ -407,7 +433,7 @@ export function blindTest(kind,brain,{count=12,size=11,seed=918273,domains=DOMAI
  }
  const snapshot=brain.snapshot(),trained=restoreBrain(kind,snapshot),base=makeBrain(kind,brain.seed);
  const report={count,seed,domains:{},all:{trained:{solved:0,episodes:0,cost:0},untrained:{solved:0,episodes:0,cost:0}}};
- const applicable=kind==='universal'?domains:
+ const applicable=(kind==='cells'||kind==='universal')?domains:
   kind==='v7'||kind==='v6'?['maze','relief']:kind==='causal'?['text']:['network'];
  for(const domain of applicable){
   let wins=0,baseWins=0,cost=0,baseCost=0,attempts=0;
@@ -415,9 +441,9 @@ export function blindTest(kind,brain,{count=12,size=11,seed=918273,domains=DOMAI
    const n=seedOf(seed,1000*i+DOMAINS.indexOf(domain)+2);
    // Native V7 alternates maze/relief deterministically; require a seed parity matching domain.
    const actualSeed=(kind==='v7'||kind==='v6')?((n&~1)+(domain==='relief'?1:0)):n;
-   const a=kind==='universal'?runSharedEpisode(trained,{domain,seed:actualSeed,size,learn:false,explore:0}):
+   const a=(kind==='cells'||kind==='universal')?runSharedEpisode(trained,{domain,seed:actualSeed,size,learn:false,explore:0}):
      nativeTrial(kind,trained,{seed:actualSeed,size});
-   const b=kind==='universal'?runSharedEpisode(base,{domain,seed:actualSeed,size,learn:false,explore:0}):
+   const b=(kind==='cells'||kind==='universal')?runSharedEpisode(base,{domain,seed:actualSeed,size,learn:false,explore:0}):
      nativeTrial(kind,base,{seed:actualSeed,size});
    wins+=Number(a.outcome.solved);baseWins+=Number(b.outcome.solved);
    cost+=a.outcome.cost;baseCost+=b.outcome.cost;attempts++;
@@ -441,6 +467,7 @@ function nativeTrial(kind,brain,args){
  return runNativeEpisode(kind,restoreBrain(kind,brain.snapshot()),{...args,learn:false});
 }
 export function functionSamples(kind,brain,{domain='maze'}={}){
+ if(kind==='cells')return brain.curve(domain);
  if(kind==='universal'){
   const samples=[];for(let i=0;i<=40;i++){
    const d=i/20-1,x=[1,...DOMAINS.map(k=>+(k===domain)),.5,.5,.5,.5,d,0,
