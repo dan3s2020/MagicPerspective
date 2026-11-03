@@ -79,7 +79,7 @@ async function launchUnlimited(input){
      onProgress:x=>{
       task.done=previousDone+x.done;
       task.last=x.latest;
-      task.history=[...task.history,...x.history.map(h=>({...h,round}))].slice(-75);
+      task.history=[...task.history,{...x.latest,round}].slice(-75);
      }});
     task.done=previousDone+work.episodes-old;
     const candidate=r.bestSnapshot?Organism7.restore(r.bestSnapshot):null;
