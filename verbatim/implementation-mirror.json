@@ -4,7 +4,8 @@
   "meaning": "This is a REQUIREMENT TRACKING STRUCTURE; technical mapping is a proposal not original Verbatim and no version is certified fully compliant.",
   "sources": [
     "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
-    "verbatim/recent-user-messages.json"
+    "verbatim/recent-user-messages.json",
+    "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt"
   ],
   "required_evidence_fields": [
     "source_ref",
@@ -162,6 +163,24 @@
       ],
       "measured_result": "Partial evidence linked to source; original full archival gate must remain BLOCKED.",
       "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-10",
+      "source_ref": "2026-11-03-USER-4D-HYPERCUBE-NAVIGATION",
+      "exact_source_span": "pe ecranul meu 2d o sa vad un hypercube,si aia i sa fie metoda de vizualizare a grafului 4d,si de asemenea hypercube are sageti pe care pot sa apas si sa misc hypercubul prin spatiul 4d",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Screen-fixed tesseract with true 4D camera translation XYZ/W; observable 3D W-sections; engine-sourced graph edges, activated cells, predicted and executed transitions. Arrow clicks translate camera mathematically; no invented fourth coordinate.",
+      "status": "GEOMETRY_AND_VIEWER_IMPLEMENTED_ORIGINAL_V7_INTEGRATION_BLOCKED",
+      "code_paths": [
+        "experiments/portal-v7-hypercube-4d/geometry.mjs",
+        "experiments/portal-v7-hypercube-4d/viewer.mjs",
+        "experiments/portal-v7-hypercube-4d/viewer.css"
+      ],
+      "test_paths": [
+        "experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs"
+      ],
+      "measured_result": "Geometry and viewer available as additive modules. Exact original Portal4D V7 UniversalGraph ZIP is not accessible for modification in this session. No claim of original V7 runtime integration or real backend animation until original source is inspected and event API wired.",
+      "regression_check": "CI: node --test experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs; source-to-implementation and original V7 no-regression checks remain open."
     }
   ],
   "versions": [
