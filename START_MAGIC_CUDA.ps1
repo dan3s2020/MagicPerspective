@@ -1,5 +1,5 @@
-# MagicPerspective GPU training launcher — Windows PowerShell 5.1/7.
-# Original checkpoints and prior V1–V7 scripts are never modified.
+# MagicPerspective GPU training launcher - Windows PowerShell 5.1/7.
+# Original checkpoints and prior V1-V7 scripts are never modified.
 param(
     [ValidateSet("cu126","cu128")][string]$TorchCuda = "cu126",
     [string]$PythonExe = "",
@@ -61,9 +61,9 @@ if ($LASTEXITCODE -ne 0) { throw "CUDA indisponibil: actualizeaza driverul NVIDI
 & $python $worker --self-test
 if ($LASTEXITCODE -ne 0) { throw "Testul real cu tensori CUDA a esuat. Nu pornesc antrenarea." }
 Write-Host ""
-Write-Host "=== MAGIC PERSPECTIVE GRAPH CELLS · CUDA REAL ===" -ForegroundColor Green
+Write-Host "=== MAGIC PERSPECTIVE GRAPH CELLS - CUDA REAL ===" -ForegroundColor Green
 Write-Host "Dashboard original: http://127.0.0.1:3044"
-Write-Host "Slider: 1–512 simulari GPU in paralel, default 64"
+Write-Host "Slider: 1-512 simulari GPU in paralel, default 64"
 Write-Host "STOP in browser: PAUZA CUDA & SINCRONIZEAZA; Ctrl+C opreste serverul"
 Write-Host "CUDA checkpoints separate: experiments\brain-studio-20261103\cuda\data\cuda-live.json"
 Write-Host "Nu folosesc CPU fallback si nu ating checkpointurile originale."
