@@ -3,6 +3,7 @@ import {readFile,writeFile,rename,mkdir,unlink} from 'node:fs/promises';
 import {createReadStream,existsSync} from 'node:fs';
 import path from 'node:path';import {fileURLToPath} from 'node:url';
 import {makeWorld} from './engine/world.mjs';
+import {makeGallery} from './engine/gallery.mjs';
 import {Agent} from './engine/agent.mjs';
 import {makeBrain,train,evaluate} from './engine/training.mjs';
 import {WorldNet} from './engine/model.mjs';
@@ -46,6 +47,7 @@ const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost'),name=url.pathname;
  if(req.method==='GET'&&name==='/api/health')return json(res,{ok:true,version:4});
  if(req.method==='GET'&&name==='/api/state')return json(res,state());
+ if(req.method==='GET'&&name==='/api/gallery'){const n=int(url.searchParams.get('size'),5,17,7);if(n%2!==1)return json(res,{error:'Odd size required'},400);return json(res,{size:n,worlds:makeGallery(n)});}
  if(req.method==='GET'&&name==='/api/export')return json(res,{net:net.snapshot(),perspective:perspective.snapshot(),bestScore});
  if(name.startsWith('/api/')){
   if(req.method!=='POST')return json(res,{error:'Method not allowed'},405);
@@ -78,7 +80,7 @@ const server=http.createServer(async(req,res)=>{try{
  }
  if(req.method!=='GET')return json(res,{error:'Method not allowed'},405);
  const file=name==='/'?'index.html':name.slice(1);
- if(!['index.html','app.js','style.css'].includes(file))return json(res,{error:'Not found'},404);
+ if(!['index.html','app.js','style.css','world-visuals.js'].includes(file))return json(res,{error:'Not found'},404);
  const full=path.join(root,'public',file);res.writeHead(200,{'Content-Type':MIME[path.extname(full)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});
  createReadStream(full).pipe(res);
  }catch(error){console.error(error);return json(res,{error:error.message??String(error)},500)}});
