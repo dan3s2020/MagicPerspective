@@ -40,6 +40,16 @@
 <span><i class="purple"></i> nod activ</span>
 <span><i class="green-line"></i> soluție optimă (evaluator)</span></div>
 <div class="decision-list" id="candidate-list" aria-live="polite">Acțiunile și scorurile modelului apar aici.</div>
+<div class="cell-controls">
+ <label><input id="show-messages" type="checkbox" checked> Desenează MESAJELE REALE dintre celule</label>
+ <label>Rundă calcul <select id="cell-round">
+  <option value="0">0 · intrări</option><option value="1">1 · mesaje vecini</option>
+  <option value="2">2 · cooperare</option><option value="3" selected>3 · decizie</option>
+ </select></label>
+ <label>Celulă inspectată <select id="cell-select"><option value="">Alege nodul prin atingere pe graf</option></select></label>
+</div>
+<div class="cell-ledger" id="cell-ledger" aria-live="polite">Selectează **Graph Cells** și atinge un nod pe graful de mai sus pentru mesaje, activări și modificarea ponderilor.</div>
+<div class="cell-flow" id="cell-flow">0 mesaje calculate · 0 celule implicate · 0 actualizări</div>
 <div class="replay-row"><button id="replay-toggle">Ⅱ PAUZĂ REPLAY</button><button id="replay-start">|◀ REIA</button><label>Viteză<select id="play-speed"><option value="1" selected>1× · fiecare cadru</option><option value="4">4× · rapid</option><option value="12">12× · episod complet accelerat</option></select></label>
 <label>Cadru <input id="replay" type="range" min="0" max="0" value="0" step="1"></label>
 <span id="frame-number">0 / 0</span></div>
@@ -93,7 +103,7 @@
 <section class="card"><div class="section-head"><div><span class="eyebrow">05 / NODURI ANIMATE</span>
 <h2>Fluxul prin creier</h2></div><span class="pill" id="architecture">—</span></div>
 <canvas id="neural-canvas" width="750" height="320" aria-label="Straturile, ponderile și activările neuronale observate"></canvas>
-<p class="fine" id="activation-note">Activările sunt afișate numai unde modelul le expune; alte arhitecturi afișează parametrii reali.</p>
+<p class="fine" id="activation-note">Pentru Graph Cells, sunt afișate canalele reale ale celulelor și mesajele lor; pentru modelele istorice, fiecare adaptor rămâne separat.</p>
 </section>
 </div>
 <section class="card"><div class="section-head"><div><span class="eyebrow">06 / EVOLUȚIA TRAININGULUI</span><h2>Cât învață și cât de repede?</h2></div><button id="test" class="primary">◎ TEST ORB</button></div>
@@ -106,6 +116,7 @@
 <div class="form-grid">
 <label>Creier activ<select id="brain-list" aria-label="Alege creierul salvat"><option>Se caută checkpointuri...</option></select></label>
 <label>Creier nou<select id="new-kind">
+<option value="cells" selected>Graph Cells · toate deciziile prin aceeași rețea</option>
 <option value="universal">Universal · creier comun</option>
 <option value="v7">V7 · labirint și relief</option>
 <option value="v6">V6 · percepție și relief</option>

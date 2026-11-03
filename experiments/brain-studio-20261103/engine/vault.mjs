@@ -26,7 +26,8 @@ export function detect(content){
  const s=content?.snapshot||content?.brain||content?.rule||content?.model||content;
  if(!s||typeof s!=='object')throw Error('Invalid snapshot object');
  let kind='archive';
- if(s.schema===1&&s.net?.I===16)kind='universal';
+ if(s.schema===1&&s.architecture==='graph-cells'&&s.parameters?.in?.length===72)kind='cells';
+ else if(s.schema===1&&s.net?.I===16)kind='universal';
  else if(s.schema===7&&Array.isArray(s.experts))kind='v7';
  else if(s.schema===6&&s.recon&&s.doubt)kind='v6';
  else if(s.schema===7&&Array.isArray(s.w)&&s.w.length===9)kind='graph';

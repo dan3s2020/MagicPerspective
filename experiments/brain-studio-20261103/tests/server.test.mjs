@@ -48,13 +48,15 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
    assert.ok(html.includes('id="'+control+'"'),'Missing UI control '+control);
   }
   let s=await state();
-  assert.equal(s.kind,'universal');assert.equal(s.model.episodes,0);
+  assert.equal(s.kind,'cells');assert.equal(s.model.episodes,0);
   const graphRenderer=await fetch(base+'/graph-render.js');
   assert.equal(graphRenderer.status,200,'Graph renderer ES module not served');
   assert.ok((await graphRenderer.text()).includes('drawAbstract'));
   assert.ok(html.includes('id="graph-prediction"'));
   assert.ok(html.includes('id="graph-solution"'));
   assert.ok(html.includes('id="candidate-list"'));
+  for(const id of ['cell-round','cell-select','cell-ledger','show-messages','cell-flow'])
+   assert.ok(html.includes('id="'+id+'"'),'Cell inspector missing '+id);
   assert.ok(html.indexOf('class="card world"')<html.indexOf('class="card brain-card"'),
    'Graph must be first, above library');
   const beforeProbe=JSON.stringify(s.model.weights);
@@ -78,6 +80,9 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   assert.ok(s.preview.meta.positions.length>0);
   assert.equal(s.preview.meta.abstract.schema,'magic.abstract.graph.v1');
   assert.ok(s.preview.frames.some(f=>f.graph.candidates.length>0));
+  assert.ok(s.preview.frames.some(f=>f.graph.compute?.engine==='GRAPH-CELLS'));
+  assert.equal(s.preview.frames.length,s.preview.outcome.steps+1);
+  assert.ok(s.preview.frames.some(f=>f.graph.compute?.learning?.weightDelta>0));
   const feed=await (await fetch(base+'/api/traces?after=0')).json();
   assert.ok(feed.traces.length>0);
   assert.equal(new Set(feed.traces.map(t=>t.id)).size,feed.traces.length);
@@ -119,7 +124,7 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   assert.ok(r.body.lastTest.domains.network);
   const snapshot=await (await fetch(base+'/api/export')).json();
   assert.equal(snapshot.brain.schema,1);
-  r=await post('brains/import',{content:JSON.stringify(snapshot),label:'Imported Universal'});
+  r=await post('brains/import',{content:JSON.stringify(snapshot),label:'Imported Graph Cells'});
   assert.equal(r.status,200);
   assert.ok(r.body.id.startsWith('saved:'));
   r=await post('start',{episodes:0,unlimited:true,size:11,delayMs:40,

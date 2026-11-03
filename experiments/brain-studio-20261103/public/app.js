@@ -7,7 +7,7 @@ const COLORS={mint:'#71dcc8',amber:'#f8c17b',blue:'#7abfff',purple:'#baa3fc',red
 let S=null,archive=[],busy=false,polling=false,frames=[],frameNo=0,framePlaying=true,
  lastPreviewStamp=null,animation=0,revision=-1,lastFile=null;
 let displayed=null,displaySource=null,traceCursor=0,traceQueue=[],traceDropped=0,
- tracePolling=false;
+ tracePolling=false,selectedCell=null,cellOptionsStamp=null;
 async function api(route,payload){
  const isPost=payload!==undefined;
  const response=await fetch('/api/'+route,{method:isPost?'POST':'GET',
@@ -120,6 +120,7 @@ $('replay').oninput=()=>{frameNo=Number($('replay').value);framePlaying=false;
 function showDisplayed(preview,source){
  if(!preview?.meta?.abstract)return;
  displayed=preview;displaySource=source;frames=preview.frames||[];frameNo=0;
+ selectedCell=null;cellOptionsStamp=null;
  lastPreviewStamp=preview.meta.seed+'-'+preview.outcome.steps+'-'+preview.meta.kind;
  $('replay').max=String(Math.max(0,frames.length-1));
  $('episode-id').textContent=preview.meta.domain.toUpperCase()+' · seed '+preview.meta.seed;
@@ -133,6 +134,7 @@ function apply(s){
  S=s;
  if(previousSelection&&previousSelection!==s.selected){
   displayed=null;traceQueue=[];traceCursor=0;traceDropped=0;frames=[];
+  selectedCell=null;cellOptionsStamp=null;
  }
  if(!s)return;
  const run=s.run||{},m=s.model||{},t=s.timing||{},out=s.last?.outcome||{};
@@ -198,9 +200,11 @@ const parseKnown=frame=>{
 };
 function drawWorld(id,truth=false){
  drawAbstract($(id),displayed?.meta||null,frames[Math.min(frameNo,frames.length-1)]||null,
-  {truth,animation});
+  {truth,animation,cellRound:Number($('cell-round').value),showMessages:$('show-messages').checked,
+   selectedCell});
 }
 function drawGraphFacts(){
+ drawCellLedger();
  const p=displayed,frame=frames[Math.min(frameNo,frames.length-1)]||null,
   facts=graphFacts(p?.meta,frame);
  if(!facts){
@@ -233,6 +237,74 @@ function drawGraphFacts(){
   ' (când motorul rulează mai repede decât telefonul).';
 }
 
+// Explain exactly how every participating state cell computes and learns.
+// All values originate in the same computation tape that selected the action.
+function drawCellLedger(){
+ const frame=frames[Math.min(frameNo,frames.length-1)]||{},g=frame.graph||{},
+  compute=g.compute,root=$('cell-ledger');
+ if(!compute||compute.engine!=='GRAPH-CELLS'){
+  root.textContent='Creierul selectat are un mecanism istoric separat. Alege Graph Cells pentru a vedea mesajele, scorul și gradientele prin același graf.';
+  $('cell-flow').textContent='Fără calcul celular comun în acest checkpoint';
+  return;
+ }
+ const cells=compute.cells||[];
+ const stamp=(displayed?.meta?.seed||0)+':'+frameNo+':'+cells.length;
+ const select=$('cell-select');
+ if(stamp!==cellOptionsStamp){
+  cellOptionsStamp=stamp;select.replaceChildren();
+  for(const cell of cells){
+   const option=document.createElement('option');option.value=String(cell.id);
+   option.textContent='Celula '+cell.id+' · '+cell.neighbors.length+' vecini';
+   select.append(option);
+  }
+  if(selectedCell===null||!cells.some(c=>c.id===selectedCell))
+   selectedCell=cells.find(c=>c.id===frame.current)?.id??cells[0]?.id??null;
+  if(selectedCell!==null)select.value=String(selectedCell);
+ }
+ const cell=cells.find(c=>c.id===selectedCell);
+ if(!cell)return;
+ const round=Number($('cell-round').value),learning=compute.learning;
+ const messages=(compute.messages||[]).filter(m=>m.round===round);
+ const incoming=messages.filter(m=>m.to===cell.id);
+ const outgoing=messages.filter(m=>m.from===cell.id);
+ const votes=g.chosen?.contribution?.votes?.filter(v=>v.cell===cell.id)||[];
+ const vals=x=>Array.isArray(x)?x.map(v=>number(v,4)).join(', '):'—';
+ root.textContent=
+  'CELULA '+cell.id+' · '+cell.neighbors.length+' vecini '+cell.neighbors.join(', ')+'\n'+
+  'Intrări observate: ['+vals(cell.input)+']\n'+
+  'Activări T0 → T3: '+cell.activations.map((v,i)=>'T'+i+' ['+vals(v)+']').join(' | ')+'\n'+
+  'Mesaje primite în runda '+round+': '+incoming.map(m=>m.from+' → '+m.to+
+    ' ('+number(m.strength,5)+')').join('; ')+'\n'+
+  'Mesaje trimise: '+outgoing.map(m=>m.from+' → '+m.to+
+    ' ('+number(m.strength,5)+')').join('; ')+'\n'+
+  'Contribuții la scorul acțiunii alese: '+votes.map(v=>
+   'canal '+v.channel+' '+v.role+' '+number(v.value,6)).join('; ')+'\n'+
+  (learning?'ÎNVĂȚARE după execuție: predicție '+number(learning.prediction,5)+
+   ', țintă '+number(learning.target,5)+', gradient celulă '+number(cell.gradient,6)+
+   ', Δ ponderi '+number(learning.weightDelta,8)+', actualizarea #'+learning.updatedWeights:
+   'Inspecție fără antrenare: ponderile nu s-au modificat.');
+ $('cell-flow').textContent=compute.participatingCells+' celule ACTIVE, '+
+  (compute.messages||[]).length+' mesaje numerice în '+compute.rounds+
+  ' runde · alegerea acțiunii este calculată din aceste activări'+
+  (learning?' · gradient total '+number(learning.gradientNorm,5):'');
+}
+$('cell-select').onchange=()=>{selectedCell=Number($('cell-select').value);drawAll();};
+$('cell-round').onchange=()=>drawAll();
+$('show-messages').onchange=()=>drawAll();
+$('learner-canvas').onclick=event=>{
+ const canvas=$('learner-canvas'),rect=canvas.getBoundingClientRect(),
+  mx=(event.clientX-rect.left)/rect.width*650,
+  my=(event.clientY-rect.top)/rect.height*650,
+  nodes=displayed?.meta?.abstract?.nodes||[],
+  active=new Set(frames[Math.min(frameNo,frames.length-1)]?.graph?.compute?.cells?.map(x=>x.id)||[]);
+ let best=null,distance=24*24;
+ for(const n of nodes){
+  if(!active.has(n.id))continue;
+  const dx=mx-(25+n.x*600),dy=my-(25+n.y*600),d=dx*dx+dy*dy;
+  if(d<distance){distance=d;best=n.id;}
+ }
+ if(best!==null){selectedCell=best;$('cell-select').value=String(best);drawAll();}
+};
 function plotLine(id,series,labels,min=0,max=1){
  const {g,w,h}=canvas(id),left=54,right=w-20,top=35,bottom=h-38;
  for(let k=0;k<=4;k++){
@@ -272,6 +344,32 @@ function drawLearning(){
 }
 function drawBrain(){
  const {g,w,h}=canvas('neural-canvas');
+ const graph=frames[Math.min(frameNo,frames.length-1)]?.graph;
+ if(graph?.compute?.engine==='GRAPH-CELLS'){
+  const cells=graph.compute.cells,active=cells.find(c=>c.id===selectedCell)||
+   cells.find(c=>c.id===(frames[frameNo]?.current))||cells[0];
+  if(!active){text(g,'Nu există celule calculate în acest cadru.',20,80);return;}
+  const channels=active.activations,steps=channels.length,
+   xs=Array.from({length:steps},(_,r)=>110+r*165);
+  for(let r=0;r<steps;r++)for(let k=0;k<channels[r].length;k++){
+   const v=channels[r][k],x=xs[r],y=60+k*29;
+   if(r){
+    const prior=channels[r-1][k],color=prior*v>=0?COLORS.mint:COLORS.red;
+    g.beginPath();g.moveTo(xs[r-1],y);g.lineTo(x,y);
+    g.strokeStyle=color;g.lineWidth=.6+Math.abs(v)*3;g.stroke();
+   }
+   g.beginPath();g.arc(x,y,4+Math.abs(v)*5,0,Math.PI*2);
+   g.fillStyle=v>=0?COLORS.mint:COLORS.red;g.globalAlpha=.2+.78*Math.abs(v);
+   g.fill();g.globalAlpha=1;
+   text(g,number(v,3),x+12,y+4,COLORS.muted,10);
+  }
+  for(let r=0;r<steps;r++)text(g,'T '+r,xs[r]-20,25,COLORS.purple,12);
+  $('activation-note').textContent='Celula '+active.id+
+   ': 8 canale calculate REAL prin '+graph.compute.rounds+
+   ' runde de mesaje · gradient '+number(active.gradient,6)+
+   ' · păstrează același graful de stări pentru toate acțiunile.';
+  return;
+ }
  const weights=S?.model?.weights;
  if(!weights){text(g,'Arhiva selectată nu expune o rețea antrenabilă.',22,80);return}
  const input=weights.W1||[],middle=weights.b1||[],output=weights.W2||[];
