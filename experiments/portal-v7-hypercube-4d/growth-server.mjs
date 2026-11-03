@@ -59,7 +59,8 @@ export async function createGrowthServer({
   try{
    if(req.method==='GET'&&url.pathname==='/api/health')
     return json(res,200,{ok:true,source_connected:journal.stats().sequence>0,
-     persistent:true,read_only_original_v7:true,stats:journal.stats()});
+     original_v7_backend_verified:false,persistent:true,
+     read_only_original_v7:true,stats:journal.stats()});
    if(req.method==='GET'&&url.pathname==='/api/graph'){
     const maxNodes=safeNumber(url.searchParams.get('maxNodes'),1500,1,5000);
     const maxEdges=safeNumber(url.searchParams.get('maxEdges'),6000,1,15000);
