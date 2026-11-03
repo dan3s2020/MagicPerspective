@@ -1,0 +1,59 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal4D · Graful REAL care crește cu experiența</title>
+<link rel="stylesheet" href="/viewer.css">
+<style>
+:root{color-scheme:dark;font:14px system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;color:#d9e8ff;background:#071224}
+main{max-width:1700px;margin:auto;padding:15px}
+.heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.heading h1{font-size:clamp(19px,2.8vw,29px);margin:2px 0}
+.heading small{color:#85b6ce;letter-spacing:.12em;font-weight:800}
+#connection{border:1px solid #546a89;border-radius:999px;padding:7px 12px;font-size:12px;color:#ffd59d}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}
+.stat{border:1px solid #294b65;padding:12px;border-radius:12px;background:#112238}
+.stat small{display:block;color:#a5bed6;font-size:11px}
+.stat strong{display:block;font-size:24px;color:#81e3d5;font-variant-numeric:tabular-nums}
+.stack{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,.8fr);gap:13px;margin-top:12px}
+#tesseract{min-width:0}
+.panel{padding:14px;background:#102035;border-radius:13px;border:1px solid #315370}
+.panel h2{font-size:15px;margin:0 0 10px}
+.timeline{width:100%;height:240px;display:block;background:#08182a;border-radius:10px}
+#events{max-height:370px;overflow:auto;font:12px/1.65 ui-monospace,Consolas,monospace;white-space:pre-wrap}
+.controls{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+button{border-radius:8px;border:1px solid #6480a3;background:#1b3957;color:#e7f4ff;padding:10px 14px;cursor:pointer}
+button:focus-visible{outline:3px solid #e9bd75}
+.warning{margin:11px 0;color:#f8c58b;font-size:13px;padding:10px;border:1px solid #765638;border-radius:8px}
+.legend{display:flex;gap:13px;flex-wrap:wrap;color:#abc8dd;margin-top:8px;font-size:11px}
+@media(max-width:900px){.stack{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head><body><main>
+<div class="heading"><div><small>PORTAL4D · VERBATIM · EXPERIENȚE CONFIRMATE</small>
+<h1>Graful în creștere · Tesseract 4D</h1></div>
+<strong id="connection">AȘTEPT MOTORUL ORIGINAL</strong></div>
+<p>Graful începe gol. Fiecare nod și muchie apare numai după un eveniment real de antrenament.
+Predicțiile neconfirmate nu devin conexiuni permanente.
+Rama tesseractului este singurul obiect geometric fix.</p>
+<div class="stats">
+<div class="stat"><small>NODURI REALE</small><strong id="nodes">0</strong></div>
+<div class="stat"><small>LEGĂTURI CONFIRMATE</small><strong id="edges">0</strong></div>
+<div class="stat"><small>PROBLEME DIFERITE</small><strong id="problems">0</strong></div>
+<div class="stat"><small>EXPERIENȚE EXECUTATE</small><strong id="experiences">0</strong></div>
+<div class="stat"><small>ÎNVĂȚĂRI CU ΔPONDERI</small><strong id="learning">0</strong></div>
+<div class="stat"><small>LEGĂTURI MULTIDOMENIU</small><strong id="cross">0</strong></div>
+<div class="stat"><small>LEGĂTURI / NOD</small><strong id="ratio">0</strong></div>
+<div class="stat"><small>DENSITATE MATEMATICĂ</small><strong id="density">0</strong></div>
+</div>
+<div class="stack"><section id="tesseract"></section>
+<aside class="panel"><h2>Creștere măsurată, nu animație hardcoded</h2>
+<canvas id="chart" class="timeline" aria-label="Istoric real număr noduri și muchii"></canvas>
+<div class="legend"><span style="color:#81e3d5">━━ noduri</span>
+<span style="color:#f8c27e">━━ muchii</span><span>Nu există puncte inventate</span></div>
+<div class="controls"><button id="follow">Ⅱ PAUZĂ REPLAY</button>
+<button id="restore">↻ REIA LIVE</button>
+<button id="snapshot">▣ SALVEAZĂ GRAFUL</button></div>
+<p class="warning" id="warning">Aștept evenimente originale V7 pe serviciul local; nu voi genera exemple decorative.</p>
+<h2>Evenimente și verificarea provenienței</h2>
+<div id="events" aria-live="polite">Niciun eveniment primit.</div>
+</aside></div>
+</main><script type="module" src="/growth-app.mjs"></script></body></html>
