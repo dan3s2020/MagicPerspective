@@ -73,6 +73,10 @@ if(existsSync(activeFile)){
   bestFitness=Number.isFinite(stored.bestFitness)?stored.bestFitness:Infinity;
   notes='Creier restaurat din checkpoint local.';
   run={...run,...stored.run,status:'paused',error:null};
+  // After any process restart, abandon the unused remainder of the reserved
+  // seed block. If Android killed Termux between autosaves, no old seed is replayed.
+  run.seedCursor=Math.max(run.seedCursor||0,run.reservedUntil||0);
+  run.reservedUntil=run.seedCursor;
  }catch(e){notes='Checkpoint anterior incompatibil (nu este șters): '+e.message;
   console.error(notes);brain=makeBrain('universal',19);kind='universal';selection='unsaved';}
 }
