@@ -117,7 +117,7 @@ export function drawAbstract(canvas,meta,frame,{truth=false,animation=0}={}){
   ctx.strokeStyle=C.prediction;ctx.lineWidth=2;ctx.stroke();
   annotate(ctx,nodes,current,'●',C.prediction,10);
  }
- text(ctx,truth?'GRAF EVALUATOR · SOLUȚIE EXACTĂ':'GRAF MODEL · OBSERVAȚII + PREDICȚII',
+ text(ctx,truth?(reference?.initialOnly?'EVALUATOR · SOLUȚIE INIȚIALĂ':'EVALUATOR · SOLUȚIE DE REFERINȚĂ'):'GRAF MODEL · OBSERVAȚII + PREDICȚII',
   16,19,truth?C.solution:C.node,'bold 12px system-ui');
  text(ctx,domain.toUpperCase()+' · '+nodes.length+' noduri · '+
   (truth?(meta.abstract.edges?.length||0):(graph.observedEdges?.length||0))+' muchii',
@@ -147,7 +147,7 @@ export function graphFacts(meta,frame){
  return {domain:a.domain+' · '+a.nodes.length+' stări',
   prediction:pred,execution:observed,
   solution:solution.reachable?
-    solution.path.length+' stări, cost '+(solution.cost??'?'):
+    solution.path.length+' stări, cost '+(solution.cost??'?')+(solution.initialOnly?' · doar inițial':''):
     'Soluție nedeterminată în orizontul de căutare',
   reference,source:graph.planSource||'Model route',candidates:candidates.map(c=>({
    action:actionName(c.action),from:nodeLabel(meta,c.from),
