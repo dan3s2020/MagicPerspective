@@ -9,10 +9,10 @@ import {AssociationRule} from '../../graph-dance-20261103/engine/dance.mjs';
 import {makeWorld as makeGraph,sense as graphSense,act as graphAct} from '../../graph-dance-20261103/engine/world.mjs';
 import {Episode as GraphEpisode} from '../../graph-dance-20261103/engine/agent.mjs';
 import {MessageBrain} from '../../dynamic-perspective-20261103/engine/brain.mjs';
-import {trainEpisode as trainMessages} from '../../dynamic-perspective-20261103/engine/experiment.mjs';
+import {trainEpisode as trainMessages,costMAE} from '../../dynamic-perspective-20261103/engine/experiment.mjs';
 import {CausalNet} from '../../causal-text/engine/model.mjs';
 import {buildExperience} from '../../causal-text/engine/training.mjs';
-import {createWorld as makeSymbolic,generateTask,TOOLS} from '../../causal-text/engine/world.mjs';
+import {createWorld as makeSymbolic,generateTask,TOOLS,senseProbes,encodeContext} from '../../causal-text/engine/world.mjs';
 import {MLP} from '../../../v7/engine/nn.mjs';
 
 export const KINDS=['universal','v7','v6','graph','dynamic','causal'];
@@ -252,6 +252,34 @@ export function oneEpisode(kind,brain,args){
 }
 export function blindTest(kind,brain,{count=12,size=11,seed=918273,domains=DOMAINS}={}){
  if(!Number.isInteger(count)||count<3||count>120)throw Error('Invalid test count');
+ // Domain-correct metrics: cost prediction for message operator, exact action transitions
+ // for Causal Text. Never report these as "navigation goals solved".
+ if(kind==='dynamic'){
+  const trained=costMAE(MessageBrain.restore(brain.snapshot()),{seed,n:Math.max(16,Math.min(60,size*2+3)),count});
+  const base=costMAE(new MessageBrain(brain.seed),{seed,n:Math.max(16,Math.min(60,size*2+3)),count});
+  return {count,seed,domains:{network:{metric:'costMAE',count,
+   meanCost:trained,baselineCost:base,success:null,baselineSuccess:null,
+   solved:null,baselineSolved:null}}};
+ }
+ if(kind==='causal'){
+  const clone=CausalNet.restore(brain.snapshot()),base=new CausalNet(brain.seed);
+  let correct=0,baseCorrect=0,total=0;
+  const probes=[[4,1],[5,4],[6,6]];
+  for(let k=0;k<count;k++){
+   const world=makeSymbolic(seedOf(seed,k)),context=encodeContext(senseProbes(world));
+   for(const action of TOOLS)for(const state of probes){
+    const actual=world.intervene(state,action).to,
+     a=clone.predict(state,action,context).state,
+     b=base.predict(state,action,context).state;
+    correct+=+(a[0]===actual[0]&&a[1]===actual[1]);
+    baseCorrect+=+(b[0]===actual[0]&&b[1]===actual[1]);total++;
+   }
+  }
+  return {count,seed,domains:{text:{metric:'exactTransition',count:total,
+   solved:correct,baselineSolved:baseCorrect,
+   success:+(correct/total).toFixed(4),baselineSuccess:+(baseCorrect/total).toFixed(4),
+   meanCost:+(1-correct/total).toFixed(4),baselineCost:+(1-baseCorrect/total).toFixed(4)}}};
+ }
  const snapshot=brain.snapshot(),trained=restoreBrain(kind,snapshot),base=makeBrain(kind,brain.seed);
  const report={count,seed,domains:{},all:{trained:{solved:0,episodes:0,cost:0},untrained:{solved:0,episodes:0,cost:0}}};
  const applicable=kind==='universal'?domains:
