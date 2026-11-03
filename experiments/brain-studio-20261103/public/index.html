@@ -13,27 +13,38 @@
 <button id="stop">■ OPREȘTE</button>
 </nav>
 <main class="shell">
-<section class="card brain-card" aria-label="Biblioteca de creiere">
-<div class="section-head"><div><span class="eyebrow">01 / BIBLIOTECĂ PERSISTENTĂ</span><h1>Orice creier salvat. Un singur panou.</h1></div><span class="pill" id="brain-status">LIVE</span></div>
-<p class="intro">Modelele originale rămân intacte. Selectează un creier, inspectează-i arhitectura și continuă antrenamentul cu mecanismul lui real. Creierul Universal este singurul care folosește aceleași ponderi în labirinturi, rețele și simboluri.</p>
-<div class="form-grid">
-<label>Creier activ<select id="brain-list" aria-label="Alege creierul salvat"><option>Se caută checkpointuri...</option></select></label>
-<label>Creier nou<select id="new-kind">
-<option value="universal">Universal · creier comun</option>
-<option value="v7">V7 · labirint și relief</option>
-<option value="v6">V6 · percepție și relief</option>
-<option value="graph">Graph Dance · rețele abstracte</option>
-<option value="dynamic">Dynamic Perspective · mesaje locale</option>
-<option value="causal">Causal Text · transformări simbolice</option>
-</select></label></div>
-<div class="buttons">
-<button id="load">◎ ACTIVEAZĂ SELECTAT</button><button id="create">＋ CREIER NOU</button>
-<button class="primary" id="save">▣ SALVEAZĂ CREIERUL</button>
-<button id="export">⇩ EXPORT JSON</button><button id="import">⇧ IMPORT JSON</button>
-<input type="file" id="file" accept=".json,application/json" hidden>
+<section class="card world"><div class="section-head"><div><span class="eyebrow">01 / GRAF COMUN · OBSERVAȚII → PREDICȚII → ACȚIUNI → SOLUȚIE</span>
+<h2>Graful real al problemei, predicția și soluția.</h2></div><span class="pill" id="episode-id">Nicio lume</span></div>
+<p class="fine" id="world-desc">Stările, tranzițiile și predicțiile sunt calculate de motor; traseul optim este afișat separat numai de evaluator.</p>
+<div class="graph-controls"><label>Problema inspectată <select id="probe-domain">
+<option value="maze">Labirint → graf de stări</option>
+<option value="network">Abstract Network → graf de legături</option>
+<option value="text">Text / numere → graf de transformări</option></select></label>
+<button id="probe">◎ INSPECTEAZĂ CU CREIERUL ACTUAL</button></div>
+<div class="graph-facts">
+<div><small>REȚEA ABSTRACTĂ</small><strong id="graph-domain">—</strong></div>
+<div><small>PREDICȚIA MODELULUI (ÎNAINTE)</small><strong id="graph-prediction">—</strong></div>
+<div><small>ACȚIUNEA REALĂ (DUPĂ)</small><strong id="graph-actual">—</strong></div>
+<div><small>SOLUȚIA EVALUATORULUI</small><strong id="graph-solution">—</strong></div>
 </div>
-<div class="small-line" id="current-brain">Se citește modelul...</div>
-<div class="small-line" id="saved-status">Fără modificări ale checkpointurilor originale.</div>
+<div class="graph-logic" id="graph-explanation">Un graf înseamnă: stări = noduri, transformări = muchii, modelul evaluează acțiuni, execuția produce o stare nouă.</div>
+<div class="dual">
+<div class="canvas-panel"><h3>GRAF OBSERVAT · PREDICȚIE · EXECUȚIE</h3>
+<canvas id="learner-canvas" width="650" height="650" aria-label="Nodurile observate și acțiunile reale ale organismului"></canvas></div>
+<div class="canvas-panel"><h3>GRAF COMPLET · FORMA SOLUȚIEI (DOAR EVALUATOR)</h3>
+<canvas id="truth-canvas" width="650" height="650" aria-label="Graful real, disponibil numai pentru evaluator"></canvas></div>
+</div>
+<div class="legend"><span><i class="mint"></i> tranziție observată</span>
+<span><i class="amber"></i> predicția modelului</span>
+<span><i class="blue"></i> execuție reală</span>
+<span><i class="purple"></i> nod activ</span>
+<span><i class="green-line"></i> soluție optimă (evaluator)</span></div>
+<div class="decision-list" id="candidate-list" aria-live="polite">Acțiunile și scorurile modelului apar aici.</div>
+<div class="replay-row"><button id="replay-toggle">Ⅱ PAUZĂ REPLAY</button><button id="replay-start">|◀ REIA</button>
+<label>Cadru <input id="replay" type="range" min="0" max="0" value="0" step="1"></label>
+<span id="frame-number">0 / 0</span></div>
+<p class="fine" id="frame-info">Încă nu există cadre.</p>
+<p class="fine" id="trace-indicator">Fiecare cadru reprezintă o acțiune executată într-un episod real. Replay-ul nu modifică ponderile.</p>
 </section>
 <section class="card training">
 <div class="section-head"><div><span class="eyebrow">02 / TRAINING CONTINUU · FĂRĂ DEMO</span>
@@ -71,22 +82,8 @@
 <div><small>MODIFICARE PONDERI Δ</small><strong id="metric-delta">—</strong></div>
 </div>
 </section>
-<section class="card world"><div class="section-head"><div><span class="eyebrow">03 / ACȚIUNI EXECUTATE, REPLAY REAL</span>
-<h2>Ce face organismul, în fiecare lume?</h2></div><span class="pill" id="episode-id">Nicio lume</span></div>
-<p class="fine" id="world-desc">Nodurile și traseele afișate vor proveni dintr-un episod executat, nu dintr-o animație decorativă.</p>
-<div class="dual">
-<div class="canvas-panel"><h3>PERSPECTIVA ORGANISMULUI</h3>
-<canvas id="learner-canvas" width="650" height="650" aria-label="Nodurile observate și acțiunile reale ale organismului"></canvas></div>
-<div class="canvas-panel"><h3>EVALUATOR · ADEVĂR SEPARAT</h3>
-<canvas id="truth-canvas" width="650" height="650" aria-label="Graful real, disponibil numai pentru evaluator"></canvas></div>
-</div>
-<div class="legend"><span><i class="mint"></i> observat</span><span><i class="amber"></i> ultimă acțiune</span><span><i class="blue"></i> parcurs efectiv</span>
-<span><i class="purple"></i> nod activ</span></div>
-<div class="replay-row"><button id="replay-toggle">Ⅱ PAUZĂ REPLAY</button><button id="replay-start">|◀ REIA</button>
-<label>Cadru <input id="replay" type="range" min="0" max="0" value="0" step="1"></label>
-<span id="frame-number">0 / 0</span></div>
-<p class="fine" id="frame-info">Încă nu există cadre.</p>
-</section>
+
+
 <div class="dual">
 <section class="card"><div class="section-head"><div><span class="eyebrow">04 / FUNCȚIA ÎNVĂȚATĂ</span>
 <h2>Forma funcției</h2></div><span class="pill">PREDICȚIE REALĂ</span></div>
@@ -103,6 +100,29 @@
 <canvas id="learning-canvas" width="1100" height="340" aria-label="Istoricul real al pierderii, vitezei și succesului"></canvas>
 <div id="test-results" class="test-grid"><p class="fine">Testul orb compară creierul salvat cu același tip de creier neantrenat, pe aceleași semințe nevăzute.</p></div>
 </section>
+<section class="card brain-card" aria-label="Biblioteca de creiere">
+<div class="section-head"><div><span class="eyebrow">01 / BIBLIOTECĂ PERSISTENTĂ</span><h1>Orice creier salvat. Un singur panou.</h1></div><span class="pill" id="brain-status">LIVE</span></div>
+<p class="intro">Modelele originale rămân intacte. Selectează un creier, inspectează-i arhitectura și continuă antrenamentul cu mecanismul lui real. Creierul Universal este singurul care folosește aceleași ponderi în labirinturi, rețele și simboluri.</p>
+<div class="form-grid">
+<label>Creier activ<select id="brain-list" aria-label="Alege creierul salvat"><option>Se caută checkpointuri...</option></select></label>
+<label>Creier nou<select id="new-kind">
+<option value="universal">Universal · creier comun</option>
+<option value="v7">V7 · labirint și relief</option>
+<option value="v6">V6 · percepție și relief</option>
+<option value="graph">Graph Dance · rețele abstracte</option>
+<option value="dynamic">Dynamic Perspective · mesaje locale</option>
+<option value="causal">Causal Text · transformări simbolice</option>
+</select></label></div>
+<div class="buttons">
+<button id="load">◎ ACTIVEAZĂ SELECTAT</button><button id="create">＋ CREIER NOU</button>
+<button class="primary" id="save">▣ SALVEAZĂ CREIERUL</button>
+<button id="export">⇩ EXPORT JSON</button><button id="import">⇧ IMPORT JSON</button>
+<input type="file" id="file" accept=".json,application/json" hidden>
+</div>
+<div class="small-line" id="current-brain">Se citește modelul...</div>
+<div class="small-line" id="saved-status">Fără modificări ale checkpointurilor originale.</div>
+</section>
+
 <section class="card warnings"><h2>Limite verificabile</h2><p>Arhitecturile vechi au formate diferite și rămân antrenabile doar în domeniile compatibile. Creierul Universal reutilizează ponderile între trei domenii, dar asta nu dovedește transfer pozitiv: diferența față de modelul neantrenat trebuie să fie măsurată. Nu se folosește răspunsul evaluatorului în actualizarea ponderilor.</p>
 <a href="https://github.com/dan3s2020/MagicPerspective" target="_blank" rel="noopener">Repository · V1–V7 și toate experimentele originale</a></section>
 </main>
