@@ -11,6 +11,11 @@
       "related_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
       "description": "User supplied an image of the network in this turn; original binary/asset URI not yet archived in GitHub.",
       "status": "MISSING_BINARY"
+    },
+    {
+      "related_ref": "2026-11-03-USER-4D-NOT-PROJECTION-CORPUS-UI",
+      "description": "Screenshot provided in chat; its original image bytes have not been committed to GitHub",
+      "status": "MISSING_BINARY"
     }
   ],
   "entries": [
@@ -146,6 +151,51 @@
       "role": "USER",
       "source_path": "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt",
       "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 16,
+      "ref": "2026-11-03-USER-IMPLEMENT-NOW",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-implement-now-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-IMPLEMENT-NOW",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 17,
+      "ref": "2026-11-03-USER-4D-NOT-PROJECTION-CORPUS-UI",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-4D-NOT-PROJECTION-CORPUS-UI",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 18,
+      "ref": "2026-11-03-USER-GRAPH-MUST-GROW-4D",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-GRAPH-MUST-GROW-4D",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 19,
+      "ref": "2026-11-03-USER-PARQUET-ERROR-MAP-WORLD",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-PARQUET-ERROR-MAP-WORLD",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 20,
+      "ref": "2026-11-03-USER-FIX-PRIORITY",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-FIX-PRIORITY",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
     }
