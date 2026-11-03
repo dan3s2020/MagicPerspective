@@ -137,7 +137,7 @@ function apply(s){
  $('bar').setAttribute('aria-valuenow',Math.round(progress));
  const preview=s.preview;
  if(preview){
-  const stamp=preview.meta.seed+'-'+preview.outcome.steps+'-'+s.kind+'-'+s.revision;
+  const stamp=preview.meta.seed+'-'+preview.outcome.steps+'-'+s.kind;
   if(stamp!==lastPreviewStamp){
    lastPreviewStamp=stamp;frames=preview.frames||[];frameNo=0;
    $('replay').max=String(Math.max(0,frames.length-1));
@@ -352,9 +352,9 @@ async function refresh(){
  }catch(e){status('Conexiune pierdută: '+e.message,false)}
  finally{polling=false}
 }
-setInterval(()=>{if(!S)return;animation++;
+setInterval(()=>{if(!S||document.hidden)return;animation++;
  if(framePlaying&&frames.length){frameNo=(frameNo+1)%frames.length}
- drawAll();},140);
+ drawAll();},220);
 setInterval(refresh,950);
 (async()=>{
  try{await refresh();await loadLibrary();drawAll();}
