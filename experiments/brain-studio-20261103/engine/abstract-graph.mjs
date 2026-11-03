@@ -22,10 +22,12 @@ function metaGraph(meta,world,domain){
   solution={path:r.cells,actions:[],cost:Number.isFinite(r.cost)?+r.cost.toFixed(2):null,
    reachable:!!r.cells.length};
  }else if(domain==='network'){
-  edges=(world.edges||world.links||[]).map(e=>({
+  edges=(world?.edges||world?.links||meta.truth||[]).map(e=>({
    a:e.a,b:e.b,cost:e.cost??e.actual??null,
    open:e.open!==false,type:e.open===false?'closed':'passage'}));
-  const r=networkOracle(world);
+  const r=Array.isArray(meta.referencePath)?
+   {nodes:meta.referencePath,cost:null}:
+   world?.edges?networkOracle(world):{nodes:[],cost:null};
   solution={path:r.nodes||r.route||[],actions:[],cost:Number.isFinite(r.cost)?+r.cost.toFixed(2):null,
    reachable:!!(r.nodes||r.route)?.length};
  }else if(domain==='text'){
