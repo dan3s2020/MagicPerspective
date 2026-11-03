@@ -39,8 +39,13 @@ if (-not (Test-Path $python)) {
 & $python -c "import sys; assert (3,10)<=sys.version_info[:2]<=(3,12), 'Python 3.10-3.12 required on Windows'"
 if ($LASTEXITCODE -ne 0) { throw "Mediul creat nu are Python compatibil cu PyTorch Windows (3.10-3.12)." }
 $working = $false
-& $python -c "import torch; assert torch.cuda.is_available(); print(torch.__version__,torch.cuda.get_device_name(0))" 2>$null
-if ($LASTEXITCODE -eq 0) { $working = $true }
+try {
+    & $python -c "import torch; assert torch.cuda.is_available(); print(torch.__version__,torch.cuda.get_device_name(0))" 2>$null
+    if ($LASTEXITCODE -eq 0) { $working = $true }
+} catch {
+    # A missing or CPU-only torch is recoverable: install the CUDA wheel below.
+    $working = $false
+}
 if (-not $working) {
     if ($SkipInstall) {
         throw "PyTorch CUDA lipseste sau driverul NVIDIA nu functioneaza. Scoate -SkipInstall."
