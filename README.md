@@ -1,5 +1,7 @@
 # MagicPerspective — Shape Prediction Laboratory
 
+> **Canonical project requirements:** [VERBATIM_ROOT.md](./VERBATIM_ROOT.md) and the original ordered conversation. This README documents V1 only; it does not replace Verbatim or certify compliance of V1–V9. See [the version mirror](./verbatim/implementation-mirror.json) and [archival gaps](./verbatim/continuation-index.json).
+
 **Version 1.0.0 — independent, fully runnable prototype.** This is not a complete general intelligence system and does not prove P=NP. It is an experimental implementation of a neural **solution-shape predictor** trained from partial observations and evaluated on unseen mazes.
 
 ## Quick start in Termux (Android)
