@@ -1,0 +1,79 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070b16"><title>MagicPerspective V11 · Portalul</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head>
+<body><main class="page">
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".5"/><circle cx="20" cy="20" r="9" fill="none" stroke="#f5b301" stroke-width="2"/><circle cx="20" cy="20" r="2.6" fill="#f5b301"/></svg>
+    <div><h1>MagicPerspective <span>V11</span></h1><p>Portalul · un singur abstract network pentru toate lumile</p></div></div>
+  <div class="status"><span id="device" class="chip">…</span><span id="counts" class="chip ghost">…</span></div>
+</header>
+
+<section class="portal-wrap">
+  <div class="portal-head">
+    <div class="pick">
+      <label>Lumea<select id="family"></select></label>
+      <label>Mărime<select id="size"></select></label>
+      <label>Organismul<select id="who"><option value="organ">Cu organul formei</option><option value="control">Aceeași rețea, fără organul formei</option><option value="untrained">Rețea neantrenată</option><option value="classic">Fără învățare (clasic)</option></select></label>
+      <button id="show" class="primary">Lume nouă</button>
+      <button id="live" class="toggle" aria-pressed="false">Antrenarea live</button>
+    </div>
+    <div class="viewopts">
+      <button class="seg on" data-layout="latent">Geometria latentă</button><button class="seg" data-layout="world">Așezarea lumii</button>
+      <button id="dim4" class="toggle" aria-pressed="false">4D · axa timpului</button>
+      <button id="spin" class="toggle" aria-pressed="true">Rotire</button>
+    </div>
+  </div>
+  <div class="stage">
+    <div class="portal-box"><canvas id="portal" aria-label="Graful viu: abstract network-ul, cu forma soluției activată"></canvas>
+      <div class="hud" id="hud"></div></div>
+    <div class="world-box"><h3>Lumea reală <small>doar observatorul o vede</small></h3><canvas id="world" aria-label="Lumea reală, traseele optime și ce a făcut organismul"></canvas>
+      <dl class="nums"><div><dt>Eroarea formei</dt><dd id="n-bce">—</dd></div><div><dt>Forma la pasul 0 (F1)</dt><dd id="n-f1">—</dd></div><div><dt>Pași / optim</dt><dd id="n-ratio">—</dd></div><div><dt>Rezistențe</dt><dd id="n-res">—</dd></div></dl>
+      <canvas id="errc" class="errc" aria-label="Eroarea formei după fiecare observație"></canvas><p class="small" style="margin:0">Eroarea formei după fiecare observație. Linia verticală marchează pasul afișat.</p></div>
+  </div>
+  <div class="timebar"><button id="play" class="icon" aria-label="Redă">▶</button><input id="scrub" type="range" min="0" max="0" value="0" aria-label="Pasul"><output id="scrub-out">pasul 0</output>
+    <label class="speed">Viteză<input id="speed" type="range" min="1" max="8" value="3"></label></div>
+  <details class="legend" open><summary>Ce înseamnă fiecare culoare și fiecare mișcare</summary>
+    <ul>
+      <li><i style="--c:#f5b301"></i><b>Auriu — forma soluției.</b> Nodurile unde rețeaua crede că trece soluția. Cu cât strălucesc mai tare, cu atât e mai sigură. Mulțimea aurie e „insula”: ordinea care apare în mijlocul zgomotului.</li>
+      <li><i style="--c:#9b7cff"></i><b>Violet — incertitudinea.</b> Un halou în jurul nodurilor unde rețeaua știe că nu știe.</li>
+      <li><i style="--c:#5ec8ff"></i><b>Albastru-gheață — activarea.</b> Cât de tare lucrează fiecare nod în starea internă a rețelei. La fiecare pas, nodurile se aprind în ordinea reală în care rețeaua le-a schimbat starea: runda în care fiecare nod a ajuns la jumătate din schimbarea sa finală, măsurată din calcul.</li>
+      <li><i style="--c:#22d3ee"></i><b>Cometa cyan — decizia.</b> Acțiunea aleasă, din nodul „eu” spre consecința pe care și-a imaginat-o.</li>
+      <li><i style="--c:#ff3b5c"></i><b>Undă roșie — rezistența lumii.</b> Lumea a răspuns altfel decât prezicea. Unda pornește din locul greșelii și se propagă pe legături.</li>
+      <li><i style="--c:#ffffff"></i><b>Dâră albă — drumul mers.</b> Cu 4D pornit, formele din pașii trecuți rămân în urmă pe axa timpului, ca să vezi cum se „plimbă” forma.</li>
+      <li><i style="--c:#ff8a00"></i><b>Portocaliu — învățarea.</b> În antrenarea live, nucleul pulsează când profesorul a corectat greutățile.</li>
+      <li><i style="--c:#cfd8ff"></i><b>Nucleul — graful persistent.</b> Câte un nod pentru fiecare etichetă din toate lumile trăite, colorat după lumea în care s-a născut. Rămâne de la o lume la alta. Nodurile din lumi diferite pe care rețeaua le-a făcut asemănătoare sunt legate cu punți. Un nod nou sclipește alb.</li>
+      <li><i style="--c:#22c55e"></i><b>Verde (doar în Lumea reală) — traseele optime.</b> Le vede numai profesorul.</li>
+    </ul></details>
+</section>
+
+<section class="panel">
+  <h2>Antrenare pe lumi unice, în paralel</h2>
+  <p>Fiecare lume e nouă: e identificată după conținut, iar o lume deja trăită nu se repetă. Toate rulează prin aceeași rețea, într-un singur pas paralel pe GPU sau CPU. La fiecare pas, înainte de mișcare, profesorul care vede harta spune exact cât a greșit forma.</p>
+  <div class="fams" id="fams"></div>
+  <div class="row">
+    <label class="slider">Lumi unice în paralel <b id="par-out">4</b><input id="parallel" type="range" min="1" max="256" value="4"></label>
+    <label class="check"><input type="checkbox" id="ctrl" checked> antrenează și martorul (aceeași rețea, fără organul formei)</label>
+    <button id="train" class="primary">Pornește antrenarea</button><button id="stop" disabled>Oprește</button>
+  </div>
+  <div class="trainstat" id="trainstat">—</div>
+  <canvas id="curves" class="curve" aria-label="Forma înainte de prima mișcare, pe lumi de verificare, pe parcursul vieții"></canvas>
+  <p class="small">Eroarea formei înainte de prima mișcare, pe lumi de verificare nevăzute, pe parcursul vieții. Fiecare culoare e o lume. Mai jos = mai bine.</p>
+</section>
+
+<section class="panel">
+  <h2>Polymath — graful care rămâne</h2>
+  <p>Fiecare lume își aduce etichetele în același graf. Graful nu se resetează. Rețeaua decide singură ce noduri din lumi diferite ajung să semene (se unesc) și ce noduri rămân separate.</p>
+  <div class="poly"><canvas id="core" aria-label="Nodurile persistente ale grafului și punțile dintre lumi"></canvas><div id="merges" class="merges"></div></div>
+</section>
+
+<section class="panel">
+  <h2>Testele decisive</h2>
+  <p>Aceleași lumi nevăzute pentru toți: cu organul formei; aceeași rețea, cu aceeași capacitate și aceleași lumi, dar învățată doar pasul următor; rețeaua neantrenată; metoda clasică fără învățare; probabilitate constantă.</p>
+  <div class="row"><label>Lumi pe familie<select id="tcount"><option>8</option><option selected>16</option><option>32</option><option>64</option></select></label><button id="test" class="primary">Rulează testele</button><span id="teststat" class="small"></span></div>
+  <div id="verdicts" class="verdicts"></div><div id="tables" class="tables"></div>
+</section>
+
+<footer class="foot"><p>Fiecare cerință e legată de fraza din conversația Verbatim din care vine: <code>verbatim/implementation-mirror.json</code> și <code>v11/VERBATIM_MAP.md</code>.</p></footer>
+</main><script type="module" src="app.js"></script></body></html>
