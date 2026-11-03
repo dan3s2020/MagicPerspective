@@ -93,7 +93,14 @@ export class Vault{
  }
  async import(content,label){
   const raw=typeof content==='string'?JSON.parse(content):content,{kind,snapshot}=detect(raw);
-  if(kind==='archive')throw Error('Unknown or unsupported brain architecture; not importing as trainable');
+  if(kind==='archive'){
+   // Preserve any structurally valid unsupported brain without inventing a weight conversion.
+   const title=String(label||raw.label||'Arhivă importată').slice(0,75);
+   const id='archive-'+new Date().toISOString().replace(/[-:.TZ]/g,'')+'-'+Math.random().toString(36).slice(2,9);
+   await this.atomic(path.join(this.dir,id+'.json'),{schema:'studio-archive-1',
+    label:title,kind:'archive',snapshot,savedAt:new Date().toISOString()});
+   return 'saved:'+id;
+  }
   const brain=restoreBrain(kind,snapshot);return this.saveBrain(kind,brain,label||raw.label||('Import '+kind));
  }
  async atomic(file,obj){
