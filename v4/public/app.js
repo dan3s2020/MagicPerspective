@@ -1,3 +1,4 @@
+import {drawWorld} from './world-visuals.js';
 const $=id=>document.getElementById(id);
 let state=null,busy=false,automatic=false,autoTimer=null,lastTaskDone=null;
 const fmt=(x,d=3)=>x===null||x===undefined||!Number.isFinite(Number(x))?'—':Number(x).toFixed(d);
@@ -5,24 +6,6 @@ async function api(name,body){const r=await fetch('/api/'+name,{method:body===un
 const nextFrame=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
 async function guard(fn){if(busy)return;busy=true;try{await fn();}catch(err){$('status').textContent='ERROR: '+err.message;console.error(err);}finally{busy=false;}}
 function canvasContext(id,width=580,height=580){const canvas=$(id),dpr=Math.min(3,window.devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#0e1728';c.fillRect(0,0,width,height);return c;}
-function drawWorld(id,e,truth){const c=canvasContext(id),spec=e.spec,positions=spec.layout,n=spec.nodes,unknown=e.belief.status;
- const xy=i=>({x:28+positions[i].x*524,y:28+positions[i].y*524});
- c.lineCap='round';c.lineJoin='round';
- for(const link of spec.links){const a=xy(link.a),b=xy(link.b);let k=truth?e.teacher.truth[link.id].open?1:0:unknown[link.id];
-  c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.lineWidth=truth?3:k===-1?1.4:3.3;
-  c.strokeStyle=k===1?'#4d796c':k===0?'#394258':'#35415c';c.setLineDash(k===-1?[3,6]:[]);c.stroke();}
- c.setLineDash([]);
- function path(nodes,color,width,dashed){if(nodes?.length<2)return;c.beginPath();nodes.forEach((i,j)=>{const v=xy(i);if(j===0)c.moveTo(v.x,v.y);else c.lineTo(v.x,v.y)});c.strokeStyle=color;c.lineWidth=width;c.setLineDash(dashed?[10,7]:[]);c.stroke();c.setLineDash([]);}
- if(truth){path(e.teacher.path,'#6fe8b7',5,false);}else{
-  for(const a of e.plan.alternatives)path(a.nodes,'rgba(222,140,240,.4)',3,true);
-  path(e.plan.nodes,'#ffc17b',5,true);
- }
- const radius=n>150?3.5:n>80?5:n>40?7:9;
- for(let i=0;i<n;i++){const p=xy(i);c.beginPath();c.arc(p.x,p.y,radius,0,2*Math.PI);c.fillStyle=i===e.position?'#94bfff':i===spec.goal?'#77e5bc':e.belief.observed[i]?'#8696b8':'#394767';c.fill();}
- for(const [i,label,color] of [[e.position,'S','#93c2ff'],[spec.goal,'G','#78ecc1']]){
-  const p=xy(i);c.beginPath();c.arc(p.x,p.y,Math.max(10,radius+4),0,2*Math.PI);c.fillStyle=color;c.fill();c.strokeStyle='#101525';c.lineWidth=2;c.stroke();c.fillStyle='#0b1423';c.textAlign='center';c.textBaseline='middle';c.font='bold 12px system-ui';c.fillText(label,p.x,p.y+1);
- }
-}
 function plot(history){const c=canvasContext('chart',580,220);const axes={left:42,right:553,top:25,bottom:188};c.strokeStyle='#43516e';c.lineWidth=1;c.beginPath();c.moveTo(axes.left,axes.top);c.lineTo(axes.left,axes.bottom);c.lineTo(axes.right,axes.bottom);c.stroke();
  if(!history?.length){c.font='15px system-ui';c.fillStyle='#9eacc7';c.fillText('Validation history appears after training',70,113);return;}
  const values=history.flatMap(x=>[x.heldoutF1,x.neutralF1]).filter(Number.isFinite);
@@ -32,6 +15,16 @@ function plot(history){const c=canvasContext('chart',580,220);const axes={left:4
 }
 function render(s){state=s;const e=s.episode,p=e.perspective;
  drawWorld('truth',e,true);drawWorld('dream',e,false);
+ const selected=e.spec.kind;
+ for(const kind of ['maze','braided','graph']){
+  const card=$('choose-'+kind);
+  card.classList.toggle('selected',kind===selected);
+  card.setAttribute('aria-pressed',String(kind===selected));
+  card.disabled=!!s.task?.running;
+ }
+ $('world-mode').textContent=selected==='maze'?'GRID · CORRIDORS':selected==='braided'?'GRID · LOOPS':'TOPOLOGY · NODES';
+ $('truth-world').textContent=selected==='graph'?'Actual graph connections':'Real maze walls and corridors';
+ $('dream-world').textContent=selected==='graph'?'Learned network links and paths':'Locally known cells and imagined route';
  $('trained').textContent=s.model.episodes.toLocaleString();$('first-f1').textContent=fmt(e.initial.metrics.f1,3);$('current-f1').textContent=fmt(e.current.f1,3);
  $('effort').textContent=fmt(e.effort,1)+' / '+e.blocked;$('updates').textContent=s.model.updates.toLocaleString();$('comparisons').textContent=s.model.perspectiveComparisons.toLocaleString();
  $('geom-value').textContent=fmt(p.weights[0]*100,1)+'%';$('rel-value').textContent=fmt(p.weights[1]*100,1)+'%';$('geom-bar').style.width=p.weights[0]*100+'%';$('rel-bar').style.width=p.weights[1]*100+'%';
@@ -69,5 +62,22 @@ async function blind(){await guard(async()=>{stopAuto();$('test-status').textCon
 $('evaluate').onclick=blind;$('run-test').onclick=blind;
 $('reset').onclick=()=>guard(async()=>{if(confirm('Reset ONLY MagicPerspective V4 weights? V1–V3 are not touched.')){stopAuto();render(await api('reset',{}));$('test-status').textContent='V4 brain reset.';}});
 window.addEventListener('resize',()=>{if(state)render(state);});
-refresh().catch(e=>{$('health').textContent='Connection failed: '+e.message;});
+async function loadGallery(){
+ const selectedSize=Number($('size').value);
+ const response=await api('gallery?size='+selectedSize);
+ if(selectedSize!==Number($('size').value))return;
+ for(const world of response.worlds)drawWorld('preview-'+world.kind,world,true,{mini:true});
+ $('gallery-status').textContent='All three independent example worlds rendered · '+selectedSize+' scale. Tap a card to create an active world.';
+}
+for(const kind of ['maze','braided','graph']){
+ $('choose-'+kind).onclick=()=>guard(async()=>{
+  if(state?.task?.running)return;
+  stopAuto();$('kind').value=kind;
+  render(await api('new',{kind,size:Number($('size').value),online:$('online').value==='true'}));
+ });
+}
+$('size').addEventListener('change',()=>loadGallery().catch(err=>{
+ $('gallery-status').textContent='Preview error: '+err.message;
+}));
+refresh().then(loadGallery).catch(e=>{$('health').textContent='Connection failed: '+e.message;});
 setInterval(()=>{if(state?.task?.running&&!busy)refresh().catch(console.error);},750);
