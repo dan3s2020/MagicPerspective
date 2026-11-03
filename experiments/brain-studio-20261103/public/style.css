@@ -27,3 +27,23 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:1;background:#091629;bo
 .test-item{border:1px solid var(--border);background:#0e1b2c;border-radius:11px;padding:13px}.test-item strong{color:var(--mint);font-size:21px;display:block}.test-item small{color:var(--muted);display:block}.warnings a{color:var(--purple)}
 @media(max-width:790px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dual{grid-template-columns:1fr}.shell{padding:13px 11px 35px}.card{padding:15px;border-radius:16px}.toolbar{top:54px}.toolbar button{font-size:11px;padding:8px 3px}.form-grid{grid-template-columns:1fr}.section-head{align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){.bar>div.infinite{animation:none}.bar>div{transition:none}}
+
+/* The universal graph is the FIRST visible work surface, not a demo below the library. */
+.world{border-color:#4f8c94;background:linear-gradient(140deg,#192a3e,#111b30)}
+.graph-controls{display:flex;align-items:end;flex-wrap:wrap;gap:10px;padding:13px 0}
+.graph-controls label{display:flex;flex-direction:column;gap:4px;min-width:190px;flex:1;color:var(--muted);font-weight:800;font-size:12px}
+.graph-controls button{min-height:44px}
+.graph-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 14px}
+.graph-facts>div{border:1px solid var(--border);border-radius:10px;background:#0a182b;padding:10px;min-width:0}
+.graph-facts small{display:block;font-size:10px;letter-spacing:.065em;color:var(--muted);font-weight:800}
+.graph-facts strong{display:block;font-size:12px;color:var(--mint);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;white-space:normal;margin-top:5px}
+.graph-logic{padding:10px 12px;font-size:12px;line-height:1.55;color:#c3d2e9;background:#101f32;border-left:3px solid var(--amber);border-radius:6px;margin-bottom:14px;overflow-wrap:anywhere}
+.decision-list{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
+.decision{border:1px solid #455872;border-radius:8px;background:#10233a;color:#b9c8e2;
+ font:700 11px/1.4 system-ui;padding:7px 9px;overflow-wrap:anywhere}
+.decision.best{border-color:#dcaf70;background:#362a25;color:#ffdcaa}
+.legend .green-line{background:#78eaac}
+.replay-row select{min-height:34px;max-width:200px}
+#trace-indicator{color:#9ec5cf}
+@media(max-width:860px){.graph-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:470px){.graph-controls{align-items:stretch}.graph-controls button{width:100%}.graph-facts>div{padding:8px}.graph-facts strong{font-size:11px}}
