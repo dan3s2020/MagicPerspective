@@ -130,3 +130,69 @@ setInterval(()=>{
 setInterval(poll,880);
 new ResizeObserver(drawHistory).observe($('chart'));
 void poll();
+
+/* Original V7 training is a separate FastAPI application on 8788.
+ * This iframe displays its *real* A-H controls, not fabricated START
+ * buttons that would be unable to run the original model.
+ */
+const v7Frame=$('v7-frame');
+$('toggle-v7').onclick=()=>{
+ const hidden=v7Frame.hidden;
+ v7Frame.hidden=!hidden;
+ v7Frame.style.display=hidden?'block':'none';
+ $('toggle-v7').textContent=hidden?'ASCUNDE V7':'ARATĂ CONTROALELE V7';
+ $('toggle-v7').setAttribute('aria-expanded',String(hidden));
+};
+async function pollOriginal(){
+ try{
+  const v7=await json('/api/v7/status');
+  $('v7-status').textContent=v7.reachable?
+   'Portul 8788 răspunde. Folosește START 1 din interfața originală de mai jos. '+ 
+   'Starea antrenării nu este încă transmisă către graful 4D.':
+   'V7 original nu răspunde pe portul 8788. '+
+   'Pornește START_PORTAL_4D_v7.ps1; checkpointul existent rămâne intact.';
+ }catch(e){$('v7-status').textContent='Nu pot verifica V7: '+e.message;}
+}
+let exerciseCursor=0,exerciseBusy=false,exerciseTotal=0;
+function appendExercises(records){
+ const el=$('exercise-data');
+ for(const event of records){
+  const row=document.createElement('div');row.className='exercise-row';
+  const head=document.createElement('strong');
+  head.textContent='#'+event.sequence+' · '+event.domain+
+   ' · '+event.problem_id+
+   (event.unique_problem_first_seen?' · PROBLEMĂ NOUĂ':' · REAPARIȚIE');
+  const detail=document.createElement('div');
+  detail.textContent='pas '+event.step+
+   ' · noduri raportate '+event.observed_nodes+
+   ' · legături raportate '+event.reported_edges+
+   ' · reward '+(event.reward??'neraportat')+
+   ' · Δ ponderi '+(event.model_update?.weight_delta??'neraportată');
+  row.append(head,detail);el.append(row);
+ }
+}
+async function fetchExercises(reset=false){
+ if(exerciseBusy)return;
+ exerciseBusy=true;
+ if(reset){exerciseCursor=0;$('exercise-data').replaceChildren();}
+ try{
+  const payload=await json('/api/exercises?after='+exerciseCursor+'&limit=30');
+  exerciseTotal=payload.total_records;
+  appendExercises(payload.records);
+  exerciseCursor=payload.next_after;
+  $('exercise-next').disabled=!payload.has_more;
+  $('exercise-status').textContent=exerciseTotal?
+   'Jurnal verificabil al evenimentelor PRIMITE: '+count(exerciseCursor)+
+   ' / '+count(exerciseTotal)+
+   ' înregistrări · '+count(payload.unique_problems)+' probleme diferite. '+
+   'Sursa V7 originală nu este conectată automat.':
+   '0 exerciții transmise către acest jurnal. Pentru A–H folosește START 1 '+
+   'din V7 original de mai sus; integrarea jurnalului cu motorul este încă lipsă.';
+ }catch(e){$('exercise-status').textContent='Jurnal indisponibil: '+e.message;}
+ finally{exerciseBusy=false;}
+}
+$('exercise-next').onclick=()=>void fetchExercises(false);
+$('exercise-refresh').onclick=()=>void fetchExercises(true);
+void pollOriginal();
+setInterval(()=>void pollOriginal(),6500);
+void fetchExercises(true);
