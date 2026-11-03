@@ -1,0 +1,8 @@
+.venv_portal/
+data/
+__pycache__/
+*.pyc
+*.db
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
