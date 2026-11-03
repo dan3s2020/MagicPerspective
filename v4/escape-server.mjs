@@ -9,7 +9,7 @@ import {PerspectiveLearner,createProjectionWorld,VIEWS,trainProjection,evaluateP
 import {RuleLearner,createRuleWorld,ACTIONS,evaluateRules} from './engine/rules.mjs';
 import {planChemistry} from './engine/chemistry.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
-const HOST=process.env.HOST||'127.0.0.1',PORT=Number(process.env.PORT||3034);
+const HOST=process.env.HOST||'127.0.0.1',PORT=Number(process.env.PORT||3035);
 if(!Number.isInteger(PORT)||PORT<1||PORT>65535)throw Error('Invalid port');
 const checkpoint=path.join(root,'data','escape-checkpoint.json');
 let perspective=new PerspectiveLearner(),projectionSeed=2201,projectionWorld=createProjectionWorld(projectionSeed);
