@@ -259,10 +259,10 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
     utility:+x.utility.toFixed(6),knownDestination:x.to!==null||x.expectedTo!=null})),
    chosen:{action:select.tool??String(select.action),from:ep.current,
     to:select.expectedTo??select.to??null,
-    q:+(cellular?select.q:select.neural).toFixed(6),utility:+select.utility.toFixed(6)},
-   contribution:cellular?{logit:+select.logit.toFixed(6),votes:select.net.votes,
-    action:select.net.action,cost:select.net.cost,revisit:select.net.revisit,
-    unknown:select.net.unknown}:null,
+    q:+(cellular?select.q:select.neural).toFixed(6),utility:+select.utility.toFixed(6),
+    contribution:cellular?{logit:+select.logit.toFixed(6),votes:select.net.votes,
+     action:select.net.action,cost:select.net.cost,revisit:select.net.revisit,
+     unknown:select.net.unknown}:null},
    actual:null};
   let to,stepCost=select.cost;
   if(domain==='text'){
