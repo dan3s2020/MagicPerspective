@@ -26,6 +26,24 @@ button:focus-visible{outline:3px solid #e9bd75}
 .warning{margin:11px 0;color:#f8c58b;font-size:13px;padding:10px;border:1px solid #765638;border-radius:8px}
 .legend{display:flex;gap:13px;flex-wrap:wrap;color:#abc8dd;margin-top:8px;font-size:11px}
 @media(max-width:900px){.stack{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.v7-live{background:#11233f;border:1px solid #476b92;border-radius:14px;padding:13px;margin:12px 0}
+.v7-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.v7-head h2{font-size:19px;margin:2px 0}.v7-head small{font-size:11px;color:#9ddbd5;letter-spacing:.07em}
+.v7-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.v7-actions a{display:inline-flex;padding:11px 14px;align-items:center;min-height:42px;border-radius:9px;
+ background:#2c6e8d;color:#fff;text-decoration:none;border:1px solid #7dbbd2;font-weight:800}
+.v7-actions a:focus-visible{outline:3px solid #f4c98b}
+.v7-status{font-size:12px;color:#f4c98b}
+.v7-frame{width:100%;height:640px;border:1px solid #2b4769;border-radius:10px;background:#081324;display:block;margin-top:10px}
+.v7-notice{font-size:12px;color:#b9cbdf;margin-top:9px}
+.exercise-panel{margin-top:14px;background:#101e34;border:1px solid #315370;border-radius:12px;padding:13px}
+.exercise-panel h2{font-size:17px;margin:0 0 6px}
+.exercise-data{display:grid;gap:7px;max-height:320px;overflow:auto;margin-top:10px}
+.exercise-row{background:#0a172a;border:1px solid #2a4763;border-radius:9px;padding:9px;line-height:1.5;
+ font:12px ui-monospace,Consolas,monospace}
+.exercise-row strong{color:#95e9d8}
+.exercise-empty{font-size:12px;color:#f8c58b}
 </style>
 </head><body><main>
 <div class="heading"><div><small>PORTAL4D · VERBATIM · EXPERIENȚE CONFIRMATE</small>
@@ -34,6 +52,21 @@ button:focus-visible{outline:3px solid #e9bd75}
 <p>Graful începe gol. Fiecare nod și muchie apare numai după un eveniment de antrenament raportat de motor.
 Predicțiile neconfirmate nu devin conexiuni permanente.
 Rama tesseractului este singurul obiect geometric fix.</p>
+<section class="v7-live" aria-label="Antrenamentul original Portal4D V7">
+<div class="v7-head">
+<div><small>MOTORUL ORIGINAL · FĂRĂ ÎNLOCUIRE · 8788</small>
+<h2>START 1 · START 2 · STOP + SAVE — Portal4D V7</h2></div>
+<div class="v7-actions">
+<a id="open-v7" href="http://127.0.0.1:8788/" target="_blank" rel="noopener">DESCHIDE TRAININGUL ORIGINAL ↗</a>
+<button id="toggle-v7" type="button" aria-expanded="true" aria-controls="v7-frame">ASCUNDE V7</button>
+</div></div>
+<p id="v7-status" class="v7-status">Verific portul 8788 al motorului original.</p>
+<iframe id="v7-frame" class="v7-frame" src="http://127.0.0.1:8788/"
+ title="Portal4D V7 original: controalele START 1 START 2 STOP SAVE si lumile A-H"></iframe>
+<p class="v7-notice">Butoanele START din fereastra de mai sus aparțin aplicației V7 reale; nu sunt simulate de acest viewer.
+Dacă browserul blochează încadrarea, apasă DESCHIDE TRAININGUL ORIGINAL.
+Graful 4D de mai jos nu primește automat evenimente din V7 până când adaptorul din sursa originală este instalat.</p>
+</section>
 <div class="stats">
 <div class="stat"><small>NODURI REALE</small><strong id="nodes">0</strong></div>
 <div class="stat"><small>LEGĂTURI CONFIRMATE</small><strong id="edges">0</strong></div>
@@ -55,5 +88,12 @@ Rama tesseractului este singurul obiect geometric fix.</p>
 <p class="warning" id="warning">Aștept evenimente originale V7 pe serviciul local; nu voi genera exemple decorative.</p>
 <h2>Evenimente și verificarea provenienței</h2>
 <div id="events" aria-live="polite">Niciun eveniment primit.</div>
+<section class="exercise-panel" aria-label="Exerciții individuale raportate de motor">
+<h2>Jurnalul exercițiilor individuale</h2>
+<div class="exercise-empty" id="exercise-status">Nu există încă niciun exercițiu transmis către graful 4D. Lista V7 originală rămâne în fereastra de antrenament de mai sus.</div>
+<div id="exercise-data" class="exercise-data"></div>
+<div class="controls"><button id="exercise-next" type="button">ÎNCARCĂ URMĂTOARELE 30</button>
+<button id="exercise-refresh" type="button">ACTUALIZEAZĂ JURNALUL</button></div>
+</section>
 </aside></div>
 </main><script type="module" src="/growth-app.mjs"></script></body></html>
