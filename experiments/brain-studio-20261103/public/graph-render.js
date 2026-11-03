@@ -62,7 +62,7 @@ function drawEdges(ctx,nodes,edges,{isText=false,truth=false}={}){
   });
  }
 }
-export function drawAbstract(canvas,meta,frame,{truth=false,animation=0}={}){
+export function drawAbstract(canvas,meta,frame,{truth=false,animation=0,cellRound=3,showMessages=true,selectedCell=null}={}){
  const ctx=canvas.getContext('2d'),nodes=meta?.abstract?.nodes||[],
    reference=meta?.abstract?.solution,graph=frame?.graph||{},
    domain=meta?.abstract?.domain||meta?.domain||'unknown';
@@ -75,9 +75,19 @@ export function drawAbstract(canvas,meta,frame,{truth=false,animation=0}={}){
   text(ctx,'Nu există graf calculat. Apasă INSPECTEAZĂ sau START ∞.',28,85,C.muted);
   return;
  }
- const isText=domain==='text';
+ const isText=domain==='text',compute=graph.compute,
+  actualCells=compute?.engine==='GRAPH-CELLS'?compute.cells:[],
+  cellMap=new Map(actualCells.map(cell=>[cell.id,cell]));
  drawEdges(ctx,nodes,truth?meta.abstract.edges:graph.observedEdges,
   {isText,truth});
+ // Each line is an actual computed numerical message used by the selected round.
+ if(!truth&&showMessages&&compute?.engine==='GRAPH-CELLS'){
+  for(const msg of (compute.messages||[]).filter(m=>m.round===cellRound)){
+   const strength=Math.min(1,Math.max(0,msg.strength||0));
+   edge(ctx,nodes,msg.from,msg.to,C.prediction,{width:.7+5*strength,
+    alpha:.16+.72*strength,arrow:true});
+  }
+ }
  if(truth){
   path(ctx,nodes,reference?.path,C.solution,5);
  }else{
@@ -101,8 +111,16 @@ export function drawAbstract(canvas,meta,frame,{truth=false,animation=0}={}){
   if(!p)continue;
   const rad=isCurrent?6:labelEvery?4.0:Math.max(1.2,Math.min(3.3,180/nodes.length));
   ctx.beginPath();ctx.arc(p.x,p.y,rad,0,Math.PI*2);
-  ctx.fillStyle=isKnown?(truth?'#91a9c9':C.node):'#263851';
+  const realCell=cellMap.get(n.id),layer=realCell?.activations?.[cellRound],
+   intensity=layer?.length?Math.min(1,Math.hypot(...layer)/Math.sqrt(layer.length)):0;
+  ctx.fillStyle=!truth&&realCell?
+   'rgba(186,163,252,'+(.35+.63*intensity)+')':
+   isKnown?(truth?'#91a9c9':C.node):'#263851';
   ctx.fill();
+  if(!truth&&realCell&&n.id===selectedCell){
+   ctx.beginPath();ctx.arc(p.x,p.y,12+2*Math.sin(animation*.3),0,2*Math.PI);
+   ctx.strokeStyle=C.prediction;ctx.lineWidth=3;ctx.stroke();
+  }
   if(labelEvery&&isKnown&&n.id!==meta.start&&n.id!==meta.goal&&!isCurrent){
    text(ctx,n.label,p.x+6,p.y-5,'#8196b7','9px system-ui');
   }
@@ -117,6 +135,10 @@ export function drawAbstract(canvas,meta,frame,{truth=false,animation=0}={}){
   ctx.strokeStyle=C.prediction;ctx.lineWidth=2;ctx.stroke();
   annotate(ctx,nodes,current,'●',C.prediction,10);
  }
+ if(!truth&&compute?.engine==='GRAPH-CELLS')
+  text(ctx,'NODURI ACTIVE: '+compute.participatingCells+' · MESAJE '+cellRound+'/'+compute.rounds+
+   ' · actualizare '+(compute.learning?.updatedWeights??'—'),
+   16,613,C.prediction,'bold 12px system-ui');
  text(ctx,truth?(reference?.initialOnly?'EVALUATOR · SOLUȚIE INIȚIALĂ':'EVALUATOR · SOLUȚIE DE REFERINȚĂ'):'GRAF MODEL · OBSERVAȚII + PREDICȚII',
   16,19,truth?C.solution:C.node,'bold 12px system-ui');
  text(ctx,domain.toUpperCase()+' · '+nodes.length+' noduri · '+
