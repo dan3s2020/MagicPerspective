@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-03",
+  "config": {
+    "episodes": 150,
+    "n": 33,
+    "count": 24,
+    "seed": 83
+  },
+  "beforeMAE": 4.13513,
+  "afterMAE": 0.89477,
+  "before": {
+    "real": {
+      "success": 1,
+      "cost": 26.5,
+      "f1": 0.7331,
+      "connected": 1,
+      "efficiency": 0.9805,
+      "coherence": 1,
+      "phaseCoherence": 0.9328,
+      "steps": 4.625
+    },
+    "off": {
+      "success": 1,
+      "cost": 58.875,
+      "f1": 0,
+      "connected": 0,
+      "efficiency": 0.6126,
+      "coherence": 0,
+      "phaseCoherence": -0.088,
+      "steps": 11.4167
+    },
+    "shuffled": {
+      "success": 1,
+      "cost": 102.625,
+      "f1": 0.1276,
+      "connected": 0,
+      "efficiency": 0.4556,
+      "coherence": 0.7971,
+      "phaseCoherence": 0.8231,
+      "steps": 19.2917
+    },
+    "untrained": {
+      "success": 1,
+      "cost": 26.5,
+      "f1": 0.7331,
+      "connected": 1,
+      "efficiency": 0.9805,
+      "coherence": 1,
+      "phaseCoherence": 0.9328,
+      "steps": 4.625
+    }
+  },
+  "after": {
+    "real": {
+      "success": 1,
+      "cost": 26.375,
+      "f1": 0.7512,
+      "connected": 1,
+      "efficiency": 0.9856,
+      "coherence": 1,
+      "phaseCoherence": 0.0468,
+      "steps": 4.7083
+    },
+    "off": {
+      "success": 1,
+      "cost": 76.625,
+      "f1": 0,
+      "connected": 0,
+      "efficiency": 0.5536,
+      "coherence": 0,
+      "phaseCoherence": -0.088,
+      "steps": 15.0833
+    },
+    "shuffled": {
+      "success": 0.9583,
+      "cost": 217.6667,
+      "f1": 0.1276,
+      "connected": 0,
+      "efficiency": 0.2612,
+      "coherence": 0.3904,
+      "phaseCoherence": 0.026,
+      "steps": 41.5833
+    },
+    "untrained": {
+      "success": 1,
+      "cost": 26.5,
+      "f1": 0.7331,
+      "connected": 1,
+      "efficiency": 0.9805,
+      "coherence": 1,
+      "phaseCoherence": 0.9328,
+      "steps": 4.625
+    }
+  },
+  "limitations": "Message propagation is explicit distributed value iteration, not learned emergent intelligence. Cost prediction is learned from traversals. One seed is insufficient for statistical proof."
+}

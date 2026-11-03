@@ -1,0 +1,1 @@
+{"name":"magicperspective-distributed-dance","version":"1.0.0-research","private":true,"type":"module","engines":{"node":">=18"},"scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs","bench":"node scripts-benchmark.mjs"}}
