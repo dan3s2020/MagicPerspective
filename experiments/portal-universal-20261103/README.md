@@ -57,3 +57,21 @@ The test suite includes simulator boundaries, exact content hashing, graph growt
 7. **Long-run scalability not proven.** Millions of distinct tasks demand growth budgets, compact databases, pruning/archival, deterministic resume audits, extensive CUDA benchmarks and CI evidence. Default full-action event logging can produce large databases; disabling capture is an explicit tradeoff that removes replay frames.
 
 This is a research engine with falsifiable measurements, not a demonstration that all Verbatim instructions have already been satisfied.
+
+## V11 - Parquet, imported text, and persistent dimensional graph (2026-11-03)
+
+**Do not replace the UI or earlier model checkpoint.** V11 updates the same experiment folder over V10.
+
+- OpenThoughts3-1.2M Parquet actual source schema contains top-level `conversations: list<struct<from, value>>` alongside nontext `difficulty/source/domain`. Import now inspects actual Arrow schema, recursively extracts conversation turns in source order, and skips numeric/metadata fields. Other textual Parquet schemas are discovered without a hardcoded seven-column allowlist. Rows are streamed in small batches; no pretrained model responses are generated or supplied.
+- `POST /api/corpus` acknowledges quickly and imports asynchronously. `GET /api/status` contains `corpus_ingest` with actual progress, selected/detected columns, processed rows, errors, final checksum; browser updates the existing corpus row and enables Text real upon successful import. This is not a background cloud job: it runs inside the local server and stops when the server stops.
+- Each observed graph node has `origin`, `born_at`, `dimension` (1D observed events, 2D observed relations, 3D recurring motifs, 4D time-ordered relation of actual motifs). Same persistent storage, edges and neural embeddings; no isolated 4D drawing. An actual ordered second action is necessary to produce a 4D temporal node. No distinct time coordinate is presented as a physical dimension proof.
+- Historic graph snapshot format is loaded with missing dimension metadata defaulted, then evolved without reset. Controller retrieves nearby learned 2D–4D structures as input features from observed graph links, capped by `MAX_OBS` for GPU memory.
+- 3D view remains the original viewer; the 4D button now highlights actual 4D nodes and their relations, while the replay timeline stays separate. Recent physical nodes and edges have priority in the viewport to make genuine training growth visible; unused decorative nodes are never synthesized.
+- V11 has not processed 14 million unique tasks and has not demonstrated universal language understanding, positive cross-domain transfer or literal higher-dimensional physics.
+- Local CPU CI can validate schema selection with a mocked pyarrow reader and all model tests; actual decoding of the user's ~286MB OpenThoughts3 shard must be verified in the user's Windows environment with pyarrow installed.
+
+### Update on Windows (preserve checkpoints)
+
+Stop the running server first, then `git pull --ff-only origin main` in `MagicPerspective`. Run `START_PORTAL_UNIVERSAL_CUDA.ps1` from the same existing project directory. The `.venv_portal` folder and `D:\training\MagicPerspective-PortalUniversal` checkpoints remain intact. Choose the exact `.parquet` path in the existing corpus field, click **Încarcă corpus**, observe the progress/selected columns until `ÎNCĂRCAT`; the Text real checkbox is then selected. Only after that press START TRAIN.
+
+Test: `python -m unittest discover -s tests -v`, `node --check web/app.js`.
