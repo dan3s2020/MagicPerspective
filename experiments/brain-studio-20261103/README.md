@@ -31,3 +31,28 @@ Run `npm test` inside this folder. No GPU is assumed. The default node runtime i
 
 ## Limitations
 The current function chart plots a one-dimensional section through the parameterized function. Animated neuron layers sample weights rather than exposing every network connection; labels distinguish inferred activity from actual hidden activations. Legacy incompatible formats cannot be continued without their own adapter; import never fabricates a conversion. Persistence and performance are bounded by Android RAM, battery, storage, and OS scheduling.
+
+## Unified real abstract graph — 3 November 2026
+
+The FIRST section of Brain Studio is the **executed state-transition graph**, not an unrelated illustrative graph. The same `magic.abstract.graph.v1` envelope is used for all three problem domains:
+
+| Domain | State node | Transformation edge | Evaluator solution |
+| --- | --- | --- | --- |
+| Maze | coordinate/cell | physically open adjacent cell | shortest traversable route on hidden maze |
+| Abstract Network | graph vertex | actual open link with cost | graph shortest route |
+| Text/symbolic | pair (red, blue) of 0–6 | one of amber/violet/cobalt operations | bounded shortest sequence of operations |
+
+Every trace frame contains:
+- `graph.observedNodes` and `graph.observedEdges`: measured by the learner's own local observations/actions, not copied from the evaluator graph.
+- `graph.candidates`: actual ranked neural scores `Q(s,a)` calculated **before** the corresponding action. Unknown symbolic destinations stay `null` until observed; no fake next-state prediction is invented.
+- `graph.predictedNext` and `graph.predictedPath`: the model's highest-ranked immediate transition and an explicit BFS composition **only over links already observed**. The `planSource` field makes this distinction visible.
+- `graph.actual`: executed action and measured destination, with a comparison to the prediction if it was known.
+- `meta.abstract.solution`: computed by an evaluator **after** model execution. It is displayed on a second graph and never enters model features, action selection, or gradients.
+
+For Causal Text, the prior three fixed actions have been replaced by the model's `predictedPlan`: the simulator executes **exactly** that predicted sequence, if one exists. The evaluator has an independent shortest plan. Its restricted natural-language goal parser is still fixed, not a trained language model.
+
+Brain Studio replays sequential complete traces from `GET /api/traces?after=<sequence>`, with a bounded server ring buffer. The phone can select every frame, freeze playback, and inspect the actual Q rankings, solution, neural activations and outcome. If training outruns the device's ability to display it, the UI reports how many traces were skipped rather than fabricating live frames. The server may finish episodes between polls: this is replay of recently **completed real episodes** during continued training, not a synchronized video of the still-executing step.
+
+`POST /api/probe` performs a real **no-training inspection on a copy** of the selected model. The native Dynamic Perspective adapter requires its copied training episode to produce a trace; it is labelled `inspecție cu adaptare pe COPIE`, and the selected checkpoint remains frozen. The initial Dynamic Perspective oracle route is labelled **initial only**, since its network may evolve afterward.
+
+These visual changes never rewrite original V6/V7/Graph/Dynamic/Causal checkpoint files. Run `node --test tests/*.test.mjs` inside this studio directory, then verify a maze, network and symbolic graph in the first panel. Real graph display is not proof of positive cross-domain transfer; use the separate held-out evaluation and transfer benchmark.
