@@ -61,3 +61,22 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:1;background:#091629;bo
 .cell-flow{font:800 12px/1.5 system-ui;color:#71dcc8;margin:9px 0 16px}
 @media(max-width:720px){.cell-controls label{width:100%;justify-content:space-between}
  .cell-controls select{flex:1;min-width:0}.cell-ledger{font-size:11px}}
+
+/* Windows CUDA controls are added below the existing graph, not a replacement UI. */
+.cuda-card{border-color:#5b7195;background:linear-gradient(140deg,#182940,#132036)}
+.cuda-control{border:1px solid var(--border);background:#0e1d32;border-radius:12px;
+ padding:15px;margin:12px 0}
+.cuda-control label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+ font-size:14px;font-weight:750;color:var(--text)}
+.cuda-control strong{color:var(--mint);font-size:19px;font-variant-numeric:tabular-nums}
+#cuda-worlds{display:block;width:100%;accent-color:var(--mint);cursor:pointer;
+ min-height:26px;touch-action:pan-x}
+.cuda-marks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.cuda-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cuda-metrics strong{font-size:clamp(13px,2.4vw,23px);overflow-wrap:anywhere}
+.cuda-results{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.cuda-results .test-item{flex:1;min-width:135px}
+#cuda-inspect{min-height:44px;background:#293953;color:var(--text);
+ border:1px solid #4a607f;border-radius:9px;padding:8px}
+#cuda-message{overflow-wrap:anywhere}
+@media(max-width:720px){.cuda-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
