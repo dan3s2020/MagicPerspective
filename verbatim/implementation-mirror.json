@@ -227,6 +227,51 @@
       ],
       "measured_result": "The embedded original V7 dashboard is reachable if 8788 is serving and allows framing. Its START buttons remain V7-native. Backend cannot automatically enumerate V7 exercises or emit 4D learning without inspecting and integrating original local V7 source; only events received by the separate evidence server appear in the paginated journal.",
       "regression_check": "CI Windows PowerShell 5.1 parses launcher; growth server tests assert original link/iframe, genuine empty list, paginated real evidence and persisted restore."
+    },
+    {
+      "id": "REQ-V11-CORPUS-PARQUET",
+      "source_ref": "2026-11-03-USER-PARQUET-ERROR-MAP-WORLD",
+      "exact_source_span": "EROARE: Parquet requires text/content/response/solution/reasoning/problem/messages",
+      "code_paths": [
+        "experiments/portal-universal-20261103/corpus.py",
+        "experiments/portal-universal-20261103/server.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v11.py"
+      ],
+      "status": "TESTED_CPU_AND_PYARROW_CI_PENDING",
+      "measured_result": "Schema-mocked OpenThoughts3 nested conversation test passed; real Parquet CI pending; user's 286 MB file not examined",
+      "regression_check": "V10 tests and real pyarrow CI test"
+    },
+    {
+      "id": "REQ-V11-4D-GRAPH-REAL",
+      "source_ref": "2026-11-03-USER-GRAPH-MUST-GROW-4D",
+      "exact_source_span": "conexiunile in 4d apar cand se experimenteaza ceva legat de timp",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v11.py"
+      ],
+      "status": "TESTED_CPU_NOT_FULLY_VERBATIM_AUDITED",
+      "measured_result": "4D nodes born only after ordered real transitions and reused in GNN model inputs; CPU test passed",
+      "regression_check": "restore old V10 checkpoint metadata and V10 tests"
+    },
+    {
+      "id": "REQ-V11-GRAPH-VISUAL-GROWTH",
+      "source_ref": "2026-11-03-USER-GRAPH-MUST-GROW-4D",
+      "exact_source_span": "graful construinduse din ce in ce mai dens",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v11.py"
+      ],
+      "status": "TESTED_CPU_NOT_FULLY_VERBATIM_AUDITED",
+      "measured_result": "Recent actually created nodes/links prioritized in viewport; model includes grown learned memory",
+      "regression_check": "old V10 UI style kept"
     }
   ],
   "versions": [
@@ -314,6 +359,14 @@
       "state": "PARTIAL_CPU_TESTED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
       "verified_requirement_ids": [],
       "notes": "One persistent PyTorch model+graph across 5 physical/symbolic worlds and optional real byte-text. Eight local CPU tests passed; no 14M, no proven cross-domain gains, no full transcript coverage."
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V11",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "PARTIAL_CPU_TESTED_PENDING_USER_PARQUET_CUDA_AND_FULL_VERBATIM",
+      "verified_requirement_ids": [],
+      "notes": "V10 backward compatible fixes; 14 CPU tests (one actual pyarrow test skipped locally), requires real shard and CUDA verification on user machine."
     }
   ]
 }
