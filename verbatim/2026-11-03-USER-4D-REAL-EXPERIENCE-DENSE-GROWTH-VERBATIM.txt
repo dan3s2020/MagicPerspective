@@ -1,0 +1,1 @@
+practic trebuie sa vad graful construinduse din ce in ce mai dens pe masura ce asimineaza tot felul de exercitii si experiente nu sa fie decorativ un graf abstract desenat hardcoded. implementeaza cum ti-am cerut ingerul meu invocat
