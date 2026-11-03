@@ -73,3 +73,39 @@ The original universal model used a detached fixed-size MLP with a graph used pr
 A full mathematical gradient audit uses finite differences against the same graph and confirms the analytic derivatives for encoder, message-passing, readout and action weights. `node --test tests/cells.test.mjs` checks these along with 3-domain action execution, read-only inspection, genuine per-cell training traces and checkpoint recovery. `node scripts-cells-benchmark.mjs 45 5` compares identical Graph Cells networks trained on all three versus just one domain and a same-architecture untrained baseline on disjoint blind seeds.
 
 **Limits:** A working state graph does not yet imply a language model, a novel discovered law grammar or positive transfer. Text here means the current restricted symbolic number transformations. Three rounds limit how far a cell's information can travel in one decision; future work can test more rounds, adaptive topology and new environments. Measured wins/losses must come from benchmark outputs rather than animation.
+
+## Windows NVIDIA CUDA parallel training — 3 November 2026
+
+This is an **additional backend in the existing Brain Studio UI**, not a replacement interface and not a CUDA label on a CPU Node.js loop.
+
+### Start in Windows PowerShell
+
+Clone the public repository to `$env:USERPROFILE\Downloads\MagicPerspective` if it is not already available, `git pull --ff-only origin main` and run:
+
+```powershell
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Downloads\MagicPerspective\START_MAGIC_CUDA.ps1"
+```
+
+The PowerShell script creates an isolated `.venv_graph_cuda` with Python 3.10–3.12, installs official Windows PyTorch CUDA 12.6 wheels (unless a working CUDA PyTorch is already present), **asserts `torch.cuda.is_available()`**, runs real tensor/gradient self-tests on CUDA and launches the original local Brain Studio at **http://127.0.0.1:3044**. Node.js 22+, Python 3.12, Git and an up-to-date NVIDIA driver must already be installed. No global Python or Node changes are made.
+
+### The GPU slider and brain synchronization
+
+Create/select a **Graph Cells** brain. In the new CUDA card immediately below the same abstract graph, select a parallel world count **1–512 (64 default)** and click **START CUDA ∞**. The CUDA worker starts independent *batched parallel worlds*, each with its own goal/observations/hidden topology/current node and physical action, all represented and updated in PyTorch GPU tensors. A single shared Graph Cells model with the exact JS 8-channel/3-round parameter tensor controls the whole batch. Gradients from actual actions update this shared model on CUDA. The CUDA slider may be moved **while running**, applied at the next GPU batch. Select a specific batch-world index to inspect its observed state graph and genuine executed actions on the original graph viewer.
+
+GPU metrics report **effective** (not merely requested) worlds, true time-normalized worlds/second, used PyTorch GPU VRAM and total VRAM, CUDA version, GPU name, batch loss and actual solved/total outcomes per domain. On CUDA memory exhaustion the batch size is visibly halved for the next attempt; the worker does not silently move to CPU.
+
+**PAUZĂ CUDA + SINCRONIZEAZĂ** finishes the active GPU batch and atomically stores the GPU checkpoint in `experiments/brain-studio-20261103/cuda/data/cuda-live.json`. The Node server first saves the selected original Graph Cells checkpoint into its named library, then imports the new CUDA-trained Graph Cells weights and optimizer moments into the original studio model. Previously trained **V1–V7, Graph Dance and earlier MLP** checkpoints are never rewritten. `REIA CHECKPOINT CUDA` resumes this isolated CUDA state. `RECUPEREAZĂ CHECKPOINT GPU` explicitly imports a prior GPU checkpoint after an interrupted Windows session. CUDA import refuses to replace a newer active brain with fewer episodes.
+
+### Research and hardware limits
+
+- The GPU batched maze/network/text world generators have common graph semantics, but **they are GPU-native new generators, not identical to the JavaScript worlds**. In particular, GPU maze worlds are 9×9 random-obstacle graphs with guaranteed corridors; GPU network worlds are 81-node random graphs; GPU symbolic worlds are finite two-register modular transformations. There is no free-form natural-language training or demonstrated general intelligence.
+- The same weight *names, shapes, message-passing equations and action readout* are shared. Because GPU and JS worlds have some different observation feature encodings and action orderings, a GPU-trained model's transfer back to JS must be evaluated independently. The original JS blind tests remain available.
+- The CUDA trace records **executed GPU action steps, pre-action logits and cell activations/messages** of one selected world from a recent GPU batch. The display is a true replay from completed GPU batches, not synchronized video of in-flight kernels. Per-cell CUDA gradients are not exported; only the aggregate gradient and model weight changes are reported; use JS Graph Cells for full per-cell gradient attribution. This is explicitly labelled, never fabricated.
+- RTX 3050 Ti 4 GB VRAM: start with 32–64 worlds, then use the slider to test larger batches. Processing 512 worlds in a single batch is *allowed but not guaranteed to fit*; the worker will report any VRAM-driven downgrade. High GPU utilization is not guaranteed by a small graph neural network; report measured performance, not manufactured percentages.
+- GPU checkpoints and the CUDA virtual environment are **gitignored**. A CUDA failure never overwrites the last atomically saved GPU checkpoint. If Windows crashes, worlds processed since the last autosave may be lost.
+- Only **one** CUDA worker may own the local GPU service port 3045. Node serves the existing UI on port 3044. The PowerShell launcher uses localhost on both, so neither exposes an unauthenticated training endpoint on Wi-Fi or the internet.
+- This backend is not available on Android Termux; Termux retains the original Node.js Graph Cells training unchanged.
+
+Run the CPU-only compatibility test on any CI machine with PyTorch installed:
+`python experiments/brain-studio-20261103/cuda/cuda_worker.py --self-test --cpu-test`.
+This is *test-only*; the live CUDA server will not start on CPU.
