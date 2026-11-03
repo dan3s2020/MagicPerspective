@@ -74,6 +74,14 @@ jobs:
           node --check experiments/portal-v7-hypercube-4d/geometry.mjs
           node --check experiments/portal-v7-hypercube-4d/viewer.mjs
           node --test experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs
+      - name: Verified Portal V7 real evolving 4D experience graph, persistent journal and HTTP evidence
+        run: |
+          node --check experiments/portal-v7-hypercube-4d/growth.mjs
+          node --check experiments/portal-v7-hypercube-4d/journal.mjs
+          node --check experiments/portal-v7-hypercube-4d/growth-server.mjs
+          node --check experiments/portal-v7-hypercube-4d/growth-view.mjs
+          node --check experiments/portal-v7-hypercube-4d/growth-app.mjs
+          node --test experiments/portal-v7-hypercube-4d/tests/*.test.mjs
       - name: Portal Universal V10 shared graph, real-world feedback, persistence, blind controls and HTTP tests
         run: |
           PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v

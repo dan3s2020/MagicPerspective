@@ -5,7 +5,8 @@
   "sources": [
     "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
     "verbatim/recent-user-messages.json",
-    "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt"
+    "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt",
+    "verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt"
   ],
   "required_evidence_fields": [
     "source_ref",
@@ -181,6 +182,30 @@
       ],
       "measured_result": "Geometry and viewer available as additive modules. Exact original Portal4D V7 UniversalGraph ZIP is not accessible for modification in this session. No claim of original V7 runtime integration or real backend animation until original source is inspected and event API wired.",
       "regression_check": "CI: node --test experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs; source-to-implementation and original V7 no-regression checks remain open."
+    },
+    {
+      "id": "REQ-11",
+      "source_ref": "2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH",
+      "exact_source_span": "graful construinduse din ce in ce mai dens pe masura ce asimineaza tot felul de exercitii si experiente nu sa fie decorativ un graf abstract desenat hardcoded",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Graph starts empty, adds only observed 4D nodes and confirmed original training transitions, reinforces measured links on reuse, persists complete evidence, shows actual new-node/new-edge births and exact density/unique-problem measurements. No static fake graph replaces the model. The original V7 source adapter remains required to connect real training events.",
+      "status": "EVIDENCE_GRAPH_AND_LIVE_VIEW_IMPLEMENTED_ORIGINAL_V7_SOURCE_ADAPTER_PENDING",
+      "code_paths": [
+        "experiments/portal-v7-hypercube-4d/growth.mjs",
+        "experiments/portal-v7-hypercube-4d/journal.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-view.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-server.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-index.html",
+        "experiments/portal-v7-hypercube-4d/growth-app.mjs",
+        "experiments/portal-v7-hypercube-4d/viewer.mjs"
+      ],
+      "test_paths": [
+        "experiments/portal-v7-hypercube-4d/tests/growth.test.mjs",
+        "experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs",
+        "experiments/portal-v7-hypercube-4d/tests/server.test.mjs"
+      ],
+      "measured_result": "Pending GitHub CI evidence. Original Portal4D V7 training source is not present in this repository; receipt of original model events and in-V7 integration are NOT yet verified. No claim of 14M unique exercises or positive generalization.",
+      "regression_check": "node --test experiments/portal-v7-hypercube-4d/tests/*.test.mjs; node scripts/verbatim-mirror-gate.mjs must report integrity PASS and completeness gate BLOCKED."
     }
   ],
   "versions": [
