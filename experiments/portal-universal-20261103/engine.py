@@ -49,23 +49,32 @@ class Graph:
         self.by_label = {}
         self.edges = {}  # (from,to,kind) -> {count, confirmed, amplitude}
         self.link_counts = {} # (from,to) -> maximum observed edge count, for fast local adjacency
+        self.neighbors = {}  # actual observed edges, including temporal memories
+        self.experience_step = 0
+        self.saturated = 0
         self.used_by_domain = {}
         self.growth_events = 0
         self.cross_domain_links = 0
         self.last_growth = []
         self.ensure('UNKNOWN', 'unknown', 'system')
 
-    def ensure(self, label, role, domain):
+    def ensure(self, label, role, domain, dimension=None, evidence=None):
+        if dimension is None:
+            dimension = {'relation':2, 'motif':3, 'temporal':4}.get(role,1)
         created = label not in self.by_label
         if label in self.by_label:
             i = self.by_label[label]
         else:
             if len(self.nodes) >= self.capacity:
-                return 0, False
+                self.saturated += 1
+                return 0, False  # explicit overflow metric; no claimed new node
             i = len(self.nodes)
             self.by_label[label] = i
             self.nodes.append({'id':i,'label':label,'role':role,
-                               'pos':position(label),'uses':0,'domains':[]})
+                               'pos':position(label),'dimension':dimension,
+                               'w':round(math.log1p(self.experience_step),5) if dimension==4 else 0.0,
+                               'born_at':self.experience_step,'origin':evidence or {'domain':domain, 'observation':role},
+                               'uses':0,'domains':[]})
             self.growth_events += 1
             self.last_growth.append(i)
         n=self.nodes[i]
@@ -78,20 +87,26 @@ class Graph:
         key = (int(a), int(b), role)
         v=self.edges.get(key)
         if v is None:
-            v={'count':0,'strength':0.0,'domains':[]}
+            v={'count':0,'strength':0.0,'domains':[], 'born_at':self.experience_step}
             self.edges[key]=v
         v['count']+=1
+        self.neighbors.setdefault(int(a),set()).add(int(b))
+        self.neighbors.setdefault(int(b),set()).add(int(a))
         self.link_counts[(int(a),int(b))]=max(self.link_counts.get((int(a),int(b)),0),v['count'])
         v['strength']+=float(strength)
         if domain and domain not in v['domains']:
             if len(v['domains'])==1:self.cross_domain_links += 1
             v['domains'].append(domain)
 
-    def remember(self, domain, observed, action, effect, before_ids, after_ids):
-        self.last_growth=[]
-        world,_=self.ensure('WORLD/'+domain, 'world', domain)
-        action_id,_=self.ensure('ACTION/'+action, 'action', domain)
-        effect_id,_=self.ensure('EFFECT/'+effect, 'effect', domain)
+    def remember(self, domain, observed, action, effect, before_ids, after_ids,
+                 previous_motif=None, evidence=None):
+        # ALL new structures must correspond to a real observed transition.
+        self.experience_step += 1
+        self.last_growth = []
+        evidence = evidence or {'domain':domain,'step':self.experience_step}
+        world,_=self.ensure('WORLD/'+domain, 'world', domain, evidence=evidence)
+        action_id,_=self.ensure('ACTION/'+action, 'action', domain, evidence=evidence)
+        effect_id,_=self.ensure('EFFECT/'+effect, 'effect', domain, evidence=evidence)
         self.link(world,action_id,'candidate',domain=domain)
         self.link(action_id,effect_id,'produced',domain=domain)
         for v in before_ids:
@@ -99,15 +114,40 @@ class Graph:
             self.link(world,v,'perceived',domain=domain)
         for v in after_ids:
             self.link(effect_id,v,'observed_after',domain=domain)
-        # Generic result nodes are shared across domains; a concept is retained
-        # only as a genuine repeatable observation-action-effect combination.
-        motif='MOTIF/'+fingerprint({'a':action,'effect':effect,'common':sorted(self.nodes[i]['label'].split('/')[-1]
-                    for i in before_ids if i<len(self.nodes) and self.nodes[i]['role']=='sensor')[:4]})[:20]
-        motif_id,_=self.ensure(motif,'motif',domain)
+        # 2D relational cell: an actually experienced input → action → output.
+        # Context labels are observed, never taken from the hidden simulator.
+        sample=sorted(self.nodes[i]['label'] for i in before_ids
+                      if i<len(self.nodes) and self.nodes[i]['role']=='sensor')[:3]
+        relation='REL/'+fingerprint({'domain_free':'observed', 'a':action,
+                                     'effect':effect,'input':sample})[:20]
+        relation_id,_=self.ensure(relation,'relation',domain,evidence=evidence)
+        for v in before_ids[:6]:self.link(v,relation_id,'relates',domain=domain)
+        self.link(relation_id,action_id,'context_action',domain=domain)
+        self.link(relation_id,effect_id,'context_effect',domain=domain)
+        # 3D pattern cell: a recurring organization of relations/effects.
+        motif='MOTIF/'+fingerprint({'a':action,'effect':effect,'common':sorted(
+            self.nodes[i]['label'].split('/')[-1] for i in before_ids
+            if i<len(self.nodes) and self.nodes[i]['role']=='sensor')[:4]})[:20]
+        motif_id,_=self.ensure(motif,'motif',domain,evidence=evidence)
+        self.link(relation_id,motif_id,'part_of_pattern',domain=domain)
         self.link(motif_id,effect_id,'predicts',domain=domain)
         self.link(action_id,motif_id,'recruits',domain=domain)
+        # 4D is NOT a time-axis picture. This node is born only after TWO
+        # actual ordered events; it remains in the SAME graph, linked to the
+        # 3D motifs that it relates, and is available to the GNN as memory.
+        temporal_id=None
+        if previous_motif is not None and 0<=previous_motif<len(self.nodes):
+            prior=self.nodes[previous_motif]['label']
+            temporal='TEMP/'+fingerprint({'prior':prior,'next':motif})[:20]
+            temporal_id,_=self.ensure(temporal,'temporal',domain,4,evidence=evidence)
+            self.link(previous_motif,temporal_id,'before',domain=domain)
+            self.link(temporal_id,motif_id,'after',domain=domain)
+            self.link(relation_id,temporal_id,'temporal_context',domain=domain)
         return {'action_id':action_id,'effect_id':effect_id,'motif_id':motif_id,
-                'born':self.last_growth[:],'node_count':len(self.nodes),'edge_count':len(self.edges)}
+                'relation_id':relation_id,'temporal_id':temporal_id,
+                'born':self.last_growth[:], 'node_count':len(self.nodes),
+                'edge_count':len(self.edges),'dimension':4 if temporal_id is not None else 3,
+                'evidence':evidence}
 
     def context(self, domain, observed, actions):
         born_start=len(self.nodes)
@@ -117,6 +157,24 @@ class Graph:
             name = tag if tag.startswith('SHARED/') else ('OBS/'+tag)
             v,_=self.ensure(name,'sensor',domain)
             ids.append(v)
+        # Reuse live memories from earlier problems: traverse observed
+        # connections (up to 3 hops), recruiting 2D/3D/4D concept nodes.
+        # Unknown hidden simulator truth is NEVER accessed by this retrieval.
+        frontier=set(ids);visited=set(ids);candidates=set()
+        for depth in range(3):
+            nxt=set()
+            for u in sorted(frontier)[:96]:
+                linked=sorted(self.neighbors.get(u,()),key=lambda v:(-self.nodes[v]['uses'],v))[:96]
+                for v in linked:
+                    if v in visited:continue
+                    if self.nodes[v].get('dimension',1)>=2:candidates.add(v)
+                    nxt.add(v)
+                    if len(nxt)>=512:break
+                if len(nxt)>=512:break
+            visited.update(nxt);frontier=nxt
+            if not frontier:break
+        slots=max(0,MAX_OBS-len(ids))
+        ids+=sorted(candidates,key=lambda v:(-self.nodes[v]['uses'],v))[:slots]
         action_ids=[]
         for a in actions[:MAX_ACTIONS]:
             i,_=self.ensure('ACTION/'+a,'action',domain)
@@ -134,27 +192,45 @@ class Graph:
         return ids+[0]*(MAX_OBS-len(ids)), action_ids+[0]*(MAX_ACTIONS-len(action_ids)), matrix, len(ids),len(action_ids),born
 
     def view(self, active=(), limit=350):
-        # Stable positions; prioritize active nodes and well-used memories.
+        # The viewport MUST show newly born real cells, not just old high-use
+        # nodes forever. Blend active, latest created and stable memories.
         keep=set(active)
+        recent=min(max(1,limit//2),len(self.nodes))
+        keep.update(range(max(0,len(self.nodes)-recent),len(self.nodes)))
         for n in sorted(self.nodes,key=lambda n:-n['uses']):
             if len(keep)>=limit:break
             keep.add(n['id'])
         nodes=[{'id':n['id'],'label':n['label'],'role':n['role'],'pos':n['pos'],
-                'uses':n['uses'],'domains':n['domains']} for n in self.nodes if n['id'] in keep]
+                'uses':n['uses'],'domains':n['domains'],
+                'dimension':n.get('dimension',1),'w':n.get('w',0.0),
+                'born_at':n.get('born_at',0), 'origin':n.get('origin')}
+               for n in self.nodes if n['id'] in keep]
         edges=[]
         for (a,b,k),v in self.edges.items():
             if a in keep and b in keep:
                 edges.append({'from':a,'to':b,'type':k,'weight':round(v['strength']/max(1,v['count']),5),
-                              'count':v['count'],'domains':v['domains']})
-        edges.sort(key=lambda e:-e['count'])
+                              'count':v['count'],'domains':v['domains'],
+                              'born_at':v.get('born_at',0)})
+        # Keep actual recently-created and active connections visible so the
+        # network can be SEEN growing rather than freezing into old high counts.
+        active_set=set(active)
+        edges.sort(key=lambda e:(
+            e['born_at']>=self.experience_step-150,
+            e['from'] in active_set or e['to'] in active_set,
+            e['count'],e['born_at']),reverse=True)
         return {'nodes':nodes,'edges':edges[:min(2000,len(edges))],
                 'total_nodes':len(self.nodes),'total_edges':len(self.edges),
-                'cross_domain_links':self.cross_domain_links,'capacity':self.capacity}
+                'cross_domain_links':self.cross_domain_links,'capacity':self.capacity,
+                'shown_nodes':len(nodes),'shown_edges':min(2000,len(edges)),
+                'dimension_counts':{str(d):sum(n.get('dimension',1)==d for n in self.nodes)
+                                    for d in (1,2,3,4)},
+                'experience_step':self.experience_step,'saturated':self.saturated}
 
     def state(self):
         return {'capacity':self.capacity,'nodes':self.nodes,'edges':[
                 [a,b,k,v] for (a,b,k),v in self.edges.items()],
-                'growth_events':self.growth_events,'cross_domain_links':self.cross_domain_links}
+                'growth_events':self.growth_events,'cross_domain_links':self.cross_domain_links,
+                'experience_step':self.experience_step,'saturated':self.saturated}
 
     @classmethod
     def restore(cls, d):
@@ -166,6 +242,12 @@ class Graph:
         for (a,b,k),v in g.edges.items():g.link_counts[(a,b)]=max(g.link_counts.get((a,b),0),v['count'])
         g.growth_events=d['growth_events']
         g.cross_domain_links=d.get('cross_domain_links',0)
+        g.experience_step=d.get('experience_step',0)
+        g.saturated=d.get('saturated',0)
+        g.neighbors={}
+        for a,b,_ in g.edges:
+            g.neighbors.setdefault(a,set()).add(b)
+            g.neighbors.setdefault(b,set()).add(a)
         g.last_growth=[]
         return g
 
@@ -385,8 +467,10 @@ class World:
             if self.pos==s['goal']:reward=1.0;effect='goal';self.done=True
         if self.t>=s['limit']:self.done=True
         self.last_effect=effect
-        return {'before':before,'after':self.pos,'effect':effect,'reward':reward,
+        response={'before':before,'after':self.pos,'effect':effect,'reward':reward,
                 'done':self.done,'goal':effect=='goal','t':self.t}
+        if k=='text':response['observed_byte_after_action']=s['target']
+        return response
 
 
 def build_world(kind,seed,corpus=None):
@@ -505,13 +589,19 @@ class PortalEngine:
             picks.append(selected);rewards.append(target);outcomes.append(result)
             errors.append(abs(pred-target))
             observed_next,_=w.observation() if not w.done else ([],[])
+            if w.kind=='text' and 'observed_byte_after_action' in result:
+                observed_next.append('TEXT/observed_output/'+str(result['observed_byte_after_action']))
             growth_start=len(self.graph.nodes)
             # Grow the same graph from actual experience, never from hidden state.
             after_ids=[]
             for tag in observed_next[:MAX_OBS-1]:
                 node,_=self.graph.ensure(tag if tag.startswith('SHARED/') else 'OBS/'+tag,'sensor',w.kind)
                 after_ids.append(node)
-            growth=self.graph.remember(w.kind,obs,actions[selected],result['effect'],ids,after_ids)
+            growth=self.graph.remember(w.kind,obs,actions[selected],result['effect'],ids,after_ids,
+                previous_motif=getattr(w,'last_motif',None),
+                evidence={'world_hash':w.fingerprint,'domain':w.kind,'step':w.t,
+                          'actual_effect':result['effect']})
+            w.last_motif=growth['motif_id']
             growth['born']=list(dict.fromkeys(contexts[i][5]+list(range(growth_start,len(self.graph.nodes)))))
             step_frame={'domain':w.kind,'seed':w.seed,'world_hash':w.fingerprint,'step':w.t,
                         'observed':obs,'action':actions[selected],
@@ -583,6 +673,10 @@ class PortalEngine:
                 'loss':round(self.loss_mean,6),'prediction_error':round(self.error_mean,6),
                 'graph':{'nodes':len(self.graph.nodes),'edges':len(self.graph.edges),
                          'growth_events':self.graph.growth_events,'cross_domain_links':self.graph.cross_domain_links,
+                         'dimension_counts':{str(d):sum(n.get('dimension',1)==d for n in self.graph.nodes)
+                                             for d in (1,2,3,4)},
+                         'experience_step':self.graph.experience_step,
+                         'saturated':self.graph.saturated,
                          'capacity':self.graph.capacity},
                 'domains':{k:{'episodes':c,'success_rate':round(s or 0,4)} for k,c,s in rows},
                 'last':self.last_trace}
