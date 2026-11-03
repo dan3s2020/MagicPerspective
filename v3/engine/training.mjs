@@ -31,7 +31,7 @@ export function trainingExample(model,causal,episodeSeed,index,n=11,lr=.008){
  for(const experience of data.experiences)causal.learn(experience.sensedMaterial,experience.actualEffort);
  // Real self-supervised online adaptation; no oracle labels enter these update calls.
  const live=new Organism(episodeSeed,model,causal,n,family,'shape',true);
- for(let j=0;j<Math.min(16,n*n)&&!live.finished;j++){const action=live.act();if(action.type==='no-route'||action.type==='invalid')break;}
+ for(let j=0;j<Math.min(16,n*n)&&!live.finished;j++){const action=live.act();if(action.event==='no-route'||action.event==='invalid')break;}
  model.episodes++;return loss/data.length;
 }
 export function evaluate(model,{seed=980001,count=36,n=11,family='all',navigation=false,causal=new CausalModel()}={}){
@@ -53,7 +53,7 @@ export function evaluate(model,{seed=980001,count=36,n=11,family='all',navigatio
     // Causal model is frozen during evaluation; don't mutate the original training model.
     const opt=shortestPath(w,w.start,w.goal).cost;
     for(let j=0;j<n*n*5&&!agent.finished;j++){
-     const action=agent.act();if(action.type==='no-route'||action.type==='invalid')break;
+     const action=agent.act();if(action.event==='no-route'||action.event==='invalid')break;
     }
     onlineUpdates+=agent.onlineEvents;
     if(agent.finished){solved++;cost+=agent.effort;oracle+=opt;steps+=agent.steps}else miss++;
