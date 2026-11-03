@@ -423,11 +423,11 @@ class Controller:
         self.settings = dict(worlds=64, domains=list(DOMAINS), steps=24,
             checkpointEvery=5, inspectIndex=0)
         self.info = dict(available=True, running=False, status="ready",
-            device=str(device), gpuName=torch.cuda.get_device_name(0),
+            device=str(device), gpuName=(torch.cuda.get_device_name(0) if device.type=='cuda' else 'CPU TEST ONLY'),
             cudaVersion=torch.version.cuda, gpuVerified=True, requestedWorlds=64,
             effectiveWorlds=0, completedWorlds=0, batches=0, worldsPerSecond=0.,
             loss=None, success={}, gpuMemoryAllocatedMB=0,
-            gpuMemoryReservedMB=0, vramTotalMB=round(torch.cuda.get_device_properties(0).total_memory/1048576),
+            gpuMemoryReservedMB=0, vramTotalMB=(round(torch.cuda.get_device_properties(0).total_memory/1048576) if device.type=='cuda' else 0),
             checkpointSavedAt=None, error=None, traceId=0, trace=None)
     def status(self):
         with self.lock:
@@ -689,7 +689,7 @@ def main():
         snap={"schema":1,"architecture":"graph-cells","seed":19,"episodes":0,
             "samples":0,"steps":0,"domainCounts":{},
             "parameters":zero,"m":zero,"v":zero}
-        c=Controller(device) if not args.cpu_test else None
+        c=Controller(device)
         model=Cells(snap,device)
         batch=Batch(6,list(DOMAINS),19,device)
         batch.sense()
@@ -709,7 +709,18 @@ def main():
             for p in model.parameters())
         model.optimizer.step()
         assert model.snapshot()["parameters"]["in"]
-        print("CUDA_GRAPH_SELFTEST_PASS",device,torch.__version__,flush=True)
+        c.model=model
+        actual=c.train_batch(9,{"domains":list(DOMAINS),"steps":8,
+            "inspectIndex":0,"checkpointEvery":5})
+        assert actual["trace"] is not None
+        assert actual["trace"]["frames"]
+        assert actual["trace"]["meta"]["abstract"]["schema"]=="magic.abstract.graph.v1"
+        assert actual["trace"]["frames"][0]["graph"]["compute"]["engine"]=="GRAPH-CELLS"
+        assert set(actual["success"])==set(DOMAINS)
+        assert model.steps>=1 and model.episodes==9
+        json.dumps(model.snapshot(),allow_nan=False)
+        print("CUDA_GRAPH_SELFTEST_PASS",device,torch.__version__,
+            "worlds=9","domains=3","batch-gradient=OK",flush=True)
         return
     if args.cpu_test:
         raise SystemExit("CPU is allowed ONLY with --self-test; live CUDA training never falls back.")
