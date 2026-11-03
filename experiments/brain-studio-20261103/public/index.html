@@ -56,6 +56,41 @@
 <p class="fine" id="frame-info">Încă nu există cadre.</p>
 <p class="fine" id="trace-indicator">Fiecare cadru reprezintă o acțiune executată într-un episod real. Replay-ul nu modifică ponderile.</p>
 </section>
+<section class="card cuda-card" aria-label="GPU CUDA simulari in paralel">
+<div class="section-head"><div><span class="eyebrow">CUDA · ACELAȘI GRAPH CELLS · EXECUȚIE GPU REALĂ</span>
+<h2>Simulări paralele pe NVIDIA CUDA</h2></div>
+<span class="pill" id="cuda-state">SE VERIFICĂ CUDA</span></div>
+<p class="fine">Nu schimbă UI-ul sau checkpointurile originale. Aceleași ponderi Graph Cells sunt antrenate în loturi de lumi pe GPU; oprirea sincronizează un nou checkpoint în biblioteca Studio. Nu există fallback ascuns pe CPU.</p>
+<div class="cuda-control">
+<label for="cuda-worlds">Simulări simultane pe GPU
+<strong><output for="cuda-worlds" id="cuda-worlds-value">64</output> lumi</strong></label>
+<input id="cuda-worlds" type="range" min="1" max="512" step="1" value="64">
+<div class="cuda-marks"><span>1</span><span>64</span><span>128</span><span>256</span><span>512</span></div>
+</div>
+<div class="form-grid">
+<label>Acțiuni / lume CUDA<select id="cuda-steps">
+<option value="12">12 · rapid</option><option value="24" selected>24 · standard</option>
+<option value="40">40 · lung</option><option value="64">64 · complex</option></select></label>
+<label>Lume de inspectat în batch<input type="number" id="cuda-inspect" min="0" max="511" value="0" step="1"></label>
+</div>
+<div class="buttons">
+<button id="cuda-start" class="primary">▶ START CUDA ∞</button>
+<button id="cuda-resize">↔ APLICĂ SLIDER LIVE</button>
+<button id="cuda-pause">Ⅱ PAUZĂ CUDA + SINCRONIZEAZĂ</button>
+<button id="cuda-resume">↻ REIA CHECKPOINT CUDA</button>
+<button id="cuda-recover">▣ RECUPEREAZĂ CHECKPOINT GPU</button>
+</div>
+<div class="metrics cuda-metrics">
+<div><small>GPU VERIFICAT</small><strong id="cuda-gpu">—</strong></div>
+<div><small>SIMULĂRI ACTIVE</small><strong id="cuda-effective">0</strong></div>
+<div><small>LUMI ANTRENATE</small><strong id="cuda-episodes">0</strong></div>
+<div><small>LUMI / SECUNDĂ</small><strong id="cuda-speed">—</strong></div>
+<div><small>MEMORIE VRAM</small><strong id="cuda-vram">—</strong></div>
+<div><small>LOSS CUDA</small><strong id="cuda-loss">—</strong></div>
+</div>
+<div class="cuda-results" id="cuda-results">Rezultatele GPU vor apărea aici pentru fiecare domeniu.</div>
+<p class="fine" id="cuda-message">Pentru Windows: rulează START_MAGIC_CUDA.ps1. Pe Termux rămâne disponibil antrenamentul Node.</p>
+</section>
 <section class="card training">
 <div class="section-head"><div><span class="eyebrow">02 / TRAINING CONTINUU · FĂRĂ DEMO</span>
 <h2>Învață și arată fiecare intervenție.</h2></div><span class="pill" id="phase">PREGĂTIT</span></div>

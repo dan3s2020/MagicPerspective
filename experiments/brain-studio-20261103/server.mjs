@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {readFile,rename,writeFile,mkdir} from 'node:fs/promises';
 import {existsSync,createReadStream} from 'node:fs';
+import {CudaBridge} from './cuda/bridge.mjs';
 import {Vault,detect} from './engine/vault.mjs';
 import {makeBrain,restoreBrain,oneEpisode,blindTest,brainStats,functionSamples,KINDS,DOMAINS} from './engine/studio.mjs';
 
@@ -12,6 +13,8 @@ const root=path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot=path.resolve(root,'../..');
 const data=process.env.DATA_DIR?path.resolve(process.env.DATA_DIR):path.join(root,'data');
 const vault=new Vault(repositoryRoot,data);
+const cuda=new CudaBridge({python:process.env.CUDA_PYTHON,root});
+let cudaActive=false;
 const activeFile=path.join(data,'active.json'),host=process.env.HOST||'127.0.0.1';
 const port=Number(process.env.PORT||3044);
 if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid port');
@@ -169,6 +172,7 @@ async function execute(){
  return training;
 }
 function start(input={}){
+ if(cudaActive)throw Error('CUDA training is active. Pause and sync CUDA before starting CPU training.');
  if(!brain)throw Error('This archived brain cannot be trained with the available engines');
  if(run.status==='running')throw Error('Training already running');
  if(input.resetRun===true){run.done=0;last25=[];startAt=Date.now();}
@@ -210,6 +214,7 @@ const server=http.createServer(async(req,res)=>{
    return send(res,{ok:true,port,kind,status:run.status,episodes:brain?.episodes||0});
   if(req.method==='GET'&&endpoint==='/api/state')return send(res,copyState());
   if(req.method==='GET'&&endpoint==='/api/brains')return send(res,{brains:await vault.list(),selected:selection});
+  if(req.method==='GET'&&endpoint==='/api/cuda/status')return send(res,await cuda.status());
   if(req.method==='GET'&&endpoint==='/api/traces'){
    const after=bounded(new URL(req.url,'http://localhost').searchParams.get('after'),0,2147483647,0);
    const oldest=traces[0]?.id??traceSequence+1;
@@ -227,6 +232,53 @@ const server=http.createServer(async(req,res)=>{
   if(endpoint.startsWith('/api/')){
    if(req.method!=='POST')return send(res,{error:'Method not allowed'},405);
    const input=await readBody(req);
+   if(endpoint==='/api/cuda/start'||endpoint==='/api/cuda/resume'){
+    if(kind!=='cells'||!brain)throw Error('Selectează un creier Graph Cells înainte de CUDA.');
+    if(run.status==='running')throw Error('Oprește trainingul Node înainte de CUDA, pentru a evita două copii diferite ale creierului.');
+    if(cudaActive)throw Error('CUDA deja rulează.');
+    const ready=await cuda.status();
+    if(!ready.available)throw Error('CUDA indisponibil: '+ready.error);
+    if(ready.running)throw Error('Un antrenament CUDA existent rulează. Folosește PAUZĂ CUDA, nu porni două instanțe.');
+    await save();
+    const payload={worlds:bounded(input.worlds,1,512,64),
+     steps:bounded(input.steps,4,64,24),domains:chosenDomains(input.domains),
+     checkpointEvery:bounded(input.checkpointEvery,1,50,5),
+     inspectIndex:bounded(input.inspectIndex,0,511,0)};
+    if(endpoint==='/api/cuda/resume')payload.resume=true;
+    else payload.snapshot=brain.snapshot();
+    const output=await cuda.request('/start',payload,25000);
+    cudaActive=true;
+    notes='CUDA real activ. Creierul JS este înghețat până la pauză și sincronizare.';
+    return send(res,output);
+   }
+   if(endpoint==='/api/cuda/resize')
+    return send(res,await cuda.request('/resize',{worlds:bounded(input.worlds,1,512,64)}));
+   if(endpoint==='/api/cuda/inspect')
+    return send(res,await cuda.request('/inspect',{inspectIndex:bounded(input.inspectIndex,0,511,0)}));
+   if(endpoint==='/api/cuda/pause'||endpoint==='/api/cuda/recover'){
+    if(kind!=='cells'||!brain)throw Error('Un checkpoint Graph Cells trebuie selectat pentru sincronizare.');
+    if(run.status==='running')throw Error('Oprește trainingul Node înainte de import CUDA.');
+    if(endpoint==='/api/cuda/pause'){
+     await cuda.waitIdle();
+    }else{
+     const st=await cuda.status();
+     if(st.running)throw Error('Oprește antrenamentul CUDA înainte de recuperare.');
+    }
+    const file=await cuda.request('/checkpoint',undefined,15000);
+    const imported=restoreBrain('cells',file.snapshot);
+    if(imported.episodes<brain.episodes)
+     throw Error('Checkpoint CUDA este mai vechi decât creierul activ. Nu îl înlocuiesc automat.');
+    await vault.saveBrain('cells',brain,
+      'Înainte de sincronizarea CUDA · '+brain.episodes+' episoade');
+    await save();
+    brain=imported;selection='cuda:checkpoint';cudaActive=false;
+    last=null;preview=null;previewOrigin=null;
+    notes='Checkpoint GPU sincronizat cu Graph Cells; '+brain.episodes+
+     ' lumi procesate; checkpointul anterior păstrat separat.';
+    revision++;
+    await save();
+    return send(res,{synchronized:true,cuda:await cuda.status(),studio:copyState()});
+   }
    if(endpoint==='/api/pause')return send(res,await stop('paused'));
    if(endpoint==='/api/stop')return send(res,await stop('stopped'));
    if(endpoint==='/api/start')return send(res,start(input));
@@ -247,7 +299,7 @@ const server=http.createServer(async(req,res)=>{
     return send(res,copyState());
    }
    if(endpoint==='/api/resume')return send(res,start({...input,resetRun:false}));
-   if(run.status==='running')return send(res,{error:'Pause training before selecting, saving, importing, or resetting'},409);
+   if(run.status==='running'||cudaActive)return send(res,{error:'Oprește și sincronizează antrenamentul Node/CUDA înainte de a schimba creierul'},409);
    if(endpoint==='/api/brains/select'){
     if(typeof input.id!=='string')throw Error('Brain ID required');
     await save();
@@ -315,10 +367,15 @@ server.on('error',error=>{
  console.error('Brain Studio: eroare la pornirea serverului:',error);
  process.exitCode=1;
 });
-server.listen(port,host,()=>console.log('MagicPerspective Brain Studio http://'+host+':'+port));
+server.listen(port,host,()=>{
+ console.log('MagicPerspective Brain Studio http://'+host+':'+port);
+ if(cuda.python)cuda.launch();
+});
 async function shutdown(){
  shuttingDown=true;run.status='paused';
  try{if(training)await training;else await save()}catch(e){console.error('Shutdown save failed',e)}
+ if(cudaActive)console.log('[CUDA] Stopping GPU; its independent checkpoint remains in cuda/data/cuda-live.json');
+ try{await cuda.shutdown()}catch(e){console.error('[CUDA] Shutdown failed',e)}
  server.close(()=>process.exit(0));
 }
 process.on('SIGTERM',()=>void shutdown());

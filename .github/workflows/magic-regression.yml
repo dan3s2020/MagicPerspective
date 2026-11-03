@@ -7,6 +7,7 @@ on:
       - feature/BRAIN-STUDIO-UNIVERSAL-TRAINING-20261103
       - feature/REAL-ABSTRACT-GRAPH-TRACE-20261103
       - feature/GRAPH-CELLS-CONTROL-AND-LEARNING-20261103
+      - feature/GRAPH-CELLS-CUDA-PARALLEL-20261103
       - experiment/CAUSAL-TEXT-LAB-20261103
   pull_request:
     branches:
@@ -56,6 +57,16 @@ jobs:
           node --check experiments/brain-studio-20261103/engine/abstract-graph.mjs
           node --check experiments/brain-studio-20261103/engine/cells.mjs
           node --check experiments/brain-studio-20261103/public/graph-render.js
+      - name: CUDA worker and bridge syntax
+        run: |
+          python -m py_compile experiments/brain-studio-20261103/cuda/cuda_worker.py
+          node --check experiments/brain-studio-20261103/cuda/bridge.mjs
+          node --check experiments/brain-studio-20261103/server.mjs
+          node --check experiments/brain-studio-20261103/public/app.js
+      - name: PyTorch batched world policy and GPU-compatible checkpoint math on CPU CI
+        run: |
+          python -m pip install --quiet "torch==2.11.0" --index-url https://download.pytorch.org/whl/cpu
+          python experiments/brain-studio-20261103/cuda/cuda_worker.py --self-test --cpu-test
       - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
         run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
       - name: Graph Cells actual learning, gradients, cross-domain controls and blind evaluation
@@ -64,3 +75,24 @@ jobs:
         run: node experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs 90 6 19
       - name: Active causal hypothesis versus random-query benchmark
         run: node --input-type=module -e "import {evaluateHypotheses} from './experiments/causal-text/engine/hypotheses.mjs'; for (const extra of [0,2,4,6,9]) console.log('CAUSAL_BENCH',JSON.stringify(evaluateHypotheses({worlds:60,seed:6300019,extra,goalsPerWorld:3})))"
+
+  windows-powershell-parse:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate one-command Windows CUDA launcher syntax (GPU runs only on user hardware)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './START_MAGIC_CUDA.ps1').Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'PowerShell launcher failed parser validation'
+          }
+          Write-Host 'POWERSHELL_CUDA_LAUNCHER_PARSE_OK'

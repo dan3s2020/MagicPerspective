@@ -7,7 +7,7 @@ const COLORS={mint:'#71dcc8',amber:'#f8c17b',blue:'#7abfff',purple:'#baa3fc',red
 let S=null,archive=[],busy=false,polling=false,frames=[],frameNo=0,framePlaying=true,
  lastPreviewStamp=null,animation=0,revision=-1,lastFile=null;
 let displayed=null,displaySource=null,traceCursor=0,traceQueue=[],traceDropped=0,
- tracePolling=false,selectedCell=null,cellOptionsStamp=null;
+ tracePolling=false,selectedCell=null,cellOptionsStamp=null,cudaRunning=false;
 async function api(route,payload){
  const isPost=payload!==undefined;
  const response=await fetch('/api/'+route,{method:isPost?'POST':'GET',
@@ -20,16 +20,16 @@ async function api(route,payload){
 function status(t,ok=true){$('connection').textContent=t;$('connection').style.color=ok?COLORS.mint:COLORS.red;}
 function setBusy(value){busy=value;controls()}
 function controls(){
- const running=S?.run?.status==='running';
+ const running=S?.run?.status==='running',locked=running||cudaRunning;
  for(const id of ['load','create','save','import','test','start','resume','pause','stop','export']){
   const b=$(id);if(b)b.disabled=busy;
  }
- $('start').disabled=busy||running||!S?.trainable;
- $('resume').disabled=busy||running||!S?.trainable;
+ $('start').disabled=busy||locked||!S?.trainable;
+ $('resume').disabled=busy||locked||!S?.trainable;
  $('pause').disabled=busy||!running;
  $('stop').disabled=busy||!running;
- for(const id of ['load','create','import','test'])$(id).disabled=busy||running;
- $('save').disabled=busy||running||!S?.trainable;
+ for(const id of ['load','create','import','test'])$(id).disabled=busy||locked;
+ $('save').disabled=busy||locked||!S?.trainable;
 }
 async function action(route,payload,label){
  if(busy)return;setBusy(true);status(label+'…');
@@ -492,3 +492,122 @@ setInterval(()=>{if(S&&!busy&&document.visibilityState==='visible')loadLibrary()
   drawAll();
  }catch(e){status('Conexiune eșuată: '+e.message,false)}
 })();
+
+
+/* GPU CUDA uses the existing graph/cell inspector, not another demo UI.
+ * Server will only enable the real Windows PyTorch backend if CUDA is verified.
+ */
+let lastCudaTrace=0,lastCudaStatus=null,cudaPolling=false,cudaPending=false;
+const cudaConfig=()=>({
+ worlds:Number($('cuda-worlds').value),
+ steps:Number($('cuda-steps').value),
+ inspectIndex:Number($('cuda-inspect').value),
+ domains:selectedDomains(),
+ checkpointEvery:5
+});
+function cudaSetBusy(value){
+ cudaPending=value;
+ for(const id of ['cuda-start','cuda-resize','cuda-pause','cuda-resume','cuda-recover'])
+  $(id).disabled=value;
+}
+async function cudaCommand(endpoint,payload,message){
+ if(cudaPending)return;
+ cudaSetBusy(true);$('cuda-message').textContent=message;
+ try{
+  const result=await api('cuda/'+endpoint,payload);
+  if(result.studio)apply(result.studio);
+  $('cuda-message').textContent=result.synchronized?
+   'Checkpoint CUDA sincronizat în Graph Cells și salvat local.':
+   'Comandă CUDA acceptată. Starea reală este afișată mai jos.';
+  await cudaPoll(true);
+  return result;
+ }catch(e){
+  $('cuda-message').textContent='EROARE CUDA: '+e.message;
+  return null;
+ }finally{cudaSetBusy(false);}
+}
+$('cuda-worlds').oninput=()=>{
+ const count=Number($('cuda-worlds').value);
+ $('cuda-worlds-value').textContent=comma(count);
+ $('cuda-inspect').max=String(Math.max(0,count-1));
+ if(Number($('cuda-inspect').value)>=count)$('cuda-inspect').value='0';
+};
+$('cuda-worlds').onchange=()=>{
+ if(cudaRunning)void cudaCommand('resize',{worlds:Number($('cuda-worlds').value)},
+  'Actualizare la limita următorului batch CUDA…');
+};
+$('cuda-start').onclick=()=>{
+ if(S?.kind!=='cells'){
+  $('cuda-message').textContent='Selectează Creier nou → Graph Cells în biblioteca originală.';
+  return;
+ }
+ void cudaCommand('start',cudaConfig(),'Pornire GPU verificată; simulări în paralel pe CUDA…');
+};
+$('cuda-resize').onclick=()=>cudaCommand('resize',
+ {worlds:Number($('cuda-worlds').value)},'Modificare live a numărului de lumi GPU…');
+$('cuda-pause').onclick=()=>cudaCommand('pause',{},
+ 'Se termină batch-ul activ, se salvează CUDA și se sincronizează în Graph Cells…');
+$('cuda-resume').onclick=()=>cudaCommand('resume',cudaConfig(),
+ 'Se reia checkpointul independent de pe GPU, fără reset de ponderi…');
+$('cuda-recover').onclick=()=>cudaCommand('recover',{},
+ 'Se recuperează ultimul checkpoint GPU după oprirea procesului…');
+$('cuda-inspect').onchange=()=>{
+ if(cudaRunning)void cudaCommand('inspect',
+  {inspectIndex:Number($('cuda-inspect').value)},
+  'Schimbare lume inspectată la următorul batch…');
+};
+function cudaRender(state){
+ lastCudaStatus=state;
+ cudaRunning=!!state?.running;
+ const running=cudaRunning;
+ $('cuda-state').textContent=state.status?.toUpperCase()||'NECONECTAT';
+ $('cuda-gpu').textContent=state.gpuVerified?state.gpuName:'INDISPONIBIL';
+ $('cuda-effective').textContent=comma(state.effectiveWorlds||0);
+ $('cuda-episodes').textContent=comma(state.completedWorlds||0);
+ $('cuda-speed').textContent=number(state.worldsPerSecond,1);
+ $('cuda-vram').textContent=state.gpuVerified?
+  number(state.gpuMemoryAllocatedMB,0)+' / '+comma(state.vramTotalMB||0)+' MB':'—';
+ $('cuda-loss').textContent=number(state.loss,5);
+ if(state.gpuVerified){
+  $('cuda-message').textContent=state.error?
+   'CUDA: '+state.error+' (numărul efectiv și VRAM sunt afișate)':
+   'CUDA '+(state.cudaVersion||'?')+' · GPU real verificat · starea: '+
+   state.status+' · batch #'+comma(state.batches||0)+
+   ' · checkpoint: '+(state.checkpointSavedAt||'în așteptare');
+ }else{
+  $('cuda-message').textContent=state.error||
+   'Pornește pe Windows cu START_MAGIC_CUDA.ps1 și driver NVIDIA compatibil.';
+ }
+ const root=$('cuda-results');root.replaceChildren();
+ for(const [domain,v] of Object.entries(state.success||{})){
+  const box=document.createElement('div');box.className='test-item';
+  const title=document.createElement('small');title.textContent=domain.toUpperCase();
+  const numberEl=document.createElement('strong');
+  numberEl.textContent=number(100*v.success,1)+'%';
+  const description=document.createElement('small');
+  description.textContent=comma(v.wins)+' / '+comma(v.worlds)+
+   ' lumi rezolvate în ultimul batch · cost mediu '+number(v.meanCost,2);
+  box.append(title,numberEl,description);root.append(box);
+ }
+ if(state.traceId&&state.traceId!==lastCudaTrace&&state.trace?.meta?.abstract){
+  lastCudaTrace=state.traceId;
+  showDisplayed(state.trace,'CUDA GPU · lume '+$('cuda-inspect').value+
+   ' · '+(state.effectiveWorlds||0)+' lumi simultane');
+ }
+ for(const id of ['cuda-start','cuda-resume'])
+  $(id).disabled=cudaPending||running||!state.available||S?.kind!=='cells';
+ $('cuda-resize').disabled=cudaPending||!running;
+ $('cuda-pause').disabled=cudaPending||!running;
+ $('cuda-recover').disabled=cudaPending||running||!state.available;
+ controls();
+}
+async function cudaPoll(force=false){
+ if(cudaPolling||document.hidden&&!force)return;
+ cudaPolling=true;
+ try{cudaRender(await api('cuda/status'));}
+ catch(e){$('cuda-state').textContent='CUDA DESCONECTAT';
+  $('cuda-message').textContent=e.message;}
+ finally{cudaPolling=false;}
+}
+setInterval(()=>void cudaPoll(),1600);
+void cudaPoll(true);

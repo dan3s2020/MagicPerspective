@@ -3,3 +3,8 @@ data/*
 node_modules/
 *.log
 .DS_Store
+
+# Isolated Windows CUDA environment and personal GPU checkpoints
+/.venv_graph_cuda/
+**/__pycache__/
+*.pyc
