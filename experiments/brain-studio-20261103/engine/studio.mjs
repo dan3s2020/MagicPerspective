@@ -14,6 +14,7 @@ import {CausalNet} from '../../causal-text/engine/model.mjs';
 import {buildExperience} from '../../causal-text/engine/training.mjs';
 import {createWorld as makeSymbolic,generateTask,TOOLS,senseProbes,encodeContext} from '../../causal-text/engine/world.mjs';
 import {MLP} from '../../../v7/engine/nn.mjs';
+import {attachAbstractGraph} from './abstract-graph.mjs';
 
 export const KINDS=['universal','v7','v6','graph','dynamic','causal'];
 export const DOMAINS=['maze','network','text'];
@@ -131,20 +132,20 @@ function createEpisode(domain,seed,size){
    for(const j of [x+1<n?i+1:-1,y+1<n?i+n:-1])if(j>=0&&w.h[j]<=.82)truth.push({a:i,b:j});
   }
   return {domain,seed,start:w.start,goal:w.goal,current:w.start,positions,
-   truth,visited:Array(n*n).fill(0),walked:[w.start],observed:new Map(),world:w,
+   truth,visited:Array(n*n).fill(0),walked:[w.start],observed:new Map(),observedCells:new Map(),observedLinks:new Map(),transitions:new Map(),world:w,
    activeState:()=>w.start,limit:n*n};
  }
  if(domain==='network'){
   const w=makeGraph(seed,Math.max(13,Math.min(65,size*2+3)),['local','hierarchical','mixed'][seed%3]);
   return {domain,seed,start:w.start,goal:w.goal,current:w.start,positions:w.positions,
    truth:w.edges.filter(e=>e.open).map(e=>({a:e.a,b:e.b})),visited:Array(w.n).fill(0),
-   walked:[w.start],observed:new Map(),world:w,limit:w.n*4};
+   walked:[w.start],observed:new Map(),observedCells:new Map(),observedLinks:new Map(),transitions:new Map(),world:w,limit:w.n*4};
  }
  if(domain==='text'){
   const w=makeSymbolic(seed),task=generateTask(w,seed+77,{minSteps:2,maxSteps:5});
   const start=symbolicNode(task.start),goal=symbolicNode(task.goal);
   return {domain,seed,start,goal,current:start,positions:positionsForSymbolic(),
-   truth:[],visited:Array(49).fill(0),walked:[start],observed:new Map(),world:w,
+   truth:[],visited:Array(49).fill(0),walked:[start],observed:new Map(),observedCells:new Map(),observedLinks:new Map(),transitions:new Map(),world:w,
    text:task.text,limit:15};
  }
  throw Error('Unknown domain');
@@ -154,17 +155,63 @@ function options(ep){
   const p=ep.current,n=ep.world.n;
   const s=terrainSense(ep.world,p); // 3×3 local window is the ONLY maze terrain input.
   const heights=new Map(s.window.map(x=>[x.i,x.h]));
+  for(const [i,h] of heights)ep.observedCells.set(i,h);
+  // Edges are inferred from LOCAL measured cells only; unobserved walls stay hidden.
+  for(const [i,h] of ep.observedCells)if(h<=.82){
+   const x=i%n,y=Math.floor(i/n);
+   const adj=[x+1<n?i+1:-1,y+1<n?i+n:-1];
+   for(const j of adj)if(j>=0&&ep.observedCells.get(j)<=.82){
+    const key=i+':'+j;ep.observedLinks.set(key,{a:i,b:j,open:true,action:null});
+   }
+  }
   const next=[p%n>0?p-1:-1,p%n<n-1?p+1:-1,p>=n?p-n:-1,p<n*(n-1)?p+n:-1];
   return next.map((to,action)=>({to,action,cost:heights.has(to)?1+8*heights.get(to):2}))
    .filter(x=>x.to>=0&&heights.get(x.to)<=.82);
  }
  if(ep.domain==='network'){
   const sensed=graphSense(ep.world,ep.current);
+  for(const link of sensed.links){
+   const a=Math.min(ep.current,link.to),b=Math.max(ep.current,link.to);
+   ep.observedLinks.set(a+':'+b,{a,b,open:link.open,cost:link.cost,action:null});
+  }
   return sensed.links.filter(x=>x.open).map((x,i)=>({to:x.to,action:i%5,cost:x.cost}));
  }
- return TOOLS.map((tool,action)=>({tool,to:null,action,cost:2}));
+ return TOOLS.map((tool,action)=>({tool,to:null,action,cost:2,
+  expectedTo:ep.transitions.get(ep.current+':'+tool)??null}));
 }
-function observedList(ep){return [...ep.observed.entries()].map(([key,e])=>({a:e.a,b:e.b,open:true}))}
+function observedList(ep){return [...ep.observedLinks.values()]}
+function pathThroughObserved(ep,start,goal,preferred){
+ // Explicit shortest-hop path over ONLY observed connections, not hidden truth.
+ const adj=new Map();
+ for(const edge of ep.observedLinks.values()){
+  if(edge.open===false)continue;
+  if(!adj.has(edge.a))adj.set(edge.a,[]);
+  adj.get(edge.a).push(edge.b);
+  if(ep.domain!=='text'){
+   if(!adj.has(edge.b))adj.set(edge.b,[]);
+   adj.get(edge.b).push(edge.a);
+  }
+ }
+ const queue=[start],prev=new Map([[start,null]]);
+ for(let k=0;k<queue.length;k++){
+  const u=queue[k];if(u===goal)break;
+  for(const v of adj.get(u)||[])if(!prev.has(v)){prev.set(v,u);queue.push(v);}
+ }
+ if(prev.has(goal)){
+  const path=[];for(let u=goal;u!==null;u=prev.get(u))path.push(u);
+  return {path:path.reverse(),source:'BFS only on observed links'};
+ }
+ return {path:Number.isInteger(preferred)?[start,preferred]:[start],
+  source:'1-step neural candidate; unknown future'};
+}
+function graphFrame(ep){
+ const observedNodes=ep.domain==='maze'?[...ep.observedCells.keys()]:
+   [...new Set([ep.start,...ep.walked,...ep.observedLinks.values()].flatMap(x=>
+    typeof x==='number'?[x]:[x?.a,x?.b]).filter(Number.isInteger))];
+ return {observedNodes,observedEdges:observedList(ep).slice(-550),
+   predictedPath:[ep.current],predictedNext:null,planSource:'No prediction evaluated yet',
+   candidates:[],chosen:null,actual:null};
+}
 export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=true,explore=.18}={}){
  if(!(brain instanceof SharedBrain))throw Error('Expected SharedBrain');
  const ep=createEpisode(domain,seed,size),rand=RNG(seed^brain.seed^0x1ca1);
@@ -173,9 +220,10 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
  const capture=({action=null,activation=null,score=null}={})=>{
   const last=ep.walked.slice(-40);
   frames.push({step:trajectory.length,current:ep.current,walked:last,
-   learnedEdges:observedList(ep).slice(-250),action,activation,score,cost,solved});
+   learnedEdges:observedList(ep).slice(-250),action,activation,score,cost,solved,
+   graph:graphFrame(ep)});
  };
- ep.visited[ep.current]++;capture();
+ ep.visited[ep.current]++;options(ep);capture();
  for(let t=0;t<ep.limit&&!solved;t++){
   const candidates=options(ep);if(!candidates.length)break;
   const rated=candidates.map(c=>{
@@ -188,6 +236,19 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
   });
   rated.sort((a,b)=>b.utility-a.utility||a.action-b.action);
   const select=learn&&rand()<explore?rated[Math.floor(rand()*rated.length)]:rated[0];
+  // Snapshot the model's belief BEFORE execution. This is the actual score used
+  // by the policy; next-state for unseen symbolic actions remains explicitly unknown.
+  const priorFrame=frames.at(-1),nextPredicted=rated[0]?.expectedTo??rated[0]?.to??null;
+  const knownPlan=pathThroughObserved(ep,ep.current,ep.goal,nextPredicted);
+  priorFrame.graph={...graphFrame(ep),predictedPath:knownPlan.path,
+   predictedNext:nextPredicted,planSource:knownPlan.source,
+   candidates:rated.map(x=>({from:ep.current,to:x.expectedTo??x.to??null,
+    action:x.tool??String(x.action),q:+x.neural.toFixed(6),
+    utility:+x.utility.toFixed(6),knownDestination:x.to!==null||x.expectedTo!=null})),
+   chosen:{action:select.tool??String(select.action),from:ep.current,
+    to:select.expectedTo??select.to??null,
+    q:+select.neural.toFixed(6),utility:+select.utility.toFixed(6)},
+   actual:null};
   let to,stepCost=select.cost;
   if(domain==='text'){
    const previous=[Math.floor(ep.current/7),ep.current%7],event=ep.world.intervene(previous,select.tool);
@@ -195,28 +256,36 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
   }else if(domain==='network'){
    const outcome=graphAct(ep.world,ep.current,select.to);to=outcome.position;stepCost=outcome.cost;
   }else to=select.to;
+  if(domain==='text')ep.transitions.set(ep.current+':'+select.tool,to);
   if(to===ep.current)blocked++;
   const previous=ep.current,oldDist=posDistance(ep.positions[previous],ep.positions[ep.goal]),
     newDist=posDistance(ep.positions[to],ep.positions[ep.goal]),repeat=ep.visited[to];
   ep.current=to;ep.visited[to]++;ep.walked.push(to);cost+=stepCost;
   ep.observed.set(previous+':'+to,{a:previous,b:to});
+  if(domain==='text')ep.observedLinks.set(previous+':'+to+':'+select.tool,
+   {a:previous,b:to,action:select.tool,open:true,cost:1});
   solved=ep.current===ep.goal;
   const reward=clamp(2*(oldDist-newDist)-.035*stepCost-.045*repeat+(solved?1.8:0),-2.5,2.5);
   trajectory.push({features:select.features,score:select.neural,
    action:select.tool??select.action,from:previous,to,domain,reward});
+  priorFrame.graph.actual={from:previous,to,action:select.tool??String(select.action),
+   reward:+reward.toFixed(5),cost:stepCost,
+   predictionKnown:priorFrame.graph.predictedNext!==null,
+   matched:priorFrame.graph.predictedNext===to};
+  options(ep); // reveal only local observations at the NEW position
   capture({action:select.tool??select.action,activation:brain.hidden(select.features),
    score:select.neural});
  }
  const loss=learn?brain.learn(trajectory,solved):null;
  if(learn){brain.episodes++;brain.domainCounts[domain]++;}
  const trimmed=frames.length<=96?frames:frames.filter((_,i)=>i%Math.ceil(frames.length/96)===0||i===frames.length-1);
- return {
+ return attachAbstractGraph({
   meta:{domain,seed,kind:'universal',text:ep.text||null,start:ep.start,goal:ep.goal,
    positions:ep.positions,truth:ep.truth,learnerInput:'Only local observations and known goal'},
   outcome:{solved,steps:trajectory.length,cost,blocked,loss,domain,
    observedEdges:ep.observed.size},frames:trimmed,trajectory,
   lastInput:trajectory.at(-1)?.features||Array(INPUT).fill(0)
- };
+ },ep.world,domain);
 }
 export function runNativeEpisode(kind,brain,{seed=1,size=11,learn=true}={}){
  if(kind==='v7'||kind==='v6'){
