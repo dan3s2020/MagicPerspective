@@ -1,22 +1,23 @@
 /* Real graph event explorer; no simulated activation frames. */
 const $=id=>document.getElementById(id);
 let graph={nodes:[],edges:[],total_nodes:0,total_edges:0},traces=[],frame=0,follow=true,mode='3d',yaw=.48,pitch=-.22,zoom=1,drag=null,selected=null;
-let replayAt=0,lastError='',lastTraceSeq=0,activePulse=null;
+let replayAt=0,lastError='',lastTraceSeq=0,activePulse=null,loadedCorpusDigest=null;
 const cols={activation:'#55d4e7',prediction:'#b497ff',decision:'#f7c95d',error:'#ee5e7e',learning:'#f3985e',confirmed:'#52cfa6',growth:'#eef5ff'};
 const canvas=$('graph'),ctx=canvas.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1);
 function resize(){const r=canvas.getBoundingClientRect();canvas.width=r.width*dpr;canvas.height=r.height*dpr}
 new ResizeObserver(resize).observe(canvas);resize();
 function selectedTrace(){return traces[frame]||null}
-function project(p,time=0){
+function project(p){
+  // Stable 3D display coordinates. '4D' represents REAL temporal-memory
+  // nodes connected to the same graph, never shifted time ghost sprites.
   let [x,y,z]=p;
-  if(mode==='4d'){x+=time*.85;y+=time*.2;z+=time*.55;}
   const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
   let xx=x*cy-z*sy,zz=x*sy+z*cy,yy=y*cp-zz*sp;
   zz=y*sp+zz*cp;
   const s=Math.min(canvas.width,canvas.height)*.28*zoom/(1+zz*.18);
   return {x:canvas.width/2+xx*s,y:canvas.height/2-yy*s,z:zz,s};
 }
-function color(role){return role==='action'?cols.decision:role==='motif'?'#bb9afa':role==='effect'?cols.confirmed:role==='world'?'#63b6ff':'#526f9a'}
+function color(role){return role==='temporal'?'#b497ff':role==='relation'?'#5b80b9':role==='action'?cols.decision:role==='motif'?'#bb9afa':role==='effect'?cols.confirmed:role==='world'?'#63b6ff':'#526f9a'}
 function draw(ts){
  const W=canvas.width,H=canvas.height;
  ctx.clearRect(0,0,W,H);
@@ -26,22 +27,17 @@ function draw(ts){
  const active=new Set(f.active||[]),born=new Set(f.growth?.born||[]);
  const amplitude=new Map((f.activations?.at(-1)?.nodes||[]).map(n=>[n.id,n.amplitude]));
  const projections=new Map(graph.nodes.map(n=>[n.id,project(n.pos)]));
- // 4D view shows REAL preceding frames stacked along time, not invented geometry.
- if(mode==='4d'){
-   const samples=traces.slice(Math.max(0,frame-11),frame+1);
-   samples.forEach((v,i)=>{
-     const t=(i-samples.length+1)/Math.max(1,samples.length);
-     const ap=new Set(v.active||[]);
-     for(const id of ap){const n=nodeMap.get(id);if(!n)continue;
-       const p=project(n.pos,t*1.55);ctx.beginPath();ctx.fillStyle=`rgba(166,143,255,${.12+(i/samples.length)*.28})`;
-       ctx.arc(p.x,p.y,(1.2+i/samples.length)*dpr,0,Math.PI*2);ctx.fill();}
-   });
- }
+ // In 4D STRUCTURE mode, 4D-level nodes have their OWN identities and
+ // real temporal connections, grown only from successive actual events.
+ // Replay time stays on the timeline beneath the graph, not on a fake axis.
  // Edges never move; they use the actual persisted topology.
  for(const e of graph.edges){const a=projections.get(e.from),b=projections.get(e.to);if(!a||!b)continue;
    const isActive=active.has(e.from)&&active.has(e.to);
-   ctx.strokeStyle=isActive?'rgba(94,205,226,.48)':'rgba(67,89,128,.16)';
-   ctx.lineWidth=(isActive?1.2:.62)*dpr;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+   const temporal=(nodeMap.get(e.from)?.dimension===4||nodeMap.get(e.to)?.dimension===4);
+   ctx.strokeStyle=mode==='4d'&&temporal?(isActive?'rgba(180,151,255,.8)':'rgba(180,151,255,.35)'):
+     isActive?'rgba(94,205,226,.48)':'rgba(67,89,128,.16)';
+   ctx.lineWidth=(mode==='4d'&&temporal?1.1:isActive?1.2:.62)*dpr;
+   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
  }
  // Meaningful pulse travels only on message edges present in the actual recorded trace.
  const elapsed=activePulse&&activePulse.seq===f.event_seq?Math.max(0,now-activePulse.at):99999;
@@ -65,6 +61,8 @@ function draw(ts){
    const radius=(isOn?3+Math.min(6,a*18):1.7+Math.log1p(n.uses)*.4)*dpr;
    ctx.beginPath();ctx.fillStyle=isOn?cols.activation:color(n.role);ctx.globalAlpha=isOn?1:.62;
    ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+   if(mode==='4d'&&n.dimension===4){ctx.strokeStyle='#b497ff';ctx.lineWidth=1.4*dpr;
+     ctx.beginPath();ctx.arc(p.x,p.y,radius+3*dpr,0,Math.PI*2);ctx.stroke();}
    if(born.has(n.id)){ctx.beginPath();ctx.strokeStyle=cols.growth;ctx.lineWidth=2*dpr;
      ctx.arc(p.x,p.y,radius+4*dpr,0,Math.PI*2);ctx.stroke();}
    if(n.id===selected){ctx.beginPath();ctx.strokeStyle='#ffffff';ctx.lineWidth=2*dpr;ctx.arc(p.x,p.y,radius+7*dpr,0,Math.PI*2);ctx.stroke();}
@@ -85,14 +83,14 @@ function highlightFrame(){const f=selectedTrace();if(!f)return;
  $('actual').textContent=`${f.actual?.effect} · reward=${f.reward} · ${JSON.stringify(f.actual?.before)} → ${JSON.stringify(f.actual?.after)}`;
  $('mismatch').textContent=`${(100*Number(f.error||0)).toFixed(1)}% · target=${f.target}`;
  $('update').textContent=`||ΔW||=${f.update_norm} · ||∇||=${f.gradient_norm}`;
- $('growth').textContent=`+${(f.growth?.born||[]).length} noduri · ${f.growth?.node_count} în total`;
+ $('growth').textContent=`+${(f.growth?.born||[]).length} noduri · ${f.growth?.node_count} în total · ${f.growth?.dimension||1}D observat`;
  $('frameInfo').textContent=`Trace #${f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
  activePulse={seq:f.event_seq,at:performance.now()};
 }
 function inspect(id){selected=id;const n=graph.nodes.find(x=>x.id===id);
  if(!n){$('nodeInfo').textContent='Nodul nu este în proiecția actuală.';return;}
  const relations=graph.edges.filter(e=>e.from===id||e.to===id);
- $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nFolosiri: ${n.uses}\nDomenii: ${n.domains.join(', ')}\nPoziție 3D: ${n.pos.join(', ')}\nLegături vizibile: ${relations.length}\n\n${relations.slice(0,10).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
+ $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nDimensiune structurală: ${n.dimension||1}D\nNăscut la eveniment: ${n.born_at||0}\nOrigine: ${JSON.stringify(n.origin||{})}\nFolosiri: ${n.uses}\nDomenii: ${n.domains.join(', ')}\nPoziție 3D: ${n.pos.join(', ')}\nCoordonată temporală internă: ${n.w||0}\nLegături vizibile: ${relations.length}\n\n${relations.slice(0,10).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
 }
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY, moved:false}});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
@@ -107,7 +105,7 @@ canvas.addEventListener('pointerup',e=>{if(!drag)return;const moved=drag.moved;d
 });
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.3,Math.min(4,zoom*Math.exp(-e.deltaY*.001)))},{passive:false});
 $('center').onclick=()=>{yaw=.48;pitch=-.22;zoom=1};
-for(const b of document.querySelectorAll('[data-mode]'))b.onclick=()=>{mode=b.dataset.mode;for(const x of document.querySelectorAll('[data-mode]'))x.classList.toggle('active',x===b);$('axis').textContent=mode==='4d'?'X · Y · Z · T (proiecție)':'X · Y · Z'};
+for(const b of document.querySelectorAll('[data-mode]'))b.onclick=()=>{mode=b.dataset.mode;for(const x of document.querySelectorAll('[data-mode]'))x.classList.toggle('active',x===b);$('axis').textContent=mode==='4d'?'X · Y · Z · noduri 4D conectate (timp în replay)':'X · Y · Z'};
 $('batch').oninput=()=>{$('batchValue').textContent=$('batch').value};
 $('timeline').oninput=()=>{follow=false;frame=+$('timeline').value;highlightFrame()};
 $('prev').onclick=()=>{follow=false;frame=Math.max(0,frame-1);highlightFrame()};
@@ -120,7 +118,11 @@ $('start').onclick=()=>act(()=>post('/api/start',{domains:[...document.querySele
 $('stop').onclick=()=>act(()=>post('/api/stop'));
 $('save').onclick=()=>act(()=>post('/api/save'));
 $('evaluate').onclick=()=>act(async()=>{const d=await post('/api/evaluate',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),count:24});$('evaluation').textContent=JSON.stringify(d,null,2)});
-$('loadCorpus').onclick=()=>act(async()=>{const d=await post('/api/corpus',{path:$('corpus').value});$('corpusState').textContent=`${(d.bytes/1048576).toFixed(1)} MiB · SHA ${d.sha256.slice(0,12)}`});
+$('loadCorpus').onclick=()=>act(async()=>{
+ $('corpusState').textContent='Se verifică fișierul…';
+ const d=await post('/api/corpus',{path:$('corpus').value});
+ $('corpusState').textContent=`Import ${d.state} · 0% · ${d.source||''}`;
+});
 async function refresh(){try{
  const [s,g,t]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/graph').then(r=>r.json()),fetch('/api/traces?limit=120').then(r=>r.json())]);
  graph=g;const old=traces.at(-1)?.event_seq||0;traces=t;
@@ -132,8 +134,22 @@ async function refresh(){try{
  $('error').textContent=Number(s.prediction_error).toFixed(4);$('loss').textContent=Number(s.loss).toFixed(4);
  $('device').textContent='DEVICE: '+s.device.toUpperCase();$('runState').textContent=s.state.toUpperCase();
  $('dataStatus').textContent=s.saved_at?'SAVED '+new Date(s.saved_at*1000).toLocaleTimeString('ro-RO'):'NOT YET SAVED';
- $('statusline').textContent=lastError?'EROARE: '+lastError:`${s.state} · ${s.config.batch_size} lumi per lot · ${g.total_nodes} noduri totale · ${g.total_edges} legături · ${s.graph.cross_domain_links} conexiuni multi-domeniu observate${s.error?' · SERVER ERROR: '+s.error:''}`;
+ const ci=s.corpus_ingest||{state:'idle',progress:0};
+ if(ci.state==='reading'||ci.state==='queued'){
+   $('corpusState').textContent=`IMPORTĂ ${Math.round((ci.progress||0)*100)}% · ${Number(ci.rows_read||0).toLocaleString('ro-RO')} rânduri · ${(Number(ci.bytes_written||0)/1048576).toFixed(1)} MiB · ${ci.columns_selected?.join(', ')||'detectare schemă'}`;
+ }else if(ci.state==='error'){
+   $('corpusState').textContent='EROARE CORPUS: '+(ci.error||'necunoscută');
+ }else if(ci.state==='ready'){
+   $('corpusState').textContent=`ÎNCĂRCAT · ${(Number(ci.bytes||0)/1048576).toFixed(1)} MiB · ${Number(ci.rows_with_text||0).toLocaleString('ro-RO')} rânduri · ${ci.columns_selected?.join(', ')||ci.source_format||''}`;
+   if(ci.sha256&&ci.sha256!==loadedCorpusDigest){
+     loadedCorpusDigest=ci.sha256;
+     const textBox=document.querySelector('.domain[value="text"]');
+     if(textBox)textBox.checked=true;
+   }
+ }
+ $('loadCorpus').disabled=s.state==='running'||s.state==='stopping'||ci.state==='reading'||ci.state==='queued';
+ $('statusline').textContent=lastError?'EROARE: '+lastError:`${s.state} · ${s.config.batch_size} lumi per lot · ${g.total_nodes} noduri reale / ${g.total_edges} legături · ${s.graph.cross_domain_links} conexiuni multi-domeniu · 1D:${s.graph.dimension_counts?.['1']||0} 2D:${s.graph.dimension_counts?.['2']||0} 3D:${s.graph.dimension_counts?.['3']||0} 4D:${s.graph.dimension_counts?.['4']||0}${s.error?' · SERVER ERROR: '+s.error:''}`;
  $('domainStats').innerHTML=Object.entries(s.domains).map(([k,v])=>`<div>${k}: ${v.episodes} exerciții · ${(100*v.success_rate).toFixed(1)}% succes</div>`).join('');
- $('start').disabled=s.state==='running'||s.state==='stopping';$('stop').disabled=s.state!=='running';$('evaluate').disabled=s.state==='running'||s.state==='stopping';
+ $('start').disabled=s.state==='running'||s.state==='stopping'||ci.state==='queued'||ci.state==='reading';$('stop').disabled=s.state!=='running';$('evaluate').disabled=s.state==='running'||s.state==='stopping'||ci.state==='reading';
  }catch(e){$('statusline').textContent='Conexiune întreruptă: '+e.message}}
 refresh();setInterval(refresh,900);
