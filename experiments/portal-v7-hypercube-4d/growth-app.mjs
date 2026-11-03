@@ -16,9 +16,9 @@ function status(s){
   density:fixed(s.directed_density*100,5)+'%'
  }))$(id).textContent=typeof value==='string'?value:count(value);
  $('connection').textContent=s.observed_actions>0?
-  'DATE REALE · '+count(s.observed_actions)+' ACȚIUNI':'AȘTEPT EVENIMENTE DE LA MOTOR';
+  'EVENIMENTE PRIMITE · '+count(s.observed_actions)+' ACȚIUNI':'AȘTEPT EVENIMENTE DE LA MOTOR';
  $('warning').textContent=s.observed_actions>0?
-  'Ultimul graf conține doar conexiuni confirmate de motor. '+
+  'Graful conține conexiuni raportate drept observate. Originea V7 nu este încă autentificată. '+
   'Densitatea matematică poate crește sau scădea; totalul muchiilor nu este fabricat. '+
   'Replay omis pe ecran: '+skipped+' episoade (antrenarea nu este oprită).':
   'Niciun eveniment real primit. Nu desenez noduri și nu simulez învățare.';
