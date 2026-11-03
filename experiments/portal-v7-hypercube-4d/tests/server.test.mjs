@@ -31,6 +31,18 @@ test('Original-source 4D growth API persists real exercised topology; no hardcod
   assert.equal(html.status,200);
   assert.ok(html.body.includes('Graful în creștere'));
   assert.ok(html.body.includes('Nu există puncte inventate'));
+  assert.ok(html.body.includes('START 1'));
+  assert.ok(html.body.includes('START 2'));
+  assert.ok(html.body.includes('v7-frame'));
+  assert.ok(html.body.includes('http://127.0.0.1:8788/'));
+  assert.ok(html.body.includes('exercise-data'));
+  const original=await read(base+'/api/v7/status');
+  assert.equal(original.status,200);
+  assert.equal(original.body.originalBackendIntegrated,false);
+  assert.equal(original.body.trainingState,'UNKNOWN');
+  const emptyExercises=(await read(base+'/api/exercises')).body;
+  assert.equal(emptyExercises.total_records,0);
+  assert.equal(emptyExercises.records.length,0);
   for(const path of ['/geometry.mjs','/viewer.mjs','/growth-view.mjs',
     '/growth.mjs','/growth-app.mjs','/viewer.css']){
    assert.equal((await read(base+path)).status,200,'Missing real viewer '+path);
@@ -59,6 +71,18 @@ test('Original-source 4D growth API persists real exercised topology; no hardcod
   assert.equal(second.body.stats.total_edges,2);
   assert.equal(second.body.stats.unique_problems,2);
   assert.equal(second.body.stats.cross_domain_nodes,1);
+  const exerciseFeed=(await read(base+'/api/exercises?after=0&limit=1')).body;
+  assert.equal(exerciseFeed.total_records,2);
+  assert.equal(exerciseFeed.unique_problems,2);
+  assert.equal(exerciseFeed.records.length,1);
+  assert.equal(exerciseFeed.records[0].event_id,'e1');
+  assert.equal(exerciseFeed.records[0].unique_problem_first_seen,true);
+  assert.equal(exerciseFeed.has_more,true);
+  const secondPage=(await read(base+'/api/exercises?after=1&limit=1')).body;
+  assert.equal(secondPage.records[0].event_id,'e2');
+  assert.equal(secondPage.records[0].domain,'network');
+  assert.equal(secondPage.records[0].problem_id,'network-different-exercise');
+  assert.equal(secondPage.has_more,false);
   const g=(await read(base+'/api/graph')).body;
   assert.equal(g.nodes.length,3);
   assert.equal(g.edges.length,2);
@@ -90,6 +114,8 @@ test('Original-source 4D growth API persists real exercised topology; no hardcod
   assert.equal(restored.stats.total_edges,2);
   assert.equal(restored.stats.unique_problems,2);
   assert.equal((await read(instance.url+'/api/history')).body.history.length,2);
+  assert.deepEqual((await read(instance.url+'/api/exercises?after=0&limit=30')).body.records.map(x=>x.event_id),
+   ['e1','e2'],'All genuinely received exercise records survive the checkpoint restart');
  }finally{
   if(instance)await instance.close();
   await rm(dir,{recursive:true,force:true});

@@ -57,6 +57,56 @@ export async function createGrowthServer({
    return json(res,400,{error:'Invalid URL'});
   }
   try{
+   if(req.method==='GET'&&url.pathname==='/api/v7/status'){
+    // READ-ONLY local connection check. A reachable page does not prove
+    // training is running or that this is the actual V7 source.
+    try{
+     const response=await fetch('http://127.0.0.1:8788/',{
+      signal:AbortSignal.timeout(1800),redirect:'manual'
+     });
+     return json(res,200,{reachable:response.status>=200&&response.status<500,
+      httpStatus:response.status,url:'http://127.0.0.1:8788/',
+      originalBackendIntegrated:false,trainingState:'UNKNOWN',
+      note:'V7 is accessed via its original embedded UI, not a fake START API.'});
+    }catch(e){
+     return json(res,200,{reachable:false,trainingState:'UNKNOWN',
+      originalBackendIntegrated:false,error:e.message,
+      url:'http://127.0.0.1:8788/'});
+    }
+   }
+   if(req.method==='GET'&&url.pathname==='/api/exercises'){
+    // The persistent graph.events map includes EVERY event signature
+    // received (not just the last 120 frames in the UI). This is
+    // paginated read-only, no fabricated exercise/test records.
+    const after=safeNumber(url.searchParams.get('after'),0,0,Number.MAX_SAFE_INTEGER);
+    const limit=safeNumber(url.searchParams.get('limit'),30,1,100);
+    const total=journal.graph.events.size;
+    const records=[];let index=0;
+    const problemsSeen=new Set();
+    for(const [id,encoded] of journal.graph.events){
+     let e;
+     try{e=JSON.parse(encoded)}catch{
+      throw Error('Corrupt persisted event '+id);
+     }
+     const isNew=!problemsSeen.has(e.problem_id);
+     problemsSeen.add(e.problem_id);
+     index++;
+     if(index<=after)continue;
+     if(records.length>=limit)break;
+     records.push({
+      sequence:index,event_id:id,problem_id:e.problem_id,
+      domain:e.domain,step:e.step,unique_problem_first_seen:isNew,
+      reward:e.reward,model_update:e.model_update,
+      observed_nodes:e.nodes.length,reported_edges:e.edges.length,
+      source:e.source
+     });
+    }
+    return json(res,200,{total_records:total,
+     unique_problems:journal.stats().unique_problems,
+     original_v7_connected:false,after,
+     records,next_after:after+records.length,
+     has_more:after+records.length<total});
+   }
    if(req.method==='GET'&&url.pathname==='/api/health')
     return json(res,200,{ok:true,source_connected:journal.stats().sequence>0,
      original_v7_backend_verified:false,persistent:true,

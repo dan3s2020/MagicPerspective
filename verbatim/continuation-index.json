@@ -139,6 +139,15 @@
       "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
+    },
+    {
+      "order": 15,
+      "ref": "2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
     }
   ]
 }
