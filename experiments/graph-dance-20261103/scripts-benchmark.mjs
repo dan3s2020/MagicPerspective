@@ -1,0 +1,11 @@
+import {AssociationRule} from './engine/dance.mjs';
+import {train,evaluate,linkBCE} from './engine/training.mjs';
+import {writeFile,mkdir} from 'node:fs/promises';
+const episodes=Number(process.argv[2]||120),n=Number(process.argv[3]||33),count=Number(process.argv[4]||12);
+const rule=new AssociationRule(19),before=linkBCE(rule,{seed:800008,count:9,n});
+const result=await train(rule,{episodes,n,onProgress:p=>{if(p.done%Math.max(10,Math.floor(episodes/4))===0)console.log('Episodes',p.done,'/',episodes,'heldout association BCE',p.latest.loss);}});
+const selected=AssociationRule.restore(result.checkpoint),test=evaluate(selected,{count,n});
+const output={config:{episodes,n,count},before,validation:{best:result.best,history:result.history},test,conclusion:'Training adjusts association predictions; navigation superiority is only supported if paired evaluation beats controls.'};
+await mkdir(new URL('./results/',import.meta.url),{recursive:true});
+await writeFile(new URL('./results/benchmark.json',import.meta.url),JSON.stringify(output,null,2));
+console.log(JSON.stringify(output,null,2));

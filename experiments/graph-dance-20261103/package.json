@@ -1,0 +1,1 @@
+{"name":"magicperspective-graph-dance","version":"1.0.0-graph-dance","private":true,"type":"module","engines":{"node":">=18"},"scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs","bench":"node scripts-benchmark.mjs 120 33 12"}}

@@ -1,0 +1,138 @@
+{
+  "config": {
+    "episodes": 120,
+    "n": 33,
+    "count": 12
+  },
+  "before": {
+    "balanced": 1.5716,
+    "positive": 3.10985,
+    "negative": 0.03336
+  },
+  "validation": {
+    "best": 0.7135,
+    "history": [
+      {
+        "episode": 10,
+        "loss": 0.82832,
+        "positive": 1.45146,
+        "negative": 0.20519
+      },
+      {
+        "episode": 20,
+        "loss": 0.78316,
+        "positive": 1.3308,
+        "negative": 0.23552
+      },
+      {
+        "episode": 30,
+        "loss": 0.7135,
+        "positive": 1.12581,
+        "negative": 0.30119
+      },
+      {
+        "episode": 40,
+        "loss": 0.74163,
+        "positive": 1.21781,
+        "negative": 0.26546
+      },
+      {
+        "episode": 50,
+        "loss": 0.83374,
+        "positive": 1.47459,
+        "negative": 0.1929
+      },
+      {
+        "episode": 60,
+        "loss": 0.76596,
+        "positive": 1.29149,
+        "negative": 0.24043
+      },
+      {
+        "episode": 70,
+        "loss": 0.82081,
+        "positive": 1.44105,
+        "negative": 0.20057
+      },
+      {
+        "episode": 80,
+        "loss": 0.86704,
+        "positive": 1.55902,
+        "negative": 0.17507
+      },
+      {
+        "episode": 90,
+        "loss": 0.72888,
+        "positive": 1.17758,
+        "negative": 0.28018
+      },
+      {
+        "episode": 100,
+        "loss": 0.78049,
+        "positive": 1.33279,
+        "negative": 0.22818
+      },
+      {
+        "episode": 110,
+        "loss": 0.71864,
+        "positive": 1.1453,
+        "negative": 0.29197
+      },
+      {
+        "episode": 120,
+        "loss": 0.77272,
+        "positive": 1.31116,
+        "negative": 0.23429
+      }
+    ]
+  },
+  "test": {
+    "count": 12,
+    "n": 33,
+    "seed": 990000,
+    "linkBCE": {
+      "balanced": 0.7123,
+      "positive": 1.12267,
+      "negative": 0.30193
+    },
+    "modes": {
+      "dance-online": {
+        "success": 1,
+        "penalizedCost": 19.833,
+        "solvedCost": 19.833,
+        "initialF1": 0.1369,
+        "coherence": 0.9453,
+        "knownPairs": 275.5,
+        "learnedUpdates": 3306
+      },
+      "dance-frozen": {
+        "success": 1,
+        "penalizedCost": 19.583,
+        "solvedCost": 19.583,
+        "initialF1": 0.1369,
+        "coherence": 0.9463,
+        "knownPairs": 270,
+        "learnedUpdates": 0
+      },
+      "no-dance": {
+        "success": 1,
+        "penalizedCost": 19.25,
+        "solvedCost": 19.25,
+        "initialF1": 0.1369,
+        "coherence": 0.2648,
+        "knownPairs": 271.1,
+        "learnedUpdates": 0
+      },
+      "untrained": {
+        "success": 1,
+        "penalizedCost": 23.5,
+        "solvedCost": 23.5,
+        "initialF1": 0.1293,
+        "coherence": 0.9458,
+        "knownPairs": 280.9,
+        "learnedUpdates": 0
+      }
+    }
+  },
+  "conclusion": "Training adjusts association predictions; navigation superiority is only supported if paired evaluation beats controls."
+}
