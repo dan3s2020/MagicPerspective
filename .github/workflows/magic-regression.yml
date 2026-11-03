@@ -7,6 +7,7 @@ on:
       - feature/BRAIN-STUDIO-UNIVERSAL-TRAINING-20261103
       - feature/REAL-ABSTRACT-GRAPH-TRACE-20261103
       - feature/GRAPH-CELLS-CONTROL-AND-LEARNING-20261103
+      - feature/GRAPH-CELLS-CUDA-PARALLEL-20261103
       - experiment/CAUSAL-TEXT-LAB-20261103
   pull_request:
     branches:
@@ -56,6 +57,16 @@ jobs:
           node --check experiments/brain-studio-20261103/engine/abstract-graph.mjs
           node --check experiments/brain-studio-20261103/engine/cells.mjs
           node --check experiments/brain-studio-20261103/public/graph-render.js
+      - name: CUDA worker and bridge syntax
+        run: |
+          python -m py_compile experiments/brain-studio-20261103/cuda/cuda_worker.py
+          node --check experiments/brain-studio-20261103/cuda/bridge.mjs
+          node --check experiments/brain-studio-20261103/server.mjs
+          node --check experiments/brain-studio-20261103/public/app.js
+      - name: PyTorch batched world policy and GPU-compatible checkpoint math on CPU CI
+        run: |
+          python -m pip install --quiet "torch==2.11.0" --index-url https://download.pytorch.org/whl/cpu
+          python experiments/brain-studio-20261103/cuda/cuda_worker.py --self-test --cpu-test
       - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
         run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
       - name: Graph Cells actual learning, gradients, cross-domain controls and blind evaluation
