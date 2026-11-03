@@ -50,7 +50,7 @@ function renderTraining(s){
     ' · plan reușit: '+(t.latest?percent(t.latest.validationPlan):'—')):
    'Niciun antrenament activ. Testele se fac pe lumi distincte.';
  chart(t?.history||[]);
- for(const id of ['train','evaluate','new','reset','plan'])$(id).disabled=!!t?.running||inFlight;
+ for(const id of ['train','evaluate','hypothesis','new','reset','plan'])$(id).disabled=!!t?.running||inFlight;
  $('cancel').disabled=!t?.running;
 }
 function makeNode(tag,cls,text){
@@ -106,8 +106,22 @@ function renderEvaluation(data){
   root.append(card);
  }
 }
+function renderHypothesis(data){
+ const root=$('hypothesis-results');root.replaceChildren();
+ if(!data){root.append(makeNode('p','note','Pornește experimentul de inferență cauzală.'));return}
+ for(const [mode,item] of Object.entries(data.modes)){
+  const block=makeNode('div','result','');
+  block.append(makeNode('h3','',mode==='active'?'Experimente informative':'Experimente aleatorii'),
+   makeNode('strong','',percent(item.exactTransition)),
+   makeNode('p','','Predicții exacte pe stări neobservate'),
+   makeNode('strong','',percent(item.planningSuccess)),
+   makeNode('p','','Planuri reușite: '+item.solved+'/'+item.attempted),
+   makeNode('p','','Observații per lume: '+item.observationsPerWorld));
+  root.append(block);
+ }
+}
 function render(s){
- state=s;renderTraining(s);renderScene(s);renderEvaluation(s.evaluation);
+ state=s;renderTraining(s);renderScene(s);renderEvaluation(s.evaluation);renderHypothesis(s.hypothesisEvaluation);
  if(s.training?.error)status('Eroare: '+s.training.error,false);
  else status('● Motor local activ');
 }
@@ -132,6 +146,7 @@ async function poll(){
 function startPoll(){stopPoll();polling=setInterval(poll,650);void poll()}
 $('train').onclick=()=>press('train',{episodes:Number($('episodes').value)},'Pornire antrenament');
 $('evaluate').onclick=()=>press('evaluate',{worlds:30},'Testare pe lumi noi');
+$('hypothesis').onclick=()=>press('evaluate-hypotheses',{worlds:30,extra:6},'Comparare ipoteze cauzale');
 $('new').onclick=()=>press('new',{},'Generare lume');
 $('plan').onclick=()=>press('plan',{},'Planificare și verificare');
 $('cancel').onclick=async()=>{try{await api('cancel',{});status('Oprire solicitată')}catch(e){status(e.message,false)}};
