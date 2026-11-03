@@ -77,3 +77,12 @@ canvas.curve{aspect-ratio:2.6;background:#fff;margin-top:10px}
 table.tests th,table.tests td{padding:8px;border-bottom:1px solid var(--rule);text-align:right}table.tests th:first-child,table.tests td:first-child{text-align:left}
 table.tests th{font-size:12px;color:var(--ink-soft);font-weight:600}
 @media (max-width:720px){.strip{grid-auto-columns:46%}}
+
+/* Additive controls only: keep all original V7 layout and colors. */
+.network-link{display:inline-flex;align-items:center;justify-content:center;min-height:38px;
+ padding:7px 12px;border:1px solid #9aa9b5;border-radius:6px;color:inherit;text-decoration:none;font-weight:700}
+.network-link:focus-visible{outline:3px solid #c2185b;outline-offset:2px}
+.meter div.unlimited{background:repeating-linear-gradient(110deg,#c2185b 0px,#c2185b 14px,#e178a2 14px,#e178a2 28px);
+ background-size:180% 100%;animation:unlimited-flow 1.4s linear infinite}
+@keyframes unlimited-flow{to{background-position:180% 0}}
+@media(prefers-reduced-motion:reduce){.meter div.unlimited{animation:none}}
