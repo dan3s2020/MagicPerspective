@@ -342,7 +342,8 @@ def make_trace(batch, records, model, index, loss, weight_delta, decision_weight
         edges = [{"a": a, "b": b, "open": True} for a,b in adj.nonzero().tolist() if a < b]
         visibility = rec["seen"][idx].nonzero().flatten().cpu().tolist()
         layers = [lay[idx].detach().cpu().tolist() for lay in rec["layers"]]
-        cells = [{"id": node, "input": rec["features"][idx,node].cpu().tolist(),
+        inputs_cpu = rec["features"][idx].detach().cpu().tolist()
+        cells = [{"id": node, "input": inputs_cpu[node],
             "neighbors": adj[node].nonzero().flatten().tolist(),
             "activations": [layers[r][node] for r in range(ROUNDS+1)],
             "inbox": [], "activity": float(math.sqrt(sum(x*x for x in layers[-1][node]))),
