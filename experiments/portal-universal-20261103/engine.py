@@ -435,12 +435,26 @@ class PortalEngine:
             self.graph=Graph.restore(ck['graph'])
             self.steps=ck['steps'];self.episodes=ck['episodes'];self.loss_mean=ck.get('loss_mean',0.0)
             self.error_mean=ck.get('error_mean',0.0)
+            # A world completed after the last weights checkpoint must not appear as
+            # integrated into those weights. Rewind the audit ledger to its checkpoint.
+            self.db.execute('DELETE FROM episodes WHERE id>?',(ck['episode_watermark'],))
+            self.db.execute('DELETE FROM trace WHERE id>?',(ck['trace_watermark'],))
+        else:
+            # First run interrupted before first model checkpoint: worlds may have
+            # been generated, but no completed episode is attached to saved weights.
+            self.db.execute('DELETE FROM episodes')
+            self.db.execute('DELETE FROM trace')
+        self.db.commit()
         self.seq=self._meta_get('seq',0)
 
     def save(self):
         p=self.folder/'brain.pt';tmp=self.folder/'brain.pt.tmp'
+        self.db.commit()
+        episode_mark=self.db.execute('SELECT IFNULL(MAX(id),0) FROM episodes').fetchone()[0]
+        trace_mark=self.db.execute('SELECT IFNULL(MAX(id),0) FROM trace').fetchone()[0]
         torch.save({'model':self.model.state_dict(),'optimizer':self.optimizer.state_dict(),
                     'graph':self.graph.state(),'steps':self.steps,'episodes':self.episodes,
+                    'episode_watermark':episode_mark,'trace_watermark':trace_mark,
                     'loss_mean':self.loss_mean,'error_mean':self.error_mean},tmp)
         tmp.replace(p)
         self._meta_set('seq',self.seq);self.db.commit()
