@@ -36,7 +36,7 @@ function render(s){state=s;const e=s.episode;
  $('causal-samples').textContent=s.model.causalSamples.toLocaleString();$('causal-error').textContent=fmt(s.model.averageCausalError);
  $('causal-weights').textContent=[0,1,2].map(i=>{const w=s.model.causalWeights;return fmt(w[0]+(i===1?w[1]:i===2?w[2]:0),2)}).join(' / ');
  $('action-status').textContent=e.finished?'Goal reached ✓':e.steps===0?'Initial prediction frozen before action':`Step ${e.steps} • actual effort ${fmt(e.effort,2)} • hypothesis updated`;
- $('step').disabled=s.task?.running||e.finished;$('new').disabled=s.task?.running;$('evaluate').disabled=s.task?.running;$('auto').disabled=s.task?.running||e.finished;$('train').disabled=s.task?.running;
+ $('step').disabled=s.task?.running||e.finished;$('new').disabled=s.task?.running;$('evaluate').disabled=s.task?.running;$('evaluate-control').disabled=s.task?.running;$('auto').disabled=s.task?.running||e.finished;$('train').disabled=s.task?.running;
  $('cancel').disabled=!s.task?.running;
  const t=s.task;if(t){$('train-status').textContent=`${t.running?'Training':'Training finished'} · ${t.done}/${t.total} episodes · latest loss ${fmt(t.loss)}${t.error?' · ERROR '+t.error:''}`;
   $('progress-bar').style.width=((t.done/t.total)*100)+'%';graph(t.history);}
@@ -62,7 +62,30 @@ $('auto').onclick=()=>{if(automatic){stopAuto();return}automatic=true;$('auto').
  const r=await api('step',{});render(r);if(r.episode.finished||r.action.event==='no-route')stopAuto();}),150)};
 $('train').onclick=()=>guard(async()=>{stopAuto();await api('train',{episodes:Number($('episodes').value),n:Number($('size').value)});await refresh()});
 $('cancel').onclick=()=>guard(async()=>{await api('cancel',{});$('train-status').textContent+=' · Stop requested'});
-$('evaluate').onclick=()=>guard(async()=>{const r=await api('evaluate',{n:Number($('size').value),count:36});render(r)});
+async function runBlindEvaluation(){
+ if(state?.task?.running)return;
+ await guard(async()=>{
+  const mainButton=$('evaluate'),cardButton=$('evaluate-control'),note=$('evaluation-status');
+  mainButton.disabled=true;cardButton.disabled=true;
+  note.textContent='Running blind evaluation on 36 unseen worlds. The phone may take a while to calculate the comparison…';
+  $('verdict').textContent='Evaluation running…';
+  try{
+   // Ensure the status becomes visible before the evaluation request begins.
+   await new Promise(resolve=>requestAnimationFrame(resolve));
+   const r=await api('evaluate',{n:Number($('size').value),count:36});
+   render(r);
+   note.textContent='Blind evaluation complete. The results below compare the active brain with the controls.';
+  }catch(e){
+   note.textContent='Blind evaluation failed: '+e.message;
+   throw e;
+  }finally{
+   mainButton.disabled=!!state?.task?.running;
+   cardButton.disabled=!!state?.task?.running;
+  }
+ });
+}
+$('evaluate').onclick=runBlindEvaluation;
+$('evaluate-control').onclick=runBlindEvaluation;
 $('reset').onclick=()=>guard(async()=>{if(confirm('Reset learned model and permanently remove saved V2 checkpoint?')){stopAuto();render(await api('reset',{}))}});
 $('belief').addEventListener('click',event=>guard(async()=>{if(!state||state.task?.running||state.episode.finished)return;
  const canvas=$('belief'),rect=canvas.getBoundingClientRect(),X=(event.clientX-rect.left)/rect.width*560,Y=(event.clientY-rect.top)/rect.height*560,n=state.episode.n,side=536/n;
