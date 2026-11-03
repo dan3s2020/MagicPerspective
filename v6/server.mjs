@@ -8,7 +8,7 @@ import {SPLITS,train,evaluate,predictedPlan,testPlan} from './engine/training.mj
 const root=path.dirname(fileURLToPath(import.meta.url)),HOST=process.env.HOST||'127.0.0.1';
 const PORT=Number(process.env.PORT||3036),check=path.join(root,'data','best-model.json');
 if(!Number.isInteger(PORT)||PORT<1||PORT>65535)throw Error('Invalid port');
-let model=new CausalNet(17),bestQuality=-Infinity,task=null,evaluation=null,lastTraining=null;
+let model=new CausalNet(17),bestQuality=-Infinity,task=null,evaluation=null,lastTraining=null,stopRequested=false;
 let sceneSeed=88003,world=createWorld(sceneSeed),probes=senseProbes(world),context=encodeContext(probes);
 let challenge=generateTask(world,sceneSeed+73),demonstration=null;
 try{
@@ -45,20 +45,20 @@ function newScene(seed){
 async function startTraining(arg){
  if(task?.running)throw Error('Training already running');
  const episodes=int(arg.episodes,1,20000,500),seed=int(arg.seed,1,2147000000,SPLITS.train);
- const candidate=CausalNet.restore(model.snapshot());let cancel=false;
+ stopRequested=false;const candidate=CausalNet.restore(model.snapshot());
  task={running:true,done:0,total:episodes,best:null,latest:null,history:[],error:null,
   started:new Date().toISOString()};
  // Nonblocking batches keep the UI responsive and progress visible.
  (async()=>{try{
   const result=await train(candidate,{episodes,seed,validationWorlds:8,validateEvery:Math.max(10,Math.floor(episodes/30)),
-   cancel:()=>cancel,onProgress:s=>Object.assign(task,{done:s.done,total:s.total,best:s.best,
+   cancel:()=>stopRequested,onProgress:s=>Object.assign(task,{done:s.done,total:s.total,best:s.best,
     latest:s.latest,history:s.history})});
   let promoted=false;
   if(result.bestSnapshot&&result.best.quality>bestQuality){
    model=CausalNet.restore(result.bestSnapshot);bestQuality=result.best.quality;
    await save();promoted=true;
   }
-  lastTraining={episodes:result.episodesCompleted,elapsedMs:result.elapsedMs,
+  lastTraining={episodes:result.episodesCompleted,interrupted:result.interrupted,elapsedMs:result.elapsedMs,
    promoted,best:result.best,completed:new Date().toISOString()};
  }catch(e){task.error=String(e.stack||e)}finally{task.running=false;task.completed=new Date().toISOString()}})();
  return {started:true,total:episodes};
@@ -74,6 +74,7 @@ const server=http.createServer(async(req,res)=>{
    if(req.method!=='POST')return respond(res,{error:'Method not allowed'},405);
    const arg=await body(req);
    if(p==='/api/train')return respond(res,await startTraining(arg));
+   if(p==='/api/cancel'){stopRequested=true;return respond(res,{requested:true,running:!!task?.running});}
    if(task?.running)return respond(res,{error:'Training active; wait for completion before altering worlds'},409);
    if(p==='/api/new'){
     newScene(int(arg.seed,1,2147000000,sceneSeed+101));return respond(res,view());
