@@ -559,7 +559,7 @@ class Controller:
                 prob=torch.softmax(logits/.8,dim=-1)
                 selected=torch.multinomial(prob,1).squeeze(1)
                 target=dest.gather(1,selected[:,None]).squeeze(1)
-                measured_cost=costs.gather(1,selected[:,None]).squeeze(1)*12
+                measured_cost=costs.gather(1,selected[:,None]).squeeze(1)
                 current=batch.current.clone()
                 obs=batch.observed.clone()
                 seen=batch.seen.clone()
