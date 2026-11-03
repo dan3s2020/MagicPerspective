@@ -15,19 +15,20 @@ export function linkBCE(rule,{seed=900000,count=12,n=33}={}){
  }
  return {balanced:+((positive/np+negative/nn)/2).toFixed(5),positive:+(positive/np).toFixed(5),negative:+(negative/nn).toFixed(5)};
 }
-export async function train(rule,{episodes=300,n=33,seed=100001,onProgress=()=>{},cancel=()=>false}={}){
+export async function train(rule,{episodes=300,n=33,seed=100001,onProgress=()=>{},cancel=()=>false,onEpisode=null,previewEvery=8,seedOffset=0}={}){
  if(!Number.isInteger(episodes)||episodes<1||episodes>10000)throw Error('Invalid training episode count');
  const rng=new RNG(seed),initial=linkBCE(rule,{seed:800008,count:9,n});
  const history=[],every=Math.max(10,Math.floor(episodes/12));let best=initial.balanced,checkpoint=rule.snapshot();let done=0;
  for(let i=0;i<episodes;i++){
   if(cancel())break;
-  const w=makeWorld(seed+7919*i,n,FAMILIES[i%3]);
+  const w=makeWorld(((seed>>>0)+Math.imul(7919,seedOffset+i))>>>0,n,FAMILIES[(seedOffset+i)%3]);
   const e=new Episode(w,rule,{online:true,dance:true});
   // Self-supervised association discovery; no oracle, teacher path, or true map is given to the learner.
   for(let s=0;s<Math.min(w.n*3,90)&&!e.solved;s++){
    const out=e.step();if(['stuck','limit'].includes(out.type))break;
   }
   rule.episodes++;done++;
+  if(typeof onEpisode==='function'&&(i===0||done%previewEvery===0))onEpisode(e);
   if(done%every===0||done===episodes){
    const value=linkBCE(rule,{seed:800008,count:9,n}),r={episode:rule.episodes,loss:value.balanced,positive:value.positive,negative:value.negative};
    history.push(r);if(value.balanced<best){best=value.balanced;checkpoint=rule.snapshot();}
