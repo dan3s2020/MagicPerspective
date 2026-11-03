@@ -15,6 +15,7 @@
 <button id="train" class="primary">Începe antrenamentul real</button>
 <button id="cancel" class="warning" disabled>Oprește după episodul curent</button>
 <button id="evaluate">Test orb pe lumi complet noi</button>
+<button id="hypothesis" class="warning">Testează ipotezele cauzale (fără NN)</button>
 <button id="new">Generează lume nouă</button>
 <button id="reset" class="danger">Reset doar V6</button>
 </section>
@@ -43,6 +44,8 @@
 </article></section>
 <section class="card"><div class="heading"><h2>Evaluare oarbă pe domenii și obiective noi</h2><span class="tag">Semințe separate</span></div>
 <div id="results" class="result-grid"><p class="note">Rezultatele apar după apăsarea „Test orb”.</p></div>
+<div id="hypothesis-results" class="result-grid"><p class="note">Aici apar rezultatele comparației dintre întrebările informative și întrebările aleatorii.</p></div>
+<p class="note">Experimentul cu ipoteze deduce reguli din observații folosind o bibliotecă finită, independent de rețeaua neuronală. Nu îl vom prezenta drept învățare neurală.</p>
 <p class="note">Indicatorii sunt separați: precizia unei tranziții și succesul unui plan cu 2–5 acțiuni. Textele sunt interpretate de o gramatică fixă; modelul nu a învățat încă limbaj natural general.</p>
 </section>
 <footer>Experiment V6, independent de V1–V5. Port 3036, checkpoint separat. Fără LLM, fără legi ascunse în inputul de antrenare. Rezultatele negative se afișează la fel ca cele pozitive.</footer>
