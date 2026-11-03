@@ -230,6 +230,7 @@ def evaluate(brain, families, count=24, seed=SEEDS['test'], modes=('organ', 'cla
         F = FAMILIES[fam]; specs = [(fam, seed_of(seed, i), F['test_sizes'][i % len(F['test_sizes'])]) for i in range(count)]
         res[fam] = {}
         for m in list(modes) + list((others or {}).keys()):
+            if m == 'line' and fam not in ('maze2d', 'maze3d', 'dynamic'): continue   # a straight line exists only in space
             b = (others or {}).get(m, brain)
             eps = run_episodes(b, specs, mode='organ' if m in ('next-step', 'untrained') else m, parallel=parallel, curve=True)
             res[fam][m] = summarize(eps)
