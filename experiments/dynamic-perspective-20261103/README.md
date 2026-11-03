@@ -80,3 +80,15 @@ For exact results and negative findings see [REPORT.md](./REPORT.md).
 3. A changing network remains connected due to a fixed underlying spanning tree; that makes the first dynamic tasks solvable but limits generality.
 4. Neural updates do not automatically imply policy improvements. Bellman is a strong explicit benchmark and may tie or outperform the learned rule.
 5. Validation/test worlds share broad generator families with training. This is **not** proof of transfer to text, SAT or other NP-complete problems.
+
+## Training-first UI (3 November 2026)
+
+The mobile UI has been replaced with a **training-first display**. Start, Pause, Resume, and Save are sticky at the top. The main full-width canvas plays back **actual completed training episodes** received from `/api/train/live`, continuously cycling through recently completed episodes. It is not a generated illustration or a simulation of nonexistent learning. The orange line is the organism's hypothesized solution, cyan is its executed walk, and green dotted is the evaluator's **initial** optimal route, which can become obsolete as graph connections change.
+
+Each episode displays its actual initial F1, after-training F1 on the **same already-observed world**, weight change norm, number of parameter updates, realized cost, success/failure, and changes observed. This within-world before/after comparison is *not* generalization evidence.
+
+A separate **held-out benchmark** measures cost MAE on the same fixed unseen edges (seed `880000`, 12 worlds, 33 nodes), compared to the untrained baseline. Evaluator-only access to actual edge costs is used only for scoring. Navigation is separately validated against a fixed Bellman baseline every 20 or more episodes. Improvements or regressions are shown without hiding negative results.
+
+The original model architecture, prediction rule, checkpoint schema (`3`), endless-training controls and `data/` directory remain unchanged. The live episode ring buffer is volatile, so after server restart there are no traces until a new episode is trained. Last saved model weights and episode count are restored in paused mode. Browser closure stops only the visualization, not the server-side training process.
+
+Run `npm test` and verify that `/api/train/live` includes frames from actual training when the trainer is active. The experimental UI cannot claim emergent general intelligence, universal form prediction, or superiority over Bellman from these observations.

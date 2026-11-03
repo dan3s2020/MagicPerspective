@@ -14,6 +14,22 @@ const latest=path.join(dir,'latest.json'),best=path.join(dir,'best.json');
 let brain=new MessageBrain(20261103),world=makeWorld(191911,33,'clusters');
 let session=new Collective(world,MessageBrain.restore(brain.snapshot()));
 let lastTest=null,bestCost=Infinity;
+// Volatile last completed training episodes, for faithful UI replay only (not neural inputs).
+let lastTrainingEpisodes=[];
+const untrainedReference=new MessageBrain(20261103);
+let baselineCostError=null,heldoutCostError=null;
+const validationSeed=880000;
+function diagnostics(){
+ baselineCostError ??= costMAE(untrainedReference,{seed:validationSeed,n:33,count:12});
+ heldoutCostError ??= costMAE(brain,{seed:validationSeed,n:33,count:12});
+ return {baselineCostMAE:baselineCostError,heldoutCostMAE:heldoutCostError,
+  reductionPct:baselineCostError>0?+(100*(baselineCostError-heldoutCostError)/baselineCostError).toFixed(2):null,
+  validatedAt:trainer.validation?.episode??null,
+  learnedCost:trainer.validation?.learned?.cost??null,
+  bellmanCost:trainer.validation?.bellman?.cost??null,
+  learnedF1:trainer.validation?.learned?.firstF1??null,
+  bellmanF1:trainer.validation?.bellman?.firstF1??null};
+}
 let trainer={status:'stopped',episodes:0,updates:0,loss:0,history:[],validation:null,
  throttleMs:30,saveEvery:10,n:33,seed:130000,notes:'Pregătit.',savedAt:null,revision:0};
 let running=null,writeQueue=Promise.resolve(),evalBusy=false,closing=false;
@@ -36,7 +52,7 @@ function createWorld(family=world.family,n=world.n,seed=(world.seed+101)>>>0){
  session.exchange(world.n*2);session.initialShape=session.shape();
 }
 createWorld();
-const state=()=>({version:'dynamic-perspective-1',trainer:trimmed(),model:{
+const state=()=>({version:'dynamic-perspective-1',trainer:trimmed(),diagnostics:diagnostics(),model:{
   costUpdates:brain.costUpdates,ruleUpdates:brain.ruleUpdates,parameters:brain.snapshot(),
   costMAE:brain.costUpdates?brain.costLoss/brain.costUpdates:null,
   messageMAE:brain.ruleUpdates?brain.ruleLoss/brain.ruleUpdates:null,
@@ -50,9 +66,12 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function trainingLoop(){if(running)return running;
  running=(async()=>{try{
   while(trainer.status==='running'&&!closing){
-   const progress=trainEpisode(brain,trainer.episodes,{n:trainer.n,seed:trainer.seed});
+   const progress=trainEpisode(brain,trainer.episodes,{n:trainer.n,seed:trainer.seed,trace:true});
+   if(progress.live){lastTrainingEpisodes.push(progress.live);if(lastTrainingEpisodes.length>5)lastTrainingEpisodes.shift();}
    trainer.episodes++;trainer.updates=brain.ruleUpdates+brain.costUpdates;trainer.loss=progress.ruleMAE;
-   if(trainer.episodes%5===0){trainer.history.push({episode:trainer.episodes,costMAE:+progress.costMAE.toFixed(3),ruleMAE:+progress.ruleMAE.toFixed(3),solved:progress.solved?1:0});
+   if(trainer.episodes%5===0){heldoutCostError=costMAE(brain,{seed:validationSeed,n:33,count:12});
+    trainer.history.push({episode:trainer.episodes,costMAE:+progress.costMAE.toFixed(3),ruleMAE:+progress.ruleMAE.toFixed(3),heldoutMAE:heldoutCostError,
+     firstF1:+(progress.live?.initialF1??0).toFixed(3),solved:progress.solved?1:0});
     if(trainer.history.length>240)trainer.history.shift();}
    if(trainer.episodes%Math.max(20,trainer.saveEvery*4)===0){
     const v=evaluate(brain,{count:6,n:trainer.n,seed:7800000,modes:['learned','bellman']});
@@ -78,6 +97,7 @@ const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost'),route=url.pathname;
  if(req.method==='GET'&&route==='/api/health')return send(res,{ok:true,training:trainer.status,episodes:trainer.episodes});
  if(req.method==='GET'&&route==='/api/state')return send(res,state());
+ if(req.method==='GET'&&route==='/api/train/live')return send(res,{status:trainer.status,episodes:trainer.episodes,traces:lastTrainingEpisodes,diagnostics:diagnostics(),validation:trainer.validation});
  if(req.method==='GET'&&route==='/api/export'){
   res.setHeader('Content-Disposition','attachment; filename="magicperspective-dynamic-checkpoint.json"');
   return send(res,{schema:3,brain:brain.snapshot(),trainer:trimmed(),lastTest,bestCost});
@@ -110,7 +130,7 @@ const server=http.createServer(async(req,res)=>{try{
   if(route==='/api/train/reset'){
    if(b.confirm!=='RESET_TRAINING')return send(res,{error:'Explicit reset confirmation required'},400);
    if(trainer.status==='running')return send(res,{error:'Pause training first'},409);
-   brain=new MessageBrain(20261103);bestCost=Infinity;lastTest=null;
+   brain=new MessageBrain(20261103);bestCost=Infinity;lastTest=null;lastTrainingEpisodes=[];heldoutCostError=null;
    trainer={...trainer,status:'stopped',episodes:0,updates:0,loss:0,history:[],validation:null,notes:'Reset explicit. Old experiments untouched.'};
    await save();createWorld();return send(res,state());}
   return send(res,{error:'Unknown endpoint'},404);

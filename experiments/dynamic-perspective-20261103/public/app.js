@@ -1,129 +1,116 @@
+'use strict';
+// Training-first viewer: every playback frame is returned by /api/train/live from a real completed episode.
 const $=id=>document.getElementById(id);
-const fmt=(v,d=2)=>v===null||v===undefined||!Number.isFinite(Number(v))?'—':Number(v).toFixed(d);
-let state=null,viewIndex=null,pending=0,pollTimer=null,selectedNode=null;
-async function request(route,data){const isPost=!!data;const res=await fetch('/api/'+route,{method:isPost?'POST':'GET',headers:isPost?{'Content-Type':'application/json'}:{},body:isPost?JSON.stringify(data):undefined,cache:'no-store'});
- let json;try{json=await res.json();}catch{throw Error('Invalid server response');}
- if(!res.ok)throw Error(json.error||'HTTP '+res.status);return json;}
-async function action(route,data){pending++;toggleBusy();try{const res=await request(route,data);render(res);return res;}
- catch(e){$('movement').textContent='Eroare: '+e.message;$('train-notice').textContent='Eroare: '+e.message;throw e;}
- finally{pending--;toggleBusy();}}
-function toggleBusy(){for(const id of ['new','round','step','navigate','intervene','start','pause','resume','stop','save','test'])$(id).disabled=pending>0;}
-function trace(ctx,coords,arr,color,width=4,dashed=false){if(!arr||arr.length<2)return;ctx.beginPath();
- arr.forEach((idx,i)=>{const p=coords[idx];if(!p)return;const x=25+p.x*590,y=25+p.y*590;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});
- ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.setLineDash(dashed?[8,7]:[]);ctx.stroke();ctx.setLineDash([]);}
-function graph(id,s,truth,frame){const canvas=$(id),ctx=canvas.getContext('2d');const size=640;
- ctx.clearRect(0,0,size,size);const bg=ctx.createLinearGradient(0,0,640,640);bg.addColorStop(0,'#0c182b');bg.addColorStop(1,'#141e35');ctx.fillStyle=bg;ctx.fillRect(0,0,size,size);
- const {positions,start,goal}=s.info;
- for(let i=1;i<=4;i++){ctx.beginPath();ctx.arc(320,320,i*68,0,Math.PI*2);ctx.strokeStyle='rgba(115,135,178,.10)';ctx.lineWidth=1;ctx.stroke();}
- const segments=truth?s.evaluator.links:s.nodes.flatMap(n=>n.links.filter(l=>l.to>n.id).map(l=>({a:n.id,b:l.to,open:l.open,cost:l.sensor})));
- for(const e of segments){const a=positions[e.a],b=positions[e.b];ctx.beginPath();ctx.moveTo(25+a.x*590,25+a.y*590);ctx.lineTo(25+b.x*590,25+b.y*590);
-  ctx.strokeStyle=!e.open?'rgba(159,103,127,.13)':truth?(e.cost>12?'rgba(237,155,125,.38)':'rgba(103,188,201,.27)'):'rgba(135,144,229,.26)';
-  ctx.lineWidth=e.open?1.8:.8;ctx.setLineDash(e.open?[]:[4,6]);ctx.stroke();ctx.setLineDash([]);
- }
- if(truth)trace(ctx,positions,s.evaluator.oracle,'#69e8b3',5);
- else trace(ctx,positions,frame?.shape||s.shape.nodes,'#ffc580',4,true);
- if(!truth)trace(ctx,positions,frame?.walked||s.walked,'rgba(110,224,213,.65)',2);
- const current=frame?.current??s.position;
- for(let i=0;i<s.info.n;i++){
-  const p=positions[i],x=25+p.x*590,y=25+p.y*590;
-  const phase=(frame?.phase?.[i]??s.nodes[i].phase)??0;
-  const val=frame?.values?.[i]??s.nodes[i].value;
-  const hue=180+(phase+Math.PI)*39;
-  ctx.beginPath();ctx.arc(x,y,truth?5:7,0,Math.PI*2);
-  ctx.fillStyle=truth?'#b8cae9':Number.isFinite(val)?`hsl(${hue} 68% 69%)`:'#465570';ctx.fill();
-  if(!truth){ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.strokeStyle=`hsla(${hue} 80% 76% / .5)`;ctx.lineWidth=2;ctx.stroke();}
-  if(!truth&&selectedNode===i){ctx.beginPath();ctx.arc(x,y,18,0,Math.PI*2);ctx.strokeStyle='#ffc581';ctx.lineWidth=3;ctx.stroke();}
-  if(i===start||i===goal||i===current){ctx.beginPath();ctx.arc(x,y,14,0,Math.PI*2);
-   ctx.fillStyle=i===goal?'#69e9bb':i===current?'#9ec5ff':'#bcaafd';ctx.fill();ctx.strokeStyle='#142238';ctx.lineWidth=2;ctx.stroke();
-   ctx.fillStyle='#132035';ctx.font='900 12px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i===goal?'G':i===current?'S':'A',x,y+.5);
-  }
- }
- ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.font='800 14px system-ui';ctx.fillStyle='#b5c4e7';
- ctx.fillText(truth?'WORLD TRUTH · EVALUATOR':'LEARNER · LOCAL MESSAGES',18,24);
+const fmt=(n,k=2)=>Number.isFinite(Number(n))&&n!==null?Number(n).toFixed(k):'—';
+const comma=n=>Number(n||0).toLocaleString('ro-RO');
+let state=null,pending=0,activeTrace=null,frameNo=0,queuedTrace=null,play=true,manualFrame=null,selectedNode=null,lastLiveRequest=0;
+const api=async(route,payload)=>{const post=payload!==undefined;const res=await fetch('/api/'+route,{method:post?'POST':'GET',headers:post?{'Content-Type':'application/json'}:{},body:post?JSON.stringify(payload):undefined,cache:'no-store'});const x=await res.json();if(!res.ok)throw Error(x.error||`HTTP ${res.status}`);return x;};
+function controls(){const t=state?.trainer?.status;
+ for(const id of ['start','pause','resume','stop','new','round','step','navigate','intervene','save','test'])$(id).disabled=pending>0;
+ $('start').disabled=pending>0||t==='running';$('resume').disabled=pending>0||t==='running';$('pause').disabled=pending>0||t!=='running';$('stop').disabled=pending>0||t==='stopped';
+ if(state?.session?.solved){$('step').disabled=true;$('navigate').disabled=true;}
 }
-function chart(id,values,keys,colors){const canvas=$(id),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
- ctx.clearRect(0,0,w,h);ctx.fillStyle='#0f1a30';ctx.fillRect(0,0,w,h);
- const x0=50,x1=w-23,y0=28,y1=h-35;ctx.strokeStyle='#34415d';ctx.lineWidth=1;
- for(let t=0;t<=4;t++){const y=y1-(y1-y0)*t/4;ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();}
- if(values.length<2){ctx.fillStyle='#8f9cb9';ctx.font='20px system-ui';ctx.fillText('Date insuficiente pentru grafic',x0,65);return;}
- const low=0,high=Math.max(1,...values.flatMap(x=>keys.map(k=>Number(x[k])||0)))*1.1;
- for(let n=0;n<keys.length;n++){
-  ctx.beginPath();values.forEach((v,i)=>{const x=x0+(x1-x0)*i/(values.length-1),y=y1-(y1-y0)*((Number(v[keys[n]])||0)-low)/(high-low);
-   if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.strokeStyle=colors[n];ctx.lineWidth=3;ctx.stroke();}
- ctx.fillStyle='#9eabc7';ctx.font='16px system-ui';ctx.fillText('0',15,y1);ctx.fillText(fmt(high,1),9,y0+6);
- keys.forEach((k,i)=>{ctx.fillStyle=colors[i];ctx.fillText(k,x0+i*220,18);});
+async function act(route,payload){pending++;controls();try{const s=await api(route,payload);showState(s);return s;}
+ catch(error){$('save-info').textContent='Eroare: '+error.message;$('save-info').style.color='#ffb5a6';throw error;}
+ finally{pending--;controls();}}
+function background(ctx,size){ctx.clearRect(0,0,size,size);ctx.fillStyle='#081423';ctx.fillRect(0,0,size,size);for(let i=1;i<=4;i++){ctx.beginPath();ctx.arc(size/2,size/2,i*size*.102,0,Math.PI*2);ctx.strokeStyle='#283858';ctx.lineWidth=1;ctx.stroke();}}
+function line(ctx,pos,arr,color,width=3,dash=[]){if(!Array.isArray(arr)||arr.length<2)return;ctx.beginPath();let ok=false;arr.forEach((n,i)=>{const p=pos[n];if(!p)return;const x=30+p.x*640,y=30+p.y*640;if(!ok){ctx.moveTo(x,y);ok=true;}else ctx.lineTo(x,y);});if(!ok)return;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();ctx.setLineDash([]);}
+function graph(canvas,info,links,frame,{mode='train',oracle=null}={}){
+ if(!info||!Array.isArray(info.positions))return;
+ const ctx=canvas.getContext('2d'),size=700;canvas.width=700;canvas.height=700;background(ctx,size);
+ const pos=info.positions;
+ for(const link of links||[]){if(link.open===false)continue;const a=pos[link.a],b=pos[link.b];if(!a||!b)continue;
+ ctx.beginPath();ctx.moveTo(30+a.x*640,30+a.y*640);ctx.lineTo(30+b.x*640,30+b.y*640);ctx.strokeStyle=mode==='train'?'rgba(104,140,186,.27)':'rgba(112,165,192,.35)';ctx.lineWidth=1.5;ctx.stroke();}
+ if(oracle?.length>1)line(ctx,pos,oracle,'#57d8ae',3,[5,8]);
+ if(frame?.shape?.length>1)line(ctx,pos,frame.shape,'#ffba70',5,[12,8]);
+ if(frame?.walked?.length>1)line(ctx,pos,frame.walked,'#81b9ff',4);
+ const current=frame?.current??info.start;
+ pos.forEach((p,i)=>{const x=30+p.x*640,y=30+p.y*640;
+ const v=frame?.values?.[i],intensity=Number.isFinite(v)?Math.min(1,1/(1+Math.abs(v)/20)):.1;
+ ctx.beginPath();ctx.arc(x,y,mode==='train'?6:5,0,Math.PI*2);ctx.fillStyle=mode==='train'?`rgba(184,161,247,${.28+intensity*.72})`:'#9baccc';ctx.fill();});
+ for(const [id,letter,color] of [[info.start,'S','#93c3ff'],[info.goal,'G','#64e0b3'],[current,'●','#ffd190']]){
+ const p=pos[id];if(!p)continue;const x=30+p.x*640,y=30+p.y*640;
+ ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#092035';ctx.lineWidth=2;ctx.stroke();ctx.font='800 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#172540';ctx.fillText(letter,x,y);}
 }
-function inspect(s){const panel=$('node-info');if(selectedNode===null||!s.nodes[selectedNode]){
- panel.textContent='Apasă un nod pentru a-i vedea conexiunile locale și estimarea către obiectiv.';return;}
- const n=s.nodes[selectedNode];panel.replaceChildren();
- const heading=document.createElement('b');heading.textContent=`Nod ${n.id} · potențial ${fmt(n.value)} · fază ${fmt(n.phase)} rad`;panel.append(heading);
- const p=document.createElement('p');p.textContent=`${n.links.length} legături locale · ${n.links.filter(e=>e.open).length} utilizabile · mesaj părinte ${n.parent<0?'necunoscut':n.parent}.`;panel.append(p);
- const links=document.createElement('div');links.className='local-links';
- for(const l of n.links){const span=document.createElement('span');span.textContent=`${n.id} → ${l.to} · ${l.open?'deschis':'blocat'} · sensor ${fmt(l.sensor)}`;links.append(span);}panel.append(links);
+function emptyTraining(){const c=$('train-canvas'),ctx=c.getContext('2d');background(ctx,700);ctx.fillStyle='#b5c2dc';ctx.textAlign='center';ctx.font='600 20px system-ui';ctx.fillText('Apasă START ∞',350,325);ctx.font='14px system-ui';ctx.fillText('Aici vor apărea episoade reale, animate',350,355);}
+function chooseLive(incoming){if(!incoming?.length)return;const newest=incoming.at(-1);
+ if(!activeTrace){activeTrace=newest;frameNo=0;showTrainingFrame();return;}
+ if(newest.episode>activeTrace.episode)queuedTrace=newest;
 }
-function drawEvents(s){const list=s.events.slice(-12).reverse();$('events').innerHTML='';
- if(!list.length){$('events').textContent='Încă nu există evenimente fizice.';return;}
- for(const e of list){const p=document.createElement('div');p.className='event';
-  p.textContent=`#${e.step} ${e.type==='goal'?'✓ Obiectiv':e.type==='blocked'?'✕ Blocaj':'→ Deplasare'} · ${e.from} → ${e.to} · cost ${fmt(e.cost)} · surpriză ${fmt(e.surprise)} · ${e.changed||0} schimbări`; $('events').appendChild(p);}
+function showTrainingFrame(){if(!activeTrace){emptyTraining();return;}const frames=activeTrace.frames||[],f=frames[Math.min(frames.length-1,frameNo)]||null;
+ graph($('train-canvas'),activeTrace.info,activeTrace.initialTruth.links,f,{oracle:activeTrace.initialTruth.optimal});
+ $('episode-title').textContent=`EPISOD REAL #${comma(activeTrace.episode)} · ${activeTrace.family.toUpperCase()} · seed ${activeTrace.seed}`;
+ $('episode-detail').textContent=f?`Acțiune ${f.step} · ${f.type} · ${f.connected?'traseu conectat':'traseu incomplet'}`:'—';
+ $('frame-indicator').textContent=`${frameNo+1} / ${frames.length}`;
+ $('train-f1').textContent=fmt(activeTrace.initialF1,3);$('train-cost').textContent=fmt(activeTrace.outcome.cost,1);
+ $('train-steps').textContent=`${activeTrace.outcome.steps} / ${activeTrace.outcome.changes}`;
+ $('train-outcome').textContent=activeTrace.outcome.solved?'✓ SUCCES':'✕ EȘEC';
+ $('train-after-f1').textContent=fmt(activeTrace.afterTrainingF1,3);
+ $('train-delta').textContent=`${fmt(activeTrace.weightShift,4)} / ${activeTrace.costUpdatesInEpisode+activeTrace.ruleUpdatesInEpisode}`;
+ $('live-state').textContent=`EPISOD #${comma(activeTrace.episode)} · REPLAY`;
 }
-function showTest(test){if(!test){$('test-rows').innerHTML='<tr><td colspan="4">Nicio evaluare finalizată</td></tr>';return;}
- const labels={learned:'Regula învățată',bellman:'Bellman fix',off:'Fără mesaje',shuffled:'Mesaje amestecate',untrained:'Neantrenat'};
- $('test-rows').innerHTML='';for(const [key,value] of Object.entries(test.modes)){
-  const row=document.createElement('tr');for(const cell of [labels[key],fmt(value.success*100,1)+'%',fmt(value.cost),fmt(value.firstF1,3)]){
-   const td=document.createElement('td');td.textContent=cell;row.append(td);} $('test-rows').appendChild(row);
- }
- $('test-status').textContent=`${test.count} lumi noi · ${test.n} noduri · graf dinamic · eșecuri penalizate. Niciun avantaj nu este presupus.`;
+let replayTick=0,frameIdle=0;
+setInterval(()=>{if(!play||!activeTrace)return;if(++replayTick%2!==0)return;
+ const length=activeTrace.frames?.length||1;
+ if(frameNo<length-1){frameNo++;frameIdle=0;}else if(++frameIdle>=5){if(queuedTrace&&queuedTrace.episode>activeTrace.episode){activeTrace=queuedTrace;queuedTrace=null;frameNo=0;}else frameNo=0;frameIdle=0;}
+ showTrainingFrame();},160);
+function plot(canvas,data,{baseline=null,key='heldoutMAE',label='MAE pe lumi nevăzute'}={}){
+ const ctx=canvas.getContext('2d'),w=1000,h=290;ctx.clearRect(0,0,w,h);ctx.fillStyle='#0b1729';ctx.fillRect(0,0,w,h);
+ ctx.font='16px system-ui';ctx.fillStyle='#bcc9e3';ctx.fillText(label,25,27);
+ if(!data?.length){ctx.fillStyle='#9faece';ctx.font='20px system-ui';ctx.fillText('Graficul apare după primele 5 episoade',25,148);return;}
+ const vals=data.map(v=>v[key]).filter(Number.isFinite);if(!vals.length)return;
+ const max=Math.max(...vals,baseline||0)*1.1||1,min=Math.min(0,...vals,baseline||0),start=50,end=w-25,top=52,bottom=h-42;
+ ctx.strokeStyle='#293956';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(start,top);ctx.lineTo(start,bottom);ctx.lineTo(end,bottom);ctx.stroke();
+ if(Number.isFinite(baseline)){const y=bottom-(baseline-min)/(max-min)*(bottom-top);ctx.strokeStyle='#f5ad8e';ctx.setLineDash([8,7]);ctx.beginPath();ctx.moveTo(start,y);ctx.lineTo(end,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#f4b898';ctx.font='13px system-ui';ctx.fillText('neantrenat '+fmt(baseline,2),start+8,y-8);}
+ ctx.strokeStyle='#67dec5';ctx.lineWidth=4;ctx.beginPath();let drawn=0;data.forEach((d,i)=>{const val=d[key];if(!Number.isFinite(val))return;const x=start+i*(end-start)/Math.max(1,data.length-1),y=bottom-(val-min)/(max-min)*(bottom-top);if(drawn++===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});ctx.stroke();
+ ctx.fillStyle='#b0c1db';ctx.font='13px system-ui';ctx.fillText('0',start,bottom+20);ctx.fillText(`${data.at(-1).episode} episoade`,end-140,bottom+20);
 }
-function render(s){state=s;const t=s.trainer,m=s.model,e=s.session;
- $('status').textContent=t.status==='running'?'TRAINING ∞':t.status==='paused'?'PAUZĂ':'OPRIT';
- $('status').parentElement.className='live '+t.status;
- $('training-tag').textContent=t.status==='running'?'TRAINING ∞':t.status==='paused'?'PAUZĂ':'OPRIT';
- $('led').title=t.status;
- $('episodes').textContent=t.episodes.toLocaleString('ro-RO');$('rule-updates').textContent=m.ruleUpdates.toLocaleString('ro-RO');
- $('cost-mae').textContent=fmt(m.costMAE,3);$('rule-mae').textContent=fmt(m.messageMAE,3);
- $('train-notice').textContent=`${t.notes} · autosave ${t.saveEvery} episoade · ultimul save ${t.savedAt||'încă nu'} `;
- $('progress-fill').style.width=t.status==='running'?'100%':t.status==='paused'?'58%':'0%';
- $('world-type').textContent=e.info.family.toUpperCase();$('rounds').textContent=e.round.toLocaleString('ro-RO');
- $('connected').textContent=e.shape.connected?'DA':'NU';$('effort').textContent=fmt(e.effort,1)+' / '+e.steps;
- $('changes').textContent=e.changes.toLocaleString('ro-RO');$('surprise').textContent=fmt(e.surprise,2);$('solved').textContent=e.solved?'✓ DA':'ÎNCĂ NU';
- $('movement').textContent=e.solved?'Obiectiv atins. Poți genera o lume nouă.':`Poziția ${e.position} / obiectiv ${e.info.goal} · ${e.info.family} · ${e.steps} pași executați.`;
- $('step').disabled=e.solved||pending>0;$('navigate').disabled=e.solved||pending>0;
- $('weights').textContent=`Message attention [${m.parameters.score.map(x=>fmt(x,3)).join(', ')}] · gate [${m.parameters.gate.map(x=>fmt(x,3)).join(', ')}] · τ ${fmt(m.parameters.temperature,3)} · bias ${fmt(m.parameters.bias,3)} · sensor [${m.parameters.cost.map(x=>fmt(x,3)).join(', ')}]`;
- $('start').disabled=t.status==='running'||pending>0;$('resume').disabled=t.status==='running'||pending>0;
- $('pause').disabled=t.status!=='running'||pending>0;$('stop').disabled=t.status==='stopped'||pending>0;
- $('family').value=e.info.family;$('nodes').value=String(e.info.n);$('autosave').value=String(t.saveEvery);$('throttle').value=String(t.throttleMs);
- const frames=e.frames||[],last=frames.length-1;let index=viewIndex===null?last:Math.min(viewIndex,last);
- $('replay').max=Math.max(0,last);$('replay').value=Math.max(0,index);$('replay-label').textContent=viewIndex===null?'LIVE':`PAS ${index}/${last}`;
- const currentFrame=frames[index]||null;$('frame-caption').textContent=currentFrame?`Tur ${currentFrame.round} · pas ${currentFrame.step} · cost ${fmt(currentFrame.effort)} · formă ${currentFrame.connected?'conectată':'incompletă'}`:'—';
- graph('truth',e,true,currentFrame);graph('learner',e,false,currentFrame);
- chart('timeline',frames,['effort','changes'],['#b3a1fb','#6be4d0']);
- chart('learning',t.history,['costMAE','ruleMAE'],['#6be4d0','#b4a1f7']);
- drawEvents(e);inspect(e);showTest(s.lastTest);
+function showLearning(s){const d=s.diagnostics||{},t=s.trainer,m=s.model;
+ $('episodes').textContent=comma(t.episodes);$('updates').textContent=`${comma(m.costUpdates)} / ${comma(m.ruleUpdates)}`;
+ $('base-mae').textContent=fmt(d.baselineCostMAE,3);$('now-mae').textContent=fmt(d.heldoutCostMAE,3);
+ $('gain').textContent=d.reductionPct===null||d.reductionPct===undefined?'—':`${d.reductionPct>=0?'+':''}${fmt(d.reductionPct,1)}%`;
+ const good=Number(d.reductionPct)>0;
+ $('gain-verdict').className='verdict '+(good?'positive':'negative');
+ $('gain-verdict').textContent=d.reductionPct===null?'Nu există încă evaluare independentă.':
+  good?`Predicția costurilor pe același set nevăzut este cu ${fmt(d.reductionPct,1)}% mai bună decât modelul neantrenat. Acest lucru NU înseamnă automat navigare mai bună.`:
+  `Modelul actual nu depășește modelul neantrenat la MAE pe setul fix (${fmt(d.reductionPct,1)}%).`;
+ $('validation').textContent=Number.isFinite(d.learnedCost)?`${fmt(d.learnedCost,1)} / ${fmt(d.bellmanCost,1)}`:'—';
+ $('validation-note').textContent=Number.isFinite(d.learnedCost)?
+  `După episodul ${d.validatedAt}: cost antrenat ${fmt(d.learnedCost,2)} versus Bellman ${fmt(d.bellmanCost,2)} (mai mic este mai bine). F1 inițial ${fmt(d.learnedF1,3)} vs ${fmt(d.bellmanF1,3)}. Set de validare separat.`:
+  'Prima validare independentă a navigării apare după aproximativ 20 de episoade.';
+ plot($('learning-chart'),t.history,{baseline:d.baselineCostMAE});
 }
-async function refresh(){if(pending)return;try{const s=await request('state');render(s);}catch(e){$('status').textContent='OFFLINE';$('movement').textContent=e.message;}}
-const inputConfig=()=>({n:Number($('nodes').value),saveEvery:Number($('autosave').value),throttleMs:Number($('throttle').value)});
-$('new').onclick=()=>{viewIndex=null;void action('new',{n:Number($('nodes').value),family:$('family').value});};
-$('round').onclick=()=>{viewIndex=null;void action('round',{rounds:1});};
-$('step').onclick=()=>{viewIndex=null;void action('step',{});};
-$('navigate').onclick=()=>{viewIndex=null;void action('navigate',{});};
-$('intervene').onclick=()=>{viewIndex=null;void action('intervene',{});};
-$('start').onclick=()=>void action('train/start',inputConfig());
-$('pause').onclick=()=>void action('train/pause',{});
-$('resume').onclick=()=>void action('train/resume',inputConfig());
-$('stop').onclick=()=>void action('train/stop',{});
-$('save').onclick=()=>void action('save',{});
-$('export').onclick=()=>{window.location.href='/api/export';};
-$('test').onclick=async()=>{const button=$('test');$('test-status').textContent='Test orb în curs: comparăm aceleași lumi în cinci variante…';button.disabled=true;
- try{await action('test',{count:Number($('test-count').value),n:Number($('nodes').value)});}catch(e){$('test-status').textContent='Test eșuat: '+e.message;}finally{button.disabled=false;}};
-$('learner').addEventListener('click',event=>{
- if(!state)return;const rect=$('learner').getBoundingClientRect();const x=(event.clientX-rect.left)*640/rect.width,y=(event.clientY-rect.top)*640/rect.height;
- let best=-1,distance=Infinity;state.session.info.positions.forEach((p,i)=>{const d=Math.hypot((25+p.x*590)-x,(25+p.y*590)-y);
- if(d<distance){distance=d;best=i;}});
- if(distance<25){selectedNode=best;render(state);}
-});
-$('replay').oninput=()=>{viewIndex=Number($('replay').value);if(state)render(state);};
-$('first').onclick=()=>{viewIndex=0;if(state)render(state);};
-$('live').onclick=()=>{viewIndex=null;if(state)render(state);};
-window.addEventListener('resize',()=>{if(state)render(state)});
-window.addEventListener('focus',()=>{void refresh()});
-refresh();pollTimer=setInterval(refresh,1800);
+function drawSession(s){const e=s.session;if(!e)return;
+ const f=e.frames?.[manualFrame===null?e.frames.length-1:Math.min(manualFrame,e.frames.length-1)];
+ const info=e.info,original=e.evaluator.links;
+ graph($('truth'),info,original,{shape:e.evaluator.oracle,walked:e.walked,current:e.position},{mode:'session',oracle:e.evaluator.oracle});
+ const links=e.nodes.flatMap(n=>n.links.filter(l=>l.to>n.id).map(l=>({a:n.id,b:l.to,open:l.open})));
+ graph($('learner'),info,links,{...(f||{}),shape:f?.shape||e.shape.nodes,walked:f?.walked||e.walked,current:f?.current??e.position},{mode:'session'});
+ $('connected').textContent=e.shape.connected?'DA':'NU';$('effort').textContent=`${fmt(e.effort,1)} / ${e.steps}`;$('solved').textContent=e.solved?'✓ DA':'ÎNCĂ NU';
+ $('movement').textContent=`${info.family} · nod ${e.position} spre ${info.goal} · ${e.changes} modificări detectate`;
+ $('replay').max=Math.max(0,(e.frames?.length||1)-1);$('replay').value=manualFrame===null?$('replay').max:Math.min(manualFrame,Number($('replay').max));
+ $('frame-caption').textContent=f?`Tur ${f.round}, pas ${f.step}, cost ${fmt(f.effort)}, formă ${f.connected?'conectată':'incompletă'}`:'—';
+ const ev=$('events');ev.replaceChildren();for(const record of (e.events||[]).slice(-12).reverse()){const p=document.createElement('div');p.textContent=`#${record.step||0} ${record.type}: ${record.from??'?'} → ${record.to??'?'} · ${record.changed??0} schimbări`;ev.append(p);}
+ if(selectedNode!==null){const node=e.nodes[selectedNode];$('node-info').textContent=node?`Nod ${selectedNode}: ${node.links.length} vecini locali, valoare ${fmt(node.value,2)}, fază ${fmt(node.phase,2)} rad.`:'Alege un nod.';}
+}
+function showTest(test){if(!test)return;const labels={learned:'Regulă învățată',bellman:'Bellman fix',off:'Fără mesaje',shuffled:'Mesaje amestecate',untrained:'Neantrenat'};
+ $('test-rows').replaceChildren();for(const [kind,v] of Object.entries(test.modes)){const tr=document.createElement('tr');for(const val of [labels[kind]||kind,fmt(v.success*100,1)+'%',fmt(v.cost,2),fmt(v.firstF1,3)]){const td=document.createElement('td');td.textContent=val;tr.append(td);} $('test-rows').append(tr);}
+ $('test-status').textContent=`${test.count} rețele nevăzute · ${test.n} noduri · eșecuri penalizate · comparație între 5 moduri.`;
+}
+function showState(s){const firstLoad=state===null;state=s;const t=s.trainer,m=s.model;
+ $('status').textContent=t.status==='running'?'TRAINING ∞':t.status==='paused'?'PAUZĂ':'OPRIT';$('status').className='status '+t.status;
+ $('save-info').textContent=`${t.notes} · autosave la ${t.saveEvery} episoade · salvat: ${t.savedAt||'încă nu'}`;
+ if(firstLoad){$('nodes').value=String(t.n);$('autosave').value=String(t.saveEvery);$('throttle').value=String(t.throttleMs);}
+ $('weights').textContent=JSON.stringify(m.parameters,null,2);
+ showLearning(s);drawSession(s);showTest(s.lastTest);controls();}
+async function updateState(){if(pending)return;try{showState(await api('state'));}catch(err){$('status').textContent='SERVER OFFLINE';$('save-info').textContent=err.message;}}
+async function updateLive(){if(Date.now()-lastLiveRequest<400)return;lastLiveRequest=Date.now();try{const response=await api('train/live');chooseLive(response.traces);if(!activeTrace&&response.episodes===0){$('live-state').textContent='APASĂ START ∞';emptyTraining();}}catch(err){$('live-state').textContent='REPLAY INDISPONIBIL';}}
+function config(){return {n:Number($('nodes').value),saveEvery:Number($('autosave').value),throttleMs:Number($('throttle').value)};}
+$('start').onclick=()=>void act('train/start',config());$('resume').onclick=()=>void act('train/resume',config());$('pause').onclick=()=>void act('train/pause',{});$('stop').onclick=()=>void act('train/stop',{});$('save').onclick=()=>void act('save',{});$('export').onclick=()=>{location.href='/api/export';};
+$('new').onclick=()=>{manualFrame=null;void act('new',{family:$('family').value,n:Number($('nodes').value)});};
+$('round').onclick=()=>{manualFrame=null;void act('round',{rounds:1});};$('step').onclick=()=>{manualFrame=null;void act('step',{});};$('intervene').onclick=()=>{manualFrame=null;void act('intervene',{});};$('navigate').onclick=()=>{manualFrame=null;void act('navigate',{});};
+$('replay-pause').onclick=()=>{play=!play;$('replay-pause').textContent=play?'Ⅱ OPREȘTE REPLAY':'▶ PORNEȘTE REPLAY';};$('replay-back').onclick=()=>{frameNo=0;showTrainingFrame();};
+$('test').onclick=async()=>{$('test-status').textContent='TEST ORB ÎN CURS: verificăm cinci controale...';try{await act('test',{count:Number($('test-count').value),n:Number($('nodes').value)});}catch(e){$('test-status').textContent='Eroare test: '+e.message;}};
+$('replay').oninput=()=>{manualFrame=Number($('replay').value);if(state)drawSession(state);};$('first').onclick=()=>{manualFrame=0;if(state)drawSession(state);};$('live').onclick=()=>{manualFrame=null;if(state)drawSession(state);};
+$('learner').onclick=event=>{if(!state?.session)return;const box=$('learner').getBoundingClientRect(),x=(event.clientX-box.left)*700/box.width,y=(event.clientY-box.top)*700/box.height;let best=null,distance=Infinity;state.session.info.positions.forEach((p,i)=>{const d=Math.hypot(30+p.x*640-x,30+p.y*640-y);if(d<distance){best=i;distance=d;}});if(distance<25){selectedNode=best;drawSession(state);}};
+emptyTraining();void updateState();void updateLive();setInterval(updateState,1650);setInterval(updateLive,850);

@@ -34,13 +34,40 @@ export function evaluate(brain,{count=18,n=33,seed=900000,changed=true,modes=MOD
  }
  return out;
 }
-export function trainEpisode(brain,num,{n=33,seed=130000}={}){
+export function trainEpisode(brain,num,{n=33,seed=130000,trace=false}={}){
  const family=FAMILIES[num%FAMILIES.length],world=makeWorld((seed+num*5387)>>>0,n,family);
  // Train the same persistent brain from its own physically experienced transitions.
+ const prior=trace?brain.snapshot():null;
  const collective=new Collective(world,brain,{mode:'learned',online:true});
+ // Evaluator-only copy of the initial graph. It never enters neural predictions.
+ const initialTeacher=trace?{links:world.links.map(e=>({a:e.a,b:e.b,open:e.open,cost:e.actual})),optimal:oracle(world).route}:null;
  collective.run({dynamic:true,maxMoves:n*5,learn:true});
  brain.episodes++;
- return {episode:brain.episodes,family,solved:collective.solved,cost:+collective.effort.toFixed(2),
+ const initial=collective.initialShape?.nodes||[world.start];
+ // Compact genuine training episode replay; sample evenly but always include first and last.
+ const recorded=collective.frames;
+ const frameIndexes=trace?Array.from(new Set(Array.from({length:Math.min(42,recorded.length)},(_,i)=>
+  Math.round(i*(recorded.length-1)/Math.max(1,Math.min(42,recorded.length)-1))))):[];
+ const updated=trace?brain.snapshot():null;
+ const params=x=>[...x.cost,...x.score,...x.gate,x.temperature,x.bias];
+ const weightShift=trace?Math.hypot(...params(updated).map((v,i)=>v-params(prior)[i])):0;
+ // Reconstruct original world with updated brain for a paired same-world before/after view.
+ const afterAgent=trace?new Collective(makeWorld(world.seed,world.n,world.family),MessageBrain.restore(updated),{mode:'learned'}):null;
+ if(afterAgent)afterAgent.exchange(world.n*2);
+ const afterShape=afterAgent?.shape()?.nodes||null;
+ const live=trace?{
+  episode:num+1,seed:world.seed,family,n:world.n,info:{positions:world.coords,start:world.start,goal:world.goal},
+  initialTruth:initialTeacher,initialShape:initial,initialF1:f1(initial,initialTeacher.optimal),
+  afterTrainingShape:afterShape,afterTrainingF1:f1(afterShape||[],initialTeacher.optimal),
+  weightShift:+weightShift.toFixed(7),costUpdatesInEpisode:updated.costUpdates-prior.costUpdates,ruleUpdatesInEpisode:updated.ruleUpdates-prior.ruleUpdates,
+  frames:frameIndexes.map(i=>recorded[i]).map(f=>({type:f.type,round:f.round,step:f.step,
+   current:f.current,effort:f.effort,shape:f.shape,connected:f.connected,
+   walked:f.walked,changes:f.changes,values:f.values})),
+  outcome:{solved:collective.solved,steps:collective.steps,cost:collective.effort,
+    updates:brain.ruleUpdates,changes:collective.changes},
+  teacherOnly:true
+ }:null;
+ return {live,episode:brain.episodes,family,solved:collective.solved,cost:+collective.effort.toFixed(2),
   costUpdates:brain.costUpdates,ruleUpdates:brain.ruleUpdates,initialConnected:collective.initialShape?.connected||false,
   costMAE:brain.costUpdates?brain.costLoss/brain.costUpdates:0,
   ruleMAE:brain.ruleUpdates?brain.ruleLoss/brain.ruleUpdates:0,changes:collective.changes};
