@@ -5,7 +5,7 @@ This is a **separate, non-destructive implementation** under `experiments/portal
 ## Actual implemented mechanisms
 
 - **One shared model:** a `GraphController` PyTorch message-passing neural network with one set of embeddings, three message rounds, action readout and optimizer across six task families. We never load a fresh brain when changing the task.
-- **One growing persistent graph:** sensory labels, world labels, action nodes, effect nodes and experienced motifs; observed transitions add nodes and relations. A persistent `brain.pt` stores the graph, neural weights and optimizer. Node IDs/3D positions are stable.
+- **One growing persistent graph:** sensory labels, world labels, action nodes, effect nodes and experienced motifs; observed transitions add nodes and relations. A persistent `brain.pt` stores the graph, neural weights and optimizer. The selected on-disk corpus cache and checksum are also restored when the server restarts. Node IDs/3D positions are stable.
 - **Real environment feedback:** 3D maze (randomized 4×4×4 spanning tree plus loops, local wall sensing), random weighted abstract network, modular symbol transformations, 12-bit Yes/No boolean tasks, small vehicle grid control, and an **optional real-byte-text next-byte-choice** task. The text task is NOT free-form conversation and is not a pretrained LLM.
 - **Measured events:** actual participating node IDs, message magnitudes computed from learned weights and active hidden states, neural action probabilities, executed action, actual consequence, prediction error, true gradient norm/parameter update, graph births. No synthetic message impulses.
 - **CUDA mini-batches:** 1–64 concurrent independent environments, matrix operations/backprop on `torch.device('cuda')`. The UI labels the actual device; CPU exists only for diagnostics or non-GPU testing. A real NVIDIA test checks matrix multiplication AND gradients.
@@ -24,7 +24,7 @@ From an existing checkout on branch `main`, run (after `git pull --ff-only`):
 
 Or start the script from wherever your actual clone is located; it resolves other files relative to its own directory. Requires Python 3.12 (`py -3.12`), an NVIDIA driver and internet access to install dependencies the first time. Creates only `.venv_portal` inside this experiment. Uses `D:\training\MagicPerspective-PortalUniversal` if the pre-existing `D:\training` folder exists, otherwise local `data/`. UI: **http://127.0.0.1:3050**.
 
-Parquet is optional: set `$env:PORTAL_INSTALL_PARQUET='1'` before running the launcher, or install `pyarrow` manually into `.venv_portal`. Choose the corpus by typing its *actual* local file path in the text field and pressing **Încarcă corpus**; unlike a browser file picker, this path is read by the local server. Supported: TXT/MD/JSONL/Parquet, streamed into a disk-backed byte corpus. No uploaded example or fake default text is used.
+The Windows launcher installs `pyarrow` for Parquet support along with NumPy; alternatively install it manually into `.venv_portal`. Choose the corpus by typing its *actual* local file path in the text field and pressing **Încarcă corpus**; unlike a browser file picker, this path is read by the local server. Supported: TXT/MD/JSONL/Parquet, streamed into a disk-backed byte corpus. No uploaded example or fake default text is used.
 
 CPU-only diagnostics (never labelled CUDA):
 
