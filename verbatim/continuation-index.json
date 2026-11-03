@@ -121,6 +121,15 @@
       "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-VERBATIM-MIRROR-MAIN",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
+    },
+    {
+      "order": 13,
+      "ref": "2026-11-03-USER-4D-HYPERCUBE-NAVIGATION",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-03-USER-4D-HYPERCUBE-NAVIGATION",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
     }
   ]
 }
