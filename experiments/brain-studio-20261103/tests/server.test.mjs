@@ -57,6 +57,8 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   assert.equal(s.model.episodes,7);
   assert.equal(s.model.updates,7);
   assert.equal(s.run.done,7);
+  assert.ok(s.run.seedCursor>=1000007);
+  assert.ok(s.run.reservedUntil>=s.run.seedCursor);
   assert.ok(s.preview.frames.length>0);
   assert.ok(s.preview.meta.positions.length>0);
   assert.ok(s.history.length>0);
@@ -69,11 +71,14 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   await stop();await start();
   s=await state();
   assert.equal(s.model.episodes,7,'Last autosave not restored');
+  assert.ok(s.run.reservedUntil>=s.run.seedCursor,'Seed reservations missing after restart');
   assert.deepEqual(s.model.weights.W1,before);
   r=await post('brains/select',{id:selectedId});
   assert.equal(r.status,200);
   assert.equal(r.body.model.episodes,7);
   r=await post('brains/new',{kind:'graph'});assert.equal(r.status,200);
+  const autosaved=await (await fetch(base+'/api/brains')).json();
+  assert.ok(autosaved.brains.some(b=>b.label.includes('Autosave înainte de creier nou')));
   assert.equal(r.body.kind,'graph');
   r=await post('start',{episodes:5,domains:['network'],size:11,delayMs:0,
    autosaveEvery:2,previewEvery:1,resetRun:true});
@@ -101,5 +106,6 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   assert.ok(r.body.run.done>0);
   const active=JSON.parse(await readFile(path.join(home,'active.json'),'utf8'));
   assert.equal(active.snapshot.schema,1);
+  assert.ok(active.run.seedCursor>=1000007);
  }finally{await stop();await rm(home,{recursive:true,force:true})}
 });
