@@ -30,6 +30,17 @@ class Control:
         self.last_batch=None
         self.completed_batches=0
         self.corpus_meta=None
+        # The source corpus is part of the training state; restore it on restart.
+        meta_file=self.engine.folder/'corpus.json'
+        if meta_file.is_file():
+            try:
+                meta=json.loads(meta_file.read_text(encoding='utf-8'))
+                self.engine.corpus=Corpus(meta['path'])
+                if self.engine.corpus.digest!=meta['sha256']:
+                    raise ValueError('Corpus cache checksum changed')
+                self.corpus_meta=meta
+            except (OSError,ValueError,KeyError):
+                self.corpus_meta={'error':'Saved corpus missing or corrupted; reload original file'}
 
     def start(self,config):
         with self.lock:
@@ -87,6 +98,9 @@ class Control:
             meta=ingest(path,self.engine.folder/'corpora')
             if self.engine.corpus is not None and hasattr(self.engine.corpus,'close'):self.engine.corpus.close()
             self.engine.corpus=Corpus(meta['path']);self.corpus_meta=meta
+            target=self.engine.folder/'corpus.json';temp=target.with_suffix('.json.tmp')
+            temp.write_text(json.dumps(meta,ensure_ascii=False),encoding='utf-8')
+            temp.replace(target)
             return meta
 
 class Handler(BaseHTTPRequestHandler):
