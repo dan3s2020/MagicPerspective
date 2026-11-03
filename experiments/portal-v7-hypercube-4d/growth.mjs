@@ -125,6 +125,7 @@ export class EvidenceGraph{
   this.sequence=0;
   this.learnedSteps=0;
   this.eventsByDomain=new Map();
+  this.history=[];
   this.last=null;
  }
  ingest(raw){
@@ -187,6 +188,9 @@ export class EvidenceGraph{
     reward:data.reward,model_update:data.model_update,growth
    }};
   this.last=result;
+  // Bounded durable history, each point derived from a committed real event.
+  this.history.push({sequence:this.sequence,stats:{...result.stats}});
+  if(this.history.length>1200)this.history.shift();
   return result;
  }
  stats(){
@@ -242,7 +246,8 @@ export class EvidenceGraph{
    nodes:[...this.nodes.values()].map(copy),edges:[...this.edges.values()].map(copy),
    events:[...this.events.entries()],
    problems:[...this.problems],
-   eventsByDomain:[...this.eventsByDomain.entries()]};
+   eventsByDomain:[...this.eventsByDomain.entries()],
+   history:this.history.map(copy)};
  }
  static restore(payload){
   if(payload?.schema!==GROWTH_SCHEMA)throw Error('Incompatible graph snapshot schema');
@@ -261,6 +266,7 @@ export class EvidenceGraph{
   graph.events=new Map(payload.events);
   graph.problems=new Set(payload.problems);
   graph.eventsByDomain=new Map(payload.eventsByDomain);
+  graph.history=(payload.history||[]).map(copy);
   if(graph.events.size!==graph.sequence)
    throw Error('Graph snapshot sequence/events mismatch');
   for(const e of graph.edges.values())
