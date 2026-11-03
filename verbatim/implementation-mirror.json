@@ -6,7 +6,8 @@
     "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
     "verbatim/recent-user-messages.json",
     "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt",
-    "verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt"
+    "verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt",
+    "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt"
   ],
   "required_evidence_fields": [
     "source_ref",
@@ -206,6 +207,26 @@
       ],
       "measured_result": "Pending GitHub CI evidence. Original Portal4D V7 training source is not present in this repository; receipt of original model events and in-V7 integration are NOT yet verified. No claim of 14M unique exercises or positive generalization.",
       "regression_check": "node --test experiments/portal-v7-hypercube-4d/tests/*.test.mjs; node scripts/verbatim-mirror-gate.mjs must report integrity PASS and completeness gate BLOCKED."
+    },
+    {
+      "id": "REQ-12",
+      "source_ref": "2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES",
+      "exact_source_span": "nu am buton de start training,nu vad exercitiile unice toate pe care le parcuge",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Expose unchanged original V7 START 1/START 2/A–H controls inside growth dashboard and add a paginated, persisted log of all real event records actually received from V7; no fake training controls or synthetic exercise counts.",
+      "status": "ORIGINAL_V7_CONTROLS_VISIBLE_WHEN_8788_REACHABLE_TELEMETRY_ADAPTER_PENDING",
+      "code_paths": [
+        "START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1",
+        "experiments/portal-v7-hypercube-4d/growth-index.html",
+        "experiments/portal-v7-hypercube-4d/growth-app.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-server.mjs"
+      ],
+      "test_paths": [
+        "experiments/portal-v7-hypercube-4d/tests/server.test.mjs",
+        ".github/workflows/magic-regression.yml"
+      ],
+      "measured_result": "The embedded original V7 dashboard is reachable if 8788 is serving and allows framing. Its START buttons remain V7-native. Backend cannot automatically enumerate V7 exercises or emit 4D learning without inspecting and integrating original local V7 source; only events received by the separate evidence server appear in the paginated journal.",
+      "regression_check": "CI Windows PowerShell 5.1 parses launcher; growth server tests assert original link/iframe, genuine empty list, paginated real evidence and persisted restore."
     }
   ],
   "versions": [
