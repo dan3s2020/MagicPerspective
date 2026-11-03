@@ -16,10 +16,10 @@ const activeFile=path.join(data,'active.json'),host=process.env.HOST||'127.0.0.1
 const port=Number(process.env.PORT||3044);
 if(!Number.isInteger(port)||port<1||port>65535)throw Error('Invalid port');
 await vault.setup();
-let kind='universal',brain=makeBrain(kind,19),selection='unsaved',readOnlyArchive=null;
+let kind='cells',brain=makeBrain(kind,19),selection='unsaved',readOnlyArchive=null;
 let history=[],last=null,preview=null,lastTest=null,validation=null,bestFitness=Infinity,
  traceSequence=0,traces=[],previewOrigin=null,
- notes='Creier partajat inițializat.',revision=0;
+ notes='Graph Cells: control și învățare prin aceeași rețea abstractă.',revision=0;
 let run={status:'stopped',unlimited:false,done:0,target:0,domains:DOMAINS.slice(),size:11,
  autosaveEvery:10,previewEvery:2,delayMs:40,seedCursor:1000000,reservedUntil:1000000,started:null,error:null,savedAt:null};
 let startAt=Date.now(),last25=[],recentOutcomes=[],training=null,writeTail=Promise.resolve(),shuttingDown=false;
@@ -79,13 +79,13 @@ if(existsSync(activeFile)){
   run.seedCursor=Math.max(run.seedCursor||0,run.reservedUntil||0);
   run.reservedUntil=run.seedCursor;
  }catch(e){notes='Checkpoint anterior incompatibil (nu este șters): '+e.message;
-  console.error(notes);brain=makeBrain('universal',19);kind='universal';selection='unsaved';}
+  console.error(notes);brain=makeBrain('cells',19);kind='cells';selection='unsaved';}
 }
-function allowTraining(domain){if(kind==='universal')return DOMAINS.includes(domain);
+function allowTraining(domain){if(kind==='cells'||kind==='universal')return DOMAINS.includes(domain);
  if(kind==='v7'||kind==='v6')return domain==='maze'||domain==='relief';
  if(kind==='causal')return domain==='text';return domain==='network';}
 function nextDomain(index){
- const available=kind==='universal'?run.domains:
+ const available=(kind==='cells'||kind==='universal')?run.domains:
   kind==='v7'||kind==='v6'?['maze','relief']:
   kind==='causal'?['text']:['network'];
  return available[index%available.length];
@@ -106,12 +106,12 @@ function trial(){
  last={episode:brain.episodes,domain,seed,outcome:output.outcome,
   elapsedMs:+elapsed.toFixed(2),weightDelta:+delta.toFixed(6)};
  if(run.done===1||run.done%run.previewEvery===0){
-  preview={meta:output.meta,outcome:output.outcome,frames:output.frames.slice(-90),
+  preview={meta:output.meta,outcome:output.outcome,frames:kind==='cells'?output.frames:output.frames.slice(-90),
    lastInput:output.lastInput,episode:brain.episodes};
   previewOrigin='training';
   const item={id:++traceSequence,kind,episode:brain.episodes,
    preview};
-  traces.push(item);if(traces.length>32)traces.shift();
+  traces.push(item);if(traces.length>(kind==='cells'?4:32))traces.shift();
  }
  if(run.done===1||run.done%5===0){
   const recent=recentOutcomes;
@@ -141,7 +141,7 @@ async function execute(){
      try{
       // Validation uses a FIXED seed family, distinct from the user-invoked blind test.
       // This selects a best checkpoint without ever replacing the active working brain.
-      const domains=kind==='universal'?run.domains:undefined;
+      const domains=(kind==='cells'||kind==='universal')?run.domains:undefined;
       validation=blindTest(kind,brain,{count:3,size:run.size,seed:811001,domains});
       const rows=Object.values(validation.domains);
       const fitness=rows.reduce((sum,r)=>{
@@ -173,7 +173,7 @@ function start(input={}){
  if(run.status==='running')throw Error('Training already running');
  if(input.resetRun===true){run.done=0;last25=[];startAt=Date.now();}
  const domains=chosenDomains(input.domains);
- if(kind!=='universal'&&domains.length===1&&!allowTraining(domains[0]))
+ if(kind!=='cells'&&kind!=='universal'&&domains.length===1&&!allowTraining(domains[0]))
   throw Error('Selected brain is incompatible with the requested domain');
  run={...run,status:'running',unlimited:input.episodes===0||input.unlimited===true,
   target:bounded(input.episodes,1,100000000,1000),domains,
@@ -234,14 +234,14 @@ const server=http.createServer(async(req,res)=>{
     if(run.status==='running')return send(res,{error:'Pause training before inspection'},409);
     if(!brain)throw Error('Select a compatible brain');
     const copy=restoreBrain(kind,brain.snapshot());
-    const domain=kind==='universal'?
+    const domain=(kind==='cells'||kind==='universal')?
      (DOMAINS.includes(input.domain)?input.domain:'maze'):
      kind==='causal'?'text':(kind==='v6'||kind==='v7')?'maze':'network';
     const seed=bounded(input.seed,1,2147483646,471993);
     const episode=oneEpisode(kind,copy,{domain,seed,size:bounded(input.size,9,19,run.size),
      learn:kind==='dynamic',explore:0});
     preview={meta:episode.meta,outcome:episode.outcome,
-     frames:episode.frames.slice(-90),lastInput:episode.lastInput,episode:brain.episodes};
+     frames:kind==='cells'?episode.frames:episode.frames.slice(-90),lastInput:episode.lastInput,episode:brain.episodes};
     previewOrigin=kind==='dynamic'?'inspecție cu adaptare pe COPIE':'inspecție fără antrenare';
     revision++;
     return send(res,copyState());
