@@ -1,0 +1,248 @@
+{
+  "EM": 1500,
+  "EN": 150,
+  "seed": 7,
+  "kinds": {
+    "graph": [
+      {
+        "episodes": 0,
+        "veteran": {
+          "solved": 0.9667,
+          "bce0": 0.5545,
+          "f1_0": 0.4543,
+          "bce50": 0.53,
+          "ratio": 2.5977,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 0.8333,
+          "bce0": 0.5735,
+          "f1_0": 0.508,
+          "bce50": 0.6365,
+          "ratio": 7.9907,
+          "resistance": 1.3667
+        }
+      },
+      {
+        "episodes": 25,
+        "veteran": {
+          "solved": 0.9667,
+          "bce0": 0.2661,
+          "f1_0": 0.4787,
+          "bce50": 0.2465,
+          "ratio": 2.6339,
+          "resistance": 1.4667
+        },
+        "fresh": {
+          "solved": 0.9333,
+          "bce0": 0.2767,
+          "f1_0": 0.472,
+          "bce50": 0.2668,
+          "ratio": 2.2208,
+          "resistance": 1.4667
+        }
+      },
+      {
+        "episodes": 50,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.2545,
+          "f1_0": 0.4788,
+          "bce50": 0.2363,
+          "ratio": 3.0506,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 0.9667,
+          "bce0": 0.2478,
+          "f1_0": 0.5262,
+          "bce50": 0.2235,
+          "ratio": 1.6213,
+          "resistance": 1.4667
+        }
+      },
+      {
+        "episodes": 100,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.2483,
+          "f1_0": 0.5395,
+          "bce50": 0.2157,
+          "ratio": 1.7206,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 0.9667,
+          "bce0": 0.2407,
+          "f1_0": 0.5161,
+          "bce50": 0.2152,
+          "ratio": 1.7167,
+          "resistance": 1.4667
+        }
+      },
+      {
+        "episodes": 150,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.2322,
+          "f1_0": 0.5349,
+          "bce50": 0.1921,
+          "ratio": 1.52,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 0.9667,
+          "bce0": 0.2286,
+          "f1_0": 0.5245,
+          "bce50": 0.2054,
+          "ratio": 1.5109,
+          "resistance": 1.4667
+        }
+      }
+    ],
+    "sat": [
+      {
+        "episodes": 0,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.4434,
+          "f1_0": 0.2165,
+          "bce50": 0.3084,
+          "ratio": 2.8922,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 0.9667,
+          "bce0": 0.6211,
+          "f1_0": 0.1808,
+          "bce50": 0.6001,
+          "ratio": 1.8483,
+          "resistance": 0
+        }
+      },
+      {
+        "episodes": 25,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.3163,
+          "f1_0": 0.2119,
+          "bce50": 0.2815,
+          "ratio": 2.765,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 1,
+          "bce0": 0.3359,
+          "f1_0": 0.207,
+          "bce50": 0.3151,
+          "ratio": 3.6056,
+          "resistance": 0
+        }
+      },
+      {
+        "episodes": 50,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.3151,
+          "f1_0": 0.2166,
+          "bce50": 0.1775,
+          "ratio": 1.4733,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 1,
+          "bce0": 0.3316,
+          "f1_0": 0.2051,
+          "bce50": 0.3448,
+          "ratio": 1.6383,
+          "resistance": 0
+        }
+      },
+      {
+        "episodes": 100,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.3054,
+          "f1_0": 0.2123,
+          "bce50": 0.1521,
+          "ratio": 1.7122,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 1,
+          "bce0": 0.3195,
+          "f1_0": 0.2067,
+          "bce50": 0.2122,
+          "ratio": 5.6578,
+          "resistance": 0
+        }
+      },
+      {
+        "episodes": 150,
+        "veteran": {
+          "solved": 1,
+          "bce0": 0.3099,
+          "f1_0": 0.2083,
+          "bce50": 0.2288,
+          "ratio": 1.6789,
+          "resistance": 0
+        },
+        "fresh": {
+          "solved": 1,
+          "bce0": 0.304,
+          "f1_0": 0.2064,
+          "bce50": 0.1871,
+          "ratio": 2.2417,
+          "resistance": 0
+        }
+      }
+    ]
+  },
+  "mix": true,
+  "mazeBefore": {
+    "worlds": 24,
+    "solved": 1,
+    "bce0": 0.3523,
+    "f1_0": 0.5896,
+    "valid0": 0.0417,
+    "ratio": 1.2217,
+    "bce25": 0.2946,
+    "bce50": 0.2117,
+    "bce75": 0.1342,
+    "bySize": {
+      "7": {
+        "f1_0": 0.677,
+        "bce0": 0.297,
+        "ratio": 1.158
+      },
+      "9": {
+        "f1_0": 0.502,
+        "bce0": 0.407,
+        "ratio": 1.286
+      }
+    }
+  },
+  "mazeAfter": {
+    "worlds": 24,
+    "solved": 1,
+    "bce0": 0.3887,
+    "f1_0": 0.5228,
+    "valid0": 0.0833,
+    "ratio": 1.3408,
+    "bce25": 0.3306,
+    "bce50": 0.2633,
+    "bce75": 0.1479,
+    "bySize": {
+      "7": {
+        "f1_0": 0.647,
+        "bce0": 0.337,
+        "ratio": 1.229
+      },
+      "9": {
+        "f1_0": 0.398,
+        "bce0": 0.441,
+        "ratio": 1.452
+      }
+    }
+  }
+}

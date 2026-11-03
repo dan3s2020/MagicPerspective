@@ -1,0 +1,60 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#e6ecef">
+<title>MagicPerspective V10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head>
+<body><main class="page">
+<header class="top"><div class="logo" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 22c4-1 5-9 13-12" fill="none" stroke="#e8a81b" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+  <div><h1>MagicPerspective <span>V10</span></h1><p class="tag">Organul formei soluției, construit din conversație</p></div><p class="health" id="health">se conectează…</p></header>
+
+<section class="lead"><h2>Înainte de primul pas, ghicește forma soluției.</h2>
+<p>„Organismul nu trebuie să primească perspectiva necesară rezolvării problemei. Trebuie să învețe să o construiască din relația dintre propriile acțiuni, observații și consecințele lor.” Vede doar 3×3 în jur; noi vedem harta de sus și, la antrenare, îi spunem exact cât a greșit forma.</p></section>
+
+<section class="bar" aria-label="Control">
+  <label>Lumea<select id="kind"><option value="maze">Labirint 2D</option><option value="dynamic">Labirint cu uși care se schimbă singure</option><option value="graph">Graf de stări (alte reguli)</option><option value="sat">Constrângeri logice (3-SAT)</option></select></label>
+  <label>Mărime labirint<select id="size"><option>7</option><option selected>9</option><option>11</option><option>13</option></select></label>
+  <label>Organismul<select id="who"><option value="organ">Cu organul formei</option><option value="control">Aceeași rețea, fără organul formei</option><option value="untrained">Organ neantrenat</option><option value="classic">Navigare clasică</option></select></label>
+  <div class="buttons"><button id="new">Lume nouă</button><button id="step">Un pas</button><button id="auto" class="primary">Pornește</button><button id="end">Până la capăt</button></div>
+</section>
+
+<section class="duel">
+  <article class="side"><header><h3>Lumea reală</h3><p>doar observatorul o vede: harta și traseele optime</p></header><canvas id="truth" aria-label="Lumea reală cu traseele optime"></canvas></article>
+  <article class="side organ"><header><h3>Perspectiva organismului</h3><p>ce a descoperit, norul formei și linia prezisă</p></header><canvas id="mind" aria-label="Harta internă, norul formei și traseul prezis"></canvas>
+    <dl class="nums"><div><dt>Forma la pasul 0 (F1)</dt><dd id="f1-0">—</dd></div><div><dt>Eroarea formei acum</dt><dd id="bce-now">—</dd></div><div><dt>Pași / optim</dt><dd id="ratio">—</dd></div></dl></article>
+</section>
+
+<section class="block"><h2>Geometria internă</h2>
+  <p>Cum își așază organismul în minte locurile, din relațiile dintre slice-uri: fiecare punct e un loc, poziția lui vine din starea latentă a organului (MDS clasic). Galben: cât de sigur e că forma trece pe acolo; linia: drumul prezis.</p>
+  <canvas id="geo" class="curve" style="aspect-ratio:1.6" aria-label="Geometria internă a organismului"></canvas></section>
+<section class="viewbar">
+  <div class="time"><button id="play" class="icon" aria-label="Redă de la început">▶</button><input id="scrub" type="range" min="0" max="0" value="0" aria-label="Pasul afișat"><output id="scrub-out">pasul 0</output></div>
+  <ul class="key"><li><i class="k-guess"></i>linia prezisă acum</li><li><i class="k-first"></i>linia prezisă la pasul 0</li><li><i class="k-cloud2"></i>norul formei (mai luminos = mai sigur)</li><li><i class="k-true"></i>traseele optime (profesorul)</li><li><i class="k-walk"></i>drumul mers</li><li><i class="k-unc"></i>incertitudine</li></ul>
+  <label class="small" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="show-u"> arată incertitudinea în loc de nor</label>
+  <canvas id="curve" class="curve" aria-label="Eroarea formei după fiecare observație"></canvas>
+  <p class="small">Eroarea formei după fiecare observație (mai jos = mai bine). Linia verticală e pasul afișat.</p>
+</section>
+
+<section class="block"><h2>Învățare</h2>
+  <p>La antrenare, după fiecare formă prezisă, observatorul care vede harta îi spune exact cât a greșit; organul își schimbă parametrii. Toate traseele optime sunt corecte. La test nu mai primește nimic.</p>
+  <div class="row"><label>Plan<select id="plan"><option value="curriculum">Toate trei, de la simplu la greu</option><option value="maze">Doar labirinturi</option><option value="graph">Doar graful de stări</option><option value="sat">Doar constrângeri</option></select></label>
+    <label>Episoade<select id="episodes"><option value="200">200</option><option value="600" selected>600</option><option value="2000">2000</option><option value="6000">6000</option></select></label>
+    <button id="train" class="primary">Antrenează</button><button id="cancel" disabled>Oprește</button></div>
+  <div class="meter"><div id="progress"></div></div><p class="small" id="train-status">—</p>
+  <canvas id="learn" class="curve" aria-label="Forma la pasul 0 pe lumi de verificare, pe parcursul vieții"></canvas>
+  <p class="small">Forma la pasul 0 (F1) pe lumi de verificare, pe parcursul vieții: <b style="color:#e8a81b">labirint</b>, <b style="color:#1f3a93">graf</b>, <b style="color:#0b7a75">constrângeri</b>.</p>
+</section>
+
+<section class="block"><h2>Testele decisive</h2>
+  <p>Aceleași lumi nevăzute pentru toți: cu organul formei, aceeași rețea fără organul formei (aceeași capacitate, același profesor, dar învățată doar pasul următor), organ neantrenat, navigare clasică și linia dreaptă spre țintă.</p>
+  <div class="row"><button id="test" class="primary">Rulează testele</button></div>
+  <div class="verdicts" id="verdicts"></div><div class="table-wrap" id="tables"></div>
+</section>
+
+<section class="block"><h2>Predicții inițiale pe probleme noi</h2>
+  <p>Șase labirinturi pe care nu le-a văzut niciodată: forma pe care o ghicește înainte de primul pas, cu traseele optime peste ea.</p>
+  <div class="row"><button id="gal">Arată</button></div><div class="gallery" id="gallery"></div>
+</section>
+
+<details class="block how"><summary>Specificația</summary><p>Fiecare cerință a acestei versiuni vine dintr-o frază a conversației; lista completă, cu numărul mesajului și testul care o verifică, e în <code>v10/SPEC.md</code>.</p>
+  <div class="row"><a href="/api/export" download="magicperspective-v10.json">Descarcă creierul</a></div></details>
+</main><script type="module" src="app.js"></script></body></html>
