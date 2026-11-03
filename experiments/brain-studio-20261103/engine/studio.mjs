@@ -2,7 +2,7 @@
 // Native adapters continue each checkpoint using its ACTUAL model architecture.
 // The new SharedBrain is one trainable parameter set over maze, graph and symbolic tasks.
 // Evaluator truth is serialized separately; no oracle route enters a learner feature.
-import {Organism7} from '../../../v7/engine/organ.mjs';
+import {Organism7,Organism} from '../../../v7/engine/organ.mjs';
 import {makeWorld as makeTerrain,sense as terrainSense} from '../../../v7/engine/world.mjs';
 import {Episode as TerrainEpisode} from '../../../v7/engine/agent.mjs';
 import {AssociationRule} from '../../graph-dance-20261103/engine/dance.mjs';
@@ -15,7 +15,7 @@ import {buildExperience} from '../../causal-text/engine/training.mjs';
 import {createWorld as makeSymbolic,generateTask,TOOLS} from '../../causal-text/engine/world.mjs';
 import {MLP} from '../../../v7/engine/nn.mjs';
 
-export const KINDS=['universal','v7','graph','dynamic','causal'];
+export const KINDS=['universal','v7','v6','graph','dynamic','causal'];
 export const DOMAINS=['maze','network','text'];
 export const INPUT=16;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -26,6 +26,7 @@ export function makeBrain(kind='universal',seed=19){
  switch(kind){
   case 'universal':return new SharedBrain(seed);
   case 'v7':return new Organism7(seed);
+  case 'v6':return new Organism(seed);
   case 'graph':return new AssociationRule(seed);
   case 'dynamic':return new MessageBrain(seed);
   case 'causal':return new CausalNet(seed);
@@ -36,6 +37,7 @@ export function restoreBrain(kind,snapshot){
  switch(kind){
   case 'universal':return SharedBrain.restore(snapshot);
   case 'v7':return Organism7.restore(snapshot);
+  case 'v6':return Organism.restore(snapshot);
   case 'graph':return AssociationRule.restore(snapshot);
   case 'dynamic':return MessageBrain.restore(snapshot);
   case 'causal':return CausalNet.restore(snapshot);
@@ -48,15 +50,17 @@ const kindOf=(brain)=>brain instanceof SharedBrain?'universal':
 export function brainStats(kind,brain){
  const s=brain.snapshot();return {kind,episodes:brain.episodes||0,
   updates:kind==='universal'?brain.net.updates:kind==='v7'?brain.experts.reduce((n,e)=>n+e.recon.updates+e.doubt.updates,0):
+   kind==='v6'?brain.recon.updates+brain.doubt.updates:
    kind==='graph'?brain.updates:kind==='dynamic'?brain.costUpdates+brain.ruleUpdates:brain.steps,
   samples:kind==='universal'?brain.samples:brain.samples??brain.costUpdates??0,
   weights:kind==='universal'?{W1:s.net.W1,b1:s.net.b1,W2:s.net.W2,b2:s.net.b2}:kind==='v7'?
    {W1:s.experts[0].recon.W1,b1:s.experts[0].recon.b1,W2:s.experts[0].recon.W2,b2:s.experts[0].recon.b2}:
+   kind==='v6'?{W1:s.recon.W1,b1:s.recon.b1,W2:s.recon.W2,b2:s.recon.b2}:
    kind==='graph'?{W1:s.w,b1:[],W2:[],b2:[]}:kind==='dynamic'?
    {W1:s.cost,b1:s.score,W2:s.gate,b2:[s.bias,s.temperature]}:
    {W1:s.w1,b1:s.b1,W2:s.w2,b2:s.b2},
   architecture:kind==='universal'?'16 → 24 → 1 • shared across domains':
-   kind==='v7'?'3 specialists × 13 → {24,16} → 1':
+   kind==='v7'?'3 specialists × 13 → {24,16} → 1':kind==='v6'?'13 → {24,16} → 1':
    kind==='graph'?'9 learned edge associations':
    kind==='dynamic'?'4 cost + 3 attention + 3 gate + 2':
    '23 → 64 → 14 (two 7-way heads)'};
@@ -192,7 +196,7 @@ export function runSharedEpisode(brain,{domain='maze',seed=123,size=11,learn=tru
  };
 }
 export function runNativeEpisode(kind,brain,{seed=1,size=11,learn=true}={}){
- if(kind==='v7'){
+ if(kind==='v7'||kind==='v6'){
   const domain=(seed%2===0?'maze':'relief'),w=makeTerrain(seed,domain,size%2?size:11);
   const ep=new TerrainEpisode(w,brain,{mode:'organ',online:learn,record:true,imagine:4});
   ep.run();if(learn)brain.episodes++;
@@ -251,13 +255,13 @@ export function blindTest(kind,brain,{count=12,size=11,seed=918273,domains=DOMAI
  const snapshot=brain.snapshot(),trained=restoreBrain(kind,snapshot),base=makeBrain(kind,brain.seed);
  const report={count,seed,domains:{},all:{trained:{solved:0,episodes:0,cost:0},untrained:{solved:0,episodes:0,cost:0}}};
  const applicable=kind==='universal'?domains:
-  kind==='v7'?['maze','relief']:kind==='causal'?['text']:['network'];
+  kind==='v7'||kind==='v6'?['maze','relief']:kind==='causal'?['text']:['network'];
  for(const domain of applicable){
   let wins=0,baseWins=0,cost=0,baseCost=0,attempts=0;
   for(let i=0;i<count;i++){
    const n=seedOf(seed,1000*i+DOMAINS.indexOf(domain)+2);
    // Native V7 alternates maze/relief deterministically; require a seed parity matching domain.
-   const actualSeed=kind==='v7'?((n&~1)+(domain==='relief'?1:0)):n;
+   const actualSeed=(kind==='v7'||kind==='v6')?((n&~1)+(domain==='relief'?1:0)):n;
    const a=kind==='universal'?runSharedEpisode(trained,{domain,seed:actualSeed,size,learn:false,explore:0}):
      nativeTrial(kind,trained,{seed:actualSeed,size});
    const b=kind==='universal'?runSharedEpisode(base,{domain,seed:actualSeed,size,learn:false,explore:0}):
@@ -300,5 +304,5 @@ export function functionSamples(kind,brain,{domain='maze'}={}){
  if(kind==='causal')return Array.from({length:41},(_,i)=>{
   const v=i/40,x=[v,.5,1,0,0,...Array(18).fill(.5)];return {x:v,y:brain.predict([Math.min(6,Math.floor(v*7)),3],'amber',Array(18).fill(.5)).distribution[0][0]};
  });
- return Array.from({length:41},(_,i)=>({x:i/40,y:brain.experts[0].recon.forward(Array(13).fill(i/40))}));
+ return Array.from({length:41},(_,i)=>({x:i/40,y:(kind==='v6'?brain.recon:brain.experts[0].recon).forward(Array(13).fill(i/40))}));
 }
