@@ -36,8 +36,10 @@ export function applyReaction(inventory,reaction){
 const normalized=i=>JSON.stringify(Object.fromEntries(Object.entries(i).filter(([,n])=>n>0).sort((a,b)=>a[0].localeCompare(b[0]))));
 export function planChemistry(initial,{goal='ethanol',amount=1,maxDepth=6}={}){
   if(!FORMULAS[goal]||!Number.isInteger(amount)||amount<1||amount>20||!Number.isInteger(maxDepth)||maxDepth<1||maxDepth>9)throw Error('Invalid goal');
+  // Validate the original inventory BEFORE normalization; negative amounts must not disappear.
+  const available=atomCounts(initial);
   const start=Object.fromEntries(Object.entries(initial).filter(([,v])=>v>0));
-  const available=atomCounts(start),needed=atomCounts({[goal]:amount});
+  const needed=atomCounts({[goal]:amount});
   const deficits=Object.fromEntries(ELEMENTS.map(e=>[e,Math.max(0,needed[e]-available[e])]));
   if(Object.values(deficits).some(v=>v>0))
     return {possible:false,reason:'Insufficient atoms in this closed system',deficits,available,needed,steps:[]};
