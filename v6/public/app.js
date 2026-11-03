@@ -35,7 +35,8 @@ function chart(history){
  g.fillStyle='#9cb0c8';g.fillText('Episoade '+maxEp,left,bottom+22);
 }
 function renderTraining(s){
- $('episodes-trained').textContent=s.model.episodes.toLocaleString('ro-RO');
+ const completed=s.training?.running?s.model.episodes+s.training.done:(s.lastTraining?.episodes??s.model.episodes);
+ $('episodes-trained').textContent=completed.toLocaleString('ro-RO');
  $('samples').textContent=s.model.samples.toLocaleString('ro-RO');
  $('updates').textContent=s.model.steps.toLocaleString('ro-RO');
  $('quality').textContent=s.model.bestQuality===null?'—':s.model.bestQuality.toFixed(3);
