@@ -6,7 +6,12 @@ import {Episode,MODES,shapeMatch} from './agent.mjs';
 export const SEEDS={train:6000013,validation:6060607,test:6121211};
 const seedOf=(b,i)=>((b>>>0)+i*7919)>>>0;
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
-export function liveEpisode(org,seed,kind,size){const ep=new Episode(makeWorld(seed,kind,size),org,{mode:'organ',online:true,record:false});ep.run();org.episodes++;return ep.summary();}
+export function liveEpisode(org,seed,kind,size,{record=false,onEpisode=null}={}){
+ const ep=new Episode(makeWorld(seed,kind,size),org,{mode:'organ',online:true,record});
+ ep.run();org.episodes++;
+ if(onEpisode)onEpisode(ep);
+ return ep.summary();
+}
 function brainFor(mode,org){return mode==='organ-untrained'?newBrainLike(org):restoreBrain(org.snapshot());}
 export function evaluate(org,{seed=SEEDS.test,count=30,size=15,kind='all',modes=MODES,extra={}}={}){
   const out={seed,count,size,kind,modes:{},kinds:{}};
@@ -22,13 +27,16 @@ export const score=m=>m.match0+m.meanMatch-2*((m.ratio??3)-1)-.03*m.surprises-.0
 // Moments of its life worth keeping, so we can later see how its imagination formed.
 export const MILESTONES=[0,5,15,40,100,250,600,1500,4000,10000,20000];
 export function lightSnapshot(org){const s=JSON.parse(JSON.stringify(org.snapshot()));const strip=o=>{if(o&&typeof o==='object'){delete o.m;delete o.v;for(const v of Object.values(o))strip(v);}};strip(s);return s;}
-export async function train(org,{episodes=200,size=15,validationCount=24,onProgress=()=>{},cancel=()=>false,onMilestone=()=>{}}={}){
+export async function train(org,{episodes=200,size=15,validationCount=24,onProgress=()=>{},cancel=()=>false,onMilestone=()=>{},seedOffset=null,onEpisode=null,previewEvery=10}={}){
   if(MILESTONES.includes(org.episodes))onMilestone(org.episodes,lightSnapshot(org));
   if(!Number.isInteger(episodes)||episodes<1||episodes>20000)throw Error('Invalid number of episodes');
   const every=Math.max(10,Math.floor(episodes/15)),history=[],snaps=[];let best=null,bestSnapshot=null;
   const control=evaluate(org,{seed:SEEDS.validation,count:validationCount,size,kind:'relief',modes:['classic']}).modes.classic;
   for(let i=0;i<episodes;i++){if(cancel())break;
-    liveEpisode(org,seedOf(SEEDS.train,org.episodes),KINDS[i%KINDS.length],size);
+    const preview=typeof onEpisode==='function'&&(i===0||(i+1)%previewEvery===0);
+    liveEpisode(org,seedOf(SEEDS.train,seedOffset===null?org.episodes:seedOffset+i),
+      KINDS[(seedOffset===null?i:seedOffset+i)%KINDS.length],size,
+      {record:preview,onEpisode:preview?onEpisode:null});
     if(MILESTONES.includes(org.episodes))onMilestone(org.episodes,lightSnapshot(org));
     if((i+1)%every===0||i===episodes-1){
       const v=evaluate(org,{seed:SEEDS.validation,count:validationCount,size,kind:'relief',modes:['organ']}).modes.organ;

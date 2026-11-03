@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id);
-let state=null,auto=null,busy=false,replayIndex=-1,selectedNode=0,lastPaint=0;
+let state=null,auto=null,busy=false,replayIndex=-1,selectedNode=0,lastPaint=0,lastTrainingPreview=null;
 const fmt=(x,d=3)=>Number.isFinite(x)?Number(x).toFixed(d):'—';
 async function get(){const r=await fetch('/api/state',{cache:'no-store'}),body=await r.json();if(!r.ok)throw Error(body.error||r.status);return body;}
 async function post(endpoint,data={}){const r=await fetch('/api/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),result=await r.json();if(!r.ok)throw Error(result.error||r.status);return result;}
@@ -64,16 +64,22 @@ function resultTable(r){if(!r)return '<p>Nu există încă evaluare. Apasă Blin
  const cells=Object.entries(r.modes).map(([k,v])=>`<tr><td>${names[k]||k}</td><td>${(100*v.success).toFixed(1)}%</td><td>${fmt(v.penalizedCost,2)}</td><td>${fmt(v.initialF1,3)}</td><td>${fmt(v.coherence,3)}</td></tr>`).join('');
  return `<p>Test pe ${r.count} lumi nevăzute · BCE conexiuni: ${fmt(r.linkBCE.balanced,4)} · Costul include penalitate pentru eșec.</p><table><thead><tr><th>Organism</th><th>Succes</th><th>Cost penalizat ↓</th><th>F1 inițial ↑</th><th>Coerență</th></tr></thead><tbody>${cells}</tbody></table>`;
 }
-function display(s,redraw=true){state=s;const ep=s.episode,p=s.progress,frame=selectedFrame(ep);
- $('connection').textContent='● LOCAL · :3040';$('metric-episodes').textContent=s.model.episodes;
+function display(s,redraw=true){
+ const previous=state?.progress?.running;
+ state=s;const ep=s.episode,p=s.progress;
+ if(p?.running&&p.previewSeed!==null&&p.previewSeed!==undefined&&p.previewSeed!==lastTrainingPreview){
+   lastTrainingPreview=p.previewSeed;replayIndex=0;
+ }else if(previous&&!p?.running){lastTrainingPreview=null;replayIndex=-1;}
+ const frame=selectedFrame(ep);
+ $('connection').textContent='● LOCAL · :3040';$('metric-episodes').textContent=p?.unlimited?(s.model.episodes+' + '+p.done+' în curs'):s.model.episodes;
  $('metric-sync').textContent=fmt(frame.localCoherence,3);$('metric-known').textContent=frame.known.length;
  $('metric-shape').textContent=(frame.route.length-1)+' · '+(ep.current.verified?'confirmat':'ipotetic');
  $('results').innerHTML=resultTable(s.assessment);
  $('family').value=s.options.family;$('nodes').value=String(s.options.n);$('dance').value=s.options.dance?'yes':'no';$('online').value=s.options.online?'yes':'no';
  const taskBusy=!!p?.running;for(const id of ['new','step','auto','run','train','test','family','nodes','dance','online','episodes'])$(id).disabled=taskBusy;
  $('stop').disabled=!taskBusy;$('step').disabled=taskBusy||ep.solved;
- if(p){$('progress').style.width=(100*p.done/Math.max(1,p.total))+'%';
-  $('status').textContent=p.running?'Antrenare reală: '+p.done+'/'+p.total+' episoade · BCE bun '+fmt(p.best,4):p.error?'Eroare training: '+p.error:(p.selected||'Training finalizat');}
+ if(p){$('progress').style.width=p.unlimited?'100%':(100*p.done/Math.max(1,p.total))+'%';
+  $('status').textContent=p.running?(p.unlimited?'∞ Antrenare continuă · '+p.done+' lumi · cea mai recentă '+(p.preview?.info?.family||'lume'):'Antrenare reală: '+p.done+'/'+p.total+' episoade · BCE bun '+fmt(p.best,4)):p.error?'Eroare training: '+p.error:(p.selected||'Training finalizat');}
  else {$('status').textContent=s.notice||(ep.solved?'Obiectiv atins!':`Pas ${ep.steps} · efort ${fmt(ep.effort,1)} · ipoteză actualizată`);$('progress').style.width='0%';}
  $('auto').textContent=auto?'■ Pauză':'▶ Auto explorare';
  $('replay').max=String(ep.history.length-1);$('replay').value=String(replayIndex<0?ep.history.length-1:Math.min(replayIndex,ep.history.length-1));
@@ -107,3 +113,8 @@ let prevRunning=false;
 setInterval(async()=>{if(busy)return;try{const s=await get();if(s.progress?.running||prevRunning){if(s.progress?.running!==prevRunning)replayIndex=-1;display(s);}
  prevRunning=!!s.progress?.running;}catch(e){$('connection').textContent='Connection error';}},1100);
 get().then(s=>{display(s);requestAnimationFrame(animate);}).catch(e=>{$('status').textContent='Server inaccesibil: '+e.message;});
+
+// Replay REAL graph worlds encountered by training, on the original animated network canvas.
+setInterval(()=>{if(!state?.progress?.running||state.progress.previewSeed==null||busy||replayIndex<0)return;
+ if(replayIndex<state.episode.history.length-1){replayIndex++;paint(performance.now());}
+},130);
