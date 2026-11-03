@@ -75,5 +75,10 @@ test('vault can select any supported original saved brain without mutating its s
   await assert.rejects(()=>vault.load('saved:../../escape'));
   const imported=await vault.import({brain:makeBrain('graph',77).snapshot()},'Graph imported');
   assert.equal((await vault.load(imported)).kind,'graph');
+  const archived=await vault.import({brain:{schema:999,unknown:'old weights'}},'Unsupported original');
+  const archivedBrain=await vault.load(archived);
+  assert.equal(archivedBrain.kind,'archive');
+  assert.equal(archivedBrain.trainable,false);
+  assert.ok((await vault.list()).some(x=>x.id===archived&&x.trainable===false));
  }finally{await rm(root,{recursive:true,force:true})}
 });
