@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - feature/V4-PERSPECTIVE-ESCAPE-20261103
+      - experiment/CAUSAL-TEXT-LAB-20261103
   pull_request:
     branches:
       - main
@@ -30,3 +31,14 @@ jobs:
         run: node --test v4/escape-tests/*.test.mjs
       - name: Escape held-out numeric and projection benchmark
         run: node v4/scripts-escape-benchmark.mjs 100 100
+      - name: Existing V6 horizon world regression tests
+        run: node --test v6/tests/*.test.mjs
+      - name: Causal Text Lab and HTTP regression tests
+        run: node --test experiments/causal-text/tests/*.test.mjs
+      - name: V6 blind causal-text benchmark
+        run: |
+          node experiments/causal-text/benchmark.mjs 120 9 17
+          node experiments/causal-text/benchmark.mjs 2000 30 17
+          node experiments/causal-text/benchmark.mjs 2000 30 23
+      - name: Active causal hypothesis versus random-query benchmark
+        run: node --input-type=module -e "import {evaluateHypotheses} from './experiments/causal-text/engine/hypotheses.mjs'; for (const extra of [0,2,4,6,9]) console.log('CAUSAL_BENCH',JSON.stringify(evaluateHypotheses({worlds:60,seed:6300019,extra,goalsPerWorld:3})))"
