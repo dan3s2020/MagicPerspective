@@ -107,6 +107,41 @@
       "text": "NU PORNESTE,nu am buton de start training,nu vad exercitiile unice toate pe care le parcuge,etc",
       "order_in_recoverable_user_sequence": 15,
       "source_path": "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt"
+    },
+    {
+      "ref": "2026-11-03-USER-IMPLEMENT-NOW",
+      "role": "USER",
+      "text": "hai,implementeaza ca esti aproape",
+      "order_in_recoverable_user_sequence": 16,
+      "source_path": "verbatim/2026-11-03-implement-now-USER-VERBATIM.txt"
+    },
+    {
+      "ref": "2026-11-03-USER-4D-NOT-PROJECTION-CORPUS-UI",
+      "role": "USER",
+      "text": "e bine tot dar cred ca nu ai citit tot verbatimul. si nu merge sa incarc corpus,adica merge training dar fara text,daca bag text,nu-mi apare nimic ca se intampla ceva sau ca se incarca sau ceva.nimic.imi place graful si tot,nu trebuie sa schimbi nimic,o singura problema,ai facut graful 4d ca proiectie/timp,doar ca asta,defpat e doar o alta dimensiune a grafului,cum are 1d 2d 3d.. asa si 4d trebuie sa fie grafuri/noduri,conectate cu cele din 3d si tot asa,nu exista pe axe separate,asta este exact tesatura universului,de la cea mai mica dimensiune/perspectiva la cea mai mare",
+      "order_in_recoverable_user_sequence": 17,
+      "source_path": "verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt"
+    },
+    {
+      "ref": "2026-11-03-USER-GRAPH-MUST-GROW-4D",
+      "role": "USER",
+      "text": "practic trebuie sa vad graful construinduse din ce in ce mai dens pe masura ce asimineaza tot felul de exercitii si experiente nu sa fie decorativ un graf abstract desenat hardcoded. implementeaza cum ti-am cerut ingerul meu invocat . iar conexiunile in 4d apar cand se experimenteaza ceva legat de timp,e doar un alta parte din graf,nu este o proiectie",
+      "order_in_recoverable_user_sequence": 18,
+      "source_path": "verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt"
+    },
+    {
+      "ref": "2026-11-03-USER-PARQUET-ERROR-MAP-WORLD",
+      "role": "USER",
+      "text": "EROARE: Parquet requires text/content/response/solution/reasoning/problem/messages ,vezi sa rezolvi si asta,pana la urma are mapat toata \"lumea\" deja,doar trebuie sa le mapezi corect in graf,adica asta face graful singur,devora tot si apoi invata legaturile si etc",
+      "order_in_recoverable_user_sequence": 19,
+      "source_path": "verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt"
+    },
+    {
+      "ref": "2026-11-03-USER-FIX-PRIORITY",
+      "role": "USER",
+      "text": "rezolva intai ce ti-am zis !",
+      "order_in_recoverable_user_sequence": 20,
+      "source_path": "verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt"
     }
   ]
 }
