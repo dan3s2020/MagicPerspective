@@ -51,7 +51,11 @@ function RestoreMissingV7Source([string]$Zip, [string]$Target) {
     if (-not (Test-Path -LiteralPath $Zip -PathType Leaf)) {
         throw "Original V7 source ZIP not found: $Zip"
     }
-    $recover = Join-Path "$env:USERPROFILE\Downloads" ("Portal4D_V7_RECOVER_" + [DateTime]::UtcNow.ToString("yyyyMMdd_HHmmssfff"))
+    $downloadRoot = Join-Path $env:USERPROFILE "Downloads"
+    if (-not (Test-Path -LiteralPath $downloadRoot)) {
+        New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
+    }
+    $recover = Join-Path $downloadRoot ("Portal4D_V7_RECOVER_" + [DateTime]::UtcNow.ToString("yyyyMMdd_HHmmssfff"))
     New-Item -ItemType Directory -Path $recover -ErrorAction Stop | Out-Null
     # Fresh directory, never -Force. No user source or weights are overwritten.
     Expand-Archive -LiteralPath $Zip -DestinationPath $recover -ErrorAction Stop
