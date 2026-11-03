@@ -1,6 +1,7 @@
 import {drawTerrain,drawCurve} from './draw.js';
 const $=id=>document.getElementById(id);
 let S=null,busy=false,auto=null,play=null,view='imag',idx=0,follow=true,tab='relief';
+let previewIndex=0,lastPreviewId=null;
 const cache={key:null,first:{}};const frames={organ:null,classic:null};
 const pct=x=>x==null?'—':Math.round(x*100)+'%',times=x=>x==null?'—':x.toFixed(2).replace('.',',')+'×';
 async function api(p,b){const r=await fetch('/api/'+p,{method:b===undefined?'GET':'POST',headers:b===undefined?{}:{'Content-Type':'application/json'},body:b===undefined?undefined:JSON.stringify(b)});
@@ -10,7 +11,20 @@ const lastIndex=()=>Math.max(S.organ.frames.length,S.classic.frames.length)-1;
 async function loadFrames(){const key=S.cfg.seed+'|'+S.cfg.kind+'|'+S.cfg.size;
   if(cache.key!==key){cache.key=key;cache.first.organ=(await api('frame?side=organ&i=0')).route;cache.first.classic=(await api('frame?side=classic&i=0')).route;}
   [frames.organ,frames.classic]=await Promise.all([api('frame?side=organ&i='+idx),api('frame?side=classic&i='+idx)]);draw();}
-function draw(){if(!S||!frames.organ)return;
+function draw(){if(!S)return;
+  const live=S.task?.running?S.task.preview:null;
+  if(live?.organFrames?.length){
+    if(lastPreviewId!==live.id){lastPreviewId=live.id;previewIndex=0;}
+    const i=previewIndex%live.organFrames.length;
+    const j=Math.min(previewIndex,live.classicFrames.length-1);
+    drawTerrain($('map-organ'),live.world,live.organFrames[i],{view,first:live.organFrames[0].route});
+    drawTerrain($('map-classic'),live.world,live.classicFrames[j],{view,classic:true,first:live.classicFrames[0].route});
+    $('scrub-out').textContent='antrenament · pas '+live.organFrames[i].step;
+    $('hint').textContent='REPLAY episod real: '+(live.kind==='maze'?'Labirint':'Relief')+
+      ' · observații, trasee și corecții, nu o animație inventată.';
+    return;
+  }
+  if(!frames.organ)return;
   drawTerrain($('map-organ'),S.world,frames.organ,{view,first:cache.first.organ});
   drawTerrain($('map-classic'),S.world,frames.classic,{view,classic:true,first:cache.first.classic});
   $('scrub-out').textContent='pasul '+idx;
@@ -28,9 +42,10 @@ function render(s){S=s;const run=!!s.task?.running,done=s.organ.finished&&s.clas
   nums();
   for(const id of ['new','step','auto','run','evaluate','train','reset','kind','size','left'])$(id).disabled=run||((id==='step'||id==='run'||id==='auto')&&done);
   $('cancel').disabled=!run;
-  $('health').textContent=run?`antrenează ${s.task.done}/${s.task.total}`:`creier: ${s.brain.episodes} terenuri trăite`;
-  if(s.task){$('progress').style.width=100*s.task.done/s.task.total+'%';
-    $('train-status').textContent=run?`A trăit ${s.task.done} din ${s.task.total} terenuri.`:s.task.error?'Eroare: '+s.task.error:`Gata: ${s.task.done} terenuri. ${s.task.selected||''}`;drawCurve($('curve'),s.task.history);}
+  $('health').textContent=run?(s.task.unlimited?'∞ antrenează · '+s.task.done+' episoade':'antrenează '+s.task.done+'/'+s.task.total):'creier: '+s.brain.episodes+' terenuri trăite';
+  if(s.task){$('progress').style.width=s.task.unlimited?'100%':100*s.task.done/s.task.total+'%';
+    $('progress').classList.toggle('unlimited',!!s.task.unlimited&&run);
+    $('train-status').textContent=run?(s.task.unlimited?'∞ Episoade reale: '+s.task.done+' · '+(s.task.preview?.kind||'pregătire')+' · '+(s.task.selected||'învățare în curs'):'A trăit '+s.task.done+' din '+s.task.total+' terenuri.'):s.task.error?'Eroare: '+s.task.error:`Gata: ${s.task.done} terenuri. ${s.task.selected||''}`;drawCurve($('curve'),s.task.history);}
   else drawCurve($('curve'),[]);
   bars();}
 function bars(){const t=S.test,box=$('bars');box.replaceChildren();
@@ -67,11 +82,14 @@ $('play').onclick=()=>{if(play){stopPlay();return;}stopAuto();follow=false;idx=0
   play=setInterval(()=>{if(busy)return;$('scrub').value=idx;guard(loadFrames);idx++;if(idx>lastIndex()){stopPlay();follow=true;}},320);};
 for(const [id,v] of [['v-imag','imag'],['v-real','real']])$(id).onclick=()=>{view=v;for(const b of ['v-imag','v-real']){$(b).classList.toggle('on',b===id);$(b).setAttribute('aria-pressed',String(b===id));}draw();};
 for(const [id,v] of [['t-relief','relief'],['t-maze','maze']])$(id).onclick=()=>{tab=v;for(const b of ['t-relief','t-maze']){$(b).classList.toggle('on',b===id);$(b).setAttribute('aria-pressed',String(b===id));}bars();};
-$('train').onclick=()=>guard(async()=>{stopAuto();await api('train',{episodes:Number($('episodes').value),size:Number($('size').value)});render(await api('state'));});
+$('train').onclick=()=>guard(async()=>{stopAuto();stopPlay();await api('train',{episodes:Number($('episodes').value),size:Number($('size').value)});render(await api('state'));draw();});
 $('cancel').onclick=()=>guard(async()=>{await api('cancel',{});});
 $('evaluate').onclick=()=>guard(async()=>{stopAuto();$('verdict').textContent='Rulez 40 de terenuri noi pentru fiecare organism…';await new Promise(r=>setTimeout(r,30));render(await api('evaluate',{count:40,size:Number($('size').value)}));dispatchEvent(new Event('brain-changed'));});
 $('reset').onclick=()=>guard(async()=>{if(!confirm('Ștergi doar creierul V6? Versiunile anterioare rămân.'))return;await apply(await api('reset',{}));dispatchEvent(new Event('brain-changed'));});
 let wasRunning=false;
-setInterval(()=>{if(!S||busy)return;const r=!!S.task?.running;if(r||wasRunning)guard(async()=>{const s=await api('state');wasRunning=!!s.task?.running;if(!wasRunning&&r){await apply(s);dispatchEvent(new Event('brain-changed'));}else render(s);});},900);
+setInterval(()=>{if(!S||busy)return;const r=!!S.task?.running;if(r||wasRunning)guard(async()=>{const s=await api('state');wasRunning=!!s.task?.running;if(!wasRunning&&r){lastPreviewId=null;await apply(s);dispatchEvent(new Event('brain-changed'));}else{render(s);if(r)draw();}});},900);
 addEventListener('resize',()=>{draw();if(S?.task)drawCurve($('curve'),S.task.history);});
 refresh().catch(e=>{$('health').textContent='Nu găsesc serverul: '+e.message;});
+
+// Replays the most recently completed real training episode on the original two map canvases.
+setInterval(()=>{if(!S?.task?.running||!S.task.preview||busy)return;previewIndex++;draw();},185);
