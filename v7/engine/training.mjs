@@ -35,7 +35,7 @@ export async function train(org,{episodes=200,size=15,validationCount=24,onProgr
   for(let i=0;i<episodes;i++){if(cancel())break;
     const preview=typeof onEpisode==='function'&&(i===0||(i+1)%previewEvery===0);
     liveEpisode(org,seedOf(SEEDS.train,seedOffset===null?org.episodes:seedOffset+i),
-      KINDS[(seedOffset===null?org.episodes:seedOffset+i)%KINDS.length],size,
+      KINDS[(seedOffset===null?i:seedOffset+i)%KINDS.length],size,
       {record:preview,onEpisode:preview?onEpisode:null});
     if(MILESTONES.includes(org.episodes))onMilestone(org.episodes,lightSnapshot(org));
     if((i+1)%every===0||i===episodes-1){
