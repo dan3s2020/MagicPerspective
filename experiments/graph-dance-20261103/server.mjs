@@ -15,7 +15,7 @@ let rule=new AssociationRule(19),best=Infinity,progress=null,assessment=null,can
 let options={seed:20261103,n:33,family:'mixed',dance:true,online:true},episode;
 try{const p=existsSync(livePath)?livePath:existsSync(bestPath)?bestPath:null;
  if(p){const snapshot=JSON.parse(await readFile(p,'utf8'));rule=AssociationRule.restore(snapshot.rule);best=snapshot.best??Infinity;
-    trainingCursor=Number.isInteger(snapshot.trainingCursor)&&snapshot.trainingCursor>=0?snapshot.trainingCursor:rule.episodes;
+    trainingCursor=Number.isInteger(snapshot.trainingCursor)&&snapshot.trainingCursor>=0?snapshot.trainingCursor:1000000+rule.episodes;
     notice='Model restaurat din '+path.basename(p);}
 }catch(e){notice='Checkpoint incompatibil: '+e.message;console.error(e);}
 function buildEpisode(){episode=new Episode(makeWorld(options.seed,options.n,options.family),rule,{dance:options.dance,online:options.online});}
