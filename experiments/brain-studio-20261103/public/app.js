@@ -337,6 +337,26 @@ function drawAll(){
  $('frame-info').textContent='Acțiune '+(f.step??'—')+' · nod '+(f.current??f.position??'—')+
   ' · cost '+number(f.cost??f.effort,1)+' · '+(out.solved?'obiectiv atins':'fără succes încă');
 }
+async function pollTraces(){
+ if(tracePolling||!S?.trainable||document.hidden)return;
+ if(S.run?.status!=='running'&&(S.traceSequence||0)<=traceCursor)return;
+ tracePolling=true;
+ try{
+  const response=await api('traces?after='+traceCursor);
+  if(response.dropped)traceDropped+=response.dropped;
+  for(const t of response.traces||[]){
+   if(t.id<=traceCursor)continue;
+   traceCursor=t.id;
+   if(!t.preview?.meta?.abstract)continue;
+   traceQueue.push(t);
+   if(traceQueue.length>12){traceQueue.shift();traceDropped++;}
+  }
+  if(traceQueue.length&&(!displayed||displaySource!=='training')){
+   const t=traceQueue.shift();showDisplayed(t.preview,'training');
+  }
+ }catch(e){status('Eroare flux grafic: '+e.message,false);}
+ finally{tracePolling=false;}
+}
 async function refresh(){
  if(polling)return;polling=true;
  try{
@@ -351,11 +371,26 @@ async function refresh(){
  finally{polling=false}
 }
 setInterval(()=>{if(!S||document.hidden)return;animation++;
- if(framePlaying&&frames.length){frameNo=(frameNo+1)%frames.length}
- drawAll();},220);
+ if(framePlaying&&frames.length){
+  const speed=Number($('play-speed')?.value||1);
+  if(frameNo+speed<frames.length)frameNo+=speed;
+  else if(traceQueue.length){
+   const t=traceQueue.shift();showDisplayed(t.preview,'training');
+  }else frameNo=0;
+ }
+ drawAll();
+},220);
 setInterval(refresh,950);
+setInterval(pollTraces,500);
 setInterval(()=>{if(S&&!busy&&document.visibilityState==='visible')loadLibrary().catch(()=>{});},15000);
 (async()=>{
- try{await refresh();await loadLibrary();drawAll();}
- catch(e){status('Conexiune eșuată: '+e.message,false)}
+ try{
+  await refresh();await loadLibrary();
+  if(S?.trainable&&!S.preview&&S.run.status!=='running'){
+   const observed=await action('probe',{domain:'maze',seed:471993,size:11},
+    'Inspecție reală a creierului actual');
+   if(observed?.preview)showDisplayed(observed.preview,observed.previewOrigin);
+  }
+  drawAll();
+ }catch(e){status('Conexiune eșuată: '+e.message,false)}
 })();
