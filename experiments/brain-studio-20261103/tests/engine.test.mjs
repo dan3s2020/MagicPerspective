@@ -71,7 +71,7 @@ test('vault can select any supported original saved brain without mutating its s
   const id=await vault.saveBrain('v7',selected.brain,'Test 121 ep');
   const reread=await vault.load(id);assert.equal(reread.brain.episodes,121);
   assert.equal(await readFile(file,'utf8'),exact,'Original checkpoint overwritten');
-  assert.throws(()=>detect({what:'unknown'}).kind==='universal'?Error('Wrong'):'');
+  assert.equal(detect({what:'unknown'}).kind,'archive');
   await assert.rejects(()=>vault.load('saved:../../escape'));
   const imported=await vault.import({brain:makeBrain('graph',77).snapshot()},'Graph imported');
   assert.equal((await vault.load(imported)).kind,'graph');
