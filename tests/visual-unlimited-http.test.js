@@ -84,7 +84,7 @@ test('original Graph Dance UI can train indefinitely, show nodes, animate actual
   for(let i=0;i<180;i++){
    s=await state(r.base);
    if(s.progress?.previewSeed!=null){
-    seen=true;const p=s.progress.preview;
+    seen=true;const p=s.episode;
     assert.equal(p.info.n,13);
     assert.ok(p.history.length>=2);
     assert.ok(p.evaluator.edges.length>0);
