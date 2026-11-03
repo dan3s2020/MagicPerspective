@@ -7,7 +7,13 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 test('Termux launcher refuses occupied port 3044 without killing existing server or wiping data',{timeout:15000},async(t)=>{
- const listener=createServer();
+ const sockets=new Set();
+ const listener=createServer(socket=>{
+  sockets.add(socket);socket.on('close',()=>sockets.delete(socket));
+  const body=JSON.stringify({ok:true,status:'running',episodes:42});
+  socket.end('HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n'+
+    'Content-Length: '+Buffer.byteLength(body)+'\r\nConnection: close\r\n\r\n'+body);
+ });
  await new Promise((resolve,reject)=>{
   listener.once('error',reject);
   listener.listen(3044,'127.0.0.1',resolve);
@@ -29,6 +35,7 @@ test('Termux launcher refuses occupied port 3044 without killing existing server
   assert.match(err,/PORTUL 3044 ESTE DEJA OCUPAT/);
   assert.ok(listener.listening,'Preflight killed existing server');
  }finally{
+  for(const socket of sockets)socket.destroy();
   await new Promise(resolve=>listener.close(resolve));
  }
 });
