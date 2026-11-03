@@ -92,3 +92,16 @@ A separate **held-out benchmark** measures cost MAE on the same fixed unseen edg
 The original model architecture, prediction rule, checkpoint schema (`3`), endless-training controls and `data/` directory remain unchanged. The live episode ring buffer is volatile, so after server restart there are no traces until a new episode is trained. Last saved model weights and episode count are restored in paused mode. Browser closure stops only the visualization, not the server-side training process.
 
 Run `npm test` and verify that `/api/train/live` includes frames from actual training when the trainer is active. The experimental UI cannot claim emergent general intelligence, universal form prediction, or superiority over Bellman from these observations.
+
+## Live Research Console — actual training visualization (2026-11-03)
+
+The default `/` page is a **training-first console**. Start/Pause/Resume/Save are permanently visible on mobile. Below them, two synchronized canvas views replay a **completed, real training episode**: the collective's locally assembled edge views, messages and predicted route; and the evaluator-only current physical connections and current oracle route. The evaluator truth is never sent to the learning function. This display is replayed after each real episode, not a fabricated simulation. The visual playback can lag behind fast training and intentionally skips older episodes to stay near the latest results.
+
+- The primary pane renders only recorded node-local edge observations (`frame.links`), learned potentials, the hypothesized route and traversed path. The evaluator pane uses separately recorded physical edges and the shortest route **recomputed for that time step** (`frame.truthLinks`, `frame.oracle`).
+- Each replay frame labels the attempted movement, observed changes and revised route. The final weight-shift shown next to a replay belongs to the **whole episode**, not each frame.
+- The playback speed, play/pause, scrubbing and jump to latest affect visualization only; training continues independently in Termux.
+- Quantitative evidence is separated: held-out sensor-cost MAE from before/after training on fixed unseen seeds; held-out initial route F1 (before vs after on the **same fixed validation networks**); and trained navigation cost versus fixed Bellman. None of these is a substitute for the others.
+- The API `/api/train/live?since=EPISODE&limit=12` incrementally returns actual completed traces; the latest two traces are saved in the same atomic version-3 checkpoint as the model and restored on restart. This does **not** modify the model's checkpoint schema or weights.
+- The independent manual test lab remains below the training display. Existing routes, actions, autosave, reset protection and training endpoints are not removed.
+
+Re-run tests with `npm test`. The `tests/training-visibility.test.mjs` suite checks learner/truth separation, real frames, and a solution shape visible on both views; the server test checks persisted replay and restoration after restart.

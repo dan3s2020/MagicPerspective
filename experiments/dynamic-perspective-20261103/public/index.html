@@ -1,54 +1,80 @@
 <!doctype html>
-<html lang="ro"><head>
+<html lang="ro">
+<head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#081020"><title>MagicPerspective · Training LIVE</title>
-<link rel="stylesheet" href="/style.css">
-</head><body>
-<header class="top"><div class="brand"><div class="logo">✧</div><div><strong>MAGICPERSPECTIVE</strong><small>TRAINING LAB · Dynamic Perspective</small></div></div><span id="status" class="status">CONECTARE...</span></header>
-<nav class="toolbar" aria-label="Comenzi training permanent vizibile">
- <button id="start" class="primary">▶ START ∞</button><button id="pause">Ⅱ PAUZĂ</button>
- <button id="resume">↻ CONTINUĂ</button><button id="save">▣ SALVEAZĂ</button>
+<meta name="theme-color" content="#070c16"><meta name="description" content="MagicPerspective – antrenare reală, replay și dovezi măsurabile.">
+<title>MagicPerspective · Dynamic Perspective LIVE Research Console</title><link rel="stylesheet" href="/style.css?v=2">
+</head>
+<body>
+<header class="top">
+ <div class="brand"><div class="logo">✧</div><div><strong>MAGIC<span>PERSPECTIVE</span></strong><small>LIVE RESEARCH CONSOLE · DYNAMIC WORLDS</small></div></div>
+ <div class="server-flag"><span id="online-dot" aria-hidden="true"></span><span id="status" role="status">CONECTARE...</span></div>
+</header>
+<nav class="toolbar" aria-label="Comenzi training întotdeauna accesibile">
+ <button id="start" class="primary" type="button">▶ START ∞</button>
+ <button id="pause" type="button">Ⅱ PAUZĂ</button>
+ <button id="resume" type="button">↻ CONTINUĂ</button>
+ <button id="save" type="button">▣ SALVEAZĂ</button>
 </nav>
 <main>
- <section class="hero live-panel" id="live-panel">
-  <div class="section-head"><div><div class="kicker"><span class="pulse"></span> 01 / TRAINING LIVE · EPISOADE REALE</div><h1>Vezi ce învață organismul.</h1></div><span class="mini-status" id="live-state">ÎNCĂRCARE</span></div>
-  <p class="explain">Acesta este un replay animat al unui <b>episod real de training încheiat</b>, nu o animație demonstrativă. În paralel, antrenarea continuă în Termux. Traseul portocaliu este predicția, cel turcoaz este mișcarea executată, iar verde punctat este referința evaluatorului de la început.</p>
-  <div class="episode-strip"><strong id="episode-title">Încă nu există episod de afișat</strong><span id="episode-detail">Apasă START ∞</span></div>
-  <div class="live-canvas-wrap"><canvas id="train-canvas" width="700" height="700" aria-label="Replay al grafului, traseului prezis și traseului efectiv din antrenare"></canvas><div class="overlay">REPLAY REAL <span id="frame-indicator">0 / 0</span></div></div>
-  <div class="legend"><span><i class="orang"></i> Formă prezisă</span><span><i class="cyan"></i> Mișcare reală</span><span><i class="green"></i> Referință inițială (evaluator)</span></div>
-  <div class="live-metrics"><div><small>Forma prezisă ÎNAINTE de pasul 1 · F1</small><strong id="train-f1">—</strong></div><div><small>Cost final real</small><strong id="train-cost">—</strong></div><div><small>Pași / schimbări</small><strong id="train-steps">—</strong></div><div><small>Rezultat episod</small><strong id="train-outcome">—</strong></div><div><small>F1 după actualizări (aceeași lume)</small><strong id="train-after-f1">—</strong></div><div><small>Schimbare ponderi Δ / update-uri</small><strong id="train-delta">—</strong></div></div>
-  <div class="replay-bar"><button id="replay-pause">Ⅱ OPREȘTE REPLAY</button><button id="replay-back">↶ DE LA ÎNCEPUT</button><span id="replay-caption">Flux automat de episoade din antrenare</span></div>
+ <section class="live-panel" id="live-panel">
+  <div class="section-head"><div><div class="kicker"><span class="pulse" aria-hidden="true"></span> EXPERIMENT LIVE / DATE REALE</div><h1>Privește cum învață.</h1></div><span class="mini-status" id="live-state">CONECTARE...</span></div>
+  <div class="now-strip"><div class="now-indicator"><small>EPISOADE ÎNCHEIATE</small><strong id="episodes-live">0</strong></div><div class="now-indicator"><small>RITM</small><strong id="training-rate">—</strong><span>ep/min</span></div><div class="now-indicator"><small>STARE MODEL</small><strong id="learning-state">NEVERIFICAT</strong></div></div>
+  <div class="episode-strip"><strong id="episode-title">Niciun episod disponibil</strong><span id="episode-detail">Apasă START ∞ de mai sus.</span></div>
+  <div class="worlds-training">
+   <div class="world-main"><div class="pane-title"><span>01</span><strong>ORGANISMUL · FORMA PREZISĂ</strong><em id="hypothesis-state">IPOTEZĂ</em></div><div class="canvas-shell">
+    <canvas id="train-canvas" width="700" height="700" aria-label="Replay real al perspectivei organismului și al formei prezise"></canvas>
+    <div class="overlay"><b>EPISOD REAL</b><span id="frame-indicator">0 / 0</span></div>
+   </div></div>
+   <div class="world-truth"><div class="pane-title"><span>02</span><strong>EVALUATORUL · FORMA REALĂ</strong><em>DOAR PENTRU NOI</em></div>
+    <canvas id="teacher-canvas" width="700" height="700" aria-label="Harta completă și traseul optim al evaluatorului"></canvas>
+    <p>Harta și traseul optim sunt recalculate pentru acest cadru. Aceste date nu ajung la organism.</p>
+   </div>
+  </div>
+  <div class="legend"><span><i class="orang"></i> Formă anticipată</span><span><i class="cyan"></i> Traseu executat</span><span><i class="green"></i> Soluția evaluatorului</span><span><i class="purple"></i> Semnal intern al nodurilor</span></div>
+  <div class="step-explainer" aria-live="polite"><div class="step-line"><small>CE A ÎNCERCAT?</small><strong id="step-action">Nu există încă o mișcare.</strong></div>
+   <div class="step-line"><small>CE A DESCOPERIT?</small><strong id="step-discovery">Fiecare episod va apărea aici după execuția reală.</strong></div>
+   <div class="step-line"><small>CE S-A CORECTAT?</small><strong id="step-correction">Urmărim schimbarea formei și a ponderilor.</strong></div></div>
+  <div class="replay-control"><div class="replay-top"><strong>REPLAY AUTOMAT · TRAINING REAL</strong><span id="replay-caption">Așteptare</span></div>
+   <input id="live-scrub" type="range" min="0" max="0" value="0" aria-label="Explorează cadrele episodului real">
+   <div class="replay-buttons"><button id="replay-pause" type="button">Ⅱ REPLAY</button><button id="replay-back" type="button">↶ ÎNCEPUT</button>
+    <button id="replay-next" type="button">▶ ULTIMUL EPISOD</button><label>Viteză <select id="replay-speed"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option><option value="8">8×</option></select></label></div>
+  </div>
+  <div class="live-metrics">
+   <div><small>FORMA înainte de prima acțiune · F1 ↑</small><strong id="train-f1">—</strong></div>
+   <div><small>FORMA după antrenare, aceeași lume · F1 ↑</small><strong id="train-after-f1">—</strong></div>
+   <div><small>Cost real / pași</small><strong id="train-cost">—</strong><span id="train-steps">—</span></div>
+   <div><small>Corecția ponderilor / actualizări</small><strong id="train-delta">—</strong><span id="train-outcome">—</span></div>
+  </div>
  </section>
- <section class="card learning" id="learning"><div class="kicker">02 / DOVADA ÎNVĂȚĂRII · TEST PE LUMI NEVĂZUTE</div><h2>Cât învață, de fapt?</h2>
- <p class="explain">Nu folosim numărul de episoade ca dovadă. Comparam <b>eroarea pe conexiuni nevăzute</b> cu același model înainte de antrenare. O eroare mai mică este mai bună. Navigarea se verifică separat față de Bellman.</p>
- <div class="evidence"><div><small>Model neantrenat · MAE</small><strong id="base-mae">—</strong></div><div><small>Model actual · MAE</small><strong id="now-mae">—</strong></div><div class="gain"><small>Îmbunătățire pe test fix</small><strong id="gain">—</strong></div></div>
- <div class="verdict" id="gain-verdict">Se calculează rezultatele...</div>
- <div class="chart-wrap"><canvas id="learning-chart" width="1000" height="290" aria-label="Evoluția erorii MAE pe un set nevăzut"></canvas></div>
- <div class="evidence secondary"><div><small>Episoade terminate</small><strong id="episodes">0</strong></div><div><small>Actualizări cost / mesaje</small><strong id="updates">0 / 0</strong></div><div><small>Validare: antrenat vs Bellman</small><strong id="validation">—</strong></div></div>
- <p class="fine" id="validation-note">Validarea navigării rulează periodic; nu echivalează cu progres la predicție.</p>
+ <section class="card learning" id="learning"><div class="section-head"><div><div class="kicker">02 / DOVADA ÎNVĂȚĂRII · DATE NEVĂZUTE</div><h2>Cât a învățat cu adevărat?</h2></div><span class="method-tag">MAI MIC = MAI BINE</span></div>
+  <div class="evidence"><div><small>Înainte de training · MAE</small><strong id="base-mae">—</strong></div><div><small>Modelul acum · MAE</small><strong id="now-mae">—</strong></div><div class="gain"><small>Progres pe set FIX nevăzut</small><strong id="gain">—</strong></div></div>
+  <p class="measurement-note">MAE = eroarea de estimare a costurilor pe aceleași conexiuni nevăzute. Nu este precizia traseului; aceasta se măsoară separat.</p>
+  <div class="verdict" id="gain-verdict" role="status">Nu există încă suficiente date.</div>
+  <div class="chart-wrap"><canvas id="learning-chart" width="1000" height="320" aria-label="Grafic real al erorii MAE pe probleme nevăzute"></canvas></div>
+  <div class="evidence secondary"><div><small>Episoade totale</small><strong id="episodes">0</strong></div><div><small>Actualizări cost / reguli</small><strong id="updates">0 / 0</strong></div><div><small>Costul rutei / Bellman</small><strong id="validation">—</strong></div></div>
+  <div class="shape-proof"><div><small>FORMA PE LUMI NEVĂZUTE · MODEL NEANTRENAT F1</small><strong id="base-shape">—</strong></div><div><small>MODEL ANTRENAT F1 · ACELEAȘI LUMI</small><strong id="now-shape">—</strong></div><div><small>PROGRES FORMĂ · PUNCTE</small><strong id="shape-delta">—</strong></div></div>
+  <p class="fine" id="validation-note">Validarea comparativă apare automat după antrenare.</p>
  </section>
- <section class="card settings"><div class="kicker">03 / MOTORUL DE TRAINING</div><h2>Control complet. Fără limită de episoade.</h2>
-  <div class="fields"><label>Noduri la training<select id="nodes"><option value="24">24 · rapid</option><option value="33" selected>33 · standard</option><option value="48">48 · complex</option><option value="64">64 · extins</option></select></label>
-  <label>Autosave<select id="autosave"><option value="5">La 5 episoade</option><option value="10" selected>La 10 episoade</option><option value="25">La 25 episoade</option><option value="50">La 50 episoade</option></select></label>
-  <label>Pauză între episoade<select id="throttle"><option value="0">0 ms · maxim</option><option value="15">15 ms</option><option value="30" selected>30 ms</option><option value="120">120 ms · mai rece</option><option value="300">300 ms · economisire</option></select></label></div>
-  <div class="two-buttons"><button id="stop">■ OPREȘTE TRAINING</button><button id="export">⇩ EXPORT CHECKPOINT</button></div>
-  <p id="save-info" class="fine" role="status">Ultimul checkpoint: —</p>
+ <section class="card settings" id="settings"><div class="section-head"><div><div class="kicker">03 / MOTOR TRAINING</div><h2>Training fără limită de episoade</h2></div><span class="method-tag">CHECKPOINT PERSISTENT</span></div>
+  <div class="fields"><label>Noduri pe rețea<select id="nodes"><option value="24">24 · rapid</option><option value="33" selected>33 · standard</option><option value="48">48 · complex</option><option value="64">64 · extins</option></select></label>
+   <label>Autosave<select id="autosave"><option value="5">La 5 episoade</option><option value="10" selected>La 10 episoade</option><option value="25">La 25 episoade</option><option value="50">La 50 episoade</option></select></label>
+   <label>Întârziere între episoade<select id="throttle"><option value="0">0 ms · maxim</option><option value="15">15 ms</option><option value="30" selected>30 ms</option><option value="120">120 ms · economic</option><option value="300">300 ms · răcire</option></select></label></div>
+  <div class="two-buttons"><button id="stop">■ OPREȘTE TRAINING</button><button id="export">⇩ EXPORT CHECKPOINT</button></div><p id="save-info" class="fine" role="status">Așteptare...</p>
  </section>
- <section class="card lab"><div class="kicker">04 / LABORATOR SEPARAT · ACȚIUNI MANUALE</div><h2>Testează un organism, pas cu pas.</h2><p class="explain">Aceste grafuri sunt o <b>sesiune de test separată</b>, nu imaginile episoadelor de training de mai sus. Alege o lume și confruntă predicția cu realitatea.</p>
-  <div class="fields"><label>Tip de graf<select id="family"><option value="clusters">Clusters</option><option value="bridges">Bridges</option><option value="dense">Dense</option></select></label></div>
-  <div class="two-buttons"><button id="new">↺ LUME NOUĂ</button><button id="intervene">⚡ SCHIMBĂ LEGĂTURA</button><button id="round">✦ TUR DE MESAJE</button><button id="step">→ UN PAS</button><button id="navigate">▶ NAVIGHEAZĂ</button></div>
+ <section class="card lab"><div class="kicker">04 / SIMULATOR SEPARAT · TEST MANUAL</div><h2>Urmărește o problemă pas cu pas</h2><p class="fine">Acesta este un test independent de trainingul live. Forma soluției este vizibilă în ambele perspective.</p>
+  <div class="fields"><label>Tip lume<select id="family"><option value="clusters">Clusters</option><option value="bridges">Bridges</option><option value="dense">Dense</option></select></label></div>
+  <div class="two-buttons"><button id="new">↺ LUME NOUĂ</button><button id="intervene">⚡ SCHIMBĂ LEGĂTURA</button><button id="round">✦ TUR MESAJE</button><button id="step">→ UN PAS</button><button id="navigate">▶ NAVIGHEAZĂ</button></div>
   <p id="movement" class="fine">Pregătire sesiune...</p>
-  <div class="worlds"><div><h3>FORMA PREZISĂ · ORGANISM</h3><canvas id="learner" width="640" height="640"></canvas></div><div><h3>HARTA REALĂ · EVALUATOR</h3><canvas id="truth" width="640" height="640"></canvas></div></div>
-  <div class="three"><div><small>Traseu conectat</small><b id="connected">—</b></div><div><small>Cost / pași</small><b id="effort">—</b></div><div><small>Obiectiv</small><b id="solved">—</b></div></div>
-  <p class="fine" id="node-info">Atinge un nod din harta organismului pentru informațiile lui locale.</p>
-  <details><summary>Replay și jurnalul acțiunilor manuale</summary><input id="replay" type="range" min="0" max="0" value="0" aria-label="Cadru din sesiunea manuală"><button id="first">|◀ Primul</button><button id="live">↪ LIVE</button><p id="frame-caption"></p><div id="events"></div><canvas id="timeline" width="900" height="220"></canvas></details>
+  <div class="worlds"><div><h3>ORGANISM · FORMA PREZISĂ</h3><canvas id="learner" width="700" height="700" aria-label="Forma prezisă din sesiunea manuală"></canvas></div><div><h3>EVALUATOR · FORMA SOLUȚIEI</h3><canvas id="truth" width="700" height="700" aria-label="Traseul de referință al sesiunii manuale"></canvas></div></div>
+  <div class="three"><div><small>Formă conectată</small><b id="connected">—</b></div><div><small>Cost / pași</small><b id="effort">—</b></div><div><small>Obiectiv</small><b id="solved">—</b></div></div><p id="node-info" class="fine">Atinge un nod pentru informațiile lui locale.</p>
+  <details><summary>Replay și jurnal sesiune manuală</summary><input id="replay" type="range" min="0" max="0" value="0" aria-label="Replay sesiune manuală"><button id="first">|◀ Primul</button><button id="live">↪ LIVE</button><p id="frame-caption"></p><div id="events"></div><canvas id="timeline" width="900" height="220"></canvas></details>
  </section>
- <section class="card evaluation"><div class="section-head"><div><div class="kicker">05 / TEST ORB</div><h2>Depășește Bellman?</h2></div><button id="test" class="primary">◎ RUN TEST</button></div>
-  <div class="fields"><label>Număr de rețele<select id="test-count"><option value="9">9</option><option value="18" selected>18</option><option value="36">36</option></select></label></div>
-  <p class="fine" id="test-status">Nu a fost rulat un test orb în această sesiune.</p><div class="table-wrap"><table><thead><tr><th>Variantă</th><th>Succes</th><th>Cost ↓</th><th>Forma inițială F1 ↑</th></tr></thead><tbody id="test-rows"><tr><td colspan="4">Fără rezultate</td></tr></tbody></table></div>
+ <section class="card evaluation"><div class="section-head"><div><div class="kicker">05 / CONTROL NEGATIV · EVALUARE OARBĂ</div><h2>Ajută modelul antrenat?</h2></div><button id="test" class="primary">◎ RUN TEST</button></div><div class="fields"><label>Rețele nevăzute<select id="test-count"><option value="9">9</option><option value="18" selected>18</option><option value="36">36</option></select></label></div>
+  <p id="test-status" class="fine" role="status">Testul nu a fost executat.</p><div class="table-wrap"><table><thead><tr><th>Varianta</th><th>Succes</th><th>Cost ↓</th><th>Forma inițială F1 ↑</th></tr></thead><tbody id="test-rows"><tr><td colspan="4">Fără rezultate</td></tr></tbody></table></div>
  </section>
- <details class="card details"><summary>Parametrii modelului și limitări științifice</summary><div id="weights"></div><p>Regula de transmitere a mesajelor are o arhitectură impusă, cu parametri învățați. Traseele pot fi reconstruite cu propagare explicită. F1, succesul, MAE și costul sunt indicatori diferiți. Niciunul singur nu demonstrează generalizare universală sau P=NP.</p></details>
- <footer>MagicPerspective · Experimente reproductibile · Date din serverul local Termux</footer>
+ <details class="card details"><summary>Parametri exacți și limite științifice</summary><pre id="weights"></pre><p>Modelele de mesaje sunt parametrizate. Forma poate fi reconstruită și prin operații programate; diferența față de Bellman și transferul pe lumi diferite nu trebuie presupuse. MAE, F1 și costul sunt metrici distincte. Niciun rezultat singur nu demonstrează generalizare universală.</p></details>
+ <footer>MagicPerspective · rezultate reale din procesul local Termux, fără date demonstrative.</footer>
 </main>
-<script src="/app.js" defer></script>
+<script src="/app.js?v=2" defer></script>
 </body></html>

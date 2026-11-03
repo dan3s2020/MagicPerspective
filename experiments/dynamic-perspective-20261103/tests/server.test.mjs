@@ -20,6 +20,14 @@ test('train infinity, pause, atomic save, restart and resume from same weights a
   let count=0;for(let i=0;i<150;i++){
    await delay(45);s=(await api(port,'state')).data;if(s.trainer.episodes>=4){count=s.trainer.episodes;break;}
   }assert.ok(count>=4,'Infinite training did not advance');
+  const streamed=await api(port,'train/live?since=0&limit=3');
+  assert.equal(streamed.status,200);
+  assert.ok(streamed.data.traces.length>0);
+  const frames=streamed.data.traces.at(-1).frames;
+  assert.ok(frames.length>1);
+  assert.ok(Array.isArray(frames[0].links),'Learner-owned topology in replay');
+  assert.ok(Array.isArray(frames[0].truthLinks),'Separate evaluator-only topology in replay');
+  assert.ok(Number.isFinite(streamed.data.diagnostics.baselineShapeF1));
   s=(await api(port,'train/pause',{})).data;
   assert.equal(s.trainer.status,'paused');const old=s.trainer.episodes,weights=s.model.parameters;
   assert.ok(old>=4);const disk=JSON.parse(await readFile(path.join(dir,'latest.json'),'utf8'));
@@ -27,6 +35,8 @@ test('train infinity, pause, atomic save, restart and resume from same weights a
   await stop(child);child=await boot(port,dir);
   s=(await api(port,'state')).data;assert.equal(s.trainer.status,'paused');assert.equal(s.trainer.episodes,old);
   assert.deepEqual(s.model.parameters,weights);
+  const restoredReplay=await api(port,'train/live?since=0&limit=3');
+  assert.ok(restoredReplay.data.traces.length>0,'Saved real episode replay restored');
   s=(await api(port,'train/resume',{n:24,throttleMs:1,saveEvery:3})).data;
   for(let i=0;i<100;i++){await delay(50);s=(await api(port,'state')).data;if(s.trainer.episodes>old+1)break;}
   assert.ok(s.trainer.episodes>old+1);

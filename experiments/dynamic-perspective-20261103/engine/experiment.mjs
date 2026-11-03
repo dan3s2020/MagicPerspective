@@ -38,7 +38,7 @@ export function trainEpisode(brain,num,{n=33,seed=130000,trace=false}={}){
  const family=FAMILIES[num%FAMILIES.length],world=makeWorld((seed+num*5387)>>>0,n,family);
  // Train the same persistent brain from its own physically experienced transitions.
  const prior=trace?brain.snapshot():null;
- const collective=new Collective(world,brain,{mode:'learned',online:true});
+ const collective=new Collective(world,brain,{mode:'learned',online:true,trackVisuals:trace});
  // Evaluator-only copy of the initial graph. It never enters neural predictions.
  const initialTeacher=trace?{links:world.links.map(e=>({a:e.a,b:e.b,open:e.open,cost:e.actual})),optimal:oracle(world).route}:null;
  collective.run({dynamic:true,maxMoves:n*5,learn:true});
@@ -62,7 +62,7 @@ export function trainEpisode(brain,num,{n=33,seed=130000,trace=false}={}){
   weightShift:+weightShift.toFixed(7),costUpdatesInEpisode:updated.costUpdates-prior.costUpdates,ruleUpdatesInEpisode:updated.ruleUpdates-prior.ruleUpdates,
   frames:frameIndexes.map(i=>recorded[i]).map(f=>({type:f.type,round:f.round,step:f.step,
    current:f.current,effort:f.effort,shape:f.shape,connected:f.connected,
-   walked:f.walked,changes:f.changes,values:f.values})),
+   walked:f.walked,changes:f.changes,values:f.values,links:f.links,truthLinks:f.truthLinks,oracle:f.oracle})),
   outcome:{solved:collective.solved,steps:collective.steps,cost:collective.effort,
     updates:brain.ruleUpdates,changes:collective.changes},
   teacherOnly:true

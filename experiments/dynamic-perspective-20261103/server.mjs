@@ -15,10 +15,16 @@ let brain=new MessageBrain(20261103),world=makeWorld(191911,33,'clusters');
 let session=new Collective(world,MessageBrain.restore(brain.snapshot()));
 let lastTest=null,bestCost=Infinity;
 // Volatile last completed training episodes, for faithful UI replay only (not neural inputs).
-let lastTrainingEpisodes=[];
+let lastTrainingEpisodes=[]; // ring buffer of completed, real training episodes
 const untrainedReference=new MessageBrain(20261103);
 let baselineCostError=null,heldoutCostError=null;
 const validationSeed=880000;
+const shapeBaselines=new Map();
+function baselineShapeF1(n){
+ if(!shapeBaselines.has(n)){const result=evaluate(untrainedReference,{count:6,n,seed:7800000,modes:['learned']});
+  shapeBaselines.set(n,result.modes.learned.firstF1);}
+ return shapeBaselines.get(n);
+}
 function diagnostics(){
  baselineCostError ??= costMAE(untrainedReference,{seed:validationSeed,n:33,count:12});
  heldoutCostError ??= costMAE(brain,{seed:validationSeed,n:33,count:12});
@@ -28,7 +34,9 @@ function diagnostics(){
   learnedCost:trainer.validation?.learned?.cost??null,
   bellmanCost:trainer.validation?.bellman?.cost??null,
   learnedF1:trainer.validation?.learned?.firstF1??null,
-  bellmanF1:trainer.validation?.bellman?.firstF1??null};
+  bellmanF1:trainer.validation?.bellman?.firstF1??null,
+  baselineShapeF1:baselineShapeF1(trainer.n),
+  shapeDelta:trainer.validation?+(trainer.validation.learned.firstF1-baselineShapeF1(trainer.n)).toFixed(4):null};
 }
 let trainer={status:'stopped',episodes:0,updates:0,loss:0,history:[],validation:null,
  throttleMs:30,saveEvery:10,n:33,seed:130000,notes:'Pregătit.',savedAt:null,revision:0};
@@ -36,7 +44,8 @@ let running=null,writeQueue=Promise.resolve(),evalBusy=false,closing=false;
 const trimmed=()=>({...trainer,history:trainer.history.slice(-180)});
 async function atomic(file,o){await mkdir(dir,{recursive:true});const tmp=file+'.tmp';await writeFile(tmp,JSON.stringify(o),'utf8');await rename(tmp,file);}
 function save(){trainer.savedAt=new Date().toISOString();trainer.revision++;
- const snap={schema:3,brain:brain.snapshot(),trainer:trimmed(),lastTest,bestCost};
+ const snap={schema:3,brain:brain.snapshot(),trainer:trimmed(),lastTest,bestCost,
+  replay:lastTrainingEpisodes.slice(-2)};
  writeQueue=writeQueue.catch(()=>{}).then(async()=>{
   try{if(existsSync(latest))await copyFile(latest,latest+'.bak');}catch{}
   await atomic(latest,snap);
@@ -45,7 +54,7 @@ function save(){trainer.savedAt=new Date().toISOString();trainer.revision++;
 for(const file of [latest,latest+'.bak']){if(!existsSync(file))continue;try{
  const s=JSON.parse(await readFile(file,'utf8'));if(s.schema!==3)throw Error('Unknown schema');
  brain=MessageBrain.restore(s.brain);trainer={...trainer,...s.trainer,status:'paused',notes:'Checkpoint restaurat. Apasă Continuă pentru antrenare.'};
- lastTest=s.lastTest??null;bestCost=Number.isFinite(s.bestCost)?s.bestCost:Infinity;break;
+ lastTest=s.lastTest??null;lastTrainingEpisodes=Array.isArray(s.replay)?s.replay.slice(-2):[];bestCost=Number.isFinite(s.bestCost)?s.bestCost:Infinity;break;
 }catch(e){console.warn('Could not restore',file,e.message);trainer.notes='Eroare checkpoint: '+e.message;}}
 function createWorld(family=world.family,n=world.n,seed=(world.seed+101)>>>0){
  world=makeWorld(seed,n,family);session=new Collective(world,MessageBrain.restore(brain.snapshot()));
@@ -67,7 +76,7 @@ async function trainingLoop(){if(running)return running;
  running=(async()=>{try{
   while(trainer.status==='running'&&!closing){
    const progress=trainEpisode(brain,trainer.episodes,{n:trainer.n,seed:trainer.seed,trace:true});
-   if(progress.live){lastTrainingEpisodes.push(progress.live);if(lastTrainingEpisodes.length>5)lastTrainingEpisodes.shift();}
+   if(progress.live){lastTrainingEpisodes.push(progress.live);if(lastTrainingEpisodes.length>12)lastTrainingEpisodes.shift();}
    trainer.episodes++;trainer.updates=brain.ruleUpdates+brain.costUpdates;trainer.loss=progress.ruleMAE;
    if(trainer.episodes%5===0){heldoutCostError=costMAE(brain,{seed:validationSeed,n:33,count:12});
     trainer.history.push({episode:trainer.episodes,costMAE:+progress.costMAE.toFixed(3),ruleMAE:+progress.ruleMAE.toFixed(3),heldoutMAE:heldoutCostError,
@@ -76,6 +85,7 @@ async function trainingLoop(){if(running)return running;
    if(trainer.episodes%Math.max(20,trainer.saveEvery*4)===0){
     const v=evaluate(brain,{count:6,n:trainer.n,seed:7800000,modes:['learned','bellman']});
     trainer.validation={episode:trainer.episodes,learned:v.modes.learned,bellman:v.modes.bellman};
+    if(trainer.history.length)trainer.history[trainer.history.length-1].heldoutF1=v.modes.learned.firstF1;
     if(v.modes.learned.cost<bestCost){bestCost=v.modes.learned.cost;
      await atomic(best,{schema:3,brain:brain.snapshot(),episode:trainer.episodes,validationCost:bestCost});}
    }
@@ -97,7 +107,14 @@ const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,'http://localhost'),route=url.pathname;
  if(req.method==='GET'&&route==='/api/health')return send(res,{ok:true,training:trainer.status,episodes:trainer.episodes});
  if(req.method==='GET'&&route==='/api/state')return send(res,state());
- if(req.method==='GET'&&route==='/api/train/live')return send(res,{status:trainer.status,episodes:trainer.episodes,traces:lastTrainingEpisodes,diagnostics:diagnostics(),validation:trainer.validation});
+ if(req.method==='GET'&&route==='/api/train/live'){
+  const since=bounded(url.searchParams.get('since'),0,2147483647,0);
+  const limit=bounded(url.searchParams.get('limit'),1,12,5);
+  return send(res,{status:trainer.status,episodes:trainer.episodes,
+    traces:lastTrainingEpisodes.filter(e=>e.episode>since).slice(-limit),
+    latestEpisode:lastTrainingEpisodes.at(-1)?.episode??null,
+    diagnostics:diagnostics(),validation:trainer.validation});
+ }
  if(req.method==='GET'&&route==='/api/export'){
   res.setHeader('Content-Disposition','attachment; filename="magicperspective-dynamic-checkpoint.json"');
   return send(res,{schema:3,brain:brain.snapshot(),trainer:trimmed(),lastTest,bestCost});

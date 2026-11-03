@@ -72,9 +72,9 @@ export class MessageBrain {
   for(const k of ['temperature','bias','costUpdates','ruleUpdates','costLoss','ruleLoss','episodes'])b[k]=o[k]??b[k];return b;}
 }
 export class Collective {
- constructor(world,brain=new MessageBrain(),{mode='learned',online=false}={}){
+ constructor(world,brain=new MessageBrain(),{mode='learned',online=false,trackVisuals=false}={}){
   if(!['learned','bellman','off','shuffled'].includes(mode))throw Error('Invalid mode');
-  this.environment=world;this.info=publicInfo(world);this.brain=brain;this.mode=mode;this.online=online;
+  this.environment=world;this.info=publicInfo(world);this.brain=brain;this.trackVisuals=trackVisuals;this.mode=mode;this.online=online;
   this.nodes=Array.from({length:world.n},(_,id)=>{const view=localView(world,id);
    return {id,links:view.links,value:id===world.goal?0:Infinity,parent:-1,phase:0,signal:0,received:0,details:null,age:0};});
   this.current=world.start;this.steps=0;this.effort=0;this.solved=world.start===world.goal;
@@ -164,6 +164,13 @@ export class Collective {
  snapshot(type){const f={type,round:this.round,step:this.steps,current:this.current,effort:+this.effort.toFixed(2),
   shape:this.shape().nodes,connected:this.shape().connected,values:this.nodes.map(n=>Number.isFinite(n.value)?+n.value.toFixed(2):null),
   phase:this.nodes.map(n=>+n.phase.toFixed(2)),parents:this.nodes.map(n=>n.parent),walked:this.walked.slice(),changes:this.changes};
+  // Viewer-only trace. Node-local views and evaluator truth remain separate;
+  // these arrays are never read by exchange(), choose() or weight updates.
+  if(this.trackVisuals){
+   f.links=this.nodes.flatMap(n=>n.links.filter(e=>e.to>n.id).map(e=>({a:n.id,b:e.to,open:e.open})));
+   f.truthLinks=this.environment.links.map(e=>({a:e.a,b:e.b,open:e.open,cost:e.actual}));
+   f.oracle=oracle(this.environment).route; // evaluator-only current optimal route
+  }
   this.frames.push(f);if(this.frames.length>180)this.frames.shift();return f;
  }
  payload({truth=true}={}){const out={info:this.info,mode:this.mode,position:this.current,steps:this.steps,effort:this.effort,solved:this.solved,
