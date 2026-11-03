@@ -33,7 +33,9 @@ test('V6 HTTP server: real train progress, blind test, text goal and isolated re
   }
   assert.ok(!state.training.running,'Training did not complete in test budget');
   assert.equal(state.training.error,null);
-  assert.equal(state.model.episodes,12);
+  // Active checkpoint is selected at the BEST validation episode (e.g. 10), not necessarily episode 12.
+  assert.equal(state.lastTraining.episodes,12);
+  assert.ok(state.model.episodes>=1&&state.model.episodes<=12);
   assert.ok(state.training.history.length>=1);
   response=await post('evaluate',{worlds:3});
   assert.equal(response.status,200);
