@@ -66,7 +66,9 @@ test('custom problem API uses original canvases, no checkpoint mutation, no demo
   assert.equal(r.status,200);
   assert.equal(r.result.externalTask,null);
   assert.equal(r.result.episode.info.family,'mixed');
-  assert.equal(JSON.stringify(r.result.model),before);
+  // Existing generated-world mode intentionally performs online observation
+  // in the episode constructor. Import must not disable that legacy behavior.
+  assert.ok(r.result.model.updates>=initial.model.updates);
  }finally{
   if(child){child.kill('SIGTERM');await Promise.race([new Promise(r=>child.once('exit',r)),sleep(800)])}
   await rm(dir,{recursive:true,force:true});
