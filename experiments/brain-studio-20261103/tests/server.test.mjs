@@ -55,6 +55,13 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   assert.ok(html.includes('id="graph-prediction"'));
   assert.ok(html.includes('id="graph-solution"'));
   assert.ok(html.includes('id="candidate-list"'));
+  for(const control of ['cuda-worlds','cuda-worlds-value','cuda-start','cuda-resize',
+   'cuda-pause','cuda-resume','cuda-recover','cuda-inspect','cuda-gpu','cuda-effective'])
+   assert.ok(html.includes('id="'+control+'"'),'Missing real CUDA slider/control '+control);
+  const noCuda=await (await fetch(base+'/api/cuda/status')).json();
+  assert.equal(noCuda.available,false,'Non-CUDA server must never fabricate GPU readiness');
+  assert.equal(noCuda.running,false);
+
   for(const id of ['cell-round','cell-select','cell-ledger','show-messages','cell-flow'])
    assert.ok(html.includes('id="'+id+'"'),'Cell inspector missing '+id);
   assert.ok(html.indexOf('class="card world"')<html.indexOf('class="card brain-card"'),
