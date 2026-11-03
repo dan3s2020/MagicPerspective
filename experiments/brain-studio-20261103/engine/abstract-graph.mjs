@@ -29,7 +29,7 @@ function metaGraph(meta,world,domain){
    {nodes:meta.referencePath,cost:null}:
    world?.edges?networkOracle(world):{nodes:[],cost:null};
   solution={path:r.nodes||r.route||[],actions:[],cost:Number.isFinite(r.cost)?+r.cost.toFixed(2):null,
-   reachable:!!(r.nodes||r.route)?.length};
+   reachable:!!(r.nodes||r.route)?.length,initialOnly:Array.isArray(meta.referencePath)};
  }else if(domain==='text'){
   const start=[Math.floor(meta.start/7),meta.start%7],
     goal=[Math.floor(meta.goal/7),meta.goal%7];
