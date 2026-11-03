@@ -49,6 +49,21 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   }
   let s=await state();
   assert.equal(s.kind,'universal');assert.equal(s.model.episodes,0);
+  const graphRenderer=await fetch(base+'/graph-render.js');
+  assert.equal(graphRenderer.status,200,'Graph renderer ES module not served');
+  assert.ok((await graphRenderer.text()).includes('drawAbstract'));
+  assert.ok(html.includes('id="graph-prediction"'));
+  assert.ok(html.includes('id="graph-solution"'));
+  assert.ok(html.includes('id="candidate-list"'));
+  assert.ok(html.indexOf('class="card world"')<html.indexOf('class="card brain-card"'),
+   'Graph must be first, above library');
+  const beforeProbe=JSON.stringify(s.model.weights);
+  let inspect=await post('probe',{domain:'text',seed:409777,size:11});
+  assert.equal(inspect.status,200);
+  assert.equal(inspect.body.preview.meta.abstract.domain,'text');
+  assert.ok(inspect.body.preview.meta.abstract.solution.path.length>=1);
+  assert.deepEqual(JSON.stringify(inspect.body.model.weights),beforeProbe,
+   'Inspection accidentally trained selected brain');
   assert.equal(s.functionCurve.length,41);
   r=await post('start',{episodes:7,domains:['maze','network','text'],delayMs:0,
    autosaveEvery:2,previewEvery:1,size:11,resetRun:true});
@@ -61,6 +76,14 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   assert.ok(s.run.reservedUntil>=s.run.seedCursor);
   assert.ok(s.preview.frames.length>0);
   assert.ok(s.preview.meta.positions.length>0);
+  assert.equal(s.preview.meta.abstract.schema,'magic.abstract.graph.v1');
+  assert.ok(s.preview.frames.some(f=>f.graph.candidates.length>0));
+  const feed=await (await fetch(base+'/api/traces?after=0')).json();
+  assert.ok(feed.traces.length>0);
+  assert.equal(new Set(feed.traces.map(t=>t.id)).size,feed.traces.length);
+  assert.ok(feed.traces.every(t=>t.preview.meta.abstract.solution));
+  const more=await (await fetch(base+'/api/traces?after='+feed.traces.at(-1).id)).json();
+  assert.equal(more.traces.length,0);
   assert.ok(s.history.length>0);
   assert.ok(Number.isFinite(s.timing.elapsedSeconds));
   r=await post('brains/save',{label:'My seven-episode brain'});
@@ -86,6 +109,8 @@ test('real HTTP training, checkpoint library, reload, blind tests and live graph
   s=await awaitStop();
   assert.equal(s.model.episodes,5);
   assert.equal(s.preview.meta.domain,'network');
+  assert.ok(s.preview.meta.abstract.edges.length>0);
+  assert.ok(s.preview.meta.abstract.solution.path.length>0);
   const list=await (await fetch(base+'/api/brains')).json();
   assert.ok(list.brains.some(b=>b.id===selectedId));
   r=await post('brains/select',{id:selectedId});assert.equal(r.status,200);
