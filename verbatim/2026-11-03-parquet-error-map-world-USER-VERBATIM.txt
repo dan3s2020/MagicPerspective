@@ -1,0 +1,1 @@
+EROARE: Parquet requires text/content/response/solution/reasoning/problem/messages ,vezi sa rezolvi si asta,pana la urma are mapat toata "lumea" deja,doar trebuie sa le mapezi corect in graf,adica asta face graful singur,devora tot si apoi invata legaturile si etc
