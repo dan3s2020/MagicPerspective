@@ -297,7 +297,7 @@ const server=http.createServer(async(req,res)=>{
   }
   if(req.method!=='GET')return send(res,{error:'Method not allowed'},405);
   const file=endpoint==='/'?'index.html':endpoint.slice(1);
-  if(!['index.html','app.js','style.css'].includes(file))return send(res,{error:'Not found'},404);
+  if(!['index.html','app.js','graph-render.js','style.css'].includes(file))return send(res,{error:'Not found'},404);
   const absolute=path.join(root,'public',file);
   res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache',
    'X-Content-Type-Options':'nosniff'});
