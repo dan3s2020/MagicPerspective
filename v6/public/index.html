@@ -1,0 +1,49 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101527">
+<title>Magic Perspective V6 — One Mind, Many Worlds</title>
+<link rel="stylesheet" href="style.css"></head>
+<body><main class="wrap">
+<header><div class="brand">MAGIC <span>PERSPECTIVE</span> <small>V6 — RESEARCH</small></div><div id="status" aria-live="polite">Conectare...</div></header>
+<section class="hero"><p class="eyebrow">Causal text worlds · Neural dynamics · Test orb</p>
+<h1>Nu învață un labirint.<br><em>Învață ce provoacă o acțiune.</em></h1>
+<p>În fiecare lume, trei instrumente au reguli ascunse. Modelul vede câteva intervenții și învață să prezică următoarea stare. Apoi primește o cerință textuală pe care trebuie să o rezolve în mai mulți pași.</p></section>
+<section class="card controls">
+<div class="field"><label for="episodes">Episoade de învățare</label><select id="episodes">
+<option value="100">100 (test rapid)</option><option value="500" selected>500</option>
+<option value="2000">2.000</option><option value="5000">5.000</option></select></div>
+<button id="train" class="primary">Începe antrenamentul real</button>
+<button id="cancel" class="warning" disabled>Oprește după episodul curent</button>
+<button id="evaluate">Test orb pe lumi complet noi</button>
+<button id="new">Generează lume nouă</button>
+<button id="reset" class="danger">Reset doar V6</button>
+</section>
+<section class="stats">
+<div class="stat"><span>Episoade învățate</span><strong id="episodes-trained">0</strong></div>
+<div class="stat"><span>Exemple observate</span><strong id="samples">0</strong></div>
+<div class="stat"><span>Actualizări neuronale</span><strong id="updates">0</strong></div>
+<div class="stat"><span>Cel mai bun test de validare</span><strong id="quality">—</strong></div></section>
+<section class="card"><div class="heading"><h2>Învață, episod cu episod</h2><span class="tag" id="phase">Pregătit</span></div>
+<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress"><div id="progress-inner"></div></div>
+<div class="subtitle" id="progress-label">Apasă butonul de antrenament.</div>
+<canvas id="learning" role="img" aria-label="Graficul exactității predicțiilor în validare și al comparației cu modelele martor"></canvas>
+<p class="note">Curbele provin din evaluări reale, pe semințe diferite de cele folosite la antrenare. O actualizare a ponderilor nu garantează rezolvarea unei probleme.</p></section>
+<section class="cols">
+<article class="card"><div class="heading"><h2>Lumea necunoscută</h2><span class="tag">Agent: observații</span></div>
+<div class="goal"><span>Instrucțiunea textuală:</span><strong id="goal"></strong></div>
+<div id="states" class="state-map"></div>
+<h3>Intervenții măsurate (date de intrare)</h3><div class="probe-list" id="probes"></div>
+<div class="buttons"><button id="plan" class="primary">Propune și verifică planul</button></div>
+<div class="message" id="plan-result">Încă nu a fost încercată rezolvarea.</div>
+</article>
+<article class="card"><div class="heading"><h2>Ce prezice modelul?</h2><span class="tag">Predicție înainte de acțiune</span></div>
+<div id="predictions" class="preds"></div>
+<details><summary>Regulile reale — doar pentru evaluator</summary><pre id="teacher"></pre></details>
+<p class="note">Regulile afișate aici nu ajung în intrarea rețelei. Aceasta primește numai stări, instrumente și consecințele probelor.</p>
+</article></section>
+<section class="card"><div class="heading"><h2>Evaluare oarbă pe domenii și obiective noi</h2><span class="tag">Semințe separate</span></div>
+<div id="results" class="result-grid"><p class="note">Rezultatele apar după apăsarea „Test orb”.</p></div>
+<p class="note">Indicatorii sunt separați: precizia unei tranziții și succesul unui plan cu 2–5 acțiuni. Textele sunt interpretate de o gramatică fixă; modelul nu a învățat încă limbaj natural general.</p>
+</section>
+<footer>Experiment V6, independent de V1–V5. Port 3036, checkpoint separat. Fără LLM, fără legi ascunse în inputul de antrenare. Rezultatele negative se afișează la fel ca cele pozitive.</footer>
+</main><script src="app.js" type="module"></script></body></html>
