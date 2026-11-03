@@ -66,6 +66,37 @@ class CorpusAndGraphTests(unittest.TestCase):
             self.assertEqual(meta['rows_with_text'],1)
             self.assertIn('human: What is the solution',Path(meta['path']).read_text())
 
+    def test_actual_pyarrow_nested_parquet_when_library_available(self):
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+        except ImportError:
+            self.skipTest('Local CPU diagnostic has no pyarrow; CI installs it')
+        with tempfile.TemporaryDirectory() as d:
+            schema=pa.schema([
+                pa.field('difficulty',pa.int64()),
+                pa.field('source',pa.string()),
+                pa.field('domain',pa.string()),
+                pa.field('conversations',pa.list_(pa.struct([
+                    pa.field('from',pa.string()),pa.field('value',pa.string())]))),
+            ])
+            rows=[{'difficulty':7,'source':'stackexchange_codegolf','domain':'code',
+                   'conversations':[{'from':'human','value':'What is the problem '+str(i)},
+                                    {'from':'gpt','value':'The verified solution is '+str(i)}]}
+                  for i in range(12)]
+            source=Path(d)/'train-00015-of-00120.parquet'
+            pq.write_table(pa.Table.from_pylist(rows,schema=schema),source,row_group_size=3)
+            progress=[]
+            result=ingest(source,Path(d)/'cache',on_progress=progress.append)
+            self.assertEqual(result['rows_read'],12)
+            self.assertEqual(result['rows_with_text'],12)
+            self.assertEqual(result['columns_selected'],['conversations'])
+            data=Path(result['path']).read_text(encoding='utf-8')
+            self.assertIn('human: What is the problem 0',data)
+            self.assertIn('gpt: The verified solution is 11',data)
+            self.assertFalse('stackexchange_codegolf' in data)
+            self.assertEqual(progress[-1]['progress'],1)
+
     def test_async_corpus_import_reports_progress_and_enables_real_text(self):
         with tempfile.TemporaryDirectory() as d:
             source=Path(d)/'training.jsonl'
