@@ -53,5 +53,7 @@ jobs:
           node --check experiments/brain-studio-20261103/public/app.js
       - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
         run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
+      - name: Brain Studio three-domain transfer benchmark with fixed held-out worlds
+        run: node experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs 90 6 19
       - name: Active causal hypothesis versus random-query benchmark
         run: node --input-type=module -e "import {evaluateHypotheses} from './experiments/causal-text/engine/hypotheses.mjs'; for (const extra of [0,2,4,6,9]) console.log('CAUSAL_BENCH',JSON.stringify(evaluateHypotheses({worlds:60,seed:6300019,extra,goalsPerWorld:3})))"
