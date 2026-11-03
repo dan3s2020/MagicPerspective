@@ -32,7 +32,8 @@ async function close(run){
 }
 async function post(base,name,body){
  const res=await fetch(base+'/api/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
- assert.equal(res.status,200,'POST '+name+' '+await res.text().catch(()=>''));return res.json();
+ if(!res.ok)throw Error('POST '+name+' '+res.status+' '+await res.text());
+ return res.json();
 }
 async function state(base){return (await (await fetch(base+'/api/state')).json())}
 test('original V7 UI can train indefinitely, show real maze frames and stop without reset',{timeout:75000},async()=>{
