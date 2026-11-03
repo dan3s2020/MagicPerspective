@@ -40,6 +40,8 @@ class Control:
                     raise ValueError('Corpus cache checksum changed')
                 self.corpus_meta=meta
             except (OSError,ValueError,KeyError):
+                if self.engine.corpus is not None:
+                    self.engine.corpus.close();self.engine.corpus=None
                 self.corpus_meta={'error':'Saved corpus missing or corrupted; reload original file'}
 
     def start(self,config):
