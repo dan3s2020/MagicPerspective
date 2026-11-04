@@ -202,6 +202,13 @@
       "text": "ce pula mea e ma asta? asa un cacat facut la misto? nu vezi ca nu respect deloc conversatia verbatim 100%?",
       "source_path": "verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt",
       "order_in_recoverable_user_sequence": 28
+    },
+    {
+      "ref": "2026-11-04-USER-TORUS-UI-NOT-FULL-VERBATIM",
+      "role": "USER",
+      "text": "arata interesat ca ui si vizualizer,dar nu respecta converastia din verbatim 100% cu ce e e repo MagicPerspective",
+      "source_path": "verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt",
+      "order_in_recoverable_user_sequence": 29
     }
   ]
 }

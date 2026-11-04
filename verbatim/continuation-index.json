@@ -277,6 +277,15 @@
       "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-V14-FULL-NONCOMPLIANCE",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
+    },
+    {
+      "order": 29,
+      "ref": "2026-11-04-USER-TORUS-UI-NOT-FULL-VERBATIM",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-TORUS-UI-NOT-FULL-VERBATIM",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
     }
   ]
 }
