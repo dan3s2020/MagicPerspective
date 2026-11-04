@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000">
+<title>A și B în țesătură · MagicPerspective V15</title>
+<style>
+  :root{--line:#1d2c3a;--ink:#e6f3ff;--dim:#8aa1b4;--gold:#f5b301;--red:#ff4d6d;--green:#3ddc84;--cyan:#22d3ee}
+  *{box-sizing:border-box}html,body{margin:0;background:#000;color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .top h1{font-size:18px;margin:0}.top h1 span{color:var(--gold)}.chip{font:12px ui-monospace,Menlo,Consolas,monospace;padding:5px 10px;border-radius:999px;border:1px solid #2b4257;color:#cfe3ff}
+  .grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;padding:14px 16px}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  .card{background:#070d15;border:1px solid var(--line);border-radius:14px;padding:14px}
+  h2{font-size:12px;margin:0 0 10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  .chat{display:flex;flex-direction:column;gap:10px;min-height:340px;max-height:58vh;overflow:auto;padding-right:4px}
+  .msg{padding:10px 12px;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+  .me{background:#13253a;align-self:flex-end;max-width:85%}
+  .it{background:#0b1622;border:1px solid #1a2b3c;align-self:flex-start;max-width:95%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+  .shape{font-size:12px;color:var(--dim);margin-bottom:6px;border-bottom:1px dashed #23384b;padding-bottom:6px}
+  .shape b{color:var(--gold)}.shape i{font-style:normal;display:inline-block;margin:1px;padding:0 4px;border-radius:4px;background:#f5b30122;color:#ffe6a6}
+  textarea{width:100%;min-height:70px;resize:vertical;background:#0b1622;color:var(--ink);border:1px solid #23384b;border-radius:10px;padding:10px;font:inherit}
+  button{font:inherit;color:var(--ink);background:#0d1a26;border:1px solid #24394c;border-radius:9px;padding:7px 12px;min-height:36px;cursor:pointer}
+  button.primary{background:var(--gold);color:#1a1300;border-color:var(--gold);font-weight:600}button:disabled{opacity:.5}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  label.s{display:grid;grid-template-columns:110px 1fr 54px;gap:8px;align-items:center;font-size:12.5px;color:var(--dim);margin:3px 0}
+  label.s output{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--ink);text-align:right}input[type=range]{width:100%;accent-color:#9fdcff}
+  input[type=text]{flex:1;min-width:200px;background:#0b1622;color:var(--ink);border:1px solid #23384b;border-radius:9px;padding:7px 10px;font:12px ui-monospace,Menlo,Consolas,monospace}
+  .stat{font:12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--dim);white-space:pre-wrap;background:#0b1622;border-radius:10px;padding:10px;margin-top:8px}
+  canvas{width:100%;display:block;background:#0b1622;border-radius:10px}
+  .samples div{border-top:1px solid #15222f;padding:6px 0;font:12px ui-monospace,Menlo,Consolas,monospace;color:#b9cadb;white-space:pre-wrap;word-break:break-word}
+  .small{font-size:12px;color:var(--dim)}
+</style>
+</head>
+<body>
+<header class="top"><h1>MagicPerspective <span>V15</span> · A și B în țesătură</h1><div class="row" style="margin:0"><span class="chip" id="dev">…</span><span class="chip" id="note"></span></div></header>
+<main class="grid">
+  <section class="card">
+    <h2>Vorbește cu el</h2>
+    <div class="chat" id="chat"><div class="small">Scrie ceva și apasă Trimite. Înainte să scrie, <b>B</b> îți arată <b>forma</b> răspunsului: cât de lung va fi și ce caractere vor apărea. Apoi <b>A</b> scrie byte cu byte. Amândoi lucrează doar prin țesătura (graful) care a învățat.</div></div>
+    <textarea id="msg" placeholder="Scrie aici… (datele de antrenare sunt în engleză: probleme de matematică, cod și științe)"></textarea>
+    <label class="s">Zgomot în latent<input id="noise" type="range" min="0" max="0.6" step="0.01" value="0"><output id="noiseo"></output></label>
+    <label class="s">Temperatură<input id="temp" type="range" min="0" max="1.5" step="0.05" value="0.7"><output id="tempo"></output></label>
+    <label class="s">Lungime maximă<input id="maxlen" type="range" min="50" max="3000" step="50" value="600"><output id="maxleno"></output></label>
+    <div class="row"><button id="send" class="primary">Trimite</button><button id="clear">Golește</button></div>
+    <h2 style="margin-top:14px">De unde vorbește: bucla α … Ω</h2>
+    <canvas id="loop" style="aspect-ratio:2.2" aria-label="Nivelurile de perspectivă de la care vorbește, la fiecare caracter"></canvas>
+    <p class="small">Fiecare coloană e un caracter scris. Rândurile sunt nivelurile: α (jos) … Ω (sus). <b style="color:#f5b301">Galben</b>: perspectiva aleasă de <b>B</b>, adică nivelurile prin care îl lasă pe A să privească. <b style="color:#5ec8ff">Albastru</b>: cât de activ e fiecare nivel al țesăturii. <b style="color:#ff4d6d">Roșu</b> (rândul de jos): rezistența lui <b>A</b>, adică surpriza la ce a urmat; ea intră înapoi în α. Perspectiva lui B intră înapoi în Ω.</p>
+  </section>
+  <section class="card">
+    <h2>Antrenare</h2>
+    <div class="row"><input type="text" id="file"><button id="load">Încarcă</button></div>
+    <div class="stat" id="data">—</div>
+    <label class="s">Lumi în paralel<input id="par" type="range" min="1" max="512" value="64"><output id="paro"></output></label>
+    <label class="s">Zgomot la antrenare<input id="tnoise" type="range" min="0" max="0.3" step="0.01" value="0.05"><output id="tnoiseo"></output></label>
+    <label class="s" style="grid-template-columns:auto 1fr"><input type="checkbox" id="ctrl" checked> antrenează și martorul: același graf, fără corpurile A și B (V14), pe exact aceleași date</label>
+    <div class="row"><button id="start" class="primary">Pornește antrenarea</button><button id="stop">Oprește</button><button id="save">Salvează acum</button></div>
+    <div class="stat" id="stat">—</div>
+    <canvas id="curve" style="height:200px" aria-label="Biți pe byte pe parcursul antrenării"></canvas>
+    <p class="small">Biți pe byte ai răspunsurilor (mai puțin = mai bine). Alb: țesătura cu A și B. Gri: martorul fără A și B. Punctele sunt conversațiile ținute deoparte, pe care nu s-au antrenat niciodată: galben pentru A și B, gri pentru martor. Un text la întâmplare are 8 biți pe byte.</p>
+    <h2 style="margin-top:12px">Ce scrie singur pe parcurs</h2>
+    <div class="samples" id="samples"></div>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

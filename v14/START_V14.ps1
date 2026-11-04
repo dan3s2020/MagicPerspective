@@ -1,4 +1,4 @@
-# MagicPerspective V14 — Vorbitorul (Windows + NVIDIA CUDA).
+﻿# MagicPerspective V14 — Vorbitorul (Windows + NVIDIA CUDA).
 # From PowerShell:
 #   cd D:\MagicPerspective ; git pull
 #   powershell -NoProfile -ExecutionPolicy Bypass -File .\v14\START_V14.ps1

@@ -1,4 +1,4 @@
-# MagicPerspective V11 on Windows with an NVIDIA GPU (CUDA).
+﻿# MagicPerspective V11 on Windows with an NVIDIA GPU (CUDA).
 # From PowerShell, in your clone (for example D:\MagicPerspective):
 #   git pull
 #   powershell -NoProfile -ExecutionPolicy Bypass -File .\v11\START_V11_CUDA.ps1
