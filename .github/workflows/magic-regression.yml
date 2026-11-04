@@ -30,6 +30,12 @@ jobs:
           node --check v13/web/engine.mjs
           node --check v13/web/app.js
           node --test v13/tests/v13.test.mjs
+      - name: Strict full Verbatim source-to-implementation audit (block false 100 percent claims)
+        run: |
+          node --check scripts/verbatim-strict-audit.mjs
+          node --test tests/verbatim-strict-audit.test.mjs
+          node scripts/verbatim-strict-audit.mjs --json
+          # The deliberate full --gate failure is NOT bypassed as a release certification.
       - name: V2 baseline tests
         run: node --test v2/tests/*.test.mjs
       - name: V3 baseline and online tests
