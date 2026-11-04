@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import parse_qs,urlsplit
 from engine import PortalEngine,KINDS
 from corpus import Corpus,ingest
+from spacetime_api import metadata as spacetime_metadata, window as spacetime_window
 
 HERE=Path(__file__).resolve().parent
 
@@ -197,6 +198,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed=urlsplit(self.path);path=parsed.path
         if path=='/':path='/index.html'
+        if path in ('/spacetime.html','/spacetime.js','/spacetime-core.mjs','/spacetime.css'):
+            # Additive, read-only 5D observer. Original Portal static routes stay unchanged.
+            p=(HERE/'web'/path.lstrip('/')).resolve()
+            if p.parent!=(HERE/'web').resolve() or not p.is_file():self.send_error(404);return
+            data=p.read_bytes()
+            typ='text/javascript' if p.suffix in ('.js','.mjs') else (mimetypes.guess_type(p.name)[0] or 'text/plain')
+            self.send_response(200);self.send_header('Content-Type',typ+'; charset=utf-8')
+            self.send_header('Cache-Control','no-store')
+            self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data);return
         if path in ('/index.html','/style.css','/app.js','/torus-view.js'):
             p=(HERE/'web'/path.lstrip('/')).resolve()
             if p.parent!=(HERE/'web').resolve() or not p.is_file():self.send_error(404);return
@@ -207,6 +217,20 @@ class Handler(BaseHTTPRequestHandler):
         c=self.control
         if path=='/api/health':self._json(200,{'ok':True,'training':c.state,'device':str(c.engine.device)});return
         if path=='/api/status':self._json(200,c.status());return
+        if path=='/api/spacetime/meta':
+            with c.lock:self._json(200,spacetime_metadata(c.engine.db))
+            return
+        if path=='/api/spacetime/window':
+            query=parse_qs(parsed.query)
+            def value(name,default):
+                return query.get(name,[str(default)])[0]
+            with c.lock:
+                bounds=spacetime_metadata(c.engine.db)
+                self._json(200,spacetime_window(
+                    c.engine.db,value('start',bounds['first']),
+                    value('end',bounds['last']),
+                    bins=value('bins',80),max_events=value('max_events',96)))
+            return
         if path=='/api/graph/all':
             query=parse_qs(parsed.query)
             # A full ordered snapshot, paginated so even 32K nodes + many
