@@ -268,6 +268,15 @@
       "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-IMPLEMENT-SELF-WORLD-V14",
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false
+    },
+    {
+      "order": 28,
+      "ref": "2026-11-04-USER-V14-FULL-NONCOMPLIANCE",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-V14-FULL-NONCOMPLIANCE",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
     }
   ]
 }
