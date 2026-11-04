@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000">
+<title>Țesătura vie · MagicPerspective V16</title>
+<style>
+  :root{--line:#1b2a39;--ink:#e6f3ff;--dim:#8aa1b4;--gold:#f5b301;--red:#ff4d6d;--green:#3ddc84;--cyan:#22d3ee;--ice:#7cc9ff}
+  *{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .app{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(340px,1fr);height:100vh}
+  @media (max-width:980px){.app{grid-template-columns:1fr;height:auto}}
+  .graph{position:relative;min-height:62vh;border-right:1px solid var(--line)}
+  #g{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .hud{position:absolute;left:14px;top:10px;pointer-events:none;max-width:min(560px,90%)}
+  .hud h1{margin:0;font-size:18px}.hud h1 span{color:var(--gold)}.hud p{margin:4px 0 0;font-size:12.5px;color:var(--dim)}
+  .legend{position:absolute;left:12px;bottom:10px;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--dim);pointer-events:none;max-width:95%}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;background:var(--c);box-shadow:0 0 8px var(--c)}
+  .side{overflow:auto;padding:12px 14px}
+  h2{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;font-weight:600}h2:first-child{margin-top:0}
+  #maze{width:100%;aspect-ratio:1;display:block;background:#0a121c;border-radius:12px}
+  button,select{font:inherit;color:var(--ink);background:#0d1a26;border:1px solid #24394c;border-radius:9px;padding:6px 11px;min-height:34px;cursor:pointer}
+  button.primary{background:var(--gold);color:#1a1300;border-color:var(--gold);font-weight:600}button.on{background:#1b3a52;border-color:#4f86a8}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0}
+  label.s{display:grid;grid-template-columns:96px 1fr 40px;gap:8px;align-items:center;font-size:12.5px;color:var(--dim)}
+  label.s output{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--ink);text-align:right}input[type=range]{width:100%;accent-color:#9fdcff}
+  .stat{font:12.5px ui-monospace,Menlo,Consolas,monospace;color:var(--dim);white-space:pre-wrap;background:#0a121c;border-radius:10px;padding:9px;margin-top:6px}
+  .stat b{color:var(--ink)}
+  canvas.curve{width:100%;height:130px;display:block;background:#0a121c;border-radius:10px}
+  .small{font-size:12px;color:var(--dim)}
+  .probs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}.probs div{background:#0a121c;border-radius:8px;padding:6px;text-align:center;font:12px ui-monospace,Menlo,Consolas,monospace}
+  .probs .chosen{outline:2px solid var(--red)}.probs .opt{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="graph">
+    <canvas id="g" aria-label="Țesătura vie: lumea, nivelurile α…Ω, A, B și acțiunile, legate după ce au învățat"></canvas>
+    <div class="hud"><h1>Țesătura vie <span>V16</span></h1>
+      <p>Nodurile se mișcă singure. Legăturile mai puternice le trag mai aproape, nodurile se resping când sunt prea înghesuite, iar nodurile active în același moment se atrag. Așa se vede forma care apare. Poți trage cu mouse-ul de orice nod.</p></div>
+    <div class="legend" id="legend"></div>
+  </section>
+  <aside class="side">
+    <h2>Labirintul (lumea reală)</h2>
+    <canvas id="maze" aria-label="Labirintul: A, ținta, ce a văzut, drumul mers și forma drumului ținută de B"></canvas>
+    <div class="probs" id="probs"></div>
+    <div class="row"><button id="new" class="primary">Lume nouă</button><button id="play">Pauză</button><button id="stepb">Un pas</button>
+      <select id="who"><option value="ab">A și B în țesătură</option><option value="ctrl">martorul (fără A și B)</option></select><select id="size"><option>7</option><option selected>9</option><option>11</option></select></div>
+    <label class="s">Viteză<input id="speed" type="range" min="1" max="20" value="5"><output id="speedo"></output></label>
+    <h2>Antrenare (în pagină, pe labirinturi unice)</h2>
+    <div class="row"><button id="train" class="primary">Pornește antrenarea</button><button id="reset">Creier nou</button></div>
+    <div class="stat" id="stat">—</div>
+    <canvas class="curve" id="curve" aria-label="Labirinturi nevăzute rezolvate, pe parcursul antrenării"></canvas>
+    <p class="small">Procentul de labirinturi nevăzute rezolvate și pașii față de drumul optim, măsurate la fiecare 300 de episoade. Galben: A și B. Gri: martorul fără A și B, antrenat pe exact aceleași labirinturi.</p>
+  </aside>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
