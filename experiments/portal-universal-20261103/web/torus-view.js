@@ -157,7 +157,9 @@
     for(const n of settings.nodes){
       const p=visible.get(n.id);if(!p)continue;
       const d=n.dimension||1,on=active.has(n.id),newBorn=born.has(n.id);
-      const c=on?color.activation:d===4?'#c19dfd':d===3?'#a48fea':d===2?'#6198d4':'#75bdce';
+      const c=on?color.activation:n.role==='perspective'?
+        (n.controllability>=.7?'#64d6a2':n.controllability<=.3?'#7195b3':'#d6addc'):
+        d===4?'#c19dfd':d===3?'#a48fea':d===2?'#6198d4':'#75bdce';
       let radius=on?3.2:Math.min(2.5,.85+Math.log1p(n.uses||0)*.14);
       if(newBorn)radius=Math.max(radius,2.9);
       ctx.beginPath();ctx.arc(p.x,p.y,radius*settings.dpr,0,TAU);

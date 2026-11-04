@@ -17,6 +17,7 @@ from pathlib import Path
 
 import torch
 from toroid import solid_torus4_position
+from perspective import PerspectiveLearner
 from torch import nn
 import torch.nn.functional as F
 
@@ -64,7 +65,7 @@ class Graph:
 
     def ensure(self, label, role, domain, dimension=None, evidence=None):
         if dimension is None:
-            dimension = {'relation':2, 'motif':3, 'temporal':4}.get(role,1)
+            dimension = {'relation':2, 'motif':3, 'temporal':4, 'perspective':3, 'policy':3}.get(role,1)
         created = label not in self.by_label
         if label in self.by_label:
             i = self.by_label[label]
@@ -104,7 +105,7 @@ class Graph:
             v['domains'].append(domain)
 
     def remember(self, domain, observed, action, effect, before_ids, after_ids,
-                 previous_motif=None, evidence=None):
+                 previous_motif=None, evidence=None, perspective=None, policy_profile=None):
         # ALL new structures must correspond to a real observed transition.
         self.experience_step += 1
         self.last_growth = []
@@ -149,8 +150,57 @@ class Graph:
             self.link(previous_motif,temporal_id,'before',domain=domain)
             self.link(temporal_id,motif_id,'after',domain=domain)
             self.link(relation_id,temporal_id,'temporal_context',domain=domain)
+        # V14: one learned graph, not separately hardwired SELF and WORLD
+        # subgraphs. Every lens is backed by matched real interventions.
+        # Its statistic is action-sensitivity; its interpretation remains
+        # provisional. The model can encounter the lens in graph.context.
+        # Internal learned *behavioural preference* is also in the SAME graph.
+        # It comes from the actual policy distribution BEFORE execution, never
+        # from a symbolic 'self identity' hand-assigned to any world state.
+        policy_id=None
+        if policy_profile:
+            confidence=float(policy_profile['confidence'])
+            uncertainty=float(policy_profile['normalized_entropy'])
+            signature=('PROFILE/p='+str(min(9,int(confidence*10)))+
+                       '/h='+str(min(9,int(uncertainty*10))))
+            policy_id,_=self.ensure(signature,'policy',domain,3,
+                                    evidence={'domain':domain,'step':self.experience_step,
+                                              'source':'actual trained action probability distribution'})
+            profile=self.nodes[policy_id]
+            profile['confidence']=round(confidence,5)
+            profile['normalized_entropy']=round(uncertainty,5)
+            self.link(world,policy_id,'expresses_policy',domain=domain)
+            self.link(policy_id,action_id,'selects_action',domain=domain)
+            self.link(policy_id,relation_id,'behaviour_in_context',domain=domain)
+        lens_ids=[]
+        if perspective:
+            for finding in perspective.get('features',[]):
+                channel=finding['channel']
+                lens_id,_=self.ensure('PERSPECTIVE/'+channel,'perspective',domain,3,
+                                      evidence={'probe':perspective['probe_index'],
+                                                'method':'matched_counterfactual',
+                                                'world_hash':evidence.get('world_hash')})
+                lens=self.nodes[lens_id]
+                lens['controllability']=finding['controllability']
+                lens['classification']=finding['classification']
+                lens['trials']=finding['trials']
+                lens['evidence_type']='matched simulator actions; not a predefined self label'
+                self.link(world,lens_id,'perspective_of',domain=domain)
+                self.link(action_id,lens_id,'intervention_tested',domain=domain)
+                self.link(lens_id,relation_id,'context_explained',domain=domain)
+                # Directly connect the actual observed feature tokens. This
+                # lets the SAME graph controller recruit learned perspective
+                # cells via ordinary message passing on later decisions.
+                for observed_id in before_ids[:MAX_OBS]:
+                    if observed_id >= len(self.nodes):continue
+                    label=self.nodes[observed_id]['label']
+                    bare=label[4:] if label.startswith('OBS/') else label
+                    if bare.rsplit('/',1)[0]==channel:
+                        self.link(observed_id,lens_id,'feature_of',domain=domain)
+                lens_ids.append(lens_id)
         return {'action_id':action_id,'effect_id':effect_id,'motif_id':motif_id,
                 'relation_id':relation_id,'temporal_id':temporal_id,
+                'perspective_ids':lens_ids,'policy_id':policy_id,
                 'born':self.last_growth[:], 'edges_born':self.last_edge_events[:],
                 'node_count':len(self.nodes),
                 'edge_count':len(self.edges),'dimension':4 if temporal_id is not None else 3,
@@ -211,7 +261,12 @@ class Graph:
                 'uses':n['uses'],'domains':n['domains'],
                 'dimension':n.get('dimension',1),'w':n.get('w',0.0),
                 'p4':n.get('p4',solid_torus4_position(n['label'])),
-                'born_at':n.get('born_at',0), 'origin':n.get('origin')}
+                'born_at':n.get('born_at',0), 'origin':n.get('origin'),
+                'controllability':n.get('controllability'),
+                'classification':n.get('classification'),
+                'trials':n.get('trials',0),
+                'confidence':n.get('confidence'),
+                'normalized_entropy':n.get('normalized_entropy')}
                for n in self.nodes if n['id'] in keep]
         edges=[]
         for (a,b,k),v in self.edges.items():
@@ -253,7 +308,12 @@ class Graph:
                    'pos':n['pos'],'p4':n.get('p4',solid_torus4_position(n['label'])),
                    'dimension':n.get('dimension',1),'uses':n['uses'],
                    'domains':n['domains'],'born_at':n.get('born_at',0),
-                   'origin':n.get('origin')} for n in node_slice]
+                   'origin':n.get('origin'),
+                   'controllability':n.get('controllability'),
+                   'classification':n.get('classification'),
+                   'trials':n.get('trials',0),
+                   'confidence':n.get('confidence'),
+                   'normalized_entropy':n.get('normalized_entropy')} for n in node_slice]
         edges=[]
         for (a,b,k),v in islice(self.edges.items(),edge_offset,edge_offset+edge_limit):
             edges.append({'from':a,'to':b,'type':k,
@@ -537,6 +597,7 @@ class PortalEngine:
         self.db.execute('CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY,v TEXT)')
         self.db.commit()
         self.graph=Graph(capacity)
+        self.perspective=PerspectiveLearner()
         self.model=GraphController(capacity).to(device)
         self.optimizer=torch.optim.AdamW(self.model.parameters(),lr=.001)
         self.seq=0
@@ -562,6 +623,7 @@ class PortalEngine:
             ck=torch.load(p,map_location=self.device,weights_only=False)
             self.model.load_state_dict(ck['model']);self.optimizer.load_state_dict(ck['optimizer'])
             self.graph=Graph.restore(ck['graph'])
+            self.perspective=PerspectiveLearner.restore(ck.get('perspective',{}))
             self.steps=ck['steps'];self.episodes=ck['episodes'];self.loss_mean=ck.get('loss_mean',0.0)
             self.error_mean=ck.get('error_mean',0.0)
             # A world completed after the last weights checkpoint must not appear as
@@ -582,7 +644,8 @@ class PortalEngine:
         episode_mark=self.db.execute('SELECT IFNULL(MAX(id),0) FROM episodes').fetchone()[0]
         trace_mark=self.db.execute('SELECT IFNULL(MAX(id),0) FROM trace').fetchone()[0]
         torch.save({'model':self.model.state_dict(),'optimizer':self.optimizer.state_dict(),
-                    'graph':self.graph.state(),'steps':self.steps,'episodes':self.episodes,
+                    'graph':self.graph.state(),'perspective':self.perspective.state(),
+                    'steps':self.steps,'episodes':self.episodes,
                     'episode_watermark':episode_mark,'trace_watermark':trace_mark,
                     'loss_mean':self.loss_mean,'error_mean':self.error_mean},tmp)
         tmp.replace(p)
@@ -626,9 +689,28 @@ class PortalEngine:
             obs,actions,ids=stored[i]
             p=probabilities[i][:len(actions)]
             selected=rng.randrange(len(actions)) if rng.random()<epsilon else max(range(len(actions)),key=lambda j:p[j])
+            # Every fourth matched experience is a paired intervention on a
+            # SHADOW simulator clone, made BEFORE the real action. No oracle
+            # labels or counterfactual effects influence the chosen action.
+            probe=(len(actions)>1 and (self.steps+i+w.t)%4==0)
+            shadow=copy.deepcopy(w) if probe else None
+            alternate=actions[(selected+1+(self.steps+i)%max(1,len(actions)-1))%len(actions)] if probe else None
+            if probe and alternate==actions[selected]:
+                alternate=actions[(selected+1)%len(actions)]
             # predicted outcome confidence is neural score of the chosen action
             pred=torch.sigmoid(logits[i,selected]).detach().item()
             result=w.step(actions[selected])
+            perspective_report=None
+            if probe:
+                # Both outcomes are actual simulator executions, compared at
+                # identical pre-action state. Shadow evidence stays diagnostic
+                # until incorporated as AFTER-action graph memory.
+                shadow_outcome=shadow.step(alternate)
+                actual_tokens,_=w.observation()
+                alternate_tokens,_=shadow.observation()
+                perspective_report=self.perspective.contrast(
+                    w.kind,actions[selected],alternate,actual_tokens,
+                    alternate_tokens,result,shadow_outcome,source=w.fingerprint)
             target=(result['reward']+1)/2
             target=max(0.0,min(1.0,target))
             picks.append(selected);rewards.append(target);outcomes.append(result)
@@ -642,10 +724,14 @@ class PortalEngine:
             for tag in observed_next[:MAX_OBS-1]:
                 node,_=self.graph.ensure(tag if tag.startswith('SHARED/') else 'OBS/'+tag,'sensor',w.kind)
                 after_ids.append(node)
+            confidence=max(0.,min(1.,p[selected]))
+            entropy=-sum(q*math.log(max(q,1e-12)) for q in p)/max(1e-12,math.log(len(p))) if len(p)>1 else 0.
+            profile={'confidence':confidence,'normalized_entropy':max(0.,min(1.,entropy))}
             growth=self.graph.remember(w.kind,obs,actions[selected],result['effect'],ids,after_ids,
                 previous_motif=getattr(w,'last_motif',None),
                 evidence={'world_hash':w.fingerprint,'domain':w.kind,'step':w.t,
-                          'actual_effect':result['effect']})
+                          'actual_effect':result['effect']},perspective=perspective_report,
+                policy_profile=profile)
             w.last_motif=growth['motif_id']
             growth['born']=list(dict.fromkeys(contexts[i][5]+list(range(growth_start,len(self.graph.nodes)))))
             step_frame={'domain':w.kind,'seed':w.seed,'world_hash':w.fingerprint,'step':w.t,
@@ -654,7 +740,8 @@ class PortalEngine:
                         'target':round(target,6),'error':round(abs(pred-target),6),
                         'actual':result,'active':ids+[contexts[i][1][selected]],
                         'probabilities':[{'action':a,'prob':round(p[j],5)} for j,a in enumerate(actions)],
-                        'growth':growth,'device':str(self.device)}
+                        'growth':growth,'device':str(self.device),
+                        'perspective':perspective_report,'policy_profile':profile}
             if record:
                 step_frame['activations']=[{'round':round_i+1,'nodes':[
                     {'id':ids[j],'amplitude':round(float(acts[round_i][i,j].abs().mean()),5)}
@@ -760,6 +847,7 @@ class PortalEngine:
         self.db.commit()
         self.db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
         self.graph=Graph(self.graph.capacity)
+        self.perspective=PerspectiveLearner()
         torch.manual_seed(secrets.randbits(31))
         self.model=GraphController(self.graph.capacity).to(self.device)
         self.optimizer=torch.optim.AdamW(self.model.parameters(),lr=.001)
@@ -777,6 +865,7 @@ class PortalEngine:
         return {'device':str(self.device),'cuda':self.device.type=='cuda','steps':self.steps,
                 'episodes':self.episodes,'unique_worlds_verified_sqlite':unique,'unique_worlds_created':created,'next_seed':self.seq,
                 'loss':round(self.loss_mean,6),'prediction_error':round(self.error_mean,6),
+                'perspective':self.perspective.summary(limit=12),
                 'graph':{'nodes':len(self.graph.nodes),'edges':len(self.graph.edges),
                          'growth_events':self.graph.growth_events,'cross_domain_links':self.graph.cross_domain_links,
                          'dimension_counts':{str(d):sum(n.get('dimension',1)==d for n in self.graph.nodes)

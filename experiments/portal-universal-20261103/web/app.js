@@ -66,7 +66,7 @@ function project(v){
   return {x:canvas.width/2+xx*s,y:canvas.height/2-yy*s,z:zz,s};
 }
 function projectNode(n){return project(nodePosition(n))}
-function roleColor(role){return role==='temporal'?'#b497ff':role==='relation'?'#5b80b9':role==='action'?colors.decision:role==='motif'?'#bb9afa':role==='effect'?colors.confirmed:role==='world'?'#63b6ff':'#526f9a'}
+function roleColor(role){return role==='temporal'?'#b497ff':role==='relation'?'#5b80b9':role==='action'?colors.decision:role==='motif'?'#bb9afa':role==='effect'?colors.confirmed:role==='world'?'#63b6ff':role==='perspective'?'#64d6a2':'#526f9a'}
 function selectedTrace(){return frame>=0?traces[frame]||null:null}
 function normalizedPhase(now){return clamp((now-phaseStarted)/frameDuration,0,1)}
 function phaseIndex(v){return v<.18?0:v<.56?1:v<.68?2:v<.88?3:4}
@@ -232,6 +232,15 @@ function highlightFrame(){const f=selectedTrace();if(!f)return;
   $('update').textContent=`||ΔW||=${f.update_norm} · ||∇||=${f.gradient_norm}`;
   $('growth').textContent=`+${(f.growth?.born||[]).length} noduri · ${f.growth?.node_count} în total · ${f.growth?.dimension||1}D · ${(f.growth?.edges_born||[]).length} conexiuni noi`;
   $('frameInfo').textContent=`Trace #${f.trace_id||f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
+  const lens=f.perspective;
+  if(lens?.features?.length){
+    const different=lens.features.filter(v=>v.different).length;
+    $('perspectiveLatest').textContent=
+      'PERECHE INTERVENȚII (aceeași stare)\n'+lens.actual_action+' ↔ '+lens.alternative_action+
+      '\n'+different+'/'+lens.features.length+' caracteristici au răspuns diferit.\n'+
+      lens.features.slice(0,6).map(x=>x.channel+': '+x.observed+' / '+x.alternative+
+        ' · control='+Math.round(x.controllability*100)+'% · '+x.classification).join('\n');
+  }
   phaseStarted=performance.now();
   if(mode==='4d'&&followSlice){
     const current=fullGraph.byID.get(f.growth?.action_id)||nodeMap.get(f.growth?.action_id);
@@ -249,7 +258,7 @@ function showNext(){if(!follow||!pending.length)return;
 function inspect(id){selected=id;const n=(mode==='3d'?nodeMap:fullGraph.byID).get(id)||nodeMap.get(id);
  if(!n){$('nodeInfo').textContent='Nodul nu este în secțiunea actuală.';return;}
  const rel=(mode==='3d'?graph.edges:fullGraph.edges).filter(e=>e.from===id||e.to===id);
- $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nDimensiune structurală: ${n.dimension||1}D\nNăscut la eveniment: ${n.born_at||0}\nOrigine REALĂ: ${JSON.stringify(n.origin||{})}\nFolosiri: ${n.uses}\nDomenii: ${(n.domains||[]).join(', ')}\nPoziție afișare 3D: ${n.pos.join(', ')}\nPoziție TOROID 4D (x,y,z,w): ${(n.p4||[]).join(', ')}\nLegături vizibile: ${rel.length}\n${rel.slice(0,18).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
+ $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nControlabilitate (intervenții pereche): ${n.controllability==null?'neestimată':(100*n.controllability).toFixed(1)+'%'} · încercări: ${n.trials||0}\nDimensiune structurală: ${n.dimension||1}D\nNăscut la eveniment: ${n.born_at||0}\nOrigine REALĂ: ${JSON.stringify(n.origin||{})}\nFolosiri: ${n.uses}\nDomenii: ${(n.domains||[]).join(', ')}\nPoziție afișare 3D: ${n.pos.join(', ')}\nPoziție TOROID 4D (x,y,z,w): ${(n.p4||[]).join(', ')}\nLegături vizibile: ${rel.length}\n${rel.slice(0,18).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
 }
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,moved:false}});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;let dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
@@ -324,6 +333,8 @@ $('confirmReset').onclick=()=>act(async()=>{
  $('skipped').textContent='0';$('nodeInfo').textContent='Alege un nod din graf.';
  document.querySelector('.domain[value="text"]').checked=false;
  $('evaluation').textContent='Niciun test efectuat după RESET TOT.';
+ $('perspectiveStats').textContent='0 intervenții pereche · 0 caracteristici';
+ $('perspectiveLatest').textContent='Niciun experiment de controlabilitate înregistrat.';
  $('statusline').textContent='RESET COMPLET · Greutăți noi · Graf nou · Replay gol · Corpusul-sursă neatins.';
  await Promise.all([refreshStatus(),refreshGraph(),refreshTraces()]);
 });
@@ -336,6 +347,13 @@ async function refreshStatus(){if(statusBusy)return;statusBusy=true;try{
  $('nodes').textContent=`${s.graph.nodes.toLocaleString('ro-RO')} / ${s.graph.edges.toLocaleString('ro-RO')}`;
  $('error').textContent=Number(s.prediction_error).toFixed(4);
  $('loss').textContent=Number(s.loss).toFixed(4);
+ const lens=s.perspective||{};
+ $('perspectiveStats').textContent=`${Number(lens.probes||0).toLocaleString('ro-RO')} intervenții pereche · ${Number(lens.channels_observed||0)} caracteristici urmărite · `+
+   `${Number(lens.counts?.['action-sensitive']||0)} sensibile la acțiune · ${Number(lens.counts?.['action-invariant']||0)} invariante`;
+ if(lens.channels?.length && !$('perspectiveLatest').textContent.startsWith('PERECHE')){
+   $('perspectiveLatest').textContent=lens.channels.slice(0,8).map(x=>
+      `${x.channel}: ${Math.round(x.controllability*100)}% (${x.trials} probe) · ${x.classification}`).join('\n');
+ }
  $('device').textContent='DEVICE: '+s.device.toUpperCase();$('runState').textContent=s.state.toUpperCase();
  $('dataStatus').textContent=s.saved_at?'SAVED '+new Date(s.saved_at*1000).toLocaleTimeString('ro-RO'):'NOT YET SAVED';
  const ci=s.corpus_ingest||{state:'idle',progress:0};

@@ -49,3 +49,17 @@ Attached reference: `MagicPerspective_4D_Torus_OneObject.html`, supplied by the 
 - **Acceptance test:** `tests/test_v13.py` verifies pagination past 900, source-backed total counts, HTTP endpoint, stable ordering, and old UI controls; entire existing `tests/` suite and browser scripts checked. Headless-browser diagnostic loaded 7,953/7,953 node records and 37,291/37,291 edge records from 285 *actual* CPU diagnostic episodes. Section W=0.30 ±0.34 showed 3,547 of those nodes. No JavaScript page errors. This was not the user's actual CUDA-trained checkpoint.
 - **Regression guard:** V12 reset/corpus/train/replay tests unchanged; V13 does not touch the saved model format, optimizer, trainer, corpus importer or old 3D view. No invented graph edges; wireframe is a labeled geometric guide.
 - **State:** `LOCAL_CPU_BROWSER_TESTED; USER_GPU_UNVERIFIED; FULL_VERBATIM_CONFORMITY_BLOCKED`. The original user text and attachment must not be replaced with this summary, and previous missing transcript pieces remain missing.
+
+## V14 — Emergent controllability hypothesis within the SAME graph
+
+**Exact original user message:** see `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt` on `main`, including the phrase `SE CREAZA INTERN IN GRAF O SEPARARE INTRE CE E EL SI CE E LUMEA`. The full message is authoritative, not this technical interpretation.
+
+| Requirement | Actual file | Acceptance evidence | Status |
+| --- | --- | --- | --- |
+| Consume the encountered world and experience | `engine.py: Graph.context` + `Graph.remember` | `tests/test_v14.py` real world, paired simulator transitions and same global `Graph` | PARTIAL: only locally observed state is ingested; not entire inaccessible simulator truth |
+| Keep agent's own behavior within same graph | `engine.py: Graph.remember(policy_profile=…)` | `tests/test_v14.py` `policy` nodes and `expresses_policy` links | CPU TESTED: behavior distributions, not a conscious personality |
+| Let the difference between self and world form INTERNALLY | `perspective.py: PerspectiveLearner` and `Graph.remember(perspective=…)` | matched action interventions and invariants, 5+ evidence threshold, checkpoint restore | CPU TESTED numeric hypothesis; general identity emergence NOT PROVEN |
+| Show evidence in 4D viewer without UI regression | `web/app.js`, `web/torus-view.js`, `web/index.html` | tests preserve original 3 view buttons, import, reset, timeline; numeric node inspector | SOURCE TESTED; browser/RTX user hardware pending |
+| Do not destroy saved V13 training | `PortalEngine._restore` uses optional `perspective`; `save`, `reset_all` preserved | `tests/test_v14.py` old-format restore + all older tests | CPU TESTED |
+
+The full Verbatim integrity gate remains BLOCKED; no claim is made that V14 completes the wider infinite space / 14-million-exercise / general-language research program.

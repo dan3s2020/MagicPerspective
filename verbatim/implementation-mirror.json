@@ -498,11 +498,18 @@
       "exact_source_span": "SE CREAZA INTERN IN GRAF O SEPARARE INTRE CE E EL SI CE E LUMEA",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Single persistent graph representing environment, policy, actions, outcomes and recurrent internal state; learn a latent controllability/self-versus-external partition without fixed world/self graph separation, verified with counterfactual interventions, prediction errors and held-out domains.",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "LOCAL_CPU_TESTED_PARTIAL_USER_GPU_AND_TRANSFER_PENDING",
+      "code_paths": [
+        "experiments/portal-universal-20261103/perspective.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/web/torus-view.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v14.py"
+      ],
+      "measured_result": "29 local tests: 28 PASS, 1 pyarrow SKIP; 24-world CPU diagnostic: 423 executed steps, 110 matched probes, 43 perspective nodes and 5 policy nodes; CUDA and true positive cross-domain transfer unverified.",
+      "regression_check": "V10-V13 original Python tests and Node syntax passed, old checkpoint schema restored."
     },
     {
       "id": "REQ-V14-INGEST-ALL-WORLD-EXPERIENCE",
@@ -510,11 +517,18 @@
       "exact_source_span": "BAGA IN GRAF TOT,SI HARTA,SI ACTIUNILE SI \"CARACTERUL\" LUI",
       "experimental_mapping_is_not_verbatim": true,
       "experimental_mapping": "Persistent world/action/observation/self-state trace ingestion, typed provenance and bounded storage; investigate emergent self/environment structure as a testable learned distinction rather than assuming consciousness.",
-      "status": "NOT_VERIFIED",
-      "code_paths": [],
-      "test_paths": [],
-      "measured_result": null,
-      "regression_check": null
+      "status": "LOCAL_CPU_TESTED_PARTIAL_USER_GPU_AND_TRANSFER_PENDING",
+      "code_paths": [
+        "experiments/portal-universal-20261103/perspective.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/web/torus-view.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v14.py"
+      ],
+      "measured_result": "29 local tests: 28 PASS, 1 pyarrow SKIP; 24-world CPU diagnostic: 423 executed steps, 110 matched probes, 43 perspective nodes and 5 policy nodes; CUDA and true positive cross-domain transfer unverified.",
+      "regression_check": "V10-V13 original Python tests and Node syntax passed, old checkpoint schema restored."
     }
   ],
   "versions": [
@@ -663,6 +677,26 @@
         "V12 training and checkpoints",
         "existing 3D LIVE, RESET TOT, import and replay"
       ]
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V14",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "LOCAL_CPU_TESTED_PARTIAL_NOT_FULL_VERBATIM_CONFORMANT",
+      "verified_requirement_ids": [],
+      "source_refs": [
+        "2026-11-04-USER-SELF-WORLD-EMERGENT-PERSPECTIVE",
+        "2026-11-04-USER-IMPLEMENT-SELF-WORLD-V14"
+      ],
+      "code_paths": [
+        "experiments/portal-universal-20261103/perspective.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v14.py"
+      ],
+      "result": "Matched paired-action sensitivity and observed behavioral policy signatures stored in a single persistent graph; V13 checkpoint backward-compatible; no claim of subjective perspective or solved universal transfer."
     }
   ]
 }
