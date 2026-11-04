@@ -195,6 +195,13 @@
       "text": "hai",
       "source_path": "verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt",
       "order_in_recoverable_user_sequence": 27
+    },
+    {
+      "ref": "2026-11-04-USER-V14-FULL-NONCOMPLIANCE",
+      "role": "USER",
+      "text": "ce pula mea e ma asta? asa un cacat facut la misto? nu vezi ca nu respect deloc conversatia verbatim 100%?",
+      "source_path": "verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt",
+      "order_in_recoverable_user_sequence": 28
     }
   ]
 }
