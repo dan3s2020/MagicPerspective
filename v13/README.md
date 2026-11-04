@@ -45,3 +45,15 @@ node bench.mjs 0 grad      # bucla lentă, prima împărțire a textului
 node bench.mjs 0.5 grad    # a doua împărțire
 node bench.mjs 0 pull      # bucla rapidă
 ```
+
+## Fix de învățare și checkpoint (4 nov 2026)
+
+- Modificarea modului de perspectivă, a lățimii σ și a vitezei η actualizează motorul activ; **nu mai șterge antrenarea**. „De la început” este singurul reset explicit.
+- „Fiabilitate” arată **—** până la prima predicție măsurată, nu un 1.000 fals. Contorul, tabelul și graficul se sincronizează imediat după reset sau import.
+- **Salvează creierul** exportă un JSON local cu toate numărătorile sparse de contexte, distribuția de bază, ponderile B, selecția C, feedbackul, pozițiile perspectivelor, scorurile și curba.
+- **Încarcă creierul** reia antrenamentul din același punct, fără a învăța din nou textul trecut. Importul validează amprenta corpusului și refuză fișiere incompatibile fără a afecta memoria curentă. Checkpointurile sunt explicite, **nu** salvate automat în browser.
+- Ultimele 15% sunt **test prequential online**: predicția este notată înainte să fie observată valoarea adevărată, apoi memoria se actualizează. Nu este o evaluare cu model înghețat.
+- Modificarea hiperparametrilor în timpul antrenării este permisă, dar pentru comparații reproductibile resetează și rulează cu aceiași parametri pe întreg corpusul.
+- Această corecție repară continuitatea învățării și interpretarea UI, **nu promite un scor de predicție mai bun** decât raportul de benchmark existent.
+
+Test de regresie: `cd v13 && npm test`.
