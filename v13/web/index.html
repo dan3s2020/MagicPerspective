@@ -58,6 +58,11 @@
     <p class="small" id="pos"></p>
     <div class="row">
       <button id="play" class="on">Pauză</button><button id="stepb">Un caracter</button><button id="reset">De la început</button><button id="full">Rulează tot textul</button>
+      <button id="save" title="Exportă memoria și statisticile în JSON">Salvează creierul</button><button id="load" title="Importă un checkpoint V13">Încarcă creierul</button>
+      <input id="statefile" type="file" accept=".json,application/json" hidden>
+    </div>
+    <p class="small" id="checkpointStatus" role="status" aria-live="polite">Memoria este în browser. Salvează un checkpoint înainte să închizi pagina; schimbarea parametrilor nu șterge antrenarea.</p>
+    <div class="row">
     </div>
     <label class="s">Viteză<input id="speed" type="range" min="1" max="400" value="6"><output id="speedo"></output></label>
 
@@ -65,14 +70,14 @@
     <div class="row"><button data-mode="grad" class="on">Lentă (după fiabilitate)</button><button data-mode="pull">Rapidă (trage spre centru)</button></div>
     <label class="s">Lățimea σ<input id="sigma" type="range" min="0.5" max="2" step="0.05" value="1"><output id="sigmao"></output></label>
     <label class="s">Viteza η<input id="eta" type="range" min="0.01" max="1" step="0.01" value="0.05"><output id="etao"></output></label>
-    <p class="small">Valorile implicite (lentă, σ = 1, η = 0,05) sunt cele care au mers cel mai bine în măsurători. Schimbarea lor repornește fluxul de la început.</p>
+    <p class="small">Valorile implicite (lentă, σ = 1, η = 0,05) au fost cele mai bune în măsurătorile V13 publicate. Acum modificarea lor păstrează memoria; „De la început” este singura resetare intenționată. Pentru comparații valide, rulează fiecare configurație de la început.</p>
 
     <h2>Fiabilitatea fiecărei perspective acum</h2>
     <div class="bars" id="bars"></div>
 
     <h2>Biți pe caracter (mai puțin = mai bine)</h2>
     <table id="tab"></table>
-    <p class="small">Cât timp textul de antrenare curge, toți învață. Ultimele 15% din text sunt partea de test: acolo se măsoară rezultatul. Toți trăiesc exact același flux și au aceleași memorii de niveluri; se deosebesc doar prin felul în care își aleg și își mută perspectiva.</p>
+    <p class="small">În primele 85% toți învață să prezică următorul caracter. Ultimele 15% sunt evaluate online: fiecare predicție este notată înainte de a vedea caracterul, după care modelul continuă să învețe. Acesta este un test prequential, nu un test complet înghețat. Organismele au memorii comune pe niveluri și diferă prin alegerea perspectivei.</p>
     <canvas class="curve" id="curve" aria-label="Biți pe caracter de-a lungul fluxului"></canvas>
 
     <h2>Ce s-a măsurat (bench.mjs, ambele împărțiri ale textului)</h2>
