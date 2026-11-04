@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MagicPerspective | Explorator 5D Spațiu–Timp</title><link rel="stylesheet" href="spacetime.css"></head>
+<body>
+<header class="top"><div><div class="eyebrow">MAGICPERSPECTIVE / REAL-EVENT LAB</div><h1>SPAȚIU–TIMP <span>5D</span></h1><p>Un singur graf persistent · patru coordonate spațiale + ordinea evenimentelor observate</p></div>
+<div class="topactions"><a href="/" class="button">← PORTAL ORIGINAL</a><button id="reload" type="button">ACTUALIZEAZĂ GRAFUL</button><span id="connect">CONECTARE…</span></div></header>
+<main>
+<section class="stage">
+<div class="stagebar"><strong>01 / OBSERVATOR — 5D → 4D → 3D → 2D</strong><span id="coverage">Numai date reale din motor</span></div>
+<canvas id="space" aria-label="Proiecția 5D a activărilor reale ale grafului pe axa temporală"></canvas>
+<div class="legend"><span><i style="background:#4ce8e4"></i> activări înregistrate</span><span><i style="background:#efb46c"></i> mesaje observate</span><span><i style="background:#f27da0"></i> eroare</span><span><i style="background:#8b9ed5"></i> agregare vizuală</span><span><i style="background:#3e617a"></i> torus: reper matematic</span></div>
+<div class="stagehint">Drag: rotație XY/WT · Shift+drag: panoramare X/Y · Rotiță: zoom spațial · Shift+rotiță: zoom temporal · Click: inspectează eveniment/nod</div>
+</section>
+<aside class="right">
+<section class="pane"><h2>02 / OBSERVATOR</h2><div class="buttons"><button id="resetCamera">RESETEAZĂ CAMERA</button><button id="follow">URMĂREȘTE LIVE: DA</button></div>
+<label>Zoom spațial <output id="spaceVal">×1</output><input id="spatialZoom" type="range" min="-12" max="12" value="0" step="0.1"></label>
+<label>Scară timp <output id="timeVal">—</output><input id="timeZoom" type="range" min="0" max="1" value="0" step="1"></label>
+<div class="buttons"><button id="timeBack">◀ TIMP</button><button id="timeFront">TIMP ▶</button><button id="allTime">TOATĂ ISTORIA</button></div>
+<h3>Centru cameră 5D</h3><div class="camera" id="cameraInputs"></div>
+<h3>Rotații plane (10)</h3><div class="angles" id="planes"></div>
+<label><input type="checkbox" id="shell" checked> Reper geometric toroidal (nu este graf neuronal)</label>
+<label><input type="checkbox" id="tracks" checked> Continuitate între evenimente consecutive observate</label>
+</section>
+<section class="pane"><h2>03 / INSPECTOR</h2><pre id="inspect">Alege un punct din graf. Nicio observație nu este inventată.</pre></section>
+</aside>
+<section class="timeline"><div class="stagebar"><strong>04 / ZOOM TEMPORAL — ÎNREGISTRĂRI REALE</strong><span id="windowInfo">—</span></div>
+<canvas id="history" aria-label="Numărul exact de evenimente în fiecare interval temporal; clic pentru navigare"></canvas>
+<div class="timefooter"><span id="sampling">Nu sunt încărcate evenimente.</span><span id="source">T = identificator de eveniment, nu secunde.</span></div></section>
+<section class="footnote"><strong>NOTĂ ȘTIINȚIFICĂ:</strong> coordonatele spațiale provin din embeddingul 4D actual al Portalului, care este determinist pentru multe noduri, nu dovedit ca învățat. Grupurile multiscală sunt agregări de vizualizare, nu neuroni noi. Intervale fără înregistrări nu sunt completate cu date sintetice. Fractalitatea nu este presupusă și nu este declarată demonstrată.</section>
+</main>
+<script type="module" src="spacetime.js"></script></body></html>
