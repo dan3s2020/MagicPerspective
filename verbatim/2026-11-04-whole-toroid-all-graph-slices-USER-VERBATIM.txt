@@ -1,0 +1,1 @@
+nu vad torusul in ui-ul nostru,adica totul e ok,nu trebuie sa scoti nimic dar ni vad sliceuri din acest toroid sa vad tot graful care se intinde prin tot interiorul acestui torus,nu sa stau cu focus pe partea aia 3d de graf

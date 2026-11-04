@@ -234,6 +234,40 @@ class Graph:
                                     for d in (1,2,3,4)},
                 'experience_step':self.experience_step,'saturated':self.saturated}
 
+    def view_page(self, node_offset=0, node_limit=1200, edge_offset=0, edge_limit=3200):
+        """Append-only paginated view of the ENTIRE learned graph.
+
+        The compact pre-existing ``view`` method is preserved for the fast 3D
+        live camera. This method does not prioritize, synthesize, or sample
+        vertices: it walks every persistent node/edge in stable ID/insert order.
+        Cursor indexes survive model checkpoints because restore preserves both
+        node and edge ordering. Callers can resume at the previous end cursor.
+        """
+        from itertools import islice
+        node_offset=max(0,int(node_offset))
+        edge_offset=max(0,int(edge_offset))
+        node_limit=max(0,min(1800,int(node_limit)))
+        edge_limit=max(0,min(5000,int(edge_limit)))
+        node_slice=self.nodes[node_offset:node_offset+node_limit]
+        vertices=[{'id':n['id'],'label':n['label'],'role':n['role'],
+                   'pos':n['pos'],'p4':n.get('p4',solid_torus4_position(n['label'])),
+                   'dimension':n.get('dimension',1),'uses':n['uses'],
+                   'domains':n['domains'],'born_at':n.get('born_at',0),
+                   'origin':n.get('origin')} for n in node_slice]
+        edges=[]
+        for (a,b,k),v in islice(self.edges.items(),edge_offset,edge_offset+edge_limit):
+            edges.append({'from':a,'to':b,'type':k,
+                          'weight':round(v['strength']/max(1,v['count']),5),
+                          'count':v['count'],'born_at':v.get('born_at',0),
+                          'domains':v.get('domains',[])})
+        return {'schema':'portal.graph.all.v1','nodes':vertices,'edges':edges,
+                'next_node_offset':node_offset+len(vertices),
+                'next_edge_offset':edge_offset+len(edges),
+                'total_nodes':len(self.nodes),'total_edges':len(self.edges),
+                'experience_step':self.experience_step,
+                'complete':node_offset+len(vertices)>=len(self.nodes) and
+                            edge_offset+len(edges)>=len(self.edges)}
+
     def state(self):
         return {'capacity':self.capacity,'nodes':self.nodes,'edges':[
                 [a,b,k,v] for (a,b,k),v in self.edges.items()],

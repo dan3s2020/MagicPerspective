@@ -9,9 +9,33 @@ const dpr=Math.min(2,window.devicePixelRatio||1);
 const colors={activation:'#55d4e7',prediction:'#b497ff',decision:'#f7c95d',error:'#ee5e7e',learning:'#f3985e',confirmed:'#52cfa6',growth:'#eef5ff'};
 const MAJOR=1.75,MINOR=.92;
 let graph={nodes:[],edges:[],total_nodes:0,total_edges:0},nodeMap=new Map(),graphVersion=0;
-let traces=[],pending=[],frame=-1,follow=true,mode='3d',yaw=.48,pitch=-.22,zoom=1,drag=null,selected=null;
+let traces=[],pending=[],frame=-1,follow=true,mode='torus',yaw=.12,pitch=-.08,zoom=1.08,drag=null,selected=null;
 let since=0,skipped=0,lastError='',loadedCorpusDigest=null,phaseStarted=performance.now(),frameDuration=1160;
-let sliceW=0,sliceThickness=.34,torusTheta=0,followSlice=true,lastStatus=null;
+let sliceW=0,sliceThickness=.34,torusTheta=0,followSlice=false,lastStatus=null;
+// User-supplied Clifford Torus HTML establishes the 4D plane rotations.
+// True all-graph render positions come exclusively from backend p4 coordinates.
+let torusAngles=[.08,-.18,.02,.08,-.10,.04],rotate4Automatically=false,lastRotateTime=performance.now();
+const allNodes=new Map(),allEdges=new Map();
+let fullGraph={nodes:[],edges:[],byID:new Map()},wholeGraphBusy=false;
+let wholeNodeOffset=0,wholeEdgeOffset=0,wholeNodeTotal=0,wholeEdgeTotal=0;
+let torusProjections=new Map(),lastTorusInfoAt=0;
+const edgeKey=e=>e.from+'|'+e.to+'|'+e.type;
+function rebuildWholeGraph(){
+  const nodes=new Map(allNodes);
+  // The previous fast /api/graph fetch can include a brand-new active node
+  // before its all-graph page is fetched; never suppress that live activity.
+  for(const n of graph.nodes)nodes.set(n.id,n);
+  const edges=new Map(allEdges);
+  for(const e of graph.edges)edges.set(edgeKey(e),e);
+  fullGraph={nodes:[...nodes.values()],edges:[...edges.values()],byID:nodes};
+}
+function clearWholeGraph(){
+  PortalTorusView.resetGeometry();
+  allNodes.clear();allEdges.clear();wholeNodeOffset=0;wholeEdgeOffset=0;
+  wholeNodeTotal=0;wholeEdgeTotal=0;
+  fullGraph={nodes:[],edges:[],byID:new Map()};torusProjections=new Map();
+}
+
 let statusBusy=false,traceBusy=false,graphBusy=false,graphFetched=0;
 const phaseLabels=[
   '01 • PERCEPȚIE — noduri activate în lumea curentă',
@@ -85,6 +109,37 @@ function draw(){
   const W=canvas.width,H=canvas.height;
   ctx.clearRect(0,0,W,H);
   if(!W||!H){requestAnimationFrame(draw);return}
+  if(mode==='torus'||mode==='4d'){
+    if(rotate4Automatically){
+      const dt=Math.min(.06,(now-lastRotateTime)/1000);
+      torusAngles[0]+=dt*.12;torusAngles[1]+=dt*.075;torusAngles[2]+=dt*.04;
+    }
+    lastRotateTime=now;
+    const f=selectedTrace();
+    const rendered=PortalTorusView.draw(ctx,{
+      width:W,height:H,dpr,mode,nodes:fullGraph.nodes,edges:fullGraph.edges,
+      byID:fullGraph.byID,angles:torusAngles.map((a,i)=>i===3?a+torusTheta:a),
+      yaw,pitch,zoom,w:sliceW,thickness:sliceThickness,
+      trace:f,phase:normalizedPhase(now),selected
+    });
+    torusProjections=rendered.visible;
+    const loadedN=allNodes.size,loadedE=allEdges.size;
+    const totalN=Math.max(wholeNodeTotal,graph.total_nodes||0),totalE=Math.max(wholeEdgeTotal,graph.total_edges||0);
+    if(now-lastTorusInfoAt>250){lastTorusInfoAt=now;
+    $('torusInfo').textContent=(mode==='torus'?'TOROID 4D COMPLET':'SECȚIUNE A INTERIORULUI')+
+      ' · '+loadedN.toLocaleString('ro-RO')+'/'+totalN.toLocaleString('ro-RO')+' noduri citite'+
+      ' · '+loadedE.toLocaleString('ro-RO')+'/'+totalE.toLocaleString('ro-RO')+' legături citite'+
+      (mode==='4d'?' · '+rendered.insideCount.toLocaleString('ro-RO')+' noduri în secțiune':'')+
+      ' · XW '+(torusAngles[0]*180/Math.PI).toFixed(0)+'° YW '+(torusAngles[1]*180/Math.PI).toFixed(0)+'°';
+    $('sliceCount').textContent=mode==='torus'?
+      'Întreg toroidul · '+rendered.insideCount.toLocaleString('ro-RO')+' noduri reale · '+rendered.drawnEdges.toLocaleString('ro-RO')+' legături reale desenate':
+      'Felie W='+sliceW.toFixed(2)+' ±'+sliceThickness.toFixed(2)+' · '+rendered.insideCount.toLocaleString('ro-RO')+
+      ' noduri · '+rendered.drawnEdges.toLocaleString('ro-RO')+' segmente din legături reale';
+    }
+    if(follow&&normalizedPhase(now)>=1&&pending.length)showNext();
+    requestAnimationFrame(draw);return;
+  }
+
   if(mode==='4d')drawTorusSectionGuide();
   const f=selectedTrace(),p=normalizedPhase(now),idx=phaseIndex(p);
   // The set of existing graph nodes is fetched separately from events. Only
@@ -179,8 +234,11 @@ function highlightFrame(){const f=selectedTrace();if(!f)return;
   $('frameInfo').textContent=`Trace #${f.trace_id||f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
   phaseStarted=performance.now();
   if(mode==='4d'&&followSlice){
-    const current=nodeMap.get(f.growth?.action_id);
-    if(current?.p4){sliceW=clamp(current.p4[3],-.86,.86);$('sliceW').value=sliceW;$('sliceWValue').textContent=sliceW.toFixed(2)}
+    const current=fullGraph.byID.get(f.growth?.action_id)||nodeMap.get(f.growth?.action_id);
+    if(current?.p4){
+      const rp=PortalTorusView.rotate(current.p4,torusAngles.map((a,i)=>i===3?a+torusTheta:a));
+      sliceW=clamp(rp[3],-2.7,2.7);$('sliceW').value=sliceW;$('sliceWValue').textContent=sliceW.toFixed(2);
+    }
   }
 }
 function pushTrace(f){traces.push(f);if(traces.length>300){traces.shift();if(!follow&&frame>0)frame--}if(follow){frame=traces.length-1;highlightFrame()}}
@@ -188,31 +246,54 @@ function showNext(){if(!follow||!pending.length)return;
   const next=pending.shift();pushTrace(next);
   // New geometry is not invented; the next /api/graph fetch catches up.
 }
-function inspect(id){selected=id;const n=nodeMap.get(id);
+function inspect(id){selected=id;const n=(mode==='3d'?nodeMap:fullGraph.byID).get(id)||nodeMap.get(id);
  if(!n){$('nodeInfo').textContent='Nodul nu este în secțiunea actuală.';return;}
- const rel=graph.edges.filter(e=>e.from===id||e.to===id);
+ const rel=(mode==='3d'?graph.edges:fullGraph.edges).filter(e=>e.from===id||e.to===id);
  $('nodeInfo').textContent=`ID: ${n.id}\nLabel: ${n.label}\nRol: ${n.role}\nDimensiune structurală: ${n.dimension||1}D\nNăscut la eveniment: ${n.born_at||0}\nOrigine REALĂ: ${JSON.stringify(n.origin||{})}\nFolosiri: ${n.uses}\nDomenii: ${(n.domains||[]).join(', ')}\nPoziție afișare 3D: ${n.pos.join(', ')}\nPoziție TOROID 4D (x,y,z,w): ${(n.p4||[]).join(', ')}\nLegături vizibile: ${rel.length}\n${rel.slice(0,18).map(e=>`${e.from} → ${e.to} (${e.type}, count=${e.count})`).join('\n')}`;
 }
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,moved:false}});
 canvas.addEventListener('pointermove',e=>{if(!drag)return;let dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
- yaw+=dx*.006;pitch=clamp(pitch+dy*.006,-1.5,1.5);drag.x=e.clientX;drag.y=e.clientY});
+ if(mode!=='3d'&&!e.shiftKey){
+   torusAngles[0]+=dx*.0074;torusAngles[1]+=dy*.0074;
+   torusAngles[2]+=(dx-dy)*.0020;torusAngles[3]+=(dx+dy)*.0014;
+ }else{yaw+=dx*.006;pitch=clamp(pitch+dy*.006,-1.5,1.5)}
+ drag.x=e.clientX;drag.y=e.clientY});
 canvas.addEventListener('pointerup',e=>{if(!drag)return;const moved=drag.moved;drag=null;if(moved)return;
  const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*dpr,y=(e.clientY-r.top)*dpr;
  let best=null,dist=14*dpr;
- for(const n of graph.nodes){if(mode==='4d'&&!visible4(n))continue;const p=projectNode(n),d=Math.hypot(x-p.x,y-p.y);if(d<dist){dist=d;best=n.id}}
+ if(mode==='3d')for(const n of graph.nodes){const p=projectNode(n),d=Math.hypot(x-p.x,y-p.y);if(d<dist){dist=d;best=n.id}}
+ else for(const [id,p] of torusProjections){const d=Math.hypot(x-p.x,y-p.y);if(d<dist){dist=d;best=id}}
  if(best!==null)inspect(best);
 });
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom*Math.exp(-e.deltaY*.001),.3,4)},{passive:false});
-$('center').onclick=()=>{yaw=mode==='4d'?0:.48;pitch=mode==='4d'?-.07:-.22;zoom=mode==='4d'?1.22:1;torusTheta=0;$('torusTheta').value=0;$('thetaValue').textContent='0.00'};
+$('center').onclick=()=>{
+ yaw=mode==='3d'?.48:.12;pitch=mode==='3d'?-.22:-.08;zoom=mode==='3d'?1:1.08;
+ torusAngles=[.08,-.18,.02,.08,-.10,.04];torusTheta=0;
+ $('torusTheta').value=0;$('thetaValue').textContent='0.00';
+};
 for(const b of document.querySelectorAll('[data-mode]'))b.onclick=()=>{mode=b.dataset.mode;for(const other of document.querySelectorAll('[data-mode]'))other.classList.toggle('active',other===b);
- $('sliceTools').hidden=mode!=='4d';
- yaw=mode==='4d'?0:.48;pitch=mode==='4d'?-.07:-.22;zoom=mode==='4d'?1.22:1;
- $('axis').textContent=mode==='4d'?'SECȚIUNE W DIN TOROID 4D · TIMPUL E DOAR REPLAY':'X · Y · Z';
+ $('sliceTools').hidden=mode==='3d';
+ $('sliceW').disabled=mode!=='4d';$('sliceThickness').disabled=mode!=='4d';
+ $('torusInfo').hidden=mode==='3d';
+ yaw=mode==='3d'?.48:.12;pitch=mode==='3d'?-.22:-.08;zoom=mode==='3d'?1:1.08;
+ $('axis').textContent=mode==='torus'?'TOROID 4D COMPLET · S¹ × B³':
+   mode==='4d'?'SECȚIUNE SPAȚIALĂ W · REPLAY SEPARAT':'X · Y · Z';
+ if(mode!=='3d')refreshWholeGraph();
 };
 $('sliceW').oninput=()=>{sliceW=+$('sliceW').value;followSlice=false;$('followSlice').checked=false;$('sliceWValue').textContent=sliceW.toFixed(2)};
 $('sliceThickness').oninput=()=>{sliceThickness=+$('sliceThickness').value;$('thicknessValue').textContent=sliceThickness.toFixed(2)};
 $('torusTheta').oninput=()=>{torusTheta=+$('torusTheta').value;$('thetaValue').textContent=torusTheta.toFixed(2)};
 $('followSlice').onchange=()=>{followSlice=$('followSlice').checked};
+$('autoRotate4').onchange=()=>{rotate4Automatically=$('autoRotate4').checked;lastRotateTime=performance.now()};
+const torusPresets={
+ ring:{angles:[.08,-.18,.02,.08,-.10,.04],yaw:.12,pitch:-.08},
+ flower:{angles:[.95,-.72,.18,.34,-.05,.20],yaw:.24,pitch:-.18},
+ sphere:{angles:[1.12,.88,-.40,.30,.26,-.12],yaw:.34,pitch:-.10}
+};
+for(const button of document.querySelectorAll('[data-preset4]'))button.onclick=()=>{
+ const v=torusPresets[button.dataset.preset4];torusAngles=v.angles.slice();yaw=v.yaw;pitch=v.pitch;
+ for(const other of document.querySelectorAll('[data-preset4]'))other.classList.toggle('active',other===button);
+};
 $('batch').oninput=()=>{$('batchValue').textContent=$('batch').value};
 $('timeline').oninput=()=>{follow=false;frame=+$('timeline').value;highlightFrame();$('play').textContent='▶'};
 $('prev').onclick=()=>{follow=false;frame=Math.max(0,frame-1);highlightFrame();$('play').textContent='▶'};
@@ -236,7 +317,7 @@ $('resetPhrase').oninput=()=>{$('confirmReset').disabled=$('resetPhrase').value!
 $('confirmReset').onclick=()=>act(async()=>{
  $('confirmReset').disabled=true;
  await post('/api/reset',{confirm:$('resetPhrase').value});dialog.close();
- graph={nodes:[],edges:[],total_nodes:0,total_edges:0};nodeMap.clear();
+ graph={nodes:[],edges:[],total_nodes:0,total_edges:0};nodeMap.clear();clearWholeGraph();
  traces=[];pending=[];since=0;frame=-1;skipped=0;follow=true;selected=null;
  loadedCorpusDigest=null;lastError='';$('corpusState').textContent='Textul cere un corpus real.';
  $('timeline').value=0;$('timeline').max=0;$('frameN').textContent='0/0';$('frameInfo').textContent='Fără evenimente de antrenare';
@@ -278,8 +359,32 @@ async function refreshGraph(){if(graphBusy)return;graphBusy=true;try{
  const url='/api/graph?limit=750'+(ids?'&focus='+encodeURIComponent(ids):'');
  const r=await fetch(url);if(!r.ok)throw Error('Graph '+r.status);
  const data=await r.json();graph=data;nodeMap=new Map(data.nodes.map(n=>[n.id,n]));
- graphFetched=Date.now();
+ if(wholeNodeOffset>data.total_nodes||wholeEdgeOffset>data.total_edges)clearWholeGraph();
+ rebuildWholeGraph();graphFetched=Date.now();
  }catch(e){$('statusline').textContent='Vizualizarea grafului: '+e.message}finally{graphBusy=false}}
+async function refreshWholeGraph(){
+ if(wholeGraphBusy)return;wholeGraphBusy=true;
+ try{
+   // Global pagination retrieves the ENTIRE persisted topology, never a sample.
+   // Bounded work per iteration keeps training and the legacy 3D panel responsive.
+   for(let i=0;i<(mode==='3d'?1:16);i++){
+     const url='/api/graph/all?node_offset='+wholeNodeOffset+'&node_limit=1200'+
+       '&edge_offset='+wholeEdgeOffset+'&edge_limit=3500';
+     const res=await fetch(url);
+     if(!res.ok)throw Error('Full graph API '+res.status);
+     const page=await res.json();
+     if(page.schema!=='portal.graph.all.v1')throw Error('Full graph response schema mismatch');
+     if(page.total_nodes<wholeNodeOffset||page.total_edges<wholeEdgeOffset){clearWholeGraph();continue}
+     for(const n of page.nodes)allNodes.set(n.id,n);
+     for(const e of page.edges)allEdges.set(edgeKey(e),e);
+     wholeNodeOffset=page.next_node_offset;wholeEdgeOffset=page.next_edge_offset;
+     wholeNodeTotal=page.total_nodes;wholeEdgeTotal=page.total_edges;
+     if(page.complete)break;
+   }
+   rebuildWholeGraph();
+ }catch(e){$('statusline').textContent='Citire toroid complet: '+e.message}
+ finally{wholeGraphBusy=false}
+}
 async function refreshTraces(){if(traceBusy)return;traceBusy=true;try{
  const r=await fetch('/api/traces?after='+since+'&limit=48');if(!r.ok)throw Error('Traces '+r.status);
  const data=await r.json();
@@ -289,7 +394,8 @@ async function refreshTraces(){if(traceBusy)return;traceBusy=true;try{
  if(pending.length>90){skipped+=pending.length-90;pending.splice(0,pending.length-90);$('skipped').textContent=skipped.toLocaleString('ro-RO')}
  if(follow && frame===-1 && pending.length)showNext();
  }catch(e){$('statusline').textContent='Jurnal evenimente: '+e.message}finally{traceBusy=false}}
-refreshStatus();refreshGraph();refreshTraces();
+refreshStatus();refreshGraph();refreshTraces();refreshWholeGraph();
 setInterval(refreshStatus,900);
 setInterval(refreshTraces,350);
 setInterval(refreshGraph,1550);
+setInterval(refreshWholeGraph,1800);

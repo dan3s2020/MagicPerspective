@@ -1,595 +1,632 @@
 {
- "schema": 1,
- "full_implementation_conformity_verified": false,
- "meaning": "This is a REQUIREMENT TRACKING STRUCTURE; technical mapping is a proposal not original Verbatim and no version is certified fully compliant.",
- "sources": [
-  "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
-  "verbatim/recent-user-messages.json",
-  "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt",
-  "verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt",
-  "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt"
- ],
- "required_evidence_fields": [
-  "source_ref",
-  "exact_source_span",
-  "code_paths",
-  "test_paths",
-  "measured_result",
-  "regression_check",
-  "status"
- ],
- "requirements": [
-  {
-   "id": "REQ-01",
-   "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
-   "exact_source_span": "14 milioane de exercitii unice si diferite",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Unique problem counting with reproducible episode identifiers across domains",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "CPU smoke: SQLite holds content-hash-unique completed episodes, not 14M; uniqueness test passes. Long run not done.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-02",
-   "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
-   "exact_source_span": "insula",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Track persistent solution-shape patterns; tests on new worlds and causal ablations",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Persistent motifs and cross-domain reused nodes exist; identity of universal solution form not established.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-03",
-   "source_ref": "2026-11-03-USER-NO-MORE-DEMOS",
-   "exact_source_span": "gata cu demo-ul",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Real training and measured held-out evaluation without toy success claims",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/engine.py",
-    "experiments/portal-universal-20261103/server.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Real multi-domain environment actions, gradients, and blind controls tested on CPU, not long-run CUDA or positive transfer.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-04",
-   "source_ref": "2026-11-03-USER-ANIMATED-GRAPH-UI",
-   "exact_source_span": "SA MA UIT LA GRAF SI SA INTELEG TOT CE SE INTAMPLA PRIN PATTERNURILE PE CARE LE VAD",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Event-sourced 3D viewer: activations, prediction, actual action, error impulses, weight updates",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/web/app.js",
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Action/activation/message/error/gradient frames generated from actual outcomes and weights; browser headless visual test blocked by environment.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-05",
-   "source_ref": "2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
-   "exact_source_span": "GRAF 4D",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "3D spatial layout + time trajectory + higher dimensional state projections",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/web/app.js"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Spatial 3D canvas projection and time-stacked event frames implemented; higher-dimensional latent projection incomplete.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-06",
-   "source_ref": "2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
-   "exact_source_span": "CONCEPTUL DE POLYMATH",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Persistent morphable graph trained across domains; structural growth, selective merging, non-destructive retention",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Shared model/optimizer/graph persists across five physical domains and optional byte-text; autonomous functional merging and transfer unproven.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-07",
-   "source_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
-   "exact_source_span": "graful e si lumea,e si forma solutie",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Map world, controller, observations, constraints and predicted solution within one computational graph, with a separate environment truth contract",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "World/observation/action/outcome represented as typed nodes in one persistent graph; hidden physical truth remains separate for honest evaluation.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-08",
-   "source_ref": "2026-11-03-USER-AS-ABOVE-AS-BELOW-QUESTION",
-   "exact_source_span": "as above as below",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Correspondence test between graph-predicted transitions and real observed state transitions",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Predicted action-quality compared to observed reward, mismatch and gradient recorded; physical 4D claim not made.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-09",
-   "source_ref": "2026-11-03-USER-VERBATIM-MIRROR-MAIN",
-   "exact_source_span": "versiunile trebuie sa se oglindeasca in ea",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Source-to-code-to-test-to-evidence mapping for each release on main",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "experiments/portal-universal-20261103/README.md",
-    "experiments/portal-universal-20261103/VERBATIM_MAPPING.md"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_portal.py"
-   ],
-   "measured_result": "Partial evidence linked to source; original full archival gate must remain BLOCKED.",
-   "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
-  },
-  {
-   "id": "REQ-10",
-   "source_ref": "2026-11-03-USER-4D-HYPERCUBE-NAVIGATION",
-   "exact_source_span": "pe ecranul meu 2d o sa vad un hypercube,si aia i sa fie metoda de vizualizare a grafului 4d,si de asemenea hypercube are sageti pe care pot sa apas si sa misc hypercubul prin spatiul 4d",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Screen-fixed tesseract with true 4D camera translation XYZ/W; observable 3D W-sections; engine-sourced graph edges, activated cells, predicted and executed transitions. Arrow clicks translate camera mathematically; no invented fourth coordinate.",
-   "status": "GEOMETRY_AND_VIEWER_IMPLEMENTED_ORIGINAL_V7_INTEGRATION_BLOCKED",
-   "code_paths": [
-    "experiments/portal-v7-hypercube-4d/geometry.mjs",
-    "experiments/portal-v7-hypercube-4d/viewer.mjs",
-    "experiments/portal-v7-hypercube-4d/viewer.css"
-   ],
-   "test_paths": [
-    "experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs"
-   ],
-   "measured_result": "Geometry and viewer available as additive modules. Exact original Portal4D V7 UniversalGraph ZIP is not accessible for modification in this session. No claim of original V7 runtime integration or real backend animation until original source is inspected and event API wired.",
-   "regression_check": "CI: node --test experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs; source-to-implementation and original V7 no-regression checks remain open."
-  },
-  {
-   "id": "REQ-11",
-   "source_ref": "2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH",
-   "exact_source_span": "graful construinduse din ce in ce mai dens pe masura ce asimineaza tot felul de exercitii si experiente nu sa fie decorativ un graf abstract desenat hardcoded",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Graph starts empty, adds only observed 4D nodes and confirmed original training transitions, reinforces measured links on reuse, persists complete evidence, shows actual new-node/new-edge births and exact density/unique-problem measurements. No static fake graph replaces the model. The original V7 source adapter remains required to connect real training events.",
-   "status": "EVIDENCE_GRAPH_AND_LIVE_VIEW_IMPLEMENTED_ORIGINAL_V7_SOURCE_ADAPTER_PENDING",
-   "code_paths": [
-    "experiments/portal-v7-hypercube-4d/growth.mjs",
-    "experiments/portal-v7-hypercube-4d/journal.mjs",
-    "experiments/portal-v7-hypercube-4d/growth-view.mjs",
-    "experiments/portal-v7-hypercube-4d/growth-server.mjs",
-    "experiments/portal-v7-hypercube-4d/growth-index.html",
-    "experiments/portal-v7-hypercube-4d/growth-app.mjs",
-    "experiments/portal-v7-hypercube-4d/viewer.mjs"
-   ],
-   "test_paths": [
-    "experiments/portal-v7-hypercube-4d/tests/growth.test.mjs",
-    "experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs",
-    "experiments/portal-v7-hypercube-4d/tests/server.test.mjs"
-   ],
-   "measured_result": "Pending GitHub CI evidence. Original Portal4D V7 training source is not present in this repository; receipt of original model events and in-V7 integration are NOT yet verified. No claim of 14M unique exercises or positive generalization.",
-   "regression_check": "node --test experiments/portal-v7-hypercube-4d/tests/*.test.mjs; node scripts/verbatim-mirror-gate.mjs must report integrity PASS and completeness gate BLOCKED."
-  },
-  {
-   "id": "REQ-12",
-   "source_ref": "2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES",
-   "exact_source_span": "nu am buton de start training,nu vad exercitiile unice toate pe care le parcuge",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "Expose unchanged original V7 START 1/START 2/A–H controls inside growth dashboard and add a paginated, persisted log of all real event records actually received from V7; no fake training controls or synthetic exercise counts.",
-   "status": "ORIGINAL_V7_CONTROLS_VISIBLE_WHEN_8788_REACHABLE_TELEMETRY_ADAPTER_PENDING",
-   "code_paths": [
-    "START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1",
-    "experiments/portal-v7-hypercube-4d/growth-index.html",
-    "experiments/portal-v7-hypercube-4d/growth-app.mjs",
-    "experiments/portal-v7-hypercube-4d/growth-server.mjs"
-   ],
-   "test_paths": [
-    "experiments/portal-v7-hypercube-4d/tests/server.test.mjs",
-    ".github/workflows/magic-regression.yml"
-   ],
-   "measured_result": "The embedded original V7 dashboard is reachable if 8788 is serving and allows framing. Its START buttons remain V7-native. Backend cannot automatically enumerate V7 exercises or emit 4D learning without inspecting and integrating original local V7 source; only events received by the separate evidence server appear in the paginated journal.",
-   "regression_check": "CI Windows PowerShell 5.1 parses launcher; growth server tests assert original link/iframe, genuine empty list, paginated real evidence and persisted restore."
-  },
-  {
-   "id": "REQ-V12-TOROID-SLICE",
-   "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
-   "exact_source_span": "graful trebuie sa fie interiorul unui toroid 4d",
-   "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
-   "experimental_mapping": "Place persistent actual graph nodes in a 4D solid torus S1×B3 and render interior w slices; do not use replay time as w.",
-   "code_paths": [
-    "experiments/portal-universal-20261103/toroid.py",
-    "experiments/portal-universal-20261103/web/app.js",
-    "experiments/portal-universal-20261103/engine.py"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_v12.py"
-   ],
-   "measured_result": "20 CPU regression tests passed with 1 optional PyArrow test skipped in local runtime; browser JavaScript produced real event animation with no page errors in static live-trace probe",
-   "regression_check": "python -m unittest discover -s tests -p test_*.py"
-  },
-  {
-   "id": "REQ-V12-ANIMATED-REAL-EVENTS",
-   "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
-   "exact_source_span": "nu se intampla nicioa nimatie in graf in timpul trainingului",
-   "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
-   "experimental_mapping": "Release training lock per actual environment step and replay actual messages, decision, mismatch, weight update, and graph birth phases.",
-   "code_paths": [
-    "experiments/portal-universal-20261103/server.py",
-    "experiments/portal-universal-20261103/engine.py",
-    "experiments/portal-universal-20261103/web/app.js"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_v12.py"
-   ],
-   "measured_result": "Step frames available through incremental HTTP query before batch completion; browser static trace uses real stored events",
-   "regression_check": "python -m unittest discover -s tests -p test_*.py"
-  },
-  {
-   "id": "REQ-V12-FULL-RESET",
-   "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
-   "exact_source_span": "buton de reset,sa curete tot ce a mai lasat si replays",
-   "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
-   "experimental_mapping": "Typed confirmation RESET TOT clears this experiment's weights, graph, SQLite ledger, replay, checkpoints and imported corpus cache without deleting any external source file.",
-   "code_paths": [
-    "experiments/portal-universal-20261103/server.py",
-    "experiments/portal-universal-20261103/engine.py",
-    "experiments/portal-universal-20261103/web/index.html",
-    "experiments/portal-universal-20261103/web/app.js"
-   ],
-   "test_paths": [
-    "experiments/portal-universal-20261103/tests/test_v12.py"
-   ],
-   "measured_result": "Reset tests pass before and after server restart; rejects reset during training or without explicit phrase",
-   "regression_check": "python -m unittest discover -s tests -p test_*.py"
-  },
-  {
-   "id": "REQ-V11-01",
-   "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
-   "exact_source_span": "control printr-un singur abstract network",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_MEASURED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/engine/portal.py",
-    "v11/worlds/__init__.py"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "One brain, 9 worlds, 2700 unique worlds (CPU). D1 shape-before-move beats same-capacity control and every no-learning reference in 9/9 worlds (e.g. maze2d 0.473 vs 0.864 control / 0.541 line; SAT 0.228 vs 0.361 / 0.366). D2 navigation partial: better than control in maze3d, dynamic, graph, SAT (100% vs 56%); worse in symbols, car, text, voter; longer than classic in spatial worlds.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-02",
-   "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
-   "exact_source_span": "14 milioane de exercitii unice si diferite",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/server.py"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "Content-hash ledger with uniqueness; 2700 unique worlds lived in the benchmark; 14M not run.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-03",
-   "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
-   "exact_source_span": "insula izolata intr-o mare de posibilitati/randomness",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_MEASURED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/engine/life.py"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "Shape signature step-to-step stability vs random node sets: higher in graph (0.93 vs 0.75), voter (0.98 vs 0.83), symbols (0.98 vs 0.96); equal in maze2d/dynamic; lower in maze3d, SAT, car, text. Island hypothesis supported only in 3 worlds.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-04",
-   "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
-   "exact_source_span": "ce o sa vedem in graf activat si cum e activat si in ce secventa",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/engine/life.py",
-    "v11/web/app.js"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "Real activation onset round per node recorded in frames and animated; action read from graph node of imagined consequence.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-05",
-   "source_ref": "2026-11-03-USER-ANIMATED-GRAPH-UI",
-   "exact_source_span": "impulsuri in zona grafului cand se ia o decizie gresita a predictiei fata de realitate",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/web/app.js",
-    "v11/web/index.html"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "Red impulse at the node where imagined consequence differed from the real one; legend explains every color/animation; headless screenshots checked.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-06",
-   "source_ref": "2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
-   "exact_source_span": "GRAF 4D",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/web/app.js",
-    "v11/engine/life.py"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "Latent 3D (classical MDS of hidden state) + time axis ghost shapes; shape motion 0.2-1.4 per step measured.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-07",
-   "source_ref": "2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
-   "exact_source_span": "UNELE SE UNESC INTRE ELE,ALTELE NU",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_MEASURED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/engine/portal.py",
-    "v11/server.py",
-    "v11/transfer.py"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "116 persistent label nodes, 9 worlds; 41 cross-world pairs with learned cosine>0.8 (random-vector baseline max 0.76): goal labels of maze2d/dynamic/maze3d/graph/symbols and self labels united; some unions likely noise (rare labels). Polymath vs specialists: better shape in dynamic, symbols, text; worse navigation in graph (31% vs 94%) and car (0% vs 69%).",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-08",
-   "source_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
-   "exact_source_span": "tot exercitiul trebuie sa se mapeze random in graf ,prin labels",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/engine/portal.py",
-    "v11/worlds/grid.py",
-    "v11/worlds/states.py",
-    "v11/worlds/symbolic.py"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "Every world entity incl. walls, unseen cells, inputs, outputs, characters is an instance node tied to label nodes born with random vectors.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-09",
-   "source_ref": "2026-11-03-USER-NO-MORE-DEMOS",
-   "exact_source_span": "fara sa ma pacalesti",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_MEASURED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/REPORT.md",
-    "v11/results"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "v11/REPORT.md lists passes and failures with numbers on held-out worlds.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  },
-  {
-   "id": "REQ-V11-10",
-   "source_ref": "2026-11-03-USER-VERBATIM-MIRROR-MAIN",
-   "exact_source_span": "versiunile trebuie sa se oglindeasca in ea",
-   "experimental_mapping_is_not_verbatim": true,
-   "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
-   "status": "PARTIAL_TESTED_NOT_VERIFIED",
-   "code_paths": [
-    "v11/VERBATIM_MAP.md"
-   ],
-   "test_paths": [
-    "v11/tests/test_v11.py",
-    "v11/tests/gradcheck.py"
-   ],
-   "measured_result": "v11/VERBATIM_MAP.md: every quote checked programmatically as an exact substring of the sources.",
-   "regression_check": "cd v11 && python -m unittest discover -s tests -v"
-  }
- ],
- "versions": [
-  {
-   "id": "V1",
-   "path": "src",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V2",
-   "path": "v2",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V3",
-   "path": "v3",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V4",
-   "path": "v4",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V5",
-   "path": "v5",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V6",
-   "path": "v6",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V7",
-   "path": "v7",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V8",
-   "path": "v8",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "V9",
-   "path": "v9",
-   "in_repo": true,
-   "state": "LEGACY_NOT_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "BRAIN-STUDIO",
-   "path": "experiments/brain-studio-20261103",
-   "in_repo": true,
-   "state": "EXPERIMENT_NOT_FULLY_VERBATIM_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "PORTAL4D-CUDA-A-I",
-   "path": "<external-local-project-not-under-MagicPerspective-main>",
-   "in_repo": false,
-   "state": "EXTERNAL_NOT_AUDITED",
-   "verified_requirement_ids": []
-  },
-  {
-   "id": "PORTAL-UNIVERSAL-V10",
-   "path": "experiments/portal-universal-20261103",
-   "in_repo": true,
-   "state": "PARTIAL_CPU_TESTED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
-   "verified_requirement_ids": [],
-   "notes": "One persistent PyTorch model+graph across 5 physical/symbolic worlds and optional real byte-text. Eight local CPU tests passed; no 14M, no proven cross-domain gains, no full transcript coverage."
-  },
-  {
-   "id": "PORTAL-UNIVERSAL-V11",
-   "path": "experiments/portal-universal-20261103",
-   "in_repo": true,
-   "state": "PARTIAL_CPU_TESTED_PENDING_USER_PARQUET_CUDA_AND_FULL_VERBATIM",
-   "verified_requirement_ids": [],
-   "notes": "V10 backward compatible fixes; 14 CPU tests (one actual pyarrow test skipped locally), requires real shard and CUDA verification on user machine."
-  },
-  {
-   "id": "PORTAL-UNIVERSAL-V12",
-   "path": "experiments/portal-universal-20261103",
-   "in_repo": true,
-   "state": "LOCAL_CPU_TESTED_FULL_VERBATIM_NOT_CERTIFIED",
-   "verified_requirement_ids": [],
-   "changes": [
-    "toroid.py",
-    "engine.py",
-    "server.py",
-    "web/app.js",
-    "web/index.html",
-    "web/style.css",
-    "tests/test_v12.py"
-   ],
-   "source_refs": [
-    "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
-    "2026-11-03-USER-TOROID-BUILD-COMMAND"
-   ]
-  },
-  {
-   "id": "V10",
-   "path": "v10",
-   "in_repo": true,
-   "state": "MEASURED_MESSAGES_1_56_ONLY_NOT_VERIFIED",
-   "verified_requirement_ids": [],
-   "notes": "Shape organ from messages 1-56 only (JS). Superseded by V11 for the later messages."
-  },
-  {
-   "id": "V11",
-   "path": "v11",
-   "in_repo": true,
-   "state": "PARTIAL_MEASURED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
-   "verified_requirement_ids": [],
-   "notes": "One persistent abstract network across 9 worlds (2D/3D/dynamic maze, state graph, 3-SAT, symbols, car, text, yes/no voter). D1 9/9, D2 partial, D3 7/9, D7 9/9. CUDA path untested here (no GPU)."
-  }
- ]
+  "schema": 1,
+  "full_implementation_conformity_verified": false,
+  "meaning": "This is a REQUIREMENT TRACKING STRUCTURE; technical mapping is a proposal not original Verbatim and no version is certified fully compliant.",
+  "sources": [
+    "CONVERSATIE_COMPLETA_DIN_CONTEXT.md",
+    "verbatim/recent-user-messages.json",
+    "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt",
+    "verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt",
+    "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt"
+  ],
+  "required_evidence_fields": [
+    "source_ref",
+    "exact_source_span",
+    "code_paths",
+    "test_paths",
+    "measured_result",
+    "regression_check",
+    "status"
+  ],
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
+      "exact_source_span": "14 milioane de exercitii unice si diferite",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Unique problem counting with reproducible episode identifiers across domains",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "CPU smoke: SQLite holds content-hash-unique completed episodes, not 14M; uniqueness test passes. Long run not done.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-02",
+      "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
+      "exact_source_span": "insula",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Track persistent solution-shape patterns; tests on new worlds and causal ablations",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Persistent motifs and cross-domain reused nodes exist; identity of universal solution form not established.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-03",
+      "source_ref": "2026-11-03-USER-NO-MORE-DEMOS",
+      "exact_source_span": "gata cu demo-ul",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Real training and measured held-out evaluation without toy success claims",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/server.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Real multi-domain environment actions, gradients, and blind controls tested on CPU, not long-run CUDA or positive transfer.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-04",
+      "source_ref": "2026-11-03-USER-ANIMATED-GRAPH-UI",
+      "exact_source_span": "SA MA UIT LA GRAF SI SA INTELEG TOT CE SE INTAMPLA PRIN PATTERNURILE PE CARE LE VAD",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Event-sourced 3D viewer: activations, prediction, actual action, error impulses, weight updates",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Action/activation/message/error/gradient frames generated from actual outcomes and weights; browser headless visual test blocked by environment.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-05",
+      "source_ref": "2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
+      "exact_source_span": "GRAF 4D",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "3D spatial layout + time trajectory + higher dimensional state projections",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Spatial 3D canvas projection and time-stacked event frames implemented; higher-dimensional latent projection incomplete.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-06",
+      "source_ref": "2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
+      "exact_source_span": "CONCEPTUL DE POLYMATH",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Persistent morphable graph trained across domains; structural growth, selective merging, non-destructive retention",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Shared model/optimizer/graph persists across five physical domains and optional byte-text; autonomous functional merging and transfer unproven.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-07",
+      "source_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
+      "exact_source_span": "graful e si lumea,e si forma solutie",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Map world, controller, observations, constraints and predicted solution within one computational graph, with a separate environment truth contract",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "World/observation/action/outcome represented as typed nodes in one persistent graph; hidden physical truth remains separate for honest evaluation.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-08",
+      "source_ref": "2026-11-03-USER-AS-ABOVE-AS-BELOW-QUESTION",
+      "exact_source_span": "as above as below",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Correspondence test between graph-predicted transitions and real observed state transitions",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Predicted action-quality compared to observed reward, mismatch and gradient recorded; physical 4D claim not made.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-09",
+      "source_ref": "2026-11-03-USER-VERBATIM-MIRROR-MAIN",
+      "exact_source_span": "versiunile trebuie sa se oglindeasca in ea",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Source-to-code-to-test-to-evidence mapping for each release on main",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/README.md",
+        "experiments/portal-universal-20261103/VERBATIM_MAPPING.md"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_portal.py"
+      ],
+      "measured_result": "Partial evidence linked to source; original full archival gate must remain BLOCKED.",
+      "regression_check": "CI: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v"
+    },
+    {
+      "id": "REQ-10",
+      "source_ref": "2026-11-03-USER-4D-HYPERCUBE-NAVIGATION",
+      "exact_source_span": "pe ecranul meu 2d o sa vad un hypercube,si aia i sa fie metoda de vizualizare a grafului 4d,si de asemenea hypercube are sageti pe care pot sa apas si sa misc hypercubul prin spatiul 4d",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Screen-fixed tesseract with true 4D camera translation XYZ/W; observable 3D W-sections; engine-sourced graph edges, activated cells, predicted and executed transitions. Arrow clicks translate camera mathematically; no invented fourth coordinate.",
+      "status": "GEOMETRY_AND_VIEWER_IMPLEMENTED_ORIGINAL_V7_INTEGRATION_BLOCKED",
+      "code_paths": [
+        "experiments/portal-v7-hypercube-4d/geometry.mjs",
+        "experiments/portal-v7-hypercube-4d/viewer.mjs",
+        "experiments/portal-v7-hypercube-4d/viewer.css"
+      ],
+      "test_paths": [
+        "experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs"
+      ],
+      "measured_result": "Geometry and viewer available as additive modules. Exact original Portal4D V7 UniversalGraph ZIP is not accessible for modification in this session. No claim of original V7 runtime integration or real backend animation until original source is inspected and event API wired.",
+      "regression_check": "CI: node --test experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs; source-to-implementation and original V7 no-regression checks remain open."
+    },
+    {
+      "id": "REQ-11",
+      "source_ref": "2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH",
+      "exact_source_span": "graful construinduse din ce in ce mai dens pe masura ce asimineaza tot felul de exercitii si experiente nu sa fie decorativ un graf abstract desenat hardcoded",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Graph starts empty, adds only observed 4D nodes and confirmed original training transitions, reinforces measured links on reuse, persists complete evidence, shows actual new-node/new-edge births and exact density/unique-problem measurements. No static fake graph replaces the model. The original V7 source adapter remains required to connect real training events.",
+      "status": "EVIDENCE_GRAPH_AND_LIVE_VIEW_IMPLEMENTED_ORIGINAL_V7_SOURCE_ADAPTER_PENDING",
+      "code_paths": [
+        "experiments/portal-v7-hypercube-4d/growth.mjs",
+        "experiments/portal-v7-hypercube-4d/journal.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-view.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-server.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-index.html",
+        "experiments/portal-v7-hypercube-4d/growth-app.mjs",
+        "experiments/portal-v7-hypercube-4d/viewer.mjs"
+      ],
+      "test_paths": [
+        "experiments/portal-v7-hypercube-4d/tests/growth.test.mjs",
+        "experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs",
+        "experiments/portal-v7-hypercube-4d/tests/server.test.mjs"
+      ],
+      "measured_result": "Pending GitHub CI evidence. Original Portal4D V7 training source is not present in this repository; receipt of original model events and in-V7 integration are NOT yet verified. No claim of 14M unique exercises or positive generalization.",
+      "regression_check": "node --test experiments/portal-v7-hypercube-4d/tests/*.test.mjs; node scripts/verbatim-mirror-gate.mjs must report integrity PASS and completeness gate BLOCKED."
+    },
+    {
+      "id": "REQ-12",
+      "source_ref": "2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES",
+      "exact_source_span": "nu am buton de start training,nu vad exercitiile unice toate pe care le parcuge",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Expose unchanged original V7 START 1/START 2/A–H controls inside growth dashboard and add a paginated, persisted log of all real event records actually received from V7; no fake training controls or synthetic exercise counts.",
+      "status": "ORIGINAL_V7_CONTROLS_VISIBLE_WHEN_8788_REACHABLE_TELEMETRY_ADAPTER_PENDING",
+      "code_paths": [
+        "START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1",
+        "experiments/portal-v7-hypercube-4d/growth-index.html",
+        "experiments/portal-v7-hypercube-4d/growth-app.mjs",
+        "experiments/portal-v7-hypercube-4d/growth-server.mjs"
+      ],
+      "test_paths": [
+        "experiments/portal-v7-hypercube-4d/tests/server.test.mjs",
+        ".github/workflows/magic-regression.yml"
+      ],
+      "measured_result": "The embedded original V7 dashboard is reachable if 8788 is serving and allows framing. Its START buttons remain V7-native. Backend cannot automatically enumerate V7 exercises or emit 4D learning without inspecting and integrating original local V7 source; only events received by the separate evidence server appear in the paginated journal.",
+      "regression_check": "CI Windows PowerShell 5.1 parses launcher; growth server tests assert original link/iframe, genuine empty list, paginated real evidence and persisted restore."
+    },
+    {
+      "id": "REQ-V12-TOROID-SLICE",
+      "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "exact_source_span": "graful trebuie sa fie interiorul unui toroid 4d",
+      "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
+      "experimental_mapping": "Place persistent actual graph nodes in a 4D solid torus S1×B3 and render interior w slices; do not use replay time as w.",
+      "code_paths": [
+        "experiments/portal-universal-20261103/toroid.py",
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/engine.py"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v12.py"
+      ],
+      "measured_result": "20 CPU regression tests passed with 1 optional PyArrow test skipped in local runtime; browser JavaScript produced real event animation with no page errors in static live-trace probe",
+      "regression_check": "python -m unittest discover -s tests -p test_*.py"
+    },
+    {
+      "id": "REQ-V12-ANIMATED-REAL-EVENTS",
+      "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "exact_source_span": "nu se intampla nicioa nimatie in graf in timpul trainingului",
+      "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
+      "experimental_mapping": "Release training lock per actual environment step and replay actual messages, decision, mismatch, weight update, and graph birth phases.",
+      "code_paths": [
+        "experiments/portal-universal-20261103/server.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v12.py"
+      ],
+      "measured_result": "Step frames available through incremental HTTP query before batch completion; browser static trace uses real stored events",
+      "regression_check": "python -m unittest discover -s tests -p test_*.py"
+    },
+    {
+      "id": "REQ-V12-FULL-RESET",
+      "source_ref": "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+      "exact_source_span": "buton de reset,sa curete tot ce a mai lasat si replays",
+      "status": "TESTED_CPU_NOT_HARDWARE_CERTIFIED",
+      "experimental_mapping": "Typed confirmation RESET TOT clears this experiment's weights, graph, SQLite ledger, replay, checkpoints and imported corpus cache without deleting any external source file.",
+      "code_paths": [
+        "experiments/portal-universal-20261103/server.py",
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/index.html",
+        "experiments/portal-universal-20261103/web/app.js"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v12.py"
+      ],
+      "measured_result": "Reset tests pass before and after server restart; rejects reset during training or without explicit phrase",
+      "regression_check": "python -m unittest discover -s tests -p test_*.py"
+    },
+    {
+      "id": "REQ-V11-01",
+      "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
+      "exact_source_span": "control printr-un singur abstract network",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_MEASURED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/engine/portal.py",
+        "v11/worlds/__init__.py"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "One brain, 9 worlds, 2700 unique worlds (CPU). D1 shape-before-move beats same-capacity control and every no-learning reference in 9/9 worlds (e.g. maze2d 0.473 vs 0.864 control / 0.541 line; SAT 0.228 vs 0.361 / 0.366). D2 navigation partial: better than control in maze3d, dynamic, graph, SAT (100% vs 56%); worse in symbols, car, text, voter; longer than classic in spatial worlds.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-02",
+      "source_ref": "2026-11-03-USER-14M-UNIVERSAL-ABSTRACT-NETWORK",
+      "exact_source_span": "14 milioane de exercitii unice si diferite",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/server.py"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "Content-hash ledger with uniqueness; 2700 unique worlds lived in the benchmark; 14M not run.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-03",
+      "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
+      "exact_source_span": "insula izolata intr-o mare de posibilitati/randomness",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_MEASURED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/engine/life.py"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "Shape signature step-to-step stability vs random node sets: higher in graph (0.93 vs 0.75), voter (0.98 vs 0.83), symbols (0.98 vs 0.96); equal in maze2d/dynamic; lower in maze3d, SAT, car, text. Island hypothesis supported only in 3 worlds.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-04",
+      "source_ref": "2026-11-03-USER-ABSTRACT-NETWORK-ORDER-ISLAND",
+      "exact_source_span": "ce o sa vedem in graf activat si cum e activat si in ce secventa",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/engine/life.py",
+        "v11/web/app.js"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "Real activation onset round per node recorded in frames and animated; action read from graph node of imagined consequence.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-05",
+      "source_ref": "2026-11-03-USER-ANIMATED-GRAPH-UI",
+      "exact_source_span": "impulsuri in zona grafului cand se ia o decizie gresita a predictiei fata de realitate",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/web/app.js",
+        "v11/web/index.html"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "Red impulse at the node where imagined consequence differed from the real one; legend explains every color/animation; headless screenshots checked.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-06",
+      "source_ref": "2026-11-03-USER-4D-HIGHER-DIMENSION-GRAPH",
+      "exact_source_span": "GRAF 4D",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/web/app.js",
+        "v11/engine/life.py"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "Latent 3D (classical MDS of hidden state) + time axis ghost shapes; shape motion 0.2-1.4 per step measured.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-07",
+      "source_ref": "2026-11-03-USER-POLYMATH-PERSISTENT-CROSS-WORLD-GRAPH",
+      "exact_source_span": "UNELE SE UNESC INTRE ELE,ALTELE NU",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_MEASURED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/engine/portal.py",
+        "v11/server.py",
+        "v11/transfer.py"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "116 persistent label nodes, 9 worlds; 41 cross-world pairs with learned cosine>0.8 (random-vector baseline max 0.76): goal labels of maze2d/dynamic/maze3d/graph/symbols and self labels united; some unions likely noise (rare labels). Polymath vs specialists: better shape in dynamic, symbols, text; worse navigation in graph (31% vs 94%) and car (0% vs 69%).",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-08",
+      "source_ref": "2026-11-03-USER-GRAPH-WORLD-BODY-PORTAL",
+      "exact_source_span": "tot exercitiul trebuie sa se mapeze random in graf ,prin labels",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/engine/portal.py",
+        "v11/worlds/grid.py",
+        "v11/worlds/states.py",
+        "v11/worlds/symbolic.py"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "Every world entity incl. walls, unseen cells, inputs, outputs, characters is an instance node tied to label nodes born with random vectors.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-09",
+      "source_ref": "2026-11-03-USER-NO-MORE-DEMOS",
+      "exact_source_span": "fara sa ma pacalesti",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_MEASURED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/REPORT.md",
+        "v11/results"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "v11/REPORT.md lists passes and failures with numbers on held-out worlds.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V11-10",
+      "source_ref": "2026-11-03-USER-VERBATIM-MIRROR-MAIN",
+      "exact_source_span": "versiunile trebuie sa se oglindeasca in ea",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "V11: see v11/VERBATIM_MAP.md",
+      "status": "PARTIAL_TESTED_NOT_VERIFIED",
+      "code_paths": [
+        "v11/VERBATIM_MAP.md"
+      ],
+      "test_paths": [
+        "v11/tests/test_v11.py",
+        "v11/tests/gradcheck.py"
+      ],
+      "measured_result": "v11/VERBATIM_MAP.md: every quote checked programmatically as an exact substring of the sources.",
+      "regression_check": "cd v11 && python -m unittest discover -s tests -v"
+    },
+    {
+      "id": "REQ-V13-FULL-TOROID-ALL-SLICES",
+      "source_ref": "2026-11-04-USER-WHOLE-TOROID-ALL-GRAPH-SLICES",
+      "exact_source_span": "nu vad torusul in ui-ul nostru,adica totul e ok,nu trebuie sa scoti nimic dar ni vad sliceuri din acest toroid sa vad tot graful care se intinde prin tot interiorul acestui torus,nu sa stau cu focus pe partea aia 3d de graf",
+      "status": "LOCAL_CPU_BROWSER_TESTED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/server.py",
+        "experiments/portal-universal-20261103/web/app.js",
+        "experiments/portal-universal-20261103/web/torus-view.js",
+        "experiments/portal-universal-20261103/web/index.html"
+      ],
+      "test_paths": [
+        "experiments/portal-universal-20261103/tests/test_v13.py"
+      ],
+      "measured_result": "Diagnostic CPU: 285 executed episodes, 7,953/7,953 learned nodes and 37,291/37,291 actual edges shown in full torus; slice W=.30 ±.34 showed 3,547 nodes; headless Chromium no JS errors; 24 tests executed with 23 pass and 1 skipped (PyArrow not installed).",
+      "regression_check": "V1-V12 experiment test suite plus old 3D mode, reset, and text corpus controls remain intact",
+      "full_verbatim_conformity_verified": false,
+      "notes": "Filled 4D solid torus S¹×B³ is a computational visualization; p4 coordinates are deterministic layout, not learned physical space. Reference attached from user's HTML."
+    }
+  ],
+  "versions": [
+    {
+      "id": "V1",
+      "path": "src",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V2",
+      "path": "v2",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V3",
+      "path": "v3",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V4",
+      "path": "v4",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V5",
+      "path": "v5",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V6",
+      "path": "v6",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V7",
+      "path": "v7",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V8",
+      "path": "v8",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "V9",
+      "path": "v9",
+      "in_repo": true,
+      "state": "LEGACY_NOT_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "BRAIN-STUDIO",
+      "path": "experiments/brain-studio-20261103",
+      "in_repo": true,
+      "state": "EXPERIMENT_NOT_FULLY_VERBATIM_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "PORTAL4D-CUDA-A-I",
+      "path": "<external-local-project-not-under-MagicPerspective-main>",
+      "in_repo": false,
+      "state": "EXTERNAL_NOT_AUDITED",
+      "verified_requirement_ids": []
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V10",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "PARTIAL_CPU_TESTED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
+      "verified_requirement_ids": [],
+      "notes": "One persistent PyTorch model+graph across 5 physical/symbolic worlds and optional real byte-text. Eight local CPU tests passed; no 14M, no proven cross-domain gains, no full transcript coverage."
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V11",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "PARTIAL_CPU_TESTED_PENDING_USER_PARQUET_CUDA_AND_FULL_VERBATIM",
+      "verified_requirement_ids": [],
+      "notes": "V10 backward compatible fixes; 14 CPU tests (one actual pyarrow test skipped locally), requires real shard and CUDA verification on user machine."
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V12",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "LOCAL_CPU_TESTED_FULL_VERBATIM_NOT_CERTIFIED",
+      "verified_requirement_ids": [],
+      "changes": [
+        "toroid.py",
+        "engine.py",
+        "server.py",
+        "web/app.js",
+        "web/index.html",
+        "web/style.css",
+        "tests/test_v12.py"
+      ],
+      "source_refs": [
+        "2026-11-03-USER-TOROID-INTERIOR-LIVE-RESET",
+        "2026-11-03-USER-TOROID-BUILD-COMMAND"
+      ]
+    },
+    {
+      "id": "V10",
+      "path": "v10",
+      "in_repo": true,
+      "state": "MEASURED_MESSAGES_1_56_ONLY_NOT_VERIFIED",
+      "verified_requirement_ids": [],
+      "notes": "Shape organ from messages 1-56 only (JS). Superseded by V11 for the later messages."
+    },
+    {
+      "id": "V11",
+      "path": "v11",
+      "in_repo": true,
+      "state": "PARTIAL_MEASURED_PENDING_CUDA_AND_COMPLETE_VERBATIM",
+      "verified_requirement_ids": [],
+      "notes": "One persistent abstract network across 9 worlds (2D/3D/dynamic maze, state graph, 3-SAT, symbols, car, text, yes/no voter). D1 9/9, D2 partial, D3 7/9, D7 9/9. CUDA path untested here (no GPU)."
+    },
+    {
+      "id": "PORTAL-UNIVERSAL-V13",
+      "path": "experiments/portal-universal-20261103",
+      "in_repo": true,
+      "state": "LOCAL_CPU_BROWSER_TESTED_USER_CUDA_AND_COMPLETE_VERBATIM_PENDING",
+      "verified_requirement_ids": [],
+      "source_refs": [
+        "2026-11-04-USER-WHOLE-TOROID-ALL-GRAPH-SLICES"
+      ],
+      "tests": [
+        "experiments/portal-universal-20261103/tests/test_v13.py"
+      ],
+      "preserves": [
+        "V12 training and checkpoints",
+        "existing 3D LIVE, RESET TOT, import and replay"
+      ]
+    }
+  ]
 }

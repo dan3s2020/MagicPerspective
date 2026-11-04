@@ -86,3 +86,26 @@ The existing V11 cockpit, task generators, training policy, and OpenThoughts3-co
 - **RESET TOT** is intentionally destructive, with a typed confirmation. It is disabled during training/ingest. Once authorized, it clears only this **experiment's** weights/optimizer, graph, saved checkpoint, worlds/episodes database, traces/replays, source-corpus import cache and local corpus reference. It does **not** delete any Parquet/TXT/JSONL original outside the experiment data directory, and does not touch other MagicPerspective versions. The reset is verified across restart.
 
 V12 test command: `python -m unittest discover -s tests -p 'test_*.py' -v`. Browser code: `node --check web/app.js`. The PyTorch CUDA driver and browser animation on the user's NVIDIA card are not measured by the CPU CI. No transfer or 14-million-task claim is made without an independent benchmark.
+
+## V13 — întregul toroid 4D, apoi secțiuni din același graf (4 November 2026)
+
+**Original V12 UI, training, reset, replay, Parquet import, graphs and checkpoints are preserved.** The default canvas mode is now **TOROID 4D COMPLET**, with two additional choices **3D LIVE** (original unchanged) and **4D · SECȚIUNE INTERIOARĂ**. The new visualization uses the supplied `MagicPerspective_4D_Torus_OneObject.html` for six-plane 4D rotation and camera ideas, while correctly retaining the V12 **filled 4D toroidal volume** `S¹ × B³` rather than replacing it by an empty 2-dimensional Clifford torus surface.
+
+### Why V12 looked like a small central graph
+
+The original V12 `/api/graph` returned at most 900 prioritized vertices (UI requested 750), not the **entire** learner graph. The old 4D mode additionally filtered those vertices to one slice. V13 adds the read-only `/api/graph/all` endpoint with `node_offset`, `edge_offset`, `node_limit` and `edge_limit`. It walks **all** persistent nodes in stable ID order and **all** edges in insertion order, exposing total counts and next cursors. The browser fetches pages progressively and gives actual fetched/total counters. The fast previous `/api/graph` remains intact for 3D LIVE and newly active nodes.
+
+### Spatial behavior, not invented connections
+
+- **TOROID 4D COMPLET** renders every loaded real persistent node and every actual link in the filled 4D torus; camera projection is 4D→3D→2D. The torus wireframe is an explicit **mathematical guide only** (`S¹ × S²` boundary), not synthetic model nodes or learned edges.
+- **4D · SECȚIUNE INTERIOARĂ** clips the **same** full 4D graph against the adjustable plane `W ± thickness`, after six-dimensional-plane rotation. An intersecting line segment is displayed as a clip of a **real edge**, never added to the model as a new node. Slice range is extended to ±2.7 to allow slices after arbitrary 4D rotations.
+- Actual graph edges are visually routed through the toroidal volume using the shorter `S¹` angular path and a linear interpolation through the convex `B³` cross-section. This prevents visually false straight-line connections crossing the empty central hole. The graph's edge identities, weights and model topology remain **unchanged**; curve segments are only geometry for display.
+- Select **INEL**, **FLOARE**, **SFERĂ** for view orientations (all the same 4D object); drag to rotate in 4D, Shift+drag for the 3D camera, mouse wheel for zoom. The **Rotire 4D automată** checkbox rotates only the **camera**, never pretends to represent neural activation. `CENTREAZĂ` resets camera framing. By default the slice **does not** follow a single action, allowing the user to explore all regions.
+- LIVE recorded message pulses, action, error and weight-change stages remain overlaid on the actual graph, and the time replay bar is completely separate from the fourth spatial dimension.
+- The visual node coordinates `p4` are **deterministic embeddings of learned graph labels**, not claimed as learned physical coordinates. What is learned/persistent is node creation, actual adjacency, message propagation and model parameters. Showing the entire graph and the guide is not a claim of positive cross-domain transfer or access to physical spacetime.
+
+### Tests and reproducibility
+
+`python -m unittest discover -s tests -v` includes **V13 pagination beyond the prior 900-node limit**, checkpoint-stable node/edge ordering, a real HTTP page retrieval, UI continuity, and legacy V1–V12 regressions. `node --check web/app.js` and `node --check web/torus-view.js` verify browser source syntax. A headless-browser diagnostic loaded all **7,953 nodes and 37,291 real persisted links** from **285 genuinely executed CPU diagnostic episodes**, displayed 3,547 nodes in one selected 4D slice and switched back to 3D LIVE with zero page errors. These are diagnostic CPU results, **not** results on the user's NVIDIA GPU or their trained checkpoint.
+
+Stop the old server, run `git pull --ff-only origin main` and launch `START_PORTAL_UNIVERSAL_CUDA.ps1` from the existing directory. No reset is required; existing checkpoint files are not deleted or converted. When the graph is large, the `TOROID 4D COMPLET` loading counter reaches **total/total** as pages arrive. The only data omitted by the renderer are records not yet loaded or those geometrically outside the chosen slice.

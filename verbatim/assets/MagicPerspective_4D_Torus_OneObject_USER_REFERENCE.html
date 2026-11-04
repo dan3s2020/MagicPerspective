@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MagicPerspective · 4D Clifford Torus · One Object</title>
+  <meta name="color-scheme" content="dark" />
+  <style>
+    :root{
+      color-scheme:dark;
+      --ink:#eef9ff;
+      --muted:#92abc0;
+      --panel:rgba(6,12,20,.82);
+      --border:rgba(165,215,245,.16);
+      --accent:#cff2ff;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;overflow:hidden;background:#000}
+    body{color:var(--ink)}
+    canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#000;touch-action:none;cursor:grab}
+    canvas:active{cursor:grabbing}
+    .overlay{position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 42%, rgba(15,35,54,.2), rgba(0,0,0,0) 35%), radial-gradient(circle at center, transparent 35%, rgba(0,0,0,.36) 100%)}
+    .top{position:fixed;left:24px;right:24px;top:22px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;pointer-events:none}
+    .brand{display:flex;gap:12px;align-items:flex-start}
+    .orb{width:30px;height:30px;border-radius:50%;border:1px solid rgba(190,233,255,.6);position:relative;box-shadow:0 0 20px rgba(125,217,255,.14)}
+    .orb::before,.orb::after{content:"";position:absolute;inset:6px -1px;border-radius:50%;border:1px solid rgba(230,248,255,.7)}
+    .orb::before{transform:rotate(57deg)}
+    .orb::after{transform:rotate(-57deg)}
+    .kicker{font-size:10px;letter-spacing:2.8px;font-weight:700;color:#c2e7f7}
+    .sub{font-size:11px;letter-spacing:1px;color:#6d879b;margin-top:4px}
+    .badge{padding:10px 14px;border-radius:999px;border:1px solid var(--border);background:rgba(2,8,16,.45);font-size:10px;letter-spacing:1.4px;color:#a7c4d7;white-space:nowrap}
+    .badge b{color:#ebfbff;font-weight:600}
+    .readout{position:fixed;right:24px;top:90px;text-align:right;font-size:11px;line-height:1.8;color:#96b3c8;pointer-events:none}
+    .readout strong{color:#d8f4ff;font-weight:600}
+    .center{position:fixed;left:50%;transform:translateX(-50%);bottom:196px;text-align:center;pointer-events:none}
+    .center .title{font-size:13px;letter-spacing:4px;text-transform:uppercase;color:rgba(223,245,255,.82)}
+    .center .desc{margin-top:7px;font-size:11px;color:rgba(144,178,199,.72)}
+    .panel{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;width:min(1120px,calc(100vw - 24px));padding:16px 18px 12px;border-radius:18px;border:1px solid var(--border);background:var(--panel);backdrop-filter:blur(18px);box-shadow:0 24px 70px rgba(0,0,0,.68)}
+    .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .group{display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:4px;border-radius:10px;background:rgba(120,180,210,.06);border:1px solid rgba(176,216,240,.1)}
+    button,input{font:inherit}
+    button{cursor:pointer;color:inherit;background:transparent;border:0;transition:.2s background,.2s color,.2s border-color}
+    button:focus-visible,input:focus-visible{outline:2px solid #b7eeff;outline-offset:3px}
+    .tab,.btn{padding:9px 12px;border-radius:8px;font-size:11px;letter-spacing:.3px}
+    .tab{color:#88a3b6}
+    .tab.active{background:rgba(153,223,255,.14);color:#edfbff;box-shadow:inset 0 0 0 1px rgba(190,233,255,.22)}
+    .btn{border:1px solid rgba(176,214,236,.14);background:rgba(145,193,225,.06)}
+    .btn:hover,.tab:hover{background:rgba(142,207,255,.12)}
+    .btn.primary{background:#cff4ff;color:#091824;font-weight:700;border-color:#e6fbff}
+    .grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-top:14px}
+    .fieldtop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+    label{font-size:10px;font-weight:700;letter-spacing:.7px;color:#a1bdd0}
+    output{font-size:10px;color:#dcf7ff;font-variant-numeric:tabular-nums}
+    input[type="range"]{width:100%;margin:0;height:16px;appearance:none;background:transparent;cursor:pointer}
+    input[type="range"]::-webkit-slider-runnable-track{height:3px;border-radius:8px;background:linear-gradient(90deg,#5eaed3,rgba(130,173,197,.2))}
+    input[type="range"]::-moz-range-track{height:3px;border-radius:8px;background:linear-gradient(90deg,#5eaed3,rgba(130,173,197,.2))}
+    input[type="range"]::-webkit-slider-thumb{appearance:none;width:12px;height:12px;margin-top:-4px;border-radius:50%;border:2px solid #c4f2ff;background:#0c2431}
+    input[type="range"]::-moz-range-thumb{width:10px;height:10px;border-radius:50%;border:2px solid #c4f2ff;background:#0c2431}
+    .foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding-top:11px;border-top:1px solid rgba(174,214,236,.1);font-size:10px;color:#7894a8}
+    .dot{width:6px;height:6px;border-radius:50%;display:inline-block;background:#98e0ff;box-shadow:0 0 12px #86dcff;margin-right:7px}
+    @media (max-width:860px){
+      .top{left:14px;right:14px;top:14px}.badge{display:none}.readout{right:14px;top:64px;font-size:10px}.center{bottom:270px}.panel{bottom:12px;padding:12px;width:calc(100vw - 16px)}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.row{justify-content:center}.group{width:100%;justify-content:center}.foot{justify-content:center}.foot .help{display:none}.center .title{letter-spacing:2.4px;font-size:12px}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div class="overlay"></div>
+  <div class="top">
+    <div class="brand">
+      <div class="orb"></div>
+      <div>
+        <div class="kicker">MAGIC PERSPECTIVE</div>
+        <div class="sub">UN SINGUR OBIECT · CLIFFORD TORUS · ROTAȚII 4D REALE</div>
+      </div>
+    </div>
+    <div class="badge">OBIECT &nbsp;<b>T² ⊂ S³ ⊂ ℝ⁴</b></div>
+  </div>
+  <div class="readout">
+    <div><strong id="presetText">PRESET · RING</strong></div>
+    <div id="anglesText">XW 0° · YW 0° · ZW 0°</div>
+    <div id="sliceText">SECȚIUNE OPRITĂ</div>
+  </div>
+  <div class="center">
+    <div class="title">aceeași formă 4d, umbre diferite</div>
+    <div class="desc">Rotește în 4D și activează secțiunea pentru a vedea cum aceeași suprafață își schimbă complet aparența</div>
+  </div>
+  <div class="panel">
+    <div class="row">
+      <div class="group" id="presetGroup">
+        <button class="tab active" data-preset="ring">RING</button>
+        <button class="tab" data-preset="flower">FLOWER</button>
+        <button class="tab" data-preset="sphere">SPHERE</button>
+        <button class="tab" data-preset="free">FREE</button>
+      </div>
+      <div class="group">
+        <button class="btn primary" id="playBtn">Ⅱ Pauză</button>
+        <button class="btn" id="resetBtn">↺ Reset</button>
+        <button class="btn" id="sectionBtn">Secțiune: OFF</button>
+        <button class="btn" id="snapBtn">PNG</button>
+      </div>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="fieldtop"><label for="speed">VITEZĂ</label><output id="speedOut">0.32×</output></div>
+        <input id="speed" type="range" min="0" max="2" step="0.01" value="0.32" />
+      </div>
+      <div>
+        <div class="fieldtop"><label for="proj4">PROIECȚIE 4D</label><output id="proj4Out">2.40</output></div>
+        <input id="proj4" type="range" min="1.2" max="5.0" step="0.01" value="2.40" />
+      </div>
+      <div>
+        <div class="fieldtop"><label for="density">DENSITATE</label><output id="densityOut">48</output></div>
+        <input id="density" type="range" min="18" max="90" step="2" value="48" />
+      </div>
+      <div>
+        <div class="fieldtop"><label for="zoom">SCARĂ</label><output id="zoomOut">100%</output></div>
+        <input id="zoom" type="range" min="40" max="190" step="1" value="100" />
+      </div>
+      <div>
+        <div class="fieldtop"><label for="thickness">GROSIME FELIE</label><output id="thicknessOut">0.11</output></div>
+        <input id="thickness" type="range" min="0.02" max="0.35" step="0.01" value="0.11" />
+      </div>
+    </div>
+    <div class="foot">
+      <div class="help">drag = rotație 4D · Shift + drag = cameră 3D · wheel = zoom · Space = pauză</div>
+      <div><span class="dot"></span><span id="liveText">CLIFFORD TORUS · 2 FAMILII DE CERCURI · 0 curbe</span></div>
+    </div>
+  </div>
+
+<script>
+'use strict';
+const canvas = document.getElementById('view');
+const ctx = canvas.getContext('2d', { alpha:false });
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+const PI = Math.PI;
+const SQRT1_2 = Math.SQRT1_2;
+
+const state = {
+  playing:true,
+  speed:0.32,
+  proj4:2.40,
+  density:48,
+  zoom:1,
+  thickness:0.11,
+  sliceEnabled:false,
+  sliceAxis:3,      // 0=x,1=y,2=z,3=w in rotated 4D space
+  sliceCenter:0,
+  yaw:0.2,
+  pitch:-0.14,
+  angles:[0.00, 0.00, 0.00, 0.00, 0.00, 0.00], // XW,YW,ZW,XY,XZ,YZ
+  preset:'ring',
+  dragging:false,
+  lastX:0,lastY:0,
+  dpr:1,w:1,h:1,
+  curves:[],
+  pointCount:0,
+  frame:0,
+  clock:0
+};
+
+const presets = {
+  ring:   { angles:[ 0.08,-0.18, 0.02, 0.08,-0.10, 0.04], yaw:0.12, pitch:-0.08 },
+  flower: { angles:[ 0.95,-0.72, 0.18, 0.34,-0.05, 0.20], yaw:0.24, pitch:-0.18 },
+  sphere: { angles:[ 1.12, 0.88,-0.40, 0.30, 0.26,-0.12], yaw:0.34, pitch:-0.10 },
+  free:   { angles:[ 0.40,-0.28, 0.14, 0.12,-0.06, 0.05], yaw:0.18, pitch:-0.12 }
+};
+
+function resize(){
+  state.dpr = Math.min(window.devicePixelRatio || 1, 1.8);
+  state.w = Math.max(1, innerWidth);
+  state.h = Math.max(1, innerHeight);
+  canvas.width = Math.round(state.w * state.dpr);
+  canvas.height = Math.round(state.h * state.dpr);
+  canvas.style.width = state.w + 'px';
+  canvas.style.height = state.h + 'px';
+  ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+}
+
+function buildCurves(){
+  const n = state.density;
+  const segs = Math.max(140, state.density * 6);
+  const curves = [];
+  for(let j=0;j<n;j++){
+    const vFix = TAU * j / n;
+    const d1 = new Float32Array((segs+1)*4);
+    const d2 = new Float32Array((segs+1)*4);
+    for(let i=0;i<=segs;i++){
+      const t = TAU * i / segs;
+      // Same Clifford torus for all presets: x²+y² = z²+w² = 1/2
+      const p1 = [SQRT1_2*Math.cos(t), SQRT1_2*Math.sin(t), SQRT1_2*Math.cos(vFix), SQRT1_2*Math.sin(vFix)];
+      const p2 = [SQRT1_2*Math.cos(vFix), SQRT1_2*Math.sin(vFix), SQRT1_2*Math.cos(t), SQRT1_2*Math.sin(t)];
+      let k = i*4;
+      d1[k]=p1[0]; d1[k+1]=p1[1]; d1[k+2]=p1[2]; d1[k+3]=p1[3];
+      d2[k]=p2[0]; d2[k+1]=p2[1]; d2[k+2]=p2[2]; d2[k+3]=p2[3];
+    }
+    curves.push({data:d1,family:0,accent:j%Math.max(2,Math.round(n/8))===0});
+    curves.push({data:d2,family:1,accent:j%Math.max(2,Math.round(n/8))===0});
+  }
+  state.curves = curves;
+  state.pointCount = curves.reduce((a,c)=>a + c.data.length/4, 0);
+  $('liveText').textContent = `CLIFFORD TORUS · 2 FAMILII DE CERCURI · ${curves.length} curbe · ${state.pointCount.toLocaleString('ro-RO')} puncte`;
+}
+
+function rotPairs(){ return state.angles.map(a => [Math.cos(a), Math.sin(a)]); }
+
+function rotate4(x,y,z,w,R){
+  let c,s,t;
+  c=R[0][0]; s=R[0][1]; t=x*c-w*s; w=x*s+w*c; x=t; // xw
+  c=R[1][0]; s=R[1][1]; t=y*c-w*s; w=y*s+w*c; y=t; // yw
+  c=R[2][0]; s=R[2][1]; t=z*c-w*s; w=z*s+w*c; z=t; // zw
+  c=R[3][0]; s=R[3][1]; t=x*c-y*s; y=x*s+y*c; x=t; // xy
+  c=R[4][0]; s=R[4][1]; t=x*c-z*s; z=x*s+z*c; x=t; // xz
+  c=R[5][0]; s=R[5][1]; t=y*c-z*s; z=y*s+z*c; y=t; // yz
+  return [x,y,z,w];
+}
+
+function projectPoint(p){
+  const d4 = state.proj4;
+  const denom4 = d4 - p[3];
+  if(denom4 <= 0.05) return null;
+  const k4 = d4 / denom4;
+  let X = p[0] * k4, Y = p[1] * k4, Z = p[2] * k4;
+
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+  const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+  const xx = X*cy - Z*sy;
+  const zz = X*sy + Z*cy;
+  const yy = Y*cp - zz*sp;
+  const zc = Y*sp + zz*cp;
+
+  const cam = 4.8;
+  const denom3 = cam - zc;
+  if(denom3 <= 0.15) return null;
+  const k3 = cam / denom3;
+  const scale = Math.min(state.w, state.h) * 0.285 * state.zoom;
+  return {
+    x: state.w*0.5 + xx*k3*scale,
+    y: state.h*0.42 - yy*k3*scale,
+    z: zc,
+    fade: Math.max(0, Math.min(1, (p[3] + 1.2) / 2.4)),
+    screen:k3
+  };
+}
+
+function draw(){
+  const W = state.w, H = state.h;
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,W,H);
+  const g = ctx.createRadialGradient(W/2,H*0.44,0,W/2,H*0.44,Math.min(W,H)*0.7);
+  g.addColorStop(0,'#07121c');
+  g.addColorStop(0.42,'#01050a');
+  g.addColorStop(1,'#000');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  const R = rotPairs();
+  ctx.globalCompositeOperation='screen';
+  ctx.lineJoin='round';
+  ctx.lineCap='round';
+
+  let keptSegments = 0;
+
+  for(const curve of state.curves){
+    const arr = curve.data;
+    const points = [];
+    for(let i=0;i<arr.length;i+=4){
+      const rp = rotate4(arr[i],arr[i+1],arr[i+2],arr[i+3],R);
+      if(state.sliceEnabled){
+        const coordinate = rp[state.sliceAxis];
+        if(Math.abs(coordinate - state.sliceCenter) > state.thickness) {
+          points.push(null);
+          continue;
+        }
+      }
+      points.push(projectPoint(rp));
+    }
+    ctx.beginPath();
+    let started = false;
+    let last = null;
+    let localCount = 0;
+    for(const p of points){
+      if(!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) { started = false; last = null; continue; }
+      if(!started){ ctx.moveTo(p.x,p.y); started = true; last = p; continue; }
+      if(last && Math.hypot(p.x-last.x,p.y-last.y) > Math.max(W,H)*0.22){ ctx.moveTo(p.x,p.y); last = p; continue; }
+      ctx.lineTo(p.x,p.y); last = p; localCount++;
+    }
+    keptSegments += localCount;
+    const a = state.sliceEnabled ? 0.78 : 0.54;
+    const alpha = curve.accent ? a*1.35 : a;
+    ctx.strokeStyle = curve.family === 0 ? `rgba(239,248,255,${alpha})` : `rgba(183,221,245,${alpha*0.86})`;
+    ctx.lineWidth = curve.accent ? 1.05 : 0.82;
+    ctx.stroke();
+  }
+
+  // soft halo
+  ctx.globalCompositeOperation='lighter';
+  const halo = ctx.createRadialGradient(W/2,H*0.42,0,W/2,H*0.42,Math.min(W,H)*0.34*state.zoom);
+  halo.addColorStop(0,'rgba(190,233,255,.08)');
+  halo.addColorStop(0.55,'rgba(120,185,225,.03)');
+  halo.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=halo; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='source-over';
+
+  const deg = a => ((((a*180/PI)%360)+360)%360).toFixed(0);
+  $('anglesText').textContent = `XW ${deg(state.angles[0])}° · YW ${deg(state.angles[1])}° · ZW ${deg(state.angles[2])}°`;
+  $('sliceText').textContent = state.sliceEnabled ? `SECȚIUNE activă · axa ${'XYZW'[state.sliceAxis]} · ±${state.thickness.toFixed(2)}` : 'SECȚIUNE OPRITĂ';
+}
+
+function applyPreset(name){
+  state.preset = name;
+  $('presetText').textContent = `PRESET · ${name.toUpperCase()}`;
+  document.querySelectorAll('#presetGroup .tab').forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+  if(name !== 'free'){
+    const p = presets[name];
+    state.angles = p.angles.slice();
+    state.yaw = p.yaw;
+    state.pitch = p.pitch;
+  }
+  draw();
+}
+
+function resetAll(){
+  state.speed = 0.32;
+  state.proj4 = 2.40;
+  state.density = 48;
+  state.zoom = 1;
+  state.thickness = 0.11;
+  state.sliceEnabled = false;
+  state.sliceAxis = 3;
+  state.sliceCenter = 0;
+  $('speed').value = '0.32';
+  $('proj4').value = '2.40';
+  $('density').value = '48';
+  $('zoom').value = '100';
+  $('thickness').value = '0.11';
+  $('sectionBtn').textContent = 'Secțiune: OFF';
+  syncOutputs();
+  buildCurves();
+  applyPreset('ring');
+}
+
+function syncOutputs(){
+  $('speedOut').textContent = state.speed.toFixed(2)+'×';
+  $('proj4Out').textContent = state.proj4.toFixed(2);
+  $('densityOut').textContent = String(state.density);
+  $('zoomOut').textContent = Math.round(state.zoom*100)+'%';
+  $('thicknessOut').textContent = state.thickness.toFixed(2);
+  $('playBtn').textContent = state.playing ? 'Ⅱ Pauză' : '▶ Pornește';
+}
+
+$('speed').addEventListener('input', e => { state.speed = +e.target.value; syncOutputs(); });
+$('proj4').addEventListener('input', e => { state.proj4 = +e.target.value; syncOutputs(); draw(); });
+$('density').addEventListener('input', e => { state.density = +e.target.value; syncOutputs(); buildCurves(); draw(); });
+$('zoom').addEventListener('input', e => { state.zoom = (+e.target.value)/100; syncOutputs(); draw(); });
+$('thickness').addEventListener('input', e => { state.thickness = +e.target.value; syncOutputs(); if(state.sliceEnabled) draw(); });
+$('playBtn').addEventListener('click', () => { state.playing = !state.playing; syncOutputs(); draw(); });
+$('resetBtn').addEventListener('click', resetAll);
+$('sectionBtn').addEventListener('click', () => {
+  state.sliceEnabled = !state.sliceEnabled;
+  $('sectionBtn').textContent = state.sliceEnabled ? 'Secțiune: ON' : 'Secțiune: OFF';
+  draw();
+});
+$('snapBtn').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    if(!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'MagicPerspective-4D-Torus-OneObject.png'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+});
+document.querySelectorAll('#presetGroup .tab').forEach(btn => btn.addEventListener('click', () => applyPreset(btn.dataset.preset)));
+
+canvas.addEventListener('pointerdown', e => {
+  state.dragging = true; state.lastX = e.clientX; state.lastY = e.clientY; canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if(!state.dragging) return;
+  const dx = e.clientX - state.lastX;
+  const dy = e.clientY - state.lastY;
+  state.lastX = e.clientX; state.lastY = e.clientY;
+  if(e.shiftKey || e.buttons === 2){
+    state.yaw += dx * 0.008;
+    state.pitch = Math.max(-PI*0.49, Math.min(PI*0.49, state.pitch + dy * 0.008));
+  } else {
+    state.preset = 'free';
+    document.querySelectorAll('#presetGroup .tab').forEach(b => b.classList.toggle('active', b.dataset.preset === 'free'));
+    $('presetText').textContent = 'PRESET · FREE';
+    state.angles[0] += dx * 0.0074; // XW
+    state.angles[1] += dy * 0.0074; // YW
+    state.angles[2] += (dx - dy) * 0.0020; // ZW
+    state.angles[3] += (dx + dy) * 0.0014; // XY
+  }
+  draw();
+});
+canvas.addEventListener('pointerup', e => { state.dragging = false; if(canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId); });
+canvas.addEventListener('pointercancel', () => state.dragging = false);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  state.zoom = Math.max(0.4, Math.min(1.9, state.zoom * Math.exp(-e.deltaY * 0.0011)));
+  $('zoom').value = String(Math.round(state.zoom*100));
+  syncOutputs();
+  draw();
+}, { passive:false });
+window.addEventListener('keydown', e => {
+  if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+  if(e.code === 'Space'){ e.preventDefault(); state.playing = !state.playing; syncOutputs(); draw(); }
+  else if(e.code === 'KeyS'){ state.sliceEnabled = !state.sliceEnabled; $('sectionBtn').textContent = state.sliceEnabled ? 'Secțiune: ON' : 'Secțiune: OFF'; draw(); }
+  else if(e.code === 'Digit1'){ applyPreset('ring'); }
+  else if(e.code === 'Digit2'){ applyPreset('flower'); }
+  else if(e.code === 'Digit3'){ applyPreset('sphere'); }
+  else if(e.code === 'KeyR'){ resetAll(); }
+  else if(e.code === 'KeyX'){ state.sliceAxis = 0; draw(); }
+  else if(e.code === 'KeyY'){ state.sliceAxis = 1; draw(); }
+  else if(e.code === 'KeyZ'){ state.sliceAxis = 2; draw(); }
+  else if(e.code === 'KeyW'){ state.sliceAxis = 3; draw(); }
+  else if(e.code === 'BracketLeft'){ state.sliceCenter = Math.max(-1.5, state.sliceCenter - 0.03); draw(); }
+  else if(e.code === 'BracketRight'){ state.sliceCenter = Math.min(1.5, state.sliceCenter + 0.03); draw(); }
+});
+window.addEventListener('resize', () => { resize(); draw(); });
+
+function animate(t){
+  const prev = state.frame || t;
+  const dt = Math.min(0.06, (t - prev) / 1000);
+  state.frame = t;
+  if(state.playing){
+    const v = state.speed * dt;
+    // gentle autonomous rotation in true 4D planes
+    state.angles[0] += v * 0.33;
+    state.angles[1] += v * 0.24;
+    state.angles[2] += v * 0.18;
+    state.angles[4] += v * 0.06;
+    state.angles[5] += v * 0.04;
+    state.clock += dt;
+    if(state.sliceEnabled){
+      state.sliceCenter = 0.78 * Math.sin(state.clock * 0.7);
+    }
+    draw();
+  }
+  requestAnimationFrame(animate);
+}
+
+resize();
+buildCurves();
+syncOutputs();
+applyPreset('ring');
+draw();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

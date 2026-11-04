@@ -197,7 +197,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed=urlsplit(self.path);path=parsed.path
         if path=='/':path='/index.html'
-        if path in ('/index.html','/style.css','/app.js'):
+        if path in ('/index.html','/style.css','/app.js','/torus-view.js'):
             p=(HERE/'web'/path.lstrip('/')).resolve()
             if p.parent!=(HERE/'web').resolve() or not p.is_file():self.send_error(404);return
             data=p.read_bytes();typ=mimetypes.guess_type(p.name)[0] or 'text/plain'
@@ -207,6 +207,20 @@ class Handler(BaseHTTPRequestHandler):
         c=self.control
         if path=='/api/health':self._json(200,{'ok':True,'training':c.state,'device':str(c.engine.device)});return
         if path=='/api/status':self._json(200,c.status());return
+        if path=='/api/graph/all':
+            query=parse_qs(parsed.query)
+            # A full ordered snapshot, paginated so even 32K nodes + many
+            # learned links can be explored without a huge blocking response.
+            # This is read-only and NEVER changes the learner's state.
+            def number(key,default,maximum):
+                raw=int(query.get(key,[str(default)])[0]);return max(0,min(maximum,raw))
+            with c.lock:
+                self._json(200,c.engine.graph.view_page(
+                    node_offset=number('node_offset',0,32768),
+                    node_limit=number('node_limit',1200,1800),
+                    edge_offset=number('edge_offset',0,2000000),
+                    edge_limit=number('edge_limit',3200,5000)))
+            return
         if path=='/api/graph':
             query=parse_qs(parsed.query)
             with c.lock:

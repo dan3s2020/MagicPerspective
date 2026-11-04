@@ -6,3 +6,17 @@ button.danger{background:linear-gradient(125deg,#6a263c,#982b52);border-color:#c
 .sliceTools[hidden]{display:none}.sliceTools strong{font-size:11px;letter-spacing:.06em}.sliceTools label{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10px;color:#bfd0e5}.sliceTools input[type=range]{min-width:70px;flex:1}.sliceTools output{width:36px;text-align:right;color:#cbbcff}.sliceTools small{display:block;margin-top:9px;color:#80b8ca}
 .eventPhase{position:absolute;bottom:36px;right:15px;font-size:11px;color:#bde8f1;background:#061326db;padding:8px 12px;border:1px solid #36597b;border-radius:8px;max-width:min(480px,68%);pointer-events:none;text-align:right}
 dialog{border:1px solid #a04963;background:#111b33;color:#e7effd;border-radius:14px;padding:25px;max-width:550px;box-shadow:0 35px 90px #000c}dialog::backdrop{background:#000b}dialog h2{color:#ffaec3}dialog p{line-height:1.65;color:#cad5e9}dialog label{display:flex;flex-direction:column;gap:8px}dialog input{max-width:300px}.resetButtons{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
+
+/* V13 whole 4D toroidal volume: original controls/panels untouched. */
+.torusInfo{position:absolute;right:16px;top:13px;max-width:min(510px,55%);padding:9px 12px;
+ background:#07182ded;border:1px solid #36617b;border-radius:9px;color:#bfe7f2;
+ font-size:11px;line-height:1.5;pointer-events:none;text-align:right;z-index:2}
+.torusInfo[hidden]{display:none}
+.torusHelp{font-size:10px;line-height:1.4;color:#93b3c8;margin:7px 0 0}
+.sliceTools input:disabled{opacity:.25;cursor:not-allowed}
+@media(max-width:950px){.torusInfo{max-width:calc(100% - 28px);top:auto;bottom:81px;left:14px;right:auto;text-align:left}.modes{flex-wrap:wrap}}
+
+.torusPresets{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:9px}
+.torusPresets span{font-size:10px;color:#9ab7d2;margin-right:3px}
+.torusPreset{font-size:9px;padding:5px 7px;background:#152845;border-color:#45617f}
+.torusPreset.active{background:#4d4390;border-color:#ad98ff}

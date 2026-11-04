@@ -36,3 +36,16 @@ The broader Verbatim completeness gate remains BLOCKED.
 - **Non-negotiable original intent:** no fabricated graph nodes or fake learned synapses. The background chamber is a geometric guide, not a cognitive structure, and colors encode recorded events. Temporal event replay is separate from spatial dimension 4. Structural node `dimension` fields (1–4) and the torus embedding coordinates represent different properties; neither by itself proves cross-domain transfer or a physical fourth spatial dimension.
 
 **Status:** V12 implementation + local CPU regression tests; full historical Verbatim and full performance claims remain unverified under repository gates.
+
+## V13 — source-matched full toroidal network display (4 November 2026)
+
+Original current user request (preserve the exact user wording in the canonical Verbatim registry):
+
+> nu vad torusul in ui-ul nostru,adica totul e ok,nu trebuie sa scoti nimic dar ni vad sliceuri din acest toroid sa vad tot graful care se intinde prin tot interiorul acestui torus,nu sa stau cu focus pe partea aia 3d de graf
+
+Attached reference: `MagicPerspective_4D_Torus_OneObject.html`, supplied by the user and kept as source material. It provides the six 4D rotation planes, the perspective 4D→3D and camera controls. The user's **filled interior** requirement uses the existing V12 geometric space `S¹ × B³` (not an empty Clifford torus surface).
+
+- **Source → implementation:** `engine.py: Graph.view_page` and `server.py: GET /api/graph/all` expose all real node/edge records rather than a 750-node focus sample; `web/app.js: refreshWholeGraph` incrementally assembles full graph and preserves 3D LIVE; `web/torus-view.js` renders the real learned graph through the entire filled 4D torus and clips it to 4D spatial sections; `web/index.html` adds modes/presets and keeps all old controls; `web/style.css` contains only the new control styles.
+- **Acceptance test:** `tests/test_v13.py` verifies pagination past 900, source-backed total counts, HTTP endpoint, stable ordering, and old UI controls; entire existing `tests/` suite and browser scripts checked. Headless-browser diagnostic loaded 7,953/7,953 node records and 37,291/37,291 edge records from 285 *actual* CPU diagnostic episodes. Section W=0.30 ±0.34 showed 3,547 of those nodes. No JavaScript page errors. This was not the user's actual CUDA-trained checkpoint.
+- **Regression guard:** V12 reset/corpus/train/replay tests unchanged; V13 does not touch the saved model format, optimizer, trainer, corpus importer or old 3D view. No invented graph edges; wireframe is a labeled geometric guide.
+- **State:** `LOCAL_CPU_BROWSER_TESTED; USER_GPU_UNVERIFIED; FULL_VERBATIM_CONFORMITY_BLOCKED`. The original user text and attachment must not be replaced with this summary, and previous missing transcript pieces remain missing.

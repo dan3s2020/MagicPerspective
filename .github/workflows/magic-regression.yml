@@ -87,6 +87,7 @@ jobs:
           python -m pip install --quiet pyarrow
           PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -v
           node --check experiments/portal-universal-20261103/web/app.js
+          node --check experiments/portal-universal-20261103/web/torus-view.js
           python -m py_compile experiments/portal-universal-20261103/engine.py experiments/portal-universal-20261103/server.py experiments/portal-universal-20261103/corpus.py experiments/portal-universal-20261103/cuda_probe.py
       - name: Brain Studio multiworld learning, checkpoints, HTTP and UI regressions
         run: node --test experiments/brain-studio-20261103/tests/*.test.mjs
