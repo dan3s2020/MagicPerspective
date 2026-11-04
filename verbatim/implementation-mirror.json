@@ -7,7 +7,8 @@
     "verbatim/recent-user-messages.json",
     "verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt",
     "verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt",
-    "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt"
+    "verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt",
+    "verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt"
   ],
   "required_evidence_fields": [
     "source_ref",
@@ -542,6 +543,26 @@
       "measured_result": null,
       "regression_check": null,
       "audit_path": "verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md"
+    },
+    {
+      "id": "REQ-V15-STRICT-TORUS-AND-REPO-VERBATIM-COMPLIANCE",
+      "source_ref": "2026-11-04-USER-TORUS-UI-NOT-FULL-VERBATIM",
+      "exact_source_span": "arata interesat ca ui si vizualizer,dar nu respecta converastia din verbatim 100% cu ce e e repo MagicPerspective",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Do not confuse visually appealing standalone torus with full user-specified universal engine. Verify each atomic original clause against real implementation, native CUDA data provenance, all-domain training, learned solution geometry, navigation, and independent tests. Fail release gate until full source and behavior pass.",
+      "status": "BLOCKED_NOT_VERIFIED",
+      "code_paths": [
+        "experiments/portal-universal-20261103/engine.py",
+        "experiments/portal-universal-20261103/web/torus-view.js",
+        "experiments/portal-v7-hypercube-4d/growth-server.mjs",
+        "scripts/verbatim-strict-audit.mjs"
+      ],
+      "test_paths": [
+        "tests/verbatim-strict-audit.test.mjs",
+        "experiments/portal-universal-20261103/tests/test_v14.py"
+      ],
+      "measured_result": "Static repo audit: 4D positions are hash-derived in toroid.py, V14 self/world contrast remains a bounded counterfactual estimator, capacity is limited to 32768 and the source transcript is incomplete. No 100% certification.",
+      "regression_check": "node --test tests/verbatim-strict-audit.test.mjs && node scripts/verbatim-strict-audit.mjs --report; --gate deliberately fails on incomplete full source."
     }
   ],
   "versions": [
