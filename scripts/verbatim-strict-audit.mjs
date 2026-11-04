@@ -133,7 +133,7 @@ export function auditConformity(root=REPO){
     issue:'Matched-action sensitivity estimator is not verified emergence of a self/world boundary',
     status:'NOT_VERIFIED'},
    {source:'engine.py: text_world',
-    issue:'Eight-option byte-choice task is not free-form conversational language ability',
+    issue:'text_world eight-option byte-choice task is not free-form conversational language ability',
     status:'NOT_VERIFIED'},
    {source:'engine.py + VERBATIM user requirements',
     issue:'14 million different completed exercises and positive cross-domain solution-shape transfer not demonstrated',
