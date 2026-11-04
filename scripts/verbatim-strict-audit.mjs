@@ -8,7 +8,7 @@
  * visible. A green Node/Python test suite is NOT proof of the full Verbatim.
  * --report diagnoses without failure, --gate fails on noncompliance.
  */
-import {readFileSync,existsSync} from 'node:fs';
+import {readFileSync,existsSync,readdirSync} from 'node:fs';
 import {resolve,dirname,relative,isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -81,7 +81,6 @@ export function auditConformity(root=REPO){
  const extraUserFiles=[];
  // Detect original USER source files not even indexed in the recent ledger.
  // The historic 56-message archive is tracked separately.
- const {readdirSync}=awaitlessFs();
  for(const name of readdirSync(file(root,'verbatim'))){
   if(!name.includes('-USER-VERBATIM.txt'))continue;
   const p='verbatim/'+name;
@@ -148,8 +147,6 @@ export function auditConformity(root=REPO){
   ]
  };
 }
-function awaitlessFs(){return {readdirSync:globalReadDir}}
-import {readdirSync as globalReadDir} from 'node:fs';
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const result=auditConformity();
