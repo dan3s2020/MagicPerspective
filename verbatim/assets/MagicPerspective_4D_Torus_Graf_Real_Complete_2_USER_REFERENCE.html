@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>MagicPerspective · Torus 4D · Torus 4D + Graf REAL</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink:#ecf8ff;
+      --muted:#8497a9;
+      --accent:#b3e9ff;
+      --edge:rgba(190,224,245,.17);
+      --panel:rgba(4,10,18,.79);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    * { box-sizing:border-box; }
+    html,body {height:100%;margin:0;overflow:hidden;background:#000;}
+    body {color:var(--ink);}
+    canvas#universe {
+      position:fixed;inset:0;width:100%;height:100%;display:block;
+      background:radial-gradient(ellipse at 50% 46%,#06111d 0%,#010307 43%,#000 80%);
+      touch-action:none;cursor:grab;
+    }
+    canvas#universe:active {cursor:grabbing;}
+    .grain {position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.46) 100%);}
+    .topbar {position:fixed;z-index:2;left:clamp(15px,3vw,44px);top:clamp(17px,3vh,35px);right:clamp(15px,3vw,44px);display:flex;justify-content:space-between;align-items:flex-start;gap:16px;pointer-events:none;}
+    .brand {display:flex;align-items:flex-start;gap:12px;}
+    .mark {width:31px;height:31px;border:1px solid rgba(172,225,255,.56);border-radius:50%;position:relative;flex-shrink:0;box-shadow:0 0 20px rgba(131,216,255,.12);}
+    .mark:before,.mark:after {content:"";position:absolute;inset:6px -1px;border:1px solid rgba(205,240,255,.6);border-radius:50%;transform:rotate(58deg);}
+    .mark:after {transform:rotate(-58deg);}
+    .brand small,.eyebrow {display:block;font-size:10px;font-weight:650;letter-spacing:2.7px;color:#b8dbed;}
+    .brand .subtitle {margin-top:5px;font-size:11px;letter-spacing:1px;color:#69889e;}
+    .tag {padding:9px 13px;border:1px solid var(--edge);border-radius:999px;letter-spacing:1.4px;font-size:10px;font-weight:550;color:#9bb8cb;background:rgba(1,5,12,.48);white-space:nowrap;}
+    .tag b {color:#d9f7ff;font-weight:550;}
+    .center-label {position:fixed;left:50%;bottom:clamp(150px,19vh,220px);transform:translateX(-50%);text-align:center;pointer-events:none;user-select:none;white-space:nowrap;transition:opacity .25s;}
+    .center-label .main {font-size:clamp(11px,1.15vw,14px);font-weight:500;letter-spacing:4px;text-transform:uppercase;color:rgba(214,241,255,.74);text-shadow:0 0 20px #000;}
+    .center-label .sub {margin-top:8px;font-size:11px;letter-spacing:.65px;color:rgba(139,172,195,.65);}
+    .controls {position:fixed;z-index:3;bottom:clamp(15px,3vh,30px);left:50%;transform:translateX(-50%);width:min(1050px,calc(100vw - 26px));padding:16px 20px 13px;border:1px solid var(--edge);border-radius:16px;background:var(--panel);box-shadow:0 20px 70px rgba(0,0,0,.72),0 0 70px rgba(65,151,210,.035) inset;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+    .toolbar {display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+    .tabs {display:flex;align-items:center;gap:3px;background:rgba(145,200,235,.06);border:1px solid rgba(165,211,244,.11);padding:3px;border-radius:9px;}
+    button {font:inherit;color:inherit;cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .15s;}
+    button:focus-visible,input:focus-visible,select:focus-visible {outline:2px solid #a7e5ff;outline-offset:3px;}
+    .tab {font-size:11px;padding:8px 13px;border:0;background:transparent;color:#7f9aab;border-radius:6px;white-space:nowrap;}
+    .tab[aria-pressed="true"] {background:rgba(144,217,255,.13);color:#e5f8ff;box-shadow:inset 0 0 0 1px rgba(171,224,255,.19);}
+    .actions {display:flex;gap:7px;align-items:center;}
+    .btn {font-size:11px;background:rgba(149,193,224,.06);border:1px solid rgba(154,204,239,.15);border-radius:8px;padding:9px 12px;min-height:35px;}
+    .btn:hover,.tab:hover {background:rgba(140,207,255,.14);}
+    .btn.primary {background:#bfefff;border-color:#d8f7ff;color:#0a1822;font-weight:700;}
+    .btn.primary:hover {background:#e2faff;}
+    .fields {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:15px;}
+    .field .fieldtop {display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;}
+    .field label {font-size:10px;font-weight:600;letter-spacing:.7px;color:#9cb7c9;white-space:nowrap;}
+    output {font-size:10px;font-variant-numeric:tabular-nums;color:#d4f4ff;}
+    input[type="range"] {display:block;width:100%;height:15px;margin:0;cursor:pointer;appearance:none;background:transparent;}
+    input[type="range"]::-webkit-slider-runnable-track {height:3px;border-radius:9px;background:linear-gradient(90deg,#4e9bc0,rgba(123,171,198,.2));}
+    input[type="range"]::-moz-range-track {height:3px;border-radius:9px;background:linear-gradient(90deg,#4e9bc0,rgba(123,171,198,.2));}
+    input[type="range"]::-webkit-slider-thumb {appearance:none;width:12px;height:12px;margin-top:-4.5px;border:2px solid #bcf1ff;border-radius:50%;background:#0d2938;}
+    input[type="range"]::-moz-range-thumb {width:9px;height:9px;border:2px solid #bcf1ff;border-radius:50%;background:#0d2938;}
+    .foot {display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:12px;border-top:1px solid rgba(176,214,237,.11);padding-top:10px;font-size:10px;color:#7190a7;letter-spacing:.2px;}
+    .foot b {color:#a5c7d9;font-weight:500;}
+    .live {display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+    .dot {display:inline-block;width:6px;height:6px;border-radius:50%;background:#9de0ff;box-shadow:0 0 12px #72d9ff;}
+    .right-info {position:fixed;top:84px;right:clamp(15px,3vw,44px);font-size:10px;color:rgba(152,187,209,.7);letter-spacing:1px;line-height:1.85;text-align:right;pointer-events:none;user-select:none;}
+    .right-info strong {font-weight:500;color:#bdddec;}
+    @media(max-width:760px){
+      .topbar{top:16px}.tag{display:none}.brand small{letter-spacing:1.9px}.center-label{bottom:252px}.controls{padding:13px 13px 12px}.fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 17px}.toolbar{justify-content:center}.tabs{width:100%;justify-content:space-around}.tab{flex:1;padding:9px 4px;font-size:10px}.actions{width:100%}.btn{flex:1}.foot .instructions{display:none}.foot{justify-content:center}.right-info{top:67px;font-size:9px}.center-label .main{letter-spacing:2.3px}
+    }
+    @media(max-height:680px) and (min-width:761px){.center-label{bottom:155px}.controls{padding-top:10px}.fields{margin-top:9px}.foot{margin-top:8px}}
+    @media(prefers-reduced-motion:reduce){button{transition:none}}
+
+    /* Extra UI is additive: original torus and its controls stay intact. */
+    .graph-panel {position:fixed;z-index:5;top:85px;left:clamp(12px,2.4vw,32px);width:334px;
+      max-height:calc(100vh - 280px);background:rgba(3,11,24,.88);border:1px solid rgba(93,181,218,.38);
+      border-radius:15px;padding:12px;backdrop-filter:blur(14px);box-shadow:0 20px 70px #0008;
+      overflow-y:auto; scrollbar-color:#3e7794 #06101a;}
+    .graph-panel h2{font-size:13px;letter-spacing:1px;margin:0 0 4px;color:#c4f3ff;}
+    .graph-caption{font-size:10px;line-height:1.5;color:#83a9c1;margin:0 0 9px;}
+    .graph-state{font-size:10px;line-height:1.5;color:#f5cb88;padding:7px 8px;
+      background:#0e1e30;border:1px solid #325575;border-radius:8px;overflow-wrap:anywhere;}
+    .graph-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:9px 0;}
+    .graph-stat{padding:7px;border:1px solid #23445e;border-radius:8px;background:#08172a;min-width:0;}
+    .graph-stat strong{display:block;font-size:17px;color:#8ae7d2;font-variant-numeric:tabular-nums;}
+    .graph-stat small{color:#8caabc;font-size:9px;white-space:nowrap;}
+    .graph-actions{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0;}
+    .graph-actions button,.graph-actions label,.graph-actions a{display:inline-flex;align-items:center;justify-content:center;
+      gap:3px;min-height:33px;padding:6px 8px;cursor:pointer;font-size:10px;color:#e3f6ff;
+      background:#15314a;border:1px solid #477997;border-radius:7px;text-decoration:none;}
+    .graph-actions label input{display:none;}
+    .graph-actions a:hover,.graph-actions button:hover,.graph-actions label:hover{background:#21506c;}
+    .graph-switch{display:flex;gap:7px;align-items:center;font-size:10px;color:#bad5e5;}
+    .graph-switch input{accent-color:#70e3cc;}
+    .graph-section{margin-top:10px;border-top:1px solid #284057;padding-top:9px;}
+    .graph-section h3{margin:0 0 6px;font-size:10px;letter-spacing:1px;color:#a5d9ed;}
+    .graph-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+    .graph-nav div{display:flex;flex-direction:column;gap:3px;text-align:center;font-size:11px;color:#a6cde3;}
+    .graph-nav button{min-height:30px;background:#17364e;border:1px solid #4a819e;border-radius:6px;font-size:11px;padding:2px;}
+    .graph-nav button:hover{background:#285874;}
+    .graph-panel .graph-range{display:flex;justify-content:space-between;font-size:10px;margin:8px 0 3px;color:#a4cbdc;}
+    .graph-panel input[type=range]{width:100%;}
+    .graph-log{font:10px/1.5 ui-monospace,Consolas,monospace;max-height:120px;overflow:auto;
+      color:#c6e7f5;white-space:pre-wrap;overflow-wrap:anywhere;background:#071626;border:1px solid #294d63;
+      border-radius:8px;padding:8px;}
+    .graph-node-detail{font:10px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;
+      color:#add0e4;overflow-wrap:anywhere;max-height:90px;overflow:auto;}
+    .graph-legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;color:#9ebed1;font-size:9px;}
+    .graph-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;}
+    .graph-float{position:fixed;left:50%;top:78px;transform:translateX(-50%);z-index:2;
+      background:#061827bb;border:1px solid #30536c;border-radius:999px;font-size:10px;color:#b6d9ee;
+      padding:7px 13px;max-width:45vw;text-align:center;pointer-events:none;}
+    @media(max-width:760px){
+      .graph-panel{top:72px;left:10px;width:min(325px,calc(100vw - 20px));max-height:calc(100vh - 335px);}
+      .graph-panel[data-collapsed=true]{width:auto;max-height:none;overflow:visible;}
+      .graph-panel[data-collapsed=true] .graph-body{display:none;}
+      .graph-float{display:none;}
+    }
+    @media(max-height:730px) and (min-width:761px){.graph-panel{max-height:calc(100vh - 230px);}}
+  </style>
+</head>
+<body>
+  <canvas id="universe" aria-label="Vizualizare interactivă a unui torus matematic în patru dimensiuni, proiectat pe ecran"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="graph-float" id="graphFloat" aria-live="polite">GRAF 4D · aștept date reale</div>
+  <aside class="graph-panel" id="graphPanel" aria-label="Graful măsurat în spațiul torusului">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+      <h2>ABSTRACT NETWORK · ÎN TORUS 4D</h2>
+      <button class="btn" type="button" id="graphCollapse" aria-expanded="true" style="padding:5px 8px">▾</button>
+    </div>
+    <div class="graph-body">
+      <p class="graph-caption">Același sistem de proiecție 4D ca torusul. Rețeaua este citită din date, nu generată decorativ.</p>
+      <div class="graph-state" id="graphStatus">Încă nu am primit un graf cu poziții reale x/y/z/w.</div>
+      <div class="graph-stats">
+        <div class="graph-stat"><strong id="graphNodes">0</strong><small>NODURI</small></div>
+        <div class="graph-stat"><strong id="graphEdges">0</strong><small>MUCHII</small></div>
+        <div class="graph-stat"><strong id="graphExercises">0</strong><small>PROBLEME</small></div>
+        <div class="graph-stat"><strong id="graphEvents">0</strong><small>EXPERIENȚE</small></div>
+        <div class="graph-stat"><strong id="graphActive">0</strong><small>ACTIVĂRI</small></div>
+        <div class="graph-stat"><strong id="graphLearning">0</strong><small>Δ PONDERI</small></div>
+      </div>
+      <div class="graph-actions">
+        <label title="Încarcă un export JSON / JSONL real">↑ IMPORTĂ JSON/JSONL<input type="file" id="graphFile" accept=".json,.jsonl,.txt,application/json"></label>
+        <button type="button" id="graphRetry">↻ LIVE 8791</button>
+        <button type="button" id="graphResetCamera">◎ CAMERA</button>
+      </div>
+      <label class="graph-switch"><input type="checkbox" id="graphVisible" checked> Afișează graful peste geometria 4D</label>
+      <div class="graph-section">
+        <h3>NAVIGARE ÎN SPAȚIUL GRAFULUI · X/Y/Z/W</h3>
+        <div class="graph-nav">
+          <div>X<button type="button" data-graph-move="x:-1">←</button><button type="button" data-graph-move="x:1">→</button></div>
+          <div>Y<button type="button" data-graph-move="y:1">↑</button><button type="button" data-graph-move="y:-1">↓</button></div>
+          <div>Z<button type="button" data-graph-move="z:1">↗</button><button type="button" data-graph-move="z:-1">↙</button></div>
+          <div>W<button type="button" data-graph-move="w:1">W+</button><button type="button" data-graph-move="w:-1">W−</button></div>
+        </div>
+        <div class="graph-range"><span>SCARĂ GRAF</span><output id="graphScaleLabel">90%</output></div>
+        <input id="graphScale" type="range" min="25" max="150" value="90" step="5">
+        <div class="graph-range"><span>MAX MUCHII VIZIBILE</span><output id="graphLimitLabel">6000</output></div>
+        <input id="graphLimit" type="range" min="200" max="12000" value="6000" step="200">
+        <div class="graph-range"><span>CAMERĂ 4D</span><output id="graphCameraLabel">0,0,0,0</output></div>
+      </div>
+      <div class="graph-section"><h3>NOD SELECTAT · CLICK PE GRAF</h3><div class="graph-node-detail" id="graphSelected">Niciun nod selectat.</div></div>
+      <div class="graph-section"><h3>EXPERIENȚE ȘI ACTIVITATE MĂSURATE</h3><div class="graph-log" id="graphLog">Niciun eveniment transmis. Graful nu simulează antrenare.</div></div>
+      <div class="graph-legend"><span><i class="graph-dot" style="background:#87e7e2"></i>nod</span>
+        <span><i class="graph-dot" style="background:#f4bf77"></i>activare</span>
+        <span><i class="graph-dot" style="background:#e9a2ff"></i>predicție</span>
+        <span><i class="graph-dot" style="background:#8af0a4"></i>acțiune</span>
+        <span><i class="graph-dot" style="background:#ff937c"></i>nod nou</span></div>
+    </div>
+  </aside>
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div><small>MAGIC PERSPECTIVE</small><div class="subtitle">4D TORUS / LABORATOR IZOLAT / v1.0</div></div>
+    </div>
+    <span class="tag">GEOMETRIE REALĂ &nbsp;<b>S¹ × S¹ ⊂ ℝ⁴</b></span>
+  </header>
+  <div class="right-info"><div id="modeReadout"><strong>HOPF / S³</strong></div><div id="angleReadout">XW 0° · YW 0°</div><div id="fpsReadout">PROIECȚIE 4D → 3D → 2D</div></div>
+  <div class="center-label" id="centerLabel"><div class="main" id="shapeName">Umbra unui torus 4D</div><div class="sub" id="shapeInfo">Trage pentru a roti în 4D · Shift + trage pentru cameră 3D</div></div>
+  <section class="controls" aria-label="Controale torus 4D">
+    <div class="toolbar">
+      <div class="tabs" role="group" aria-label="Geometrie">
+        <button class="tab" id="tabClifford" type="button" aria-pressed="false" data-mode="clifford">TORUS CLIFFORD</button>
+        <button class="tab" id="tabHopf" type="button" aria-pressed="true" data-mode="hopf">STRATURI HOPF</button>
+        <button class="tab" id="tabFlower" type="button" aria-pressed="false" data-mode="flower">REZONANȚĂ</button>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="button" id="playButton">Ⅱ &nbsp; Pauză</button>
+        <button class="btn" type="button" id="resetButton">↺ &nbsp; Reset</button>
+        <button class="btn" type="button" id="shotButton">↓ &nbsp; PNG</button>
+        <button class="btn" type="button" id="fullButton">⛶ &nbsp; Ecran complet</button>
+      </div>
+    </div>
+    <div class="fields">
+      <div class="field"><div class="fieldtop"><label for="speed">VITEZĂ ROTIRE 4D</label><output id="speedValue">0.35×</output></div><input id="speed" type="range" min="0" max="2" step="0.05" value="0.35"></div>
+      <div class="field"><div class="fieldtop"><label for="depth">PROIECȚIE 4D</label><output id="depthValue">2.30</output></div><input id="depth" type="range" min="1.20" max="4.50" step="0.05" value="2.30"></div>
+      <div class="field"><div class="fieldtop"><label for="density">DENSITATE GRILĂ</label><output id="densityValue">42</output></div><input id="density" type="range" min="12" max="72" step="2" value="42"></div>
+      <div class="field"><div class="fieldtop"><label for="zoom">SCARĂ</label><output id="zoomValue">100%</output></div><input id="zoom" type="range" min="35" max="185" step="1" value="100"></div>
+    </div>
+    <footer class="foot">
+      <span class="instructions">ROTIRE 4D <b>drag</b> &nbsp; / &nbsp; CAMERĂ 3D <b>Shift + drag</b> &nbsp; / &nbsp; ZOOM <b>rotița mouse-ului</b> &nbsp; / &nbsp; SPAȚIU <b>pauză</b></span>
+      <span class="live"><span class="dot" id="liveDot"></span><span id="liveText">SO(4) · 6 PLANE DE ROTAȚIE</span></span>
+    </footer>
+  </section>
+  <script>
+    'use strict';
+    /*
+      Torus Clifford: T² = { (cos(η) cos(u), cos(η) sin(u), sin(η) cos(v), sin(η) sin(v)) }
+      for fixed η∈(0,π/2). Every point lies on S³⊂ℝ⁴.
+      Rotations are genuine Euclidean rotations in ℝ⁴, i.e. elements of SO(4),
+      followed by 4D perspective projection onto ℝ³ and an ordinary 3D camera
+      onto the two-dimensional browser canvas.
+      Hopf mode visualizes a family of distinct Clifford tori, not one torus.
+      Resonance mode deforms η(u,v) periodically: it is explicitly NOT a rigid
+      rotation of the original Clifford torus.
+    */
+    const canvas = document.getElementById('universe');
+    const ctx = canvas.getContext('2d', {alpha: false, desynchronized: true});
+    const $ = id => document.getElementById(id);
+    const TAU = Math.PI * 2;
+    const PI = Math.PI;
+    const state = {
+      mode:'hopf', playing:true, speed:.35, depth:2.3, density:42,
+      zoom:1, yaw:.32, pitch:-.12,
+      // six independent coordinate-plane rotation angles: XW,YW,ZW,XY,XZ,YZ
+      angles:[.53,-.29,.37,.22,-.14,.11], time:0,
+      width:0,height:0,dpr:1, dragging:false,lastX:0,lastY:0,
+      samples:[], curveCount:0, pointCount:0, frameTime:0
+    };
+    // A real observed graph is distinct from the geometric torus cage.
+    // On load this is EMPTY. No hardcoded graph nodes, edges, or fake actions.
+    const graph4d = {
+      nodes:[],edges:[],byId:new Map(),visible:true,source:'',origin:null,
+      center:[0,0,0,0],radius:1,screen:new Map(),camera:[0,0,0,0],
+      scale:.90,edgeLimit:6000,selected:null,events:[],frame:null,
+      lastFrameTime:0,sequence:-1,exerciseTotal:0,learnedSteps:0,
+      latestProblem:'',latestDomain:'',refreshing:false,
+      isLocalViewer:location.protocol==='file:',eventCursor:0,
+      hasData:false,stats:{},fetchError:'',lastPoll:0
+    };
+    const isValid4 = value => Array.isArray(value) && value.length===4 && value.every(x=>typeof x==='number'&&Number.isFinite(x));
+    const formatCount = n => Number(n||0).toLocaleString('ro-RO');
+    const safeId = x => String(x);
+    function parseMeasuredGraph(raw){
+      const payload = raw?.graph ?? raw;
+      if(!payload || !Array.isArray(payload.nodes) || !Array.isArray(payload.edges)){
+        throw Error('Format grafic invalid: sunt necesare nodes[] și edges[].');
+      }
+      const nodes=[],known=new Set();
+      for(const item of payload.nodes){
+        if(item===null||item.id===undefined||item.id===null)throw Error('Nod fără id.');
+        const id=safeId(item.id);
+        if(known.has(id))throw Error('ID nod duplicat: '+id);
+        const pos=item.position??item.pos;
+        if(!isValid4(pos))throw Error('Nodul '+id+' nu are poziții 4D reale [x,y,z,w]; nu inventez W.');
+        known.add(id);
+        nodes.push({...item,id,position:pos.slice()});
+      }
+      const edges=[];
+      for(const item of payload.edges){
+        const from=safeId(item?.from??item?.a),to=safeId(item?.to??item?.b);
+        if(!known.has(from)||!known.has(to))throw Error('Muchia '+from+' → '+to+' are nod absent.');
+        edges.push({...item,from,to});
+      }
+      return {nodes,edges,meta:payload.meta??{}};
+    }
+    function applyMeasuredGraph(input,source){
+      const graph=parseMeasuredGraph(input);
+      if(graph4d.source && source!==graph4d.source){
+        // Switching between two independent original sources must NOT use
+        // the previous source's 4D coordinate reference frame.
+        graph4d.origin=null;
+        graph4d.camera=[0,0,0,0];
+      }
+      // Fixed viewport reference once nonempty: new experiences do not
+      // teleport previously observed nodes. Source coordinates stay unmodified.
+      if(!graph4d.origin && graph.nodes.length){
+        const center=[0,0,0,0];
+        for(const n of graph.nodes)for(let i=0;i<4;i++)center[i]+=n.position[i]/graph.nodes.length;
+        let radius=0;
+        for(const n of graph.nodes)radius=Math.max(radius,Math.hypot(...n.position.map((x,i)=>x-center[i])));
+        graph4d.origin=true;
+        graph4d.center=center;
+        graph4d.radius=radius||1;
+      }
+      graph4d.nodes=graph.nodes;graph4d.edges=graph.edges;
+      graph4d.byId=new Map(graph.nodes.map(n=>[n.id,n]));
+      graph4d.stats=graph.meta||{};
+      graph4d.source=source;
+      graph4d.hasData=graph.nodes.length>0;
+      if(graph4d.selected&&!graph4d.byId.has(graph4d.selected))graph4d.selected=null;
+      graphUpdateUI();render();
+    }
+    function graphUpdateUI(){
+      const stat=graph4d.stats;
+      $('graphNodes').textContent=formatCount(stat.total_nodes??graph4d.nodes.length);
+      $('graphEdges').textContent=formatCount(stat.total_edges??graph4d.edges.length);
+      $('graphExercises').textContent=formatCount(stat.unique_problems??graph4d.exerciseTotal);
+      $('graphEvents').textContent=formatCount(stat.observed_actions??Math.max(0,graph4d.sequence));
+      $('graphActive').textContent=formatCount(graph4d.frame?.activeNodes?.length??0);
+      $('graphLearning').textContent=formatCount(stat.learned_steps??graph4d.learnedSteps);
+      $('graphScaleLabel').textContent=Math.round(graph4d.scale*100)+'%';
+      $('graphLimitLabel').textContent=String(graph4d.edgeLimit);
+      $('graphCameraLabel').textContent=graph4d.camera.map(x=>x.toFixed(2)).join(', ');
+      const source=graph4d.source ? 'SURSA: '+graph4d.source : 'AȘTEPT SURSĂ';
+      $('graphStatus').textContent=graph4d.hasData?
+        source+' · '+formatCount(graph4d.nodes.length)+' noduri / '+formatCount(graph4d.edges.length)+
+        ' muchii vizibile'+(stat.sampled?' · EȘANTION (totalurile sunt sus)':''):
+        source+' · 0 noduri. Nu există date 4D reale de desenat.';
+      $('graphFloat').textContent=graph4d.hasData?
+        'GRAF REAL · '+formatCount(stat.total_nodes??graph4d.nodes.length)+' NODURI · '+
+        formatCount(stat.total_edges??graph4d.edges.length)+' CONEXIUNI':'GRAF 4D · AȘTEPT DATE REALE';
+      if(!graph4d.selected){$('graphSelected').textContent='Niciun nod selectat.';}
+      else{
+        const n=graph4d.byId.get(graph4d.selected);
+        $('graphSelected').textContent=n?'ID '+n.id+' · '+(n.role??'')+
+          '\n(x,y,z,w) = '+n.position.map(v=>v.toFixed(4)).join(', ')+
+          '\nObservări: '+(n.uses??'necunoscut')+ ' · Activare: '+(n.activity??'neraportată'):
+          'Nodul selectat nu mai este în fereastra vizibilă.';
+      }
+      const lines=graph4d.events.slice(-9).reverse().map(e=>
+        '#'+(e.seq??'?')+' '+(e.domain||'?')+' · '+(e.problem||'?')+
+        (e.newNodes!==undefined?'\n   +'+e.newNodes+' noduri, +'+e.newEdges+' muchii':'')+
+        (e.reward!==undefined&&e.reward!==null?' · reward '+e.reward:'')+
+        (e.delta!==undefined?' · Δ '+e.delta:'')
+      );
+      $('graphLog').textContent=lines.length?lines.join('\n'):
+        'Niciun eveniment măsurat. Nu desenez impulsuri sau decizii false.';
+    }
+    function importMeasuredEvents(lines){
+      // Original evidence log lines {schema,sequence,event:{...}}, or raw
+      // events. Keep only confirmed observed and executed edges; no predictions.
+      const nodes=new Map(),edges=new Map(),problems=new Set(),events=[];
+      let seq=0,learned=0;
+      for(const entry of lines){
+        const raw=entry?.event??entry;
+        if(!raw||!Array.isArray(raw.nodes)||!Array.isArray(raw.edges))continue;
+        seq++;
+        if(raw.problem_id!=null)problems.add(String(raw.problem_id));
+        for(const item of raw.nodes){
+          if(item?.id===undefined)continue;
+          const id=String(item.id),old=nodes.get(id),pos=item.position??item.pos;
+          if(!old&&!isValid4(pos))throw Error('Evenimentul '+seq+' introduce nod fără x/y/z/w: '+id);
+          if(pos!==undefined&&!isValid4(pos))throw Error('Poziție 4D invalidă: '+id);
+          nodes.set(id,{...old,...item,id,position:pos?pos.slice():old.position});
+        }
+        const actual=[...raw.edges];
+        if(Array.isArray(raw.messages))actual.push(...raw.messages.map(e=>({...e,kind:'message'})));
+        if(raw.executed)actual.push({...raw.executed,kind:'executed'});
+        for(const edge of actual){
+          const from=String(edge.from),to=String(edge.to),kind=String(edge.kind??'observed');
+          if(!nodes.has(from)||!nodes.has(to))throw Error('Muchie cu nod inexistent la evenimentul '+seq);
+          const key=JSON.stringify([from,to,kind]);
+          const old=edges.get(key);edges.set(key,{...edge,from,to,kind,count:(old?.count??0)+1});
+        }
+        if(Number(raw.model_update?.weight_delta)>0)learned++;
+        events.push({seq,domain:raw.domain,problem:raw.problem_id,
+          newNodes:raw.nodes.length,newEdges:raw.edges.length,reward:raw.reward,
+          delta:raw.model_update?.weight_delta});
+      }
+      graph4d.origin=null;graph4d.camera=[0,0,0,0];
+      graph4d.events=events.slice(-40);graph4d.sequence=seq;graph4d.learnedSteps=learned;
+      graph4d.exerciseTotal=problems.size;
+      applyMeasuredGraph({nodes:[...nodes.values()],edges:[...edges.values()],meta:{
+        total_nodes:nodes.size,total_edges:edges.size,unique_problems:problems.size,
+        observed_actions:seq,learned_steps:learned}},'JSONL IMPORTAT');
+    }
+    function isLiveHost(){
+      return location.protocol==='http:' &&
+        ['127.0.0.1','localhost'].includes(location.hostname) &&
+        location.port==='8791';
+    }
+    async function fetchRealJSON(url){
+      const response=await fetch(url,{cache:'no-store'});
+      if(!response.ok)throw Error('HTTP '+response.status+' / '+url);
+      return response.json();
+    }
+    async function pollRealEngine(){
+      if(!isLiveHost()){
+        if(!graph4d.hasData){
+          $('graphStatus').textContent=graph4d.isLocalViewer?
+            'Acest HTML local acceptă JSON sau JSONL. Pentru LIVE, servește-l din 8791/torus.html.':
+            'Live necesită adresa http://127.0.0.1:8791/torus.html.';
+        }
+        return;
+      }
+      if(graph4d.refreshing)return;
+      graph4d.refreshing=true;
+      try{
+        const graph=await fetchRealJSON('/api/graph?maxNodes=1500&maxEdges=12000');
+        const sequence=Number(graph.meta?.sequence??0);
+        if(graph4d.sequence!==sequence || !graph4d.source.startsWith('LIVE')){
+          graph4d.sequence=sequence;
+          applyMeasuredGraph(graph,'LIVE / 8791 · RAPORTAT DE MOTOR');
+        }
+        for(let i=0;i<5;i++){
+          const feed=await fetchRealJSON('/api/events?after='+graph4d.eventCursor);
+          if(!Array.isArray(feed.events)||!feed.events.length)break;
+          for(const item of feed.events){
+            if(item.sequence<=graph4d.eventCursor)continue;
+            graph4d.eventCursor=item.sequence;
+            const frame=item.frame;
+            if(frame){
+              graph4d.frame=frame;
+              graph4d.lastFrameTime=performance.now();
+              graph4d.events.push({seq:item.sequence,domain:frame.domain,
+                problem:frame.problem_id,newNodes:item.growth?.nodes?.length??0,
+                newEdges:item.growth?.edges?.length??0,reward:frame.reward,
+                delta:frame.model_update?.weight_delta});
+              if(graph4d.events.length>40)graph4d.events.shift();
+            }
+          }
+          if(!feed.has_more)break;
+        }
+        graph4d.fetchError='';graphUpdateUI();render();
+      }catch(error){
+        graph4d.fetchError=error.message;
+        $('graphStatus').textContent='Conexiune 8791 indisponibilă: '+error.message+
+          '. Poți importa un JSON/JSONL real.';
+      }finally{graph4d.refreshing=false;}
+    }
+    function moveGraphCamera(axis,direction){
+      const axisId={x:0,y:1,z:2,w:3}[axis];
+      if(axisId===undefined)return;
+      graph4d.camera[axisId]+=direction*.16;
+      graphUpdateUI();render();
+    }
+    function sizeCanvas(){
+      const dpr = Math.min(window.devicePixelRatio || 1,1.75);
+      state.dpr=dpr;
+      state.width=Math.max(1,window.innerWidth);
+      state.height=Math.max(1,window.innerHeight);
+      canvas.width=Math.round(state.width*dpr);
+      canvas.height=Math.round(state.height*dpr);
+      canvas.style.width=state.width+'px';canvas.style.height=state.height+'px';
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function geometricPoint(eta,u,v,flower){
+      // The flower deformation keeps all vertices on S³ and changes only η.
+      if(flower){
+        eta += .18*Math.sin(12*u+2*v) * (0.7+0.3*Math.cos(3*v));
+        eta += .075*Math.sin(10*v-3*u);
+        eta=Math.max(.08,Math.min(PI/2-.08,eta));
+      }
+      const ce=Math.cos(eta),se=Math.sin(eta);
+      return [ce*Math.cos(u),ce*Math.sin(u),se*Math.cos(v),se*Math.sin(v)];
+    }
+    function createGeometry(){
+      const base=state.density;
+      const hopf=state.mode==='hopf';
+      const flower=state.mode==='flower';
+      const etas=hopf ? [.17,.31,.46,.61,.785,.96,1.11,1.26,1.40] : flower ? [.68,.785,.89] : [PI/4];
+      const lines=hopf ? Math.max(9,Math.floor(base*.49)) : flower ? Math.max(12,Math.floor(base*.80)) : base;
+      const segments=hopf ? Math.max(120,base*4) : Math.max(150,base*5);
+      const samples=[];
+      const gap=0.5/Math.max(1,etas.length-1);
+      for(let layer=0;layer<etas.length;layer++){
+        const eta=etas[layer];
+        for(let dir=0;dir<2;dir++){
+          for(let j=0;j<lines;j++){
+            const fixed=TAU*j/lines;
+            const data=new Float32Array((segments+1)*4);
+            for(let i=0;i<=segments;i++){
+              const free=TAU*i/segments;
+              const u=dir===0?free:fixed;
+              const v=dir===0?fixed:free;
+              const p=geometricPoint(eta,u,v,flower);
+              const k=i*4;data[k]=p[0];data[k+1]=p[1];data[k+2]=p[2];data[k+3]=p[3];
+            }
+            // 'Accent' lines make the surface structure easier to distinguish.
+            samples.push({data,layer,dir,accent:j%Math.max(2,Math.round(lines/7))===0,
+              weight:1-(Math.abs(eta-PI/4)/(PI/4))*.48 + gap});
+          }
+        }
+      }
+      state.samples=samples;
+      state.curveCount=samples.length;
+      state.pointCount=samples.reduce((sum,c)=>sum+c.data.length/4,0);
+    }
+    function rotations(){
+      const a=state.angles;
+      return a.map(v=>[Math.cos(v),Math.sin(v)]);
+    }
+    function rotation4(x,y,z,w,rot){
+      // xw
+      let c=rot[0][0],s=rot[0][1];let t=x*c-w*s;w=x*s+w*c;x=t;
+      // yw
+      c=rot[1][0];s=rot[1][1];t=y*c-w*s;w=y*s+w*c;y=t;
+      // zw
+      c=rot[2][0];s=rot[2][1];t=z*c-w*s;w=z*s+w*c;z=t;
+      // xy
+      c=rot[3][0];s=rot[3][1];t=x*c-y*s;y=x*s+y*c;x=t;
+      // xz
+      c=rot[4][0];s=rot[4][1];t=x*c-z*s;z=x*s+z*c;x=t;
+      // yz
+      c=rot[5][0];s=rot[5][1];t=y*c-z*s;z=y*s+z*c;y=t;
+      return [x,y,z,w];
+    }
+    // Shared projection for BOTH torus curves and the measured 4D graph.
+    function project4toCanvas(point,rot,frame){
+      const p=rotation4(point[0],point[1],point[2],point[3],rot);
+      const f4=state.depth/(state.depth-p[3]);
+      if(!Number.isFinite(f4)||f4<0||f4>18)return null;
+      const X=p[0]*f4,Y=p[1]*f4,Z=p[2]*f4;
+      const cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);
+      const cp=Math.cos(state.pitch),sp=Math.sin(state.pitch);
+      const xx=X*cy-Z*sy, zz=X*sy+Z*cy;
+      const yy=Y*cp-zz*sp, zc=Y*sp+zz*cp;
+      if(4.7-zc<.22)return null;
+      const f3=4.7/(4.7-zc);
+      const scale=Math.min(state.width,state.height)*(state.width<760?.264:.31)*state.zoom;
+      const px=state.width*.5+xx*f3*scale,py=state.height*.475-yy*f3*scale;
+      if(!Number.isFinite(px)||!Number.isFinite(py) ||
+         Math.abs(px-state.width*.5)>state.width*5||
+         Math.abs(py-state.height*.475)>state.height*5)return null;
+      return {x:px,y:py,depth:zc};
+    }
+    function drawMeasuredGraph(R){
+      if(!graph4d.visible||!graph4d.nodes.length)return;
+      const context=ctx;
+      const norm=1/Math.max(graph4d.radius,1e-10);
+      const screen=new Map();
+      const reduce=graph4d.scale*.79;
+      // Only VISUAL normalization, preserving every original 4D coordinate.
+      // This projects the observed graph into the torus reference volume.
+      for(const node of graph4d.nodes){
+        const pos=node.position.map((v,i)=>
+          ((v-graph4d.center[i])*norm - graph4d.camera[i])*reduce);
+        screen.set(node.id,project4toCanvas(pos,R));
+      }
+      graph4d.screen=screen;
+      const recent=graph4d.frame && performance.now()-graph4d.lastFrameTime<2600;
+      const birthEdges=new Set(recent?(graph4d.frame.growth?.edges??[])
+        .map(e=>JSON.stringify([String(e.from),String(e.to),String(e.kind)])):[]);
+      const birthNodes=new Set(recent?(graph4d.frame.growth?.nodes??[]).map(String):[]);
+      const max=Math.min(graph4d.edgeLimit,graph4d.edges.length);
+      // Draw confirmed measured topology, then activations and predictions.
+      for(let k=0;k<max;k++){
+        const e=graph4d.edges[k],a=screen.get(e.from),b=screen.get(e.to);
+        if(!a||!b)continue;
+        const isBorn=birthEdges.has(JSON.stringify([e.from,e.to,String(e.kind??'observed')]));
+        const count=Math.min(10000,Math.max(0,Number(e.count)||1));
+        const width=.5+Math.log1p(count)*.48+(isBorn?1.8:0);
+        context.beginPath();context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);
+        context.strokeStyle=isBorn?'rgba(255,155,111,.95)':
+          e.kind==='message'?'rgba(127,233,219,.66)':
+          'rgba(124,184,245,.49)';
+        context.lineWidth=width;context.stroke();
+      }
+      const frame=graph4d.frame;
+      if(recent && frame){
+        const highlight=(e,color,width,dashed)=>{
+          const a=screen.get(String(e.from)),b=screen.get(String(e.to));
+          if(!a||!b)return;
+          context.save();context.beginPath();context.strokeStyle=color;
+          context.lineWidth=width;context.setLineDash(dashed?[5,5]:[]);
+          context.moveTo(a.x,a.y);context.lineTo(b.x,b.y);context.stroke();context.restore();
+        };
+        for(const e of frame.predictedEdges??[])highlight(e,'rgba(232,157,255,.85)',2,true);
+        if(frame.executed)highlight(frame.executed,'rgba(140,251,169,.97)',3,false);
+        const t=((performance.now()-graph4d.lastFrameTime)/680)%1;
+        for(const m of frame.messages??[]){
+          const a=screen.get(String(m.from)),b=screen.get(String(m.to));if(!a||!b)continue;
+          const x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
+          context.fillStyle='rgba(109,244,228,.95)';context.beginPath();
+          context.arc(x,y,2.8,0,TAU);context.fill();
+        }
+      }
+      const active=new Set(recent?(frame?.activeNodes??[]).map(String):[]);
+      for(const node of graph4d.nodes){
+        const p=screen.get(node.id);if(!p)continue;
+        const on=active.has(node.id),born=birthNodes.has(node.id);
+        const glow=born?'#ff937c':on?'#ffc982':'#87ede6';
+        const radius=born?5.6:on?5.2:Math.max(1.8,Math.min(3.8,2.1+Number(node.activity||0)*1.4));
+        context.fillStyle=glow;context.globalAlpha=born||on?1:.79;
+        context.beginPath();context.arc(p.x,p.y,radius,0,TAU);context.fill();
+        if(on||born){context.strokeStyle=glow;context.lineWidth=1.15;
+          context.globalAlpha=.36;context.beginPath();context.arc(p.x,p.y,radius+5,0,TAU);context.stroke();}
+        if(graph4d.selected===node.id){
+          context.strokeStyle='#fff';context.globalAlpha=1;context.lineWidth=2;
+          context.beginPath();context.arc(p.x,p.y,12,0,TAU);context.stroke();
+        }
+        context.globalAlpha=1;
+      }
+    }
+    function render(){
+      const W=state.width,H=state.height;
+      // Canvas is truly opaque black. Background glow is painted here, not merely via CSS.
+      ctx.globalCompositeOperation='source-over';ctx.fillStyle='#000000';ctx.fillRect(0,0,W,H);
+      const r=Math.min(W,H)*.66;
+      const bg=ctx.createRadialGradient(W/2,H*.48,0,W/2,H*.48,r);
+      bg.addColorStop(0,'#06101b');bg.addColorStop(.43,'#01050a');bg.addColorStop(1,'#000');
+      ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+      const cosY=Math.cos(state.yaw),sinY=Math.sin(state.yaw);
+      const cosP=Math.cos(state.pitch),sinP=Math.sin(state.pitch);
+      const R=rotations();
+      const cx=W*.5,cy=H*.475;
+      const scale=Math.min(W,H)*(W<760?.264:.31)*state.zoom;
+      const depth4=state.depth;
+      const baseAlpha=(state.mode==='hopf'?.205:state.mode==='flower'?.26:.29) *
+        (graph4d.hasData && graph4d.visible ?.63:1);
+      ctx.globalCompositeOperation='screen';
+      ctx.lineJoin='round';ctx.lineCap='round';
+      for(const curve of state.samples){
+        const data=curve.data;
+        const alpha=baseAlpha*curve.weight*(curve.accent?1.65:1);
+        ctx.strokeStyle=curve.dir===0?`rgba(219,242,255,${alpha})`:`rgba(163,213,244,${alpha*.84})`;
+        ctx.lineWidth=curve.accent?.90:.62;
+        ctx.beginPath();
+        let prevX=0,prevY=0,penDown=false;
+        for(let i=0;i<data.length;i+=4){
+          const p=rotation4(data[i],data[i+1],data[i+2],data[i+3],R);
+          const fac4=depth4/(depth4-p[3]);
+          if(!Number.isFinite(fac4)||fac4>18){penDown=false;continue;}
+          const X=p[0]*fac4,Y=p[1]*fac4,Z=p[2]*fac4;
+          const xx=X*cosY-Z*sinY;
+          const zz=X*sinY+Z*cosY;
+          const yy=Y*cosP-zz*sinP;
+          const zc=Y*sinP+zz*cosP;
+          const den3=4.7-zc;
+          if(den3<.22){penDown=false;continue;}
+          const fac3=4.7/den3;
+          const px=cx+xx*fac3*scale;
+          const py=cy-yy*fac3*scale;
+          // Skip singularities and discontinuities near the projection poles.
+          if(!Number.isFinite(px)||!Number.isFinite(py)||Math.abs(px-cx)>W*5||Math.abs(py-cy)>H*5){penDown=false;continue;}
+          if(!penDown||Math.hypot(px-prevX,py-prevY)>Math.max(W,H)*.28){ctx.moveTo(px,py);penDown=true;}
+          else ctx.lineTo(px,py);
+          prevX=px;prevY=py;
+        }
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation='source-over';
+      drawMeasuredGraph(R);
+    }
+    function updateLabels(){
+      const names={clifford:'Torus Clifford în ℝ⁴',hopf:'Umbra straturilor Hopf',flower:'Torus 4D · rezonanță'};
+      const descs={clifford:'Un singur torus S¹ × S¹, rotit matematic în patru dimensiuni',hopf:'Familie de tori Clifford pe hipersfera S³, proiectată în 3D',flower:'Torus deformat periodic în 4D · nu este numai rotație rigidă'};
+      $('shapeName').textContent=names[state.mode];
+      $('shapeInfo').textContent=descs[state.mode];
+      $('modeReadout').innerHTML=state.mode==='clifford'?'<strong>T² / ℝ⁴</strong>':state.mode==='hopf'?'<strong>HOPF / S³</strong>':'<strong>DEFORMARE / S³</strong>';
+      document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===state.mode)));
+    }
+    function updateState(){
+      $('speedValue').textContent=state.speed.toFixed(2)+'×';
+      $('depthValue').textContent=state.depth.toFixed(2);
+      $('densityValue').textContent=String(state.density);
+      $('zoomValue').textContent=Math.round(state.zoom*100)+'%';
+      $('angleReadout').textContent=`XW ${(state.angles[0]*180/PI%360).toFixed(0)}° · YW ${(state.angles[1]*180/PI%360).toFixed(0)}° · ZW ${(state.angles[2]*180/PI%360).toFixed(0)}°`;
+      $('playButton').textContent=state.playing?'Ⅱ  Pauză':'▶  Pornește';
+      $('liveDot').style.background=state.playing?'#9de0ff':'#718697';
+      $('liveText').textContent=`${state.curveCount} CURBE · ${state.pointCount.toLocaleString('ro-RO')} PUNCTE 4D`;
+    }
+    const controlMap={speed:'speed',depth:'depth',density:'density',zoom:'zoom'};
+    for(const id of Object.keys(controlMap)){
+      $(id).addEventListener('input',()=>{
+        const num=Number($(id).value);
+        state[id]=id==='zoom'?num/100:num;
+        if(id==='density')createGeometry();
+        updateState();
+        if(!state.playing)render();
+      });
+    }
+    document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+      state.mode=b.dataset.mode;
+      createGeometry();updateLabels();updateState();render();
+    }));
+    function toggle(){state.playing=!state.playing;updateState();if(!state.playing)render();}
+    $('playButton').addEventListener('click',toggle);
+    $('resetButton').addEventListener('click',()=>{
+      state.angles=[.53,-.29,.37,.22,-.14,.11];
+      state.yaw=.32;state.pitch=-.12;state.zoom=1;state.depth=2.3;
+      $('zoom').value='100';$('depth').value='2.3';updateState();render();
+    });
+    $('shotButton').addEventListener('click',()=>{
+      // Export the actual rendered canvas, not the surrounding HUD.
+      canvas.toBlob(blob=>{
+        if(!blob)return;
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download='MagicPerspective-Torus-4D.png';a.click();
+        setTimeout(()=>URL.revokeObjectURL(url),1200);
+      },'image/png');
+    });
+    $('fullButton').addEventListener('click',()=>{
+      if(document.fullscreenElement){document.exitFullscreen?.();}
+      else document.documentElement.requestFullscreen?.();
+    });
+    canvas.addEventListener('pointerdown',e=>{
+      state.dragging=true;state.lastX=e.clientX;state.lastY=e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove',e=>{
+      if(!state.dragging)return;
+      const dx=(e.clientX-state.lastX),dy=(e.clientY-state.lastY);
+      state.lastX=e.clientX;state.lastY=e.clientY;
+      if(e.shiftKey||e.buttons===2){
+        state.yaw+=dx*.008;state.pitch=Math.max(-PI*.49,Math.min(PI*.49,state.pitch+dy*.008));
+      }else{
+        // Drag the object across true fourth-dimensional rotation planes.
+        state.angles[0]+=dx*.0075;state.angles[1]+=dy*.0075;
+        state.angles[2]+=(dx-dy)*.0012;
+      }
+      updateState();if(!state.playing)render();
+    });
+    canvas.addEventListener('pointerup',e=>{state.dragging=false;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);});
+    canvas.addEventListener('pointercancel',()=>{state.dragging=false;});
+    canvas.addEventListener('contextmenu',e=>e.preventDefault());
+    canvas.addEventListener('wheel',e=>{
+      e.preventDefault();
+      state.zoom=Math.max(.35,Math.min(1.85,state.zoom*Math.exp(-e.deltaY*.0012)));
+      $('zoom').value=String(Math.round(state.zoom*100));updateState();if(!state.playing)render();
+    },{passive:false});
+    window.addEventListener('keydown',e=>{
+      if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+      if(e.code==='Space'){e.preventDefault();toggle();}
+      else if(e.code==='KeyR'){$('resetButton').click();}
+      else if(e.code==='ArrowLeft'){state.angles[0]-=.065;updateState();if(!state.playing)render();}
+      else if(e.code==='ArrowRight'){state.angles[0]+=.065;updateState();if(!state.playing)render();}
+      else if(e.code==='ArrowUp'){state.angles[1]-=.065;updateState();if(!state.playing)render();}
+      else if(e.code==='ArrowDown'){state.angles[1]+=.065;updateState();if(!state.playing)render();}
+    });
+    window.addEventListener('resize',()=>{sizeCanvas();render();});
+    document.addEventListener('visibilitychange',()=>{state.frameTime=0;});
+    function tick(now){
+      const prev=state.frameTime||now;
+      const dt=Math.min(.06,(now-prev)/1000);
+      state.frameTime=now;
+      if(state.playing){
+        const v=state.speed*dt;
+        state.time+=dt;
+        // Three angular velocities live in three distinct 4D planes.
+        state.angles[0]+=v*.30;
+        state.angles[1]+=v*.21;
+        state.angles[2]+=v*.165;
+        state.angles[3]+=v*.085;
+        state.angles[4]+=v*.065;
+        state.angles[5]+=v*.045;
+        render();
+        if((Math.floor(now/170)!==Math.floor(prev/170)))updateState();
+      }
+      requestAnimationFrame(tick);
+    }
+    // The actual graph remains empty until the original engine reports
+    // state, or the user imports a genuine graph/evidence snapshot.
+    $('graphVisible').addEventListener('change',e=>{graph4d.visible=e.target.checked;render();});
+    $('graphScale').addEventListener('input',e=>{graph4d.scale=Number(e.target.value)/100;
+      graphUpdateUI();render();});
+    $('graphLimit').addEventListener('input',e=>{graph4d.edgeLimit=Number(e.target.value);
+      graphUpdateUI();render();});
+    $('graphRetry').addEventListener('click',()=>void pollRealEngine());
+    $('graphResetCamera').addEventListener('click',()=>{graph4d.camera=[0,0,0,0];graphUpdateUI();render();});
+    document.querySelectorAll('[data-graph-move]').forEach(button=>{
+      const [axis,direction]=button.dataset.graphMove.split(':');
+      button.addEventListener('click',()=>moveGraphCamera(axis,Number(direction)));
+    });
+    $('graphCollapse').addEventListener('click',()=>{
+      const collapsed=$('graphPanel').dataset.collapsed==='true';
+      $('graphPanel').dataset.collapsed=String(!collapsed);
+      $('graphCollapse').setAttribute('aria-expanded',String(collapsed));
+      $('graphCollapse').textContent=collapsed?'▾':'▸';
+    });
+    $('graphFile').addEventListener('change',async e=>{
+      const file=e.target.files?.[0];if(!file)return;
+      try{
+        const raw=await file.text(),trimmed=raw.trim();
+        let data;
+        if(file.name.toLowerCase().endsWith('.jsonl')){
+          data=trimmed.split(/\r?\n/).filter(Boolean).map((line,i)=>{
+            try{return JSON.parse(line)}catch{throw Error('JSONL invalid pe linia '+(i+1));}
+          });
+        }else data=JSON.parse(trimmed);
+        if(Array.isArray(data))importMeasuredEvents(data);
+        else if(Array.isArray(data.nodes)&&Array.isArray(data.edges)){
+          graph4d.origin=null;graph4d.frame=null;graph4d.events=[];
+          graph4d.sequence=Number(data.meta?.sequence??0);
+          applyMeasuredGraph(data,'FIȘIER: '+file.name);
+        }else if(Array.isArray(data.events)){
+          importMeasuredEvents(data.events);
+        }else throw Error('Fișierul nu conține nodes/edges sau evenimente măsurate.');
+        graph4d.fetchError='';graphUpdateUI();render();
+      }catch(err){$('graphStatus').textContent='Import refuzat: '+err.message;}
+      e.target.value='';
+    });
+    // Clicking a real node shows its measured four-dimensional coordinates.
+    let clickStart={x:0,y:0};
+    canvas.addEventListener('pointerdown',e=>{clickStart={x:e.clientX,y:e.clientY};});
+    canvas.addEventListener('pointerup',e=>{
+      if(Math.hypot(e.clientX-clickStart.x,e.clientY-clickStart.y)>7)return;
+      const rect=canvas.getBoundingClientRect();
+      const x=e.clientX-rect.left,y=e.clientY-rect.top;
+      let closest=null,best=16*16;
+      for(const [id,p] of graph4d.screen){if(!p)continue;
+        const d=(p.x-x)**2+(p.y-y)**2;if(d<best){best=d;closest=id;}
+      }
+      graph4d.selected=closest;graphUpdateUI();render();
+    });
+    // Local graph is embedded in the same HTML; engine polling is from the
+    // SAME ORIGIN only. No permissive cross-origin write access to localhost.
+    setInterval(()=>void pollRealEngine(),1050);
+    graphUpdateUI();
+    sizeCanvas();createGeometry();updateLabels();updateState();render();requestAnimationFrame(tick);
+    void pollRealEngine();
+  </script>
+</body>
+</html>
