@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createGrowthServer} from '../growth-server.mjs';
@@ -20,8 +20,18 @@ test('Original-source 4D growth API persists real exercised topology; no hardcod
  const dir=await mkdtemp(join(tmpdir(),'portal-growth-http-'));
  let instance=null;
  try{
-  instance=await createGrowthServer({port:0,folder:dir,checkpointEvery:2});
+  const torusPath=join(dir,'real-torus.html');
+  instance=await createGrowthServer({port:0,folder:dir,checkpointEvery:2,torusHtml:torusPath});
   const base=instance.url;
+  // New torus viewport intentionally fails explicitly when its downloaded
+  // original-file-derived HTML is not present; never shows a substitute.
+  const missingTorus=await read(base+'/torus.html');
+  assert.equal(missingTorus.status,404);
+  assert.match(missingTorus.body.error,/Torus HTML missing/);
+  await writeFile(torusPath,'<!doctype html><title>REAL TORUS GRAPH FILE</title>');
+  const liveTorus=await read(base+'/torus.html');
+  assert.equal(liveTorus.status,200);
+  assert.match(liveTorus.body,/REAL TORUS GRAPH FILE/);
   const first=await read(base+'/api/health');
   assert.equal(first.status,200);
   assert.equal(first.body.source_connected,false);

@@ -4,6 +4,7 @@
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {join,dirname} from 'node:path';
+import {homedir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {ExperienceJournal} from './journal.mjs';
 
@@ -37,7 +38,8 @@ async function getBody(req,max=1024*1024){
 }
 export async function createGrowthServer({
  port=8791,host='127.0.0.1',folder=join(ROOT,'data','evidence'),
- checkpointEvery=50
+ checkpointEvery=50,
+ torusHtml=join(homedir(),'Downloads','MagicPerspective_4D_Torus_Graf_Real_Complete.html')
 }={}){
  if(host!=='127.0.0.1')throw Error('Growth telemetry is restricted to loopback');
  const journal=new ExperienceJournal(folder,{checkpointEvery});
@@ -142,6 +144,20 @@ export async function createGrowthServer({
     await journal.checkpoint();
     return json(res,200,{saved:true,stats:journal.stats()});
    }
+   // Serve the user's full, original-file-derived 4D torus viewer on this
+   // SAME origin as the measured evidence API. No permissive CORS for local
+   // file:// URLs and no browser-side fabricated graph data.
+   if(req.method==='GET'&&url.pathname==='/torus.html'){
+    try{
+     const body=await readFile(torusHtml);
+     res.writeHead(200,{'Content-Type':'text/html; charset=utf-8',
+      'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+     res.end(body);return;
+    }catch(error){
+     if(error.code!=='ENOENT')throw error;
+     return json(res,404,{error:'Torus HTML missing. Download MagicPerspective_4D_Torus_Graf_Real_Complete.html into Downloads or set MAGICPERSPECTIVE_TORUS_HTML.'});
+    }
+   }
    if(req.method==='GET'&&assets.has(url.pathname)){
     const asset=assets.get(url.pathname);
     const body=await readFile(join(ROOT,asset));
@@ -173,8 +189,11 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
  const port=safeNumber(process.env.PORT,8791,1024,65535);
  const folder=process.env.PORTAL4D_GROWTH_DATA||
   join(ROOT,'data','evidence');
- const app=await createGrowthServer({port,folder});
+ const torusHtml=process.env.MAGICPERSPECTIVE_TORUS_HTML||
+  join(homedir(),'Downloads','MagicPerspective_4D_Torus_Graf_Real_Complete.html');
+ const app=await createGrowthServer({port,folder,torusHtml});
  console.log('PORTAL4D_REAL_GROWTH http://127.0.0.1:'+app.port);
+ console.log('TORUS 4D + GRAF REAL http://127.0.0.1:'+app.port+'/torus.html');
  console.log('Waiting for ORIGINAL training engine evidence; zero fake nodes.');
  let closing=false;
  const stop=async()=>{

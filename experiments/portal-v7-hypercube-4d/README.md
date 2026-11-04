@@ -235,3 +235,33 @@ is instrumented at actual decision, update and per-exercise boundaries.
 is fully integrated yet.** The 8791 page displays original 8788 controls
 for immediate training, while the native per-step 4D telemetry is still
 a separately tracked requirement.
+
+## Torusul 4D ORIGINAL + graful real, in aceeasi fereastra (4 noiembrie)
+
+Se pastreaza codul original din `MagicPerspective_4D_Torus_Isolated(3).html`,
+inclusiv Clifford/Hopf/Resonance si toate controalele lui. Fisierul
+`MagicPerspective_4D_Torus_Graf_Real_Complete.html` este o extensie
+standalone; nu creeaza nicio muchie/nod al invatarii la pornire.
+
+1. Descarca HTML-ul complet intr-un fisier din
+   `%USERPROFILE%\Downloads\MagicPerspective_4D_Torus_Graf_Real_Complete.html`.
+2. `git pull --ff-only origin main` in checkout-ul MagicPerspective.
+3. `node experiments/portal-v7-hypercube-4d/growth-server.mjs`.
+4. Deschide `http://127.0.0.1:8791/torus.html`, NU `file://`, pentru
+   acelasi origin ca `/api/graph` si `/api/events`.
+5. Alternativ, deschide HTML-ul offline si apasa **IMPORTA JSON/JSONL**
+   pentru un export real `nodes[].position=[x,y,z,w]` si `edges[].from/to`.
+   In lipsa datelor, afiseaza doar torusul matematic, cu 0 noduri.
+
+Serverul citeste fisierul HTML exact din Downloads la fiecare GET, fara
+suprascrierea continutului si fara a modifica versiunea V7.
+Calea poate fi indicata explicit prin variabila de mediu
+`MAGICPERSPECTIVE_TORUS_HTML` inainte de pornirea serverului.
+Daca fisierul lipseste, `/torus.html` intoarce 404 cu o explicatie:
+nu inlocuieste proiectul original cu un exemplu fals.
+
+**Limitare:** serverul 8791 continua sa fie jurnal de telemetrie, nu
+motorul CUDA original V7. Datele originale V7 nu apar fara un adaptor
+real care sa comunice actiunile, nodurile/pozitiile 4D, gradientii si
+rezultatele exercitiilor. Un test cu date importate nu certifica
+antrenarea originala CUDA.
