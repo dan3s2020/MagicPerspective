@@ -231,6 +231,34 @@
       "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
       "complete_turn_bundle": false,
       "attachment_source_path": "verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html"
+    },
+    {
+      "order": 24,
+      "ref": "2026-11-04-USER-CLOSER-4D-TORUS",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-CLOSER-4D-TORUS",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false,
+      "attachment_source_path": "verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html"
+    },
+    {
+      "order": 25,
+      "ref": "2026-11-04-USER-NAVIGABLE-PORTAL-4D",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-NAVIGABLE-PORTAL-4D",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
+    },
+    {
+      "order": 26,
+      "ref": "2026-11-04-USER-SELF-WORLD-EMERGENT-PERSPECTIVE",
+      "role": "USER",
+      "source_path": "verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt",
+      "user_text": "verbatim/recent-user-messages.json#2026-11-04-USER-SELF-WORLD-EMERGENT-PERSPECTIVE",
+      "assistant_turns_between": "NOT_BYTE_EXACT_ARCHIVED",
+      "complete_turn_bundle": false
     }
   ]
 }
