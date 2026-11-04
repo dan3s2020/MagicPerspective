@@ -85,6 +85,8 @@ export class Loop {
 
   // one character: every organism predicts BEFORE seeing it, then the world answers, then everybody learns
   step(record = false) {
+    // Never read beyond the corpus after a completed run or a restored checkpoint.
+    if (this.t >= this.d.ids.length) return false;
     const t = this.t, y = this.d.ids[t], test = t >= this.d.cut, o = this.o;
     const keys = LEVELS.map((_, l) => this.key(l, t)), P = keys.map((k, l) => this.dist(l, k));
     // how familiar each scale is RIGHT NOW (how often this context was lived before) — known before the answer
@@ -138,6 +140,81 @@ export class Loop {
     if (record) this.last = {t, y, ch: this.d.text[t], keys, res, P, out, theta: {...this.theta}, kL, wb, pickC: this.C.pick, crossed, s: Array.from(this.s), star, fam};
     this.learn(t, keys); this.t++;
     return t < this.d.ids.length - 1;
+  }
+
+  // Checkpoints store actual context counts, feedback, learned weights and evaluation
+  // accumulators. Sparse counts keep the JSON small; nothing is re-trained on load.
+  snapshot() {
+    return {
+      version: 1, signature: Loop.signature(this.d), t: this.t,
+      options: {...this.o},
+      mem: this.mem.map(m => [...m].map(([key, e]) => [
+        key, e.tot, [...e.c].flatMap((count, id) => count ? [[id, count]] : [])
+      ])),
+      uni: [...this.uni], uniTot: this.uniTot,
+      B: [...this.B.g], C: {pick: this.C.pick, hist: this.C.hist.map(row => [...row])},
+      s: [...this.s], theta: {...this.theta}, free: [...this.free.s],
+      stats: Object.fromEntries(ORGS.map(k => [k, {...this.stats[k]}])),
+      wraps: this.wraps, throat: this.throat,
+    };
+  }
+  static signature(data) {
+    let hash = 2166136261;
+    for (let i = 0; i < data.text.length; i++) {
+      hash ^= data.text.charCodeAt(i);
+      hash = Math.imul(hash, 16777619) >>> 0;
+    }
+    return [data.text.length, data.cut, data.vocab.join(''), hash.toString(16)].join(':');
+  }
+  static restore(data, state) {
+    const bad = () => { throw new Error('Checkpoint invalid sau incompatibil cu V13 / corpusul curent.'); };
+    const nums = (v, n) => Array.isArray(v) && v.length === n && v.every(x => Number.isFinite(x));
+    if (!state || state.version !== 1 || state.signature !== Loop.signature(data) ||
+        !Number.isInteger(state.t) || state.t < 7 || state.t > data.ids.length ||
+        !Array.isArray(state.mem) || state.mem.length !== M ||
+        !nums(state.uni, data.vocab.length) || !Number.isFinite(state.uniTot) ||
+        !nums(state.B, 3) || !state.C || !Number.isInteger(state.C.pick) ||
+        state.C.pick < 0 || state.C.pick >= M || !Array.isArray(state.C.hist) ||
+        state.C.hist.length > 224 || !state.C.hist.every(v => nums(v, M)) ||
+        !nums(state.s, M) || !nums(state.free, M) ||
+        !state.theta || !['L', 'L-cut', 'L-frozen'].every(k => Number.isFinite(state.theta[k])) ||
+        !state.options || !['grad', 'pull'].includes(state.options.mode) ||
+        !Number.isFinite(state.options.sigma) || state.options.sigma <= 0 ||
+        !Number.isFinite(state.options.eta) || state.options.eta < 0 ||
+        !Number.isFinite(state.options.lambda) || state.options.lambda < 0 || state.options.lambda > 1 ||
+        !Number.isFinite(state.options.gamma) || !Number.isFinite(state.options.beta) ||
+        !Number.isFinite(state.wraps) || !Number.isFinite(state.throat) ||
+        !state.stats) bad();
+    for (const k of ORGS) {
+      const q = state.stats[k];
+      if (!q || !['bits','hit','n','tbits','thit','tn'].every(p => Number.isFinite(q[p]) && q[p] >= 0)) bad();
+    }
+    const engine = new Loop(data, state.options);
+    for (let l = 0; l < M; l++) {
+      if (!Array.isArray(state.mem[l])) bad();
+      for (const row of state.mem[l]) {
+        if (!Array.isArray(row) || row.length !== 3 || typeof row[0] !== 'string' ||
+            !Number.isInteger(row[1]) || row[1] < 0 || !Array.isArray(row[2])) bad();
+        const counts = new Float64Array(engine.V);
+        let total = 0;
+        for (const pair of row[2]) {
+          if (!Array.isArray(pair) || pair.length !== 2 ||
+              !Number.isInteger(pair[0]) || pair[0] < 0 || pair[0] >= engine.V ||
+              !Number.isFinite(pair[1]) || pair[1] <= 0) bad();
+          counts[pair[0]] += pair[1]; total += pair[1];
+        }
+        if (total !== row[1] || engine.mem[l].has(row[0])) bad();
+        engine.mem[l].set(row[0], {c: counts, tot: row[1]});
+      }
+    }
+    engine.t = state.t; engine.uni.set(state.uni); engine.uniTot = state.uniTot;
+    engine.B.g.set(state.B); engine.C = {pick: state.C.pick, hist: state.C.hist.map(row => [...row])};
+    engine.s.set(state.s); engine.theta = {...state.theta};
+    engine.free.s.set(state.free);
+    engine.stats = Object.fromEntries(ORGS.map(k => [k, {...state.stats[k]}]));
+    engine.wraps = state.wraps; engine.throat = state.throat;
+    engine.last = null; // The next visible prediction must happen before the next true character.
+    return engine;
   }
   summary() {
     const r = {};
