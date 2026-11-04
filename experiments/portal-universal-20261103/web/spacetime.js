@@ -11,11 +11,11 @@ const state = {
   lastGraphFetch:0, busy:false, follow:true, timeCenter:0, timeDepth:0,
   logZoom:0, angles:Array(10).fill(0), cameraCenter:[0,0,0,0,0],
   shell:true, tracks:true, picked:[], level:0, graphIncomplete:false,
-  drag:null, problem:null, skipped:0, lastHit:null,
+  drag:null, problem:null, skipped:0, lastHit:null, revision:0, layerCache:null,
 };
 const LIMIT_EDGES=65000;
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-function text(id,value){$(id).textContent=value;}
+function text(id,value){const el=$(id);if(el.textContent!==value)el.textContent=value;}
 function fmt(n){return Number(n).toLocaleString('ro-RO');}
 function dpr(){return Math.min(2,window.devicePixelRatio||1);}
 function resize(canvas){
@@ -54,7 +54,7 @@ async function loadGraph(maxPages=3){
       state.graphIncomplete=state.edgeOffset<LIMIT_EDGES&&(!page.complete);
       if(page.complete||state.edgeOffset>=LIMIT_EDGES)break;
     }
-    state.lastGraphFetch=Date.now();
+    state.revision++;state.lastGraphFetch=Date.now();
   }catch(e){setError(e)}finally{state.graphLoading=false}
 }
 async function refresh(){
@@ -69,7 +69,7 @@ async function refresh(){
       applyTimeControls();
       const r=state.range;
       const win=await read(`/api/spacetime/window?start=${r.start}&end=${r.end}&bins=80&max_events=96`);
-      state.rows=win.events;state.bins=win.bins;
+      state.rows=win.events;state.bins=win.bins;state.revision++;
       state.skipped=win.visible_total-win.events.length;
       text('sampling',win.sampled ?
         `${fmt(win.events.length)} evenimente reale eșantionate din ${fmt(win.visible_total)}; restul sunt numărate exact, nu inventate.`:
@@ -106,7 +106,7 @@ function toroidPoint(theta,alpha,beta,t){
 }
 function drawReference(ctx,w,h){
   if(!state.shell)return;
-  const loop=(fn,steps=70)=>{
+  const loop=(fn,steps=34)=>{
     let last=null;
     for(let i=0;i<=steps;i++){
       const p=position(fn(i/steps*2*Math.PI),w,h);
@@ -115,9 +115,9 @@ function drawReference(ctx,w,h){
     }
   };
   // This mesh is explicitly a CAMERA GUIDE, never a trained synapse.
-  for(const t of [-2,0,2])for(const beta of [0,Math.PI/2,Math.PI,3*Math.PI/2]){
-    for(const alpha of [0,Math.PI/2,Math.PI,3*Math.PI/2])loop(theta=>toroidPoint(theta,alpha,beta,t));
-    for(const theta of [0,Math.PI/2,Math.PI,3*Math.PI/2])loop(alpha=>toroidPoint(theta,alpha,beta,t));
+  for(const t of [-2,0,2])for(const beta of [0,Math.PI/2]){
+    for(const alpha of [0,Math.PI/2,Math.PI])loop(theta=>toroidPoint(theta,alpha,beta,t));
+    for(const theta of [0,Math.PI/2,Math.PI])loop(alpha=>toroidPoint(theta,alpha,beta,t));
   }
 }
 function colorOf(node){
@@ -128,14 +128,18 @@ function colorOf(node){
   return '#91bad6';
 }
 function getLayer(){
-  // Scaling a graph does NOT invent new neuronal states: group by existing edges.
-  const ids=new Set();
-  for(const f of state.rows)for(const id of f.active||[])if(state.byId.has(id))ids.add(id);
-  const nodes=[...ids].map(id=>({id,p4:state.byId.get(id).p4}));
-  const edges=[...state.edges.values()].filter(e=>ids.has(e.from)&&ids.has(e.to)).map(e=>({
-    from:e.from,to:e.to,weight:Math.max(1,Number(e.count)||1)
-  }));
-  const all=graphHierarchy(nodes,edges,7);
+  // Build the hierarchy only when actual recorded evidence or graph data
+  // changes; a redraw or camera rotation MUST NOT rebuild it at 60 FPS.
+  if(state.layerCache?.revision!==state.revision){
+    const ids=new Set();
+    for(const f of state.rows)for(const id of f.active||[])if(state.byId.has(id))ids.add(id);
+    const nodes=[...ids].map(id=>({id,p4:state.byId.get(id).p4}));
+    const edges=[...state.edges.values()].filter(e=>ids.has(e.from)&&ids.has(e.to)).map(e=>({
+      from:e.from,to:e.to,weight:Math.max(1,Number(e.count)||1)
+    }));
+    state.layerCache={revision:state.revision,levels:graphHierarchy(nodes,edges,7)};
+  }
+  const all=state.layerCache.levels;
   const level=clamp(Math.floor(Math.max(0,-state.logZoom)*1.2),0,all.length-1);
   state.level=level;
   return {layer:all[level], lookup:lookupHierarchy(all[level]),totalLevels:all.length};
