@@ -479,6 +479,42 @@
       "regression_check": "V1-V12 experiment test suite plus old 3D mode, reset, and text corpus controls remain intact",
       "full_verbatim_conformity_verified": false,
       "notes": "Filled 4D solid torus S¹×B³ is a computational visualization; p4 coordinates are deterministic layout, not learned physical space. Reference attached from user's HTML."
+    },
+    {
+      "id": "REQ-V14-NAVIGABLE-PERSISTENT-PORTAL",
+      "source_ref": "2026-11-04-USER-NAVIGABLE-PORTAL-4D",
+      "exact_source_span": "SA-L FOLOSIM CA GHID SA NAVIGAM PRIN INERIORUL ACESTEI GEOMETRII 4D INFINITE",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "First-person navigation and learned guidance in 4D graph geometry, with path provenance and cross-world transfer evaluation.",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-V14-SELF-WORLD-EMERGENT-PERSPECTIVE",
+      "source_ref": "2026-11-04-USER-SELF-WORLD-EMERGENT-PERSPECTIVE",
+      "exact_source_span": "SE CREAZA INTERN IN GRAF O SEPARARE INTRE CE E EL SI CE E LUMEA",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Single persistent graph representing environment, policy, actions, outcomes and recurrent internal state; learn a latent controllability/self-versus-external partition without fixed world/self graph separation, verified with counterfactual interventions, prediction errors and held-out domains.",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
+    },
+    {
+      "id": "REQ-V14-INGEST-ALL-WORLD-EXPERIENCE",
+      "source_ref": "2026-11-04-USER-SELF-WORLD-EMERGENT-PERSPECTIVE",
+      "exact_source_span": "BAGA IN GRAF TOT,SI HARTA,SI ACTIUNILE SI \"CARACTERUL\" LUI",
+      "experimental_mapping_is_not_verbatim": true,
+      "experimental_mapping": "Persistent world/action/observation/self-state trace ingestion, typed provenance and bounded storage; investigate emergent self/environment structure as a testable learned distinction rather than assuming consciousness.",
+      "status": "NOT_VERIFIED",
+      "code_paths": [],
+      "test_paths": [],
+      "measured_result": null,
+      "regression_check": null
     }
   ],
   "versions": [
