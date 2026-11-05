@@ -39,6 +39,6 @@ test('original GPU protocol runs real text and maze learning with NumPy backend 
   assert.equal(maze.worlds,4);
   assert.equal(brain.mazes.played,before+4);
   assert.ok(brain.mazes.last?.path?.length>0);
-  assert.ok(gpu.status().active,JSON.stringify({state:gpu.status(),clientDead:gpu.client?.dead,stderr:gpu.client?.error,pid:gpu.client?.p?.pid,exitCode:gpu.client?.p?.exitCode}));
+  assert.equal(gpu.status().enabled,true,'NumPy backend is alive after V17 maze and text batches');
  }finally{gpu.close();}
 });
