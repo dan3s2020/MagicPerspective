@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="MagicPerspective research architecture from perception to path field, learned geometry and action">
+<rect width="1200" height="630" fill="#f7fafc"/>
+<text x="50" y="56" font-size="31" font-family="Arial" font-weight="bold" fill="#173047">MAGICPERSPECTIVE · THE TRANSFORMATION WE ARE TESTING</text>
+<text x="50" y="85" font-size="18" font-family="Arial" fill="#607284">Implemented mechanisms and proposed geometry are visually distinguished</text>
+<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#427d87"/></marker></defs>
+<g font-family="Arial" text-anchor="middle">
+<rect x="42" y="145" width="235" height="172" rx="18" fill="#dceaf1" stroke="#87a9bb" stroke-width="2"/>
+<text x="159" y="185" font-size="20" font-weight="bold" fill="#173047">OBSERVED WORLD</text>
+<text x="159" y="221" font-size="16" fill="#3f6177">2D / 3D maze</text><text x="159" y="246" font-size="16" fill="#3f6177">graph / text / causal</text><text x="159" y="271" font-size="16" fill="#3f6177">raw symbols and actions</text>
+<rect x="347" y="145" width="235" height="172" rx="18" fill="#dcefe7" stroke="#78af9e" stroke-width="2"/>
+<text x="464" y="185" font-size="20" font-weight="bold" fill="#173047">PERSISTENT GRAPH</text>
+<text x="464" y="221" font-size="16" fill="#3f6177">learned state and edges</text><text x="464" y="246" font-size="16" fill="#3f6177">belief / memory / rules</text><text x="464" y="271" font-size="16" fill="#3f6177">observed resistance</text>
+<rect x="652" y="145" width="235" height="172" rx="18" fill="#f8ecdd" stroke="#d3a27e" stroke-width="2"/>
+<text x="769" y="185" font-size="20" font-weight="bold" fill="#173047">LEARNED LIFT</text>
+<text x="769" y="221" font-size="16" fill="#3f6177">E(x) → latent lanes</text><text x="769" y="246" font-size="16" fill="#3f6177">geometry / projection</text><text x="769" y="271" font-size="16" font-weight="bold" fill="#ad613d">PROPOSED / UNTESTED</text>
+<rect x="957" y="145" width="201" height="172" rx="18" fill="#e4edf7" stroke="#8baad0" stroke-width="2"/>
+<text x="1057" y="185" font-size="20" font-weight="bold" fill="#173047">VALUE FIELD</text>
+<text x="1057" y="221" font-size="16" fill="#3f6177">candidate trajectories</text><text x="1057" y="246" font-size="16" fill="#3f6177">project / act / compare</text><text x="1057" y="271" font-size="16" fill="#3f6177">path quality and cost</text>
+</g>
+<g stroke="#427d87" stroke-width="4" marker-end="url(#arr)"><path d="M280 230 H341"/><path d="M586 230 H646"/><path d="M889 230 H951"/></g>
+<path d="M1055 321 V392 H160 V321" stroke="#427d87" stroke-width="3.5" stroke-dasharray="8,5" fill="none" marker-end="url(#arr)"/>
+<text x="601" y="384" font-size="20" font-family="Arial" font-weight="bold" text-anchor="middle" fill="#173047">prediction → intervention → observed error → correction</text>
+<rect x="66" y="453" width="1068" height="123" rx="14" fill="#fff" stroke="#d5e0e8"/>
+<text x="95" y="487" font-size="18" font-family="Arial" font-weight="bold" fill="#173047">THE SCIENTIFIC DISCRIMINATOR</text>
+<text x="95" y="522" font-size="17" font-family="Arial" fill="#35536a">Does a learned transformation reduce held-out cost or search over a matched classical or fixed-latent baseline?</text>
+<text x="95" y="551" font-size="15" font-family="Arial" fill="#b45550">Evidence status: prior graph and planners documented; causal toy worlds measured; learned lift and lane gradients not yet proven.</text>
+</svg>
