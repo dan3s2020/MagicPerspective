@@ -25,7 +25,7 @@
       "status": "TRUNCATED_IN_SOURCE"
     },
     {
-      "description": "Original image attachment binaries and source chat metadata (native timestamps, message IDs, edits) have not been committed.",
+      "description": "Original image attachment binaries and source chat metadata (native timestamps, message IDs, edits) have not been committed; filenames, dimensions and SHA-256 digests of 12 original runtime PNGs are preserved separately, with message-turn attribution unverified.",
       "status": "MISSING"
     }
   ],
@@ -180,5 +180,6 @@
     "complete_conversation_export_verified": false,
     "verbatim_gate_should_pass": false,
     "implementation_compliance_proven": false
-  }
+  },
+  "related_media_manifest": "verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json"
 }
