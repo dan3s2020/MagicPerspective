@@ -265,14 +265,80 @@ function transformEpisode(){
  last.transform=item;
  return {world:'transform',episode,solved:r.solved,actions:r.steps,checked:r.predicted,failed:r.failed,assessment:item.assessment};
 }
-function tick(){
- if(!run||paused)return;
+// A GPU batch is the original V17 training, not a UI simulation.
+// Only its recorded representative trace is rendered; other worlds are shown as aggregates.
+function replayFromGpuPath(r){
+ const path=r.path||[],events=[];
+ for(let i=1;i<path.length;i++)events.push({step:i-1,observableBefore:[],observableAfter:[],
+   observedSelf:path[i-1],actualSelf:path[i],moved:path[i-1]!==path[i],
+   output:null,how:'recorded GPU-batch replay; per-action planning not available',
+   predictedPlan:null,predictionAvailable:false});
+ return events;
+}
+async function gpuMazeEpisode(){
+ stage='parallel CUDA labyrinth learning';
+ const stats=await gpuRunner.maze(brain,(phase,done,total)=>emitProgress({world:'maze',phase,step:done,total,expected:null,observed:null}));
+ gpuWorldsProcessed+=stats.worlds;
+ const r=brain.mazes.last;
+ if(!r)throw Error('V17 CUDA batch did not return a recorded maze sample');
+ const actions=replayFromGpuPath(r);
+ const heldoutGeo=episode%5===0;
+ let prev=null;
+ for(const a of actions){
+  if(a.observedSelf<0||a.actualSelf<0)continue;
+  const x=observedFeatures('maze',{n:r.n,index:a.observedSelf,goal:r.goal,wall:r.wall}),
+    y=observedFeatures('maze',{n:r.n,index:a.actualSelf,goal:r.goal,wall:r.wall});
+  geoSample('maze',x,y,prev||x,0,heldoutGeo);prev=x;
+ }
+ const item={world:'maze',episode,n:r.n,wall:r.wall,start:r.start,goal:r.goal,path:r.path,
+  shapes:r.shapes,actions,solved:r.solved,steps:r.steps,optimal:r.optimal,first:r.first,
+  how:r.how,knows:r.knows,geometryHeldout:heldoutGeo,
+  gpuBatch:stats,replayProvenance:'Representative world recorded inside original V17 GPU learning batch',
+  assessment:labelEvent('maze',r)};
+ last.maze=item;
+ if(episode%8===0)evaluation.maze=brain.testMazes(6);
+ return {world:'maze',episode,solved:r.solved,actions:r.steps,optimal:r.optimal,
+   batchWorlds:stats.worlds,batchSolved:stats.solved,gpuBatch:stats,
+   assessment:{status:stats.solved===stats.worlds?'BETTER':stats.solved===0?'WORSE':'MIXED',
+    title:'Actual CUDA batch completed',
+    why:'GPU-trained '+stats.worlds+' original V17 mazes; '+stats.solved+' reached the target. Replay is from one measured world only.'}};
+}
+async function gpuTransformEpisode(){
+ stage='parallel CUDA transformation physics + CPU causal updates';
+ const stats=await gpuRunner.transform(brain,(phase,done,total)=>emitProgress({world:'transform',phase,step:done,total,expected:null,observed:null}));
+ gpuWorldsProcessed+=stats.worlds;
+ const r=brain.trans?.last;if(!r?.frames?.length)throw Error('V17 GPU transform batch did not record frames');
+ const actions=[];
+ const heldoutGeo=episode%5===0;let prev=null;
+ for(let i=0;i<r.frames.length-1;i++){
+  const before=r.frames[i].b,after=r.frames[i+1].b;
+  if(!before||!after)continue;
+  actions.push({step:i,before,after,output:null,how:'GPU batch physics + V17 causal update',
+    preActionPrediction:null,predictionMatched:null});
+  const x=observedFeatures('transform',{n:r.n,board:before,goal:r.goal}),
+    y=observedFeatures('transform',{n:r.n,board:after,goal:r.goal});
+  geoSample('transform',x,y,prev||x,0,heldoutGeo);prev=x;
+ }
+ const item={world:'transform',episode,n:r.n,frames:r.frames,goal:r.goal,goals:r.goals||[],
+  solved:r.solved,steps:r.steps,optimal:r.optimal,failed:null,predicted:0,how:'CUDA batch',said:r.said,
+  actions,geometryHeldout:heldoutGeo,gpuBatch:stats,
+  replayProvenance:'One real recorded world of '+stats.worlds+' GPU physics worlds; individual hidden decisions not streamed',
+  assessment:labelEvent('transform',r)};
+ last.transform=item;
+ return {world:'transform',episode,solved:r.solved,actions:r.steps,batchWorlds:stats.worlds,gpuBatch:stats,assessment:item.assessment};
+}
+let activeStep=false,pendingSave=false;
+async function tick(){
+ if(!run||paused||activeStep)return;
+ activeStep=true;
  const now=performance.now();
  try{
   ensureBrain(true);
   const mode=modes[idx++%modes.length];episode++;progress={world:mode,step:0,expected:null,observed:null};
   emitProgress(progress);
-  const outcome=mode==='text'?textEpisode():mode==='maze'?mazeEpisode():transformEpisode();
+  const outcome=await (mode==='text'?textEpisode():mode==='maze'?gpuRunner.active?gpuMazeEpisode():mazeEpisode():gpuRunner.active?gpuTransformEpisode():transformEpisode());
+  if(!gpuRunner.active&&mode!=='text')gpuWorldsProcessed++;
+  // CPU mode counts one world per episode; CUDA mode counts verified batch worlds.
   lastDurationMs=Math.round(performance.now()-now);
   const row={...outcome,at:new Date().toISOString(),durationMs:lastDurationMs,
     geometry:(()=>{const g=geo.summary().lanes[mode];return {assessment:g.assessment,evalN:g.evalN,evalRMSE:g.evalRMSE,baselineRMSE:g.baselineRMSE,improvement:g.improvement};})()};
@@ -281,7 +347,8 @@ function tick(){
   stage=run?'between episodes':'idle';
   if(episode%12===0||!run)save();else publish();
  }catch(e){error=String(e.stack||e);run=false;stage='error';publish();}
- if(run)setImmediate(tick);
+ finally{activeStep=false;if(pendingSave){pendingSave=false;try{save();}catch(e){error='Checkpoint save failed: '+String(e.stack||e);publish();}}
+  if(run&&!paused)setImmediate(tick);}
 }
 parentPort.on('message',m=>{
  try{
