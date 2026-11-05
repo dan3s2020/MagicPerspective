@@ -51,6 +51,24 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
   <button id="pause">Pause</button><button id="resume">Resume</button><button id="stop">Stop</button>
   <button id="save">Save</button><button id="load">Load</button><button id="new">New isolated brain</button>
  </div>
+ <div class="toolbar" style="margin-top:12px">
+  <label class="check"><input id="gpuOn" type="checkbox"> Enable original V17 CUDA batches (not simulated)</label>
+  <label>Parallel worlds/batch <input id="gpuWorlds" type="number" value="32" min="1" max="256"></label>
+  <label>Text exercises/batch <input id="gpuTextBatch" type="number" value="4" min="1" max="32"></label>
+  <label>GPU VRAM limit (GB) <input id="gpuVram" type="number" value="2.6" min="0.5" max="3.8" step="0.1"></label>
+  <label>GPU utilization % <input id="gpuUtil" type="number" value="100" min="10" max="100" step="10"></label>
+ </div>
+ <div class="brief">Requires isolated CUDA installation: run powershell -NoProfile -ExecutionPolicy Bypass -File "D:\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space\SETUP_CUDA_WINDOWS.ps1" once, then restart the server. CUDA mode fails visibly if unavailable and does not silently use the CPU.</div>
+ <div class="toolbar" style="margin-top:8px">
+  <label>Text source <select id="textSource">
+   <option value="auto">Resume current source (or V17 docs)</option>
+   <option value="docs">V17 docs</option>
+   <option value="pasted">Pasted text</option>
+   <option value="parquet">New Parquet Q/A dataset</option>
+  </select></label>
+  <label>Parquet folder (on this PC) <input id="datasetRoot" style="width:270px" placeholder="D:\training\OpenThoughts3-1.2M"></label>
+ </div>
+ <div id="corpusWarning" class="help">The bundled V17 documentation is finite. Infinite training repeats it after reaching the end. Use a real Parquet dataset for fresh exercises.</div>
  <details><summary>Optional real text source — paste a corpus to learn</summary><textarea id="custom" placeholder="Paste training text. Empty = V17 technical documentation. Non-ASCII is mapped to '?' by the original V17 tokenizer."></textarea><p>Text is split into 80% training and 20% frozen evaluation. The geometric lane separately withholds every fifth episode. These are distinct measurements.</p></details>
  <div id="stateLine" role="status">Connecting to real V17 worker...</div>
 </section>
@@ -62,6 +80,12 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
  <div class="metric"><label>Maze successes</label><b id="mazeWins">—</b><small>Solved / attempted</small></div>
  <div class="metric"><label>Transformation successes</label><b id="transformWins">—</b><small>Reached desired state</small></div>
  <div class="metric"><label>Geometric SGD updates</label><b id="updates">—</b><small>Auxiliary learner, CPU</small></div>
+ <div class="metric"><label>Observed worlds</label><b id="observedWorlds">—</b><small>CPU episodes + verified CUDA batch worlds</small></div>
+ <div class="metric"><label>World throughput</label><b id="worldsPerSec">—</b><small>Worlds / second, measured over this run</small></div>
+ <div class="metric"><label>Text cycles</label><b id="textCycles">—</b><small>Completed passes through finite source</small></div>
+ <div class="metric"><label>Worker memory</label><b id="workerMemory">—</b><small>RSS MB · brain.full state</small></div>
+ <div class="metric"><label>CUDA batch</label><b id="batchNow">—</b><small id="gpuDetails">No GPU batch yet</small></div>
+ <div class="metric"><label>Text evaluation window</label><b id="heldoutWindow">—</b><small>Distinct held-out selection, not repeated chart values</small></div>
 </div>
 
 <div class="workspace">
@@ -77,8 +101,12 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
  <canvas id="graph" class="graph" aria-label="Projected real 5D node positions and measured graph connections"></canvas>
  <div class="legend"><span><i class="led" style="background:#75acf7"></i>Recorded symbol</span><span><i class="led" style="background:#b88aff"></i>Non-printable symbol</span><span><i class="led" style="background:#f4cb82"></i>Recent measured activity</span><span><i class="led" style="background:#6b879e"></i>Recorded edge</span></div>
  <div id="graphInfo" class="brief">No graph received yet.</div>
- <canvas id="trend" aria-label="Measured held-out geometric error and baseline history"></canvas>
- <div id="trendInfo" class="brief">Errors are RMSE; lower is better. The gray line represents the persistence baseline.</div>
+ <h3>Geometry validation, separated by world</h3>
+ <div class="grid2"><div><div class="brief">TEXT · predicted vs baseline RMSE</div><canvas id="trendText" style="height:155px"></canvas></div>
+ <div><div class="brief">LABYRINTH · predicted vs baseline RMSE</div><canvas id="trendMaze" style="height:155px"></canvas></div>
+ <div><div class="brief">TRANSFORMATION · predicted vs baseline RMSE</div><canvas id="trendTransform" style="height:155px"></canvas></div>
+ <div><div class="brief">FROZEN TEXT · accuracy vs persistence</div><canvas id="textAccuracyTrend" style="height:155px"></canvas></div></div>
+ <div id="trendInfo" class="brief">Only genuinely new evaluation events are plotted. Flat lines are not generated from copied cumulative measurements. Green = learned prediction, gray = persistence baseline.</div>
  <div class="help"><b>What the graph does not prove:</b> a 2D projection is not the entire 5D object. Unplaced A/C/organism nodes are not given fictional coordinates. Dense links do not independently prove learning or shared hidden trajectories.</div>
 </section>
 
