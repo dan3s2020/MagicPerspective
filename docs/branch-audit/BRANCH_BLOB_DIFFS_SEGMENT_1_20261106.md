@@ -1,0 +1,2595 @@
+# MagicPerspective branch tree diff audit — segment 1 of 3
+
+Snapshot: 2026-11-06, ten GitHub branches, each compared to current main. **This is a complete blob-path and SHA comparison of these branch tree snapshots; NOT a code semantic audit or executable test.** Missing files often reflect later research docs added to main, not regressions. No branches were merged.
+
+## `audit/VERBATIM-CLAUSE-LEVEL-CONFORMITY-20261104`
+
+HEAD `65ed369f342408fb2b38aefe8ab546f38f84cb72` · tracked blobs 550 · tree truncated false · branch-only paths 0 · changed shared paths 4 · missing main paths 23
+
+### Added in branch relative to main
+
+
+### Different blob SHA at same path
+
+- `VERBATIM_ROOT.md` (branch cd12edccf601c6723b29821ff5bc974c4158f47a, main a4005aaba4769e444e9ae004893e234450f595a0)
+- `experiments/portal-universal-20261103/server.py` (branch 0d99ece7d8f33e4e30a2097de7601c94fc8f807b, main 9650f16d383bea4547acb2eb9db34761d4dc0497)
+- `experiments/portal-universal-20261103/web/index.html` (branch d6ce98003b66a8fe07fdc1ce1f064682b87b00d7, main 748e8e856ca0204f4adacd4d5a17cc8d04afd7a4)
+- `scripts/verbatim-strict-audit.mjs` (branch 280c17b1abe7bd4e82a5ad287d984b5f60fb55f4, main c024bf0ef00ee86011aa9f42aa46039f64563b90)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+
+---
+## `experiment/CAUSAL-TEXT-LAB-20261103`
+
+HEAD `67fbbfa98992e098679ea9fda17c280e744aee1e` · tracked blobs 180 · tree truncated false · branch-only paths 0 · changed shared paths 11 · missing main paths 393
+
+### Added in branch relative to main
+
+
+### Different blob SHA at same path
+
+- `.github/workflows/magic-regression.yml` (branch 1bbb137abe22a48e6a2816008e3884cf4c70bed0, main 8dc2b9823fb3df512dd7212db5ea387ed99904ef)
+- `.gitignore` (branch d918a10326969b7fbb7b9912c1c22dd364b9c01b, main 1ce0c51ce42fe9d46d4764609191dd4b9207cb37)
+- `README.md` (branch c05c323049bb3c3243145006972e518006d70e68, main f01173a5d1ce9e7692fb8b94a8e0d54f34cdec61)
+- `experiments/causal-text/README.md` (branch 4a20cd5cc369d2049ab06b8936222057cdfe5be7, main 11e9099d99bfbaa525b7af886487d68debee0a86)
+- `experiments/causal-text/run-termux.sh` (branch 982b6d5a4c6cbf22d643bc553b9474ce4a6ed642, main c51b8a6623a7bd3908e0fbf2d8196a32359ed4f0)
+- `experiments/causal-text/server.mjs` (branch 9d78bcef8cae238329580ff3e24d891f2a650a7f, main 75f1defc3e88f95156550db76ea66e0f3fc2b4cb)
+- `package.json` (branch dfb9e00ad492e82c1f34ba82b5fd77ad46e765be, main 2371ea85175b67c1739e34e64a0ebd4aa974560f)
+- `v4/ESCAPE-LAB.md` (branch d99c279d1f1d13852640109e60c805d2b509883e, main 024031afb69c71d5942e74baacf88bfba709a0ee)
+- `v4/escape-public/index.html` (branch b9f13580ce63e00de048b42aaa871a3a310d7e63, main e5d0a99fca5bfdd2f34cf58486cd7b123eeb9834)
+- `v4/escape-server.mjs` (branch 853e04af785ee4493d6c83f3f9a05af91a74258e, main bc1556e69e23e17d82ba52348f1c28a385fc3e9a)
+- `v4/run-escape-termux.sh` (branch a1f6548d0840ecca2bea4beebeb3ecdd8f5cca1c, main 44a70b1dbefd31dc3f527ed0e934bab7d19ceb45)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1`
+- `START_MAGIC_CUDA.ps1`
+- `VERBATIM_ROOT.md`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/brain-studio-20261103/.gitignore`
+- `experiments/brain-studio-20261103/README.md`
+- `experiments/brain-studio-20261103/cuda/bridge.mjs`
+- `experiments/brain-studio-20261103/cuda/cuda_worker.py`
+- `experiments/brain-studio-20261103/data/.gitkeep`
+- `experiments/brain-studio-20261103/engine/abstract-graph.mjs`
+- `experiments/brain-studio-20261103/engine/cells.mjs`
+- `experiments/brain-studio-20261103/engine/studio.mjs`
+- `experiments/brain-studio-20261103/engine/vault.mjs`
+- `experiments/brain-studio-20261103/package.json`
+- `experiments/brain-studio-20261103/public/app.js`
+- `experiments/brain-studio-20261103/public/graph-render.js`
+- `experiments/brain-studio-20261103/public/index.html`
+- `experiments/brain-studio-20261103/public/style.css`
+- `experiments/brain-studio-20261103/run-termux.sh`
+- `experiments/brain-studio-20261103/scripts-cells-benchmark.mjs`
+- `experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs`
+- `experiments/brain-studio-20261103/server.mjs`
+- `experiments/brain-studio-20261103/tests/abstract-graph.test.mjs`
+- `experiments/brain-studio-20261103/tests/cells.test.mjs`
+- `experiments/brain-studio-20261103/tests/engine.test.mjs`
+- `experiments/brain-studio-20261103/tests/port-occupied.test.mjs`
+- `experiments/brain-studio-20261103/tests/server.test.mjs`
+- `experiments/distributed-dance-20261103/.gitignore`
+- `experiments/distributed-dance-20261103/README.md`
+- `experiments/distributed-dance-20261103/REPORT.md`
+- `experiments/distributed-dance-20261103/data/.gitkeep`
+- `experiments/distributed-dance-20261103/engine/brain.mjs`
+- `experiments/distributed-dance-20261103/engine/experiment.mjs`
+- `experiments/distributed-dance-20261103/engine/world.mjs`
+- `experiments/distributed-dance-20261103/package.json`
+- `experiments/distributed-dance-20261103/public/app.js`
+- `experiments/distributed-dance-20261103/public/index.html`
+- `experiments/distributed-dance-20261103/public/style.css`
+- `experiments/distributed-dance-20261103/results/benchmark-150ep-33nodes-24worlds-seed17.json`
+- `experiments/distributed-dance-20261103/results/benchmark-150ep-33nodes-24worlds-seed55.json`
+- `experiments/distributed-dance-20261103/results/benchmark-150ep-33nodes-24worlds-seed83.json`
+- `experiments/distributed-dance-20261103/results/latest-benchmark.json`
+- `experiments/distributed-dance-20261103/run-termux.sh`
+- `experiments/distributed-dance-20261103/scripts-benchmark.mjs`
+- `experiments/distributed-dance-20261103/server.mjs`
+- `experiments/distributed-dance-20261103/tests/core.test.mjs`
+- `experiments/distributed-dance-20261103/tests/server.test.mjs`
+- `experiments/dynamic-perspective-20261103/.gitignore`
+- `experiments/dynamic-perspective-20261103/README.md`
+- `experiments/dynamic-perspective-20261103/REPORT.md`
+- `experiments/dynamic-perspective-20261103/data/.gitkeep`
+- `experiments/dynamic-perspective-20261103/engine/brain.mjs`
+- `experiments/dynamic-perspective-20261103/engine/experiment.mjs`
+- `experiments/dynamic-perspective-20261103/engine/world.mjs`
+- `experiments/dynamic-perspective-20261103/package.json`
+- `experiments/dynamic-perspective-20261103/public/app.js`
+- `experiments/dynamic-perspective-20261103/public/index.html`
+- `experiments/dynamic-perspective-20261103/public/style.css`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed17.json`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed55.json`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed83.json`
+- `experiments/dynamic-perspective-20261103/run-termux.sh`
+- `experiments/dynamic-perspective-20261103/scripts-benchmark.mjs`
+- `experiments/dynamic-perspective-20261103/server.mjs`
+- `experiments/dynamic-perspective-20261103/tests/core.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/live-ui.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/server.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/training-visibility.test.mjs`
+- `experiments/graph-dance-20261103/.gitignore`
+- `experiments/graph-dance-20261103/OWN-PROBLEM.md`
+- `experiments/graph-dance-20261103/README.md`
+- `experiments/graph-dance-20261103/REPORT.md`
+- `experiments/graph-dance-20261103/engine/agent.mjs`
+- `experiments/graph-dance-20261103/engine/dance.mjs`
+- `experiments/graph-dance-20261103/engine/external.mjs`
+- `experiments/graph-dance-20261103/engine/training.mjs`
+- `experiments/graph-dance-20261103/engine/world.mjs`
+- `experiments/graph-dance-20261103/package.json`
+- `experiments/graph-dance-20261103/public/app.js`
+- `experiments/graph-dance-20261103/public/index.html`
+- `experiments/graph-dance-20261103/public/style.css`
+- `experiments/graph-dance-20261103/results/benchmark-120ep-33nodes-12worlds.json`
+- `experiments/graph-dance-20261103/run-termux.sh`
+- `experiments/graph-dance-20261103/scripts-benchmark.mjs`
+- `experiments/graph-dance-20261103/scripts-run-task.mjs`
+- `experiments/graph-dance-20261103/server.mjs`
+- `experiments/graph-dance-20261103/tests/core.test.mjs`
+- `experiments/graph-dance-20261103/tests/external-server.test.mjs`
+- `experiments/graph-dance-20261103/tests/external.test.mjs`
+- `experiments/graph-dance-20261103/tests/unlimited.test.mjs`
+- `experiments/learned-message-20261103/.gitignore`
+- `experiments/learned-message-20261103/README.md`
+- `experiments/learned-message-20261103/REPORT.md`
+- `experiments/learned-message-20261103/data/.gitkeep`
+- `experiments/learned-message-20261103/engine/brain.mjs`
+- `experiments/learned-message-20261103/engine/experiment.mjs`
+- `experiments/learned-message-20261103/engine/world.mjs`
+- `experiments/learned-message-20261103/package.json`
+- `experiments/learned-message-20261103/public/app.js`
+- `experiments/learned-message-20261103/public/index.html`
+- `experiments/learned-message-20261103/public/style.css`
+- `experiments/learned-message-20261103/results/benchmark-200ep-33nodes-24worlds-seed17.json`
+- `experiments/learned-message-20261103/results/benchmark-200ep-33nodes-24worlds-seed55.json`
+- `experiments/learned-message-20261103/results/benchmark-200ep-33nodes-24worlds-seed83.json`
+- `experiments/learned-message-20261103/run-termux.sh`
+- `experiments/learned-message-20261103/scripts-benchmark.mjs`
+- `experiments/learned-message-20261103/server.mjs`
+- `experiments/learned-message-20261103/tests/core.test.mjs`
+- `experiments/learned-message-20261103/tests/server.test.mjs`
+- `experiments/portal-universal-20261103/.gitignore`
+- `experiments/portal-universal-20261103/README.md`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1`
+- `experiments/portal-universal-20261103/VERBATIM_MAPPING.md`
+- `experiments/portal-universal-20261103/corpus.py`
+- `experiments/portal-universal-20261103/cuda_probe.py`
+- `experiments/portal-universal-20261103/engine.py`
+- `experiments/portal-universal-20261103/perspective.py`
+- `experiments/portal-universal-20261103/server.py`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_portal.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/tests/test_v11.py`
+- `experiments/portal-universal-20261103/tests/test_v12.py`
+- `experiments/portal-universal-20261103/tests/test_v13.py`
+- `experiments/portal-universal-20261103/tests/test_v14.py`
+- `experiments/portal-universal-20261103/toroid.py`
+- `experiments/portal-universal-20261103/web/app.js`
+- `experiments/portal-universal-20261103/web/index.html`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `experiments/portal-universal-20261103/web/style.css`
+- `experiments/portal-universal-20261103/web/torus-view.js`
+- `experiments/portal-v7-hypercube-4d/README.md`
+- `experiments/portal-v7-hypercube-4d/geometry.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-app.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-index.html`
+- `experiments/portal-v7-hypercube-4d/growth-server.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-view.mjs`
+- `experiments/portal-v7-hypercube-4d/growth.mjs`
+- `experiments/portal-v7-hypercube-4d/journal.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/growth.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/server.test.mjs`
+- `experiments/portal-v7-hypercube-4d/viewer.css`
+- `experiments/portal-v7-hypercube-4d/viewer.mjs`
+- `run-original-unlimited-termux.sh`
+- `scripts/verbatim-gate.mjs`
+- `scripts/verbatim-mirror-gate.mjs`
+- `scripts/verbatim-strict-audit.mjs`
+- `tests/port-isolation.test.js`
+- `tests/verbatim-gate.test.mjs`
+- `tests/verbatim-mirror.test.mjs`
+- `tests/verbatim-strict-audit.test.mjs`
+- `tests/visual-unlimited-http.test.js`
+- `v10/.gitignore`
+- `v10/README.md`
+- `v10/REPORT.md`
+- `v10/SPEC.md`
+- `v10/data/.gitkeep`
+- `v10/engine/maze.mjs`
+- `v10/engine/mind.mjs`
+- `v10/engine/organ.mjs`
+- `v10/engine/organism.mjs`
+- `v10/engine/train.mjs`
+- `v10/engine/worlds.mjs`
+- `v10/package.json`
+- `v10/public/app.js`
+- `v10/public/index.html`
+- `v10/public/style.css`
+- `v10/results/transfer-1500-150-seed7-mix.json`
+- `v10/results/transfer-1500-150-seed7.json`
+- `v10/results/transfer-1500-150-seed8.json`
+- `v10/run-termux.sh`
+- `v10/scripts-bench.mjs`
+- `v10/scripts-transfer.mjs`
+- `v10/server.mjs`
+- `v10/tests/v10.test.mjs`
+- `v11/.gitignore`
+- `v11/README.md`
+- `v11/REPORT.md`
+- `v11/START_V11_CUDA.ps1`
+- `v11/VERBATIM_MAP.md`
+- `v11/bench.py`
+- `v11/data/.gitkeep`
+- `v11/engine/__init__.py`
+- `v11/engine/backend.py`
+- `v11/engine/life.py`
+- `v11/engine/portal.py`
+- `v11/evalsaved.py`
+- `v11/results/maze2d-1500-s7.json`
+- `v11/results/maze2d-1500-s8.json`
+- `v11/results/polymath-2700-s7.json`
+- `v11/results/polymath-s7-control.npz`
+- `v11/results/polymath-s7.npz`
+- `v11/results/specialists-300-s7.json`
+- `v11/results/zeroshot-sat-1600-s7.json`
+- `v11/run-termux.sh`
+- `v11/selftest.py`
+- `v11/server.py`
+- `v11/tests/gradcheck.py`
+- `v11/tests/test_v11.py`
+- `v11/transfer.py`
+- `v11/web/app.js`
+- `v11/web/index.html`
+- `v11/web/style.css`
+- `v11/worlds/__init__.py`
+- `v11/worlds/grid.py`
+- `v11/worlds/states.py`
+- `v11/worlds/symbolic.py`
+- `v12/torus4d.html`
+- `v13/README.md`
+- `v13/REPORT.md`
+- `v13/START_V13.ps1`
+- `v13/bench.mjs`
+- `v13/package.json`
+- `v13/results/bench-grad-rotate0.5.json`
+- `v13/results/bench-grad-rotate0.json`
+- `v13/results/bench-pull-rotate0.5.json`
+- `v13/results/bench-pull-rotate0.json`
+- `v13/run-termux.sh`
+- `v13/server.mjs`
+- `v13/tests/v13.test.mjs`
+- `v13/web/app.js`
+- `v13/web/corpus.js`
+- `v13/web/engine.mjs`
+- `v13/web/index.html`
+- `v14/README.md`
+- `v14/START_V14.ps1`
+- `v14/data.py`
+- `v14/model.py`
+- `v14/selftest.py`
+- `v14/server.py`
+- `v14/web/app.js`
+- `v14/web/index.html`
+- `v15/README.md`
+- `v15/START_V15.ps1`
+- `v15/data.py`
+- `v15/model.py`
+- `v15/selftest.py`
+- `v15/server.py`
+- `v15/web/app.js`
+- `v15/web/index.html`
+- `v16/README.md`
+- `v16/REPORT.md`
+- `v16/START_V16.ps1`
+- `v16/bench.mjs`
+- `v16/package.json`
+- `v16/results/bench-5000-s7.json`
+- `v16/results/bench-5000-s8.json`
+- `v16/results/bench-5000-s9.json`
+- `v16/results/bench-600-s7.json`
+- `v16/results/screenshot.png`
+- `v16/run-termux.sh`
+- `v16/server.mjs`
+- `v16/tests/gradcheck.mjs`
+- `v16/tests/v16.test.mjs`
+- `v16/web/app.js`
+- `v16/web/autograd.mjs`
+- `v16/web/engine.mjs`
+- `v16/web/index.html`
+- `v7/.gitignore`
+- `v7/README.md`
+- `v7/REPORT.md`
+- `v7/data/.gitkeep`
+- `v7/engine/agent.mjs`
+- `v7/engine/nn.mjs`
+- `v7/engine/organ.mjs`
+- `v7/engine/training.mjs`
+- `v7/engine/world.mjs`
+- `v7/package.json`
+- `v7/public/app.js`
+- `v7/public/draw.js`
+- `v7/public/index.html`
+- `v7/public/life.js`
+- `v7/public/style.css`
+- `v7/results/benchmark-v6-15x15-400ep-seed17.json`
+- `v7/results/benchmark-v7-15x15-400ep-seed17.json`
+- `v7/results/benchmark-v7-15x15-400ep-seed23.json`
+- `v7/results/benchmark-v7-15x15-400ep-seed31.json`
+- `v7/run-termux.sh`
+- `v7/scripts-benchmark.mjs`
+- `v7/server.mjs`
+- `v7/tests/core.test.mjs`
+- `v7/tests/unlimited.test.mjs`
+- `v8/.gitignore`
+- `v8/README.md`
+- `v8/REPORT.md`
+- `v8/data/.gitkeep`
+- `v8/engine/agent.mjs`
+- `v8/engine/net.mjs`
+- `v8/engine/netagent.mjs`
+- `v8/engine/netorgan.mjs`
+- `v8/engine/nn.mjs`
+- `v8/engine/organ.mjs`
+- `v8/engine/organism8.mjs`
+- `v8/engine/training.mjs`
+- `v8/engine/world.mjs`
+- `v8/package.json`
+- `v8/public/app.js`
+- `v8/public/draw.js`
+- `v8/public/index.html`
+- `v8/public/life.js`
+- `v8/public/style.css`
+- `v8/results/benchmark-v8-15x15-800ep-seed17.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed23.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed31.json`
+- `v8/run-termux.sh`
+- `v8/scripts-benchmark.mjs`
+- `v8/server.mjs`
+- `v8/tests/core.test.mjs`
+- `v8/tests/net.test.mjs`
+- `v9/.gitignore`
+- `v9/README.md`
+- `v9/REPORT.md`
+- `v9/data/.gitkeep`
+- `v9/engine/democracy/a11-democratic-output-policy.mjs`
+- `v9/engine/democracy/a11-output-democracy-economy.mjs`
+- `v9/engine/democracy/horizon.mjs`
+- `v9/engine/graphs.mjs`
+- `v9/engine/net.mjs`
+- `v9/engine/nn.mjs`
+- `v9/engine/uagent.mjs`
+- `v9/engine/uorgan.mjs`
+- `v9/engine/utraining.mjs`
+- `v9/engine/world.mjs`
+- `v9/package.json`
+- `v9/public/app.js`
+- `v9/public/draw.js`
+- `v9/public/index.html`
+- `v9/public/life.js`
+- `v9/public/style.css`
+- `v9/run-termux.sh`
+- `v9/scripts-benchmark.mjs`
+- `v9/server.mjs`
+- `v9/tests/v9.test.mjs`
+- `verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-PORTAL4D-V7-CUDA-UNIQUE-PARALLEL-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt`
+- `verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-hypercube-3d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-implement-now-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-a-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-b-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-c-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-whole-toroid-all-graph-slices-USER-VERBATIM.txt`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+- `verbatim/SOURCE_POLICY.md`
+- `verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html`
+- `verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html`
+- `verbatim/audits/2026-11-04-FULL-VERBATIM-GAP-MATRIX.md`
+- `verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md`
+- `verbatim/continuation-index.json`
+- `verbatim/coverage.json`
+- `verbatim/implementation-mirror.json`
+- `verbatim/recent-user-messages.json`
+
+---
+## `experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105`
+
+HEAD `e7e35395fcf5a7346e1d5e507af13db26cc59e9b` · tracked blobs 824 · tree truncated false · branch-only paths 264 · changed shared paths 1 · missing main paths 13
+
+### Added in branch relative to main
+
+- `.github/workflows/noise-space-observatory.yml` (1a3cf768facd0c28e9917f3893edb5ecd69fd1b2, 1932 bytes)
+- `START_NOISE_SPACE.ps1` (9dae3db02ffc32b28ab39160aadd3a393aa06083, 372 bytes)
+- `isolated/noise-space/.gitignore` (62e2b508a70baf29e619ae90fb74496814eea367, 33 bytes)
+- `isolated/noise-space/README.md` (34b97ada5020e9220acde6bb877f7b0cf97caa1a, 9533 bytes)
+- `isolated/noise-space/RUN_TERMUX.sh` (6f85646588f6a024c44f080f5aeca59e19607b3d, 210 bytes)
+- `isolated/noise-space/SETUP_CUDA_WINDOWS.ps1` (154d36a3759ce0d5bec6c8597443bccd41f69f8d, 2465 bytes)
+- `isolated/noise-space/START_WINDOWS.ps1` (a5fff0e55fa645ccda10d9d14246787bb56b01ae, 1703 bytes)
+- `isolated/noise-space/engine.mjs` (fe5b954f114339bd80f052805a40be72085d9d69, 9468 bytes)
+- `isolated/noise-space/gpu_runner.mjs` (e3aea6337ccc568d12830d8f85e9fd19700bf742, 3081 bytes)
+- `isolated/noise-space/gpu_runner.test.mjs` (c6646f795f475ed71e732e01fa82ac5f17781b21, 2268 bytes)
+- `isolated/noise-space/http_observatory.test.mjs` (1c5874992aa746d51b9c61dbf4b95427e5c0076f, 2233 bytes)
+- `isolated/noise-space/index.html` (81cbb44d37a7914ef4e20c4ba856b07b677ce166, 13831 bytes)
+- `isolated/noise-space/interpret.mjs` (dafba5fc740d819964712deb3d3ec20c7d6dd520, 3242 bytes)
+- `isolated/noise-space/learning_geometry.mjs` (56314075e4280735815607829a6f39526aebd784, 6692 bytes)
+- `isolated/noise-space/observatory.html` (f8ec43a3907c3d8ded43884bfa712ee0f6b1cc49, 37666 bytes)
+- `isolated/noise-space/observatory.test.mjs` (57270fa8338d99568d6f9ac2df3b51a1437eea82, 4344 bytes)
+- `isolated/noise-space/server.mjs` (d7d605f7fd96b42e6dd95408ef1145318a64c488, 5541 bytes)
+- `isolated/noise-space/test.mjs` (05933e416e67f8271ef24f7e02ad4fb79403fc04, 2727 bytes)
+- `isolated/noise-space/text_schedule.mjs` (1fb0575b410f4a7c9450ad14575a867eee1f072e, 1308 bytes)
+- `isolated/noise-space/v17.html` (96b1450ab4767e49e162bd694895bd3f4faca18c, 12978 bytes)
+- `isolated/noise-space/v17_bridge.mjs` (a6e10ca18c44d3f34f98617a15927329ce158bec, 1207 bytes)
+- `isolated/noise-space/v17_export.mjs` (ad68b65bf699664ac05838fcfad99fdaaa988c83, 4171 bytes)
+- `isolated/noise-space/v17_smoke.test.mjs` (346b2a66b94131e9e672df656bd42e6a106b7594, 817 bytes)
+- `isolated/noise-space/v17_worker.mjs` (da76670b0d2df9a19a45b2e977724295930c2517, 25631 bytes)
+- `v17/.gitignore` (7daeff62844da2167ef93ee9d377ad0bbb01848f, 30 bytes)
+- `v17/README.md` (c4db43d5f1b83d30c05a584eed5c7c59f2b60023, 1847 bytes)
+- `v17/START_V17.ps1` (7a7780c78935434ac1b5dafb3f9e1e8cf3840b7a, 5215 bytes)
+- `v17/docs/A12_AUTOSAVE_SAFE_V1.md` (b5944511fb8b0368f73bfd33e52202a973869e37, 554 bytes)
+- `v17/docs/BACKEND_2D_NODEGRAPH_V1.md` (4440a6b0d5c6e2a9b12a49f2521a1adaa91bc96d, 10789 bytes)
+- `v17/docs/CUDA_COGNITIVE_PARITY_EVIDENCE_LEDGER_20261019.md` (bf20730e5969499a8f8fe42b76e13511d39b93fd, 6879 bytes)
+- `v17/docs/CUDA_TRUE_CELL_ACTION_REPLAY_20261017.md` (47a748911cd514f8c8543b55ee77f3af0c860087, 3285 bytes)
+- `v17/docs/GPU_SATURATION_V1.md` (639e691e1c3275e53205ccf54a39d68c59103d6f, 3979 bytes)
+- `v17/docs/INTEGRATED_ISOLATED_V1_AUDIT_20261005.md` (415142b1a6dd5147cbf5058691e87a20f23fbc4c, 4421 bytes)
+- `v17/docs/INTEGRATED_ISOLATED_V1_SOURCE_LOCK.md` (cce90f7d6ecd53fb9b09ad1d7c720ced04f39dfd, 7094 bytes)
+- `v17/docs/LIVE_BRAIN_FULL_CONTROLS_CUDA_FROZEN_REPLAY.md` (ccf70404905c45f4830a86c40d5017d21ac8b53b, 3933 bytes)
+- `v17/docs/NATIVE_NODEGRAPH_FUSION_SOURCE_LOCK.md` (ef3c2d20453ac6f8a6635b11e2d9506819b782fa, 873 bytes)
+- `v17/docs/NODEGRAPH_BRAIN_TABS_V3.md` (57bc9e26a733ddccf8cf460e5b36f7106757bd8b, 1471 bytes)
+- `v17/docs/NODEGRAPH_RUNTIME_INPUT_CONTRACT_V2.md` (6fe6562d2257d4bce0b9154db1b201488fa9ccbe, 2638 bytes)
+- `v17/docs/NODEGRAPH_SOURCE_LOCK.md` (5d4953c3460e0458aa19ee2f4cf5dfa2ec9b1985, 813 bytes)
+- `v17/docs/NODEGRAPH_TEXT_TELEMETRY_V1.md` (5f494af0b1195ccd8739363d27ccc8a965259721, 2158 bytes)
+- `v17/docs/NODEGRAPH_TEXT_WORLD_V4.md` (c435f87a49cd00d71aa5bbb7004eb8acd89cfc85, 1440 bytes)
+- `v17/docs/OCTOPUS_TRANSCEND CAPITAL RECURSIVE AB 20261030.md` (a7a7e095885e2f54a6cca6c8ce85948952965eff, 6579 bytes)
+- `v17/docs/RUN_INCIDENT_2026-10-04_STALE_DESKTOP_CHECKOUT.md` (50ba498e1d12da2e0ae52ca8d2d3ac6f746e59ef, 2822 bytes)
+- `v17/docs/SAME_DISH_ENTANGLED_AB_V1.md` (9ee74881357b48f2a1757a8038c38b08145bb0a7, 4974 bytes)
+- `v17/docs/SAME_DISH_LAB_CONTROLS_CHECKPOINTS_FOREVER.md` (2dac584b9096035e65a220326529675391a2fd34, 4207 bytes)
+- `v17/docs/TEXT_A7_EVOWORLD_VECTRIC_TEACHER_INTEGRATION_CONTRACT_20261027.md` (08541226acc59c55ea4175501744db5339c716b8, 5282 bytes)
+- `v17/docs/TEXT_A7_RECURSIVE_ALPHA_OMEGA_FORMATION_CONTRACT_20261028.md` (09fe9cde236a718cda11de39c12d9a9538c78d31, 17703 bytes)
+- `v17/docs/TEXT_A7_RESTORATION_A4_A5_GAP_AUDIT_20261027.md` (2a2f03fb4ef75bf69dcc01b8f012cca7eb227dda, 5568 bytes)
+- `v17/docs/TORUS_AETHER_ABC_20261104.md` (faff3fae8dcbe6b020b920accb4a8df1c362f6d3, 48381 bytes)
+- `v17/docs/TRANSCEND_EPISTEMIC_ABC_RESEARCH.md` (18d6d5c7de8a0bcf370a4b71ee1ddeb9c78e060f, 6245 bytes)
+- `v17/docs/TRANSCEND_EPISTEMIC_TEXT_RESEARCH.md` (bfeab1a18c083977b238103145a3f6794a9e7cb9, 3305 bytes)
+- `v17/map-cells/map-world.js` (bc980236987a7b9376673505a870261c9393111c, 9236 bytes)
+- `v17/package.json` (40d7c922f1b5edebb3a2ad9d64c64d541a56ea44, 144 bytes)
+- `v17/tests/torus-aether.test.mjs` (b00047b6f3f654e440f9b76bae4838e51079d053, 5167 bytes)
+- `v17/tests/torus-brain.test.mjs` (83da5a169c3f875f871f8d043239bbcc1864ca12, 1486 bytes)
+- `v17/tests/torus-devour.test.mjs` (61e73844731dbc090e95b7915a8ef192924ff476, 1088 bytes)
+- `v17/tests/torus-fractal.test.mjs` (d23091180783d0155a1e60db56f9429533e9373f, 3672 bytes)
+- `v17/tests/torus-gpu-worlds.test.mjs` (af8e4545743b05d4c727171685ef8dfea3f0744e, 5181 bytes)
+- `v17/tests/torus-observatory.test.mjs` (c5421d18717f1fb6c15779211eb1288725750fb5, 3966 bytes)
+- `v17/tests/torus-organism.test.mjs` (ec3294ce6c93442beac0cfe3d05ff92f7dc0f6b7, 4384 bytes)
+- `v17/tests/torus-transform.test.mjs` (ebafed3fbe9dd4a157018ac4bb2d7f732b09a59e, 2068 bytes)
+- `v17/tests/torus-view5.test.mjs` (34cb46e473bd64d8f36d7fc022f5b845d3a4f730, 1913 bytes)
+- `v17/transcend/epistemic-text/engine.mjs` (6dce8d2097bbfc4350dfb00242fee4a8c65c58b4, 12092 bytes)
+- `v17/transcend/epistemic-text/visualizer-server.mjs` (7d379eaa19164e85eeb78e66a36c35b531d9bfc7, 7007 bytes)
+- `v17/transcend/epistemic-text/visualizer.html` (1cf7b995a45a8d98495dbd64fe89490ce729fb25, 13610 bytes)
+- `v17/transcend/torus-aether/align.mjs` (988443d58fddfc4f5b6651034a84449f527efbc1, 17207 bytes)
+- `v17/transcend/torus-aether/concepts.mjs` (a262230757deb5aa78d98a5024ef4e46e33e6c66, 3795 bytes)
+- `v17/transcend/torus-aether/data/text-dataset.mjs` (ed8bd09ca9cddbfcd1e14c292d3ddeb67d6a2ba7, 4284 bytes)
+- `v17/transcend/torus-aether/data/vendor/fzstd.LICENSE` (d844c26c1789b832a7bdc5d02ac15366f76ff3a6, 1069 bytes)
+- `v17/transcend/torus-aether/data/vendor/fzstd.mjs` (ef33f91791f3ce4fc3cf0ec4103bcda8dfc412e6, 19844 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/LICENSE` (5523c3692d69ffe7c6d7cb7bd90184ac7507cc85, 1046 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/SOURCE_COMMIT` (7c58b15e64181110e2b9be791748527d2686d008, 41 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/alp.js` (e9834fb34b51276e20c4998485b7ca680f34b485, 9389 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/assemble.js` (7ca6014024c18e52a22233a8e2efb8052c3a74a7, 8338 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/bloom.js` (4d56a41638699a72ab3422e8e96a85c2480b3552, 8496 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/column.js` (74e3b87dc5323d6e1c0bc13cbe7cc2e8a99f1192, 8008 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/constants.js` (38101af2fa532f8f5be7b3ed365206dfc7156f66, 1738 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/convert.js` (f3a524d2d4a5504e38b270f635f87feeafbffef4, 6883 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/datapage.js` (e902c3aa2f9f819dbeee2b96bab35388a6044d53, 9790 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/delta.js` (c0e43d9f7b3454823b6eafdd2b0bd5a7ae0a8ed9, 5931 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/encoding.js` (3ffd6b3a292800cb228c66e2fa5cb16946964032, 4487 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/filter.js` (a268c36c48b3c6a50d6676a25d4241441fa5bffc, 15883 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/geoparquet.js` (45183a1c7acf4d247274cccf0e477fc3132ab590, 1399 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/index.js` (24ed13109b166e3d9467d9fb8d1eb80a311ee3e8, 3488 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/indexes.js` (98f448637dc81402fa4da35f9ad5d0e4954927f1, 1509 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/metadata.js` (c88e820bc27a769cb54238978aaf21765cc699ad, 15060 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/node.js` (101948875422f97a8ff7b3b5ff1f7bb0b77fcc3a, 1290 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/plain.js` (7a513d461704772bbde225525ccf4b66aa8b486e, 5452 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/plan.js` (079d9cfe1f5162a6ab1a91d6a6bd872d82054813, 21506 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/query.js` (57f2e19e6ce623b868934c164d7c278449b64018, 6037 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/read.js` (aeef4c21252289512a38449cca206a9a7f11d672, 8253 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/rowgroup.js` (61838e18a4cdb998462d4b5805c3b60524fbf214, 10983 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/scan.js` (aafcfb38e95014eb62b43df421afeec1f05d3d8c, 11922 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/schema.js` (805af3718d4ff137ba24f6d7cb95ae52f2a50ac3, 4506 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/snappy.js` (f7bf7698d83e4e3688bbcf4e7ebfd64bec4c1828, 3626 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/thrift.js` (4338e27f68d74110e7c5f103b14789c2bf760fd1, 3858 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/utils.js` (80f85135006abcd855047bcdcee7d9b9761c14a5, 9033 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/variant.js` (3efa7335335275c1e3a44409bd59b4928c860a49, 10977 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/wkb.js` (f66e651d5af9b381795955f2d81877ee862e158a, 3408 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/xxhash.js` (aa006e9b34f874fa19fcf24949dd78adef63feb5, 2581 bytes)
+- `v17/transcend/torus-aether/devour/OBSERVATORY_README.md` (19b80772e1c05514e3c7251c51a33f4c766aab53, 5208 bytes)
+- `v17/transcend/torus-aether/devour/brain.mjs` (ea01fbdaa094405fb435655a05415106afe6e0ee, 31845 bytes)
+- `v17/transcend/torus-aether/devour/dashboard.html` (0dc6e0d5d8af9399487e9efa10f96feadb2f8b51, 9009 bytes)
+- `v17/transcend/torus-aether/devour/dashboard.png` (bb5403dcca1efbfcb996ffa71c66af36c4a7eb40, 178284 bytes)
+- `v17/transcend/torus-aether/devour/devour.mjs` (8fc5677b98d4778342aca787341ab5a89d33a5ac, 22891 bytes)
+- `v17/transcend/torus-aether/devour/eval-worker.mjs` (1d95b7e7f4ceac78063444973d83bfb2ed32ba39, 1083 bytes)
+- `v17/transcend/torus-aether/devour/observatory-core.mjs` (dcb1e082e8527ac0875a665e8f6e0da21ef8e113, 3532 bytes)
+- `v17/transcend/torus-aether/devour/observatory.html` (cdd93089d59faf24d2f7fbcab67169fd7f6e8a51, 12034 bytes)
+- `v17/transcend/torus-aether/devour/observatory.mjs` (d8fcea9e5521df0853fdc5d818b9d3794c8bdaa8, 16094 bytes)
+- `v17/transcend/torus-aether/devour/trace.mjs` (cf6aec010499a669d3e6c7280916216c78ce1686, 5089 bytes)
+- `v17/transcend/torus-aether/devour/worker.mjs` (b8d3ba3a3eaf46e5b91b75e0d0382f676ae2923a, 10677 bytes)
+- `v17/transcend/torus-aether/emergent.mjs` (d5a1deb11210643e8d6673bc981b6c25e8b94b76, 14433 bytes)
+- `v17/transcend/torus-aether/entangled.mjs` (7d380982cfaa46c6a3f7d69343dcdfa40a48d002, 6774 bytes)
+- `v17/transcend/torus-aether/fractal.mjs` (f184e3f91ffdfceef820cdf8d96d2f7fb72c911d, 4523 bytes)
+- `v17/transcend/torus-aether/gpu/.gitignore` (a230a78aea291ec7c0c35eefbc89b3898612a118, 20 bytes)
+- `v17/transcend/torus-aether/gpu/client.mjs` (e43dc59be6547dafacd159d5bb780a510b84d273, 2960 bytes)
+- `v17/transcend/torus-aether/gpu/text_gpu.py` (7641f3e224048a2a8fc2367c463224336554582e, 18644 bytes)
+- `v17/transcend/torus-aether/gpu/worlds_gpu.py` (af3c0de302a1a2c5493108ca50e1e86b124bf11d, 29610 bytes)
+- `v17/transcend/torus-aether/lab.mjs` (abf2fe0686f02f83c9d9f98bcf8fdfabdaf192c1, 10340 bytes)
+- `v17/transcend/torus-aether/laws/align-align.mjs` (8cf8c7126839e73ce765933f199c7d872b4c5d91, 8750 bytes)
+- `v17/transcend/torus-aether/laws/align-align2.mjs` (be43de3635a713e03a1c501e88f90daea8172dae, 9208 bytes)
+- `v17/transcend/torus-aether/laws/align-baseline.mjs` (82c5283f5e4c5c2283cf50ffd059b62a38eace05, 2185 bytes)
+- `v17/transcend/torus-aether/laws/align-online.mjs` (129c592430dc8b32624a03f4465cc5cf534c681c, 1517 bytes)
+- `v17/transcend/torus-aether/laws/cexp.mjs` (d0671b4042ac06ba0963db8773fe28ac0e6409a3, 5040 bytes)
+- `v17/transcend/torus-aether/laws/dimexp.mjs` (ecf08c5a6d9bd1e03f07fe9cf3ec31ac7786454d, 4939 bytes)
+- `v17/transcend/torus-aether/laws/exercise.mjs` (2b2ee399698272312655230a545e502bbc5ba6f8, 1740 bytes)
+- `v17/transcend/torus-aether/laws/form-transform.mjs` (37e7a319e12b4f682c437292da9b869ba25744c0, 7830 bytes)
+- `v17/transcend/torus-aether/laws/form-until.mjs` (c39300e1e08b15a9aa5c32bfb29f8bed07dde0c8, 2981 bytes)
+- `v17/transcend/torus-aether/laws/form.mjs` (c0c559e087ee1e7005137987668a8fa0d34dfc8b, 2762 bytes)
+- `v17/transcend/torus-aether/laws/fusion.mjs` (2604ca306ce236857b4d968e1ade71434f78be74, 4194 bytes)
+- `v17/transcend/torus-aether/laws/geo-form.mjs` (eff3a5c4a5851b65b948186cb15e1b452f29004e, 5371 bytes)
+- `v17/transcend/torus-aether/laws/labyrinth.mjs` (89a374e5ef50e924cde863fbe0c99373e1ac5ef1, 1411 bytes)
+- `v17/transcend/torus-aether/laws/laws.mjs` (e10e9178fbbc49cb855f3a594d36f3b24b428a2a, 5703 bytes)
+- `v17/transcend/torus-aether/laws/massexp.mjs` (917590bbd396e7f4d26e16e0ac44be9d315e969d, 6006 bytes)
+- `v17/transcend/torus-aether/laws/mind.mjs` (6308a3483ca69ba302e80c2dc3a9166edab8a179, 2319 bytes)
+- `v17/transcend/torus-aether/laws/polarity.mjs` (13d6e69d4112d51ef0cddc4606cd52ee8ca0a8a7, 2917 bytes)
+- `v17/transcend/torus-aether/laws/transform.mjs` (79ce3b76a2f18ae7142f88d87bba05ecee02284c, 3105 bytes)
+- `v17/transcend/torus-aether/lean-c.mjs` (987ad01233d0fb13ee31c45804782bc04c8edc6b, 4938 bytes)
+- `v17/transcend/torus-aether/measure-emergent.mjs` (edffd452b50da12befb862cd472d5f89c95752e3, 3561 bytes)
+- `v17/transcend/torus-aether/measure-entangled.mjs` (80a2556f738296fb736951cb428e77f4dbb478fb, 10063 bytes)
+- `v17/transcend/torus-aether/measure.mjs` (6c0c475f789a4ec9634659dcddae87abe3f9fbdc, 2333 bytes)
+- `v17/transcend/torus-aether/search-rules.mjs` (079a0ea69efa6a624268f27b7e890a7fac87f4cd, 1574 bytes)
+- `v17/transcend/torus-aether/torus.mjs` (454b4a7fd6dd2e35e6359b9e8b467ba6e343a18d, 11244 bytes)
+- `v17/transcend/torus-aether/ui/app.js` (dfb0987f019bde78cc1d4d3fb8dddcd493b6a1a1, 71878 bytes)
+- `v17/transcend/torus-aether/ui/index.html` (5d73b93e198d9ac80e303421c5d6e181b416f0a8, 24182 bytes)
+- `v17/transcend/torus-aether/ui/infinite-view.png` (9b91229389d5f9be9c194df957c47171be2a2fc2, 586515 bytes)
+- `v17/transcend/torus-aether/ui/live-devour.png` (b0b4835e4c839720e25db9e9fc7fdf71187bfd00, 914616 bytes)
+- `v17/transcend/torus-aether/ui/nestview.mjs` (97f648084341771c032e982f8d1f4e508b48ceb0, 15655 bytes)
+- `v17/transcend/torus-aether/ui/outside-view.png` (e9107996854be21a4cbc1d200e4606ded40e1197, 806872 bytes)
+- `v17/transcend/torus-aether/ui/rotation-5d.png` (a3cf3ea8632f3496c2ead724c02935d9c3862fc5, 199539 bytes)
+- `v17/transcend/torus-aether/ui/scale-loop.png` (a61b2bea6947e6fd291d53c4403639d12d547ee5, 582679 bytes)
+- `v17/transcend/torus-aether/ui/screenshot.png` (deb3150b4ee0cc73b9008ca51cab5b24c02e9cb5, 585377 bytes)
+- `v17/transcend/torus-aether/ui/server.mjs` (8ad17299f3040cb8da9093cd06731d959a7e513a, 2264 bytes)
+- `v17/transcend/torus-aether/ui/view5.mjs` (88e8cdbc1b5f5ab53fd2e10e4e50bd7b33fc4df1, 7010 bytes)
+- `v17/transcend/torus-aether/worlds/causal.mjs` (0a59e03eb3d1da79596d193a9ccd0413deeb3628, 12337 bytes)
+- `v17/transcend/torus-aether/worlds/exercise.mjs` (df194ecb6999cce36c15fb9f4f94d3a36ae22fcb, 13811 bytes)
+- `v17/transcend/torus-aether/worlds/form.mjs` (df3857b98c4163353189fd78d9bde0b3fb4f964d, 14396 bytes)
+- `v17/transcend/torus-aether/worlds/labyrinth.mjs` (96877ee6537c9ceb34239fc20f85909d0e3237fd, 6929 bytes)
+- `v17/transcend/torus-aether/worlds/maze.mjs` (ae4c8e43aa19a7dbc0c23ac07f97d9ea3c1f6b82, 5795 bytes)
+- `v17/transcend/torus-aether/worlds/transform.mjs` (9e58828f6e8d88241ee3efe60c94bae0d27f1501, 7334 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/action-budget.js` (6760b2fd6b1949b8097cd8e4410e4d3eb4a9e659, 4577 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/brain.js` (19b72ef9eaa061e23b170a3c7782dec9bc31f1cb, 16785 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/brsi-controller.js` (6dcc99dcd38dff39c25bc7fd9d20c7939700d281, 9491 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/brsi1.js` (068474b80bb7bf00d0ff626d87fa4bf0cf7f2f81, 22036 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-branch-runner.js` (5ae61ed247f0cab9aa85e061acacdc18e997221b, 25856 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-checkpoint.js` (d8d2e24fba8458ca6caeef74b003bbdc806d9e53, 2645 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-components.js` (6526e2ef77f69f08ddf3fac54eb3b3285cc8e094, 6631 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-contributions.js` (a222b11c739316e53554bbe2fa896b3b91c09bc4, 7056 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-interactions.js` (e8ceab0e1767b149ede37a97e59b9c7bd553b3c8, 1593 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-metrics.js` (7e19fb9d9fc9cbb1c7783a8bfab38d7764614d30, 3537 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-oracle.js` (163630b5dc5f6d0c24c1993cecae8bbcbfa3db17, 31070 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-runtime.js` (6296b481eb0130ebe36f8d729f1a60641b772565, 30571 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-types.js` (962014e9967b598f2523d8d0a3e6ae97729d47df, 2264 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/concept-flow-2d.js` (10ee218165d07e8ab4909e14659aff852d7b81e1, 13531 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/concept-world-2xf32.js` (308beb4019c759d68597f48ed062ecce2dc5c547, 12304 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/config.js` (7804266b3b6f6a6f48bd356835d0eaaab5b0525c, 12802 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/controller.js` (50fe9cf5fcaa5701de7a1d58531e5fce3a12eb02, 103747 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/cortical-audio.js` (d43540c82428f50188f00e57f62aa6166b707c2b, 4626 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/cortical-sound.js` (d012924d7849eba4ea1cef206f42deaf4c5618ff, 19314 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/curriculum-frontier.js` (42de16098c7c01497fc04893f6400ef52f774abf, 4763 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/echo-field.js` (d4ac4a5a32dace4f4398cf57864bc6756d1af224, 5409 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/energy.js` (9a86196042b4a842a906d5ef7127afc1b94a54ac, 5137 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/evaluate-batch-cpu.js` (0b2fb2283c8e41951f54720af2f372a44245850f, 19944 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/evaluate-batch.js` (436645a12a2ac79fe556584a6903324d9c6782b3, 26759 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/experimental-features.js` (23c85673aa0075920d7a94b2d75e6530a6e4106e, 3908 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/gae.js` (65fa7c68625596085f8b386710b13c3611209294, 862 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/generalization-battery.js` (d456c904dada1d0ded52d18d13150e7f86216354, 1386 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/gpu-head-trainer.js` (f453d5713a688c2f7b5acedcefad0fd0f42a4da9, 23358 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/group-runtime.js` (eb6096b28e3a64b958d70b951c84da5ddcaaf1e1, 10165 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/higher-self.js` (0a279038f9706a157ac43918d0a9b91828002088, 6992 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/identity-field.js` (fb7ed6a44d393f20719374c158715face2a034aa, 10079 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/lifecycle.js` (45a3457e8b182cca22a4af4ec0f35cb46a9a2e6d, 10058 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/math.js` (e66ad97b03c209472dd5b060ad518050043facea, 2045 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/mechanics-2d-v8.js` (f1e7dd6792461858d66f76dbebc498ea21813cbf, 7834 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/mechanics.js` (f0528251c4123cd84cd39e8f15088002110b1e53, 9560 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/meta-controller.js` (5c7951bf66cb708db8e0409b600bec002f1b7924, 5432 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/module-bridge.js` (2c501f5513d4252716620a47c8fc99a8ef5811f5, 1647 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/causal-body-discovery-v1.js` (8bc609a05d571b976a73bb08f61fb93d010a31cc, 2422 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/causal-body-registry.js` (d94bbcee66896b8a01c9173baa2dd4a56b62c4a8, 1009 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/causal-body-v9-adapter.js` (bdbbc0c37bcf68af73e7f0f76da001c99f916d9b, 952 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-adapter.js` (14b916c192bbe16ea1449c04fa3bca3e68f42456, 407 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-comparison.js` (dc2415a65296c9b6e3e0837b62156ff68ac32c5e, 2041 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-contract.js` (20f3a53323ae16215de0ec958eaab9083f3a862b, 1367 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-host.js` (8c3dbb358c47b1db2e504de36f7cb2b690b4e019, 3780 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/semantic-sound-cortex-v1.js` (87eb538aaa7eb39386ab83091add5361cebdb4a6, 13967 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/semantic-sound-registry.js` (30f5afeacbee07e30afa6017078937fe414fc47d, 4051 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/semantic-sound-v9-adapter.js` (4e57fa54e205e65d7f26ffd8cb09c729d305180d, 7174 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/native-multigpu-client.js` (38cecd34818dcd31598c982de7d295453998cfde, 11444 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/observer-audio.js` (a4d8079ab35f9996cb0dfd8f856e5a10336f7936, 7338 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/optimizer.js` (027b9b6e07b7e4733e1b93df9f98da6ad68f7abd, 1235 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/oracle-dataset.js` (19daf2e52d5eba9f7fb832c9c4ef0cd7edd1754a, 3048 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/organogenesis.js` (c49d704b768dc9f00cdae16c294a844de440265f, 4630 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/persistence.js` (1209eb6c19aeefd49082a238fab03602c994c9ff, 2344 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/perspective-engine.js` (56a2af9275e90e2f6d35174336414fab60012640, 8573 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/playback-policy.js` (11cab6e748bd4604ead93245489d6495f53576eb, 4436 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/predictive-causal-horizons.js` (0a24b6ef95156934a32fc7c1962c0f9fb7dfe4eb, 4337 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/predictive-causal-ledger.js` (2bb444d51856f068378d9696666cc04dc47071d4, 6571 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/predictive-causal-outcome.js` (e2fd434f2a7ebad4af25a47816406114261057b1, 10330 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/principal-expert-lab-controller.js` (0c9b379bf975041650023a8477c9f53415da2a6a, 29882 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/principal-expert-lab-runtime.js` (42c1640b1d0eeadb946c89a39b4672527f427cf4, 4450 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/principal-expert-portable.js` (61de33499ff6e811b8e1c2e791a59aa942483a20, 2417 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/qanda-brsi-controller.js` (82e563a6bb372254baf9dac73526410b61545438, 14181 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/qanda-rsi.js` (d9a1f0f182acc8cfa5230fe7d3fc7cc3d1c4aeee, 5023 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/recursive-qanda.js` (e585d3cc7631c90e37ba92bf7a0fb3409c69a047, 4444 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/render.js` (2c1d757cc4c5526afa38a8904ac7e6a1dd843227, 24534 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/replay.js` (76b0734d1fcf9f28ce2bd39e5639ed519f29a224, 4491 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/retention-battery.js` (921e42faf5f858e2ebd1f50c57cb627e786e3439, 1539 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/reward.js` (147e8a48d6c3790ce74ea3c818136ea040f2f6d7, 4516 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rollout.js` (292843ded9b30ba9997eef2f622210ad201f34e0, 50772 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rsi-evidence.js` (e70c75cad1ef90c6734925b9cdeb062b7a0c65f5, 15292 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rsi-freeze.js` (444fe5dd3017f1627f470272a34b2f3141499fac, 2292 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rvsi-seil.js` (7a0ddf3f7631a65a4bcfe1703e0d0b41ff85e776, 17711 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-body-discovery.js` (02f7567a692e7a283365d1af1d92384bda6daa34, 9830 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-calibration.js` (21d75fe3ae890fd8b1495f2f895d1656299acc1e, 3297 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-cortical-bridge.js` (1c9daf755bd1f6cab6db7ebd1a7cdbb10d8e090c, 1455 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-higher-shadow.js` (5f2bb8d3cbd4a11b1a5eb8250eb2c9dc5d625739, 1457 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-lifecycle.js` (9a7b3b305a9711858a54b9c7e16e778383803c91, 6538 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-policy-shadow.js` (e4dd016e9587bfc3a7ec62740492d7d8d6b54b18, 3208 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-resource-shadow.js` (2dac88671208becf6b55299ba4fe28b8e5227ce7, 1921 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shadow-runner.js` (e011f5606b4af47794ac20bb026f46069705d8c2, 5282 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shadow-world.js` (8796807def9ab6576f8b5d789735d866608b7c25, 12039 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shared-echo.js` (8aefb27f7a3e7315ab7b43ceb7bbf1f3d37d3df7, 4879 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shared-field.js` (32615804c4af81d6cf8dae5bd5ed84f6c80ba5b0, 3870 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-track-predictor.js` (a2e78529f76509a5414bba238559d760dcc8c692, 3595 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-v9-mechanics-adapter.js` (19591103a45cde484163a24c252a7bdadd7f3532, 3571 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/scheduler.js` (95502ea3b5ebfc55722b44560aaa9b1b6a3d6f71, 1127 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/sensors.js` (6578c67342bdf77e06a5ea0c430476ef6a72938b, 8467 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/spatial-cortex.js` (152b704d82750146fcfd60e32a4a1821b5c34904, 8513 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/specialization.js` (4b13bdb5a4e2158c26f790e0e3464e3ac914bf5a, 8273 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/spore-memory.js` (e9255dbccad931c17a65b806c9a228fab9eed84b, 2462 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/telemetry-outbox.js` (618fa31a76e48aae0a0f4fa1aeb5ea24c1017289, 4377 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/telemetry.js` (561859915a6fbf7cdb0b0bbbf2cfa2daece5c195, 8295 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/trainer-compatibility.js` (d651f2f2e8bbadcab557a0179e45fe1012a06ede, 1293 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/trainer.js` (908f2a85a27cbe434caecd961ef91ca952dd9b88, 54712 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/ui-metrics.js` (0e2d48481a217f52dc497994080655eaa868a81a, 257 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/v5-procedural-maps.js` (f3a615f7f5b235915a7776b0c7a7e1978e1d305b, 12809 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/v8-2d-actions.js` (a2a67080d9ce47a2ac0ba633d989b2bf25ae28fd, 268 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/verification-ui-adapter.js` (9121b23743b9941326504443c7a30f6ba2fc8f65, 18975 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/worker-entry.js` (f7fe2033eef186e8789027cda525023a2de36678, 2342 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/worker-pool.js` (5151fa03ba1d35d2ebc6203c0786286b6424b389, 7665 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/workflow.js` (805b460a41bf5db660601c849c93670a2d9a2eab, 4391 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/world-2d-v8.js` (416a9f757e078bdcb3ee04081c432b5f2b6f4dc8, 15345 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/world-model-learner.js` (eb8732270cce6a5afbe9eb6f8a548998f30213ea, 5261 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/world.js` (302e20bea5b551494a9f15ada6d5f693db7e755c, 9172 bytes)
+
+### Different blob SHA at same path
+
+- `VERBATIM_ROOT.md` (branch cd12edccf601c6723b29821ff5bc974c4158f47a, main a4005aaba4769e444e9ae004893e234450f595a0)
+
+### Missing from branch relative to main (paths)
+
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+
+---
+## `experiment/PERSPECTIVE-EXPANSION-MULTISCALE-20261105`
+
+HEAD `ce821b875111a5bb21c87f1bed1aeb052afb9929` · tracked blobs 567 · tree truncated false · branch-only paths 5 · changed shared paths 10 · missing main paths 11
+
+### Added in branch relative to main
+
+- `.github/workflows/perspective-expansion.yml` (6c6b1d6b1ccec6358d7f1ce4874130e24ac101f6, 2156 bytes)
+- `experiments/portal-universal-20261103/PERSPECTIVE_EXPANSION_IMPLEMENTATION.md` (f7c8ed61e35cac62678eb08a369b8b9de49d8684, 8515 bytes)
+- `experiments/portal-universal-20261103/ablate_expansion.py` (fa0d956621f41c35bd83b81e3e20a79951a25615, 5307 bytes)
+- `experiments/portal-universal-20261103/perspective_expansion.py` (2f1d80f1914f459394154eb743e9e2686fd954c3, 6917 bytes)
+- `experiments/portal-universal-20261103/tests/test_perspective_expansion.py` (e77f374d1f234d80f937245430c5de4724d6a582, 6070 bytes)
+
+### Different blob SHA at same path
+
+- `VERBATIM_ROOT.md` (branch 76f9ce727394e6216515604b02b998789801fc7f, main a4005aaba4769e444e9ae004893e234450f595a0)
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1` (branch 5845b40e03f4392069a1032f73b8e75698454c7e, main 3c9f0aa79b45615bde96a697153a44ceb692a01d)
+- `experiments/portal-universal-20261103/engine.py` (branch 75b5e6012e11d146af5efe067d778a253e222982, main 12c93fd01f9418a181e26bb7de37a5c04a59a011)
+- `experiments/portal-universal-20261103/server.py` (branch 291b92cfd047e6ba4da1ffddd260d53bb47d8f76, main 9650f16d383bea4547acb2eb9db34761d4dc0497)
+- `experiments/portal-universal-20261103/spacetime_api.py` (branch 1055aebfaf4254812086a6ff231fe52288b49e68, main 4a686c144ee506d7a4f913a9033828c1fad5a73c)
+- `experiments/portal-universal-20261103/tests/test_spacetime.py` (branch d77acb6472211b7f35dad39e8c48b74364c74b31, main 6c5055776b015b1b177af25496b782bf8708aea3)
+- `experiments/portal-universal-20261103/web/app.js` (branch 20dcfc75cab9e20e99053178080737ef2df519ec, main f0bbf93f5c1cfbe5b35f92a16a7ecbb950c67609)
+- `experiments/portal-universal-20261103/web/index.html` (branch 70ada5909c75afeef6b421b54d1bd68eabd9cc16, main 748e8e856ca0204f4adacd4d5a17cc8d04afd7a4)
+- `experiments/portal-universal-20261103/web/spacetime.html` (branch 50643b7ed81fc3186e33064ecba812deb952af1e, main 32f6ef55468306b7557cbb9390602a496832833e)
+- `experiments/portal-universal-20261103/web/spacetime.js` (branch 0a47e217c190a5a025dd2c49cad5fdb37eb3d254, main bbed242924ff8aefd6ac3e6c4ab3f5c4e85a7b55)
+
+### Missing from branch relative to main (paths)
+
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+
+---
+## `experiment/V6-CAUSAL-TEXT-WORLDS-20261103`
+
+HEAD `8ed63544b4f4c15d06d34241541b245f529e1850` · tracked blobs 159 · tree truncated false · branch-only paths 5 · changed shared paths 19 · missing main paths 419
+
+### Added in branch relative to main
+
+- `v6/benchmark.mjs` (b602cfa1ab92964f66ca599b5cee5bf75b974349, 1487 bytes)
+- `v6/engine/hypotheses.mjs` (ca8daf43482d446577359952b80f64f6b5b9e499, 5726 bytes)
+- `v6/engine/model.mjs` (1b2febd69e16b9ed67522b0352bc439b2f88b700, 4315 bytes)
+- `v6/tests/hypotheses.test.mjs` (e7ff525bac808c66aebb81a15b7b811a7bbc30bd, 2712 bytes)
+- `v6/tests/server.test.mjs` (da877b4ed68a45cc49ae0105c693ab8b72962c25, 3502 bytes)
+
+### Different blob SHA at same path
+
+- `.github/workflows/magic-regression.yml` (branch f9c71a4f0b416b4176647490a5952324759d7d35, main 8dc2b9823fb3df512dd7212db5ea387ed99904ef)
+- `.gitignore` (branch d918a10326969b7fbb7b9912c1c22dd364b9c01b, main 1ce0c51ce42fe9d46d4764609191dd4b9207cb37)
+- `README.md` (branch c05c323049bb3c3243145006972e518006d70e68, main f01173a5d1ce9e7692fb8b94a8e0d54f34cdec61)
+- `package.json` (branch dfb9e00ad492e82c1f34ba82b5fd77ad46e765be, main 2371ea85175b67c1739e34e64a0ebd4aa974560f)
+- `v4/ESCAPE-LAB.md` (branch d99c279d1f1d13852640109e60c805d2b509883e, main 024031afb69c71d5942e74baacf88bfba709a0ee)
+- `v4/escape-public/index.html` (branch b9f13580ce63e00de048b42aaa871a3a310d7e63, main e5d0a99fca5bfdd2f34cf58486cd7b123eeb9834)
+- `v4/escape-server.mjs` (branch 853e04af785ee4493d6c83f3f9a05af91a74258e, main bc1556e69e23e17d82ba52348f1c28a385fc3e9a)
+- `v4/run-escape-termux.sh` (branch a1f6548d0840ecca2bea4beebeb3ecdd8f5cca1c, main 44a70b1dbefd31dc3f527ed0e934bab7d19ceb45)
+- `v6/.gitignore` (branch cb9139e2826bf8f7ac74ed46ecaa984cf347f81f, main 1d81a4f4e4feb888e866a6d5d6e724aa604db0a0)
+- `v6/README.md` (branch d0fe7f10f3a983aef1eee4daf98493983912b94c, main fc67bc9f936240d52e4df8b97f5132ec1cde9a14)
+- `v6/engine/training.mjs` (branch 8744b4c4164ebfb1ab086eb8f764b55b96cd4ab2, main 2e4c61ffa532374ad5851856b3d32a248d2d6fc5)
+- `v6/engine/world.mjs` (branch 9dff68066eff0b56e9f3018509b0a6d1e4db321d, main 508173bafa5e0faa1fa479571c4bad8ca77cdc4a)
+- `v6/package.json` (branch 0ea9a3f4d1900507a0ecb3062237a12c17ba6a90, main 7ac23d00d6168c43f1572ef830a9d6e9ccab3a59)
+- `v6/public/app.js` (branch 5092796797298d1f5e5ca320582e868cc47022da, main 51d10b331fe05886a58febc63fafa81c5cc06925)
+- `v6/public/index.html` (branch 1d6a30f89425c18831df6ed1033c597f5947883a, main 0fcfc98b9daac47a4eadfdc3f9a2d47402ba8f3e)
+- `v6/public/style.css` (branch b0ce1aef998a73b5342c0629e19472a8f147cdb1, main b10654d0e9adf6b9179fc00ab0442ee3e35a84ac)
+- `v6/run-termux.sh` (branch 87b67424a6709bc15b1a865b1a14073f185f0b16, main aff0d792ec211b4fb470c8af261d9b13fcda1d43)
+- `v6/server.mjs` (branch 9d78bcef8cae238329580ff3e24d891f2a650a7f, main 255db2a332529e8677f666482f98c81d972763e4)
+- `v6/tests/core.test.mjs` (branch 937d8fe86c7b049ac69f23b640d6512a351a0a7c, main 4ae09a4d9e79698efd00e862f0ea109a6f779724)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1`
+- `START_MAGIC_CUDA.ps1`
+- `VERBATIM_ROOT.md`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/brain-studio-20261103/.gitignore`
+- `experiments/brain-studio-20261103/README.md`
+- `experiments/brain-studio-20261103/cuda/bridge.mjs`
+- `experiments/brain-studio-20261103/cuda/cuda_worker.py`
+- `experiments/brain-studio-20261103/data/.gitkeep`
+- `experiments/brain-studio-20261103/engine/abstract-graph.mjs`
+- `experiments/brain-studio-20261103/engine/cells.mjs`
+- `experiments/brain-studio-20261103/engine/studio.mjs`
+- `experiments/brain-studio-20261103/engine/vault.mjs`
+- `experiments/brain-studio-20261103/package.json`
+- `experiments/brain-studio-20261103/public/app.js`
+- `experiments/brain-studio-20261103/public/graph-render.js`
+- `experiments/brain-studio-20261103/public/index.html`
+- `experiments/brain-studio-20261103/public/style.css`
+- `experiments/brain-studio-20261103/run-termux.sh`
+- `experiments/brain-studio-20261103/scripts-cells-benchmark.mjs`
+- `experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs`
+- `experiments/brain-studio-20261103/server.mjs`
+- `experiments/brain-studio-20261103/tests/abstract-graph.test.mjs`
+- `experiments/brain-studio-20261103/tests/cells.test.mjs`
+- `experiments/brain-studio-20261103/tests/engine.test.mjs`
+- `experiments/brain-studio-20261103/tests/port-occupied.test.mjs`
+- `experiments/brain-studio-20261103/tests/server.test.mjs`
+- `experiments/causal-text/.gitignore`
+- `experiments/causal-text/README.md`
+- `experiments/causal-text/benchmark.mjs`
+- `experiments/causal-text/engine/hypotheses.mjs`
+- `experiments/causal-text/engine/model.mjs`
+- `experiments/causal-text/engine/training.mjs`
+- `experiments/causal-text/engine/world.mjs`
+- `experiments/causal-text/package.json`
+- `experiments/causal-text/public/app.js`
+- `experiments/causal-text/public/index.html`
+- `experiments/causal-text/public/style.css`
+- `experiments/causal-text/run-termux.sh`
+- `experiments/causal-text/server.mjs`
+- `experiments/causal-text/tests/core.test.mjs`
+- `experiments/causal-text/tests/hypotheses.test.mjs`
+- `experiments/causal-text/tests/server.test.mjs`
+- `experiments/distributed-dance-20261103/.gitignore`
+- `experiments/distributed-dance-20261103/README.md`
+- `experiments/distributed-dance-20261103/REPORT.md`
+- `experiments/distributed-dance-20261103/data/.gitkeep`
+- `experiments/distributed-dance-20261103/engine/brain.mjs`
+- `experiments/distributed-dance-20261103/engine/experiment.mjs`
+- `experiments/distributed-dance-20261103/engine/world.mjs`
+- `experiments/distributed-dance-20261103/package.json`
+- `experiments/distributed-dance-20261103/public/app.js`
+- `experiments/distributed-dance-20261103/public/index.html`
+- `experiments/distributed-dance-20261103/public/style.css`
+- `experiments/distributed-dance-20261103/results/benchmark-150ep-33nodes-24worlds-seed17.json`
+- `experiments/distributed-dance-20261103/results/benchmark-150ep-33nodes-24worlds-seed55.json`
+- `experiments/distributed-dance-20261103/results/benchmark-150ep-33nodes-24worlds-seed83.json`
+- `experiments/distributed-dance-20261103/results/latest-benchmark.json`
+- `experiments/distributed-dance-20261103/run-termux.sh`
+- `experiments/distributed-dance-20261103/scripts-benchmark.mjs`
+- `experiments/distributed-dance-20261103/server.mjs`
+- `experiments/distributed-dance-20261103/tests/core.test.mjs`
+- `experiments/distributed-dance-20261103/tests/server.test.mjs`
+- `experiments/dynamic-perspective-20261103/.gitignore`
+- `experiments/dynamic-perspective-20261103/README.md`
+- `experiments/dynamic-perspective-20261103/REPORT.md`
+- `experiments/dynamic-perspective-20261103/data/.gitkeep`
+- `experiments/dynamic-perspective-20261103/engine/brain.mjs`
+- `experiments/dynamic-perspective-20261103/engine/experiment.mjs`
+- `experiments/dynamic-perspective-20261103/engine/world.mjs`
+- `experiments/dynamic-perspective-20261103/package.json`
+- `experiments/dynamic-perspective-20261103/public/app.js`
+- `experiments/dynamic-perspective-20261103/public/index.html`
+- `experiments/dynamic-perspective-20261103/public/style.css`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed17.json`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed55.json`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed83.json`
+- `experiments/dynamic-perspective-20261103/run-termux.sh`
+- `experiments/dynamic-perspective-20261103/scripts-benchmark.mjs`
+- `experiments/dynamic-perspective-20261103/server.mjs`
+- `experiments/dynamic-perspective-20261103/tests/core.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/live-ui.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/server.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/training-visibility.test.mjs`
+- `experiments/graph-dance-20261103/.gitignore`
+- `experiments/graph-dance-20261103/OWN-PROBLEM.md`
+- `experiments/graph-dance-20261103/README.md`
+- `experiments/graph-dance-20261103/REPORT.md`
+- `experiments/graph-dance-20261103/engine/agent.mjs`
+- `experiments/graph-dance-20261103/engine/dance.mjs`
+- `experiments/graph-dance-20261103/engine/external.mjs`
+- `experiments/graph-dance-20261103/engine/training.mjs`
+- `experiments/graph-dance-20261103/engine/world.mjs`
+- `experiments/graph-dance-20261103/package.json`
+- `experiments/graph-dance-20261103/public/app.js`
+- `experiments/graph-dance-20261103/public/index.html`
+- `experiments/graph-dance-20261103/public/style.css`
+- `experiments/graph-dance-20261103/results/benchmark-120ep-33nodes-12worlds.json`
+- `experiments/graph-dance-20261103/run-termux.sh`
+- `experiments/graph-dance-20261103/scripts-benchmark.mjs`
+- `experiments/graph-dance-20261103/scripts-run-task.mjs`
+- `experiments/graph-dance-20261103/server.mjs`
+- `experiments/graph-dance-20261103/tests/core.test.mjs`
+- `experiments/graph-dance-20261103/tests/external-server.test.mjs`
+- `experiments/graph-dance-20261103/tests/external.test.mjs`
+- `experiments/graph-dance-20261103/tests/unlimited.test.mjs`
+- `experiments/learned-message-20261103/.gitignore`
+- `experiments/learned-message-20261103/README.md`
+- `experiments/learned-message-20261103/REPORT.md`
+- `experiments/learned-message-20261103/data/.gitkeep`
+- `experiments/learned-message-20261103/engine/brain.mjs`
+- `experiments/learned-message-20261103/engine/experiment.mjs`
+- `experiments/learned-message-20261103/engine/world.mjs`
+- `experiments/learned-message-20261103/package.json`
+- `experiments/learned-message-20261103/public/app.js`
+- `experiments/learned-message-20261103/public/index.html`
+- `experiments/learned-message-20261103/public/style.css`
+- `experiments/learned-message-20261103/results/benchmark-200ep-33nodes-24worlds-seed17.json`
+- `experiments/learned-message-20261103/results/benchmark-200ep-33nodes-24worlds-seed55.json`
+- `experiments/learned-message-20261103/results/benchmark-200ep-33nodes-24worlds-seed83.json`
+- `experiments/learned-message-20261103/run-termux.sh`
+- `experiments/learned-message-20261103/scripts-benchmark.mjs`
+- `experiments/learned-message-20261103/server.mjs`
+- `experiments/learned-message-20261103/tests/core.test.mjs`
+- `experiments/learned-message-20261103/tests/server.test.mjs`
+- `experiments/portal-universal-20261103/.gitignore`
+- `experiments/portal-universal-20261103/README.md`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1`
+- `experiments/portal-universal-20261103/VERBATIM_MAPPING.md`
+- `experiments/portal-universal-20261103/corpus.py`
+- `experiments/portal-universal-20261103/cuda_probe.py`
+- `experiments/portal-universal-20261103/engine.py`
+- `experiments/portal-universal-20261103/perspective.py`
+- `experiments/portal-universal-20261103/server.py`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_portal.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/tests/test_v11.py`
+- `experiments/portal-universal-20261103/tests/test_v12.py`
+- `experiments/portal-universal-20261103/tests/test_v13.py`
+- `experiments/portal-universal-20261103/tests/test_v14.py`
+- `experiments/portal-universal-20261103/toroid.py`
+- `experiments/portal-universal-20261103/web/app.js`
+- `experiments/portal-universal-20261103/web/index.html`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `experiments/portal-universal-20261103/web/style.css`
+- `experiments/portal-universal-20261103/web/torus-view.js`
+- `experiments/portal-v7-hypercube-4d/README.md`
+- `experiments/portal-v7-hypercube-4d/geometry.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-app.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-index.html`
+- `experiments/portal-v7-hypercube-4d/growth-server.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-view.mjs`
+- `experiments/portal-v7-hypercube-4d/growth.mjs`
+- `experiments/portal-v7-hypercube-4d/journal.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/growth.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/server.test.mjs`
+- `experiments/portal-v7-hypercube-4d/viewer.css`
+- `experiments/portal-v7-hypercube-4d/viewer.mjs`
+- `run-original-unlimited-termux.sh`
+- `scripts/verbatim-gate.mjs`
+- `scripts/verbatim-mirror-gate.mjs`
+- `scripts/verbatim-strict-audit.mjs`
+- `tests/port-isolation.test.js`
+- `tests/verbatim-gate.test.mjs`
+- `tests/verbatim-mirror.test.mjs`
+- `tests/verbatim-strict-audit.test.mjs`
+- `tests/visual-unlimited-http.test.js`
+- `v10/.gitignore`
+- `v10/README.md`
+- `v10/REPORT.md`
+- `v10/SPEC.md`
+- `v10/data/.gitkeep`
+- `v10/engine/maze.mjs`
+- `v10/engine/mind.mjs`
+- `v10/engine/organ.mjs`
+- `v10/engine/organism.mjs`
+- `v10/engine/train.mjs`
+- `v10/engine/worlds.mjs`
+- `v10/package.json`
+- `v10/public/app.js`
+- `v10/public/index.html`
+- `v10/public/style.css`
+- `v10/results/transfer-1500-150-seed7-mix.json`
+- `v10/results/transfer-1500-150-seed7.json`
+- `v10/results/transfer-1500-150-seed8.json`
+- `v10/run-termux.sh`
+- `v10/scripts-bench.mjs`
+- `v10/scripts-transfer.mjs`
+- `v10/server.mjs`
+- `v10/tests/v10.test.mjs`
+- `v11/.gitignore`
+- `v11/README.md`
+- `v11/REPORT.md`
+- `v11/START_V11_CUDA.ps1`
+- `v11/VERBATIM_MAP.md`
+- `v11/bench.py`
+- `v11/data/.gitkeep`
+- `v11/engine/__init__.py`
+- `v11/engine/backend.py`
+- `v11/engine/life.py`
+- `v11/engine/portal.py`
+- `v11/evalsaved.py`
+- `v11/results/maze2d-1500-s7.json`
+- `v11/results/maze2d-1500-s8.json`
+- `v11/results/polymath-2700-s7.json`
+- `v11/results/polymath-s7-control.npz`
+- `v11/results/polymath-s7.npz`
+- `v11/results/specialists-300-s7.json`
+- `v11/results/zeroshot-sat-1600-s7.json`
+- `v11/run-termux.sh`
+- `v11/selftest.py`
+- `v11/server.py`
+- `v11/tests/gradcheck.py`
+- `v11/tests/test_v11.py`
+- `v11/transfer.py`
+- `v11/web/app.js`
+- `v11/web/index.html`
+- `v11/web/style.css`
+- `v11/worlds/__init__.py`
+- `v11/worlds/grid.py`
+- `v11/worlds/states.py`
+- `v11/worlds/symbolic.py`
+- `v12/torus4d.html`
+- `v13/README.md`
+- `v13/REPORT.md`
+- `v13/START_V13.ps1`
+- `v13/bench.mjs`
+- `v13/package.json`
+- `v13/results/bench-grad-rotate0.5.json`
+- `v13/results/bench-grad-rotate0.json`
+- `v13/results/bench-pull-rotate0.5.json`
+- `v13/results/bench-pull-rotate0.json`
+- `v13/run-termux.sh`
+- `v13/server.mjs`
+- `v13/tests/v13.test.mjs`
+- `v13/web/app.js`
+- `v13/web/corpus.js`
+- `v13/web/engine.mjs`
+- `v13/web/index.html`
+- `v14/README.md`
+- `v14/START_V14.ps1`
+- `v14/data.py`
+- `v14/model.py`
+- `v14/selftest.py`
+- `v14/server.py`
+- `v14/web/app.js`
+- `v14/web/index.html`
+- `v15/README.md`
+- `v15/START_V15.ps1`
+- `v15/data.py`
+- `v15/model.py`
+- `v15/selftest.py`
+- `v15/server.py`
+- `v15/web/app.js`
+- `v15/web/index.html`
+- `v16/README.md`
+- `v16/REPORT.md`
+- `v16/START_V16.ps1`
+- `v16/bench.mjs`
+- `v16/package.json`
+- `v16/results/bench-5000-s7.json`
+- `v16/results/bench-5000-s8.json`
+- `v16/results/bench-5000-s9.json`
+- `v16/results/bench-600-s7.json`
+- `v16/results/screenshot.png`
+- `v16/run-termux.sh`
+- `v16/server.mjs`
+- `v16/tests/gradcheck.mjs`
+- `v16/tests/v16.test.mjs`
+- `v16/web/app.js`
+- `v16/web/autograd.mjs`
+- `v16/web/engine.mjs`
+- `v16/web/index.html`
+- `v6/REPORT.md`
+- `v6/data/.gitkeep`
+- `v6/engine/agent.mjs`
+- `v6/engine/nn.mjs`
+- `v6/engine/organ.mjs`
+- `v6/public/draw.js`
+- `v6/results/benchmark-15x15-400ep-seed17.json`
+- `v6/results/benchmark-15x15-400ep-seed23.json`
+- `v6/results/benchmark-15x15-400ep-seed31.json`
+- `v6/scripts-benchmark.mjs`
+- `v7/.gitignore`
+- `v7/README.md`
+- `v7/REPORT.md`
+- `v7/data/.gitkeep`
+- `v7/engine/agent.mjs`
+- `v7/engine/nn.mjs`
+- `v7/engine/organ.mjs`
+- `v7/engine/training.mjs`
+- `v7/engine/world.mjs`
+- `v7/package.json`
+- `v7/public/app.js`
+- `v7/public/draw.js`
+- `v7/public/index.html`
+- `v7/public/life.js`
+- `v7/public/style.css`
+- `v7/results/benchmark-v6-15x15-400ep-seed17.json`
+- `v7/results/benchmark-v7-15x15-400ep-seed17.json`
+- `v7/results/benchmark-v7-15x15-400ep-seed23.json`
+- `v7/results/benchmark-v7-15x15-400ep-seed31.json`
+- `v7/run-termux.sh`
+- `v7/scripts-benchmark.mjs`
+- `v7/server.mjs`
+- `v7/tests/core.test.mjs`
+- `v7/tests/unlimited.test.mjs`
+- `v8/.gitignore`
+- `v8/README.md`
+- `v8/REPORT.md`
+- `v8/data/.gitkeep`
+- `v8/engine/agent.mjs`
+- `v8/engine/net.mjs`
+- `v8/engine/netagent.mjs`
+- `v8/engine/netorgan.mjs`
+- `v8/engine/nn.mjs`
+- `v8/engine/organ.mjs`
+- `v8/engine/organism8.mjs`
+- `v8/engine/training.mjs`
+- `v8/engine/world.mjs`
+- `v8/package.json`
+- `v8/public/app.js`
+- `v8/public/draw.js`
+- `v8/public/index.html`
+- `v8/public/life.js`
+- `v8/public/style.css`
+- `v8/results/benchmark-v8-15x15-800ep-seed17.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed23.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed31.json`
+- `v8/run-termux.sh`
+- `v8/scripts-benchmark.mjs`
+- `v8/server.mjs`
+- `v8/tests/core.test.mjs`
+- `v8/tests/net.test.mjs`
+- `v9/.gitignore`
+- `v9/README.md`
+- `v9/REPORT.md`
+- `v9/data/.gitkeep`
+- `v9/engine/democracy/a11-democratic-output-policy.mjs`
+- `v9/engine/democracy/a11-output-democracy-economy.mjs`
+- `v9/engine/democracy/horizon.mjs`
+- `v9/engine/graphs.mjs`
+- `v9/engine/net.mjs`
+- `v9/engine/nn.mjs`
+- `v9/engine/uagent.mjs`
+- `v9/engine/uorgan.mjs`
+- `v9/engine/utraining.mjs`
+- `v9/engine/world.mjs`
+- `v9/package.json`
+- `v9/public/app.js`
+- `v9/public/draw.js`
+- `v9/public/index.html`
+- `v9/public/life.js`
+- `v9/public/style.css`
+- `v9/run-termux.sh`
+- `v9/scripts-benchmark.mjs`
+- `v9/server.mjs`
+- `v9/tests/v9.test.mjs`
+- `verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-PORTAL4D-V7-CUDA-UNIQUE-PARALLEL-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt`
+- `verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-hypercube-3d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-implement-now-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-a-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-b-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-c-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-whole-toroid-all-graph-slices-USER-VERBATIM.txt`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+- `verbatim/SOURCE_POLICY.md`
+- `verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html`
+- `verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html`
+- `verbatim/audits/2026-11-04-FULL-VERBATIM-GAP-MATRIX.md`
+- `verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md`
+- `verbatim/continuation-index.json`
+- `verbatim/coverage.json`
+- `verbatim/implementation-mirror.json`
+- `verbatim/recent-user-messages.json`
+
+---
+## `experiment/V17-NATIVE-MODEL-WORLD-20261105`
+
+HEAD `bad5c07f6d56ccf170545acefe7cf3b77a681acf` · tracked blobs 787 · tree truncated false · branch-only paths 227 · changed shared paths 1 · missing main paths 13
+
+### Added in branch relative to main
+
+- `v17/.gitignore` (7daeff62844da2167ef93ee9d377ad0bbb01848f, 30 bytes)
+- `v17/README.md` (c4db43d5f1b83d30c05a584eed5c7c59f2b60023, 1847 bytes)
+- `v17/START_V17.ps1` (795cc0b1f43b9651748ea52d9098e34204feeafe, 5184 bytes)
+- `v17/docs/A12_AUTOSAVE_SAFE_V1.md` (b5944511fb8b0368f73bfd33e52202a973869e37, 554 bytes)
+- `v17/docs/BACKEND_2D_NODEGRAPH_V1.md` (4440a6b0d5c6e2a9b12a49f2521a1adaa91bc96d, 10789 bytes)
+- `v17/docs/CUDA_COGNITIVE_PARITY_EVIDENCE_LEDGER_20261019.md` (bf20730e5969499a8f8fe42b76e13511d39b93fd, 6879 bytes)
+- `v17/docs/CUDA_TRUE_CELL_ACTION_REPLAY_20261017.md` (47a748911cd514f8c8543b55ee77f3af0c860087, 3285 bytes)
+- `v17/docs/GPU_SATURATION_V1.md` (639e691e1c3275e53205ccf54a39d68c59103d6f, 3979 bytes)
+- `v17/docs/INTEGRATED_ISOLATED_V1_AUDIT_20261005.md` (415142b1a6dd5147cbf5058691e87a20f23fbc4c, 4421 bytes)
+- `v17/docs/INTEGRATED_ISOLATED_V1_SOURCE_LOCK.md` (cce90f7d6ecd53fb9b09ad1d7c720ced04f39dfd, 7094 bytes)
+- `v17/docs/LIVE_BRAIN_FULL_CONTROLS_CUDA_FROZEN_REPLAY.md` (ccf70404905c45f4830a86c40d5017d21ac8b53b, 3933 bytes)
+- `v17/docs/NATIVE_NODEGRAPH_FUSION_SOURCE_LOCK.md` (ef3c2d20453ac6f8a6635b11e2d9506819b782fa, 873 bytes)
+- `v17/docs/NODEGRAPH_BRAIN_TABS_V3.md` (57bc9e26a733ddccf8cf460e5b36f7106757bd8b, 1471 bytes)
+- `v17/docs/NODEGRAPH_RUNTIME_INPUT_CONTRACT_V2.md` (6fe6562d2257d4bce0b9154db1b201488fa9ccbe, 2638 bytes)
+- `v17/docs/NODEGRAPH_SOURCE_LOCK.md` (5d4953c3460e0458aa19ee2f4cf5dfa2ec9b1985, 813 bytes)
+- `v17/docs/NODEGRAPH_TEXT_TELEMETRY_V1.md` (5f494af0b1195ccd8739363d27ccc8a965259721, 2158 bytes)
+- `v17/docs/NODEGRAPH_TEXT_WORLD_V4.md` (c435f87a49cd00d71aa5bbb7004eb8acd89cfc85, 1440 bytes)
+- `v17/docs/OCTOPUS_TRANSCEND CAPITAL RECURSIVE AB 20261030.md` (a7a7e095885e2f54a6cca6c8ce85948952965eff, 6579 bytes)
+- `v17/docs/RUN_INCIDENT_2026-10-04_STALE_DESKTOP_CHECKOUT.md` (50ba498e1d12da2e0ae52ca8d2d3ac6f746e59ef, 2822 bytes)
+- `v17/docs/SAME_DISH_ENTANGLED_AB_V1.md` (9ee74881357b48f2a1757a8038c38b08145bb0a7, 4974 bytes)
+- `v17/docs/SAME_DISH_LAB_CONTROLS_CHECKPOINTS_FOREVER.md` (2dac584b9096035e65a220326529675391a2fd34, 4207 bytes)
+- `v17/docs/TEXT_A7_EVOWORLD_VECTRIC_TEACHER_INTEGRATION_CONTRACT_20261027.md` (08541226acc59c55ea4175501744db5339c716b8, 5282 bytes)
+- `v17/docs/TEXT_A7_RECURSIVE_ALPHA_OMEGA_FORMATION_CONTRACT_20261028.md` (09fe9cde236a718cda11de39c12d9a9538c78d31, 17703 bytes)
+- `v17/docs/TEXT_A7_RESTORATION_A4_A5_GAP_AUDIT_20261027.md` (2a2f03fb4ef75bf69dcc01b8f012cca7eb227dda, 5568 bytes)
+- `v17/docs/TORUS_AETHER_ABC_20261104.md` (d6a90130ec36b4a8347d0622cfbfae7a01f4c990, 31595 bytes)
+- `v17/docs/TRANSCEND_EPISTEMIC_ABC_RESEARCH.md` (18d6d5c7de8a0bcf370a4b71ee1ddeb9c78e060f, 6245 bytes)
+- `v17/docs/TRANSCEND_EPISTEMIC_TEXT_RESEARCH.md` (bfeab1a18c083977b238103145a3f6794a9e7cb9, 3305 bytes)
+- `v17/map-cells/map-world.js` (bc980236987a7b9376673505a870261c9393111c, 9236 bytes)
+- `v17/package.json` (40d7c922f1b5edebb3a2ad9d64c64d541a56ea44, 144 bytes)
+- `v17/tests/torus-aether.test.mjs` (b00047b6f3f654e440f9b76bae4838e51079d053, 5167 bytes)
+- `v17/tests/torus-brain.test.mjs` (83da5a169c3f875f871f8d043239bbcc1864ca12, 1486 bytes)
+- `v17/tests/torus-devour.test.mjs` (61e73844731dbc090e95b7915a8ef192924ff476, 1088 bytes)
+- `v17/tests/torus-fractal.test.mjs` (d23091180783d0155a1e60db56f9429533e9373f, 3672 bytes)
+- `v17/tests/torus-gpu-worlds.test.mjs` (a4f339885e83ecb48b588e624655f71bc7e9903e, 3112 bytes)
+- `v17/tests/torus-observatory.test.mjs` (c5421d18717f1fb6c15779211eb1288725750fb5, 3966 bytes)
+- `v17/tests/torus-transform.test.mjs` (ebafed3fbe9dd4a157018ac4bb2d7f732b09a59e, 2068 bytes)
+- `v17/tests/torus-view5.test.mjs` (34cb46e473bd64d8f36d7fc022f5b845d3a4f730, 1913 bytes)
+- `v17/transcend/epistemic-text/engine.mjs` (6dce8d2097bbfc4350dfb00242fee4a8c65c58b4, 12092 bytes)
+- `v17/transcend/epistemic-text/visualizer-server.mjs` (7d379eaa19164e85eeb78e66a36c35b531d9bfc7, 7007 bytes)
+- `v17/transcend/epistemic-text/visualizer.html` (1cf7b995a45a8d98495dbd64fe89490ce729fb25, 13610 bytes)
+- `v17/transcend/torus-aether/concepts.mjs` (a262230757deb5aa78d98a5024ef4e46e33e6c66, 3795 bytes)
+- `v17/transcend/torus-aether/data/text-dataset.mjs` (ed8bd09ca9cddbfcd1e14c292d3ddeb67d6a2ba7, 4284 bytes)
+- `v17/transcend/torus-aether/data/vendor/fzstd.LICENSE` (d844c26c1789b832a7bdc5d02ac15366f76ff3a6, 1069 bytes)
+- `v17/transcend/torus-aether/data/vendor/fzstd.mjs` (ef33f91791f3ce4fc3cf0ec4103bcda8dfc412e6, 19844 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/LICENSE` (5523c3692d69ffe7c6d7cb7bd90184ac7507cc85, 1046 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/SOURCE_COMMIT` (7c58b15e64181110e2b9be791748527d2686d008, 41 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/alp.js` (e9834fb34b51276e20c4998485b7ca680f34b485, 9389 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/assemble.js` (7ca6014024c18e52a22233a8e2efb8052c3a74a7, 8338 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/bloom.js` (4d56a41638699a72ab3422e8e96a85c2480b3552, 8496 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/column.js` (74e3b87dc5323d6e1c0bc13cbe7cc2e8a99f1192, 8008 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/constants.js` (38101af2fa532f8f5be7b3ed365206dfc7156f66, 1738 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/convert.js` (f3a524d2d4a5504e38b270f635f87feeafbffef4, 6883 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/datapage.js` (e902c3aa2f9f819dbeee2b96bab35388a6044d53, 9790 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/delta.js` (c0e43d9f7b3454823b6eafdd2b0bd5a7ae0a8ed9, 5931 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/encoding.js` (3ffd6b3a292800cb228c66e2fa5cb16946964032, 4487 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/filter.js` (a268c36c48b3c6a50d6676a25d4241441fa5bffc, 15883 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/geoparquet.js` (45183a1c7acf4d247274cccf0e477fc3132ab590, 1399 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/index.js` (24ed13109b166e3d9467d9fb8d1eb80a311ee3e8, 3488 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/indexes.js` (98f448637dc81402fa4da35f9ad5d0e4954927f1, 1509 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/metadata.js` (c88e820bc27a769cb54238978aaf21765cc699ad, 15060 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/node.js` (101948875422f97a8ff7b3b5ff1f7bb0b77fcc3a, 1290 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/plain.js` (7a513d461704772bbde225525ccf4b66aa8b486e, 5452 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/plan.js` (079d9cfe1f5162a6ab1a91d6a6bd872d82054813, 21506 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/query.js` (57f2e19e6ce623b868934c164d7c278449b64018, 6037 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/read.js` (aeef4c21252289512a38449cca206a9a7f11d672, 8253 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/rowgroup.js` (61838e18a4cdb998462d4b5805c3b60524fbf214, 10983 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/scan.js` (aafcfb38e95014eb62b43df421afeec1f05d3d8c, 11922 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/schema.js` (805af3718d4ff137ba24f6d7cb95ae52f2a50ac3, 4506 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/snappy.js` (f7bf7698d83e4e3688bbcf4e7ebfd64bec4c1828, 3626 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/thrift.js` (4338e27f68d74110e7c5f103b14789c2bf760fd1, 3858 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/utils.js` (80f85135006abcd855047bcdcee7d9b9761c14a5, 9033 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/variant.js` (3efa7335335275c1e3a44409bd59b4928c860a49, 10977 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/wkb.js` (f66e651d5af9b381795955f2d81877ee862e158a, 3408 bytes)
+- `v17/transcend/torus-aether/data/vendor/hyparquet/xxhash.js` (aa006e9b34f874fa19fcf24949dd78adef63feb5, 2581 bytes)
+- `v17/transcend/torus-aether/devour/OBSERVATORY_README.md` (19b80772e1c05514e3c7251c51a33f4c766aab53, 5208 bytes)
+- `v17/transcend/torus-aether/devour/brain.mjs` (e32babb70288b6f82f57a198a57cba219c1cc2cc, 16987 bytes)
+- `v17/transcend/torus-aether/devour/dashboard.html` (0dc6e0d5d8af9399487e9efa10f96feadb2f8b51, 9009 bytes)
+- `v17/transcend/torus-aether/devour/dashboard.png` (bb5403dcca1efbfcb996ffa71c66af36c4a7eb40, 178284 bytes)
+- `v17/transcend/torus-aether/devour/devour.mjs` (04c5aec209cd3544e6e51c687dbcfcfa49608b4c, 16450 bytes)
+- `v17/transcend/torus-aether/devour/observatory-core.mjs` (dcb1e082e8527ac0875a665e8f6e0da21ef8e113, 3532 bytes)
+- `v17/transcend/torus-aether/devour/observatory.html` (cdd93089d59faf24d2f7fbcab67169fd7f6e8a51, 12034 bytes)
+- `v17/transcend/torus-aether/devour/observatory.mjs` (d8fcea9e5521df0853fdc5d818b9d3794c8bdaa8, 16094 bytes)
+- `v17/transcend/torus-aether/devour/trace.mjs` (c0876c9db88a1e52966d184be1188ef9394a1394, 4022 bytes)
+- `v17/transcend/torus-aether/devour/worker.mjs` (11499a0f026ac2cc9332e6eea21eb0cb6b1dce57, 8295 bytes)
+- `v17/transcend/torus-aether/emergent.mjs` (d5a1deb11210643e8d6673bc981b6c25e8b94b76, 14433 bytes)
+- `v17/transcend/torus-aether/entangled.mjs` (7d380982cfaa46c6a3f7d69343dcdfa40a48d002, 6774 bytes)
+- `v17/transcend/torus-aether/fractal.mjs` (f184e3f91ffdfceef820cdf8d96d2f7fb72c911d, 4523 bytes)
+- `v17/transcend/torus-aether/gpu/.gitignore` (a230a78aea291ec7c0c35eefbc89b3898612a118, 20 bytes)
+- `v17/transcend/torus-aether/gpu/client.mjs` (e43dc59be6547dafacd159d5bb780a510b84d273, 2960 bytes)
+- `v17/transcend/torus-aether/gpu/worlds_gpu.py` (098c872eff67614054b4f1d5f323c23a057fa8fd, 18676 bytes)
+- `v17/transcend/torus-aether/lab.mjs` (abf2fe0686f02f83c9d9f98bcf8fdfabdaf192c1, 10340 bytes)
+- `v17/transcend/torus-aether/laws/cexp.mjs` (d0671b4042ac06ba0963db8773fe28ac0e6409a3, 5040 bytes)
+- `v17/transcend/torus-aether/laws/dimexp.mjs` (ecf08c5a6d9bd1e03f07fe9cf3ec31ac7786454d, 4939 bytes)
+- `v17/transcend/torus-aether/laws/exercise.mjs` (2b2ee399698272312655230a545e502bbc5ba6f8, 1740 bytes)
+- `v17/transcend/torus-aether/laws/fusion.mjs` (2604ca306ce236857b4d968e1ade71434f78be74, 4194 bytes)
+- `v17/transcend/torus-aether/laws/labyrinth.mjs` (89a374e5ef50e924cde863fbe0c99373e1ac5ef1, 1411 bytes)
+- `v17/transcend/torus-aether/laws/laws.mjs` (e10e9178fbbc49cb855f3a594d36f3b24b428a2a, 5703 bytes)
+- `v17/transcend/torus-aether/laws/massexp.mjs` (917590bbd396e7f4d26e16e0ac44be9d315e969d, 6006 bytes)
+- `v17/transcend/torus-aether/laws/mind.mjs` (6308a3483ca69ba302e80c2dc3a9166edab8a179, 2319 bytes)
+- `v17/transcend/torus-aether/laws/polarity.mjs` (13d6e69d4112d51ef0cddc4606cd52ee8ca0a8a7, 2917 bytes)
+- `v17/transcend/torus-aether/laws/transform.mjs` (79ce3b76a2f18ae7142f88d87bba05ecee02284c, 3105 bytes)
+- `v17/transcend/torus-aether/lean-c.mjs` (987ad01233d0fb13ee31c45804782bc04c8edc6b, 4938 bytes)
+- `v17/transcend/torus-aether/measure-emergent.mjs` (edffd452b50da12befb862cd472d5f89c95752e3, 3561 bytes)
+- `v17/transcend/torus-aether/measure-entangled.mjs` (80a2556f738296fb736951cb428e77f4dbb478fb, 10063 bytes)
+- `v17/transcend/torus-aether/measure.mjs` (6c0c475f789a4ec9634659dcddae87abe3f9fbdc, 2333 bytes)
+- `v17/transcend/torus-aether/search-rules.mjs` (079a0ea69efa6a624268f27b7e890a7fac87f4cd, 1574 bytes)
+- `v17/transcend/torus-aether/torus.mjs` (454b4a7fd6dd2e35e6359b9e8b467ba6e343a18d, 11244 bytes)
+- `v17/transcend/torus-aether/ui/app.js` (89cbeb01b2e1327d7a20023816fd2ccff258e97a, 54368 bytes)
+- `v17/transcend/torus-aether/ui/index.html` (6a7885e9c9c42841d008a95974ae244906694229, 16265 bytes)
+- `v17/transcend/torus-aether/ui/infinite-view.png` (9b91229389d5f9be9c194df957c47171be2a2fc2, 586515 bytes)
+- `v17/transcend/torus-aether/ui/live-devour.png` (b0b4835e4c839720e25db9e9fc7fdf71187bfd00, 914616 bytes)
+- `v17/transcend/torus-aether/ui/nestview.mjs` (97f648084341771c032e982f8d1f4e508b48ceb0, 15655 bytes)
+- `v17/transcend/torus-aether/ui/outside-view.png` (e9107996854be21a4cbc1d200e4606ded40e1197, 806872 bytes)
+- `v17/transcend/torus-aether/ui/rotation-5d.png` (a3cf3ea8632f3496c2ead724c02935d9c3862fc5, 199539 bytes)
+- `v17/transcend/torus-aether/ui/scale-loop.png` (a61b2bea6947e6fd291d53c4403639d12d547ee5, 582679 bytes)
+- `v17/transcend/torus-aether/ui/screenshot.png` (deb3150b4ee0cc73b9008ca51cab5b24c02e9cb5, 585377 bytes)
+- `v17/transcend/torus-aether/ui/server.mjs` (8ad17299f3040cb8da9093cd06731d959a7e513a, 2264 bytes)
+- `v17/transcend/torus-aether/ui/view5.mjs` (88e8cdbc1b5f5ab53fd2e10e4e50bd7b33fc4df1, 7010 bytes)
+- `v17/transcend/torus-aether/worlds/causal.mjs` (300d65206b4f80fe9f40e6a3b4d819b2bfa55887, 11752 bytes)
+- `v17/transcend/torus-aether/worlds/exercise.mjs` (1c392213d199296d8b5d3e016a037c6b2edd7d05, 11010 bytes)
+- `v17/transcend/torus-aether/worlds/labyrinth.mjs` (96877ee6537c9ceb34239fc20f85909d0e3237fd, 6929 bytes)
+- `v17/transcend/torus-aether/worlds/maze.mjs` (ae4c8e43aa19a7dbc0c23ac07f97d9ea3c1f6b82, 5795 bytes)
+- `v17/transcend/torus-aether/worlds/transform.mjs` (9e58828f6e8d88241ee3efe60c94bae0d27f1501, 7334 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/action-budget.js` (6760b2fd6b1949b8097cd8e4410e4d3eb4a9e659, 4577 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/brain.js` (19b72ef9eaa061e23b170a3c7782dec9bc31f1cb, 16785 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/brsi-controller.js` (6dcc99dcd38dff39c25bc7fd9d20c7939700d281, 9491 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/brsi1.js` (068474b80bb7bf00d0ff626d87fa4bf0cf7f2f81, 22036 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-branch-runner.js` (5ae61ed247f0cab9aa85e061acacdc18e997221b, 25856 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-checkpoint.js` (d8d2e24fba8458ca6caeef74b003bbdc806d9e53, 2645 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-components.js` (6526e2ef77f69f08ddf3fac54eb3b3285cc8e094, 6631 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-contributions.js` (a222b11c739316e53554bbe2fa896b3b91c09bc4, 7056 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-interactions.js` (e8ceab0e1767b149ede37a97e59b9c7bd553b3c8, 1593 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-metrics.js` (7e19fb9d9fc9cbb1c7783a8bfab38d7764614d30, 3537 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-oracle.js` (163630b5dc5f6d0c24c1993cecae8bbcbfa3db17, 31070 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-runtime.js` (6296b481eb0130ebe36f8d729f1a60641b772565, 30571 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/causal-types.js` (962014e9967b598f2523d8d0a3e6ae97729d47df, 2264 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/concept-flow-2d.js` (10ee218165d07e8ab4909e14659aff852d7b81e1, 13531 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/concept-world-2xf32.js` (308beb4019c759d68597f48ed062ecce2dc5c547, 12304 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/config.js` (7804266b3b6f6a6f48bd356835d0eaaab5b0525c, 12802 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/controller.js` (50fe9cf5fcaa5701de7a1d58531e5fce3a12eb02, 103747 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/cortical-audio.js` (d43540c82428f50188f00e57f62aa6166b707c2b, 4626 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/cortical-sound.js` (d012924d7849eba4ea1cef206f42deaf4c5618ff, 19314 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/curriculum-frontier.js` (42de16098c7c01497fc04893f6400ef52f774abf, 4763 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/echo-field.js` (d4ac4a5a32dace4f4398cf57864bc6756d1af224, 5409 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/energy.js` (9a86196042b4a842a906d5ef7127afc1b94a54ac, 5137 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/evaluate-batch-cpu.js` (0b2fb2283c8e41951f54720af2f372a44245850f, 19944 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/evaluate-batch.js` (436645a12a2ac79fe556584a6903324d9c6782b3, 26759 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/experimental-features.js` (23c85673aa0075920d7a94b2d75e6530a6e4106e, 3908 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/gae.js` (65fa7c68625596085f8b386710b13c3611209294, 862 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/generalization-battery.js` (d456c904dada1d0ded52d18d13150e7f86216354, 1386 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/gpu-head-trainer.js` (f453d5713a688c2f7b5acedcefad0fd0f42a4da9, 23358 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/group-runtime.js` (eb6096b28e3a64b958d70b951c84da5ddcaaf1e1, 10165 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/higher-self.js` (0a279038f9706a157ac43918d0a9b91828002088, 6992 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/identity-field.js` (fb7ed6a44d393f20719374c158715face2a034aa, 10079 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/lifecycle.js` (45a3457e8b182cca22a4af4ec0f35cb46a9a2e6d, 10058 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/math.js` (e66ad97b03c209472dd5b060ad518050043facea, 2045 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/mechanics-2d-v8.js` (f1e7dd6792461858d66f76dbebc498ea21813cbf, 7834 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/mechanics.js` (f0528251c4123cd84cd39e8f15088002110b1e53, 9560 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/meta-controller.js` (5c7951bf66cb708db8e0409b600bec002f1b7924, 5432 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/module-bridge.js` (2c501f5513d4252716620a47c8fc99a8ef5811f5, 1647 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/causal-body-discovery-v1.js` (8bc609a05d571b976a73bb08f61fb93d010a31cc, 2422 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/causal-body-registry.js` (d94bbcee66896b8a01c9173baa2dd4a56b62c4a8, 1009 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/causal-body-v9-adapter.js` (bdbbc0c37bcf68af73e7f0f76da001c99f916d9b, 952 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-adapter.js` (14b916c192bbe16ea1449c04fa3bca3e68f42456, 407 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-comparison.js` (dc2415a65296c9b6e3e0837b62156ff68ac32c5e, 2041 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-contract.js` (20f3a53323ae16215de0ec958eaab9083f3a862b, 1367 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/module-host.js` (8c3dbb358c47b1db2e504de36f7cb2b690b4e019, 3780 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/semantic-sound-cortex-v1.js` (87eb538aaa7eb39386ab83091add5361cebdb4a6, 13967 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/semantic-sound-registry.js` (30f5afeacbee07e30afa6017078937fe414fc47d, 4051 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/modules/semantic-sound-v9-adapter.js` (4e57fa54e205e65d7f26ffd8cb09c729d305180d, 7174 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/native-multigpu-client.js` (38cecd34818dcd31598c982de7d295453998cfde, 11444 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/observer-audio.js` (a4d8079ab35f9996cb0dfd8f856e5a10336f7936, 7338 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/optimizer.js` (027b9b6e07b7e4733e1b93df9f98da6ad68f7abd, 1235 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/oracle-dataset.js` (19daf2e52d5eba9f7fb832c9c4ef0cd7edd1754a, 3048 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/organogenesis.js` (c49d704b768dc9f00cdae16c294a844de440265f, 4630 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/persistence.js` (1209eb6c19aeefd49082a238fab03602c994c9ff, 2344 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/perspective-engine.js` (56a2af9275e90e2f6d35174336414fab60012640, 8573 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/playback-policy.js` (11cab6e748bd4604ead93245489d6495f53576eb, 4436 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/predictive-causal-horizons.js` (0a24b6ef95156934a32fc7c1962c0f9fb7dfe4eb, 4337 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/predictive-causal-ledger.js` (2bb444d51856f068378d9696666cc04dc47071d4, 6571 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/predictive-causal-outcome.js` (e2fd434f2a7ebad4af25a47816406114261057b1, 10330 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/principal-expert-lab-controller.js` (0c9b379bf975041650023a8477c9f53415da2a6a, 29882 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/principal-expert-lab-runtime.js` (42c1640b1d0eeadb946c89a39b4672527f427cf4, 4450 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/principal-expert-portable.js` (61de33499ff6e811b8e1c2e791a59aa942483a20, 2417 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/qanda-brsi-controller.js` (82e563a6bb372254baf9dac73526410b61545438, 14181 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/qanda-rsi.js` (d9a1f0f182acc8cfa5230fe7d3fc7cc3d1c4aeee, 5023 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/recursive-qanda.js` (e585d3cc7631c90e37ba92bf7a0fb3409c69a047, 4444 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/render.js` (2c1d757cc4c5526afa38a8904ac7e6a1dd843227, 24534 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/replay.js` (76b0734d1fcf9f28ce2bd39e5639ed519f29a224, 4491 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/retention-battery.js` (921e42faf5f858e2ebd1f50c57cb627e786e3439, 1539 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/reward.js` (147e8a48d6c3790ce74ea3c818136ea040f2f6d7, 4516 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rollout.js` (292843ded9b30ba9997eef2f622210ad201f34e0, 50772 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rsi-evidence.js` (e70c75cad1ef90c6734925b9cdeb062b7a0c65f5, 15292 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rsi-freeze.js` (444fe5dd3017f1627f470272a34b2f3141499fac, 2292 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/rvsi-seil.js` (7a0ddf3f7631a65a4bcfe1703e0d0b41ff85e776, 17711 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-body-discovery.js` (02f7567a692e7a283365d1af1d92384bda6daa34, 9830 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-calibration.js` (21d75fe3ae890fd8b1495f2f895d1656299acc1e, 3297 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-cortical-bridge.js` (1c9daf755bd1f6cab6db7ebd1a7cdbb10d8e090c, 1455 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-higher-shadow.js` (5f2bb8d3cbd4a11b1a5eb8250eb2c9dc5d625739, 1457 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-lifecycle.js` (9a7b3b305a9711858a54b9c7e16e778383803c91, 6538 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-policy-shadow.js` (e4dd016e9587bfc3a7ec62740492d7d8d6b54b18, 3208 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-resource-shadow.js` (2dac88671208becf6b55299ba4fe28b8e5227ce7, 1921 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shadow-runner.js` (e011f5606b4af47794ac20bb026f46069705d8c2, 5282 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shadow-world.js` (8796807def9ab6576f8b5d789735d866608b7c25, 12039 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shared-echo.js` (8aefb27f7a3e7315ab7b43ceb7bbf1f3d37d3df7, 4879 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-shared-field.js` (32615804c4af81d6cf8dae5bd5ed84f6c80ba5b0, 3870 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-track-predictor.js` (a2e78529f76509a5414bba238559d760dcc8c692, 3595 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/same-dish-v9-mechanics-adapter.js` (19591103a45cde484163a24c252a7bdadd7f3532, 3571 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/scheduler.js` (95502ea3b5ebfc55722b44560aaa9b1b6a3d6f71, 1127 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/sensors.js` (6578c67342bdf77e06a5ea0c430476ef6a72938b, 8467 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/spatial-cortex.js` (152b704d82750146fcfd60e32a4a1821b5c34904, 8513 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/specialization.js` (4b13bdb5a4e2158c26f790e0e3464e3ac914bf5a, 8273 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/spore-memory.js` (e9255dbccad931c17a65b806c9a228fab9eed84b, 2462 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/telemetry-outbox.js` (618fa31a76e48aae0a0f4fa1aeb5ea24c1017289, 4377 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/telemetry.js` (561859915a6fbf7cdb0b0bbbf2cfa2daece5c195, 8295 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/trainer-compatibility.js` (d651f2f2e8bbadcab557a0179e45fe1012a06ede, 1293 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/trainer.js` (908f2a85a27cbe434caecd961ef91ca952dd9b88, 54712 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/ui-metrics.js` (0e2d48481a217f52dc497994080655eaa868a81a, 257 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/v5-procedural-maps.js` (f3a615f7f5b235915a7776b0c7a7e1978e1d305b, 12809 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/v8-2d-actions.js` (a2a67080d9ce47a2ac0ba633d989b2bf25ae28fd, 268 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/verification-ui-adapter.js` (9121b23743b9941326504443c7a30f6ba2fc8f65, 18975 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/worker-entry.js` (f7fe2033eef186e8789027cda525023a2de36678, 2342 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/worker-pool.js` (5151fa03ba1d35d2ebc6203c0786286b6424b389, 7665 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/workflow.js` (805b460a41bf5db660601c849c93670a2d9a2eab, 4391 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/world-2d-v8.js` (416a9f757e078bdcb3ee04081c432b5f2b6f4dc8, 15345 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/world-model-learner.js` (eb8732270cce6a5afbe9eb6f8a548998f30213ea, 5261 bytes)
+- `v17/vendor/v9_host/src/ego-v9-vectric4v8-qanda-brsi1/world.js` (302e20bea5b551494a9f15ada6d5f693db7e755c, 9172 bytes)
+
+### Different blob SHA at same path
+
+- `VERBATIM_ROOT.md` (branch cd12edccf601c6723b29821ff5bc974c4158f47a, main a4005aaba4769e444e9ae004893e234450f595a0)
+
+### Missing from branch relative to main (paths)
+
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+
+---
+## `feature/BRAIN-STUDIO-UNIVERSAL-TRAINING-20261103`
+
+HEAD `d6dfaf17d04387893799ddbef287c9b601c5fa12` · tracked blobs 302 · tree truncated false · branch-only paths 0 · changed shared paths 22 · missing main paths 271
+
+### Added in branch relative to main
+
+
+### Different blob SHA at same path
+
+- `.github/workflows/magic-regression.yml` (branch 7750175b12ae9b5789638f7b6595fe96c0f02f89, main 8dc2b9823fb3df512dd7212db5ea387ed99904ef)
+- `.gitignore` (branch d918a10326969b7fbb7b9912c1c22dd364b9c01b, main 1ce0c51ce42fe9d46d4764609191dd4b9207cb37)
+- `README.md` (branch c05c323049bb3c3243145006972e518006d70e68, main f01173a5d1ce9e7692fb8b94a8e0d54f34cdec61)
+- `experiments/brain-studio-20261103/.gitignore` (branch 06b2ab91a9d2a3f2a31df466f0800fe23159edc2, main 9dcaecda3ef2d43cd6e65ce76201c9b7fe75f4d7)
+- `experiments/brain-studio-20261103/README.md` (branch ff0cbc4a0460c339238f127844a0361afe0c82db, main 54eef009a14316a6a40216e796cae3d85d0dd1b7)
+- `experiments/brain-studio-20261103/engine/studio.mjs` (branch b611f8bdb6cc8a9a26fbe6d84d5700841df63094, main 8996b757df0d890ccfe2c5ef8fd304ed3c6ca000)
+- `experiments/brain-studio-20261103/engine/vault.mjs` (branch 96103a790f7182ba566b4a3238e9aa9f005b5d2b, main 19a019e9afcc385b2e4fc76fc3b73e215d12a136)
+- `experiments/brain-studio-20261103/public/app.js` (branch 45fb9e0474fcec91b1835ee92e2f8efa9cad678b, main 66ea079f04bef76f29e9525317b3444f3e9fcd80)
+- `experiments/brain-studio-20261103/public/index.html` (branch adbe1016d526cb492f438ac6dc383a9fdc9b3985, main 586d3d74aa5a59399d8d7c8ee901bc3a4cbd5b3f)
+- `experiments/brain-studio-20261103/public/style.css` (branch 5c6e484a4aadaf45b7953bf38c178cf5a614f195, main 8509dd6842fe5961cf450c85b8ce58dd729ed1e4)
+- `experiments/brain-studio-20261103/run-termux.sh` (branch 0573f78dbccca36b15cca4100f9ef4449c5b1ba5, main 74bb3ee6c0e7fba30b6ee4a6239b22d0705a1cd4)
+- `experiments/brain-studio-20261103/server.mjs` (branch e7429870a0f384bcf0013aa3812329868ecb27c3, main dc0ed1f750bab37cbaa9aad3d51a99493a9edf6f)
+- `experiments/brain-studio-20261103/tests/server.test.mjs` (branch eaa3a3533ad4b5bc466f0f46cc67e6561d2fdd32, main 0392bd5f4d24406212c3a257a23415b3eed2a45a)
+- `experiments/dynamic-perspective-20261103/README.md` (branch 2d42d46ffc08c6041f237c7538617f0e4a403915, main 52a7644b3c2035a8e7d1e7990d76997d590adae1)
+- `experiments/dynamic-perspective-20261103/engine/brain.mjs` (branch aaa17018fa27bb5e5e9870b650024f4febcedf68, main 81e81114a612fab50b36cd40095159225bf431df)
+- `experiments/dynamic-perspective-20261103/engine/experiment.mjs` (branch caae496a25e5fdce37eb5790056b5613fdb42a10, main 2e6b0ef6e3783454bb9ed5d8a98a2139b52b87f4)
+- `experiments/dynamic-perspective-20261103/public/app.js` (branch 7ca105b5a0c1b812734f880e4e80d6d6aff90a17, main dc6faee45c7ad7671266ca651d63ab3f710919cf)
+- `experiments/dynamic-perspective-20261103/public/index.html` (branch 7ab5c2269e6cc19b7c7ceacd3d4908e464f65d22, main f0620d136e936ce57d3793939bda528a7663f9fb)
+- `experiments/dynamic-perspective-20261103/public/style.css` (branch b571a40f43ebce363ea574ce903cda722db70067, main 5b1116d7951c547a2472916435a14de4a977d2e5)
+- `experiments/dynamic-perspective-20261103/server.mjs` (branch 646d8bcaa7b9a09d885134d7f9b483093691a2b2, main 954df6dccfc85801a76e974107bbe6138eb797ff)
+- `experiments/dynamic-perspective-20261103/tests/server.test.mjs` (branch 46b166ed2a04615f1f2d714cc7c39c7469a8faaf, main 49fb292a94d8215a05e54da8b79415c4cd26c8ee)
+- `package.json` (branch dfb9e00ad492e82c1f34ba82b5fd77ad46e765be, main 2371ea85175b67c1739e34e64a0ebd4aa974560f)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1`
+- `START_MAGIC_CUDA.ps1`
+- `VERBATIM_ROOT.md`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/brain-studio-20261103/cuda/bridge.mjs`
+- `experiments/brain-studio-20261103/cuda/cuda_worker.py`
+- `experiments/brain-studio-20261103/engine/abstract-graph.mjs`
+- `experiments/brain-studio-20261103/engine/cells.mjs`
+- `experiments/brain-studio-20261103/public/graph-render.js`
+- `experiments/brain-studio-20261103/scripts-cells-benchmark.mjs`
+- `experiments/brain-studio-20261103/tests/abstract-graph.test.mjs`
+- `experiments/brain-studio-20261103/tests/cells.test.mjs`
+- `experiments/brain-studio-20261103/tests/port-occupied.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/training-visibility.test.mjs`
+- `experiments/portal-universal-20261103/.gitignore`
+- `experiments/portal-universal-20261103/README.md`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1`
+- `experiments/portal-universal-20261103/VERBATIM_MAPPING.md`
+- `experiments/portal-universal-20261103/corpus.py`
+- `experiments/portal-universal-20261103/cuda_probe.py`
+- `experiments/portal-universal-20261103/engine.py`
+- `experiments/portal-universal-20261103/perspective.py`
+- `experiments/portal-universal-20261103/server.py`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_portal.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/tests/test_v11.py`
+- `experiments/portal-universal-20261103/tests/test_v12.py`
+- `experiments/portal-universal-20261103/tests/test_v13.py`
+- `experiments/portal-universal-20261103/tests/test_v14.py`
+- `experiments/portal-universal-20261103/toroid.py`
+- `experiments/portal-universal-20261103/web/app.js`
+- `experiments/portal-universal-20261103/web/index.html`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `experiments/portal-universal-20261103/web/style.css`
+- `experiments/portal-universal-20261103/web/torus-view.js`
+- `experiments/portal-v7-hypercube-4d/README.md`
+- `experiments/portal-v7-hypercube-4d/geometry.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-app.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-index.html`
+- `experiments/portal-v7-hypercube-4d/growth-server.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-view.mjs`
+- `experiments/portal-v7-hypercube-4d/growth.mjs`
+- `experiments/portal-v7-hypercube-4d/journal.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/growth.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/server.test.mjs`
+- `experiments/portal-v7-hypercube-4d/viewer.css`
+- `experiments/portal-v7-hypercube-4d/viewer.mjs`
+- `scripts/verbatim-gate.mjs`
+- `scripts/verbatim-mirror-gate.mjs`
+- `scripts/verbatim-strict-audit.mjs`
+- `tests/verbatim-gate.test.mjs`
+- `tests/verbatim-mirror.test.mjs`
+- `tests/verbatim-strict-audit.test.mjs`
+- `v10/.gitignore`
+- `v10/README.md`
+- `v10/REPORT.md`
+- `v10/SPEC.md`
+- `v10/data/.gitkeep`
+- `v10/engine/maze.mjs`
+- `v10/engine/mind.mjs`
+- `v10/engine/organ.mjs`
+- `v10/engine/organism.mjs`
+- `v10/engine/train.mjs`
+- `v10/engine/worlds.mjs`
+- `v10/package.json`
+- `v10/public/app.js`
+- `v10/public/index.html`
+- `v10/public/style.css`
+- `v10/results/transfer-1500-150-seed7-mix.json`
+- `v10/results/transfer-1500-150-seed7.json`
+- `v10/results/transfer-1500-150-seed8.json`
+- `v10/run-termux.sh`
+- `v10/scripts-bench.mjs`
+- `v10/scripts-transfer.mjs`
+- `v10/server.mjs`
+- `v10/tests/v10.test.mjs`
+- `v11/.gitignore`
+- `v11/README.md`
+- `v11/REPORT.md`
+- `v11/START_V11_CUDA.ps1`
+- `v11/VERBATIM_MAP.md`
+- `v11/bench.py`
+- `v11/data/.gitkeep`
+- `v11/engine/__init__.py`
+- `v11/engine/backend.py`
+- `v11/engine/life.py`
+- `v11/engine/portal.py`
+- `v11/evalsaved.py`
+- `v11/results/maze2d-1500-s7.json`
+- `v11/results/maze2d-1500-s8.json`
+- `v11/results/polymath-2700-s7.json`
+- `v11/results/polymath-s7-control.npz`
+- `v11/results/polymath-s7.npz`
+- `v11/results/specialists-300-s7.json`
+- `v11/results/zeroshot-sat-1600-s7.json`
+- `v11/run-termux.sh`
+- `v11/selftest.py`
+- `v11/server.py`
+- `v11/tests/gradcheck.py`
+- `v11/tests/test_v11.py`
+- `v11/transfer.py`
+- `v11/web/app.js`
+- `v11/web/index.html`
+- `v11/web/style.css`
+- `v11/worlds/__init__.py`
+- `v11/worlds/grid.py`
+- `v11/worlds/states.py`
+- `v11/worlds/symbolic.py`
+- `v12/torus4d.html`
+- `v13/README.md`
+- `v13/REPORT.md`
+- `v13/START_V13.ps1`
+- `v13/bench.mjs`
+- `v13/package.json`
+- `v13/results/bench-grad-rotate0.5.json`
+- `v13/results/bench-grad-rotate0.json`
+- `v13/results/bench-pull-rotate0.5.json`
+- `v13/results/bench-pull-rotate0.json`
+- `v13/run-termux.sh`
+- `v13/server.mjs`
+- `v13/tests/v13.test.mjs`
+- `v13/web/app.js`
+- `v13/web/corpus.js`
+- `v13/web/engine.mjs`
+- `v13/web/index.html`
+- `v14/README.md`
+- `v14/START_V14.ps1`
+- `v14/data.py`
+- `v14/model.py`
+- `v14/selftest.py`
+- `v14/server.py`
+- `v14/web/app.js`
+- `v14/web/index.html`
+- `v15/README.md`
+- `v15/START_V15.ps1`
+- `v15/data.py`
+- `v15/model.py`
+- `v15/selftest.py`
+- `v15/server.py`
+- `v15/web/app.js`
+- `v15/web/index.html`
+- `v16/README.md`
+- `v16/REPORT.md`
+- `v16/START_V16.ps1`
+- `v16/bench.mjs`
+- `v16/package.json`
+- `v16/results/bench-5000-s7.json`
+- `v16/results/bench-5000-s8.json`
+- `v16/results/bench-5000-s9.json`
+- `v16/results/bench-600-s7.json`
+- `v16/results/screenshot.png`
+- `v16/run-termux.sh`
+- `v16/server.mjs`
+- `v16/tests/gradcheck.mjs`
+- `v16/tests/v16.test.mjs`
+- `v16/web/app.js`
+- `v16/web/autograd.mjs`
+- `v16/web/engine.mjs`
+- `v16/web/index.html`
+- `v8/.gitignore`
+- `v8/README.md`
+- `v8/REPORT.md`
+- `v8/data/.gitkeep`
+- `v8/engine/agent.mjs`
+- `v8/engine/net.mjs`
+- `v8/engine/netagent.mjs`
+- `v8/engine/netorgan.mjs`
+- `v8/engine/nn.mjs`
+- `v8/engine/organ.mjs`
+- `v8/engine/organism8.mjs`
+- `v8/engine/training.mjs`
+- `v8/engine/world.mjs`
+- `v8/package.json`
+- `v8/public/app.js`
+- `v8/public/draw.js`
+- `v8/public/index.html`
+- `v8/public/life.js`
+- `v8/public/style.css`
+- `v8/results/benchmark-v8-15x15-800ep-seed17.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed23.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed31.json`
+- `v8/run-termux.sh`
+- `v8/scripts-benchmark.mjs`
+- `v8/server.mjs`
+- `v8/tests/core.test.mjs`
+- `v8/tests/net.test.mjs`
+- `v9/.gitignore`
+- `v9/README.md`
+- `v9/REPORT.md`
+- `v9/data/.gitkeep`
+- `v9/engine/democracy/a11-democratic-output-policy.mjs`
+- `v9/engine/democracy/a11-output-democracy-economy.mjs`
+- `v9/engine/democracy/horizon.mjs`
+- `v9/engine/graphs.mjs`
+- `v9/engine/net.mjs`
+- `v9/engine/nn.mjs`
+- `v9/engine/uagent.mjs`
+- `v9/engine/uorgan.mjs`
+- `v9/engine/utraining.mjs`
+- `v9/engine/world.mjs`
+- `v9/package.json`
+- `v9/public/app.js`
+- `v9/public/draw.js`
+- `v9/public/index.html`
+- `v9/public/life.js`
+- `v9/public/style.css`
+- `v9/run-termux.sh`
+- `v9/scripts-benchmark.mjs`
+- `v9/server.mjs`
+- `v9/tests/v9.test.mjs`
+- `verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-PORTAL4D-V7-CUDA-UNIQUE-PARALLEL-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt`
+- `verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-hypercube-3d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-implement-now-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-a-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-b-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-c-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-whole-toroid-all-graph-slices-USER-VERBATIM.txt`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+- `verbatim/SOURCE_POLICY.md`
+- `verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html`
+- `verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html`
+- `verbatim/audits/2026-11-04-FULL-VERBATIM-GAP-MATRIX.md`
+- `verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md`
+- `verbatim/continuation-index.json`
+- `verbatim/coverage.json`
+- `verbatim/implementation-mirror.json`
+- `verbatim/recent-user-messages.json`
+
+---
+## `feature/GRAPH-CELLS-CONTROL-AND-LEARNING-20261103`
+
+HEAD `cf5eff4f166d195b17ea705a514087a88ff9ed8b` · tracked blobs 366 · tree truncated false · branch-only paths 0 · changed shared paths 13 · missing main paths 207
+
+### Added in branch relative to main
+
+
+### Different blob SHA at same path
+
+- `.github/workflows/magic-regression.yml` (branch 74cb086ffcf7b57425016a50a2f58a36c1a0b102, main 8dc2b9823fb3df512dd7212db5ea387ed99904ef)
+- `.gitignore` (branch d918a10326969b7fbb7b9912c1c22dd364b9c01b, main 1ce0c51ce42fe9d46d4764609191dd4b9207cb37)
+- `README.md` (branch c05c323049bb3c3243145006972e518006d70e68, main f01173a5d1ce9e7692fb8b94a8e0d54f34cdec61)
+- `experiments/brain-studio-20261103/.gitignore` (branch 06b2ab91a9d2a3f2a31df466f0800fe23159edc2, main 9dcaecda3ef2d43cd6e65ce76201c9b7fe75f4d7)
+- `experiments/brain-studio-20261103/README.md` (branch 89f6dae0ecd52ab95c03198c6f49205122e21fe7, main 54eef009a14316a6a40216e796cae3d85d0dd1b7)
+- `experiments/brain-studio-20261103/public/app.js` (branch 7a6009cfb5190d578ca706dc33699108269402de, main 66ea079f04bef76f29e9525317b3444f3e9fcd80)
+- `experiments/brain-studio-20261103/public/index.html` (branch 7e18a95c661c6bf501a267df45d36eb9590d052b, main 586d3d74aa5a59399d8d7c8ee901bc3a4cbd5b3f)
+- `experiments/brain-studio-20261103/public/style.css` (branch 8b31eedc9ea912dc1f37134296d2689f8315e3e8, main 8509dd6842fe5961cf450c85b8ce58dd729ed1e4)
+- `experiments/brain-studio-20261103/server.mjs` (branch 8c5e4b48420c41d84ec93329044b320afe79d27b, main dc0ed1f750bab37cbaa9aad3d51a99493a9edf6f)
+- `experiments/brain-studio-20261103/tests/server.test.mjs` (branch a24f8cb96edbd028aa17becc8683d31b5728d28f, main 0392bd5f4d24406212c3a257a23415b3eed2a45a)
+- `package.json` (branch dfb9e00ad492e82c1f34ba82b5fd77ad46e765be, main 2371ea85175b67c1739e34e64a0ebd4aa974560f)
+- `verbatim/SOURCE_POLICY.md` (branch 7edfc1e0a18d9484648e55b81a9d99eaa08560dd, main b127355c89f5222eef4db77f8370b9e52e463fe0)
+- `verbatim/recent-user-messages.json` (branch f26b7d6a79fa55118bb57f5bb7cc7e348cd2820e, main b6f3022f3d035bc3e0a0a0b1616f7764df286c59)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1`
+- `START_MAGIC_CUDA.ps1`
+- `VERBATIM_ROOT.md`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/brain-studio-20261103/cuda/bridge.mjs`
+- `experiments/brain-studio-20261103/cuda/cuda_worker.py`
+- `experiments/portal-universal-20261103/.gitignore`
+- `experiments/portal-universal-20261103/README.md`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1`
+- `experiments/portal-universal-20261103/VERBATIM_MAPPING.md`
+- `experiments/portal-universal-20261103/corpus.py`
+- `experiments/portal-universal-20261103/cuda_probe.py`
+- `experiments/portal-universal-20261103/engine.py`
+- `experiments/portal-universal-20261103/perspective.py`
+- `experiments/portal-universal-20261103/server.py`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_portal.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/tests/test_v11.py`
+- `experiments/portal-universal-20261103/tests/test_v12.py`
+- `experiments/portal-universal-20261103/tests/test_v13.py`
+- `experiments/portal-universal-20261103/tests/test_v14.py`
+- `experiments/portal-universal-20261103/toroid.py`
+- `experiments/portal-universal-20261103/web/app.js`
+- `experiments/portal-universal-20261103/web/index.html`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `experiments/portal-universal-20261103/web/style.css`
+- `experiments/portal-universal-20261103/web/torus-view.js`
+- `experiments/portal-v7-hypercube-4d/README.md`
+- `experiments/portal-v7-hypercube-4d/geometry.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-app.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-index.html`
+- `experiments/portal-v7-hypercube-4d/growth-server.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-view.mjs`
+- `experiments/portal-v7-hypercube-4d/growth.mjs`
+- `experiments/portal-v7-hypercube-4d/journal.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/growth.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/server.test.mjs`
+- `experiments/portal-v7-hypercube-4d/viewer.css`
+- `experiments/portal-v7-hypercube-4d/viewer.mjs`
+- `scripts/verbatim-mirror-gate.mjs`
+- `scripts/verbatim-strict-audit.mjs`
+- `tests/verbatim-mirror.test.mjs`
+- `tests/verbatim-strict-audit.test.mjs`
+- `v10/.gitignore`
+- `v10/README.md`
+- `v10/REPORT.md`
+- `v10/SPEC.md`
+- `v10/data/.gitkeep`
+- `v10/engine/maze.mjs`
+- `v10/engine/mind.mjs`
+- `v10/engine/organ.mjs`
+- `v10/engine/organism.mjs`
+- `v10/engine/train.mjs`
+- `v10/engine/worlds.mjs`
+- `v10/package.json`
+- `v10/public/app.js`
+- `v10/public/index.html`
+- `v10/public/style.css`
+- `v10/results/transfer-1500-150-seed7-mix.json`
+- `v10/results/transfer-1500-150-seed7.json`
+- `v10/results/transfer-1500-150-seed8.json`
+- `v10/run-termux.sh`
+- `v10/scripts-bench.mjs`
+- `v10/scripts-transfer.mjs`
+- `v10/server.mjs`
+- `v10/tests/v10.test.mjs`
+- `v11/.gitignore`
+- `v11/README.md`
+- `v11/REPORT.md`
+- `v11/START_V11_CUDA.ps1`
+- `v11/VERBATIM_MAP.md`
+- `v11/bench.py`
+- `v11/data/.gitkeep`
+- `v11/engine/__init__.py`
+- `v11/engine/backend.py`
+- `v11/engine/life.py`
+- `v11/engine/portal.py`
+- `v11/evalsaved.py`
+- `v11/results/maze2d-1500-s7.json`
+- `v11/results/maze2d-1500-s8.json`
+- `v11/results/polymath-2700-s7.json`
+- `v11/results/polymath-s7-control.npz`
+- `v11/results/polymath-s7.npz`
+- `v11/results/specialists-300-s7.json`
+- `v11/results/zeroshot-sat-1600-s7.json`
+- `v11/run-termux.sh`
+- `v11/selftest.py`
+- `v11/server.py`
+- `v11/tests/gradcheck.py`
+- `v11/tests/test_v11.py`
+- `v11/transfer.py`
+- `v11/web/app.js`
+- `v11/web/index.html`
+- `v11/web/style.css`
+- `v11/worlds/__init__.py`
+- `v11/worlds/grid.py`
+- `v11/worlds/states.py`
+- `v11/worlds/symbolic.py`
+- `v12/torus4d.html`
+- `v13/README.md`
+- `v13/REPORT.md`
+- `v13/START_V13.ps1`
+- `v13/bench.mjs`
+- `v13/package.json`
+- `v13/results/bench-grad-rotate0.5.json`
+- `v13/results/bench-grad-rotate0.json`
+- `v13/results/bench-pull-rotate0.5.json`
+- `v13/results/bench-pull-rotate0.json`
+- `v13/run-termux.sh`
+- `v13/server.mjs`
+- `v13/tests/v13.test.mjs`
+- `v13/web/app.js`
+- `v13/web/corpus.js`
+- `v13/web/engine.mjs`
+- `v13/web/index.html`
+- `v14/README.md`
+- `v14/START_V14.ps1`
+- `v14/data.py`
+- `v14/model.py`
+- `v14/selftest.py`
+- `v14/server.py`
+- `v14/web/app.js`
+- `v14/web/index.html`
+- `v15/README.md`
+- `v15/START_V15.ps1`
+- `v15/data.py`
+- `v15/model.py`
+- `v15/selftest.py`
+- `v15/server.py`
+- `v15/web/app.js`
+- `v15/web/index.html`
+- `v16/README.md`
+- `v16/REPORT.md`
+- `v16/START_V16.ps1`
+- `v16/bench.mjs`
+- `v16/package.json`
+- `v16/results/bench-5000-s7.json`
+- `v16/results/bench-5000-s8.json`
+- `v16/results/bench-5000-s9.json`
+- `v16/results/bench-600-s7.json`
+- `v16/results/screenshot.png`
+- `v16/run-termux.sh`
+- `v16/server.mjs`
+- `v16/tests/gradcheck.mjs`
+- `v16/tests/v16.test.mjs`
+- `v16/web/app.js`
+- `v16/web/autograd.mjs`
+- `v16/web/engine.mjs`
+- `v16/web/index.html`
+- `verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-PORTAL4D-V7-CUDA-UNIQUE-PARALLEL-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt`
+- `verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-hypercube-3d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-implement-now-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-a-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-b-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-c-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-whole-toroid-all-graph-slices-USER-VERBATIM.txt`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+- `verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html`
+- `verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html`
+- `verbatim/audits/2026-11-04-FULL-VERBATIM-GAP-MATRIX.md`
+- `verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md`
+- `verbatim/continuation-index.json`
+- `verbatim/implementation-mirror.json`
+
+---
+## `feature/GRAPH-CELLS-CUDA-PARALLEL-20261103`
+
+HEAD `d277eb6cd137b06ad17c4337efba0ac236f4cff1` · tracked blobs 369 · tree truncated false · branch-only paths 0 · changed shared paths 6 · missing main paths 204
+
+### Added in branch relative to main
+
+
+### Different blob SHA at same path
+
+- `.github/workflows/magic-regression.yml` (branch 17aedeae42bd7d78983b382ad321042b39c5cd40, main 8dc2b9823fb3df512dd7212db5ea387ed99904ef)
+- `README.md` (branch c05c323049bb3c3243145006972e518006d70e68, main f01173a5d1ce9e7692fb8b94a8e0d54f34cdec61)
+- `START_MAGIC_CUDA.ps1` (branch bc3af26ca0cb07010cae62efc7e50b456c2aa169, main f61d07d90bb7ae969d6e14f565d9ae68271ae1d5)
+- `package.json` (branch dfb9e00ad492e82c1f34ba82b5fd77ad46e765be, main 2371ea85175b67c1739e34e64a0ebd4aa974560f)
+- `verbatim/SOURCE_POLICY.md` (branch 7edfc1e0a18d9484648e55b81a9d99eaa08560dd, main b127355c89f5222eef4db77f8370b9e52e463fe0)
+- `verbatim/recent-user-messages.json` (branch f26b7d6a79fa55118bb57f5bb7cc7e348cd2820e, main b6f3022f3d035bc3e0a0a0b1616f7764df286c59)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1`
+- `VERBATIM_ROOT.md`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/portal-universal-20261103/.gitignore`
+- `experiments/portal-universal-20261103/README.md`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1`
+- `experiments/portal-universal-20261103/VERBATIM_MAPPING.md`
+- `experiments/portal-universal-20261103/corpus.py`
+- `experiments/portal-universal-20261103/cuda_probe.py`
+- `experiments/portal-universal-20261103/engine.py`
+- `experiments/portal-universal-20261103/perspective.py`
+- `experiments/portal-universal-20261103/server.py`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_portal.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/tests/test_v11.py`
+- `experiments/portal-universal-20261103/tests/test_v12.py`
+- `experiments/portal-universal-20261103/tests/test_v13.py`
+- `experiments/portal-universal-20261103/tests/test_v14.py`
+- `experiments/portal-universal-20261103/toroid.py`
+- `experiments/portal-universal-20261103/web/app.js`
+- `experiments/portal-universal-20261103/web/index.html`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `experiments/portal-universal-20261103/web/style.css`
+- `experiments/portal-universal-20261103/web/torus-view.js`
+- `experiments/portal-v7-hypercube-4d/README.md`
+- `experiments/portal-v7-hypercube-4d/geometry.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-app.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-index.html`
+- `experiments/portal-v7-hypercube-4d/growth-server.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-view.mjs`
+- `experiments/portal-v7-hypercube-4d/growth.mjs`
+- `experiments/portal-v7-hypercube-4d/journal.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/growth.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/server.test.mjs`
+- `experiments/portal-v7-hypercube-4d/viewer.css`
+- `experiments/portal-v7-hypercube-4d/viewer.mjs`
+- `scripts/verbatim-mirror-gate.mjs`
+- `scripts/verbatim-strict-audit.mjs`
+- `tests/verbatim-mirror.test.mjs`
+- `tests/verbatim-strict-audit.test.mjs`
+- `v10/.gitignore`
+- `v10/README.md`
+- `v10/REPORT.md`
+- `v10/SPEC.md`
+- `v10/data/.gitkeep`
+- `v10/engine/maze.mjs`
+- `v10/engine/mind.mjs`
+- `v10/engine/organ.mjs`
+- `v10/engine/organism.mjs`
+- `v10/engine/train.mjs`
+- `v10/engine/worlds.mjs`
+- `v10/package.json`
+- `v10/public/app.js`
+- `v10/public/index.html`
+- `v10/public/style.css`
+- `v10/results/transfer-1500-150-seed7-mix.json`
+- `v10/results/transfer-1500-150-seed7.json`
+- `v10/results/transfer-1500-150-seed8.json`
+- `v10/run-termux.sh`
+- `v10/scripts-bench.mjs`
+- `v10/scripts-transfer.mjs`
+- `v10/server.mjs`
+- `v10/tests/v10.test.mjs`
+- `v11/.gitignore`
+- `v11/README.md`
+- `v11/REPORT.md`
+- `v11/START_V11_CUDA.ps1`
+- `v11/VERBATIM_MAP.md`
+- `v11/bench.py`
+- `v11/data/.gitkeep`
+- `v11/engine/__init__.py`
+- `v11/engine/backend.py`
+- `v11/engine/life.py`
+- `v11/engine/portal.py`
+- `v11/evalsaved.py`
+- `v11/results/maze2d-1500-s7.json`
+- `v11/results/maze2d-1500-s8.json`
+- `v11/results/polymath-2700-s7.json`
+- `v11/results/polymath-s7-control.npz`
+- `v11/results/polymath-s7.npz`
+- `v11/results/specialists-300-s7.json`
+- `v11/results/zeroshot-sat-1600-s7.json`
+- `v11/run-termux.sh`
+- `v11/selftest.py`
+- `v11/server.py`
+- `v11/tests/gradcheck.py`
+- `v11/tests/test_v11.py`
+- `v11/transfer.py`
+- `v11/web/app.js`
+- `v11/web/index.html`
+- `v11/web/style.css`
+- `v11/worlds/__init__.py`
+- `v11/worlds/grid.py`
+- `v11/worlds/states.py`
+- `v11/worlds/symbolic.py`
+- `v12/torus4d.html`
+- `v13/README.md`
+- `v13/REPORT.md`
+- `v13/START_V13.ps1`
+- `v13/bench.mjs`
+- `v13/package.json`
+- `v13/results/bench-grad-rotate0.5.json`
+- `v13/results/bench-grad-rotate0.json`
+- `v13/results/bench-pull-rotate0.5.json`
+- `v13/results/bench-pull-rotate0.json`
+- `v13/run-termux.sh`
+- `v13/server.mjs`
+- `v13/tests/v13.test.mjs`
+- `v13/web/app.js`
+- `v13/web/corpus.js`
+- `v13/web/engine.mjs`
+- `v13/web/index.html`
+- `v14/README.md`
+- `v14/START_V14.ps1`
+- `v14/data.py`
+- `v14/model.py`
+- `v14/selftest.py`
+- `v14/server.py`
+- `v14/web/app.js`
+- `v14/web/index.html`
+- `v15/README.md`
+- `v15/START_V15.ps1`
+- `v15/data.py`
+- `v15/model.py`
+- `v15/selftest.py`
+- `v15/server.py`
+- `v15/web/app.js`
+- `v15/web/index.html`
+- `v16/README.md`
+- `v16/REPORT.md`
+- `v16/START_V16.ps1`
+- `v16/bench.mjs`
+- `v16/package.json`
+- `v16/results/bench-5000-s7.json`
+- `v16/results/bench-5000-s8.json`
+- `v16/results/bench-5000-s9.json`
+- `v16/results/bench-600-s7.json`
+- `v16/results/screenshot.png`
+- `v16/run-termux.sh`
+- `v16/server.mjs`
+- `v16/tests/gradcheck.mjs`
+- `v16/tests/v16.test.mjs`
+- `v16/web/app.js`
+- `v16/web/autograd.mjs`
+- `v16/web/engine.mjs`
+- `v16/web/index.html`
+- `verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-PORTAL4D-V7-CUDA-UNIQUE-PARALLEL-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt`
+- `verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-hypercube-3d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-implement-now-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-a-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-b-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-c-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-whole-toroid-all-graph-slices-USER-VERBATIM.txt`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+- `verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html`
+- `verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html`
+- `verbatim/audits/2026-11-04-FULL-VERBATIM-GAP-MATRIX.md`
+- `verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md`
+- `verbatim/continuation-index.json`
+- `verbatim/implementation-mirror.json`
+
+---
+## `feature/IMPORT-REAL-TASK-GRAPHS-20261103`
+
+HEAD `42e7ad1749eef7d2beda7294c22bdbf005d2ba4e` · tracked blobs 268 · tree truncated false · branch-only paths 0 · changed shared paths 4 · missing main paths 305
+
+### Added in branch relative to main
+
+
+### Different blob SHA at same path
+
+- `.github/workflows/magic-regression.yml` (branch cfdb55bc91a7e6f5f51896b853a10eafb403a025, main 8dc2b9823fb3df512dd7212db5ea387ed99904ef)
+- `.gitignore` (branch d918a10326969b7fbb7b9912c1c22dd364b9c01b, main 1ce0c51ce42fe9d46d4764609191dd4b9207cb37)
+- `README.md` (branch c05c323049bb3c3243145006972e518006d70e68, main f01173a5d1ce9e7692fb8b94a8e0d54f34cdec61)
+- `package.json` (branch dfb9e00ad492e82c1f34ba82b5fd77ad46e765be, main 2371ea85175b67c1739e34e64a0ebd4aa974560f)
+
+### Missing from branch relative to main (paths)
+
+- `.github/workflows/magic-5d-ci.yml`
+- `START_EXACT_PORTAL_V7_WITH_4D_VIEW.ps1`
+- `START_MAGIC_CUDA.ps1`
+- `VERBATIM_ROOT.md`
+- `docs/RESEARCH_ALL_BRANCH_HEADS_20261106.md`
+- `docs/RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md`
+- `docs/RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md`
+- `docs/RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md`
+- `docs/figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg`
+- `experiments/brain-studio-20261103/.gitignore`
+- `experiments/brain-studio-20261103/README.md`
+- `experiments/brain-studio-20261103/cuda/bridge.mjs`
+- `experiments/brain-studio-20261103/cuda/cuda_worker.py`
+- `experiments/brain-studio-20261103/data/.gitkeep`
+- `experiments/brain-studio-20261103/engine/abstract-graph.mjs`
+- `experiments/brain-studio-20261103/engine/cells.mjs`
+- `experiments/brain-studio-20261103/engine/studio.mjs`
+- `experiments/brain-studio-20261103/engine/vault.mjs`
+- `experiments/brain-studio-20261103/package.json`
+- `experiments/brain-studio-20261103/public/app.js`
+- `experiments/brain-studio-20261103/public/graph-render.js`
+- `experiments/brain-studio-20261103/public/index.html`
+- `experiments/brain-studio-20261103/public/style.css`
+- `experiments/brain-studio-20261103/run-termux.sh`
+- `experiments/brain-studio-20261103/scripts-cells-benchmark.mjs`
+- `experiments/brain-studio-20261103/scripts-transfer-benchmark.mjs`
+- `experiments/brain-studio-20261103/server.mjs`
+- `experiments/brain-studio-20261103/tests/abstract-graph.test.mjs`
+- `experiments/brain-studio-20261103/tests/cells.test.mjs`
+- `experiments/brain-studio-20261103/tests/engine.test.mjs`
+- `experiments/brain-studio-20261103/tests/port-occupied.test.mjs`
+- `experiments/brain-studio-20261103/tests/server.test.mjs`
+- `experiments/dynamic-perspective-20261103/.gitignore`
+- `experiments/dynamic-perspective-20261103/README.md`
+- `experiments/dynamic-perspective-20261103/REPORT.md`
+- `experiments/dynamic-perspective-20261103/data/.gitkeep`
+- `experiments/dynamic-perspective-20261103/engine/brain.mjs`
+- `experiments/dynamic-perspective-20261103/engine/experiment.mjs`
+- `experiments/dynamic-perspective-20261103/engine/world.mjs`
+- `experiments/dynamic-perspective-20261103/package.json`
+- `experiments/dynamic-perspective-20261103/public/app.js`
+- `experiments/dynamic-perspective-20261103/public/index.html`
+- `experiments/dynamic-perspective-20261103/public/style.css`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed17.json`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed55.json`
+- `experiments/dynamic-perspective-20261103/results/benchmark-200ep-seed83.json`
+- `experiments/dynamic-perspective-20261103/run-termux.sh`
+- `experiments/dynamic-perspective-20261103/scripts-benchmark.mjs`
+- `experiments/dynamic-perspective-20261103/server.mjs`
+- `experiments/dynamic-perspective-20261103/tests/core.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/live-ui.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/server.test.mjs`
+- `experiments/dynamic-perspective-20261103/tests/training-visibility.test.mjs`
+- `experiments/portal-universal-20261103/.gitignore`
+- `experiments/portal-universal-20261103/README.md`
+- `experiments/portal-universal-20261103/SPACETIME_5D.md`
+- `experiments/portal-universal-20261103/START_PORTAL_UNIVERSAL_CUDA.ps1`
+- `experiments/portal-universal-20261103/VERBATIM_MAPPING.md`
+- `experiments/portal-universal-20261103/corpus.py`
+- `experiments/portal-universal-20261103/cuda_probe.py`
+- `experiments/portal-universal-20261103/engine.py`
+- `experiments/portal-universal-20261103/perspective.py`
+- `experiments/portal-universal-20261103/server.py`
+- `experiments/portal-universal-20261103/spacetime_api.py`
+- `experiments/portal-universal-20261103/tests/spacetime.test.mjs`
+- `experiments/portal-universal-20261103/tests/test_portal.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime.py`
+- `experiments/portal-universal-20261103/tests/test_spacetime_http.py`
+- `experiments/portal-universal-20261103/tests/test_v11.py`
+- `experiments/portal-universal-20261103/tests/test_v12.py`
+- `experiments/portal-universal-20261103/tests/test_v13.py`
+- `experiments/portal-universal-20261103/tests/test_v14.py`
+- `experiments/portal-universal-20261103/toroid.py`
+- `experiments/portal-universal-20261103/web/app.js`
+- `experiments/portal-universal-20261103/web/index.html`
+- `experiments/portal-universal-20261103/web/spacetime-core.mjs`
+- `experiments/portal-universal-20261103/web/spacetime.css`
+- `experiments/portal-universal-20261103/web/spacetime.html`
+- `experiments/portal-universal-20261103/web/spacetime.js`
+- `experiments/portal-universal-20261103/web/style.css`
+- `experiments/portal-universal-20261103/web/torus-view.js`
+- `experiments/portal-v7-hypercube-4d/README.md`
+- `experiments/portal-v7-hypercube-4d/geometry.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-app.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-index.html`
+- `experiments/portal-v7-hypercube-4d/growth-server.mjs`
+- `experiments/portal-v7-hypercube-4d/growth-view.mjs`
+- `experiments/portal-v7-hypercube-4d/growth.mjs`
+- `experiments/portal-v7-hypercube-4d/journal.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/geometry.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/growth.test.mjs`
+- `experiments/portal-v7-hypercube-4d/tests/server.test.mjs`
+- `experiments/portal-v7-hypercube-4d/viewer.css`
+- `experiments/portal-v7-hypercube-4d/viewer.mjs`
+- `scripts/verbatim-gate.mjs`
+- `scripts/verbatim-mirror-gate.mjs`
+- `scripts/verbatim-strict-audit.mjs`
+- `tests/verbatim-gate.test.mjs`
+- `tests/verbatim-mirror.test.mjs`
+- `tests/verbatim-strict-audit.test.mjs`
+- `v10/.gitignore`
+- `v10/README.md`
+- `v10/REPORT.md`
+- `v10/SPEC.md`
+- `v10/data/.gitkeep`
+- `v10/engine/maze.mjs`
+- `v10/engine/mind.mjs`
+- `v10/engine/organ.mjs`
+- `v10/engine/organism.mjs`
+- `v10/engine/train.mjs`
+- `v10/engine/worlds.mjs`
+- `v10/package.json`
+- `v10/public/app.js`
+- `v10/public/index.html`
+- `v10/public/style.css`
+- `v10/results/transfer-1500-150-seed7-mix.json`
+- `v10/results/transfer-1500-150-seed7.json`
+- `v10/results/transfer-1500-150-seed8.json`
+- `v10/run-termux.sh`
+- `v10/scripts-bench.mjs`
+- `v10/scripts-transfer.mjs`
+- `v10/server.mjs`
+- `v10/tests/v10.test.mjs`
+- `v11/.gitignore`
+- `v11/README.md`
+- `v11/REPORT.md`
+- `v11/START_V11_CUDA.ps1`
+- `v11/VERBATIM_MAP.md`
+- `v11/bench.py`
+- `v11/data/.gitkeep`
+- `v11/engine/__init__.py`
+- `v11/engine/backend.py`
+- `v11/engine/life.py`
+- `v11/engine/portal.py`
+- `v11/evalsaved.py`
+- `v11/results/maze2d-1500-s7.json`
+- `v11/results/maze2d-1500-s8.json`
+- `v11/results/polymath-2700-s7.json`
+- `v11/results/polymath-s7-control.npz`
+- `v11/results/polymath-s7.npz`
+- `v11/results/specialists-300-s7.json`
+- `v11/results/zeroshot-sat-1600-s7.json`
+- `v11/run-termux.sh`
+- `v11/selftest.py`
+- `v11/server.py`
+- `v11/tests/gradcheck.py`
+- `v11/tests/test_v11.py`
+- `v11/transfer.py`
+- `v11/web/app.js`
+- `v11/web/index.html`
+- `v11/web/style.css`
+- `v11/worlds/__init__.py`
+- `v11/worlds/grid.py`
+- `v11/worlds/states.py`
+- `v11/worlds/symbolic.py`
+- `v12/torus4d.html`
+- `v13/README.md`
+- `v13/REPORT.md`
+- `v13/START_V13.ps1`
+- `v13/bench.mjs`
+- `v13/package.json`
+- `v13/results/bench-grad-rotate0.5.json`
+- `v13/results/bench-grad-rotate0.json`
+- `v13/results/bench-pull-rotate0.5.json`
+- `v13/results/bench-pull-rotate0.json`
+- `v13/run-termux.sh`
+- `v13/server.mjs`
+- `v13/tests/v13.test.mjs`
+- `v13/web/app.js`
+- `v13/web/corpus.js`
+- `v13/web/engine.mjs`
+- `v13/web/index.html`
+- `v14/README.md`
+- `v14/START_V14.ps1`
+- `v14/data.py`
+- `v14/model.py`
+- `v14/selftest.py`
+- `v14/server.py`
+- `v14/web/app.js`
+- `v14/web/index.html`
+- `v15/README.md`
+- `v15/START_V15.ps1`
+- `v15/data.py`
+- `v15/model.py`
+- `v15/selftest.py`
+- `v15/server.py`
+- `v15/web/app.js`
+- `v15/web/index.html`
+- `v16/README.md`
+- `v16/REPORT.md`
+- `v16/START_V16.ps1`
+- `v16/bench.mjs`
+- `v16/package.json`
+- `v16/results/bench-5000-s7.json`
+- `v16/results/bench-5000-s8.json`
+- `v16/results/bench-5000-s9.json`
+- `v16/results/bench-600-s7.json`
+- `v16/results/screenshot.png`
+- `v16/run-termux.sh`
+- `v16/server.mjs`
+- `v16/tests/gradcheck.mjs`
+- `v16/tests/v16.test.mjs`
+- `v16/web/app.js`
+- `v16/web/autograd.mjs`
+- `v16/web/engine.mjs`
+- `v16/web/index.html`
+- `v8/.gitignore`
+- `v8/README.md`
+- `v8/REPORT.md`
+- `v8/data/.gitkeep`
+- `v8/engine/agent.mjs`
+- `v8/engine/net.mjs`
+- `v8/engine/netagent.mjs`
+- `v8/engine/netorgan.mjs`
+- `v8/engine/nn.mjs`
+- `v8/engine/organ.mjs`
+- `v8/engine/organism8.mjs`
+- `v8/engine/training.mjs`
+- `v8/engine/world.mjs`
+- `v8/package.json`
+- `v8/public/app.js`
+- `v8/public/draw.js`
+- `v8/public/index.html`
+- `v8/public/life.js`
+- `v8/public/style.css`
+- `v8/results/benchmark-v8-15x15-800ep-seed17.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed23.json`
+- `v8/results/benchmark-v8-15x15-800ep-seed31.json`
+- `v8/run-termux.sh`
+- `v8/scripts-benchmark.mjs`
+- `v8/server.mjs`
+- `v8/tests/core.test.mjs`
+- `v8/tests/net.test.mjs`
+- `v9/.gitignore`
+- `v9/README.md`
+- `v9/REPORT.md`
+- `v9/data/.gitkeep`
+- `v9/engine/democracy/a11-democratic-output-policy.mjs`
+- `v9/engine/democracy/a11-output-democracy-economy.mjs`
+- `v9/engine/democracy/horizon.mjs`
+- `v9/engine/graphs.mjs`
+- `v9/engine/net.mjs`
+- `v9/engine/nn.mjs`
+- `v9/engine/uagent.mjs`
+- `v9/engine/uorgan.mjs`
+- `v9/engine/utraining.mjs`
+- `v9/engine/world.mjs`
+- `v9/package.json`
+- `v9/public/app.js`
+- `v9/public/draw.js`
+- `v9/public/index.html`
+- `v9/public/life.js`
+- `v9/public/style.css`
+- `v9/run-termux.sh`
+- `v9/scripts-benchmark.mjs`
+- `v9/server.mjs`
+- `v9/tests/v9.test.mjs`
+- `verbatim/2026-11-03-4d-higher-dimensions-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-4d-not-projection-corpus-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-PORTAL4D-V7-CUDA-UNIQUE-PARALLEL-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-HYPERCUBE-NAVIGATION-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-4D-REAL-EXPERIENCE-DENSE-GROWTH-VERBATIM.txt`
+- `verbatim/2026-11-03-USER-V7-START-AND-ALL-UNIQUE-EXERCISES-VERBATIM.txt`
+- `verbatim/2026-11-03-abstract-network-forma-insula-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-animated-graph-ui-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-as-above-as-below-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-fix-priority-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-must-grow-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-graph-world-body-portal-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-hypercube-3d-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-implement-now-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-no-more-demos-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-parquet-error-map-world-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-polymath-persistent-cross-world-graph-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-a-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-b-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-recent-c-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-build-command-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-toroid-interior-live-reset-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-universal-14m-USER-VERBATIM.txt`
+- `verbatim/2026-11-03-verbatim-mirror-main-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-closer-4d-torus-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-implement-self-world-v14-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-internal-self-world-separation-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-navigable-portal-4d-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-torus-ui-not-100-verbatim-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-user-v14-full-noncompliance-USER-VERBATIM.txt`
+- `verbatim/2026-11-04-whole-toroid-all-graph-slices-USER-VERBATIM.txt`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-TORUS-MEDIA-DIGESTS-UNVERIFIED.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-AETHER-CLAUDE-SESSION-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-CHRONOLOGICAL-INDEX.json`
+- `verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json`
+- `verbatim/2026-11-05-quantum-macroscopic-shared-perspective-CONVERSATION-VERBATIM.json`
+- `verbatim/2026-11-05-quantum-to-GOD-recursive-self-learning-CONTINUATION-VERBATIM.json`
+- `verbatim/2026-11-06-CRYPTIC-PATH-HIGHER-DIMENSIONAL-RECOVERED-PARTIAL.md`
+- `verbatim/SOURCE_POLICY.md`
+- `verbatim/assets/MagicPerspective_4D_Torus_Graf_Real_Complete_2_USER_REFERENCE.html`
+- `verbatim/assets/MagicPerspective_4D_Torus_OneObject_USER_REFERENCE.html`
+- `verbatim/audits/2026-11-04-FULL-VERBATIM-GAP-MATRIX.md`
+- `verbatim/audits/2026-11-04-V14-STRICT-NONCONFORMANCE.md`
+- `verbatim/continuation-index.json`
+- `verbatim/coverage.json`
+- `verbatim/implementation-mirror.json`
+- `verbatim/recent-user-messages.json`
+
+---
