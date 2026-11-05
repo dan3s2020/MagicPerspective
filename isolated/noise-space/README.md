@@ -1,0 +1,65 @@
+# MagicPerspective — isolated Noise Space / Hyperdimensional Research
+
+**Branch:** `experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105`  
+**Directory:** `isolated/noise-space/`  
+**Recommended Windows clone directory:** `D:\MagicPerspective-NoiseSpace-Isolated`.
+
+This is a standalone, *experimental* noise-space tracker. It does NOT rewrite, replace, train, or modify the existing V17 brain, original UI, its A/B/C organisms, or checkpoints. It uses Node.js 20+ with **no npm dependencies**. By default, the data are an expressly synthetic Hénon dynamical system with several noisy observations.
+
+## Included / tested
+
+- Deterministic hidden chaotic trajectories, multiple observation functions, and fresh test trajectories.
+- True time-delay reconstructions using present and past observations only.
+- 5D historical features, 10-coordinate Plücker products of local displacements, and derivative-free metric perturbation search (inspired by DUST, **not** the full DUST algorithm).
+- Prediction of another world's *future* observed slice using a model that only sees the source world's current/past observations.
+- Controlled comparisons: instantaneous observation, delays, delays + geometry, learned metric, same-law transfer, independent false pairing, shuffled pairing, independent white noise.
+- Held-out time split with an embargo; validation for metric learning and a separate test set. Reproducible seeds.
+- One real-data-driven 5D graph with ten plane rotations, a slice selector, slice thickness, navigation, time replay, world filters, actual temporal edges, and quantitative prediction overlay.
+- Continuous experiment mode, pause/resume/stop/save, atomic state persistence, local browser API, event import with explicit source provenance.
+- `test.mjs` acceptance tests and isolated Windows launcher.
+
+## Windows: clone/pull without touching existing versions
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$repo = 'https://github.com/dan3s2020/MagicPerspective.git'
+$branch = 'experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105'
+$dest = 'D:\MagicPerspective-NoiseSpace-Isolated'
+if (-not (Test-Path 'D:\')) { throw 'D: is missing' }
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Install Git for Windows first' }
+if (Test-Path $dest) {
+  if (-not (Test-Path "$dest\.git")) { throw "Non-Git path exists, not touching: $dest" }
+  $url = (git -C $dest remote get-url origin)
+  if ($LASTEXITCODE -ne 0 -or $url -notmatch 'dan3s2020/MagicPerspective(?:\.git)?$') { throw 'Unexpected Git remote; refusing to modify' }
+  if (@(git -C $dest status --porcelain).Count -gt 0) { throw 'Local changes detected. Commit or stash them yourself first.' }
+  git -C $dest fetch origin $branch
+  if ($LASTEXITCODE -ne 0) { throw 'git fetch failed' }
+  git -C $dest checkout $branch
+  if ($LASTEXITCODE -ne 0) { throw 'git checkout failed' }
+  git -C $dest pull --ff-only origin $branch
+  if ($LASTEXITCODE -ne 0) { throw 'git pull failed' }
+} else {
+  git clone --branch $branch --single-branch $repo $dest
+  if ($LASTEXITCODE -ne 0) { throw 'git clone failed' }
+}
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$dest\isolated\noise-space\START_WINDOWS.ps1"
+```
+
+After that, run the launcher directly. The UI is at `http://127.0.0.1:8897/`. The only persistent writes are under `isolated/noise-space/runs/`; those files are ignored by Git.
+
+## Explicit external V17 events
+
+Use `node server.mjs --events <your-own-jsonl>` or paste JSONL directly into the web UI. Required keys: `world`, `exercise`, `step`, `observation`. Optional: `coordinates` (5 numeric dimensions), `action`, `prediction`, `shared_id` **only when two perspectives are known to share the same hidden trajectory**. There is no automatic identity guess from similar-looking graphs.
+
+Real cross-world transfer across unrelated text/maze/transformation episodes is **NOT yet demonstrated**. The algorithm reports `UNVERIFIED_NO_CORRESPONDENCE` until grounded paired events are supplied. The 5D time-delay visual graph is reconstructed from observations and timestamps; it is not claimed to be an intrinsically learned physical fifth dimension.
+
+## Limitations / acceptance
+
+1. Synthetic worlds intentionally share a latent trajectory. Success there is a positive control, not evidence about physical randomness.
+2. Grassmann/Plücker features may underperform time delays on some seeds. Their benefit must be decided by held-out evaluation, never assumed.
+3. The perturbation optimizer is a small derivative-free metric tuner; it is not an implementation of Qlabs DUST.
+4. The initial standalone module uses CPU; GPU V17 integration requires further separately verified work. An RTX 3050 Ti's available VRAM cannot be assumed.
+5. No verified V17 training corpus cross-world alignment exists until event provenance and tests are added.
+6. Original UI, V17 checkpoints, organisms, and projects remain unchanged; this viewer does not pretend to reproduce every historical Portal 4D UI feature.
+
+The objective is to validate hidden-dynamics reconstruction and transferable transformations before proposing any integration with real V17 training.
