@@ -39,3 +39,11 @@
 - Versioned evidence: [V1-V17 atlas](RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md).
 - Full manuscript and figure index: [paper package](RESEARCH_PAPER_SUBMISSION_PACKAGE_20261106.md).
 - **OPEN:** produce per-branch changed-file list with source and test evidence, merge ancestry, training checkpoint provenance, unmerged results, and identical-work deduplication before claiming the entire Git history has been line-by-line audited.
+
+## All-branch tracked-file delta index (full path/SHA snapshots)
+
+- [Branches 1–10: full path/SHA deltas](branch-audit/BRANCH_BLOB_DIFFS_SEGMENT_1_20261106.md)
+- [Branches 11–20: full path/SHA deltas](branch-audit/BRANCH_BLOB_DIFFS_SEGMENT_2_20261106.md)
+- [Branches 21–28: full path/SHA deltas](branch-audit/BRANCH_BLOB_DIFFS_SEGMENT_3_20261106.md)
+
+These three ledgers cover all 28 branch heads listed in the branch census; they map tracked files by Git SHA but do not constitute an independent line-by-line algorithm audit or test reproduction. Each uses main at the time of its own segment; later additive research documentation can appear as absent in older branches.
