@@ -24,7 +24,7 @@ let episode=0,idx=0,cursor=0,sourceText='',userText=false,seenTexts=0;
 let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=null,evaluation={};
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
 let gpuRunner=new IsolatedGpuRunner(),gpuRequested=false,gpuError=null,sourceRoot='',dataset=null,datasetIndex=0,datasetTestIndex=0;
-let corpusCycles=0,heldWindowIndex=0,sourceSamples=0,gpuWorldsProcessed=0,learningStart=performance.now();
+let corpusCycles=0,heldWindowIndex=0,sourceSamples=0,gpuWorldsProcessed=0,learningStart=performance.now(),throughputBase=0,backupLegacy=false;
 const bounded=(a,k=300)=>a.length>k?a.slice(-k):a;
 const finite=v=>Number.isFinite(v)?v:null;
 const ascii=s=>Array.from(s,c=>{const n=c.charCodeAt(0);return n===10||n===9||(n>=32&&n<127)?n:63;});
@@ -33,10 +33,12 @@ const writeJSON=(file,v)=>{const tmp=file+'.tmp';fs.writeFileSync(tmp,JSON.strin
 function ensureBrain(resume=true){
  if(brain)return;
  if(resume&&fs.existsSync(checkpoint))brain=Brain.load(checkpoint);else brain=new Brain({seed:11,rules:{}});
+ if(resume&&fs.existsSync(checkpoint)&&!fs.existsSync(obsFile))backupLegacy=true;
  if(resume&&fs.existsSync(geoFile)){geo=GeometricLearningLab.restore(JSON.parse(fs.readFileSync(geoFile,'utf8')));}
  else geo=new GeometricLearningLab(brain.seed||11);
  if(resume&&fs.existsSync(obsFile)){
   const m=JSON.parse(fs.readFileSync(obsFile,'utf8'));
+  if(m.version!==2&&fs.existsSync(checkpoint))backupLegacy=true;
   episode=Number.isSafeInteger(m.episode)?m.episode:0;
   idx=Number.isSafeInteger(m.idx)?m.idx:0;cursor=Number.isSafeInteger(m.cursor)?m.cursor:0;
   history=bounded(Array.isArray(m.history)?m.history:[]);
@@ -76,7 +78,7 @@ function state(withTrace=true){
   source:sourceStatus(),gpu:{...gpu,requested:gpuRequested,error:gpuError||gpu.error},
   capacity:{heapMB:Math.round(mem.heapUsed/1e6),rssMB:Math.round(mem.rss/1e6),alignBytes:brain?.align?.mem?.n||0,brainFull:!!brain?.full,priorLearningDisabled:!!brain?.full,observedWorlds:gpuWorldsProcessed,
     note:brain?.full?'Some older V17 organs stopped updating due to brain.full; alignment memory may still grow.':'Brain.full is not set. Plateau may be caused by repeated text or heldout metrics.'},
-  trainingRate:{worlds:gpuWorldsProcessed,elapsedSec:Math.round((performance.now()-learningStart)/1000),worldsPerSec:gpuWorldsProcessed/Math.max(1,(performance.now()-learningStart)/1000)},
+  trainingRate:{worlds:Math.max(0,gpuWorldsProcessed-throughputBase),elapsedSec:Math.round((performance.now()-learningStart)/1000),worldsPerSec:Math.max(0,gpuWorldsProcessed-throughputBase)/Math.max(1,(performance.now()-learningStart)/1000)},
   sourceTextLabel:userText?'User-supplied text':'V17 repository technical documentation',
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
   last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
@@ -88,10 +90,15 @@ function publish(){parentPort.postMessage({type:'state',state:state()});}
 function emitProgress(p){progress={...progress,...p};parentPort.postMessage({type:'progress',progress:{...progress,stage,episode,learned:brain?.lived||0}});}
 function save(){
  ensureBrain(false);
+ if(backupLegacy&&fs.existsSync(checkpoint)){
+  const label=new Date().toISOString().replace(/[^0-9]/g,'');
+  fs.copyFileSync(checkpoint,checkpoint+'.pre-gpu-observatory-'+label+'.backup',fs.constants.COPYFILE_EXCL);
+  backupLegacy=false;
+ }
  const bytes=brain.save(checkpoint);
  writeJSON(geoFile,geo.export());
  lastSave={at:new Date().toISOString(),bytes};
- writeJSON(obsFile,{version:1,episode,idx,cursor,sourceText,userText,seenTexts,history,evaluation,last,lastSave,
+ writeJSON(obsFile,{version:2,episode,idx,cursor,sourceText,userText,seenTexts,history,evaluation,last,lastSave,
   sourceRoot,datasetIndex,datasetTestIndex,corpusCycles,heldWindowIndex,sourceSamples,gpuWorldsProcessed});
  publish();
 }
@@ -190,7 +197,7 @@ async function textEpisode(){
   characters:bytes.length,totalBatchCharacters:batch.reduce((s,x)=>s+x.bytes.length,0),
   exercisesInBatch:batch.length,onlineAccuracy:acc,observations,heldout:evaluation.text||null,
   measuredNonAscii:batch.reduce((s,x)=>s+x.nonAscii,0),geometryHeldout:heldoutGeo,
-  corpusCycles,sourceNewExamples:corpusCycles===0||!!dataset,trainingPath:gpuMeta?'Original V17 GPU alignment + one CPU replay sample':'Original V17 CPU Brain.live',
+  corpusCycles,sourceNewExamples:corpusCycles===0,trainingPath:gpuMeta?'Original V17 GPU alignment + one CPU replay sample':'Original V17 CPU Brain.live',
   gpuBatch:gpuMeta,assessment};
  last.text=item;
  return {world:'text',episode,trainSymbols:item.totalBatchCharacters,source:item.source,corpusCycles,worldsInBatch:batch.length,
@@ -396,7 +403,7 @@ parentPort.on('message',async m=>{
    if(!preparing){stage='cancelled during setup';publish();return;}
    preparing=false;
    remaining=m.infinite?0:Math.max(1,Math.min(100,Math.trunc(Number(m.episodes)||3)));
-   learningStart=performance.now();run=true;paused=false;error=null;
+   learningStart=performance.now();throughputBase=gpuWorldsProcessed;run=true;paused=false;error=null;
    stage=gpuRunner.active?'CUDA GPU verified: training':'CPU training';publish();setImmediate(tick);
   }else if(action==='pause'){
    paused=true;stage=activeStep?'pause requested: after current batch':'paused';publish();
@@ -419,7 +426,8 @@ parentPort.on('message',async m=>{
    const stamp=new Date().toISOString().replace(/[^0-9]/g,'');
    for(const file of [checkpoint,geoFile,obsFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
    brain=null;geo=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
-   datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=0;
+   datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=throughputBase=0;
+   backupLegacy=false;
    last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;
    ensureBrain(false);stage='new isolated brain';save();
   }else if(action==='state')publish();
