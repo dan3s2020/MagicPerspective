@@ -348,35 +348,78 @@ async function tick(){
   if(episode%12===0||!run)save();else publish();
  }catch(e){error=String(e.stack||e);run=false;stage='error';publish();}
  finally{activeStep=false;if(pendingSave){pendingSave=false;try{save();}catch(e){error='Checkpoint save failed: '+String(e.stack||e);publish();}}
+  if(!run&&gpuRunner.active){gpuRunner.close();publish();}
   if(run&&!paused)setImmediate(tick);}
 }
-parentPort.on('message',m=>{
+let preparing=false;
+parentPort.on('message',async m=>{
  try{
   const action=m?.action;
   if(action==='start'){
-   if(run)throw Error('Training already running');
+   if(run||activeStep||preparing)throw Error('A training run is already active');
    ensureBrain(m.resume!==false);
    const selected=Array.isArray(m.worlds)?m.worlds.filter(x=>modesAllowed.includes(x)):[];
    if(!selected.length)throw Error('Select at least one real world');
    modes=[...new Set(selected)];
-   if(typeof m.text==='string'&&m.text.trim()){sourceText=m.text.slice(0,250000);userText=true;cursor=0;}
-   run=true;paused=false;error=null;remaining=m.infinite?0:Math.max(1,Math.min(100,Math.trunc(Number(m.episodes)||3)));
-   stage='starting';publish();setImmediate(tick);
-  }else if(action==='pause'){paused=true;stage='paused after current episode';publish();}
-  else if(action==='resume'){if(!run)throw Error('Not running; choose Train to continue');paused=false;stage='resumed';publish();setImmediate(tick);}
-  else if(action==='stop'){run=false;paused=false;stage='stopped';save();}
-  else if(action==='save'){save();}
-  else if(action==='load'){if(run)throw Error('Stop before loading');brain=null;geo=null;ensureBrain(true);publish();}
-  else if(action==='reset'){
-   if(run)throw Error('Stop before starting a fresh run');
+   const previousRoot=sourceRoot;
+   if(m.sourceKind==='docs'){
+    sourceRoot='';userText=false;if(previousRoot)cursor=0;
+   }else if(m.sourceKind==='parquet'){
+    if(typeof m.datasetRoot!=='string'||!m.datasetRoot.trim())throw Error('Enter the folder containing Parquet training files');
+    sourceRoot=m.datasetRoot.trim();userText=false;
+    if(sourceRoot!==previousRoot){dataset=null;datasetIndex=0;datasetTestIndex=0;corpusCycles=0;}
+   }else if(m.sourceKind==='pasted'){
+    if(typeof m.text!=='string'||!m.text.trim())throw Error('Paste text before selecting pasted-text training');
+    if(sourceText!==m.text){cursor=0;corpusCycles=0;heldWindowIndex=0;}
+    sourceRoot='';sourceText=m.text.slice(0,250000);userText=true;dataset=null;
+   }else if(typeof m.text==='string'&&m.text.trim()){
+    if(sourceText!==m.text){cursor=0;corpusCycles=0;heldWindowIndex=0;}
+    sourceRoot='';sourceText=m.text.slice(0,250000);userText=true;
+   }
+   preparing=true;gpuError=null;error=null;paused=false;stage='preparing training';publish();
+   try{
+    if(modes.includes('text'))await ensureDataset();
+    gpuRequested=!!m.gpu?.enabled;
+    if(gpuRequested){
+     stage='verifying real CUDA backend';publish();
+     await gpuRunner.start(m.gpu);
+    }else{
+     gpuRunner.close();
+    }
+   }catch(e){gpuError=String(e.stack||e);gpuRunner.close();throw e;}
+   finally{if(!preparing){gpuRunner.close();}}
+   if(!preparing){stage='cancelled during setup';publish();return;}
+   preparing=false;
+   remaining=m.infinite?0:Math.max(1,Math.min(100,Math.trunc(Number(m.episodes)||3)));
+   learningStart=performance.now();run=true;paused=false;error=null;
+   stage=gpuRunner.active?'CUDA GPU verified: training':'CPU training';publish();setImmediate(tick);
+  }else if(action==='pause'){
+   paused=true;stage=activeStep?'pause requested: after current batch':'paused';publish();
+  }else if(action==='resume'){
+   if(!run)throw Error('Not running; choose Train to continue');
+   paused=false;stage='resumed';publish();setImmediate(tick);
+  }else if(action==='stop'){
+   run=false;paused=false;preparing=false;
+   stage=activeStep?'stopping after current batch':'stopped';
+   if(activeStep)pendingSave=true;else {save();gpuRunner.close();}
+  }else if(action==='save'){
+   if(activeStep){pendingSave=true;stage='save requested: after current batch';publish();}
+   else save();
+  }else if(action==='load'){
+   if(run||activeStep||preparing)throw Error('Stop training before loading');
+   gpuRunner.close();brain=null;geo=null;dataset=null;ensureBrain(true);publish();
+  }else if(action==='reset'){
+   if(run||activeStep||preparing)throw Error('Stop before resetting the isolated brain');
+   gpuRunner.close();
    const stamp=new Date().toISOString().replace(/[^0-9]/g,'');
    for(const file of [checkpoint,geoFile,obsFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
-   brain=null;geo=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;
-   last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;
+   brain=null;geo=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
+   datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=0;
+   last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;
    ensureBrain(false);stage='new isolated brain';save();
   }else if(action==='state')publish();
-  else throw Error('Unknown action');
- }catch(e){error=String(e.stack||e);publish();}
+  else throw Error('Unknown command');
+ }catch(e){preparing=false;run=false;error=String(e.stack||e);stage='error';publish();}
 });
 try{if(fs.existsSync(checkpoint))ensureBrain(true);else ensureBrain(false);publish();}
 catch(e){error=String(e.stack||e);stage='error';brain=null;geo=null;publish();}
