@@ -47,13 +47,17 @@ if ($Gpu -ne "off") {
   $venv = Join-Path $runtime "python-worlds-venv"
   $py = Join-Path $venv "Scripts\python.exe"
   if (-not (Test-Path -LiteralPath $py -PathType Leaf)) {
-    if (Get-Command py -ErrorAction SilentlyContinue) {
-      & py -3.12 -m venv $venv
-      if ($LASTEXITCODE -ne 0) { & py -3.11 -m venv $venv }
-    } elseif (Get-Command python -ErrorAction SilentlyContinue) {
-      & python -m venv $venv
-    } else { throw "Python 3.11 or 3.12 required for isolated GPU world environment." }
-    if (-not (Test-Path -LiteralPath $py -PathType Leaf)) { throw "Cannot create isolated Python environment: $venv" }
+    $venvPref = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+      if (Get-Command py -ErrorAction SilentlyContinue) {
+        & py -3.12 -m venv $venv
+        if ($LASTEXITCODE -ne 0) { & py -3.11 -m venv $venv }
+      } elseif (Get-Command python -ErrorAction SilentlyContinue) {
+        & python -m venv $venv
+      } else { throw "Python 3.11 or 3.12 required for isolated GPU world environment." }
+      if (-not (Test-Path -LiteralPath $py -PathType Leaf)) { throw "Cannot create isolated Python environment: $venv" }
+    } finally { $ErrorActionPreference = $venvPref }
   }
   $prevPref = $ErrorActionPreference
   $ErrorActionPreference = "Continue"
