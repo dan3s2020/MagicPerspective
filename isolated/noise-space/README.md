@@ -75,3 +75,62 @@ node .\v17_export.mjs --seed 11 --maze 20 --transform 20 --text 'D:\octopus-text
 ```
 
 `--text` is optional and must point to an existing text corpus; optionally add `--checkpoint PATH` for a V17 checkpoint to measure its text predictions read-only. Export records provenance for each event, with no assumed shared latent state across text/maze/transform. **This exporter is syntax-checked but has not been runtime-tested against V17 files in the user's Windows environment.** Real-world claims require held-out experiments and validation of the exported event sequences.
+
+---
+
+## REAL V17 OBSERVATORY — 2026-11-05
+
+Default URL: http://127.0.0.1:8897/ — the real-backend observatory.
+Synthetic comparison lab: http://127.0.0.1:8897/synthetic.html.
+Legacy V17 dashboard: http://127.0.0.1:8897/v17.html.
+
+### Provenance and replay
+
+* Text: the ORIGINAL Brain.beginExercise, Brain.live and Brain.evalText methods. The UI shows the
+  exact observed byte, pre-update alignment guess, alignment source and frozen evaluation accuracy.
+  20% of an imported text corpus is held out of Brain.live in this worker. The persistence baseline
+  repeats the previously observed byte. Existing V17 maps non-ASCII characters to '?'.
+* Maze: original Brain.playMaze and Discoverer. The UI replays actual observed cells, actual
+  chosen outputs, original anticipated paths and whether each output moved the organism.
+  The BFS shortest path is an observer reference, not an input to the training policy.
+* Transformation: original Brain.playTransform and causal learning. The UI replays true boards,
+  goals, pre-action predicted next boards, actual next boards and prediction mismatches.
+  A limitation report does not prove a level impossible.
+* 5D graph: uses measured V17 Geometry positions and actual recorded edges, never substitutes
+  invented positions for organism/A/C nodes without learned coordinates.
+
+### Separate geometric learning module
+
+The auxiliary learning_geometry.mjs uses genuine transition data from the V17 training worlds.
+It trains three world-specific encoders and decoders and a shared 8D latent transition, with
+10 Plucker coordinates from five-dimensional observed features. Its optimizer is analytic
+SGD on next-state error plus a reconstruction penalty. It does NOT overwrite or directly
+control V17 Brain parameters and is NOT the original DUST optimizer.
+
+Every fifth global episode is withheld from the auxiliary geometry optimizer.
+Its UI compares geometric prediction RMSE with a persistence model (next state equals
+current state). BETTER requires >=20 withheld samples and >=5% less RMSE; WORSE is >=5%
+more RMSE. Otherwise the interface labels the result INCONCLUSIVE or LOW_SAMPLE.
+This is a held-out-episode comparison, not proof of cross-domain generalization.
+The original V17 Brain continues learning during these episodes.
+
+Shared latent parameters do not prove two worlds share the same hidden trajectory.
+The exact DUST activation-perturbation optimizer, GPU-accelerated end-to-end training,
+cross-lane coupling loss, and learned interventions in V17 action policies are not yet
+implemented. These are research extensions, not measured capabilities of this release.
+
+### Controls and storage
+
+Run finite episodes, run infinitely, pause/resume/stop between episodes, save, load,
+or create a new isolated brain. New brain backs up existing isolated checkpoints.
+The only written model files are under isolated/noise-space/runs/real-v17/:
+brain.v8 (original Brain serialization), geometry.json and observatory.json.
+Original V17 files are not edited.
+
+Windows startup:
+    powershell -NoProfile -ExecutionPolicy Bypass -File D:\MagicPerspective-NoiseSpace-Isolated\START_NOISE_SPACE.ps1
+
+Validation:
+    node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs
+
+GitHub Actions on this isolated branch executes these tests and verifies Windows PowerShell syntax.
