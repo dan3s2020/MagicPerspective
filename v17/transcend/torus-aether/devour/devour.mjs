@@ -48,6 +48,7 @@ if (arg("text")) {
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
 evalText = evalText.slice(0, evalChars);
+if (worldsArg.includes("text") && evalText.length < 5) throw Error("No valid held-out text (needs at least 10 nontrivial paragraphs in -Text or held-out parquet rows). Refusing misleading evaluation.");
 fs.mkdirSync(out, {recursive: true}); const log = fs.createWriteStream(path.join(out, "log.jsonl"), {flags: "a"});
 console.log(`worlds: ${worldsArg.join(" + ")} in the same brains${worldsArg.includes("maze") ? ` (a labyrinth every ${mazeEvery.toLocaleString()} chars)` : ""} · saves in ${path.join(out, "brains")}${resume ? " · resuming" : ""}`);
 console.log(`GPU worlds: ${gpuSettings.device === "off" ? "off (worlds one at a time on the CPU)" : `${gpuSettings.device} · ${gpuSettings.worlds} worlds at once · VRAM ${gpuSettings.vram || "all"} GB · ${gpuSettings.util}% of the GPU`}`);
@@ -64,9 +65,9 @@ for (const [id, settings] of Object.entries(controlProfiles)) {
   if (!/^[0-9]+$/.test(id)) throw Error("Invalid saved brain control ID " + id);
   controlProfiles[id] = normalizeControls(settings);
 }
-function saveControls() {
+function saveControls(nextProfiles = controlProfiles) {
   const temp = controlFile + ".tmp";
-  fs.writeFileSync(temp, JSON.stringify(controlProfiles, null, 2));
+  fs.writeFileSync(temp, JSON.stringify(nextProfiles, null, 2));
   fs.renameSync(temp, controlFile);
 }
 const generatedPending = new Map(); let requestSerial = 0;
@@ -140,11 +141,15 @@ http.createServer((req, res) => {
       const id = q.get("w"), targets = id === null ? slots.slice() : slots.filter(sl => String(sl.w) === id);
       if (!targets.length) {res.writeHead(404); return res.end("Unknown brain");}
       const updates = targets.map(sl => ({sl, settings: controlsFromQuery(q, sl.controls)}));
+      // Validate and persist all selected profiles BEFORE publishing them to real workers.
+      const nextProfiles = {...controlProfiles};
+      for (const {sl, settings} of updates) nextProfiles[String(sl.w)] = settings;
+      saveControls(nextProfiles);
+      Object.assign(controlProfiles, nextProfiles);
       for (const {sl, settings} of updates) {
         sl.controls = settings; sl.controlsApplied = false; sl.controlError = null;
-        controlProfiles[String(sl.w)] = settings; sl.wk?.postMessage({controls: settings});
+        sl.wk?.postMessage({controls: settings});
       }
-      saveControls();
       return json(res, {ok: true, brains: updates.map(({sl}) => ({w: sl.w, controls: sl.controls}))});
     } catch (e) {res.writeHead(400); return res.end(e.message);}
   }
