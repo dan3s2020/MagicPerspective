@@ -5,7 +5,7 @@ import {spawn} from 'node:child_process';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 test('HTTP root is real observatory; real V17 worker receives a training command',async()=>{
  const port=20000+(process.pid%20000);
- const server=spawn(process.execPath,['server.mjs'],{cwd:new URL('.',import.meta.url),env:{...process.env,PORT:String(port),HOST:'127.0.0.1'},stdio:['ignore','pipe','pipe']});
+ const server=spawn(process.execPath,['server.mjs'],{cwd:new URL('.',import.meta.url),env:{...process.env,PORT:String(port),HOST:'127.0.0.1',MP_SESSION:'http-test-'+process.pid},stdio:['ignore','pipe','pipe']});
  let stderr='';server.stderr.on('data',chunk=>{stderr+=chunk.toString().slice(0,1000);});
  let done=false;
  try{
