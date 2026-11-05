@@ -15,7 +15,7 @@ The binary PDF was produced in the research workspace and **is not committed to 
 3. [Complete SHA file inventory for main and V17 branch](RESEARCH_COMPLETE_FILE_INVENTORY_20261106.md): original file paths plus Git SHA, 1,440 lines, counts by version.
 4. [Version-by-version evidence and hypothesis atlas](RESEARCH_EVIDENCE_AND_HYPOTHESIS_ATLAS_20261106.md): V1–V17 mechanisms, positives, failures, provenance and proposed ablations.
 5. [Research flow SVG](figures/FIGURE_01_SOLUTION_SHAPE_TRANSFORMATION_20261106.svg): visual status-aware world→graph→representation→value field diagram.
-6. [V17 original research report](https://github.com/dan3s2020/MagicPerspective/blob/v17-torus-aether/v17/docs/TORUS_AETHER_ABC_20261104.md): source-reported metrics; branch is separate.
+6. [All 28 Git branch heads](RESEARCH_ALL_BRANCH_HEADS_20261106.md): exact branch names and SHA provenance; the file inventory covers main and V17 refs.\n7. [V17 original research report](https://github.com/dan3s2020/MagicPerspective/blob/v17-torus-aether/v17/docs/TORUS_AETHER_ABC_20261104.md): source-reported metrics; branch is separate.
 
 ## Paper sections / visual pages
 
