@@ -54,7 +54,7 @@ else
 fi
 RUNTIME="$HERE/runtime-live-controls-isolated"
 mkdir -p "$RUNTIME"
-HEAP="$(awk -v m="$MEM" 'BEGIN { printf "%d", m*1024*1.7+1 }')"
+HEAP="$(node -p 'Math.ceil(Number(process.argv[1])*1024*1.7)' "$MEM")"
 ARGS=("--max-old-space-size=$HEAP" "$HERE/transcend/torus-aether/devour/devour.mjs"
   --workers "$WORKERS" --arms "$ARMS" --mem "$MEM" --worlds "$WORLDS"
   --every "$EVERY" --chars "$CHARS" --maze-every "$MAZE_EVERY" --out "$RUNTIME" --port "$PORT" --gpu off)
