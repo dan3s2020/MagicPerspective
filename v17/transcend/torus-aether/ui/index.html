@@ -32,7 +32,7 @@
   .matrix{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:6px;font:11px ui-monospace,monospace;color:var(--gold)}.matrix span{background:#0a121c;border:1px solid #2a3a4a;border-radius:4px;text-align:center;padding:2px 0}
   .where{font-size:12.5px;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 9px;margin:6px 0}.where .ctx{color:var(--gold);font-family:ui-monospace,monospace}
   .liveList{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}.lgc{border:1px solid #23384c;border-radius:8px;padding:6px 8px;font-size:12px}.lgc.on{border-color:var(--gold)}.lgc .t{cursor:pointer}.lgc .sc{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:4px 0}.lgc .sc b{font-weight:600}.lgc .bt{display:flex;gap:4px;flex-wrap:wrap}.lgc .bt button{padding:2px 7px;font-size:12px}.st{font-size:11px;padding:1px 6px;border-radius:6px;background:#1d2b3a}.st.run{background:#174a2c;color:#7ee0a1}.lg{text-align:left;font-size:12px;padding:6px 8px}.lg small{color:var(--dim);font-size:11px}.lg.on{border-color:var(--gold);color:var(--gold)}
-  body.live #run,body.live #reset,body.live .sl:has(#speed),body.live .sl:has(#ltemp),body.live .sl:has(#pnoise),body.live .sl:has(#dims),body.live .sl:has(#bud),body.live .sl:has(#wires),body.live .sl:has(#gnoise),body.live .sl:has(#glr),body.live .sl:has(#repel){display:none}
+  body.live #run,body.live #reset,body.live .sl:has(#speed),body.live .sl:has(#dims),body.live .sl:has(#bud),body.live .sl:has(#wires){display:none}
   .gen{margin-top:6px;font:12px/1.5 ui-monospace,monospace;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 8px;word-break:break-all}
 </style>
 </head>
@@ -125,6 +125,9 @@
     <div id="matrix" class="matrix"></div>
 
     <h2>Zgomot și libertate</h2>
+    <div id="liveControlsPanel" hidden><p class="note">Creier selectat: parametri reali ai antrenării. Temperatura scrierii și cea de test afectează inferența/evaluarea, nu greutățile; celelalte modifică învățarea sau geometria.</p>
+      <div class="row"><button id="liveControlsApply" type="button">Aplică sliderele creierului selectat</button><button id="liveControlsAll" type="button">Aplică tuturor creierelor</button></div>
+      <p class="note" id="liveControlsStatus" role="status" aria-live="polite">Aștept parametrii reali…</p></div>
     <div class="sl"><label for="wtemp">temperatura scrierii</label><input id="wtemp" type="range" min="0" max="2" step="0.05" value="0.6"><span id="wtempOut" class="dim">0.6</span><small>libertatea de mișcare când graful scrie; rezonanța măsurată e pe la 0,6</small></div>
     <div class="row"><button id="write">Scrie liber</button></div>
     <div id="writeOut" class="dim">—</div>
@@ -148,7 +151,7 @@
     <div id="form"></div>
 
     <h2>Dovada</h2>
-    <div class="sl"><label for="ttemp">temperatura la test</label><input id="ttemp" type="range" min="0" max="1.5" step="0.05" value="0.6"><span id="ttempOut" class="dim">0.6</span><small>0 = determinist, mereu același rezultat; peste 0 graful alege prin tragere la sorți, deci halucinează și fiecare test diferă</small></div>
+    <div class="sl"><label for="ttemp">temperatura la test</label><input id="ttemp" type="range" min="0" max="1.5" step="0.05" value="0.6"><span id="ttempOut" class="dim">0.6</span><small>0 = predicție deterministă; peste 0 = sampling stochastic al predicțiilor (abaterea față de adevăr este măsurată separat, nu presupusă)</small></div>
     <div id="evalOut">—</div>
   </aside>
 </div>
