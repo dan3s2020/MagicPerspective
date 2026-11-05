@@ -241,6 +241,7 @@ class Server:
         if self.util < 100: time.sleep(busy * (100 / self.util - 1))
     def handle(self, m):
         t0 = time.time(); c = m["cmd"]
+        if self.B.torch and str(self.B.device).startswith("cuda"): torch.cuda.reset_peak_memory_stats()   # VRAM is measured as this command's peak (the batch's tensors are freed when it ends)
         if c == "init": r = self.init(m)
         elif c == "exercise": r = {"worlds": exercise_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))}
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
@@ -248,7 +249,7 @@ class Server:
         elif c == "maze_check": r = {"mazes": [make_maze(s, n) for s, n in m["items"]]}
         else: r = {"error": "unknown command " + c}
         self.B.sync(); busy = time.time() - t0; self.throttle(busy)
-        if self.B.torch and str(self.B.device).startswith("cuda"): r["vramUsedGB"] = round(torch.cuda.memory_allocated() / 1e9, 3)
+        if self.B.torch and str(self.B.device).startswith("cuda"): r["vramUsedGB"] = round(torch.cuda.max_memory_allocated() / 1e9, 4)
         r["busy"] = round(busy, 4); return r
 
 def selftest(device):                                        # run by START_V17.ps1 before training: does the card really compute?
