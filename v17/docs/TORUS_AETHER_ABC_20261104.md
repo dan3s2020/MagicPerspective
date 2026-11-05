@@ -610,3 +610,28 @@ Found on the way: labyrinth symbols lived through the same trust spoiled text tr
 apart when it lives a world of control symbols (":c"), seen in its own context, not told.
 What the CPU no longer does in this mode: the older organs (A/C chain, field) live one exercise per text batch, so
 their own text scores stay low; the aligning graph is the text organ. Not yet on the card: the transformation world.
+
+## Research: does the geometry of relations (Grassmann / Plücker) make the form learnable? (laws/geo-form.mjs)
+
+Asked by the user (2026-11-05 21:47) after three external research notes (Grassmann flows, an audit of V17 against it,
+and synthetic experiments on reconstruction / Local2Global stitching / Plücker features). Tested on OUR world, not a
+synthetic one: transformation world, task "an object there"; it discovers who it is and what it can push (its own
+rules); the form of the solution is a value it LEARNS from its own attempts (TD), linear in its relations to things.
+Same everything, two representations of the same relations: raw (itself→object, object→target) or geometric (+ the
+outer product of the two — the Plücker coordinate in 2D — and their inner product). 300 training tasks (each up to 3
+attempts), 90 unseen arrangements, 4 seeds:
+
+| | seed 1 | seed 2 | seed 3 | seed 4 | mean |
+|---|---|---|---|---|---|
+| geometric relations, learned form | 54.4% | 60.0% | 46.7% | 44.4% | 51.4% |
+| raw relations, learned form | 35.6% | 25.6% | 32.2% | 27.8% | 30.3% |
+| form written by me (FormOrganism) | 77.8% | 70.0% | 77.8% | 77.8% | 75.8% |
+| search (causal loop) | 100% | 100% | 100% | 100% | 100% |
+
+The geometry is real and it is close to what is needed for one part: with the outer and inner product of its
+relations, the form it learns by itself generalises to unseen arrangements +21 points better than with the raw
+relations (the learned weights say: the object should lie on the line from itself to the target, on the far side —
+inner product positive, outer product near zero). It is not enough alone: a linear form over a few relations does not
+see walls and doors, where the written form (attraction through what lets through) and search still win. What it
+points to: the form learned from experience as geometry of relations measured THROUGH what lets through (the
+attraction field of the labyrinth), not over straight distances.
