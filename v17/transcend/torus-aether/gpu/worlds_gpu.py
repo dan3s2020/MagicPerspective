@@ -139,7 +139,8 @@ def exercise_batch(B, worlds, K, seed):
         for b in range(N):
             if not active[b]: continue
             o = None
-            if plan_dir[b] >= 0 and tp >= te * .9:
+            if K.get("noise") and rnd[b, 1] < K["noise"]: o = int(rnd[b, 2] * 8) % 8      # the person's noise: sometimes it acts at random
+            elif plan_dir[b] >= 0 and tp >= te * .9:
                 d = ACTIONS[plan_dir[b]]
                 for oo in range(8):
                     if eff[oo] and eff[oo][0] == d[0] and eff[oo][1] == d[1]: o = oo; break

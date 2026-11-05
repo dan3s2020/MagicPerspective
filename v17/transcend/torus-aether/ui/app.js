@@ -25,8 +25,9 @@ const cLabel = id => { const [k, m] = id.split(":"); let pos = ""; for (let i = 
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 let corpus, e, chain, data, t = 0, running = false, nodes, edges, recent, strip, D, geo, rand, groups = [], real5;
-const COL = {sym: "#7cc9ff", C: "#f5b301", A: "#ff4d6d", world: "rgba(124,201,255,.18)", see: "rgba(245,179,1,.5)",
-  feel: "rgba(255,77,109,.5)", bud: "rgba(255,255,255,.5)", trust: "rgba(61,220,132,.8)"};
+const COL = {sym: "#7cc9ff", C: "#f5b301", A: "#ff4d6d", self: "#ffffff", world: "rgba(124,201,255,.18)", see: "rgba(245,179,1,.5)",
+  feel: "rgba(255,77,109,.5)", bud: "rgba(255,255,255,.5)", trust: "rgba(61,220,132,.8)",
+  align: "rgba(61,220,132,.3)", miss: "rgba(255,77,109,.35)", is: "rgba(255,255,255,.9)", moves: "rgba(245,179,1,.9)", attract: "rgba(61,220,132,.95)", repel: "rgba(255,77,109,.95)"};
 
 // ---------- life ----------
 function reset() {
@@ -279,6 +280,7 @@ function drawNest(W, H) {
   for (const d of discs) { d.alpha *= fresh(d); const n = nodeOf(d), type = n?.type || "sym", col = type === "sym" && n?.hue !== undefined ? `hsl(${n.hue},85%,${d.real ? 65 : 45}%)` : COL[type] || "#7cc9ff", act = n?.act || 0;
     g.globalAlpha = d.alpha * (d.real ? .55 + .45 * Math.max(.4, act) : .35); g.fillStyle = col; g.shadowColor = col; g.shadowBlur = d.real ? 4 + 14 * act : 0;
     g.beginPath(); g.arc(d.x, d.y, d.r, 0, 7); if (d.real) g.fill(); else { g.strokeStyle = col; g.lineWidth = 1.2; g.stroke(); } g.shadowBlur = 0;
+    if (n?.err && performance.now() - n.err < 1200) { const k = (performance.now() - n.err) / 1200; g.globalAlpha = d.alpha * (1 - k); g.strokeStyle = "#ff4d6d"; g.lineWidth = 2; g.beginPath(); g.arc(d.x, d.y, d.r + 4 + 14 * k, 0, 7); g.stroke(); }   // impulse: prediction ≠ reality
     if (d.r > 4 || discs.length < 300) { g.globalAlpha = d.alpha * (d.real ? 1 : .55); g.fillStyle = "#fff"; g.font = (type === "sym" ? "11px " : "bold 10px ") + "ui-monospace,monospace"; g.textAlign = "center";
       const txt = type !== "sym" ? n?.label || "" : d.label ? d.label.split("").map(c2 => ch(c2.charCodeAt(0))).join("") : n?.label || "";
       g.fillText(txt.length > 18 ? "…" + txt.slice(-18) : txt, d.x, d.y - d.r - 4); } }
@@ -351,7 +353,10 @@ function evaluate() {
     `<br><span class="dim">la T=0 (fără halucinație): graful ${p(hit.det)} · C singur ${p(hit.C)}. La T&gt;0 fiecare test dă alt rezultat.</span>`;
 }
 function write() {
-  if (LIVE) { $("writeOut").textContent = "Scrierea liberă rulează în pagină doar în modul local (graful antrenat aici); aici graful trăiește în trainer."; return; }
+  if (LIVE) { $("writeOut").textContent = "scrie…";                        // the graph in the trainer writes freely, at the writing temperature
+    fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: [], opts: {T: val("wtemp"), max: 1200, stopBlank: false}})}).then(r => r.json()).then(r => {
+      $("writeOut").innerHTML = r.error ? r.error : `T ${(+val("wtemp")).toFixed(2)} · graful #${liveW}<div class="gen">${String(r.text).replace(/</g, "&lt;").replace(/\n/g, " ⏎ ")}</div>`; }).catch(err => $("writeOut").textContent = err.message);
+    return; }
   const T = val("wtemp"), out = e.holdout.slice(0, 12), N = 1200, keep = chain.rand; chain.rand = rng((Math.random() * 2 ** 32) >>> 0);
   for (let k = 0; k < N; k++) { const i = out.length, p = chain.play(e, ctxAt(out, i), histAt(out, i)).out; out.push(chain.pick(p, T)); }
   chain.rand = keep;
@@ -367,7 +372,10 @@ function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
   $("steps").textContent = t.toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
-  $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—";
+  $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
+    $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
+      `<br>cum citește acum: urmează alinierile de încredere cu ascuțimea <b>${M.g}</b>, forma cântărește <b>${M.form}</b>` +
+      (M.history.length ? "<br>schimbări făcute de el însuși (G<sub>t</sub> → G<sub>t+1</sub>, adoptate doar dacă ghicesc mai bine ce n-a văzut): " + M.history.map(h => `la ${h.at.toLocaleString()}: ascuțime ${h.from.g}→${h.to.g}, formă ${h.from.form}→${h.to.form} (${(100 * h.before).toFixed(1)}%→${(100 * h.after).toFixed(1)}%)`).join("; ") : "<br>încă nicio schimbare a lui însuși: nicio variantă n-a ghicit mai bine"); }
   $("form").textContent = LIVE ? (liveSnap?.form || "încă nicio percepție") : chain.A[0].wires.length ? chain.A[0].form() : "încă nicio percepție";
   $("strip").innerHTML = strip.map(s => `<span class="${s.fixed ? "fix" : s.broke ? "brk" : s.ok ? "ok" : "no"}">${ch(s.y).replace("<", "&lt;")}</span>`).join("");
 }
@@ -412,7 +420,8 @@ for (const id of ["speed", "wtemp", "ttemp", "ltemp", "pnoise", "gnoise", "glr",
   $(id).addEventListener("input", () => { $(id + "Out").textContent = (+$(id).value).toString(); view.dirty = true; });
 $("run").onclick = () => { running = !running; $("run").textContent = running ? "Pauză" : "Start"; };
 $("reset").onclick = () => reset();
-$("eval").onclick = () => evaluate();
+$("eval").onclick = () => { if (!LIVE) return evaluate();                   // live: unseen exercises drawn at random, at the test temperature, in the Evaluare tab
+  $("tabEval").click(); $("evKind").value = "text"; $("evKind").onchange(); $("evT").value = val("ttemp"); $("evTOut").textContent = val("ttemp"); $("evGo").click(); };
 $("write").onclick = () => write();
 $("wtemp").addEventListener("change", () => { if (t) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
@@ -420,12 +429,12 @@ const LIVE = new URLSearchParams(location.search).has("live");
 let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null;
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
-  for (const [id, type, label, act, born] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); keep.add(id); }
+  for (const [id, type, label, act, born, err] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); if (err) n.err = performance.now(); keep.add(id); }
   for (const id of [...nodes.keys()]) if (!keep.has(id)) nodes.delete(id);
-  edges = new Map(gs.edges.map(([a2, b2, kind, w]) => [a2 + ">" + b2, {a: a2, b: b2, kind, w, hot: 1}]));
+  edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : ""), {a: a2, b: b2, kind, w, label, hot: 1}]));
   if (gs.text && gs.text.length !== (liveSnap?.text?.length || -1) || !data.length) { data = Array.from(gs.text || "", c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
-  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs;   // every step lived: text characters and every world's symbols view.dirty = true; findConcepts();
+  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();   // t: every step lived (text characters and every world's symbols)
 }
 // the map the same brain is living: walls, checkpoint band, and the path of its two cubes in the last episode
 let mazeShown = null, mazeT0 = 0;
@@ -537,29 +546,34 @@ fetch("/corpus").then(r => r.json()).then(c => {
   $("tabTrain").onclick = () => { side.classList.remove("evalOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); };
   $("tabEval").onclick = () => { side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("evW").textContent = "#" + liveW; };
   $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
-  const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : [];
-  const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; t0 = performance.now(); table(); };
+  const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
+  for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
+  const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; t0 = performance.now(); table(); if (kind === "text") textView(); };
   const table = () => { const L = items(); if (!L.length) { $("evalTab").innerHTML = ""; return; }
+    if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>forma scrisă înainte</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td></tr>`).join("") + "</table>";
+      for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); return; }
     $("evalTab").innerHTML = kind === "maze"
       ? "<table><tr><th align=left>labirint</th><th>forma prezisă înainte</th><th>a ajuns</th><th>pași / optim</th><th>pași după formă / explorare</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n}×${m.n}</td><td align=center>${pct(m.first)}</td><td align=center>${m.solved ? "<b style='color:var(--green)'>da</b>" : "nu"}</td><td align=center>${m.steps} / ${m.optimal}</td><td align=center>${m.how?.plan ?? 0} / ${m.how?.explore ?? 0}</td></tr>`).join("") + "</table>"
       : "<table><tr><th align=left>sarcina</th><th>rezultat</th><th>pași / optim</th><th>predicții greșite</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.impossible ? "imposibilă" : m.goals.join(" + ")} ${m.n}×${m.n}</td><td align=center>${m.impossible ? (m.said ? "<b style='color:var(--green)'>a spus: imposibil</b>" : "n-a recunoscut") : m.solved ? "<b style='color:var(--green)'>atinsă</b>" : m.said ? "a spus imposibil" : "nu"}</td><td align=center>${m.steps} / ${m.optimal ?? "—"}</td><td align=center>${m.predicted ? m.failed + "/" + m.predicted : "—"}</td></tr>`).join("") + "</table>";
     for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); };
-  const textView = () => { const T = R.rows, esc = c => c === 60 ? "&lt;" : c === 38 ? "&amp;" : c === 10 ? "⏎\n" : c < 32 || c > 126 ? "·" : String.fromCharCode(c);
-    $("evalText").innerHTML = T.map(([y, g]) => `<span class="${y === g ? "eh" : "em"}" title="a ghicit: ${esc(g)}">${esc(y)}</span>`).join(""); };
+  const textView = () => { const X = kind === "text" && R.exercises ? R.exercises[cur] : R, T = X.rows, a0 = X.a0 ?? -1, esc = c => c === 60 ? "&lt;" : c === 38 ? "&amp;" : c === 10 ? "⏎\n" : c < 32 || c > 126 ? "·" : String.fromCharCode(c);
+    $("evalText").innerHTML = T.map(([y, g], i) => (i === a0 ? `<b style="color:var(--gold)">▸ </b>` : "") + `<span class="${y === g ? "eh" : "em"}" title="a ghicit: ${esc(g)}">${esc(y)}</span>`).join("") +
+      (X.shape != null ? `<div style="margin-top:10px;color:var(--gold)">forma soluției, scrisă de el din întrebare, ÎNAINTE să vadă răspunsul (${(100 * (X.shapeSame || 0)).toFixed(0)}% din caractere la locul lor):</div><div style="color:#e6c56a">${Array.from(X.shape, c => esc(c.charCodeAt(0))).join("")}</div>` : ""); };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
     kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
-      : kind === "text" ? {text: $("evTextIn").value, max: +$("evMax").value || 3000} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
+      : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: +$("evMax").value || 20000} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
+    opts.T = +$("evT").value; opts.noise = +$("evNoise").value;
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
       if (r.error) $("evOut").textContent = r.error;
       else { R = r; const head = `graful #${r.w}, după ${(r.lived || 0).toLocaleString()} pași trăiți: `;
-        $("evCv").hidden = kind === "text"; $("evalText").hidden = kind !== "text";
+        $("evCv").hidden = kind === "text"; $("evalText").hidden = kind !== "text"; $("evT").value = r.T ?? $("evT").value;
         if (kind === "maze") { const ok = r.mazes.filter(m => m.solved).length, sh = r.mazes.reduce((a, m) => a + (m.first || 0), 0) / r.mazes.length;
           $("evOut").innerHTML = head + `<b>${ok}/${r.mazes.length} rezolvate din prima</b> · forma prezisă dinainte, în medie <b>${pct(sh)}</b> corectă · auriu punctat = ce prezice înainte de prima mișcare, albastru = pe unde a mers` + (r.mind ? `<br><span class="dim">încrederea în formă ${r.mind.trust.plan[0]}/${r.mind.trust.plan[1]} · în explorare ${r.mind.trust.explore[0]}/${r.mind.trust.explore[1]} (urmează forma doar dacă prima ≥ 0.9 × a doua) · ieșiri al căror efect îl știe: ${r.mind.effects.map((e, o) => e ? "▶" + o + "→(" + e + ")" : null).filter(Boolean).join(" ") || "niciuna"}${r.mind.gpu ? ` · ultimul lot GPU: ${r.mind.gpu.batch} lumi, ${r.mind.gpu.differ ?? 0} unde rezultatul de pe placă diferă de cel trăit` : ""}</span>` : ""); }
         else if (kind === "transform") { const T = r.tasks.filter(t => !t.impossible), I = r.tasks.filter(t => t.impossible), pred = T.reduce((a, t) => a + t.predicted, 0);
           $("evOut").innerHTML = head + `<b>${T.filter(t => t.solved).length}/${T.length} configurații nevăzute atinse din prima</b> · predicții cauzale greșite ${pred ? pct(T.reduce((a, t) => a + t.failed, 0) / pred) : "—"} · imposibile recunoscute ${I.filter(t => t.said).length}/${I.length} · conturul punctat = configurația dorită`; }
-        else { $("evOut").innerHTML = head + `pe ${r.n.toLocaleString()} caractere (${r.source}): <b>graful care se aliniază ghicește ${pct(r.aligned)}</b> din prima · graful vechi ${pct(r.live)} · C singur ${pct(r.C)} · verde = ghicit, roșu = greșit (ține mouse-ul pe o literă: ce a ghicit)`; textView(); }
+        else { $("evOut").innerHTML = head + `${r.exercises.length} ${r.source}, de la cel mai mic la cel mai mare, temperatura ${r.T}, zgomot ${r.noise}: <b>răspunsul (soluția) ghicit din prima ${pct(r.answer)}</b> · tot exercițiul ${pct(r.all)} · graful vechi pe răspuns ${pct(r.oldAnswer)}<br><span class="dim">verde = ghicit, roșu = greșit, ▸ = de aici începe răspunsul; ține mouse-ul pe o literă: ce a ghicit în locul ei. Fiecare apăsare trage alte exerciții.</span>`; }
         show(0); } }
     catch (err) { $("evOut").textContent = "nu am putut ajunge la trainer: " + err.message; }
     $("evGo").disabled = false; };
@@ -586,3 +600,14 @@ fetch("/corpus").then(r => r.json()).then(c => {
       g.fillStyle = "#e6f3ff"; g.font = "13px system-ui"; g.fillText(`${L.impossible ? "imposibilă" : L.goals.join(" + ")} · pasul ${k} / ${L.steps}${L.frames[k].how ? " · " + L.frames[k].how : ""}`, 8, c.height - 8);
       if (el > sp * (L.frames.length + 8) && cur < R.tasks.length - 1) show(cur + 1); } };
   requestAnimationFrame(draw); }
+
+// ---- determinism ↔ randomness, noise: in live mode every slider acts on the graph that is learning ----
+{ const keys = ["ltemp", "pnoise", "gnoise", "glr", "repel", "wtemp", "ttemp"]; let timer = null, shownFor = -1;
+  const send = () => { const q = keys.map(k => k + "=" + encodeURIComponent($(k).value)).join("&");
+    fetch(`/controls?${$("ctlAll").checked ? "" : "w=" + liveW + "&"}${q}`, {method: "POST"}).then(r => r.json()).then(r => {
+      $("ctlOut").textContent = `aplicat grafului ${r.graphs.map(w => "#" + w).join(", ")}: ` + Object.entries(r.applied).map(([k, v]) => k + " " + v).join(" · "); }).catch(err => $("ctlOut").textContent = err.message); };
+  if (LIVE) for (const k of keys) $(k).addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(send, 350); });
+  // when a graph is chosen, the sliders show what that graph lives with
+  setInterval(() => { if (!LIVE || !liveSnap?.controls || shownFor === liveW) return; shownFor = liveW;
+    for (const k of keys) if (liveSnap.controls[k] != null) { $(k).value = liveSnap.controls[k]; const o = $(k + "Out"); if (o) o.textContent = liveSnap.controls[k]; } }, 500);
+}

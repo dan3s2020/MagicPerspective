@@ -16,6 +16,7 @@
 //    and tries them. LIMITATION: when no way exists and nothing untried is reachable, it says so and stops.
 import {RNG} from "./labyrinth.mjs";
 import {ANY} from "./transform.mjs";
+import {bodyAdd, bodyEffect} from "./exercise.mjs";
 
 export class CausalOrganism {
   constructor(seed = 1, {cap = 40000} = {}) {
@@ -24,7 +25,7 @@ export class CausalOrganism {
   }
   // ---- structure ----
   effect(o) { let best = null, bc = 0, tot = 0; for (const [k, c] of this.fx[o]) { if (!Array.isArray(k)) continue; tot += c; if (c > bc) { bc = c; best = k; } }   // tries where nothing moved say nothing about the direction
-    return Array.isArray(best) && bc >= 2 && bc / tot > .6 ? best : null; }            // a displacement (as cell offset dx,dy) or null
+    return Array.isArray(best) && bc >= 2 && bc / tot > .6 ? best : bodyEffect(this.body, o); }   // a displacement (dx,dy), else what its body learned in another world, or null
   moves() { return [0, 1, 2, 3, 4, 5, 6, 7].filter(o => this.effect(o)); }
   findSelf(b) { let at = -1; for (let i = 0; i < b.length; i++) if (this.selfKinds.has(b[i])) { if (at >= 0) return -1; at = i; } return at; }
   cell(n, i, e, k) { const x = i % n + k * e[0], y = ((i / n) | 0) + k * e[1]; return x < 0 || y < 0 || x >= n || y >= n ? -1 : y * n + x; }
@@ -67,7 +68,7 @@ export class CausalOrganism {
       let f = this.far.get(key); if (!f) this.far.set(key, f = new Set()); f.add(k[2]); } }
     else for (const key of [o + "|" + k[0] + "," + k[1] + ",?", "M|" + k[0] + "," + k[1] + ",?"]) { let m = this.rules.get(key); if (!m) this.rules.set(key, m = new Map()); m.set("x" + k[2], 1); }   // here the farthest cell mattered
   }
-  addFx(o, e) { const m = this.fx[o], k = e; let hit = null; for (const kk of m.keys()) if (Array.isArray(kk) && kk[0] === k[0] && kk[1] === k[1]) hit = kk; m.set(hit || k, (m.get(hit || k) || 0) + 1); }
+  addFx(o, e) { bodyAdd(this.body, o, e[0], e[1]); const m = this.fx[o], k = e; let hit = null; for (const kk of m.keys()) if (Array.isArray(kk) && kk[0] === k[0] && kk[1] === k[1]) hit = kk; m.set(hit || k, (m.get(hit || k) || 0) + 1); }
   // ---- intention and imagination ----
   matches(b, goal) { for (let i = 0; i < b.length; i++) if (goal[i] !== ANY && goal[i] !== b[i]) return false; return true; }
   imagine(b, n, at, goal) {                                                    // counterfactual search over its own model
@@ -83,8 +84,12 @@ export class CausalOrganism {
   // ---- one step of the loop ----
   choose(b, n, goal) {
     const at = this.findSelf(b), M = this.moves();
+    if (this.noise && this.r.next() < this.noise) return {o: this.r.int(8), how: "noise", at};   // the person's noise: sometimes it acts at random
     if (at < 0 || M.length < 4) {                                              // it does not know yet who it is or what it can do
-      const order = [0, 1, 2, 3, 4, 5, 6, 7].sort((x, y) => (this.effect(x) ? 1 : 0) - (this.effect(y) ? 1 : 0) || this.tries[x] - this.tries[y] || this.r.next() - .5);
+      // its body already knows which outputs move it (learned in another world): to find which symbol is itself HERE it
+      // has to move, so it uses those; otherwise it tries first what it knows nothing about
+      const knowsBody = at < 0 && M.length >= 4, pref = x => (knowsBody ? (this.effect(x) ? 0 : 1) : (this.effect(x) ? 1 : 0));
+      const order = [0, 1, 2, 3, 4, 5, 6, 7].sort((x, y) => pref(x) - pref(y) || this.tries[x] - this.tries[y] || this.r.next() - .5);
       return {o: order[0], how: "explore", at}; }
     const im = this.imagine(b, n, at, goal);
     if (im.limitation) return {o: null, how: "limitation", at};

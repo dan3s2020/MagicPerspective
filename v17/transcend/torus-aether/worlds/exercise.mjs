@@ -21,6 +21,11 @@ export const KIND = {floor: 0, wall: 1, target: 2, self: 3};               // fo
 const SYMS = [1, 2, 3, 4];                                                   // the raw symbols the retina shows (control codes, never in text; no meaning)
 const OUTS = [5, 6, 7, 8, 11, 12, 14, 15];                                  // the 8 symbols the brain can emit
 export const EX_SYMBOLS = new Set([...SYMS, ...OUTS]);
+// ONE BODY: what each of its outputs does to itself, learned in whichever world it acted; every world reads it
+export const bodyAdd = (body, o, dx, dy) => { if (!body) return; const m = body[o] || (body[o] = new Map()), k = dx + "," + dy; m.set(k, (m.get(k) || 0) + 1); };
+export const bodyEffect = (body, o) => { const m = body?.[o]; if (!m) return null; let best = null, bc = 0, tot = 0; for (const [k, c] of m) { tot += c; if (c > bc) { bc = c; best = k; } }
+  return best && bc >= 3 && bc / tot > .8 ? best.split(",").map(Number) : null; };
+
 
 export class Discoverer {
   constructor(seed = 1) {
@@ -37,7 +42,7 @@ export class Discoverer {
   effect(o) {                                                                // what output o does to itself: [dx, dy] or null
     const s = this.self(); if (s < 0) return null; let best = null, bc = 0, tot = 0;
     for (const [k, c] of this.disp[o]) { const [kind, dx, dy] = k.split("|").map(Number); if (kind !== s || (!dx && !dy)) continue; tot += c; if (c > bc) { bc = c; best = [dx, dy]; } }
-    return best && bc >= 2 && bc / tot > .6 ? best : null; }   // when it did move, it always moved this way (blocked tries say nothing about the direction)
+    return best && bc >= 2 && bc / tot > .6 ? best : bodyEffect(this.body, o); }   // when it did move, it always moved this way (blocked tries say nothing about the direction); else what its body learned elsewhere
   conduct(kind) { return this.pass[kind] / (this.pass[kind] + this.block[kind]); }
   attract(kind) { return this.endIn[kind] / this.enter[kind]; }
   // ---- the shape of the solution: attraction spread over the exercise, climbed from itself ----
@@ -56,15 +61,17 @@ export class Discoverer {
   }
   // ---- choosing what to emit ----
   choose(ret, n, me, visits, plan) {
+    if (this.noise && this.r.next() < this.noise) return {o: this.r.int(8), how: "noise"};   // the person's noise: sometimes it acts at random
     const outs = [0, 1, 2, 3, 4, 5, 6, 7], eff = outs.map(o => this.effect(o));
     const tp = this.trust.plan[0] / this.trust.plan[1], te = this.trust.explore[0] / this.trust.explore[1];
     if (plan && plan.length && tp >= te * .9) { const d = ACTIONS[plan[0]], o = outs.find(o => eff[o] && eff[o][0] === d[0] && eff[o][1] === d[1]); if (o !== undefined) return {o, how: "plan"}; }
     // explore: outputs never tried first; then the known moves toward cells it has not been in, through what lets through
     const untried = outs.filter(o => this.tries[o] < 3); if (untried.length) return {o: untried[this.r.int(untried.length)], how: "explore"};
-    let best = [], bv = -Infinity;
-    for (const o of outs) { const e = eff[o]; if (!e) { const v = .7 / (1 + this.tries[o] / 15) + .05 * this.r.next(); if (v > bv) { bv = v; best = [o]; } continue; }   // what this output does is still unknown: curiosity
+    let best = [], bv = -Infinity; const cand = [];
+    for (const o of outs) { const e = eff[o]; if (!e) { const v = .7 / (1 + this.tries[o] / 15) + .05 * this.r.next(); cand.push([o, v]); if (v > bv) { bv = v; best = [o]; } continue; }   // what this output does is still unknown: curiosity
       const x = me % n + e[0], y = ((me / n) | 0) + e[1]; if (x < 0 || y < 0 || x >= n || y >= n) continue; const j = y * n + x;
-      const v = this.conduct(ret[j]) - .3 * Math.min(visits[j] || 0, 5) + .2 * this.attract(ret[j]) + .05 * this.r.next(); if (v > bv) { bv = v; best = [o]; } }
+      const v = this.conduct(ret[j]) - .3 * Math.min(visits[j] || 0, 5) + .2 * this.attract(ret[j]) + .05 * this.r.next(); cand.push([o, v]); if (v > bv) { bv = v; best = [o]; } }
+    if (this.temp && cand.length > 1) { let z = 0; const w = cand.map(([o, v]) => { const q = Math.exp((v - bv) / this.temp); z += q; return [o, q]; }); let r = this.r.next() * z; for (const [o, q] of w) { r -= q; if (r <= 0) return {o, how: "explore"}; } }   // temperature: not always the best-looking
     if (best.length) return {o: best[0], how: "explore"};
     return {o: this.r.int(8), how: "explore"};
   }
@@ -73,7 +80,7 @@ export class Discoverer {
     const self = this.self();
     for (let k = 0; k < 4; k++) { const a = before.indexOf(k), b = after.indexOf(k); if (a >= 0 && b >= 0 && a !== b && countOf(before, k) === 1) moved.push([k, (b % n) - (a % n), ((b / n) | 0) - ((a / n) | 0)]); }
     if (!moved.length) { const m = this.disp[o]; for (let k = 0; k < 4; k++) if (countOf(before, k) === 1) { const key = k + "|0|0"; m.set(key, (m.get(key) || 0) + 1); } }
-    for (const [k, dx, dy] of moved) { const key = k + "|" + dx + "|" + dy; this.disp[o].set(key, (this.disp[o].get(key) || 0) + 1); }
+    for (const [k, dx, dy] of moved) { const key = k + "|" + dx + "|" + dy; this.disp[o].set(key, (this.disp[o].get(key) || 0) + 1); if (k === self) bodyAdd(this.body, o, dx, dy); }
     // resistance: it pushed itself toward a cell and did not move → that cell's kind repels; moved into it → lets through
     const e = this.effect(o); if (self >= 0 && e && meBefore >= 0) { const x = meBefore % n + e[0], y = ((meBefore / n) | 0) + e[1];
       if (x >= 0 && y >= 0 && x < n && y < n) { const k = before[y * n + x]; if (moved.some(m => m[0] === self)) { this.pass[k]++; this.enter[k]++; this.lastEntered = k; } else this.block[k]++; } }
@@ -91,7 +98,7 @@ export function playExercise(w, D, live = () => {}, {record = false, outputs = n
   const lim = 3 * w.dist[w.start] + 15, visits = new Uint16Array(n * n); visits[pos]++;
   for (const k of ret) live(SYMS[k]);                                        // the whole exercise, once
   const meNow = () => { const s = D.self(); if (s < 0) return -1; const i = ret.indexOf(s); return ret.lastIndexOf(s) === i ? i : -1; };
-  let steps = 0, first = null; const how = {plan: 0, explore: 0}, path = [pos], shapes = [];
+  let steps = 0, first = null; const how = {plan: 0, explore: 0, noise: 0}, path = [pos], shapes = [];
   while (pos !== w.goal && steps < lim) {
     const me = meNow(), plan = me >= 0 ? D.shape(ret, n, me) : null;
     if (steps === 0) first = plan ? planScore(w, pos, plan) : 0;

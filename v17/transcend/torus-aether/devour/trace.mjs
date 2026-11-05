@@ -17,6 +17,11 @@ export class GraphTrace {
   node(id, type, label) { let n = this.nodes.get(id); if (!n) { n = {id, type, label, act: 1, born: this.steps}; this.nodes.set(id, n); } return n; }
   edge(a, b, kind, dw) { const k = a + ">" + b; let x = this.edges.get(k); if (!x) { x = {a, b, kind, w: 0}; this.edges.set(k, x); } x.w += dw; }
   fire(id) { const n = this.nodes.get(id); if (n) n.act = 1; }
+  setEdge(a, b, kind, w, label) { const k = a + ">" + b + ">" + kind; let x = this.edges.get(k); if (!x) { x = {a, b, kind, w}; this.edges.set(k, x); } x.w = w; if (label) x.label = label; }
+  // the aligning graph's step, drawn: following an alignment that was right strengthens prev → y; expecting something
+  // else is an impulse on the symbol that really came (where prediction and reality differ)
+  aligned(prev, y, guess, src) { if (guess === y) this.edge("s:" + prev, "s:" + y, "align", .3);
+    else { const n = this.nodes.get("s:" + y); if (n) { n.err = 1; n.act = 1; } this.edge("s:" + prev, "s:" + guess, "miss", .1); } }
   // called after the graph learned byte y (m = what the chain played before seeing it)
   record(e, chain, ctx, h, y, m, cWire, detailed) {
     this.steps++; this.geo.learn(ctx[0], y); this.text.push(y); if (this.text.length > 120000) this.text.splice(0, 20000);
@@ -35,11 +40,12 @@ export class GraphTrace {
       this.flow.push([ctx[0], y]); if (this.flow.length > 120) this.flow.shift();
       this.strip.push([y, fin === y ? 1 : 0, cByte !== y && fin === y ? 1 : 0, cByte === y && fin !== y ? 1 : 0]); if (this.strip.length > 90) this.strip.shift();
     }
-    if (this.steps % 1000 === 0) { for (const [k, x] of this.edges) { x.w *= .97; if (x.w < .05) this.edges.delete(k); } for (const n of this.nodes.values()) n.act *= .5; }
+    if (this.steps % 1000 === 0) { for (const x of this.edges.values()) x.w *= .97; for (const n of this.nodes.values()) n.act *= .5; }   // what is not lived again dims, but no link is ever deleted
   }
   snapshot(withText) {
-    const edges = [...this.edges.values()].sort((a, b) => b.w - a.w).slice(0, 2500).map(x => [x.a, x.b, x.kind, +x.w.toFixed(3)]);
-    const s = {nodes: [...this.nodes.values()].map(n => [n.id, n.type, n.label, +n.act.toFixed(2), n.born]), edges,
+    const ORG = new Set(["is", "attract", "repel", "moves"]), all = [...this.edges.values()];   // the organism's own links are always shown
+    const edges = [...all.filter(x => ORG.has(x.kind)), ...all.filter(x => !ORG.has(x.kind)).sort((a, b) => b.w - a.w).slice(0, 2500)].map(x => [x.a, x.b, x.kind, +x.w.toFixed(3), x.label || ""]);
+    const s = {nodes: [...this.nodes.values()].map(n => { const r = [n.id, n.type, n.label, +n.act.toFixed(2), n.born, n.err ? 1 : 0]; n.err = 0; return r; }), edges,
       U: [...this.geo.U.entries()].map(([k, v]) => [k, v.map(x => +x.toFixed(5))]), flow: this.flow.slice(), strip: this.strip.slice(),
       accC: this.seen ? (this.accC = this.hitC / this.seen) : (this.accC ?? 0), accF: this.seen ? (this.accF = this.hitF / this.seen) : (this.accF ?? 0)};   // nothing lived since the last picture (a GPU batch deciding): keep the last measured
     this.hitC = this.hitF = this.seen = 0;

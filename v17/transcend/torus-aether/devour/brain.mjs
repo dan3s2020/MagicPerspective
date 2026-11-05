@@ -12,7 +12,7 @@ import {GraphTrace} from "./trace.mjs";
 import {AligningGraph, AlignMemory, AlignIndex, SelfMem} from "../align.mjs";
 import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
-import {Discoverer, playExercise} from "../worlds/exercise.mjs";
+import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
@@ -22,21 +22,33 @@ const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5
 export class Brain {
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = new Discoverer(seed); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
+  // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
+  //  ltemp  temperature of what it expects and does while it learns (0 = always the most trusted)
+  //  pnoise noise in perception (a perceived past symbol replaced by another lived one) and in acting (a random output)
+  //  gnoise / glr / repel: the geometry's noise (random pushes), speed and repulsion; wtemp / ttemp: writing / test
+  setControls(c = {}) { const C = this.controls = {ltemp: 0, pnoise: 0, gnoise: 3, glr: .03, repel: .3, wtemp: .6, ttemp: .6, ...(this.controls || {}), ...c};
+    for (const k of Object.keys(C)) C[k] = +C[k];
+    const g = this.trace.geo; g.neg = Math.round(C.gnoise); g.lr = C.glr; g.repel = C.repel;
+    if (this.disc) { this.disc.noise = C.pnoise; this.disc.temp = C.ltemp; } if (this.causal) { this.causal.noise = C.pnoise; }
+    return C; }
   revive() {                                                                 // what cannot be saved (the random streams) is reborn
     this.place = y => this.trace.geo.U.get(y) || [.5, .5, .5, .5, .5]; this.rand = rngFrom(this.seed * 7919 + this.lived);
-    this.chain.rand = rngFrom(this.seed + this.lived); this.trace.geo.r = rngFrom(this.seed * 31 + this.lived);
+    this.chain.rand = rngFrom(this.seed + this.lived); this.trace.geo.r = rngFrom(this.seed * 31 + this.lived); this.setControls();
+    this.body ||= {}; if (this.disc) this.disc.body = this.body; if (this.causal) this.causal.body = this.body;   // one body for every world
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   live(y, detailed = false) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
-    (this.align ||= new AligningGraph()).live(y);                           // the graph that aligns itself to the context: keeps everything
-    const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), h = this.histOf(past, i), m = chain.play(e, ctx, h);
-    chain.learn(h, y, m); e.c.observe(ctx, y); this.field.live(y, this.place);
+    const prev = this.past.length ? this.past[this.past.length - 1] : null, al = (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
+    if (prev !== null) this.trace.aligned(prev, y, al.guess, al.src);        // in the drawn graph: the alignment it followed, or an impulse where it expected something else
+    const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), C = this.controls || this.setControls(), h0 = this.histOf(past, i), h = C.pnoise ? h0.map(x => (this.rand() < C.pnoise && past.length ? past[Math.floor(this.rand() * past.length)] : x)) : h0, m = chain.play(e, ctx, h, false, {temp: C.ltemp});
+    if (!this.full) { chain.learn(h, y, m); e.c.observe(ctx, y); }   // over the memory budget the old graph stops growing; nothing is deleted
+    this.field.live(y, this.place);
     trace.record(e, chain, ctx, h, y, m, "c:" + e.c.active, detailed); past.push(y); if (past.length > 64) past.splice(0, 32); this.lived++;
   }
   // talking to it: the conversation in the shape of what it devoured ("Q: …\nA: …"), and it writes the answer symbol by
@@ -68,7 +80,7 @@ export class Brain {
   // the labyrinths as the whole exercise, nothing explained (worlds/exercise.mjs): it sees the whole exercise, discovers
   // which symbol is itself, what its outputs do, what repels, what attracts, and predicts the whole trajectory
   playMaze(record = true) {
-    if (!this.disc) this.disc = new Discoverer(this.seed);
+    if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}});
     const M = this.mazes, i = M.index++, w = makeMaze(seedOf(SEEDS.train, i), [7, 9, 11][i % 3]);
     const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {record});
     M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows;
@@ -78,9 +90,9 @@ export class Brain {
   // ---- many worlds at once on the GPU (gpu/worlds_gpu.py), one brain: the worlds run in parallel with what the brain
   // knew at the start of the batch, then every world's experience is lived by this same brain, one after another ----
   knowsForGpu() { const D = this.disc, s = D.self(); return {self: s, effect: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), conduct: [0, 1, 2, 3].map(k => D.conduct(k)), attract: [0, 1, 2, 3].map(k => D.attract(k)),
-    trust: D.trust, tries: D.tries.slice(), moves: D.world.moves}; }
+    trust: D.trust, tries: D.tries.slice(), moves: D.world.moves, noise: D.noise || 0}; }
   async playMazesGPU(gpu, N, tick = async () => {}) {   // tick(phase, done, total): the worker shows progress and lets pause/stop in
-    if (!this.disc) this.disc = new Discoverer(this.seed); const M = this.mazes, items = [];
+    if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}}); const M = this.mazes, items = [];
     for (let k = 0; k < N; k++) { const i = M.index++; items.push({i, seed: seedOf(SEEDS.train, i), n: [7, 9, 11][i % 3]}); }
     await tick("labirinturi: pe GPU", 0, N);
     const res = await gpu.call({cmd: "exercise", worlds: items.map(x => ({seed: x.seed, n: x.n})), knows: this.knowsForGpu(), seed: this.seed * 1000 + M.index});
@@ -123,15 +135,33 @@ export class Brain {
   }
   // the exam to watch: after training, a frozen copy of what it discovered plays unseen labyrinths from small to large;
   // every exercise is recorded with the whole trajectory it predicted BEFORE its first move (shapes[0]) and as it went
-  examMazes(sizes = [7, 9, 11, 13, 15, 17, 19, 21, 25, 31], per = 1) {
-    if (!this.disc) this.disc = new Discoverer(this.seed); const out = [];
+  examMazes(sizes = [7, 9, 11, 13, 15, 17, 19, 21, 25, 31], per = 1, seed = (Math.random() * 2 ** 31) >>> 0, {T = 0, noise = 0} = {}) {   // new unseen labyrinths every time
+    if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}}); const out = [];
     for (const n of sizes) for (let k = 0; k < per; k++) { const c = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); c.r = Object.assign(Object.create(RNG.prototype), c.r);
-      const w = makeMaze(seedOf(SEEDS.test, 5000 + n * 101 + k), n), r = playExercise(w, c, () => {}, {record: true});
+      c.r = new RNG(seed + 7 * n + k); c.temp = T; c.noise = noise;          // its own exploration draws differently every exam; the person's temperature and noise
+      const w = makeMaze(seedOf(SEEDS.test, 100000 + (seed % 1000000) * 13 + n * 101 + k), n), r = playExercise(w, c, () => {}, {record: true});
       out.push({n, k, solved: r.solved, steps: r.steps, optimal: r.optimal, first: r.first, path: r.path, shapes: r.shapes, wall: r.wall, start: r.start, goal: r.goal, knows: r.knows, how: r.how}); }
     const D = this.disc;   // what it knows when the exam starts: why a perfect shape may still not be walked
-    return {played: this.mazes.played, mazes: out, mind: {trust: D.trust, effects: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), self: D.self(), moves: D.world.moves, gpu: this.mazes.gpu || null}};
+    return {played: this.mazes.played, seed, mazes: out, mind: {trust: D.trust, effects: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), self: D.self(), moves: D.world.moves, gpu: this.mazes.gpu || null}};
   }
   // ---- evaluation on what it never lived (the Evaluare tab; run on the CPU, on a copy loaded from the save) ----
+  // whole unseen exercises, smallest to largest: the question is read, the answer guessed symbol by symbol, at the
+  // temperature and noise chosen; each one scored on its answer (the solution) and on all of it
+  evalTextExercises(list, {T = 0, noise = 0, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
+    const rand = rngFrom(seed), out = [];
+    for (const ex of list.slice().sort((a, b) => a.length - b.length)) {
+      let a0 = 0; for (let i = 0; i < ex.length - 2; i++) if (ex[i] === 10 && ex[i + 1] === 65 && ex[i + 2] === 58) { a0 = i + 3; break; }
+      const rows = []; let ok = 0, aok = 0, an = 0, top = 0;
+      this.align.readFrozen(ex, (i, y, g, d) => { let b = 32, bv = -1; for (const [c, v] of d) if (v > bv) { bv = v; b = c; } rows.push([y, g]); ok += g === y; top += b === y; if (i >= a0) { aok += g === y; an++; } }, {T, noise, rand});
+      let old = 0, oa = 0; for (let i = 0; i < ex.length; i++) { const g = argmax(this.chain.play(this.e, this.ctxOf(ex, i), this.histOf(ex, i)).out); if (i >= a0) old += g === ex[i], oa++; }
+      // the shape of the solution, before it is seen: from the question alone it writes the whole answer
+      const shape = a0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
+      let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
+      out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
+        shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null}); }
+    const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
+    return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer")};
+  }
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
     for (let i = 0; i < H.length; i++) { const ctx = this.ctxOf(H, i), h = this.histOf(H, i), y = H[i], L = chain.play(e, ctx, h).out, g = argmax(L), gc = argmax(distC(e.c, ctx));
@@ -139,17 +169,18 @@ export class Brain {
     let aligned = null; if (this.align) { const old = rows.map(r => r[1]); aligned = this.align.readFrozen(H, (i, y, g) => { rows[i][1] = g; rows[i][3] = old[i]; }); }
     return {n: H.length, live: live / H.length, C: c / H.length, aligned, rows};   // rows: [symbol, aligned graph's guess (or old graph's), p old, old graph's guess]
   }
-  evalTransforms(count = 12, impossible = 4) {                                // desired configurations of kinds it never encountered, and impossible ones, from the first attempt
-    this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], out = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = Object.assign(Object.create(RNG.prototype), c.r); return c; };
+  evalTransforms(count = 12, impossible = 4, seed = (Math.random() * 2 ** 31) >>> 0, {noise = 0} = {}) {   // new unseen configurations every time                                // desired configurations of kinds it never encountered, and impossible ones, from the first attempt
+    this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], out = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = new RNG(seed + 31 * out.length + 1); c.noise = noise; return c; };   // its own draws differ every evaluation
     const one = (L, imp) => { const r = liveTask(L, new TWorld(L, this.tMoves), copy(), {record: true});
       out.push({impossible: imp, goals: L.goals, n: L.n, goal: L.goal, optimal: L.optimal ?? null, solved: r.solved, steps: r.steps, said: r.said, predicted: r.predicted, failed: r.failed, frames: r.frames.map(f => ({b: f.b, how: f.how}))}); };
-    for (let i = 0, k = 0; k < count && i < count * 20; i++) { const L = makeLevel(TSEEDS.test + 900000 + i * 7919, {goals: kinds[i % 3]}); if (L) { one(L, false); k++; } }
-    for (let i = 0, k = 0; k < impossible && i < impossible * 40; i++) { const L = makeLevel(TSEEDS.test + 1900000 + i * 7919, {goals: [["object"], ["self"]][i % 2], impossible: true}); if (L) { one(L, true); k++; } }
+    const base = 3000000 + (seed % 100000) * 104729;
+    for (let i = 0, k = 0; k < count && i < count * 20; i++) { const L = makeLevel(TSEEDS.test + base + i * 7919, {goals: kinds[i % 3]}); if (L) { one(L, false); k++; } }
+    for (let i = 0, k = 0; k < impossible && i < impossible * 40; i++) { const L = makeLevel(TSEEDS.test + base + 1900000 + i * 7919, {goals: [["object"], ["self"]][i % 2], impossible: true}); if (L) { one(L, true); k++; } }
     return {played: this.trans.played, tasks: out};
   }
   // frozen test on exercises it never saw (V16's test seeds, sizes 7, 9, 11): a copy of what it discovered plays them
   testMazes(count = 30) {
-    if (!this.disc) this.disc = new Discoverer(this.seed);
+    if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}});
     const rows = []; for (let i = 0; i < count; i++) { const c = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); c.r = Object.assign(Object.create(RNG.prototype), c.r);
       rows.push(playExercise(makeMaze(seedOf(SEEDS.test, i), [7, 9, 11][i % 3]), c)); }
     const ok = rows.filter(r => r.solved), av = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
@@ -157,7 +188,7 @@ export class Brain {
   }
   // the transformation world (worlds/transform.mjs, worlds/causal.mjs): objects, switches, doors, desired configurations;
   // the same brain lives every intervention as symbols; the causal loop learns P(S'|S, do(a)) and imagines its way
-  tWorld() { if (!this.causal) { this.causal = new CausalOrganism(this.seed); const r = new RNG(this.seed * 2654435761 + 7), o = [0, 1, 2, 3, 4, 5, 6, 7];
+  tWorld() { if (!this.causal) { this.causal = Object.assign(new CausalOrganism(this.seed), {body: this.body ||= {}}); const r = new RNG(this.seed * 2654435761 + 7), o = [0, 1, 2, 3, 4, 5, 6, 7];
       for (let i = 7; i > 0; i--) { const j = r.int(i + 1); [o[i], o[j]] = [o[j], o[i]]; } this.tMoves = o.slice(0, 4); this.trans = {played: 0, won: 0, index: 0, test: null, last: null}; } }
   playTransform(record = true) {
     this.tWorld(); const T = this.trans, kinds = [["object"], ["self"], ["door"]]; let L = null;
@@ -184,6 +215,15 @@ export class Brain {
       const T = p ? L.map((v, j) => .5 * v + .5 * p[j]) : L; fld += p ? argmax(p) === y : 0; tog += argmax(T) === y; tbits -= Math.log2(Math.max(1e-9, T[y])); }
     const aligned = this.align ? this.align.readFrozen(H.slice(4)) : null;   // the aligning graph, frozen, on the same unseen text
     return {C: c / N, live: live / N, masked: masked / N, bits: bits / N, field: fld / N, together: tog / N, tbits: tbits / N, n: N, aligned};
+  }
+  // the organism in its own graph: itself (the symbol its outputs move, in every world), its body (what each output does),
+  // what attracts and what repels it (learned in the labyrinths), drawn as nodes and links of the same graph
+  organismView() { const T = this.trace, S = [1, 2, 3, 4], O = [5, 6, 7, 8, 11, 12, 14, 15]; T.node("o:self", "self", "eu");
+    const D = this.disc; if (D) { const me = D.self(); if (me >= 0) { T.node("s:" + S[me], "sym", "◆"); T.setEdge("o:self", "s:" + S[me], "is", 3); }
+      for (let k = 0; k < 4; k++) { if (k === me) continue; const a = D.attract(k), c = D.conduct(k); T.node("s:" + S[k], "sym", "◆");
+        if (a > .2) T.setEdge("o:self", "s:" + S[k], "attract", 1 + 4 * a); if (c < .5) T.setEdge("o:self", "s:" + S[k], "repel", 1 + 4 * (1 - c)); } }
+    if (this.causal) for (const k of this.causal.selfKinds) { const y = TSYM[k]; if (y !== undefined) { T.node("s:" + y, "sym", "◆"); T.setEdge("o:self", "s:" + y, "is", 2); } }
+    for (let o = 0; o < 8; o++) { const e = bodyEffect(this.body, o) || D?.effect(o); if (!e) continue; T.node("s:" + O[o], "sym", "▶" + o); T.setEdge("s:" + O[o], "o:self", "moves", 3, (e[0] > 0 ? "→" : e[0] < 0 ? "←" : e[1] > 0 ? "↓" : "↑")); }
   }
   beginExercise() { (this.align ||= new AligningGraph()).begin(); }          // a new exercise of a world starts: its own memory starts empty
   dissolve() {                                                               // solve: rows lived only once are let go

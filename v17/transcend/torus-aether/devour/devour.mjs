@@ -35,16 +35,18 @@ const CLAWS = {stable: {margin: .05, window: 400}, grow: {cap: 6}, "stable+grow"
 const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {name: a, rules: ARMS.winner, c: CLAWS[a]};
   if (!ARMS[a]) throw Error("unknown arm " + a + " (" + [...Object.keys(ARMS), ...Object.keys(CLAWS)] + ")"); return {name: a, rules: ARMS[a]}; });
 
-let source, evalText = "";
+let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
 if (arg("text")) {
-  const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = []; let k = 0;
+  const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = [], heldParas = []; let k = 0;
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (para.trim().length < 20) continue; k++;
-    if (k % 10 === 0 && evalText.length < evalChars) { heldSet.push(k); evalText += para + "\n\n"; } }
+    if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
+  heldPick = async n => Array.from({length: n}, () => heldParas[Math.floor(Math.random() * heldParas.length)]);
   source = {kind: "text", files, heldSet};
 } else {
   const root = arg("data", DEFAULT_TEXT_ROOT), ds = await openTextDataset(root);
   for (let k = 0; k < ds.held && evalText.length < evalChars; k++) { const x = await ds.heldOut(k); evalText += "Q: " + x.prompt + "\nA: " + x.answer + "\n\n"; }
   source = {kind: "parquet", root};
+  heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
 evalText = evalText.slice(0, evalChars);
@@ -71,7 +73,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor()}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
@@ -114,6 +116,10 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
+  if (req.method === "POST" && url === "/controls") {                    // ?w=<graph> (none = every graph) &ltemp=&pnoise=&gnoise=&glr=&repel=&wtemp=&ttemp=
+    const c = {}; for (const k of ["ltemp", "pnoise", "gnoise", "glr", "repel", "wtemp", "ttemp"]) if (q.has(k) && Number.isFinite(+q.get(k))) c[k] = +q.get(k);
+    const to = q.has("w") ? slots.filter(x => x.w === +q.get("w")) : slots; for (const sl of to) { sl.controls = {...(sl.controls || {}), ...c}; sl.wk?.postMessage({controls: c}); }
+    return json(res, {ok: true, applied: c, graphs: to.map(x => x.w)}); }
   if (req.method === "POST" && url === "/eval") {                        // the Evaluare tab: body {w, kind: maze|text|transform, opts}; a copy from the save, on the CPU
     let body = ""; req.on("data", d => body += d); req.on("end", async () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
@@ -126,8 +132,10 @@ http.createServer((req, res) => {
           wk.on("error", err => { ev.dead = true; no(err); for (const cb of ev.wait.values()) cb({error: err.message}); }); wk.on("exit", () => { ev.dead = true; }); }); }
       const ev = sl.ev; try { await ev.ready; } catch (err) { return json(res, {error: "save-ul nu s-a putut încărca: " + err.message}); }
       const opts = m.opts || {};
-      if (m.kind === "text") { const src = opts.text && opts.text.trim() ? opts.text : evalText; opts.bytes = Array.from(src, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; }).filter(c => c !== 13); opts.own = !!(opts.text && opts.text.trim()); delete opts.text; }
-      const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "textul ținut deoparte din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
+      const toB = t => Array.from(t, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; }).filter(c => c !== 13);
+      if (m.kind === "text") { opts.own = !!(opts.text && opts.text.trim());     // your text, or unseen exercises drawn at random, new every time
+        const list = opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); opts.list = list.map(t => toB(t).slice(0, Math.max(50, +opts.max || 20000))); delete opts.text; }
+      const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
     const sl = slots.find(x => x.w === +q.get("w")), sizes = (q.get("sizes") || "7,9,11,13,15,17,19,21,25,31,41,51").split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per = Math.max(1, Math.min(10, +q.get("per") || 1));
     if (!sl) return json(res, {error: "nu există graful"});

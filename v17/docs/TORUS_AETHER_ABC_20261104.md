@@ -515,3 +515,33 @@ aligning graph; the graph drawn on the page is still the old trace, not the alig
 
 Reproduce: `GSM=<path to grade-school-math/grade_school_math/data> node transcend/torus-aether/laws/align-align2.mjs`
 (SIZES=500,1000,… NT=240 G=8), and `laws/align-baseline.mjs` for the old brain.
+
+## One organism (2026-11-05, evening): everything connected, nothing forced, nothing lost
+
+Source (verbatim, 2026-11-05 19:03): "REZULTATUL E DOAR CAND AI FACUT TOT PUZZLE-UL DIN VERBATIM SA RESPIRE CA UN SINGUR
+ORGANISM, SA SE LEGE TOTUL NATURAL NU SA FORTEZI TU NIMIC". Requirements followed: verbatim/implementation-mirror.json
+(REQ-04/05/06/07/08/11, V11-04/05/07, V14-SELF-WORLD, V14-INGEST), the 2026-11-05 V17/Torus archive (determinism ↔
+randomness, noise, hallucination sliders that act for real), Q5D-14..17 (noise as a mechanism; God = the whole graph
+that devours worlds, learns how they work and how it works itself, and improves itself recursively), and today's
+messages (align by context, lose nothing, take any form needed, text from the smallest exercise to the largest).
+
+| piece | what it is now | measured |
+|---|---|---|
+| nothing lost | the aligning graph keeps every symbol of every world; the old graph no longer dissolves (over the memory budget it stops growing); links of the drawn graph dim but are never deleted | test: kept memory = lived stream, byte for byte, even with perception noise on |
+| one body | what each output does to itself is learned in whichever world it acts and read by every world | first 10 transformation tasks, 6 brains: 53 solved / 928 steps without labyrinths before, 54 / 882 after 30 labyrinths (before the fix below it fell to 0) |
+| self vs world, discovered | in a new world it does not know which symbol is itself; its body knows which outputs move it, so it moves to find out (it used to try first what it knew nothing about, and never moved) | the transfer above |
+| determinism ↔ randomness, noise | the page's sliders act on the trainer: ltemp (temperature of expecting/acting while learning), pnoise (perception noise; random actions in the worlds, also on the GPU), gnoise/glr/repel (geometry), wtemp (writing), ttemp (test); per graph or for all | tests: geometry, labyrinth and transformation learners receive them; reading at T=0 is deterministic, at T>0 + noise it is not |
+| evaluation | new unseen labyrinths/configurations/exercises at every press, temperature and noise chosen; text evaluated per whole exercise from the smallest to the largest | two presses give different worlds (test) |
+| the shape of the solution in text | from the question alone it writes the whole answer before seeing it; shown next to the real answer | see below |
+| trust in its own imagination | every 31 symbols it writes 48 ahead from its own expectations; as reality comes, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines (as plan vs explore in the labyrinths) | GSM8K, 1,500 exercises, 120 unseen: words of the real answer it writes 13.9% → 31.1%, characters in place 3.1% → 6.0%; reading unchanged (69.25%) |
+| knows itself, improves itself | its self-model is the trust it has earned per kind of alignment; next to how it reads, it reads the same moments with variations of itself and becomes the one that guessed best what it had not seen (G_t → G_{t+1}), history kept and shown | 2,000 exercises: 70.3% → 71.0% unseen answers; 5 self-changes recorded |
+| the drawn graph is the organism | the node "eu" (itself, discovered), its body (each output → its direction), what attracts and what repels it, the alignments it followed, red impulses where prediction ≠ reality, its self-model and self-changes on the page | live snapshot (2026-11-05): self = the labyrinth's moving symbol and 5 transformation symbols, wall repels, target attracts, 4 moves |
+
+Bugs found on the way and fixed: the field had stopped learning (`field 0.0%`) and the page had stopped finding concepts
+and redrawing on every snapshot: in both places a call had ended up inside a comment. Tests now guard both.
+
+Still not done, stated plainly: in the labyrinths and the transformations the decisions are taken by the organism's
+discovery and causal parts (now sharing one body and one self, drawn in the same graph), not by the aligning memory
+itself; the written answers have the form of a solution but the numbers are mostly wrong (no arithmetic is learned);
+the 51×51 labyrinth that is predicted but not walked waits for the diagnostic from the user's own brain; OpenThoughts
+could not be measured from this machine (GSM8K was used).

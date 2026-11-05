@@ -63,7 +63,7 @@ class SelfMem {
       else { const cl = len.length; len.push(len[p] + 1); link.push(link[q]); next.push(new Map(next[q])); first.push(first[q]);
         while (p !== -1 && next[p].get(c) === q) { next[p].set(c, cl); p = link[p]; } link[q] = cl; link[cur] = cl; } }
     this.last = cur; }
-  align() { const s = this.link[this.last]; if (s <= 0 || this.len[s] === 0) return null; const at = this.first[s]; return at + 1 < this.h.length ? {k: this.len[s], y: this.h[at + 1]} : null; }
+  align() { const s = this.link[this.last]; if (s <= 0 || this.len[s] === 0) return null; const at = this.first[s]; return at + 1 < this.h.length ? {k: this.len[s], y: this.h[at + 1], far: this.h.length - 1 - at} : null; }
 }
 
 export {Memory as AlignMemory, Index as AlignIndex, SelfMem};
@@ -72,49 +72,84 @@ export class AligningGraph {
     Object.assign(this, {g, depth, formDepth, cap, window});
     this.mem = new Memory(); this.fmem = new Memory(true); this.trust = new Map(); this.begin();
     this.hits = 0; this.seen = 0; this.lived = 0;
+    // knowing itself and improving itself: next to how it reads now (g = how sharply it follows the alignments it trusts,
+    // form = how much it believes the form against the concrete), it reads the same moments with variations of itself;
+    // after every window it becomes the variation that guessed best what it had not seen yet (G_t → G_{t+1})
+    this.formW = 1; this.meta = {window: 20000, n: 0, hits: new Map(), history: []}; this.imagineEvery = 31; this.imagineK = 48; this.imag = null;
   }
+  variants() { const g = this.g, f = this.formW; return [[g, f], [g / 2, f], [g * 2, f], [g, f / 2], [g, Math.min(4, f * 2)]]; }
+  improve(P, y) { const M = this.meta; if (!M || !P.length) return; const vs = this.variants(), keep = [this.g, this.formW];
+    for (const [g, f] of vs) { this.g = g; this.formW = f; const k = g + "|" + f; M.hits.set(k, (M.hits.get(k) || 0) + (this.predict(P) === y)); }
+    [this.g, this.formW] = keep; M.n++;
+    if (M.n >= M.window) { const base = M.hits.get(keep.join("|")) || 0; let best = keep, bh = base;
+      for (const [g, f] of vs) { const h = M.hits.get(g + "|" + f) || 0; if (h > bh * 1.002) { bh = h; best = [g, f]; } }
+      if (best !== keep) { M.history.push({at: this.lived, from: {g: keep[0], form: keep[1]}, to: {g: best[0], form: best[1]}, before: +(base / M.n).toFixed(4), after: +(bh / M.n).toFixed(4)}); [this.g, this.formW] = best; }
+      M.n = 0; M.hits = new Map(); } }
+  // what it knows about how it works: how far each kind of alignment can be trusted, by depth
+  selfModel() { const out = {}; for (const [k, t] of this.trust) { const [src] = k.split(":"); const o = out[src] || (out[src] = {right: 0, tried: 0}); o.right += t[0]; o.tried += t[1]; }
+    for (const o of Object.values(out)) o.trust = +(o.right / Math.max(1, o.tried)).toFixed(3);
+    return {sources: out, g: this.g, form: this.formW, history: (this.meta?.history || []).slice(-12)}; }
   begin() { this.h = []; this.fh = []; this.self = new SelfMem(); this.fself = new SelfMem(); }   // a new exercise starts
-  key(p) { return p.src + ":" + Math.min(p.d, 12) + ":" + (p.sup < 2 ? 0 : p.sup < 8 ? 1 : p.sup < 64 ? 2 : 3); }
-  tr(k) { const t = this.trust.get(k); return t ? (t[0] + 1) / (t[1] + 2) : .5; }
+  key(p) { return p.src + ":" + Math.min(p.d, 12) + ":" + (p.sup < 2 ? 0 : p.sup < 8 ? 1 : p.sup < 64 ? 2 : 3) + (p.far != null && this.farKey !== false ? ":" + Math.min(9, Math.floor(Math.log2(1 + p.far))) : ""); }   // for its own exercise: also how far back the alignment points
+  tr(k) { const t = this.trust.get((this.imagining ? "w|" : "") + k); return t ? (t[0] + 1) / (t[1] + 2) : (this.imagining ? this.tr0(k) : .5); }
+  tr0(k) { const t = this.trust.get(k); return t ? (t[0] + 1) / (t[1] + 2) : .5; }   // before it has imagined anything, what it trusts when reading
   // everything that aligns with the present proposes; the trust earned decides
   proposals(h = this.h, fh = this.fh, self = this.self, fself = this.fself) {
     const i = h.length, P = [];
     this.mem.props(h, i, "mem", this.depth, this.cap, P);
-    const s = self.align(); if (s) P.push({src: "self", d: Math.min(s.k, 12), sup: 1, y: s.y, dist: new Map([[s.y, 1]]), tot: 1, k: s.k});
+    const s = self.align(); if (s) P.push({src: "self", d: Math.min(s.k, 12), sup: 1, y: s.y, dist: new Map([[s.y, 1]]), tot: 1, k: s.k, far: s.far});
     this.fmem.props(fh, i, "form", this.formDepth, this.cap, P);
-    const f = fself.align(); if (f) P.push({src: "fself", d: Math.min(f.k, 12), sup: 1, y: f.y, dist: new Map([[f.y, 1]]), tot: 1, k: f.k});
+    const f = fself.align(); if (f) P.push({src: "fself", d: Math.min(f.k, 12), sup: 1, y: f.y, dist: new Map([[f.y, 1]]), tot: 1, k: f.k, far: f.far});
     return P; }
   distribution(P) {
     const score = new Map(), add = (y, v) => score.set(y, (score.get(y) || 0) + v); let digitMass = 0;
-    for (const p of P) { const w = Math.pow(this.tr(this.key(p)), this.g), isForm = p.src[0] === "f";
+    for (const p of P) { const isForm = p.src[0] === "f", w = Math.pow(this.tr(this.key(p)), this.g) * (isForm ? (this.formW ?? 1) : 1);
       for (const [y, v] of p.dist) { const q = w * v / p.tot; if (isForm && y === DIG) digitMass += q; else add(y, q); } }
     if (digitMass) { let dz = 0; for (const [y, v] of score) if (isD(y)) dz += v;           // the form says "a number here"; which one, the concrete alignments say
       if (dz) for (const [y, v] of [...score]) { if (isD(y)) add(y, digitMass * v / dz); } else add(DIG, digitMass); }
     return score; }
   predict(P = this.proposals()) { let y = 32, b = -1; for (const [z, v] of this.distribution(P)) if (v > b) { b = v; y = z; } return y; }
   // live one symbol: predict it first, then see it, earn trust, keep it forever
-  live(y) {
-    const P = this.proposals(), guess = this.predict(P);
-    this.seen++; this.hits += guess === y; this.lived++;
+  live(y, opts = null) {
+    const P = this.proposals(), guess = opts && (opts.T || opts.noise) ? this.choose(this.distribution(P), opts) : this.predict(P);
+    this.seen++; this.hits += guess === y; this.lived++; if (this.meta) this.improve(P, y);
+    // its own imagination, checked against reality (as the shape of the solution in the labyrinths): every so often it
+    // writes ahead from its own expectations only; as the real symbols come, each alignment it followed while imagining
+    // earns or loses the trust it gets WHEN it imagines (writing uses that trust, reading the other)
+    if (this.imag) { const s = this.imag.steps[this.imag.at++]; if (s && this.imag.ok) { for (const p of s) { const k = "w|" + this.key(p), t = this.trust.get(k) || [0, 0]; t[0] += p.y === (p.src[0] === "f" && isD(y) ? DIG : y); t[1]++; this.trust.set(k, t); } if (s.guess !== y) this.imag.ok = this.imag.at < 3; }
+      if (this.imag.at >= this.imag.steps.length) this.imag = null; }
+    if (!this.imag && this.imagineEvery && this.lived % this.imagineEvery === 0) this.imag = {steps: this.imagineAhead(this.imagineK), at: 0, ok: true};
     for (const p of P) { const k = this.key(p), t = this.trust.get(k) || [0, 0]; t[0] += p.y === (p.src[0] === "f" && isD(y) ? DIG : y); t[1]++; this.trust.set(k, t); }
-    this.see(y); return guess === y; }
+    let src = null, bw = -1; for (const p of P) if (p.y === guess) { const w = this.tr(this.key(p)); if (w > bw) { bw = w; src = p.src; } }   // which alignment it followed
+    this.see(y); return {guess, src}; }
+  imagineAhead(K) {                                                       // write K symbols ahead from its own expectations (nothing is learned here)
+    const h = this.h.slice(-this.window), fh = this.fh.slice(-this.window), self = new SelfMem(), fself = new SelfMem(), steps = [];
+    for (let i = 0; i < h.length; i++) { self.add(h[i]); fself.add(fh[i]); }
+    this.imagining = true; for (let k = 0; k < K; k++) { const P = this.proposals(h, fh, self, fself), g = this.predict(P); P.guess = g; steps.push(P); h.push(g); fh.push(form(g)); self.add(g); fself.add(form(g)); }
+    this.imagining = false; return steps; }
   see(y) { this.h.push(y); this.fh.push(form(y)); this.self.add(y); this.fself.add(form(y)); this.mem.push(y); this.fmem.push(y);
     if (this.h.length > this.window * 2) this.recenter(); }
   recenter() { const keep = this.h.slice(-this.window); this.begin(); for (const y of keep) { this.h.push(y); this.fh.push(form(y)); this.self.add(y); this.fself.add(form(y)); } }
   accuracy() { if (this.seen) this.last = this.hits / this.seen; this.hits = this.seen = 0; return this.last ?? null; }   // since it was last asked (the last one when nothing was lived)
   // frozen: read a text it never lived, guessing every next symbol (its own exercise-memory, nothing learned)
-  readFrozen(bytes, onStep) {
+  // T = 0: always the most trusted symbol (determinism); T > 0: drawn from the trusted distribution (randomness);
+  // noise: every candidate's weight shaken by up to ±noise before choosing (the hallucination comes from there)
+  choose(d, {T = 0, noise = 0, rand = Math.random} = {}) {
+    let best = 32, bv = -1; const w = [];
+    for (const [c, v0] of d) { const v = noise ? v0 * Math.max(0, 1 + noise * (2 * rand() - 1)) : v0; if (v > bv) { bv = v; best = c; } w.push([c, v]); }
+    if (!T) return best; let z = 0; for (const x of w) { x[1] = Math.pow(x[1], 1 / T); z += x[1]; } let r = rand() * z; for (const [c, x] of w) { r -= x; if (r <= 0) return c; } return best; }
+  readFrozen(bytes, onStep, opts = {}) {
     const h = [], fh = [], self = new SelfMem(), fself = new SelfMem(); let ok = 0;
-    for (let i = 0; i < bytes.length; i++) { const P = this.proposals(h, fh, self, fself), g = this.predict(P), y = bytes[i]; ok += g === y; onStep?.(i, y, g);
+    for (let i = 0; i < bytes.length; i++) { const P = this.proposals(h, fh, self, fself), d = this.distribution(P), g = this.choose(d, opts), y = bytes[i]; ok += g === y; onStep?.(i, y, g, d);
       h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); }
     return ok / Math.max(1, bytes.length); }
   // writing: follow its own alignment, symbol after symbol (temperature over the trusted distribution)
   write(prompt, {max = 400, T = 0, rand = Math.random, stop = null} = {}) {
     const h = [], fh = [], self = new SelfMem(), fself = new SelfMem(), push = y => { h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); };
-    for (const y of prompt) push(y); const out = [];
+    for (const y of prompt) push(y); const out = []; this.imagining = true;
     for (let k = 0; k < max; k++) { const d = this.distribution(this.proposals(h, fh, self, fself)); let y = 32;
       if (!T) { let b = -1; for (const [z, v] of d) if (v > b) { b = v; y = z; } }
       else { let z = 0; const w = [...d].map(([c, v]) => { const x = Math.pow(v, 1 / T); z += x; return [c, x]; }); let r = rand() * z; for (const [c, x] of w) { r -= x; if (r <= 0) { y = c; break; } } }
       if (stop && stop(y, out)) break; out.push(y); push(y); }
-    return out; }
+    this.imagining = false; return out; }
 }
