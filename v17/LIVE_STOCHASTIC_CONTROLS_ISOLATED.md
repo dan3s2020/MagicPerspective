@@ -2,6 +2,7 @@
 
 Repository: dan3s2020/MagicPerspective
 Original branch: v17-torus-aether at 210aef1cb924adae46ff0692cdff3e854807aaa6
+Latest base GPU batch-progress commit 44e1553cef98bd227550ccda272a12c46bca2148 is also merged into the isolated branch, preserving batch progress, pauses and saves.
 Experimental branch: fix/V17-LIVE-STOCHASTIC-CONTROLS-ISOLATED-20261105
 
 ## Isolation
@@ -73,5 +74,6 @@ Port 8861 avoids the old V17 port 8841. Saves/profiles/logs stay in v17/runtime-
 Run from the new clone's v17 directory:
 
     node --test tests/torus-live-stochastic-controls.test.mjs tests/torus-brain.test.mjs tests/torus-observatory.test.mjs
+    node --test tests/torus-live-controls-http.test.mjs
 
 Static code parsing and pure control/sampling function checks were performed before publication. Full Node tests, actual GPU runs, save/resume across a real long training, and Android UI rendering cannot be certified until exercised on the target machine.
