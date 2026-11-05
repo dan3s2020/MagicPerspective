@@ -371,7 +371,7 @@ class GraphController(nn.Module):
         self.expansion=None  # opt-in; disabled model state_dict remains backward-compatible
         nn.init.normal_(self.embedding.weight, std=.06)
 
-    def forward(self, obs_ids, act_ids, adjacency, obs_mask, act_mask, trace=False, step=0):
+    def forward(self, obs_ids, act_ids, adjacency, obs_mask, act_mask, trace=False, step=0, history=None):
         # shapes: [B,S], [B,A], [B,S,S], [B,S], [B,A]
         h=self.embedding(obs_ids)
         activations=[];signals=[]
@@ -387,7 +387,8 @@ class GraphController(nn.Module):
             if trace:activations.append(h.detach().cpu())
         ctx=(h*obs_mask.unsqueeze(-1)).sum(1)/obs_mask.sum(1,keepdim=True).clamp(min=1)
         if self.expansion is not None:
-            ctx=ctx+self.expansion(h,obs_mask.unsqueeze(-1),step=step,trace=trace)
+            self.last_macro=ctx.detach() # pre-action observation, no oracle target
+            ctx=ctx+self.expansion(h,obs_mask.unsqueeze(-1),step=step,trace=trace,history=history)
         a=self.embedding(act_ids)
         scores=(self.context(ctx).unsqueeze(1)*self.action(a)).sum(-1)/math.sqrt(h.shape[-1])+self.value_bias
         scores=scores.masked_fill(act_mask==0,-1e5)
@@ -703,7 +704,13 @@ class PortalEngine:
         if not worlds:return []
         batch,stored,contexts=self._batch(worlds)
         self.model.train()
-        logits,acts,signals=self.model(*batch,trace=record,step=self.steps)
+        history=(torch.stack([getattr(w,'expansion_history',
+                                  torch.zeros(DIM,device=self.device)) for w in worlds])
+                 if self.model.expansion is not None else None)
+        logits,acts,signals=self.model(*batch,trace=record,step=self.steps,history=history)
+        if self.model.expansion is not None:
+            for i,w in enumerate(worlds):
+                w.expansion_history=self.model.last_macro[i].detach()
         expansion_coords=(self.model.expansion.last_coordinates.cpu() if
             record and self.model.expansion is not None else None)
         with torch.no_grad():
@@ -785,6 +792,8 @@ class PortalEngine:
                     'self_predicted_error':round(float(config['self_predicted_error'][i]),6),
                     'local_noise':config['local_noise'],
                     'shared_noise':config['shared_noise'],
+                    'temporal_memory_norm':(round(float(history[i].norm()),6)
+                                            if history is not None else 0.0),
                     'nodes':[{'id':ids[j],
                               'latent': [round(float(v),6) for v in
                                          expansion_coords[i,j,:active_rank].tolist()]}
