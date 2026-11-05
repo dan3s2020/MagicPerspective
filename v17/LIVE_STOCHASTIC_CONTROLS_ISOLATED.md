@@ -41,7 +41,7 @@ In PowerShell:
 
 Requires the actual D:\training\OpenThoughts3-1.2M parquet dataset or pass -Text "D:\octopus-text.txt" with a real text corpus.
 
-CUDA variant (requires real PyTorch CUDA installation; launcher runs a GPU self-test):
+CUDA variant (creates Python/PyTorch in a NEW local, gitignored Python venv if needed; launcher runs the real CUDA world self-test; override the package index with -Cuda cu124, cu126 or cu128 if appropriate to your NVIDIA driver):
 
     powershell -ExecutionPolicy Bypass -File .\START_V17_LIVE_CONTROLS_ISOLATED.ps1 -Workers 2 -Arms stable+many -Mem 3 -Worlds text,maze,transform -Gpu cuda:0 -GpuWorlds 4096 -Vram 6 -GpuUtil 80
 
