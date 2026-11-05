@@ -226,6 +226,117 @@ def gather(B, x, idx):                                         # x[b, idx[b]]
     if B.torch: return x.gather(1, idx[:, None])[:, 0]
     return x[np.arange(x.shape[0]), idx]
 
+# ---------------------------------------------------------------- many labyrinths LIVED on the card: every world at once
+def exercise_learn_batch(B, worlds, K, seed):
+    """Every labyrinth of the batch lived at once, all as tensors: the decisions with what the brain knew at the start of
+    the batch, the world's physics, and EVERYTHING the brain learns from what happens (what moved and how, what lets
+    through, what blocks, what it entered when an exercise ended, how its trust in the shape of the solution did).
+    The brain on the CPU only adds these totals (Discoverer.absorb). Same rules as worlds/exercise.mjs."""
+    T = torch if B.torch else np
+    def t(a, dt="i"): return B.arr(a, dt)
+    def amax(x, d): return x.max(dim=d).values if B.torch else x.max(axis=d)
+    def argm(x, d): return x.argmax(dim=d) if B.torch else x.argmax(axis=d)
+    def clip(x, lo, hi): return x.clamp(lo, hi) if B.torch else np.clip(x, lo, hi)
+    def add_at(acc, idx, val):                              # acc[idx] += val (repeated indices add up)
+        if B.torch: acc.index_put_((idx,), val, accumulate=True)
+        else: np.add.at(acc, idx, val)
+    mz = [make_maze(w["seed"], w["n"]) for w in worlds]; N = len(mz); P = max(m["n"] for m in mz)
+    FLOOR, WALL, TARGET, SELF = 0, 1, 2, 3
+    kind_np = np.full((N, P, P), WALL, dtype=np.int64)          # outside a smaller exercise behaves as wall
+    for b, m in enumerate(mz):
+        n = m["n"]; kind_np[b, :n, :n] = np.where(np.array(m["wall"]).reshape(n, n) == 1, WALL, FLOOR); kind_np[b, m["goal"] // n, m["goal"] % n] = TARGET
+    kind = t(kind_np); nn = t([m["n"] for m in mz])
+    py = t([m["start"] // m["n"] for m in mz]); px = t([m["start"] % m["n"] for m in mz])
+    gy = t([m["goal"] // m["n"] for m in mz]); gx = t([m["goal"] % m["n"] for m in mz])
+    lim = t([3 * m["dist"][m["start"]] + 15 for m in mz]); optimal = [m["dist"][m["start"]] for m in mz]
+    conduct = t(K["conduct"], "f"); attract = t(K["attract"], "f"); self_known = K["self"] == SELF
+    eff = K["effect"]; known = t([1 if e else 0 for e in eff]); edx = t([e[0] if e else 0 for e in eff]); edy = t([e[1] if e else 0 for e in eff])
+    moves = K["moves"]; dirOf = t([moves.index(o) if o in moves else -1 for o in range(8)])
+    AX = t([0, 1, 0, -1]); AY = t([-1, 0, 1, 0])                  # ACTIONS
+    dir2o = [-1] * 4
+    for a, (dx, dy) in enumerate([(0, -1), (1, 0), (0, 1), (-1, 0)]):
+        for o in range(8):
+            if eff[o] and eff[o][0] == dx and eff[o][1] == dy: dir2o[a] = o; break
+    dir2o = t(dir2o)
+    tp = K["trust"]["plan"][0] / K["trust"]["plan"][1]; te = K["trust"]["explore"][0] / K["trust"]["explore"][1]
+    use_plan = self_known and max(K["attract"]) > .2 and tp >= te * .9
+    noise = float(K.get("noise") or 0)
+    gen = B.gen(seed); ar = T.arange(N, device=B.device) if B.torch else np.arange(N)
+    tries = t([K["tries"]] * N); visits = B.zeros((N, P, P), "i"); visits[ar, py, px] = 1
+    active = B.zeros(N, "b") | True if B.torch else np.ones(N, dtype=bool); steps = B.zeros(N, "i")
+    last_in = t([-1] * N); n_plan = B.zeros(N, "i"); n_expl = B.zeros(N, "i"); solved = B.zeros(N, "b")
+    # what the brain learns, added up over the whole batch
+    L_tries = B.zeros(8, "i"); L_move = B.zeros((8, 3, 3), "i"); L_still = B.zeros(8, "i"); L_pass = B.zeros(4, "i"); L_block = B.zeros(4, "i"); L_enter = B.zeros(4, "i")
+    rec = []                                                       # the first world, recorded (its outputs) for the brain's view
+    while B.any(active):
+        idx = T.nonzero(active).flatten() if B.torch else np.nonzero(active)[0]
+        cy, cx, k_ = py[idx], px[idx], kind[idx]
+        rnd = B.rand((len(idx), 12), gen)
+        o = t([-1] * len(idx))
+        # the shape of the solution: attraction spreading through what lets through, for every world at once
+        if use_plan:
+            cur = k_.clone() if B.torch else k_.copy(); M = len(idx); a2 = ar[:M]
+            att = attract[cur]; cnd = conduct[cur]; me = B.zeros((M, P, P), "b"); me[a2, cy, cx] = True
+            src = (att > .2) & ~me; V = B.where(src, att, B.zeros((M, P, P))); upd = (~src) & (me | (cnd >= .5)); cc = B.where(me, B.zeros((M, P, P)) + 1, cnd)
+            for _ in range(2 * P * P):
+                pad = B.zeros((M, P + 2, P + 2)); pad[:, 1:-1, 1:-1] = V
+                nb = B.maximum(B.maximum(pad[:, :-2, 1:-1], pad[:, 2:, 1:-1]), B.maximum(pad[:, 1:-1, :-2], pad[:, 1:-1, 2:]))
+                nV = B.where(upd & (.97 * cc * nb > V + 1e-12), .97 * cc * nb, V)
+                if not B.any(nV != V): break
+                V = nV
+            Vp = B.zeros((M, P + 2, P + 2)) - 1; Vp[:, 1:-1, 1:-1] = V
+            here = V[a2, cy, cx]; nbv = B.stack([Vp[a2, cy + 1 + AY[a], cx + 1 + AX[a]] for a in range(4)], 1)
+            best = argm(nbv, 1); okp = amax(nbv, 1) > here
+            po = dir2o[best]; take = okp & (po >= 0)
+            o = B.where(take, po, o); n_plan[idx] += take.long() if B.torch else take.astype(np.int64)
+        free = o < 0
+        # exploring, as the brain does: outputs never tried first, then the known moves toward what lets through
+        tr = tries[idx]; untried = tr < 3; any_un = untried.any(1) if B.torch else untried.any(axis=1)
+        pick_un = argm(B.where(untried, rnd[:, :8], B.zeros(rnd[:, :8].shape) - 1), 1)
+        ty = cy[:, None] + edy[None, :]; tx = cx[:, None] + edx[None, :]; inb = (ty >= 0) & (tx >= 0) & (ty < nn[idx][:, None]) & (tx < nn[idx][:, None])
+        tyc = clip(ty, 0, P - 1); txc = clip(tx, 0, P - 1); a8 = ar[:len(idx)][:, None] * 0 + ar[:len(idx)][:, None]
+        tk = k_[a8, tyc, txc]; tv = visits[idx][a8, tyc, txc]
+        trf = tr.float() if B.torch else tr.astype(np.float32)
+        tvf = clip(tv, 0, 5).float() if B.torch else clip(tv, 0, 5).astype(np.float32)
+        v_known = conduct[tk] - .3 * tvf + .2 * attract[tk] + .05 * rnd[:, :8]
+        v_unknown = .7 / (1 + trf / 15) + .05 * rnd[:, :8]
+        val = B.where(known[None, :] == 1, B.where(inb, v_known, B.zeros(v_known.shape) - 1e9), v_unknown)
+        pick_ex = argm(val, 1)
+        ex = B.where(any_un, pick_un, pick_ex)
+        o = B.where(free, ex, o); n_expl[idx] += free.long() if B.torch else free.astype(np.int64)
+        if noise:                                                  # the person's noise: sometimes it acts at random
+            nz = rnd[:, 8] < noise; ro = clip((rnd[:, 9] * 8).long() if B.torch else (rnd[:, 9] * 8).astype(np.int64), 0, 7); o = B.where(nz, ro, o)
+        if int(idx[0]) == 0: rec.append(int(o[0]))
+        # the world's physics
+        d = dirOf[o]; mv = d >= 0; dsafe = clip(d, 0, 3); ny = cy + B.where(mv, AY[dsafe], B.zeros(d.shape, "i")); nx = cx + B.where(mv, AX[dsafe], B.zeros(d.shape, "i"))
+        okb = (ny >= 0) & (nx >= 0) & (ny < nn[idx]) & (nx < nn[idx]); nyc = clip(ny, 0, P - 1); nxc = clip(nx, 0, P - 1)
+        moved = mv & okb & (k_[ar[:len(idx)], nyc, nxc] != WALL)
+        # what the brain learns from this step (Discoverer.learnStep), added up
+        add_at(L_tries, o, B.zeros(o.shape, "i") + 1)
+        mdx = B.where(moved, nxc - cx, B.zeros(o.shape, "i")); mdy = B.where(moved, nyc - cy, B.zeros(o.shape, "i"))
+        mi = o * 9 + (mdx + 1) * 3 + (mdy + 1)
+        flatm = L_move.view(-1) if B.torch else L_move.reshape(-1)
+        add_at(flatm, mi[moved], B.zeros(int(moved.sum()), "i") + 1)
+        add_at(L_still, o[~moved], B.zeros(int((~moved).sum()), "i") + 1)
+        if self_known:
+            ek = known[o] == 1; ey = cy + edy[o]; exx = cx + edx[o]; eib = ek & (ey >= 0) & (exx >= 0) & (ey < nn[idx]) & (exx < nn[idx])
+            kk = k_[ar[:len(idx)], clip(ey, 0, P - 1), clip(exx, 0, P - 1)]
+            add_at(L_pass, kk[eib & moved], B.zeros(int((eib & moved).sum()), "i") + 1); add_at(L_enter, kk[eib & moved], B.zeros(int((eib & moved).sum()), "i") + 1)
+            add_at(L_block, kk[eib & ~moved], B.zeros(int((eib & ~moved).sum()), "i") + 1)
+            last = last_in[idx]; last_in[idx] = B.where(eib & moved, kk, last)
+        tries[idx, o] += 1
+        py[idx] = B.where(moved, nyc, cy); px[idx] = B.where(moved, nxc, cx); visits[idx, py[idx], px[idx]] += 1; steps[idx] += 1
+        reached = (py[idx] == gy[idx]) & (px[idx] == gx[idx]); solved[idx] = reached
+        active[idx] = ~reached & (steps[idx] < lim[idx])
+    # the end of every exercise (Discoverer.endEpisode): what it entered last attracts; the trust in the shape
+    L_endIn = B.zeros(4, "i"); ok = solved & (last_in >= 0); add_at(L_endIn, last_in[ok], B.zeros(int(ok.sum()), "i") + 1)
+    planw = n_plan > n_expl; sv = solved.long() if B.torch else solved.astype(np.int64)
+    trust = {"plan": [int(sv[planw].sum()), int(planw.sum())], "explore": [int(sv[~planw].sum()), int((~planw).sum())]}
+    tl = lambda x: B.tolist(x)
+    return {"n": N, "solved": int(solved.sum()), "steps": int(steps.sum()), "optimal": sum(optimal),
+            "learn": {"tries": tl(L_tries), "move": tl(L_move), "still": tl(L_still), "pass": tl(L_pass), "block": tl(L_block), "enter": tl(L_enter), "endIn": tl(L_endIn), "trust": trust},
+            "record": {"seed": worlds[0]["seed"], "n": worlds[0]["n"], "outputs": rec}}
+
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
     def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None
@@ -237,6 +348,9 @@ class Server:
             vram = float(m.get("vram", 0)) * 1e9
             if vram > 0: torch.cuda.set_per_process_memory_fraction(min(1.0, vram / total), idx)
             info.update(name=torch.cuda.get_device_name(idx), totalGB=round(total / 1e9, 2), vramGB=round(min(vram, total) / 1e9, 2) if vram > 0 else round(total / 1e9, 2))
+        # how many worlds fill the memory it may use: one 11x11 labyrinth lived on the card holds ~14 grids of int64/float32
+        budget = (float(m.get("vram", 0)) * 1e9 if float(m.get("vram", 0)) > 0 else (info.get("totalGB", 4) * 1e9 * .9 if self.B.torch else 2e9))
+        info["autoWorlds"] = int(max(256, min(65536, budget * .8 / (11 * 11 * 14 * 8))))
         return info
     def throttle(self, busy):                                 # the GPU works busy seconds, then rests so the average is util %
         if self.util < 100: time.sleep(busy * (100 / self.util - 1))
@@ -245,6 +359,7 @@ class Server:
         if self.B.torch and str(self.B.device).startswith("cuda"): torch.cuda.reset_peak_memory_stats()   # VRAM is measured as this command's peak (the batch's tensors are freed when it ends)
         if c == "init": r = self.init(m)
         elif c == "exercise": r = {"worlds": exercise_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))}
+        elif c == "exercise_learn": r = exercise_learn_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c == "maze_check": r = {"mazes": [make_maze(s, n) for s, n in m["items"]]}

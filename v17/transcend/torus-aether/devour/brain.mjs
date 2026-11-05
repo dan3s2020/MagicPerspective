@@ -91,6 +91,26 @@ export class Brain {
   // knew at the start of the batch, then every world's experience is lived by this same brain, one after another ----
   knowsForGpu() { const D = this.disc, s = D.self(); return {self: s, effect: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), conduct: [0, 1, 2, 3].map(k => D.conduct(k)), attract: [0, 1, 2, 3].map(k => D.attract(k)),
     trust: D.trust, tries: D.tries.slice(), moves: D.world.moves, noise: D.noise || 0}; }
+  // the labyrinths LIVED on the card: the card plays every world of the batch AND works out everything the brain learns
+  // from it; the brain only adds the totals (Discoverer.absorb). While it adds them the card is already living the next
+  // batch (with what the brain knew a batch earlier). One world per batch is also lived here, symbol by symbol, so the
+  // graph sees it and the page can show it.
+  async learnMazesGPU(gpu, N, tick = async () => {}) {
+    if (!N || N === "auto") N = gpu.info?.autoWorlds || 4096;   // as many as fill the memory it may use
+    if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}}); const M = this.mazes;
+    const ask = () => { const items = []; for (let k = 0; k < N; k++) { const i = M.index++; items.push({seed: seedOf(SEEDS.train, i), n: [7, 9, 11][i % 3]}); }
+      return gpu.call({cmd: "exercise_learn", worlds: items, knows: this.knowsForGpu(), seed: this.seed * 1000 + M.index}); };
+    let res; const pending = NEXT.get(this); NEXT.delete(this);
+    try { res = pending && pending.gpu === gpu ? await pending.p : await ask(); } catch (err) { if (!pending) throw err; res = await ask(); }
+    const p = ask(); p.catch(() => {}); NEXT.set(this, {gpu, p});            // the card starts the next batch now (never saved: it lives only while the card is there)
+    await tick("labirinturi: adunate în creier", res.n, res.n);
+    const t0 = performance.now(); this.disc.absorb(res.learn);
+    M.played += res.n; M.won += res.solved; const rate = res.solved / res.n; M.recent.push(rate); if (M.recent.length > 100) M.recent.shift();
+    const R = res.record, w = makeMaze(R.seed, R.n), copy = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); copy.r = Object.assign(Object.create(RNG.prototype), copy.r);
+    const r = playExercise(w, copy, y => this.live(y, this.lived % 50 === 0), {outputs: R.outputs, record: true}); M.knows = r.knows; M.last = {...r, kind: w.n + "×" + w.n, i: M.index};
+    M.gpu = {batch: res.n, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, solved: res.solved, mergeMs: +(performance.now() - t0).toFixed(1), cardMs: +(1000 * (res.busy || 0)).toFixed(1)};
+    return M.gpu;
+  }
   async playMazesGPU(gpu, N, tick = async () => {}) {   // tick(phase, done, total): the worker shows progress and lets pause/stop in
     if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}}); const M = this.mazes, items = [];
     for (let k = 0; k < N; k++) { const i = M.index++; items.push({i, seed: seedOf(SEEDS.train, i), n: [7, 9, 11][i % 3]}); }
@@ -252,6 +272,7 @@ export class Brain {
     fix(data.brain); const b = Object.setPrototypeOf(data.brain, Brain.prototype); b.revive(); return b;
   }
 }
+const NEXT = new WeakMap();   // the batch the card is already living, per brain
 const TSYM = [0, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 127, 5, 6, 7, 8, 11, 12, 14, 15];   // transformation world: 18 board symbols (never in text), then the same 8 output symbols as the exercise
 const fileDir = f => f.replace(/[\\/][^\\/]*$/, "") || ".";
 export {MAZE_SYMBOLS};

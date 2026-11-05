@@ -22,7 +22,7 @@ const SYMS = [1, 2, 3, 4];                                                   // 
 const OUTS = [5, 6, 7, 8, 11, 12, 14, 15];                                  // the 8 symbols the brain can emit
 export const EX_SYMBOLS = new Set([...SYMS, ...OUTS]);
 // ONE BODY: what each of its outputs does to itself, learned in whichever world it acted; every world reads it
-export const bodyAdd = (body, o, dx, dy) => { if (!body) return; const m = body[o] || (body[o] = new Map()), k = dx + "," + dy; m.set(k, (m.get(k) || 0) + 1); };
+export const bodyAdd = (body, o, dx, dy, n = 1) => { if (!body) return; const m = body[o] || (body[o] = new Map()), k = dx + "," + dy; m.set(k, (m.get(k) || 0) + n); };
 export const bodyEffect = (body, o) => { const m = body?.[o]; if (!m) return null; let best = null, bc = 0, tot = 0; for (const [k, c] of m) { tot += c; if (c > bc) { bc = c; best = k; } }
   return best && bc >= 3 && bc / tot > .8 ? best.split(",").map(Number) : null; };
 
@@ -86,6 +86,15 @@ export class Discoverer {
     const e = this.effect(o); if (self >= 0 && e && meBefore >= 0) { const x = meBefore % n + e[0], y = ((meBefore / n) | 0) + e[1];
       if (x >= 0 && y >= 0 && x < n && y < n) { const k = before[y * n + x]; if (moved.some(m => m[0] === self)) { this.pass[k]++; this.enter[k]++; this.lastEntered = k; } else this.block[k]++; } }
   }
+  // a whole batch of exercises lived on the card (gpu/worlds_gpu.py exercise_learn_batch): only the totals of what
+  // happened are added, exactly what learnStep/endEpisode would have added one step at a time
+  absorb(L) { const SELF = 3, TARGET = 2;
+    for (let o = 0; o < 8; o++) { this.tries[o] += L.tries[o]; const m = this.disp[o];
+      for (let a = 0; a < 3; a++) for (let c = 0; c < 3; c++) { const v = L.move[o][a][c]; if (!v) continue; const dx = a - 1, dy = c - 1, key = SELF + "|" + dx + "|" + dy; m.set(key, (m.get(key) || 0) + v); if (dx || dy) bodyAdd(this.body, o, dx, dy, v); }
+      if (L.still[o]) for (const k of [TARGET, SELF]) { const key = k + "|0|0"; m.set(key, (m.get(key) || 0) + L.still[o]); } }
+    for (let k = 0; k < 4; k++) { this.pass[k] += L.pass[k]; this.block[k] += L.block[k]; this.enter[k] += L.enter[k]; this.endIn[k] += L.endIn[k]; }
+    this.trust.plan[0] += L.trust.plan[0]; this.trust.plan[1] += L.trust.plan[1]; this.trust.explore[0] += L.trust.explore[0]; this.trust.explore[1] += L.trust.explore[1];
+    this.episodes += L.trust.plan[1] + L.trust.explore[1]; }
   endEpisode(solved, howCounts) { this.episodes++;                           // the exercise ended: what it entered last attracts
     if (solved && this.lastEntered !== undefined) this.endIn[this.lastEntered]++;
     const f = solved ? 1 : 0; if (howCounts.plan > howCounts.explore) { this.trust.plan[0] += f; this.trust.plan[1]++; } else { this.trust.explore[0] += f; this.trust.explore[1]++; } }

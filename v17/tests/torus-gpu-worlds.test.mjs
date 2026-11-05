@@ -29,3 +29,13 @@ test("GPU worlds = JavaScript worlds: same labyrinths, same decisions, same phys
     const s = await B2.playMazesGPU(g, 48); assert.equal(s.differ, 0, "every GPU world lived again identically by the brain"); assert.equal(B2.mazes.played, 48);
   } finally { g.close(); }
 });
+
+test("labyrinths lived on the card: the brain only adds the totals and learns to solve unseen ones", async () => {
+  const {Brain} = await import("../transcend/torus-aether/devour/brain.mjs");
+  const b = new Brain({rules: "winner", c: {}, seed: 11}), g = new GpuWorlds({device: "numpy"}); await g.ready;
+  for (let k = 0; k < 6; k++) await b.learnMazesGPU(g, 256);
+  g.close(); const ex = b.examMazes([7, 11, 21, 31], 2);
+  assert.ok(b.mazes.knows.self && b.mazes.knows.moves === 4 && b.mazes.knows.wallRepels && b.mazes.knows.targetAttracts, JSON.stringify(b.mazes.knows));
+  assert.ok(ex.mazes.filter(m => m.solved).length >= 7, JSON.stringify(ex.mazes.map(m => [m.n, m.solved])));
+  assert.ok(b.mazes.gpu.mergeMs < 1000);
+});

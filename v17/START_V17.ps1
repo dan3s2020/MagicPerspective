@@ -1,7 +1,7 @@
 # MagicPerspective V17 - Torus-Aether: many graphs devouring OpenThoughts at once, each its own share of the world, once.
 #   powershell -ExecutionPolicy Bypass -File .\v17\START_V17.ps1 -Workers 8 -Arms winner,log -Mem 3
 #   -Worlds text,maze   the same brains also live the 2D maps (a map every -MazeEvery characters)
-#   -Gpu cuda:0 -GpuWorlds 4096 -Vram 6 -GpuUtil 80   the worlds (labyrinths, transformations) run many at once on the
+#   -Gpu cuda:0 -Vram 3 -GpuUtil 100   (-GpuWorlds 0 = as many worlds as fill the VRAM) the worlds (labyrinths, transformations) run many at once on the
 #                       card (first time: installs PyTorch with CUDA in transcend\torus-aether\gpu\.venv); all can be changed on the page
 #   -Resume             every brain continues from its save (runtime-devour\brains); the page's Reset starts all from 0
 # Ctrl+C stops every graph and prints the summary. Log: runtime-devour\log.jsonl
@@ -18,7 +18,7 @@ param(
   [int]$MazeEvery = 4000,
   [switch]$Resume,
   [string]$Gpu = "off",
-  [long]$GpuWorlds = 1024,
+  [long]$GpuWorlds = 0,
   [double]$Vram = 0,
   [int]$GpuUtil = 100,
   [string]$Cuda = "cu126",
