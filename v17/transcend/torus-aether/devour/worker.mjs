@@ -34,21 +34,23 @@ const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: 
 const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
-    gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null} : null,
+    gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, batch: batchNow} : null,
     form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now();
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
-    maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
+    maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null;
 const gpuOn = async () => { if (!gpuSet) return null; if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); try { gpuInfo = await gpu.ready; gpuError = null; } catch (err) { gpuError = err.message; gpu = null; } } return gpu; };
+let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
+const tick = async (phase, done, total) => { batchNow = {phase, done, total}; shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
 const worldsOnce = async (record) => {                                     // one round of the worlds: one each on the CPU, or a batch of N on the GPU
   const G = await gpuOn();
-  if (G) { try { if (MAZE) await brain.playMazesGPU(G, gpuSet.worlds); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds); return; } catch (err) { gpuError = err.message; } }
+  if (G) { try { if (MAZE) await brain.playMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; } }
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } };
 parentPort.on("message", m => { if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
