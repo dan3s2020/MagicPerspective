@@ -237,6 +237,7 @@ function highlightFrame(){const f=selectedTrace();if(!f)return;
     `Consistență scară MSE: ${ex.consistency_mse}\n`+
     `Eroare proprie prezisă: ${ex.self_predicted_error}\n`+
     `Zgomot local / corelat: ${ex.local_noise} / ${ex.shared_noise}\n`+
+    `Memorie temporală observată: ${ex.temporal_memory_norm ?? 0}\n`+
     `Coordonate înregistrate pentru ${ex.nodes?.length||0} noduri reale` :
     'Nu există canale de expansiune în această înregistrare.';
   $('frameInfo').textContent=`Trace #${f.trace_id||f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
