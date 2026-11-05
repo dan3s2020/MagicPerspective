@@ -129,10 +129,14 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
  <div class="scroll" id="predictions"></div>
   <h3>Corpus-derived text navigation: frozen held-out trajectories</h3>
   <p class="brief">Real Parquet Q/A training, learned word-transition paths. The target answer is shown only after generation. This is not proof of semantic understanding or intrinsic higher-dimensional geometry.</p>
+  <div class="toolbar"><label>Ask the learned world <input id="textPathPrompt" style="width:min(550px,72vw)" placeholder="Enter a new question; reference answer remains unknown"></label>
+  <button id="textPathAsk">Navigate</button></div>
   <div id="textPathMeta" class="box">No Q/A navigation yet.</div>
   <div class="sliderrow"><button id="textPathPrev">◀</button><input id="textPathFrame" type="range" min="0" max="0" value="0"><button id="textPathNext">▶</button><span id="textPathIndex">—</span></div>
   <canvas id="textPathCanvas" style="height:230px"></canvas>
   <div id="textPathDetail" class="box">No learned text path.</div>
+  <div class="toolbar"><label>Choose a learned action <select id="textPathChoice"></select></label>
+  <button id="textPathTake">Take this action and explore onward</button></div>
   <pre id="textPathAnswer">No held-out answer generated.</pre><p class="brief">Green = prediction matches the actual next symbol; red = mismatch. The source column records V17 alignment provenance where available.</p>
  </div>
  <div id="tab-maze" class="tab">
@@ -289,26 +293,29 @@ function drawText(){
  for(const e of obs.slice(0,180)){const row=document.createElement('tr');const values=[e.step,fmtByte(e.predicted),fmtByte(e.actual),e.correct?'YES':'NO',e.from];for(const v of values){const cell=document.createElement('td');cell.textContent=String(v);row.appendChild(cell);}row.style.color=e.correct?'#83dabc':'#f1a6a0';table.appendChild(row);}wrap.appendChild(table);
 }
 function drawTextPath(){
- const nav=W.data?.evaluation?.text?.navigation,model=W.data?.textPaths||{};
+ const manual=W.data?.navigationQuery;
+ const nav=manual?.status==='USER_QUERY'?manual:W.data?.evaluation?.text?.navigation,model=W.data?.textPaths||{};
  const root=$('textPathMeta'),detail=$('textPathDetail'),answer=$('textPathAnswer');
  const {g,w,h}=measure($('textPathCanvas'));
- if(nav?.status!=='EVALUATED'){
+ if(nav?.status!=='EVALUATED'&&nav?.status!=='USER_QUERY'){
   root.textContent='Learned Q/A rows '+(model.rows||0)+' · '+(nav?.status||'NO HELD-OUT PATH')+
    '. Choose a real Parquet Q/A dataset. Original V17 training is unaffected.';
   detail.textContent='No frozen text trajectory to replay.';
   answer.textContent='No held-out answer generated.';return;
  }
  const steps=nav.route?.actions||[],i=Math.max(0,Math.min(steps.length-1,W.pathStep)),ev=steps[i];
- root.textContent='Frozen held-out · real Q/A rows '+model.rows+
+ root.textContent=(nav.status==='USER_QUERY'?'NEW USER QUESTION':'Frozen held-out')+' · real Q/A rows '+model.rows+
   ' · vocabulary '+model.vocabulary+' · word actions '+model.wordSteps+
   ' · path lexical F1 '+percent(nav.metrics?.f1)+' · ORIGINAL V17 generation F1 '+percent(nav.baseline?.f1)+
   ' · expanded '+nav.route.expanded+' branches. Lexical overlap is NOT semantic correctness.';
  answer.textContent='QUESTION: '+nav.prompt+'\n\nLEARNED PATH: '+nav.route.output+
-   '\n\nREFERENCE (after generation): '+nav.reference+
+   '\n\nREFERENCE: '+(nav.status==='USER_QUERY'?'unknown, no answer supplied':nav.reference)+
    '\n\nORIGINAL V17: '+(nav.baseline?.output||nav.baseline?.error||'Unavailable')+
-   '\n\nCAUTION: '+nav.warning;
+   '\n\nCAUTION: '+(nav.warning||nav.note||'This is corpus-graph navigation; correctness is not established.');
  $('textPathFrame').max=Math.max(0,steps.length-1);$('textPathFrame').value=i;
  $('textPathIndex').textContent=steps.length?(i+1)+' / '+steps.length:'0 / 0';
+ const choices=$('textPathChoice');choices.replaceChildren();
+ for(const o of ev?.alternatives||[]){const option=document.createElement('option');option.value=o.action;option.textContent=o.action+' ('+P(o.score,2)+')';choices.appendChild(option);}
  if(!ev){detail.textContent='No learned action in this route.';return;}
  detail.textContent='Action '+(i+1)+': append '+ev.action+' · observed transition evidence '+ev.observedTransitions+
   ' · prompt association evidence '+ev.promptEvidence+' · learned score '+P(ev.score,3)+
@@ -329,6 +336,12 @@ function drawTextPath(){
 $('textPathPrev').onclick=()=>{W.pathStep=Math.max(0,W.pathStep-1);drawTextPath();};
 $('textPathNext').onclick=()=>{W.pathStep++;drawTextPath();};
 $('textPathFrame').oninput=e=>{W.pathStep=Number(e.target.value);drawTextPath();};
+$('textPathAsk').onclick=()=>call('navigate',{prompt:$('textPathPrompt').value});
+$('textPathTake').onclick=()=>{
+ if(W.data?.navigationQuery?.status!=='USER_QUERY'){msg('Navigate your own question before selecting a different action.');return;}
+ if(!$('textPathChoice').value){msg('No action alternatives at this state.');return;}
+ call('textAction',{step:W.pathStep,token:$('textPathChoice').value});
+};
 function fmtByte(y){return y===10?'↵ NEWLINE':y===9?'⇥ TAB':y===32?'␣ SPACE':y>=32&&y<127?String.fromCharCode(y):'byte '+y;}
 const xy=(index,n,cell,ox,oy)=>[ox+(index%n+.5)*cell,oy+(Math.floor(index/n)+.5)*cell];
 function drawMaze(){
@@ -445,7 +458,7 @@ function render(){
   if(mode==='maze'&&ev!==W.lastMaze){W.m=0;W.lastMaze=ev;}
   if(mode==='transform'&&ev!==W.lastGame){W.g=0;W.lastGame=ev;}
  }
- const pathIdentity=s.evaluation?.text?.navigation?.route?.prompt+'|'+s.evaluation?.text?.checkedAtEpisode;
+ const pathIdentity=s.navigationQuery?.status==='USER_QUERY'?(s.navigationQuery.selected?.at||s.navigationQuery.at):s.evaluation?.text?.navigation?.route?.prompt+'|'+s.evaluation?.text?.checkedAtEpisode;
  if(pathIdentity!==W.lastTextPath){W.pathStep=0;W.lastTextPath=pathIdentity;}
  setOutcome();drawAll();
 }
