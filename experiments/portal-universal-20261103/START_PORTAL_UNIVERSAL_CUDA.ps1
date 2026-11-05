@@ -35,6 +35,11 @@ if ($device -eq 'cuda') {
 
 $data = Join-Path $PSScriptRoot 'data'
 if (Test-Path 'D:\training') { $data = 'D:\training\MagicPerspective-PortalUniversal' }
+# Optional isolated test storage. Never redirect the default training checkpoint silently.
+if (-not [string]::IsNullOrWhiteSpace($env:PORTAL_DATA_DIR)) {
+    $data = $env:PORTAL_DATA_DIR
+    Write-Host "ISOLATED DATA OVERRIDE: $data" -ForegroundColor Yellow
+}
 Write-Host "Checkpoint data: $data"
 Write-Host 'UI: http://127.0.0.1:3050'
 & $python (Join-Path $PSScriptRoot 'server.py') --host 127.0.0.1 --port 3050 --data $data --device $device
