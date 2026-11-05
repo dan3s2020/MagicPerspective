@@ -188,7 +188,11 @@ async function refresh(){
 function start(infinite){
  const worlds=[['textOn','text'],['mazeOn','maze'],['transformOn','transform']].filter(([id])=>$(id).checked).map(x=>x[1]);
  if(!worlds.length){msg('Select at least one training world.');return;}
- call('start',{worlds,infinite,episodes:Number($('episodes').value),text:$('custom').value,resume:true});
+ const sourceKind=$('textSource').value;
+ const gpu={enabled:$('gpuOn').checked,device:'cuda:0',worlds:Number($('gpuWorlds').value),
+  textBatch:Number($('gpuTextBatch').value),vram:Number($('gpuVram').value),util:Number($('gpuUtil').value)};
+ call('start',{worlds,infinite,episodes:Number($('episodes').value),sourceKind,
+  datasetRoot:$('datasetRoot').value.trim(),text:$('custom').value,gpu,resume:true});
 }
 $('train').onclick=()=>start(false);$('infinite').onclick=()=>start(true);
 for(const a of ['pause','resume','stop','save','load'])$(a).onclick=()=>call(a);
@@ -222,13 +226,35 @@ function drawGraph(){
  $('graphInfo').textContent=points.size+' measured positions · '+edges+' recorded positioned edges · '+(data.nodes?.length||0)+' total graph nodes · '+(data.unplaced||0)+' A/C/organism nodes without projected coordinates. Dimension 5 is a learned coordinate, not automatically physical time.';
 }
 function drawTrend(){
- const {g,w,h}=measure($('trend')),rows=(W.data?.history||[]).filter(x=>x.geometry?.evalN>0).slice(-80);
- if(rows.length<2){g.fillStyle='#a3b8d4';g.fillText('Need at least two held-out observations for trend history',14,27);return;}
- const ymax=Math.max(.02,...rows.flatMap(x=>[x.geometry.evalRMSE||0,x.geometry.baselineRMSE||0]))*1.2;
- const lines=[['evalRMSE','#74d9c0'],['baselineRMSE','#a9bad6']];
- g.strokeStyle='#35465f';for(let k=0;k<4;k++){const y=12+(h-25)*k/3;g.beginPath();g.moveTo(8,y);g.lineTo(w-8,y);g.stroke();}
- for(const [key,color] of lines){g.strokeStyle=color;g.lineWidth=2;g.beginPath();rows.forEach((r,i)=>{const x=10+(w-20)*i/(rows.length-1),y=h-14-(h-28)*(r.geometry[key]||0)/ymax;if(!i)g.moveTo(x,y);else g.lineTo(x,y);});g.stroke();}
- $('trendInfo').textContent='Recent real V17 transitions · green = lifted predictor RMSE, gray = persistence RMSE; plotted from recorded held-out samples of the auxiliary learner. Lower is better.';
+ const history=W.data?.history||[];
+ function plot(id,rows,a,b,kind){
+  const {g,w,h}=measure($(id));
+  if(rows.length<2){g.fillStyle='#abbedc';g.font='12px system-ui';g.fillText('Need 2 distinct held-out evaluations',10,25);return;}
+  const max=kind==='accuracy'?1:Math.max(.01,...rows.flatMap(x=>[x[a]||0,x[b]||0]))*1.17;
+  g.strokeStyle='#2c4161';g.lineWidth=.8;
+  for(let k=0;k<4;k++){const y=12+(h-25)*k/3;g.beginPath();g.moveTo(8,y);g.lineTo(w-7,y);g.stroke();}
+  for(const [key,color] of [[a,'#74d9c0'],[b,'#a9bad6']]){
+   g.strokeStyle=color;g.lineWidth=2;g.beginPath();
+   rows.forEach((row,i)=>{const x=10+(w-20)*i/(rows.length-1),y=h-12-(h-27)*(row[key]||0)/max;
+    if(i===0)g.moveTo(x,y);else g.lineTo(x,y);});g.stroke();
+  }
+  g.fillStyle='#adbfde';g.font='10px system-ui';g.fillText(kind==='accuracy'?'0–100% accuracy':'RMSE (lower is better)',10,h-2);
+ }
+ for(const [world,id] of [['text','trendText'],['maze','trendMaze'],['transform','trendTransform']]){
+  const seen=new Set(),rows=[];
+  for(const e of history)if(e.world===world&&e.geometry?.evalN>0&&!seen.has(e.geometry.evalN)){
+   seen.add(e.geometry.evalN);
+   rows.push({learned:e.geometry.evalRMSE,baseline:e.geometry.baselineRMSE});
+  }
+  plot(id,rows,'learned','baseline','rmse');
+ }
+ const seen=new Set(),evals=[];
+ for(const e of history)if(e.world==='text'&&e.heldoutCheckedAt!=null&&!seen.has(e.heldoutCheckedAt)){
+  seen.add(e.heldoutCheckedAt);
+  evals.push({aligned:e.heldoutAccuracy,persistence:e.heldoutPersistence});
+ }
+ plot('textAccuracyTrend',evals,'aligned','persistence','accuracy');
+ $('trendInfo').textContent='Text-only and mixed-world evaluations are separated. New points appear only when heldout evalN or frozen text checkedAtEpisode increases; no artificial flat lines from repeated stored scores.';
 }
 function setOutcome(){
  const box=$('outcome');box.replaceChildren();const s=W.data;
