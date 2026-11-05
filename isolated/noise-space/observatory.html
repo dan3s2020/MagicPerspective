@@ -273,9 +273,11 @@ function setOutcome(){
 function drawText(){
  const t=W.data?.last?.text;
  if(!t)return;
- $('rawText').textContent=t.actual||'';$('textMeta').textContent=t.source+' · '+t.characters+' observed training symbols · online accuracy '+percent(t.onlineAccuracy)+' · corpus non-ASCII chars '+t.measuredNonAscii+' (mapped to ? in V17)';
+ $('rawText').textContent=t.actual||'';$('textMeta').textContent=t.source+' · '+t.characters+' sample symbols · '+(t.gpuBatch?'CUDA card aggregated '+t.exercisesInBatch+' independent text exercises · GPU aggregate accuracy '+percent(t.gpuBatch.alignAccuracy)+'; these are NOT per-symbol predictions.':'CPU online prediction accuracy '+percent(t.onlineAccuracy))+' · source cycles '+t.corpusCycles+' · non-ASCII '+t.measuredNonAscii+' (mapped to ? in V17)';
  const obs=t.observations||[];
- const wrap=$('predictions');wrap.replaceChildren();const table=document.createElement('table'),head=document.createElement('tr');
+ const wrap=$('predictions');wrap.replaceChildren();
+ if(!obs.length){wrap.appendChild(panelBox('Batch aggregation','Original V17 CUDA TextCard returns aggregate trust and hits. No individual pre-update alignment guesses were emitted for this GPU batch; a CPU replay sample is shown in the learned graph.', 'INCONCLUSIVE'));return;}
+ const table=document.createElement('table'),head=document.createElement('tr');
  for(const x of ['#','Predicted','Actual','Correct?','Prediction source']){const th=document.createElement('th');th.textContent=x;head.appendChild(th);}table.appendChild(head);
  for(const e of obs.slice(0,180)){const row=document.createElement('tr');const values=[e.step,fmtByte(e.predicted),fmtByte(e.actual),e.correct?'YES':'NO',e.from];for(const v of values){const cell=document.createElement('td');cell.textContent=String(v);row.appendChild(cell);}row.style.color=e.correct?'#83dabc':'#f1a6a0';table.appendChild(row);}wrap.appendChild(table);
 }
@@ -337,7 +339,8 @@ function backend(){
  for(const ev of rows.slice().reverse()){const row=document.createElement('tr');
  for(const q of [ev.episode,ev.world,ev.actions??ev.trainSymbols??0,ev.durationMs+' ms',ev.assessment?.status||'?']){const td=document.createElement('td');td.textContent=String(q);row.appendChild(td);}table.appendChild(row);}wrap.appendChild(table);
  $('backendInfo').textContent=JSON.stringify({engine:s.engine,device:s.device,stage:s.stage,progress:s.progress,episode:s.episode,
-  learnedSymbols:s.learned,checkpoint:s.checkpoint,save:s.lastSave,error:s.error,geometry:s.geometry?{
+  learnedSymbols:s.learned,checkpoint:s.checkpoint,save:s.lastSave,error:s.error,
+  source:s.source,capacity:s.capacity,trainingRate:s.trainingRate,gpu:s.gpu,geometry:s.geometry?{
   updates:s.geometry.updates,device:s.geometry.device,optimizer:s.geometry.optimizer,
   latentDimension:s.geometry.latentDimension,pluckerCoordinates:s.geometry.pluckerCoordinates}:null},null,2);
  const un=$('unplaced');un.replaceChildren();const nodes=(s.trace?.nodes||[]).filter(n=>n[1]!=='sym').slice(-120);
@@ -362,7 +365,7 @@ function replay(kind){
 $('mazePlay').onclick=()=>replay('maze');$('gamePlay').onclick=()=>replay('game');
 function render(){
  const s=W.data;if(!s)return;const ready=!!s.available;
- $('runTag').textContent=s.error?'ERROR':s.running?(s.paused?'PAUSED':'TRAINING'):'READY';
+ $('runTag').textContent=s.error?'ERROR':s.running?(s.paused?'PAUSED':'TRAINING'):/(preparing|verifying)/i.test(s.stage||'')?'INITIALIZING':'READY';
  $('deviceTag').textContent=s.device||'CPU';
  msg(s.error?'Backend ERROR: '+s.error:ready?(s.running?'Live world '+(s.progress?.world||'?')+' · step '+(s.progress?.step||0)+' · '+s.stage:'Real V17 worker ready · '+s.stage):'Worker starting');
  $('episodesNow').textContent=s.episode||0;$('symbols').textContent=(s.learned||0).toLocaleString();
@@ -371,9 +374,24 @@ function render(){
  $('mazeWins').textContent=(s.mazeWon||0)+' / '+(s.mazePlayed||0);
  $('transformWins').textContent=(s.transformWon||0)+' / '+(s.transformPlayed||0);
  $('updates').textContent=(s.geometry?.updates||0).toLocaleString();
+ $('observedWorlds').textContent=(s.capacity?.observedWorlds||0).toLocaleString();
+ $('worldsPerSec').textContent=P(s.trainingRate?.worldsPerSec,2);
+ $('textCycles').textContent=s.source?.cycles??0;
+ $('workerMemory').textContent=s.capacity?String(s.capacity.rssMB)+(s.capacity.brainFull?' · FULL':' · GROWING'):'—';
+ $('batchNow').textContent=s.gpu?.last?.worlds?String(s.gpu.last.worlds):'—';
+ $('gpuDetails').textContent=s.gpu?.last?'GPU batch '+(s.gpu.last.device||'?')+' · '+P(s.gpu.last.elapsedMs,0)+' ms · VRAM '+P(s.gpu.last.vramUsedGB,3)+' GB':'No completed GPU batch';
+ $('heldoutWindow').textContent=text?.checkedAtEpisode!=null?'#'+(text.heldoutWindow??0)+' / '+(text.totalWindows??1):'Not tested';
+ $('corpusWarning').textContent=s.source?.repetitionWarning||s.gpu?.error||('Source: '+(s.source?.name||'unknown')+' · '+(s.source?.root||'bundled finite text')+
+  '. If it repeats, further training is not new evidence. For genuine new examples select a Parquet folder.');
+ $('corpusWarning').style.borderLeftColor=s.source?.repetitionWarning||s.gpu?.error?'#edb774':'#7785c5';
+ const current=s.history?.at(-1),g=s.gpu?.last;
+ $('liveInfo').textContent=JSON.stringify({world:s.progress?.world,step:s.progress?.step,phase:s.stage,
+   source:s.source,currentOutcome:current?{world:current.world,assessment:current.assessment,elapsedMs:current.durationMs}:null,
+   gpu:{requested:s.gpu?.requested,enabled:s.gpu?.enabled,device:s.gpu?.device,error:s.gpu?.error,batch:g},
+   capacity:s.capacity,checkpoint:s.lastSave?.at},null,2);
  $('fresh').textContent=s.checkpoint||'Independent checkpoint';
  $('validity').textContent=s.crossWorld?.why||'No validated paired trajectories across worlds.';
- $('saveInfo').textContent=s.lastSave?'Last isolated checkpoint: '+s.lastSave.at+' · '+s.lastSave.bytes+' bytes of V17 Brain. Auxiliary geometry and event ledger saved independently.':'No isolated checkpoint saved.';
+ $('saveInfo').textContent=s.lastSave?'Last isolated checkpoint: '+s.lastSave.at+' · '+s.lastSave.bytes+' bytes of V17 Brain. Auxiliary geometry, corpus cursor and event ledger saved independently.':'No isolated checkpoint saved.';
  for(const mode of ['text','maze','transform']){
   const key=mode==='maze'?'lastMaze':'lastGame',ev=s.last?.[mode]?.episode||-1;
   if(mode==='maze'&&ev!==W.lastMaze){W.m=0;W.lastMaze=ev;}
