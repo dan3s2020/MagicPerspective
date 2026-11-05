@@ -23,8 +23,8 @@ if (-not (Test-Path $py)) {
   if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
     throw "Python 3.12 x64 is required. Install it or pass -PythonExe C:\...\python.exe"
   }
-  $version = & $PythonExe -c 'import sys; print("%s.%s" % sys.version_info[:2])'
-  if ($LASTEXITCODE -ne 0 -or $version.Trim() -notmatch '^3\.(10|11|12)$') {
+  $version = & $PythonExe --version 2>&1
+  if ($LASTEXITCODE -ne 0 -or ([string]$version).Trim() -notmatch '^Python 3\.(10|11|12)\.') {
     throw "Use Python 3.10-3.12 x64 (found: $version)."
   }
   & $PythonExe -m venv $venv
@@ -37,7 +37,7 @@ if ($LASTEXITCODE -ne 0) { throw "pip upgrade failed." }
 if ($LASTEXITCODE -ne 0) { throw "NumPy installation failed; environment remains isolated." }
 & $py -m pip install torch --index-url "https://download.pytorch.org/whl/$Cuda"
 if ($LASTEXITCODE -ne 0) { throw "PyTorch CUDA installation failed; environment remains isolated." }
-& $py -c "import torch; print('torch=',torch.__version__,'cuda=',torch.version.cuda,'available=',torch.cuda.is_available()); assert torch.cuda.is_available(); print('GPU=',torch.cuda.get_device_name(0))"
+& $py -c 'import torch; assert torch.cuda.is_available(); print(torch.__version__,torch.version.cuda,torch.cuda.get_device_name(0))'
 if ($LASTEXITCODE -ne 0) { throw "PyTorch did not confirm a real CUDA GPU. No silent CPU fallback." }
 & $py $gpuScript --selftest cuda:0
 if ($LASTEXITCODE -ne 0) { throw "The original V17 CUDA world self-test failed. Do not mark GPU ready." }
