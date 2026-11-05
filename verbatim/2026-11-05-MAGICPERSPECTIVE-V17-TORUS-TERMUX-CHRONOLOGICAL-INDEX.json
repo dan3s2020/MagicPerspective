@@ -1,0 +1,184 @@
+{
+  "schema": "magicperspective.verbatim.partial-conversation-index.v1",
+  "date": "2026-11-05",
+  "topic": "V17 Torus, OctopusV2 repository confusion, Termux vs Windows PowerShell, stochastic controls, CUDA worlds and Git isolation",
+  "branch": "main",
+  "status": "PARTIAL_NOT_COMPLETE_EXPORT",
+  "historical_source": "Original full native ChatGPT conversation is not available as bytes. Current chat context permits transcription of the following user/assistant turns only. Earlier visual cortex screenshots and the beginning of this same conversation were available only via summaries; do not silently reconstruct them.",
+  "counts": {
+    "recoverable_user_turns": 10,
+    "recoverable_assistant_turns": 9,
+    "recoverable_sequence_entries": 19
+  },
+  "gaps": [
+    {
+      "before_index": 1,
+      "description": "Conversation history before the user message 'Sper ca nu ai lucrat peste versiunea aia...' is NOT included. This contains at least the earlier eight-image visual-cortex discussion; original user and assistant text and attachment bytes are unavailable as a complete native export.",
+      "status": "MISSING"
+    },
+    {
+      "description": "User-visible transient commentary and internal tool calls are not transcribed as a complete continuous original event log; only the exact recoverable text registered in source files has been archived.",
+      "status": "INCOMPLETE"
+    },
+    {
+      "description": "The visible user's Windows PowerShell error report in this context stops at 'wsl: An err'. No missing continuation has been invented.",
+      "status": "TRUNCATED_IN_SOURCE"
+    },
+    {
+      "description": "Original image attachment binaries and source chat metadata (native timestamps, message IDs, edits) have not been committed.",
+      "status": "MISSING"
+    }
+  ],
+  "chronological": [
+    {
+      "sequence": 1,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 1,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 2,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 1,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 3,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 2,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 4,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 2,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 5,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 3,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 6,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 3,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 7,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 4,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 8,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 4,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 9,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 5,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 10,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 5,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 11,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 6,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 12,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 6,
+      "visibility": "intermediate_commentary_only_no_final_before_next_user_turn",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 13,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 7,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 14,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 7,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 15,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 8,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 16,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 8,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 17,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 9,
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 18,
+      "role": "ASSISTANT",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-ASSISTANT-VERBATIM-PARTIAL.json",
+      "follows_user_index": 9,
+      "visibility": "finalized_response",
+      "verbatim_text_present": true
+    },
+    {
+      "sequence": 19,
+      "role": "USER",
+      "source_path": "verbatim/2026-11-05-MAGICPERSPECTIVE-V17-TORUS-TERMUX-USER-VERBATIM-PARTIAL.json",
+      "source_index": 10,
+      "verbatim_text_present": true
+    }
+  ],
+  "release_claims": {
+    "all_original_words_byte_exact": false,
+    "all_assistant_turns_recovered": false,
+    "all_media_recovered": false,
+    "complete_conversation_export_verified": false,
+    "verbatim_gate_should_pass": false,
+    "implementation_compliance_proven": false
+  }
+}
