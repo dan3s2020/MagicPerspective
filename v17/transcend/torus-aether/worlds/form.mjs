@@ -57,12 +57,18 @@ export class FormOrganism extends CausalOrganism {
       for (let h = 0; h < q.length; h++) { const u = q[h]; for (const v of nb(u)) if (d[v] >= INF && (walk(v) || (u === at && R.enter.has(b[v])))) { d[v] = d[u] + 1; q.push(v); } } plain.set(from, d); return d; };   // what it holds open, it can still step into right now
     const me = field(at);
     // an object's way to a cell, pushed, with itself behind it; returns the cost and where itself ends
-    const objWay = (from, to) => { const into = R.push.get(b[from]); if (!into) return null; const d = new Float64Array(N).fill(INF), pr = new Int32Array(N).fill(-1), q = [from]; d[from] = 0;
+    // what a barrier costs an object: the attraction passes through a cause that holds it open, as it does for itself
+    const objOpen = new Map(), objPass = (into, s0) => { if (objOpen.has(s0)) return objOpen.get(s0); let c = INF;
+      for (const [ab, causes] of R.causeEnter) { const [a, bb] = ab.split(">").map(Number); if (a !== s0 || !into.has(bb) || R.causeLeave.has(ab)) continue;
+        for (let i = 0; i < N; i++) if (causes.has(b[i]) && me[i] < c) c = me[i] + 1; }
+      objOpen.set(s0, c); return c; };
+    const objWay = (from, to) => { const into = R.push.get(b[from]); if (!into) return null; const d = new Float64Array(N).fill(INF), pr = new Int32Array(N).fill(-1), q = [from]; d[from] = 0; let opened = 0;
       for (let h = 0; h < q.length; h++) { const u = q[h]; for (const v of nb(u)) { const back = 2 * u - v; if (d[v] < INF || back < 0 || back >= N || Math.abs((back % n) - (u % n)) + Math.abs(((back / n) | 0) - ((u / n) | 0)) !== 1) continue;
-          if (!into.has(b[v]) && v !== to) continue; if (!walk(back) && back !== from) continue; d[v] = d[u] + 1; pr[v] = u; q.push(v); } }
+          let extra = 0; if (!into.has(b[v]) && v !== to) { const c = objPass(into, b[v]); if (c >= INF) continue; extra = c; }
+          if (!walk(back) && back !== from) continue; d[v] = d[u] + 1; pr[v] = u; if (extra) opened = Math.max(opened, extra); q.push(v); } }
       if (d[to] >= INF) return null; let first = to; while (pr[first] !== from && pr[first] >= 0) first = pr[first];
       const behind = 2 * from - first; if (behind < 0 || behind >= N || me[behind] >= INF) return null;
-      return {cost: me[behind] + d[to], end: pr[to]}; };
+      return {cost: me[behind] + d[to] + opened, end: pr[to]}; };
     // a barrier a cause can change into something it can enter: the cheapest way to bring the cause about, and where it is then
     const openers = new Map(), opener = s0 => { if (openers.has(s0)) return openers.get(s0); const ways = []; let hold = null, step = null, pushW = null;
       for (const [ab, causes] of R.causeEnter) { const [a, bb] = ab.split(">").map(Number); if (a !== s0 || !R.enter.has(bb)) continue;

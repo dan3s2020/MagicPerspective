@@ -635,3 +635,23 @@ inner product positive, outer product near zero). It is not enough alone: a line
 see walls and doors, where the written form (attraction through what lets through) and search still win. What it
 points to: the form learned from experience as geometry of relations measured THROUGH what lets through (the
 attraction field of the labyrinth), not over straight distances.
+
+## Transforming the form it has, instead of changing it (laws/form-transform.mjs, verbatim 2026-11-05 21:53)
+
+Its form starts as the attraction field it already has and every attempt transforms it (value = −field + w·φ, w by TD
+from what happened; φ = the field's own parts + the geometry of its relations). Before it lives anything it acts as
+before. 4 seeds:
+
+| | form as it was | form transformed by what it lives |
+|---|---|---|
+| unseen combinations (seeds 1–4) | 54.4 / 51.1 / 51.1 / 52.2 → mean 52.2% | 62.2 / 56.7 / 60.0 / 60.0 → mean 59.7% |
+| unseen "object there" (seeds 1–4) | 77.8 / 70.0 / 77.8 / 77.8 → 75.8% | 83.3 / 83.3 / 80.0 / 75.6 → 80.6% |
+| impossible recognised | 15–17 / 20 | 17–18 / 20 |
+
+What it learned by itself: the written field over-weights distances (weight on it reduced); the object should lie on
+the line from itself to the target (inner/outer product). Not helping: more experience (1,000 and 3,000 tasks: 56.7%,
+it saturates), imagining one line along its own form before acting (54.4%), letting the attraction pass through causes
+for pushed objects too (principled, no measurable change). Where it still fails: levers and plates in combinations,
+and some wrong "impossible" — the costs of each relation (lever, plate, door, object) are still fixed by me and only
+a few global sums are transformed. Next: each discovered relation learns its own attraction/repulsion from what
+happens (as wall/target do in the labyrinth), so the form is transformed relation by relation.
