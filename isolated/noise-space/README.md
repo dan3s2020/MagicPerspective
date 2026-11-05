@@ -58,7 +58,7 @@ Real cross-world transfer across unrelated text/maze/transformation episodes is 
 1. Synthetic worlds intentionally share a latent trajectory. Success there is a positive control, not evidence about physical randomness.
 2. Grassmann/Plücker features may underperform time delays on some seeds. Their benefit must be decided by held-out evaluation, never assumed.
 3. The perturbation optimizer is a small derivative-free metric tuner; it is not an implementation of Qlabs DUST.
-4. The initial standalone module uses CPU; GPU V17 integration requires further separately verified work. An RTX 3050 Ti's available VRAM cannot be assumed.
+4. The synthetic time-delay reconstruction remains on CPU. The separate real-V17 Observatory can now use the original V17 CUDA batching functions for text, labyrinth and transformation-world physics after explicit CUDA installation. Actual RTX throughput/VRAM performance still needs measurement on the user's GPU. The JavaScript auxiliary geometry learner remains CPU.
 5. No verified V17 training corpus cross-world alignment exists until event provenance and tests are added.
 6. Original UI, V17 checkpoints, organisms, and projects remain unchanged; this viewer does not pretend to reproduce every historical Portal 4D UI feature.
 
@@ -86,9 +86,10 @@ Legacy V17 dashboard: http://127.0.0.1:8897/v17.html.
 
 ### Provenance and replay
 
-* Text: the ORIGINAL Brain.beginExercise, Brain.live and Brain.evalText methods. The UI shows the
-  exact observed byte, pre-update alignment guess, alignment source and frozen evaluation accuracy.
-  20% of an imported text corpus is held out of Brain.live in this worker. The persistence baseline
+* Text: the ORIGINAL Brain.beginExercise, Brain.live and Brain.evalText methods. In CPU mode the UI shows the
+  observed byte, pre-update alignment guess, alignment source and frozen evaluation accuracy. The original GPU TextCard
+  returns batch aggregate alignment statistics, NOT a pre-update prediction for every character; the UI labels this distinctly.
+  20% of a pasted/document corpus (or the dataset's own held-out rows) is held out of Brain.live in this worker. The persistence baseline
   repeats the previously observed byte. Existing V17 maps non-ASCII characters to '?'.
 * Maze: original Brain.playMaze and Discoverer. The UI replays actual observed cells, actual
   chosen outputs, original anticipated paths and whether each output moved the organism.
@@ -123,7 +124,7 @@ implemented. These are research extensions, not measured capabilities of this re
 
 Run finite episodes, run infinitely, pause/resume/stop between episodes, save, load,
 or create a new isolated brain. New brain backs up existing isolated checkpoints.
-The only written model files are under isolated/noise-space/runs/real-v17/:
+The default written model files are under isolated/noise-space/runs/real-v17/ (test workers use separate isolated session folders):
 brain.v8 (original Brain serialization), geometry.json and observatory.json.
 Original V17 files are not edited.
 
@@ -134,3 +135,49 @@ Validation:
     node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs
 
 GitHub Actions on this isolated branch executes these tests and verifies Windows PowerShell syntax.
+
+
+### Optional real CUDA accelerator (separate installer)
+
+The synthetic noise-space comparison experiment continues to use JavaScript CPU. For real V17 worlds:
+
+1. Update the isolated Git branch and STOP the existing local server with Ctrl+C.
+2. Install CUDA PyTorch only inside the isolated directory:
+
+       powershell -NoProfile -ExecutionPolicy Bypass -File D:\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space\SETUP_CUDA_WINDOWS.ps1
+
+   The setup verifies PyTorch device availability and runs the original V17 CUDA world self-test.
+   It does not install/overwrite Python into the original V17 folder. Default VRAM budget shown
+   in the dashboard: 2.6 GB for the RTX 3050 Ti 4 GB (configurable 0.5-3.8 GB).
+3. Restart the existing launcher, enable "Original V17 CUDA batches", select parallel worlds,
+   and optionally supply an actual Parquet Q/A dataset folder.
+4. The GPU status panel reports device, actual VRAM allocation from the V17 batch worker,
+   batch count, elapsed milliseconds and measured worlds/s. A failed CUDA init never
+   silently becomes CPU training. Select CPU deliberately to continue without CUDA.
+
+The CPU-only startup and regression tests work without Python, NumPy, Torch or CUDA.
+Only the optional GPU-protocol acceptance test requires NumPy. In CI it runs on the
+NumPy backend, confirming commands and original physics/learning flow **without claiming CUDA**.
+
+### Text plateau / "stuck around 56–60"
+
+The original default text corpus is a finite V17 documentation file. Continuing infinitely
+after the cursor wraps reuses those same training bytes; it does not produce new examples.
+The previous observatory repeatedly evaluated the same 420-byte heldout prefix and copied
+cumulative values into the chart on every episode. Now:
+* The corpus cycle counter and repetition warning are shown.
+* Frozen text evaluations rotate through untouched windows (or separate Parquet heldout rows).
+* Per-world geometric graphs plot only newly measured evaluations, and text accuracy has a separate chart.
+* The Brain.full, alignment-memory size, heap/RSS, worlds per second and GPU errors are exposed.
+* Exact text examples can come from the existing local V17 Parquet reader, not necessarily
+  the small bundled documentation. Source changes preserve the Brain checkpoint unless the
+  user explicitly presses "New isolated brain".
+
+Checkpoint format v2 preserves the older state and adds corpus cursors, counts and event history.
+On the first updated save, a previous format-v1 Brain checkpoint is also copied to a
+timestamped immutable backup beside brain.v8. Later saves use the usual atomic V17 save routine.
+Parallel CI test workers write to separate run folders, not the actual local Brain checkpoint.
+
+See REGRESSION_TRACEABILITY.md for source-excerpt references, code paths, verified tests and
+explicit open items. Full historical Verbatim completeness remains BLOCKED under the
+canonical source policy; optional CUDA does not change that finding.
