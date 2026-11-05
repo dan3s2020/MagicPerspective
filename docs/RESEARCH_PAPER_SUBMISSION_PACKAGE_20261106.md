@@ -4,7 +4,7 @@
 
 ## Primary deliverable
 
-The finished working paper is named `MagicPerspective_Visual_Research_Atlas_Working_Paper_2026-11-06_v2.pdf` and is delivered as a file in the current ChatGPT conversation. It has **48 pages**, including **14 distinct custom research graphics**, illustrated summaries of **V1–V17**, original user screenshots, and a **16-page appendix copied from the earlier 21-entry conversation PDF**. The PDF embeds the prior 29,833-byte UTF-8 transcript and original images as attachments; its later user-turn supplement is explicitly partial. PDF SHA-256: `1f3486eac5c6c61a5b614c9b22178e02bd2164722031037c7d6e5c436d5ae64c`.
+The finished working paper is named `MagicPerspective_Visual_Research_Atlas_Working_Paper_2026-11-06_FINAL.pdf` and is delivered as a file in the current ChatGPT conversation. It has **49 pages**, including **15 distinct custom research graphics**, illustrated summaries of **V1–V17**, original user screenshots, and a **16-page appendix copied from the earlier 21-entry conversation PDF**. The PDF embeds the prior 29,833-byte UTF-8 transcript and original images as attachments; its later user-turn supplement is explicitly partial. PDF SHA-256: `e5cc5acd1b4525526ae08e774aacd7a51fcaf475914787b17777be5f3942c415`.
 
 The binary PDF was produced in the research workspace and **is not committed to GitHub by this document**. This source package is the durable GitHub index and evidence record. All figures and values have labels distinguishing source metrics, hypotheses, and schematics.
 
@@ -19,7 +19,7 @@ The binary PDF was produced in the research workspace and **is not committed to 
 
 ## Paper sections / visual pages
 
-- Cover + executive abstract and evidence-status legend.
+- Cover + executive abstract and evidence-status legend; full 28-branch visual census and file-delta chart.
 - Repository architecture and file census; coverage matrix and chronological version map.
 - V1–V17 illustrated experimental development with limitations.
 - BFS on 2D and 3D graphs; path vs value field and local vs whole observation.
