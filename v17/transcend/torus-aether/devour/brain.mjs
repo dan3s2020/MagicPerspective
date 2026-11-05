@@ -71,20 +71,22 @@ export class Brain {
   // knew at the start of the batch, then every world's experience is lived by this same brain, one after another ----
   knowsForGpu() { const D = this.disc, s = D.self(); return {self: s, effect: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), conduct: [0, 1, 2, 3].map(k => D.conduct(k)), attract: [0, 1, 2, 3].map(k => D.attract(k)),
     trust: D.trust, tries: D.tries.slice(), moves: D.world.moves}; }
-  async playMazesGPU(gpu, N) {
+  async playMazesGPU(gpu, N, tick = async () => {}) {
     if (!this.disc) this.disc = new Discoverer(this.seed); const M = this.mazes, items = [];
     for (let k = 0; k < N; k++) { const i = M.index++; items.push({i, seed: seedOf(SEEDS.train, i), n: [7, 9, 11][i % 3]}); }
+    await tick("labirinturi: pe GPU", 0, N);
     const res = await gpu.call({cmd: "exercise", worlds: items.map(x => ({seed: x.seed, n: x.n})), knows: this.knowsForGpu(), seed: this.seed * 1000 + M.index});
     let differ = 0;
-    items.forEach((x, k) => { const w = makeMaze(x.seed, x.n), rec = k === items.length - 1;
+    for (let k = 0; k < items.length; k++) { const x = items[k], w = makeMaze(x.seed, x.n), rec = k === items.length - 1;
       const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {outputs: res.worlds[k].outputs, record: rec});
       if (r.solved !== res.worlds[k].solved) differ++;
-      M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows; if (rec) M.last = {...r, kind: w.n + "×" + w.n, i: x.i}; });
+      M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows; if (rec) M.last = {...r, kind: w.n + "×" + w.n, i: x.i};
+      if (k % 16 === 15) await tick("labirinturi: trăite de creier", k + 1, N); }
     M.gpu = {batch: N, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, differ}; return M.gpu;
   }
-  async playTransformsGPU(gpu, N) {
+  async playTransformsGPU(gpu, N, tick = async () => {}) {
     this.tWorld(); const T = this.trans, kinds = [["object"], ["self"], ["door"]], levels = [];
-    while (levels.length < N) { const L = makeLevel(TSEEDS.train + T.index * 7919, {goals: kinds[T.index % 3]}); T.index++; if (L) levels.push(L); }
+    while (levels.length < N) { const L = makeLevel(TSEEDS.train + T.index * 7919, {goals: kinds[T.index % 3]}); T.index++; if (L) levels.push(L); if (L && levels.length % 32 === 0) await tick("transformări: lumi generate", levels.length, N); }
     const frozen = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); frozen.r = Object.assign(Object.create(RNG.prototype), frozen.r);
     const still = [0, 1, 2, 3, 4, 5, 6, 7].find(o => !this.tMoves.includes(o));          // an output the world ignores, for worlds that are done
     let boards = (await gpu.call({cmd: "t_reset", levels: levels.map(L => ({n: L.n, terr: L.terr, self: L.self, boxes: L.boxes})), moves: this.tMoves})).boards;
@@ -100,13 +102,15 @@ export class Brain {
       const acted = levels.map((L, k) => !lives[k].done);
       const r = await gpu.call({cmd: "t_step", outputs: outs}); busy += r.busy; vram = r.vramUsedGB ?? vram;
       levels.forEach((L, k) => { if (acted[k]) lives[k].steps.at(-1).a = r.boards[k]; }); boards = r.boards;
+      await tick("transformări: decizii (pas " + Math.max(...lives.map(x => x.steps.length)) + ")", lives.filter(x => x.done).length, N);
     }
-    levels.forEach((L, k) => { const x = lives[k], live = y => this.live(TSYM[y], this.lived % 50 === 0);   // the same brain lives every world's experience
+    for (let k = 0; k < levels.length; k++) { const L = levels[k], x = lives[k], live = y => this.live(TSYM[y], this.lived % 50 === 0);   // the same brain lives every world's experience
       for (const v of x.steps[0]?.b || []) live(v); for (const v of L.goal) live(v);
       for (const s of x.steps) { if (!s.a) continue; this.causal.learn(s.b, s.a, L.n, this.causal.findSelf(s.b), s.o); live(18 + s.o); for (let i = 0; i < s.a.length; i++) if (s.a[i] !== s.b[i]) live(s.a[i]); }
       const solved = match(boards[k], L.goal); T.played++; T.won += solved;
       if (k === levels.length - 1) T.last = {solved, steps: x.steps.length, optimal: L.optimal, said: x.said, n: L.n, terr: L.terr, goal: L.goal, goals: L.goals, i: T.index - 1,
-        frames: [...x.steps.map(s => ({b: s.b})), {b: boards[k]}]}; });
+        frames: [...x.steps.map(s => ({b: s.b})), {b: boards[k]}]};
+      if (k % 16 === 15) await tick("transformări: trăite de creier", k + 1, N); }
     T.gpu = {batch: N, busy, vramUsedGB: vram}; return T.gpu;
   }
   // frozen test on exercises it never saw (V16's test seeds, sizes 7, 9, 11): a copy of what it discovered plays them
