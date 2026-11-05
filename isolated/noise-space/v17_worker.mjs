@@ -190,7 +190,8 @@ async function textEpisode(){
   gpuBatch:gpuMeta,assessment};
  last.text=item;
  return {world:'text',episode,trainSymbols:item.totalBatchCharacters,source:item.source,corpusCycles,worldsInBatch:batch.length,
-   gpuBatch:gpuMeta,heldoutAccuracy:evaluation.text?.aligned??null,assessment};
+   gpuBatch:gpuMeta,heldoutAccuracy:evaluation.text?.aligned??null,heldoutPersistence:evaluation.text?.persistence??null,
+   heldoutCheckedAt:evaluation.text?.checkedAtEpisode??null,heldoutWindow:evaluation.text?.heldoutWindow??null,assessment};
 }
 function mazeEpisode(){
  stage='learning maze';const D=brain.disc,origChoose=D.choose,origLearn=D.learnStep;
