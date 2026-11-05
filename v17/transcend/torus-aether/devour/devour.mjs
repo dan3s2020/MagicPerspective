@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
+import {DEFAULT_CONTROLS, normalizeControls, controlsFromQuery} from "./stochastic-controls.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -55,6 +56,20 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(); let started = new Date().toISOString(), stopping = false;
+// Live control settings are stored ONLY in this isolated runtime, independent of the original V17 checkpoints.
+const controlFile = path.join(out, "live-controls.json");
+const controlProfiles = fs.existsSync(controlFile) ? JSON.parse(fs.readFileSync(controlFile, "utf8")) : {};
+if (!controlProfiles || typeof controlProfiles !== "object" || Array.isArray(controlProfiles)) throw Error("Invalid controls profile: " + controlFile);
+for (const [id, settings] of Object.entries(controlProfiles)) {
+  if (!/^[0-9]+$/.test(id)) throw Error("Invalid saved brain control ID " + id);
+  controlProfiles[id] = normalizeControls(settings);
+}
+function saveControls() {
+  const temp = controlFile + ".tmp";
+  fs.writeFileSync(temp, JSON.stringify(controlProfiles, null, 2));
+  fs.renameSync(temp, controlFile);
+}
+const generatedPending = new Map(); let requestSerial = 0;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
@@ -62,19 +77,30 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, controls: sl.controls, controlsApplied: !!sl.controlsApplied, controlError: sl.controlError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
+  sl.controlsApplied = false; sl.controlError = null;
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
   if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor()}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, controls: sl.controls, gpu: gpuFor()}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
+    if (m.type === "controls-ack") { sl.controlsApplied = true; sl.controlError = null; return; }
+    if (m.type === "controls-error") { sl.controlsApplied = false; sl.controlError = m.error; return console.error("Controls for #" + sl.w + ": " + m.error); }
+    if (m.type === "generated") {
+      const pending = generatedPending.get(m.requestId);
+      if (pending && pending.w === sl.w) {
+        generatedPending.delete(m.requestId); clearTimeout(pending.timeout);
+        return json(pending.res, m.error ? {error: m.error} : {w: sl.w, result: m.result});
+      }
+      return;
+    }
     if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; graphs.set(sl.w, m); return; }   // its living graph
     if (m.type === "saved") { sl.savedMB = m.MB; return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
@@ -88,7 +114,8 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
 }
 function gpuFor() { const share = Math.max(1, slots.filter(x => x.worlds.some(w => w !== "text")).length); return gpuSettings.device === "off" ? null : {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0}; }
 function addSlot(armName, worlds) { const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
-  const w = slots.length ? Math.max(...slots.map(x => x.w)) + 1 : 0, sl = {w, arm, worlds, share: Math.floor(w / arms.length), gen: 0, wk: null, status: "oprit"}; slots.push(sl); launch(sl, {fresh: false, fromSave: resume || booted}); return sl; }
+  const w = slots.length ? Math.max(...slots.map(x => x.w)) + 1 : 0, sl = {w, arm, worlds, share: Math.floor(w / arms.length), gen: 0, wk: null, status: "oprit",
+    controls: normalizeControls(controlProfiles[String(w)] || DEFAULT_CONTROLS), controlsApplied: false, controlError: null}; slots.push(sl); launch(sl, {fresh: false, fromSave: resume || booted}); return sl; }
 function control(sl, act) {
   if (act === "start") { if (!sl.wk) launch(sl, {paused: false}); else { sl.wk.postMessage("resume"); sl.status = "antrenează"; } }
   else if (act === "pause") { sl.wk?.postMessage("pause"); if (sl.wk) sl.status = "pauză"; }
@@ -108,6 +135,37 @@ http.createServer((req, res) => {
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
     for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
   if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
+  if (req.method === "POST" && url === "/controls") {
+    try {
+      const id = q.get("w"), targets = id === null ? slots.slice() : slots.filter(sl => String(sl.w) === id);
+      if (!targets.length) {res.writeHead(404); return res.end("Unknown brain");}
+      const updates = targets.map(sl => ({sl, settings: controlsFromQuery(q, sl.controls)}));
+      for (const {sl, settings} of updates) {
+        sl.controls = settings; sl.controlsApplied = false; sl.controlError = null;
+        controlProfiles[String(sl.w)] = settings; sl.wk?.postMessage({controls: settings});
+      }
+      saveControls();
+      return json(res, {ok: true, brains: updates.map(({sl}) => ({w: sl.w, controls: sl.controls}))});
+    } catch (e) {res.writeHead(400); return res.end(e.message);}
+  }
+  if (req.method === "POST" && url === "/evaluate") {
+    const sl = slots.find(sl => String(sl.w) === q.get("w"));
+    if (!sl?.wk || !sl.worlds.includes("text")) {res.writeHead(404); return res.end("No live text brain");}
+    sl.wk.postMessage({evaluate: true});
+    return json(res, {ok: true, w: sl.w, queued: true});
+  }
+  if (req.method === "POST" && url === "/write") {
+    const sl = slots.find(sl => String(sl.w) === q.get("w"));
+    if (!sl?.wk) {res.writeHead(404); return res.end("Unknown active brain");}
+    const requestId = ++requestSerial;
+    const timeout = setTimeout(() => {
+      generatedPending.delete(requestId); if (!res.writableEnded) {res.writeHead(504); res.end("Brain did not respond to text generation");}
+    }, 60000);
+    generatedPending.set(requestId, {w: sl.w, res, timeout});
+    req.on("close", () => {if (!res.writableEnded && generatedPending.has(requestId)) {clearTimeout(timeout); generatedPending.delete(requestId);}});
+    sl.wk.postMessage({generate: {requestId}});
+    return;
+  }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
