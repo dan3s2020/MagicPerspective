@@ -203,7 +203,7 @@ function tick(){
   const outcome=mode==='text'?textEpisode():mode==='maze'?mazeEpisode():transformEpisode();
   lastDurationMs=Math.round(performance.now()-now);
   const row={...outcome,at:new Date().toISOString(),durationMs:lastDurationMs,
-    geometry:geo.summary().lanes[mode]?.assessment||'INSUFFICIENT_EVIDENCE'};
+    geometry:(()=>{const g=geo.summary().lanes[mode];return {assessment:g.assessment,evalN:g.evalN,evalRMSE:g.evalRMSE,baselineRMSE:g.baselineRMSE,improvement:g.improvement};})()};
   history.push(row);history=bounded(history,300);
   if(remaining>0&&--remaining===0)run=false;
   stage=run?'between episodes':'idle';
