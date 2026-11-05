@@ -21,7 +21,7 @@ jobs:
           node --check isolated/noise-space/learning_geometry.mjs
           node --check isolated/noise-space/interpret.mjs
       - name: Synthetic regression and true V17 integration acceptance
-        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs
+        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs
   powershell:
     runs-on: windows-latest
     timeout-minutes: 5
