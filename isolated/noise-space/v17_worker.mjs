@@ -25,6 +25,7 @@ let brain=null,geo=null,pathHead=null,run=false,paused=false,remaining=0,modes=m
 let episode=0,idx=0,cursor=0,sourceText='',userText=false,seenTexts=0;
 let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=null,evaluation={};
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
+let navigationQuery=null;
 let gpuRunner=new IsolatedGpuRunner(),gpuRequested=false,gpuError=null,sourceRoot='',dataset=null,datasetIndex=0,datasetTestIndex=0;
 let corpusCycles=0,heldWindowIndex=0,sourceSamples=0,gpuWorldsProcessed=0,learningStart=performance.now(),throughputBase=0,backupLegacy=false;
 const bounded=(a,k=300)=>a.length>k?a.slice(-k):a;
@@ -85,7 +86,7 @@ function state(withTrace=true){
   sourceTextLabel:userText?'User-supplied text':'V17 repository technical documentation',
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
   last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
-  textPaths:pathHead?.summary()||null,
+  textPaths:pathHead?.summary()||null,navigationQuery,
   lastSave,error,lastDurationMs,checkpoint:path.relative(here,checkpoint),
   trace:withTrace&&brain?copyTrace():null,
   crossWorld:{status:'UNVERIFIED',why:'Training the same Brain in several worlds does not by itself prove that their observations share a single hidden trajectory. Pair identifiers or independent transfer tests are needed.'}};
@@ -435,6 +436,27 @@ parentPort.on('message',async m=>{
    remaining=m.infinite?0:Math.max(1,Math.min(100,Math.trunc(Number(m.episodes)||3)));
    learningStart=performance.now();throughputBase=gpuWorldsProcessed;run=true;paused=false;error=null;
    stage=gpuRunner.active?'CUDA GPU verified: training':'CPU training';publish();setImmediate(tick);
+  }else if(action==='navigate'){
+   ensureBrain(true);
+   const prompt=String(m.prompt||'').trim().slice(0,1600);
+   if(!prompt)throw Error('Enter a nonempty text question');
+   if(!pathHead.rows)throw Error('Train on real Q/A examples first; no navigation actions have been learned');
+   const route=pathHead.plan(prompt,{maxSteps:48,beamWidth:4,branching:7});
+   navigationQuery={status:'USER_QUERY',prompt,route,at:new Date().toISOString(),
+    note:'No reference answer or oracle was supplied for this query.'};
+   publish();
+  }else if(action==='textAction'){
+   ensureBrain(true);
+   const source=navigationQuery?.route;
+   if(!source)throw Error('Navigate a text prompt before selecting an action');
+   const step=Number(m.step),token=String(m.token||'');
+   if(!Number.isInteger(step)||step<0||step>=source.actions.length)throw Error('Invalid path action step');
+   const selected=source.actions[step];
+   if(!selected.alternatives?.some(a=>a.action===token))throw Error('Selected action was not among learned candidates at this step');
+   const prefix=[...(source.prefix||[]),...source.actions.slice(0,step).map(a=>a.action).filter(a=>a!=='<eos>'),token].filter(a=>a!=='<eos>');
+   const route=pathHead.plan(navigationQuery.prompt,{prefix,maxSteps:48,beamWidth:4,branching:7});
+   navigationQuery={...navigationQuery,route,selected:{step,token,at:new Date().toISOString()}};
+   publish();
   }else if(action==='pause'){
    paused=true;stage=activeStep?'pause requested: after current batch':'paused';publish();
   }else if(action==='resume'){
@@ -449,7 +471,7 @@ parentPort.on('message',async m=>{
    else save();
   }else if(action==='load'){
    if(run||activeStep||preparing)throw Error('Stop training before loading');
-   gpuRunner.close();brain=null;geo=null;pathHead=null;dataset=null;ensureBrain(true);publish();
+   gpuRunner.close();brain=null;geo=null;pathHead=null;dataset=null;navigationQuery=null;ensureBrain(true);publish();
   }else if(action==='reset'){
    if(run||activeStep||preparing)throw Error('Stop before resetting the isolated brain');
    gpuRunner.close();
@@ -458,7 +480,7 @@ parentPort.on('message',async m=>{
    brain=null;geo=null;pathHead=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
    datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=throughputBase=0;
    backupLegacy=false;
-   last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;
+   last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;navigationQuery=null;
    ensureBrain(false);stage='new isolated brain';save();
   }else if(action==='state')publish();
   else throw Error('Unknown command');
