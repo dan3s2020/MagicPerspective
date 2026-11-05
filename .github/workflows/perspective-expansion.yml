@@ -21,8 +21,9 @@ jobs:
         run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Syntax and import checks
         run: |
-          python -m py_compile experiments/portal-universal-20261103/engine.py experiments/portal-universal-20261103/server.py experiments/portal-universal-20261103/perspective_expansion.py
+          python -m py_compile experiments/portal-universal-20261103/engine.py experiments/portal-universal-20261103/server.py experiments/portal-universal-20261103/perspective_expansion.py experiments/portal-universal-20261103/spacetime_api.py
           node --check experiments/portal-universal-20261103/web/app.js
+          node --check experiments/portal-universal-20261103/web/spacetime.js
       - name: Actual-optimizer expansion, checkpoint and baseline tests
         run: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -p 'test_perspective_expansion.py' -v
       - name: Previously working Portal engine regression tests
