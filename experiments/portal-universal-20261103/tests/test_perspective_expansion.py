@@ -26,7 +26,7 @@ class ExpansionUnitTests(unittest.TestCase):
         self.assertTrue(m.increase_rank())
         m(self.h,self.mask,trace=True)
         self.assertGreater(float(m.last_coordinates[:,:,4:8].abs().sum()),0.0)
-        self.assertFalse(m.increase_rank() is False)  # rank 2 -> 3
+        self.assertTrue(m.increase_rank())  # rank 2 -> 3
         self.assertFalse(m.increase_rank())  # at max rank
 
     def test_noise_reproducible_and_disabled_at_evaluation(self):
@@ -43,6 +43,17 @@ class ExpansionUnitTests(unittest.TestCase):
         b=m.last_coordinates.clone()
         m(self.h,self.mask,step=4,trace=True)
         self.assertTrue(torch.equal(b,m.last_coordinates))
+
+    def test_identical_current_state_changes_with_different_real_histories(self):
+        m=PerspectiveExpansion()
+        history_a=torch.zeros(2,24)
+        history_b=torch.ones(2,24)*.7
+        m(self.h,self.mask,step=1,trace=True,history=history_a)
+        a=m.last_coordinates.clone()
+        m(self.h,self.mask,step=1,trace=True,history=history_b)
+        b=m.last_coordinates.clone()
+        self.assertFalse(torch.equal(a,b),
+            'Historical information must affect the new degrees of freedom')
 
     def test_joint_prediction_and_self_error_gradients(self):
         m=PerspectiveExpansion()
@@ -73,6 +84,9 @@ class ExpansionEngineTests(unittest.TestCase):
             self.assertEqual(result['episodes'],2)
             self.assertGreater(float((engine.model.context.weight-before).abs().sum()),0)
             self.assertTrue('expansion' in engine.last_trace)
+            logged=[x.get('expansion') for x in engine.recent(200) if x.get('expansion')]
+            self.assertTrue(any(x['temporal_memory_norm']>0 for x in logged),
+                'Actual multi-step world memory should affect perspective')
             point=engine.last_trace['expansion']['nodes'][0]
             self.assertEqual(len(point['latent']),4)
             self.assertEqual(engine.status()['perspective_expansion']['active_levels'],1)
