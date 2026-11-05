@@ -11,7 +11,14 @@ try {
   Write-Host '=== MAGIC PERSPECTIVE · ISOLATED NOISE SPACE ===' -ForegroundColor Cyan
   Write-Host "Location: $base"
   Write-Host 'No V17 source files are modified.'
-  & node --test "$base\test.mjs" "$base\v17_smoke.test.mjs"
+  $gpuPy=Join-Path $base '.venv\Scripts\python.exe'
+  if(Test-Path -LiteralPath $gpuPy){
+    $env:OCTOPUS_PY=$gpuPy
+    Write-Host "Isolated GPU Python selected: $gpuPy" -ForegroundColor Green
+  } else {
+    Write-Host 'CUDA not installed here. GPU mode must be set up explicitly using SETUP_CUDA_WINDOWS.ps1.' -ForegroundColor Yellow
+  }
+  & node --test "$base\test.mjs" "$base\v17_smoke.test.mjs" "$base\observatory.test.mjs" "$base\http_observatory.test.mjs" "$base\gpu_runner.test.mjs"
   if($LASTEXITCODE -ne 0){throw 'Acceptance tests failed; refusing to launch.'}
   $env:PORT = "$Port"
   $env:HOST = '127.0.0.1'
