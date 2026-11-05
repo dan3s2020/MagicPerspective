@@ -23,7 +23,7 @@ powershell -ExecutionPolicy Bypass -File .\v17\START_V17.ps1 -Workers 1 -Arms st
 - `-Vram`: câți GB are voie să încarce.
 - `-GpuUtil`: ce procent din GPU folosește.
 
-Prima rulare creează `v17\transcend\torus-aether\gpu\.venv` și instalează PyTorch cu CUDA (`-Cuda cu124` implicit). Apoi rulează un self-test pe placă. Toate setările se pot schimba și din pagină.
+Prima rulare creează `v17\transcend\torus-aether\gpu\.venv` și instalează PyTorch cu CUDA (`-Cuda cu126` implicit; `-PythonExe` dacă vrei alt Python 3.10–3.12). Apoi rulează un self-test pe placă. Toate setările se pot schimba și din pagină.
 
 ### Alte opțiuni
 

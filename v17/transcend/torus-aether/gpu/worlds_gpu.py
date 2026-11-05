@@ -22,10 +22,12 @@ import numpy as np
 # ---------------------------------------------------------------- backend (torch on the card, or numpy to check)
 class Back:
     def __init__(self, device="cpu"):
+        if device.startswith("cuda") and not HAVE_TORCH:          # no CPU fallback: asked for the card, the card or an error
+            raise RuntimeError("PyTorch is not installed in " + sys.executable + " - CUDA requested, no CPU fallback (run START_V17.ps1 -Gpu cuda:0)")
         self.torch = HAVE_TORCH and device != "numpy"
         self.device = device if self.torch else "numpy"
         if self.torch and device.startswith("cuda") and not torch.cuda.is_available():
-            raise RuntimeError("CUDA is not available to PyTorch on this machine")
+            raise RuntimeError("torch.cuda.is_available() is false in " + sys.executable + " (PyTorch " + torch.__version__ + ") - no CPU fallback")
     def arr(self, a, dtype="i"):
         if self.torch: return torch.tensor(a, dtype=torch.int64 if dtype == "i" else torch.float32 if dtype == "f" else torch.bool, device=self.device)
         return np.array(a, dtype=np.int64 if dtype == "i" else np.float32 if dtype == "f" else bool)
@@ -249,12 +251,16 @@ class Server:
         if self.B.torch and str(self.B.device).startswith("cuda"): r["vramUsedGB"] = round(torch.cuda.memory_allocated() / 1e9, 3)
         r["busy"] = round(busy, 4); return r
 
-def selftest(device):                                        # run by RUN_TORUS_DEVOUR.ps1 before training: does the card work?
+def selftest(device):                                        # run by START_V17.ps1 before training: does the card really compute?
     S = Server(); info = S.handle({"cmd": "init", "device": device, "util": 100})
+    if device.startswith("cuda") and not (S.B.torch and str(S.B.device).startswith("cuda")):
+        print(json.dumps({"error": "not running on the card", "device": info})); return 1
     K = {"self": 3, "effect": [[0, -1], [1, 0], [0, 1], [-1, 0], None, None, None, None], "conduct": [1.0, 0.0, 1.0, 1.0], "attract": [0.0, 0.0, 1.0, 0.0],
          "trust": {"plan": [9, 10], "explore": [1, 10]}, "tries": [9] * 8, "moves": [0, 1, 2, 3]}
     t0 = time.time(); r = S.handle({"cmd": "exercise", "worlds": [{"seed": 1000003 + i * 7919, "n": [7, 9, 11][i % 3]} for i in range(512)], "knows": K, "seed": 1})
     ok = sum(w["solved"] for w in r["worlds"]); print(json.dumps({"device": info, "labyrinths": 512, "solved_with_known_rules": ok, "seconds": round(time.time() - t0, 2), "vramUsedGB": r.get("vramUsedGB")}))
+    if device.startswith("cuda") and not r.get("vramUsedGB"):
+        print(json.dumps({"error": "the batch did not allocate anything on the card"})); return 1
     return 0 if ok == 512 else 1
 
 if __name__ == "__main__":

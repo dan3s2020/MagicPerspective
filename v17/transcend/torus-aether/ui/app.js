@@ -470,7 +470,7 @@ async function livePull() {
     // one card per graph: its own score in every world it lives, its state, and its own controls
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("liveList").innerHTML = L.graphs.map(gr => `<div class="lgc${gr.w === liveW ? " on" : ""}" data-w="${gr.w}">
-      <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span> · ${(gr.chars / 1e6).toFixed(2)}M</div>
+      <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span> · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
       <div class="sc">${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graf <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}

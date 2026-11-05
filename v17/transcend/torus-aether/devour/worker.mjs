@@ -45,12 +45,15 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null;
-const gpuOn = async () => { if (!gpuSet) return null; if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); try { gpuInfo = await gpu.ready; gpuError = null; } catch (err) { gpuError = err.message; gpu = null; } } return gpu; };
+const gpuOn = async () => { if (!gpuSet) return null; if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); batchNow = {phase: "GPU: pornește " + gpu.py, done: 0, total: 0}; shot(true);
+    try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
+    catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
 const tick = async (phase, done, total) => { batchNow = {phase, done, total}; shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
 const worldsOnce = async (record) => {                                     // one round of the worlds: one each on the CPU, or a batch of N on the GPU
   const G = await gpuOn();
-  if (G) { try { if (MAZE) await brain.playMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; } }
+  if (G) { try { if (MAZE) await brain.playMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
+  if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } };
 parentPort.on("message", m => { if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
