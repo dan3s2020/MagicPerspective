@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective · Real Training Observatory</title>
+<style>
+:root{color-scheme:dark;--bg:#060b14;--surface:#101a2c;--panel:#121e32;--line:#30415d;--text:#e8f1ff;--dim:#afbfda;--cyan:#83c8ff;--good:#71d9af;--bad:#ff9d94;--warn:#eacc83;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+header{position:sticky;top:0;z-index:10;background:#091221f2;border-bottom:1px solid var(--line);padding:12px max(14px,calc((100vw - 1780px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}
+header strong{font-size:18px}a{color:#abc8ff}main{max-width:1780px;margin:auto;padding:14px}
+small,.sub{color:var(--dim)}.topline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.tag{background:#182740;border:1px solid #43557c;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:650}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}.panel h2{font-size:15px;margin:0 0 8px}.panel h3{font-size:13px;margin:12px 0 6px}
+p{margin:5px 0 10px;color:var(--dim)}.toolbar,.inputs,.commands,.tabs,.sliderrow{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+input,button,textarea,select{font:inherit;background:#172740;color:var(--text);border:1px solid #506180;border-radius:8px;padding:8px}button{cursor:pointer}button:hover{background:#283c63}button.primary{background:#5063bf;color:white}
+button:disabled{cursor:not-allowed;opacity:.5}input[type=number]{width:70px}input[type=range]{padding:0;accent-color:#93a9ff}
+textarea{width:100%;min-height:85px;resize:vertical}label{color:var(--dim)}label.check{display:flex;gap:5px;align-items:center}.check input{accent-color:#95a2ff}
+#stateLine{min-height:21px;margin-top:10px;word-break:break-word}strong.good,.good{color:var(--good)}strong.bad,.bad{color:var(--bad)}.warn{color:var(--warn)}
+.stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin:12px 0}.metric{background:#111f34;border:1px solid #32445f;border-radius:12px;padding:11px}
+.metric label{font-size:11px;display:block}.metric b{font-size:clamp(16px,1.85vw,26px);display:block;margin-top:4px}.metric small{display:block}
+.workspace{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(340px,.9fr);gap:12px}.side{display:grid;gap:12px;align-content:start}
+canvas{display:block;width:100%;height:400px;background:#07101f;border:1px solid #344662;border-radius:10px}.graph{height:510px}.worldcanvas{height:370px}
+pre{white-space:pre-wrap;overflow:auto;overflow-wrap:anywhere;background:#07101e;color:#c5d5f2;border:1px solid #213652;border-radius:8px;padding:10px;max-height:290px;margin:7px 0;font:12px/1.55 Consolas,monospace}
+.help{border-left:3px solid #7785c5;background:#0c182a;padding:8px 12px;border-radius:4px;color:#c5d1e7;margin:9px 0}
+.tabs{margin-bottom:12px}.tabs button[aria-selected=true]{background:#41578f;color:white;border-color:#a2b5ff}.tab{display:none}.tab.show{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dim)}
+.led{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;background:var(--cyan)}
+.status{font-size:12px;font-weight:700;color:var(--dim)}.status.BETTER{color:var(--good)}.status.WORSE{color:var(--bad)}.status.MIXED,.status.LOW_SAMPLE,.status.LIMITATION{color:var(--warn)}
+table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,th{border-bottom:1px solid #293c58;text-align:left;padding:7px 5px}th{color:#aabde2}tr:focus,tr:hover{background:#1d2e49}
+.scroll{overflow:auto;max-height:310px}.rows{display:grid;gap:5px}.box{background:#0c1828;border:1px solid #2b3d5c;padding:9px;border-radius:8px}.box b{display:block}
+#trend{height:145px}#plucker{height:150px}#mini{height:150px}
+#rawText{max-height:260px;min-height:170px}#predictions{max-height:350px}.brief{font-size:12px;color:var(--dim);margin:5px 0}
+.pointer{cursor:pointer}.legendkey{padding:3px 7px;background:#172943;border-radius:6px}details{margin:7px 0}summary{cursor:pointer;color:#bdceeb}
+.banner{background:#0d1a2d;border:1px solid #334969;border-radius:10px;padding:11px;color:#bdcdeb;margin:11px 0}
+.fade{opacity:.65}.paneltitle{display:flex;justify-content:space-between;align-items:start;gap:10px}
+#events{max-height:350px}.events{max-height:280px}
+@media(max-width:1150px){.workspace{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.graph{height:450px}}
+@media(max-width:680px){header{position:static}.stats,.grid2{grid-template-columns:repeat(2,1fr)}main{padding:8px}.panel{padding:10px}.metric b{font-size:18px}}
+</style></head>
+<body>
+<header>
+ <div><strong>MAGICPERSPECTIVE · REAL TRAINING OBSERVATORY</strong><div class="sub">Original V17 Brain + isolated geometric learner · measured backend events</div></div>
+ <div class="topline"><span id="runTag" class="tag">CONNECTING</span><span id="deviceTag" class="tag">CPU</span><a href="/synthetic.html">Synthetic projection lab</a></div>
+</header>
+<main>
+<section class="panel">
+ <div class="paneltitle"><div><h2>Training controls — one real Brain across three worlds</h2><p>Every state below comes from the Node worker, not a frontend animation. Stop/pause take effect after the current episode.</p></div><span id="fresh" class="tag">Independent checkpoint</span></div>
+ <div class="toolbar">
+  <label class="check"><input type="checkbox" id="textOn" checked> Text</label>
+  <label class="check"><input type="checkbox" id="mazeOn" checked> Labyrinth</label>
+  <label class="check"><input type="checkbox" id="transformOn" checked> Transformation game</label>
+  <label>Episodes <input id="episodes" type="number" min="1" max="100" value="9"></label>
+  <button class="primary" id="train">Train & evaluate</button><button id="infinite">Infinite training</button>
+  <button id="pause">Pause</button><button id="resume">Resume</button><button id="stop">Stop</button>
+  <button id="save">Save</button><button id="load">Load</button><button id="new">New isolated brain</button>
+ </div>
+ <details><summary>Optional real text source — paste a corpus to learn</summary><textarea id="custom" placeholder="Paste training text. Empty = V17 technical documentation. Non-ASCII is mapped to '?' by the original V17 tokenizer."></textarea><p>Text is split into 80% training and 20% frozen evaluation. The geometric lane separately withholds every fifth episode. These are distinct measurements.</p></details>
+ <div id="stateLine" role="status">Connecting to real V17 worker...</div>
+</section>
+
+<div class="stats">
+ <div class="metric"><label>Real episodes</label><b id="episodesNow">—</b><small>Completed V17 runs</small></div>
+ <div class="metric"><label>Symbols learned</label><b id="symbols">—</b><small>Original Brain.live()</small></div>
+ <div class="metric"><label>Frozen text accuracy</label><b id="textAccuracy">—</b><small id="textBase">vs persistence</small></div>
+ <div class="metric"><label>Maze successes</label><b id="mazeWins">—</b><small>Solved / attempted</small></div>
+ <div class="metric"><label>Transformation successes</label><b id="transformWins">—</b><small>Reached desired state</small></div>
+ <div class="metric"><label>Geometric SGD updates</label><b id="updates">—</b><small>Auxiliary learner, CPU</small></div>
+</div>
+
+<div class="workspace">
+<section class="panel">
+ <div class="paneltitle"><div><h2>One persistent learned 5D graph</h2><p>Measured coordinates from V17 Geometry and recorded links. Rotations affect the camera only; they do not train the brain.</p></div><span class="tag">REAL COORDINATES</span></div>
+ <div class="sliderrow">
+ <label>D1–D2 <input id="r01" type="range" min="-180" max="180" value="24"></label>
+ <label>D1–D4 <input id="r03" type="range" min="-180" max="180" value="41"></label>
+ <label>D2–D5 <input id="r14" type="range" min="-180" max="180" value="18"></label>
+ <label>Zoom <input id="zoom" type="range" min="50" max="250" value="120"></label>
+ </div>
+ <details><summary>All ten independent 5D rotation planes</summary><div id="extraRotations" class="sliderrow"></div></details>
+ <canvas id="graph" class="graph" aria-label="Projected real 5D node positions and measured graph connections"></canvas>
+ <div class="legend"><span><i class="led" style="background:#75acf7"></i>Recorded symbol</span><span><i class="led" style="background:#b88aff"></i>Non-printable symbol</span><span><i class="led" style="background:#f4cb82"></i>Recent measured activity</span><span><i class="led" style="background:#6b879e"></i>Recorded edge</span></div>
+ <div id="graphInfo" class="brief">No graph received yet.</div>
+ <canvas id="trend" aria-label="Measured held-out geometric error and baseline history"></canvas>
+ <div id="trendInfo" class="brief">Errors are RMSE; lower is better. The gray line represents the persistence baseline.</div>
+ <div class="help"><b>What the graph does not prove:</b> a 2D projection is not the entire 5D object. Unplaced A/C/organism nodes are not given fictional coordinates. Dense links do not independently prove learning or shared hidden trajectories.</div>
+</section>
+
+<div class="side">
+<section class="panel">
+ <h2>Measured outcome — why good or bad?</h2>
+ <div id="outcome" class="rows"><div class="box">Train a world to receive a scored outcome.</div></div>
+ <h3>What happened in backend?</h3><pre id="liveInfo">Waiting...</pre>
+ <h3>Evidence rules</h3>
+ <div class="brief"><b class="good">BETTER</b> = defined measurement beats baseline / goal reached; <b class="bad">WORSE</b> = fails goal or baseline; <b class="warn">MIXED</b> = success with extra cost; <b class="warn">LOW SAMPLE</b> = not enough withheld examples; <b>INCONCLUSIVE</b> = difference too small.</div>
+</section>
+<section class="panel">
+ <h2>Real training worlds and action replay</h2>
+ <div class="tabs" role="tablist">
+ <button data-tab="text" aria-selected="true">Text</button><button data-tab="maze">Maze</button><button data-tab="transform">Game</button><button data-tab="geometry">5D learner</button><button data-tab="backend">Backend</button>
+ </div>
+ <div id="tab-text" class="tab show">
+ <p id="textMeta">No training bytes yet.</p><pre id="rawText">Text will appear as soon as a text exercise has been trained.</pre>
+ <h3>Exact predicted byte vs observed byte (prediction made before learning)</h3>
+ <div class="scroll" id="predictions"></div><p class="brief">Green = prediction matches the actual next symbol; red = mismatch. The source column records V17 alignment provenance where available.</p>
+ </div>
+ <div id="tab-maze" class="tab">
+ <p id="mazeMeta">No labyrinth exercise yet.</p>
+ <div class="sliderrow"><button id="mazePrev">◀</button><button id="mazePlay">Play replay</button><button id="mazeNext">▶</button><input id="mazeFrame" type="range" min="0" max="0" value="0"><span id="mazeIndex">—</span></div>
+ <canvas id="mazeCanvas" class="worldcanvas"></canvas>
+ <div id="mazeDetail" class="box">No action.</div>
+ </div>
+ <div id="tab-transform" class="tab">
+ <p id="transformMeta">No transformation exercise yet.</p>
+ <div class="sliderrow"><button id="gamePrev">◀</button><button id="gamePlay">Play replay</button><button id="gameNext">▶</button><input id="gameFrame" type="range" min="0" max="0" value="0"><span id="gameIndex">—</span></div>
+ <canvas id="gameCanvas" class="worldcanvas"></canvas>
+ <div id="gameDetail" class="box">No action.</div>
+ <p class="brief">Board cell codes are original world observations. Gold border = desired end condition; 17 means unconstrained. Color shows observed cell codes, not assumed identities.</p>
+ </div>
+ <div id="tab-geometry" class="tab">
+ <div class="help">A second learner trains on real recorded V17 transitions: 5D observations → 8D latent → predicted next 5D observation. Uses Plücker features and analytic-gradient SGD. This is not the DUST optimizer and does not alter the original V17 brain.</div>
+ <div id="lanes" class="rows">Awaiting geometric metrics.</div>
+ <canvas id="plucker" aria-label="10 measured Plucker components of last real transition"></canvas>
+ <div id="geometryDetails" class="box">No geometric transitions.</div>
+ </div>
+ <div id="tab-backend" class="tab">
+ <h3>Episode event ledger</h3><div id="events" class="scroll"></div>
+ <h3>Backend state and saved checkpoints</h3><pre id="backendInfo"></pre>
+ <h3>Real graph nodes without coordinates</h3><div id="unplaced" class="scroll"></div>
+ </div>
+</section>
+<section class="panel">
+ <h2>Scientific validity and negative controls</h2>
+ <div class="box" id="validity">Cross-world hypothesis not verified.</div>
+ <p>Comparisons never replace real exercise metrics with synthetic correlations. The auxiliary geometry lane uses withheld episodes for its own evaluation, but V17 continues to learn normally during those episodes. Its baseline is a no-change state predictor.</p>
+ <p id="saveInfo">No checkpoint saved in this session.</p>
+</section>
+</div>
+</div>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const W={data:null,tab:'text',m:0,g:0,selectedText:-1,play:null,lastMaze:-1,lastGame:-1,ang:{},time:0};
+const P=(v,d=2)=>Number.isFinite(v)?Number(v).toFixed(d):'—';
+const percent=v=>Number.isFinite(v)?P(v*100,1)+'%':'—';
+const safe=s=>String(s===undefined?'—':s);
+const stateName=x=>({'BETTER':'GOOD','WORSE':'BAD','LOW_SAMPLE':'LOW SAMPLE','INCONCLUSIVE':'UNCERTAIN','NO_TEST':'NOT TESTED','MIXED':'MIXED','LIMITATION':'LIMITATION'}[x]||x||'UNKNOWN');
+const msg=(s)=>{$('stateLine').textContent=s;};
+const measure=(r)=>{const c=r.getBoundingClientRect(),d=window.devicePixelRatio||1;r.width=Math.max(1,Math.floor(c.width*d));r.height=Math.max(1,Math.floor(c.height*d));const g=r.getContext('2d');g.setTransform(d,0,0,d,0,0);g.fillStyle='#07101e';g.fillRect(0,0,c.width,c.height);return {g,w:c.width,h:c.height};};
+function panelBox(title,body,status){const x=document.createElement('div');x.className='box';const b=document.createElement('b');b.textContent=title;x.appendChild(b);if(status){const t=document.createElement('span');t.className='status '+status;t.textContent=stateName(status);x.appendChild(t);}const d=document.createElement('div');d.className='brief';d.textContent=body||'';x.appendChild(d);return x;}
+function getSummary(){
+ const s=W.data;return s?{running:s.running,paused:s.paused,episode:s.episode,stage:s.stage,progress:s.progress,
+  evaluation:s.evaluation,geometry:s.geometry,last:s.last,history:s.history,trace:s.trace}:null;
+}
+async function call(action,rest={}){
+ try{const r=await fetch('/api/v17',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...rest})});const x=await r.json();if(!r.ok)throw Error(x.error||r.status);msg('Command accepted: '+action+'. Waiting for V17 worker confirmation…');setTimeout(refresh,260);}
+ catch(e){msg('ERROR: '+e.message);}
+}
+async function refresh(){
+ try{const r=await fetch('/api/v17',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);W.data=await r.json();render();}
+ catch(e){msg('Backend unavailable: '+e.message);}
+}
+function start(infinite){
+ const worlds=[['textOn','text'],['mazeOn','maze'],['transformOn','transform']].filter(([id])=>$(id).checked).map(x=>x[1]);
+ if(!worlds.length){msg('Select at least one training world.');return;}
+ call('start',{worlds,infinite,episodes:Number($('episodes').value),text:$('custom').value,resume:true});
+}
+$('train').onclick=()=>start(false);$('infinite').onclick=()=>start(true);
+for(const a of ['pause','resume','stop','save','load'])$(a).onclick=()=>call(a);
+$('new').onclick=()=>{if(confirm('Create a fresh isolated brain? Existing checkpoints will be backed up; no original V17 files will be overwritten.'))call('reset');};
+for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{W.tab=b.dataset.tab;for(const x of document.querySelectorAll('[data-tab]'))x.setAttribute('aria-selected',String(x.dataset.tab===W.tab));for(const e of document.querySelectorAll('.tab'))e.classList.toggle('show',e.id==='tab-'+W.tab);drawAll();};
+const pairs=[[0,1],[0,2],[0,3],[0,4],[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]];
+for(const [a,b] of pairs){
+ const id='r'+a+b;if(!$(id)){const label=document.createElement('label'),input=document.createElement('input');label.textContent='D'+(a+1)+'–D'+(b+1)+' ';input.type='range';input.id=id;input.min=-180;input.max=180;input.value=0;label.appendChild(input);$('extraRotations').appendChild(label);}
+ W.ang[id]=Number($(id).value);$(id).addEventListener('input',()=>{W.ang[id]=Number($(id).value);drawGraph();});
+}
+$('zoom').oninput=drawGraph;
+function rot(p,a,b,deg){const r=deg*Math.PI/180,x=p[a],y=p[b],c=Math.cos(r),s=Math.sin(r);p[a]=c*x-s*y;p[b]=s*x+c*y;}
+function drawGraph(){
+ const {g,w,h}=measure($('graph'));const data=W.data?.trace;if(!data)return;
+ const points=new Map(),scale=Math.min(w,h)*.6*(Number($('zoom').value)/100);
+ for(const [key,vec] of data.U||[]){
+  if(!Array.isArray(vec)||vec.length!==5||!vec.every(Number.isFinite))continue;
+  const p=vec.map(v=>v-.5);
+  for(const [a,b] of pairs)rot(p,a,b,W.ang['r'+a+b]||0);
+  const depth=1+p[2]*.4;
+  points.set('s:'+key,{x:w/2+p[0]*scale*depth,y:h/2-p[1]*scale*depth,z:p[2],k:key});
+ }
+ let edges=0;g.strokeStyle='rgba(119,155,218,.20)';g.lineWidth=.7;
+ for(const e of data.edges||[]){const a=points.get(e[0]),b=points.get(e[1]);if(!a||!b)continue;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();edges++;}
+ const latest=new Set();for(const a of data.flow||[])if(Array.isArray(a)&&a.length>=2)latest.add('s:'+a[1]);
+ for(const [id,p] of points){
+  const n=Number(p.k),active=latest.has(id),r=active?4.2:2.8;
+  g.beginPath();g.arc(p.x,p.y,r,0,Math.PI*2);
+  g.fillStyle=active?'#f6d18e':n<32?'#b693ef':'#88b9ff';g.fill();
+ }
+ $('graphInfo').textContent=points.size+' measured positions · '+edges+' recorded positioned edges · '+(data.nodes?.length||0)+' total graph nodes · '+(data.unplaced||0)+' A/C/organism nodes without projected coordinates. Dimension 5 is a learned coordinate, not automatically physical time.';
+}
+function drawTrend(){
+ const {g,w,h}=measure($('trend')),rows=(W.data?.history||[]).filter(x=>x.geometry?.evalN>0).slice(-80);
+ if(rows.length<2){g.fillStyle='#a3b8d4';g.fillText('Need at least two held-out observations for trend history',14,27);return;}
+ const ymax=Math.max(.02,...rows.flatMap(x=>[x.geometry.evalRMSE||0,x.geometry.baselineRMSE||0]))*1.2;
+ const lines=[['evalRMSE','#74d9c0'],['baselineRMSE','#a9bad6']];
+ g.strokeStyle='#35465f';for(let k=0;k<4;k++){const y=12+(h-25)*k/3;g.beginPath();g.moveTo(8,y);g.lineTo(w-8,y);g.stroke();}
+ for(const [key,color] of lines){g.strokeStyle=color;g.lineWidth=2;g.beginPath();rows.forEach((r,i)=>{const x=10+(w-20)*i/(rows.length-1),y=h-14-(h-28)*(r.geometry[key]||0)/ymax;if(!i)g.moveTo(x,y);else g.lineTo(x,y);});g.stroke();}
+ $('trendInfo').textContent='Recent real V17 transitions · green = lifted predictor RMSE, gray = persistence RMSE; plotted from recorded held-out samples of the auxiliary learner. Lower is better.';
+}
+function setOutcome(){
+ const box=$('outcome');box.replaceChildren();const s=W.data;
+ for(const mode of ['text','maze','transform']){
+  const x=s.last?.[mode],d=x?.assessment;
+  if(d)box.appendChild(panelBox(mode.toUpperCase()+' · '+d.title,d.why,d.status));
+  else box.appendChild(panelBox(mode.toUpperCase()+' · no measurement','Run an actual V17 exercise before interpreting outcomes','NO_TEST'));
+ }
+ const g=s.geometry?.lanes||{};
+ for(const world of ['text','maze','transform']){
+  const p=g[world];if(!p)continue;
+  const title='GEOMETRY '+world.toUpperCase()+' · '+(p.assessment||'');
+  box.appendChild(panelBox(title,p.evalN+' withheld observations; learned RMSE '+P(p.evalRMSE,4)+' vs persistence '+P(p.baselineRMSE,4)+'; improvement '+percent(p.improvement)+'. '+(p.evalN<20?'Insufficient evidence.':'Difference is judged against a 5% minimum improvement threshold.'),p.assessment));
+ }
+}
+function drawText(){
+ const t=W.data?.last?.text;
+ if(!t)return;
+ $('rawText').textContent=t.actual||'';$('textMeta').textContent=t.source+' · '+t.characters+' observed training symbols · online accuracy '+percent(t.onlineAccuracy)+' · corpus non-ASCII chars '+t.measuredNonAscii+' (mapped to ? in V17)';
+ const obs=t.observations||[];
+ const wrap=$('predictions');wrap.replaceChildren();const table=document.createElement('table'),head=document.createElement('tr');
+ for(const x of ['#','Predicted','Actual','Correct?','Prediction source']){const th=document.createElement('th');th.textContent=x;head.appendChild(th);}table.appendChild(head);
+ for(const e of obs.slice(0,180)){const row=document.createElement('tr');const values=[e.step,fmtByte(e.predicted),fmtByte(e.actual),e.correct?'YES':'NO',e.from];for(const v of values){const cell=document.createElement('td');cell.textContent=String(v);row.appendChild(cell);}row.style.color=e.correct?'#83dabc':'#f1a6a0';table.appendChild(row);}wrap.appendChild(table);
+}
+function fmtByte(y){return y===10?'↵ NEWLINE':y===9?'⇥ TAB':y===32?'␣ SPACE':y>=32&&y<127?String.fromCharCode(y):'byte '+y;}
+const xy=(index,n,cell,ox,oy)=>[ox+(index%n+.5)*cell,oy+(Math.floor(index/n)+.5)*cell];
+function drawMaze(){
+ const {g,w,h}=measure($('mazeCanvas')),m=W.data?.last?.maze;if(!m)return;
+ const n=m.n,cell=Math.min(w,h)*.90/n,ox=(w-n*cell)/2,oy=(h-n*cell)/2;
+ for(let i=0;i<n*n;i++){const x=ox+(i%n)*cell,y=oy+Math.floor(i/n)*cell;g.fillStyle=m.wall[i]?'#324258':'#1a3144';g.fillRect(x+1,y+1,cell-2,cell-2);}
+ const [gx,gy]=xy(m.goal,n,cell,ox,oy);g.fillStyle='#ecc978';g.fillRect(gx-cell*.32,gy-cell*.32,cell*.64,cell*.64);
+ const actions=m.actions||[],i=Math.min(W.m,Math.max(0,actions.length-1));const a=actions[i];
+ if(a){const pos=a.observedSelf>=0?a.observedSelf:m.start,plan=a.predictedPlan||[],dirs=[[0,-1],[1,0],[0,1],[-1,0]];
+  let cursor=pos;g.strokeStyle='#a394fb';g.lineWidth=2;g.setLineDash([4,5]);g.beginPath();
+  let first=true;for(const d of plan.slice(0,60)){const [x,y]=xy(cursor,n,cell,ox,oy);if(first){g.moveTo(x,y);first=false;}const xx=cursor%n+dirs[d]?.[0],yy=Math.floor(cursor/n)+dirs[d]?.[1];
+   if(!Number.isFinite(xx)||xx<0||yy<0||xx>=n||yy>=n||m.wall[yy*n+xx])break;cursor=yy*n+xx;const [tx,ty]=xy(cursor,n,cell,ox,oy);g.lineTo(tx,ty);}
+  g.stroke();g.setLineDash([]);
+  g.strokeStyle='#73caff';g.lineWidth=3;g.beginPath();let last=-1;for(const ev of actions.slice(0,i+1)){if(ev.observedSelf<0||ev.actualSelf<0)continue;
+    const [x,y]=xy(ev.observedSelf,n,cell,ox,oy),[u,v]=xy(ev.actualSelf,n,cell,ox,oy);if(last!==ev.observedSelf)g.moveTo(x,y);g.lineTo(u,v);last=ev.actualSelf;}g.stroke();
+  const [px,py]=xy(a.actualSelf>=0?a.actualSelf:m.start,n,cell,ox,oy);g.fillStyle='#f5f9ff';g.beginPath();g.arc(px,py,cell*.25,0,7);g.fill();
+  $('mazeDetail').textContent='Step '+(i+1)+'/'+actions.length+' · output '+a.output+' · '+a.how+' · '+(a.moved?'actual movement observed':'movement blocked or no movement')+'. Initial-plan prefix '+(a.predictedPlan?.length||0)+' actions. Violet dashed = planned path from V17; blue = actual observed path. Plan is not a confirmed future.';
+ }
+ $('mazeMeta').textContent=m.n+'×'+m.n+' maze · '+(m.solved?'SOLVED':'FAILED')+' · '+m.steps+' actions · oracle shortest path '+m.optimal+' · first-form score '+percent(m.first)+' · learning self '+(m.knows?.self?'identified':'not identified');
+ $('mazeFrame').max=Math.max(0,actions.length-1);$('mazeFrame').value=i;$('mazeIndex').textContent=(i+1)+'/'+Math.max(1,actions.length);
+}
+function drawGame(){
+ const {g,w,h}=measure($('gameCanvas')),t=W.data?.last?.transform;if(!t||!t.frames?.length)return;
+ const i=Math.min(W.g,t.frames.length-1),f=t.frames[i],b=f.b||[],n=t.n,cell=Math.min(w,h)*.91/n,ox=(w-n*cell)/2,oy=(h-n*cell)/2;
+ for(let j=0;j<n*n;j++){const x=ox+(j%n)*cell,y=oy+Math.floor(j/n)*cell,v=b[j]??0;
+   g.fillStyle=v===1?'#2b405c':v===9||v===13?'#9e6074':v===10||v===14?'#4c9a91':v===2||v===5||v===8||v===11||v===15?'#6cabe7':v===3||v===6||v===12||v===16?'#b38add':'#183047';
+   g.fillRect(x+1,y+1,cell-2,cell-2);
+   if(t.goal?.[j]!==17&&t.goal?.[j]!==undefined){g.strokeStyle='#ead292';g.lineWidth=2;g.strokeRect(x+2,y+2,cell-4,cell-4);}
+   g.fillStyle='#f0f6ff';g.font=Math.max(10,cell*.28)+'px monospace';g.textAlign='center';g.fillText(String(v),x+cell*.5,y+cell*.62);
+ }
+ const a=t.actions?.[Math.max(0,i-1)];
+ $('gameDetail').textContent=i===0?'Initial observed state, before an action. Gold rectangles represent actual desired cell conditions.':
+ 'Action '+i+' · output '+(a?.output??f.o??'—')+' · '+(a?.how||f.how||'—')+' · predicted board '+(a?.preActionPrediction?'available':'unavailable')+' · prediction '+(a?.predictionMatched===null?'not evaluated':a?.predictionMatched?'matched real next board':'DID NOT match next board')+'. Every displayed board comes from world.board().';
+ $('transformMeta').textContent=(t.solved?'SOLVED':'FAILED')+' · '+t.n+'×'+t.n+' · '+t.steps+' actions · predicted next board '+t.predicted+' times · '+t.failed+' mismatches · goal kinds '+t.goals.join(', ');
+ $('gameFrame').max=Math.max(0,t.frames.length-1);$('gameFrame').value=i;$('gameIndex').textContent=(i+1)+'/'+t.frames.length;
+}
+function geometry(){
+ const s=W.data?.geometry;if(!s)return;const container=$('lanes');container.replaceChildren();
+ for(const w of ['text','maze','transform']){const x=s.lanes?.[w];if(!x)continue;
+  container.appendChild(panelBox(w.toUpperCase()+' · '+(x.assessment||''),'Train transitions '+x.trainN+' · held-out '+x.evalN+' · learned RMSE '+P(x.evalRMSE,5)+' · persistence RMSE '+P(x.baselineRMSE,5)+' · improvement '+percent(x.improvement),x.assessment));
+ }
+ const world=['text','maze','transform'].reduce((best,w)=>s.lanes?.[w]?.evalN> (s.lanes?.[best]?.evalN||0)?w:best,'text');
+ const last=s.lanes?.[world]?.last;
+ $('geometryDetails').textContent=last?'Last real '+world+' transition '+(last.heldout?'withheld from geometry updates':'used for geometry SGD')+'. Predicted next 5D: ['+last.prediction.map(x=>P(x,3)).join(', ')+']; observed next 5D: ['+last.actual.map(x=>P(x,3)).join(', ')+']. Per-sample MSE '+P(last.mse,5)+'.':
+ 'No geometric transition observations yet.';
+ const {g,w,h}=measure($('plucker'));if(!last)return;
+ const vals=last.plucker||[],center=w/2;
+ g.strokeStyle='#667b9b';g.beginPath();g.moveTo(center,15);g.lineTo(center,h-7);g.stroke();
+ vals.forEach((v,i)=>{const y=10+i*(h-20)/10,len=Math.min(w*.42,Math.abs(v)*w*.4);g.fillStyle=v>=0?'#879aff':'#f0aa89';g.fillRect(v<0?center-len:center,y,len,Math.max(3,(h-20)/13));g.fillStyle='#cbd5ee';g.font='9px monospace';g.fillText('p'+(i+1)+' '+P(v,2),8,y+9);});
+}
+function backend(){
+ const s=W.data;if(!s)return;
+ const rows=s.history||[],wrap=$('events');wrap.replaceChildren();
+ const table=document.createElement('table');const h=document.createElement('tr');
+ for(const q of ['#','World','Measured','Time','Assessment']){const th=document.createElement('th');th.textContent=q;h.appendChild(th);}table.appendChild(h);
+ for(const ev of rows.slice().reverse()){const row=document.createElement('tr');
+ for(const q of [ev.episode,ev.world,ev.actions??ev.trainSymbols??0,ev.durationMs+' ms',ev.assessment?.status||'?']){const td=document.createElement('td');td.textContent=String(q);row.appendChild(td);}table.appendChild(row);}wrap.appendChild(table);
+ $('backendInfo').textContent=JSON.stringify({engine:s.engine,device:s.device,stage:s.stage,progress:s.progress,episode:s.episode,
+  learnedSymbols:s.learned,checkpoint:s.checkpoint,save:s.lastSave,error:s.error,geometry:s.geometry?{
+  updates:s.geometry.updates,device:s.geometry.device,optimizer:s.geometry.optimizer,
+  latentDimension:s.geometry.latentDimension,pluckerCoordinates:s.geometry.pluckerCoordinates}:null},null,2);
+ const un=$('unplaced');un.replaceChildren();const nodes=(s.trace?.nodes||[]).filter(n=>n[1]!=='sym').slice(-120);
+ const t=document.createElement('table');for(const n of nodes){const tr=document.createElement('tr');for(const q of [n[0],n[1],n[2],n[3]]){const td=document.createElement('td');td.textContent=String(q);tr.appendChild(td);}t.appendChild(tr);}un.appendChild(t);
+}
+function updateCanvasFrame(kind,d){
+ const t=kind==='maze'?W.data?.last?.maze:W.data?.last?.transform;
+ const lim=kind==='maze'?(t?.actions?.length||1):(t?.frames?.length||1);
+ const p=kind==='maze'?'m':'g';W[p]=Math.max(0,Math.min(lim-1,W[p]+d));
+ if(kind==='maze')drawMaze();else drawGame();
+}
+$('mazePrev').onclick=()=>updateCanvasFrame('maze',-1);$('mazeNext').onclick=()=>updateCanvasFrame('maze',1);
+$('gamePrev').onclick=()=>updateCanvasFrame('game',-1);$('gameNext').onclick=()=>updateCanvasFrame('game',1);
+$('mazeFrame').oninput=e=>{W.m=+e.target.value;drawMaze();};$('gameFrame').oninput=e=>{W.g=+e.target.value;drawGame();};
+function replay(kind){
+ if(W.play){clearInterval(W.play);W.play=null;$('mazePlay').textContent='Play replay';$('gamePlay').textContent='Play replay';return;}
+ $(kind==='maze'?'mazePlay':'gamePlay').textContent='Pause replay';
+ W.play=setInterval(()=>{const t=kind==='maze'?W.data?.last?.maze:W.data?.last?.transform;
+ const max=kind==='maze'?(t?.actions?.length||0):(t?.frames?.length||0);
+ const v=kind==='maze'?'m':'g';if(W[v]>=max-1){replay(kind);return;}updateCanvasFrame(kind,1);},330);
+}
+$('mazePlay').onclick=()=>replay('maze');$('gamePlay').onclick=()=>replay('game');
+function render(){
+ const s=W.data;if(!s)return;const ready=!!s.available;
+ $('runTag').textContent=s.error?'ERROR':s.running?(s.paused?'PAUSED':'TRAINING'):'READY';
+ $('deviceTag').textContent=s.device||'CPU';
+ msg(s.error?'Backend ERROR: '+s.error:ready?(s.running?'Live world '+(s.progress?.world||'?')+' · step '+(s.progress?.step||0)+' · '+s.stage:'Real V17 worker ready · '+s.stage):'Worker starting');
+ $('episodesNow').textContent=s.episode||0;$('symbols').textContent=(s.learned||0).toLocaleString();
+ const text=s.evaluation?.text;$('textAccuracy').textContent=percent(text?.aligned);
+ $('textBase').textContent='persistence '+percent(text?.persistence)+'; frozen '+(text?.n||0)+' bytes';
+ $('mazeWins').textContent=(s.mazeWon||0)+' / '+(s.mazePlayed||0);
+ $('transformWins').textContent=(s.transformWon||0)+' / '+(s.transformPlayed||0);
+ $('updates').textContent=(s.geometry?.updates||0).toLocaleString();
+ $('fresh').textContent=s.checkpoint||'Independent checkpoint';
+ $('validity').textContent=s.crossWorld?.why||'No validated paired trajectories across worlds.';
+ $('saveInfo').textContent=s.lastSave?'Last isolated checkpoint: '+s.lastSave.at+' · '+s.lastSave.bytes+' bytes of V17 Brain. Auxiliary geometry and event ledger saved independently.':'No isolated checkpoint saved.';
+ for(const mode of ['text','maze','transform']){
+  const key=mode==='maze'?'lastMaze':'lastGame',ev=s.last?.[mode]?.episode||-1;
+  if(mode==='maze'&&ev!==W.lastMaze){W.m=0;W.lastMaze=ev;}
+  if(mode==='transform'&&ev!==W.lastGame){W.g=0;W.lastGame=ev;}
+ }
+ setOutcome();drawAll();
+}
+function drawAll(){if(!W.data)return;drawGraph();drawTrend();drawText();drawMaze();drawGame();geometry();backend();}
+window.addEventListener('resize',drawAll);setInterval(refresh,850);refresh();
+</script>
+</body></html>
