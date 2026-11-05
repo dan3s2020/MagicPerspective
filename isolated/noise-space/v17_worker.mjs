@@ -105,40 +105,92 @@ function geometryForText(bytes,heldout){
   geoSample('text',before,after,prev,0,heldout);h=[...h,y].slice(-5);
  }
 }
-function textEpisode(){
- stage='learning text';const {train,held,nonAscii}=splitSource();
- if(!train.length)throw Error('Training text is empty');
- if(cursor>=train.length)cursor=0;
- const chunk=train.slice(cursor,cursor+Math.min(320,train.length));cursor+=chunk.length;
- brain.beginExercise();
- const A=brain.align,original=A.live,observations=[];
- const beforeHits=A.hits,beforeSeen=A.lived;
- A.live=function(y,opts){
-  const r=original.call(this,y,opts);
-  observations.push({step:observations.length,actual:y,predicted:r.guess,correct:r.guess===y,
-    from:r.src===null?'none':JSON.stringify(r.src)});
-  if(observations.length%96===0)emitProgress({world:'text',step:observations.length,expected:r.guess,observed:y});
-  return r;
- };
- try{for(const y of chunk){brain.live(y,brain.lived%32===0);brain.chars++;}}
- finally{delete A.live;}
- seenTexts++;
- const heldoutGeo=episode%5===0;
- geometryForText(chunk,heldoutGeo);
- if(seenTexts%4===0&&held.length>=80){
-  const H=held.slice(0,Math.min(420,held.length)),r=brain.evalText(H,H.length);
-  const persistence=H.reduce((sum,y,i)=>sum+(i>0&&y===H[i-1]),0)/H.length;
-  evaluation.text={frozen:true,n:H.length,aligned:r.aligned,chain:r.live,persistence,
-    sampledPredictions:r.rows.slice(0,100).map((z,i)=>({step:i,actual:z[0],predicted:z[1],old:z[3]})),
-    assessment:labelEvent('text',{n:H.length,heldoutAccuracy:r.aligned,heldoutPersistence:persistence})};
+async function nextTextExamples(count){
+ const examples=[],ds=await ensureDataset();
+ if(ds){
+  for(let k=0;k<count;k++){
+   if(datasetIndex>0&&datasetIndex%ds.trainRows===0)corpusCycles++;
+   const item=await ds.exercise(datasetIndex++);
+   const q=String(item.prompt||''),a=String(item.answer||''),raw='Q: '+q+'\nA: '+a+'\n\n';
+   const bytes=ascii(raw).slice(0,1600);
+   if(bytes.length)examples.push({bytes,source:'Parquet training row '+item.index,nonAscii:[...raw].filter(x=>x.codePointAt(0)>127).length});
+  }
+ }else{
+  const data=splitSource();if(!data.train.length)throw Error('Training text is empty');
+  for(let k=0;k<count;k++){
+   const seg=nextTrainingSlice(data.train,cursor,320);
+   if(seg.wrapped)corpusCycles++;
+   cursor=seg.cursor;
+   examples.push({bytes:seg.slice,source:userText?'Pasted text':'V17 documentation',nonAscii:data.nonAscii});
+  }
  }
- const acc=(A.hits-beforeHits)/Math.max(1,A.lived-beforeSeen);
- const item={world:'text',episode,source:userText?'Pasted text':'V17 documentation',actual:Buffer.from(chunk).toString('latin1'),
-  characters:chunk.length,onlineAccuracy:acc,observations,heldout:evaluation.text||null,
-  measuredNonAscii:nonAscii,geometryHeldout:heldoutGeo,
-  assessment:labelEvent('text',{n:evaluation.text?.n||0,heldoutAccuracy:evaluation.text?.aligned,heldoutPersistence:evaluation.text?.persistence})};
+ sourceSamples+=examples.length;
+ if(!examples.length)throw Error('No text exercises available');
+ return examples;
+}
+async function evaluateText(){
+ if(seenTexts%4!==0)return;
+ const ds=await ensureDataset();let H,meta;
+ if(ds){
+  const ex=await ds.heldOut(datasetTestIndex++);
+  const raw='Q: '+String(ex.prompt||'')+'\nA: '+String(ex.answer||'')+'\n\n';
+  H=ascii(raw).slice(0,420);meta={heldoutSource:'Parquet heldout row',heldoutIndex:ex.index,heldoutWindow:datasetTestIndex-1,totalWindows:ds.held};
+ }else{
+  const {held}=splitSource();
+  const r=rotatingHeldout(held,heldWindowIndex++,420);
+  H=r.bytes;meta={heldoutSource:'Frozen 20% corpus',heldoutIndex:r.offset,heldoutWindow:r.window,totalWindows:r.totalWindows};
+ }
+ if(H.length<80){evaluation.text={frozen:true,n:H.length,aligned:null,chain:null,persistence:null,
+  assessment:labelEvent('text',{n:H.length}) ,...meta};return;}
+ const r=brain.evalText(H,H.length);
+ const baseline=H.reduce((sum,y,i)=>sum+(i>0&&y===H[i-1]),0)/H.length;
+ evaluation.text={frozen:true,n:H.length,aligned:r.aligned,chain:r.live,persistence:baseline,
+  sampledPredictions:r.rows.slice(0,100).map((z,i)=>({step:i,actual:z[0],predicted:z[1],old:z[3]})),
+  assessment:labelEvent('text',{n:H.length,heldoutAccuracy:r.aligned,heldoutPersistence:baseline}),
+  ...meta,checkedAtEpisode:episode};
+}
+async function textEpisode(){
+ stage=gpuRunner.active?'CUDA text batch + V17 alignment merge':'learning text';
+ const batch=await nextTextExamples(gpuRunner.active?gpuRunner.settings.textBatch:1);
+ const bytes=batch[0].bytes,heldoutGeo=episode%5===0;
+ let observations=[],acc=null,gpuMeta=null;
+ if(gpuRunner.active){
+  gpuMeta=await gpuRunner.text(brain,batch.map(e=>e.bytes));
+  gpuWorldsProcessed+=batch.length;
+  // Same as original V17 GPU training: let the older organs live one recorded example
+  // with the GPU-trained alignment kept separate (old=true).
+  brain.beginExercise();
+  for(const y of bytes.slice(0,160))brain.live(y,brain.lived%32===0,{old:true});
+  acc=gpuMeta.alignAccuracy;
+  emitProgress({world:'text',step:batch.length,expected:'GPU aggregate only',observed:gpuMeta.alignAccuracy});
+ }else{
+  brain.beginExercise();
+  const A=brain.align,original=A.live,beforeHits=A.hits,beforeSeen=A.lived;
+  A.live=function(y,opts){
+   const r=original.call(this,y,opts);
+   observations.push({step:observations.length,actual:y,predicted:r.guess,correct:r.guess===y,
+     from:r.src===null?'none':JSON.stringify(r.src)});
+   if(observations.length%96===0)emitProgress({world:'text',step:observations.length,expected:r.guess,observed:y});
+   return r;
+  };
+  try{for(const y of bytes){brain.live(y,brain.lived%32===0);brain.chars++;}}
+  finally{delete A.live;}
+  gpuWorldsProcessed++;
+  acc=(A.hits-beforeHits)/Math.max(1,A.lived-beforeSeen);
+ }
+ seenTexts++;
+ geometryForText(bytes,heldoutGeo);
+ await evaluateText();
+ const assessment=labelEvent('text',{n:evaluation.text?.n||0,heldoutAccuracy:evaluation.text?.aligned,heldoutPersistence:evaluation.text?.persistence});
+ const item={world:'text',episode,source:batch[0].source,actual:Buffer.from(bytes).toString('latin1'),
+  characters:bytes.length,totalBatchCharacters:batch.reduce((s,x)=>s+x.bytes.length,0),
+  exercisesInBatch:batch.length,onlineAccuracy:acc,observations,heldout:evaluation.text||null,
+  measuredNonAscii:batch.reduce((s,x)=>s+x.nonAscii,0),geometryHeldout:heldoutGeo,
+  corpusCycles,sourceNewExamples:corpusCycles===0||!!dataset,trainingPath:gpuMeta?'Original V17 GPU alignment + one CPU replay sample':'Original V17 CPU Brain.live',
+  gpuBatch:gpuMeta,assessment};
  last.text=item;
- return {world:'text',episode,trainSymbols:chunk.length,heldoutAccuracy:evaluation.text?.aligned||null,assessment:item.assessment};
+ return {world:'text',episode,trainSymbols:item.totalBatchCharacters,source:item.source,corpusCycles,worldsInBatch:batch.length,
+   gpuBatch:gpuMeta,heldoutAccuracy:evaluation.text?.aligned??null,assessment};
 }
 function mazeEpisode(){
  stage='learning maze';const D=brain.disc,origChoose=D.choose,origLearn=D.learnStep;
