@@ -40,6 +40,7 @@ def _frame(identifier, raw):
         'active': frame.get('active', []), 'messages': frame.get('messages', []),
         'activations': frame.get('activations', []),
         'growth': frame.get('growth', {}), 'reward': frame.get('reward'),
+        'expansion': frame.get('expansion'),  # measured learned latent coordinates, if recorded
     }
 
 
