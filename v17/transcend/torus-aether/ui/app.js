@@ -425,7 +425,7 @@ function applySnap(gs) {
   edges = new Map(gs.edges.map(([a2, b2, kind, w]) => [a2 + ">" + b2, {a: a2, b: b2, kind, w, hot: 1}]));
   if (gs.text && gs.text.length !== (liveSnap?.text?.length || -1) || !data.length) { data = Array.from(gs.text || "", c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
-  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
+  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs;   // every step lived: text characters and every world's symbols view.dirty = true; findConcepts();
 }
 // the map the same brain is living: walls, checkpoint band, and the path of its two cubes in the last episode
 let mazeShown = null, mazeT0 = 0;
