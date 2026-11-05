@@ -1,0 +1,56 @@
+# MagicPerspective V17 - Torus-Aether: many graphs devouring OpenThoughts at once, each its own share of the world, once.
+#   powershell -ExecutionPolicy Bypass -File .\v17\START_V17.ps1 -Workers 8 -Arms winner,log -Mem 3
+#   -Worlds text,maze   the same brains also live the 2D maps (a map every -MazeEvery characters)
+#   -Gpu cuda:0 -GpuWorlds 4096 -Vram 6 -GpuUtil 80   the worlds (labyrinths, transformations) run many at once on the
+#                       card (first time: installs PyTorch with CUDA in transcend\torus-aether\gpu\.venv); all can be changed on the page
+#   -Resume             every brain continues from its save (runtime-devour\brains); the page's Reset starts all from 0
+# Ctrl+C stops every graph and prints the summary. Log: runtime-devour\log.jsonl
+param(
+  [int]$Workers = [Math]::Max(1, [Environment]::ProcessorCount - 1),
+  [string]$Arms = "winner",
+  [double]$Mem = 3,
+  [int]$Every = 200000,
+  [long]$Chars = 0,
+  [string]$Data = "D:\training\OpenThoughts3-1.2M",
+  [string]$Out = "runtime-devour",
+  [int]$Port = 8841,
+  [string]$Worlds = "text",
+  [int]$MazeEvery = 4000,
+  [switch]$Resume,
+  [string]$Gpu = "off",
+  [long]$GpuWorlds = 1024,
+  [double]$Vram = 0,
+  [int]$GpuUtil = 100,
+  [string]$Cuda = "cu124"
+)
+$ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw "Node.js 20+ is required (https://nodejs.org)" }
+if (-not (Test-Path $Data)) { throw "Dataset folder not found: $Data (use -Data <folder with the .parquet files>)" }
+if ($Gpu -ne "off") {
+  # Windows PowerShell treats anything a program writes on stderr (pip warnings, a failed import check) as an error
+  # when ErrorActionPreference is Stop, so this block runs with Continue and checks the exit codes itself
+  $ErrorActionPreference = "Continue"
+  $venv = Join-Path $PSScriptRoot "transcend\torus-aether\gpu\.venv"
+  $py = Join-Path $venv "Scripts\python.exe"
+  if (-not (Test-Path $py)) {
+    Write-Host "Creating the Python environment for the GPU (only the first time)..."
+    if (Get-Command py -ErrorAction SilentlyContinue) { py -3 -m venv $venv } else { python -m venv $venv }
+    if (-not (Test-Path $py)) { throw "Could not create $venv (is Python 3.9-3.12 installed? https://www.python.org/downloads/)" }
+  }
+  & $py -c "import torch, numpy; assert torch.cuda.is_available()" 2>&1 | Out-Null
+  if ($LASTEXITCODE -ne 0 -and $Gpu -like "cuda*") {
+    Write-Host "Installing PyTorch with CUDA ($Cuda) and NumPy (only the first time, a few minutes)..."
+    & $py -m pip install --upgrade pip 2>&1 | Out-Host
+    & $py -m pip install numpy 2>&1 | Out-Host
+    & $py -m pip install torch --index-url "https://download.pytorch.org/whl/$Cuda" 2>&1 | Out-Host
+    & $py -c "import torch; print('PyTorch', torch.__version__, 'CUDA', torch.version.cuda, 'available:', torch.cuda.is_available())" 2>&1 | Out-Host
+  }
+  Write-Host "Test on the graphics card ($Gpu)..."
+  & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\worlds_gpu.py") --selftest $Gpu 2>&1 | Out-Host
+  if ($LASTEXITCODE -ne 0) { Write-Host "The test on the graphics card did NOT pass. Send me the text above." -ForegroundColor Red; exit 1 }
+  $env:OCTOPUS_PY = $py
+  $ErrorActionPreference = "Stop"
+}
+$heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
+node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" })

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Graful viu · Torus Aether</title>
+<style>
+  :root{--line:#1b2a39;--ink:#e6f3ff;--dim:#8aa1b4;--gold:#f5b301;--red:#ff4d6d;--green:#3ddc84;--ice:#7cc9ff}
+  *{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .app{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr);height:100vh}
+  @media (max-width:900px){.app{grid-template-columns:1fr;height:auto}.graph{height:65vh}}
+  .graph{position:relative;border-right:1px solid var(--line);min-height:60vh}
+  #g{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .hud{position:absolute;left:14px;top:10px;pointer-events:none;max-width:min(620px,92%)}
+  .hud h1{margin:0;font-size:18px}.hud h1 span{color:var(--gold)}.hud p{margin:4px 0 0;font-size:12.5px;color:var(--dim)}
+  .legend{position:absolute;left:12px;bottom:10px;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--dim);pointer-events:none}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;background:var(--c);box-shadow:0 0 8px var(--c)}
+  .legend b{display:inline-block;width:16px;height:2px;margin-right:5px;vertical-align:middle;background:var(--c)}
+  .side{overflow:auto;padding:12px 16px}
+  h2{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px;font-weight:600}h2:first-child{margin-top:0}
+  button{background:#0d1824;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
+  button:hover{border-color:#4a7397}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  input[type=range]{flex:1;accent-color:var(--gold)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .m{background:#0a121c;border-radius:10px;padding:8px 10px}.m small{display:block;color:var(--dim);font-size:11.5px}.m b{font-size:18px;font-weight:600}
+  #strip{font:13px/1.6 ui-monospace,monospace;background:#0a121c;border-radius:10px;padding:8px 10px;word-break:break-all;min-height:3.4em}
+  #strip .ok{color:var(--green)}#strip .no{color:#4f6273}#strip .fix{color:#000;background:var(--gold);border-radius:3px}#strip .brk{color:#fff;background:var(--red);border-radius:3px}
+  #form{font:12px/1.5 ui-monospace,monospace;color:var(--dim)}.dim{color:var(--dim);font-size:12px}#evalOut{line-height:1.7}
+  p.note{color:var(--dim);font-size:12.5px;margin:6px 0}
+  .sl{display:grid;grid-template-columns:150px 1fr 44px;gap:4px 8px;align-items:center;margin:4px 0;font-size:12.5px}
+  .sl small{grid-column:1/-1;color:#5f7689;font-size:11px;margin-top:-3px}
+  .grp{display:inline-block;margin:3px 4px 0 0;padding:2px 6px;border-radius:6px;font:12px ui-monospace,monospace;color:#000;background:hsl(var(--h),85%,65%)}
+  .matrix{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:6px;font:11px ui-monospace,monospace;color:var(--gold)}.matrix span{background:#0a121c;border:1px solid #2a3a4a;border-radius:4px;text-align:center;padding:2px 0}
+  .where{font-size:12.5px;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 9px;margin:6px 0}.where .ctx{color:var(--gold);font-family:ui-monospace,monospace}
+  .liveList{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}.lgc{border:1px solid #23384c;border-radius:8px;padding:6px 8px;font-size:12px}.lgc.on{border-color:var(--gold)}.lgc .t{cursor:pointer}.lgc .sc{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:4px 0}.lgc .sc b{font-weight:600}.lgc .bt{display:flex;gap:4px;flex-wrap:wrap}.lgc .bt button{padding:2px 7px;font-size:12px}.st{font-size:11px;padding:1px 6px;border-radius:6px;background:#1d2b3a}.st.run{background:#174a2c;color:#7ee0a1}.lg{text-align:left;font-size:12px;padding:6px 8px}.lg small{color:var(--dim);font-size:11px}.lg.on{border-color:var(--gold);color:var(--gold)}
+  body.live #run,body.live #reset,body.live .sl:has(#speed),body.live .sl:has(#ltemp),body.live .sl:has(#pnoise),body.live .sl:has(#dims),body.live .sl:has(#bud),body.live .sl:has(#wires),body.live .sl:has(#gnoise),body.live .sl:has(#glr),body.live .sl:has(#repel){display:none}
+  .gen{margin-top:6px;font:12px/1.5 ui-monospace,monospace;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 8px;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="graph">
+    <canvas id="g"></canvas>
+    <div class="hud">
+      <h1>Graful viu <span>pornește gol</span></h1>
+      <p>Nimic nu e dat de la început: niciun nod, nicio linie, nicio țintă, nicio acțiune. Fiecare nod se naște din experiență,
+        fiecare legătură apare din ce s-a întâmplat și se stinge dacă nu se mai întâmplă. Fiecare nod trăiește într-un spațiu cu mai multe dimensiuni și se mișcă doar prin ce trăiește; ecranul e o felie din el, un tor infinit: mergi pe orice axă, faci zoom oricât, în afară sau înăuntru, și vezi mereu graf real.</p>
+    </div>
+    <div class="legend">
+      <span><i style="--c:var(--ice)"></i>simbol (culoarea = conceptul în care s-a condensat)</span>
+      <span><i style="--c:var(--gold)"></i>perspectivă a lui C</span>
+      <span><i style="--c:var(--red)"></i>percepție a lui A (înmugurită)</span>
+      <span><b style="--c:rgba(124,201,255,.6)"></b>lumea: ce urmează după ce</span>
+      <span><b style="--c:var(--gold)"></b>C a văzut corect</span>
+      <span><b style="--c:var(--red)"></b>A a simțit corect</span>
+      <span><b style="--c:#fff"></b>înmugurire</span>
+      <span><b style="--c:var(--green)"></b>A l-a corectat pe C</span>
+    </div>
+  </div>
+  <aside class="side">
+    <div id="livePanel" hidden>
+      <h2>Grafurile care devorează acum (alege unul ca să intri în spațiul lui)</h2>
+      <div id="liveList" class="liveList"></div>
+      <div class="row"><button id="allStart">▶ Start toate</button><button id="allPause">⏸ Pauză toate</button><button id="allSave">💾 Salvează toate</button><button id="liveReset" title="toate creierele pornesc din nou, goale (salvările vechi sunt puse deoparte)">⟲ Reset toate la 0</button></div>
+      <div class="row gpuRow"><b class="dim">Lumi pe GPU:</b> <select id="gpuDev"><option value="off">oprit (CPU)</option><option>cuda:0</option><option>cuda:1</option><option>cpu</option></select>
+        <label class="dim">lumi odată <input id="gpuWorlds" type="number" min="1" step="1" value="1024" style="width:90px"></label>
+        <label class="dim">VRAM GB <input id="gpuVram" type="number" min="0" step="0.5" value="0" style="width:60px" title="0 = cât are placa"></label>
+        <label class="dim">GPU % <input id="gpuUtil" type="range" min="5" max="100" step="5" value="100"><span id="gpuUtilOut">100</span></label>
+        <button id="gpuApply">Aplică</button></div>
+      <div class="row"><select id="addArm"></select><label class="dim"><input id="addText" type="checkbox" checked> text</label><label class="dim"><input id="addMaze" type="checkbox"> labirinturi</label><label class="dim"><input id="addTrans" type="checkbox"> transformări</label><button id="addGraph">+ Adaugă graf</button></div>
+      <div id="mazeBox" hidden>
+        <h2>Labirintul pe care îl trăiește același creier</h2>
+        <canvas id="mazeCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
+        <p class="note" id="mazeOut">—</p>
+      </div>
+      <div id="transBox" hidden>
+        <h2>Lumea transformărilor (obiecte, comutatoare, uși — fără nume)</h2>
+        <canvas id="transCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
+        <p class="note" id="transOut">—</p>
+      </div>
+    </div>
+    <h2>Mediu</h2>
+    <p class="note" id="corpus">se încarcă…</p>
+    <div class="row"><button id="run">Start</button><button id="reset">Reset la gol</button><button id="eval">Testează pe text nevăzut</button></div>
+    <div class="sl"><label for="speed">pași pe cadru</label><input id="speed" type="range" min="1" max="1500" step="1" value="40"><span id="speedOut" class="dim">40</span></div>
+
+    <h2>Ce s-a născut</h2>
+    <div class="grid">
+      <div class="m"><small>pași trăiți</small><b id="steps">0</b></div>
+      <div class="m"><small>legături vii</small><b id="edges">0</b></div>
+      <div class="m"><small>simboluri absorbite</small><b id="symbols">0</b></div>
+      <div class="m"><small>percepții A · perspective C</small><b><span id="aw">0</span> · <span id="cw">0</span></b></div>
+    </div>
+
+    <h2>Cât ghicește (ultimii 1000 de pași)</h2>
+    <div class="grid">
+      <div class="m"><small>C singur</small><b id="accC">—</b></div>
+      <div class="m"><small>graful (C ↔ A)</small><b id="accF" style="color:var(--green)">—</b></div>
+    </div>
+
+    <h2>Concepte născute în spațiu</h2>
+    <div id="groups" class="dim">încă niciun concept</div>
+
+    <h2>Călătoria prin spațiu (tor cu <span id="dimsNow">5</span> dimensiuni)</h2>
+    <p class="note">Fiecare axă e un cerc: pleci printr-o parte, intri prin cealaltă, pe oricare din cele 5 axe. Și scara e un cerc: ieșind din tot graful îi vezi corpul din afară, iar corpul devine
+      cel mai mic context unic al lumii trăite; intrând tot mai adânc într-un nod ajungi la acel context unic, al cărui viitor e din nou întregul.
+      Rotița mouse-ului face zoom, tragerea cu mouse-ul te mută.</p>
+    <div class="row"><label class="dim"><input id="focusLive" type="checkbox"> doar zonele care se antrenează acum (restul se stinge, privirea alunecă spre ce trăiește acum)</label></div>
+    <div class="row"><label class="dim"><input id="torusView" type="checkbox"> privirea veche: torul (în loc de graful care se conține pe sine)</label></div>
+    <div id="where" class="where">—</div>
+    <div class="row"><button id="zout">− zoom</button><button id="zin">+ zoom</button><button id="still">Oprește mișcarea</button><button id="home">Înapoi sus</button></div>
+    <div class="sl"><label for="fly">zbor (zoom continuu)</label><input id="fly" type="range" min="-1" max="1" step="0.05" value="0"><span id="flyOut" class="dim">0</span><small>spre dreapta intri, spre stânga ieși; nu se termină în nicio direcție</small></div>
+    <div class="sl"><label for="tx">mers pe X</label><input id="tx" type="range" min="-1" max="1" step="0.05" value="0"><span id="txOut" class="dim">0</span></div>
+    <div class="sl"><label for="ty">mers pe Y</label><input id="ty" type="range" min="-1" max="1" step="0.05" value="0"><span id="tyOut" class="dim">0</span></div>
+    <div class="sl"><label for="tz">mers pe Z</label><input id="tz" type="range" min="-1" max="1" step="0.05" value="0"><span id="tzOut" class="dim">0</span></div>
+    <div class="sl"><label for="tw">mers pe W</label><input id="tw" type="range" min="-1" max="1" step="0.05" value="0"><span id="twOut" class="dim">0</span></div>
+    <div class="sl"><label for="tv">mers pe V</label><input id="tv" type="range" min="-1" max="1" step="0.05" value="0"><span id="tvOut" class="dim">0</span></div>
+    <div class="row"><label class="dim"><input id="spin" type="checkbox"> rotește singur planele bifate</label><button id="resetRot">Rotație la zero</button></div>
+    <div class="sl"><label for="spinSpeed">viteza rotației</label><input id="spinSpeed" type="range" min="0" max="2" step="0.05" value="0.3"><span id="spinSpeedOut" class="dim">0.3</span></div>
+    <div id="planes"></div>
+    <div class="row"><label class="dim"><input id="persp" type="checkbox" checked> perspectivă din Z, W, V (adâncimea în secțiune)</label></div>
+    <div class="sl"><label for="cam">distanța privitorului</label><input id="cam" type="range" min="1.2" max="6" step="0.05" value="2"><span id="camOut" class="dim">2</span><small>mai aproape = deformare mai puternică din dimensiunile ascunse</small></div>
+    <div class="sl"><label for="density">câte imagini pe ecran</label><input id="density" type="range" min="100" max="2000" step="50" value="600"><span id="densityOut" class="dim">600</span><small>secțiunea se subțiază sau se îngroașă singură ca ecranul să fie mereu plin de graf real</small></div>
+    <div class="sl"><label for="thickMul">grosimea secțiunii</label><input id="thickMul" type="range" min="0.3" max="3" step="0.05" value="1"><span id="thickMulOut" class="dim">1</span></div>
+    <div class="dim" id="visible">—</div>
+    <div id="matrix" class="matrix"></div>
+
+    <h2>Zgomot și libertate</h2>
+    <div class="sl"><label for="wtemp">temperatura scrierii</label><input id="wtemp" type="range" min="0" max="2" step="0.05" value="0.6"><span id="wtempOut" class="dim">0.6</span><small>libertatea de mișcare când graful scrie; rezonanța măsurată e pe la 0,6</small></div>
+    <div class="row"><button id="write">Scrie liber</button></div>
+    <div id="writeOut" class="dim">—</div>
+    <div class="sl"><label for="gnoise">zgomot în geometrie</label><input id="gnoise" type="range" min="0" max="10" step="1" value="3"><span id="gnoiseOut" class="dim">3</span><small>câte simboluri la întâmplare împing fiecare simbol (polaritate); fără el conceptele nu se separă</small></div>
+    <div class="sl"><label for="glr">viteza geometriei</label><input id="glr" type="range" min="0.005" max="0.1" step="0.005" value="0.03"><span id="glrOut" class="dim">0.03</span></div>
+    <div class="sl"><label for="repel">respingerea dintre noduri</label><input id="repel" type="range" min="0" max="1" step="0.05" value="0.3"><span id="repelOut" class="dim">0.3</span><small>polaritate între poziții: nimic nu se strânge într-un singur punct</small></div>
+    <div class="sl"><label for="cthr">pragul conceptelor</label><input id="cthr" type="range" min="0.2" max="1" step="0.05" value="0.5"><span id="cthrOut" class="dim">0.5</span><small>cât de apropiate trebuie să fie ca să se condenseze într-un concept</small></div>
+    <div class="sl"><label for="ltemp">temperatura în învățare</label><input id="ltemp" type="range" min="0" max="1" step="0.05" value="0"><span id="ltempOut" class="dim">0</span><small>zgomot în ce arată organismele cât învață; măsurat: strică</small></div>
+    <div class="sl"><label for="pnoise">zgomot în percepție</label><input id="pnoise" type="range" min="0" max="0.3" step="0.01" value="0"><span id="pnoiseOut" class="dim">0</span><small>probabilitatea ca A să perceapă greșit un caracter din trecut; măsurat: strică</small></div>
+
+    <h2>Creștere (se aplică la Reset)</h2>
+    <div class="sl"><label for="dims">dimensiunile spațiului</label><input id="dims" type="range" min="5" max="10" step="1" value="5"><span id="dimsOut" class="dim">5</span></div>
+    <div class="sl"><label for="bud">înmugurire la fiecare</label><input id="bud" type="range" min="20" max="1600" step="10" value="100"><span id="budOut" class="dim">100</span><small>experiențe între doi muguri ai lui A</small></div>
+    <div class="sl"><label for="wires">percepții maxime ale lui A</label><input id="wires" type="range" min="2" max="32" step="1" value="16"><span id="wiresOut" class="dim">16</span></div>
+
+    <h2>Textul, cum l-a scris graful</h2>
+    <div id="strip"></div>
+    <p class="note"><span style="color:var(--green)">verde</span> corect · gri greșit · <span style="background:var(--gold);color:#000;border-radius:3px">&nbsp;auriu&nbsp;</span> C greșea, A l-a corectat · <span style="background:var(--red);border-radius:3px">&nbsp;roșu&nbsp;</span> C avea dreptate, graful nu</p>
+
+    <h2>Forma lui A</h2>
+    <div id="form"></div>
+
+    <h2>Dovada</h2>
+    <div class="sl"><label for="ttemp">temperatura la test</label><input id="ttemp" type="range" min="0" max="1.5" step="0.05" value="0.6"><span id="ttempOut" class="dim">0.6</span><small>0 = determinist, mereu același rezultat; peste 0 graful alege prin tragere la sorți, deci halucinează și fiecare test diferă</small></div>
+    <div id="evalOut">—</div>
+  </aside>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

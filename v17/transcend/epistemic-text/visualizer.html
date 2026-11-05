@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Octopus Transcend | A/B/C Text Discovery</title>
+<style>
+:root{color-scheme:dark;--bg:#080f1b;--panel:#101d2d;--border:#2b4158;--blue:#65bbff;--teal:#33e2bd;--gold:#ffc86c;--soft:#9cb2c8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 25% 5%,#14283d,var(--bg) 48%);font:15px system-ui,Segoe UI,sans-serif;color:#f3f6ff}
+header,.wrap{max-width:1560px;margin:auto;padding:18px 16px}header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border)}
+h1{font-size:clamp(20px,3vw,31px);margin:4px 0;font-weight:850;letter-spacing:.03em}.eyebrow{font-size:12px;color:#9ab9d9;letter-spacing:.13em}p{color:var(--soft);line-height:1.6;margin:5px 0}
+.badge{border:1px solid #275a59;color:var(--teal);padding:10px;border-radius:10px;font-size:12px}
+.card{background:rgba(14,25,41,.92);border:1px solid var(--border);border-radius:16px;padding:20px;min-width:0}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.toolbar button{background:#1c314b;color:#f3f8ff;border:1px solid #38526e;border-radius:9px;padding:13px;font-weight:700;cursor:pointer}.toolbar button:hover{border-color:var(--teal)}
+.toolbar .primary{background:#096d61}.toolbar .danger{background:#392d35}button:disabled{opacity:.45;cursor:not-allowed}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}.column{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.headerline{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.a{color:var(--blue)}.b{color:var(--teal)}.c{color:var(--gold)}.big{font-size:31px;font-weight:850;font-variant-numeric:tabular-nums}
+h2{font-size:18px;margin:0 0 8px}h3{font-size:14px;color:var(--soft);margin:16px 0 8px}
+.small{font-size:12px;color:var(--soft)}.kv{display:flex;justify-content:space-between;border-bottom:1px solid #22364b;padding:9px 0}
+svg{width:100%;height:185px;overflow:visible}svg text{font-family:system-ui;fill:#b3d7e7;font-size:12px}
+.timeline{width:100%;height:220px;background:#0b1726;border-radius:10px;display:block}
+.mono,pre{font:13px ui-monospace,Consolas,monospace;overflow-wrap:anywhere;white-space:pre-wrap}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:12px}.status{min-height:16px;color:#d9c58d}
+textarea{width:100%;min-height:135px;background:#0a1725;color:#f0f6ff;border:1px solid #37516a;border-radius:9px;padding:12px;font:13px ui-monospace,monospace}
+code{background:#0b1d2d;color:#fff;padding:3px 6px;border-radius:4px}details{margin-top:12px}summary{cursor:pointer;font-weight:600}
+#trace{max-height:300px;overflow:auto}.traceRow{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,50px);gap:10px;padding:6px 0;border-bottom:1px solid #22364b;align-items:center}
+.good{color:#33e2bd}.bad{color:#fa8080}.meta{font-size:12px;color:#9fb6cb}
+footer{margin-top:18px;color:#8fa8bc;font-size:12px}
+@media(max-width:920px){.column{grid-template-columns:1fr}.cards{grid-template-columns:repeat(3,1fr)}.results{grid-template-columns:1fr}header,.wrap{padding:12px}.card{padding:15px}}
+</style></head><body>
+<header><div><div class="eyebrow">OCTOPUS LAB / ISOLATED TEXT EXPERIMENT</div>
+<h1>TRANSCEND A/B/C <span style="color:var(--gold)">TEXT DISCOVERY</span></h1>
+<p>Real next-byte feedback • independent organisms • recursive context • learned perspectives</p></div>
+<div class="badge" id="connection">CONNECTING</div></header>
+<div class="wrap">
+<section class="card">
+<div class="toolbar">
+<button class="primary" onclick="control('start')">▶ Start training</button>
+<button class="danger" onclick="control('pause')">Ⅱ Pause &amp; save</button>
+<button onclick="control('step',{count:1})">↦ Step</button>
+<button onclick="control('step',{count:100})">+100</button>
+<button onclick="control('step',{count:1000})">+1000</button>
+<button onclick="control('evaluate')">◇ Frozen held-out evaluation</button>
+<button onclick="control('save')">↓ Save checkpoint</button>
+</div>
+<p class="small">Starts paused. Separate CPU trainer, port 8833. No changes to the binary A/B/C lab or original CUDA UI. Checkpoints retain weights between sessions.</p>
+<div class="status" id="message" role="status"></div>
+</section>
+<div class="cards">
+<div class="card"><div class="eyebrow">TRAINING CHARACTERS</div><div class="big" id="episodes">0</div><div class="small" id="size">—</div></div>
+<div class="card"><div class="eyebrow">C CONTEXT PURCHASED</div><div class="big c" id="lag">1/4</div><div class="small" id="wallet">—</div></div>
+<div class="card"><div class="eyebrow">C PERSPECTIVE DISCOVERIES</div><div class="big c" id="discoveries">0</div><div class="small" id="represent">—</div></div>
+</div>
+<div class="column">
+<div class="card"><div class="headerline"><h2 class="a">A / AUTONOMOUS CELLS</h2><b class="big a" id="scoreA">0%</b></div>
+<p>Eight independent bit-level learners predict the next byte using their own local context bit.</p>
+<svg viewBox="0 0 400 185" role="img" aria-label="A has eight independent learning cells">
+<g id="nodesA"></g></svg><div class="small">A is the minimal local sensory baseline.</div></div>
+<div class="card"><div class="headerline"><h2 class="b">B / HIERARCHICAL CONTEXT</h2><b class="big b" id="scoreB">0%</b></div>
+<p>Local 1-character and Higher Self 2-character predictors learn from the same stream; the higher context is predefined.</p>
+<svg viewBox="0 0 400 185" role="img" aria-label="B has lower and higher learning hierarchy"><g id="nodesB"></g></svg>
+<div class="small">The two-level architecture is programmed, its predictions are learned.</div></div>
+<div class="card"><div class="headerline"><h2 class="c">C / EPISTEMIC TEXT</h2><b class="big c" id="scoreC">0%</b></div>
+<p>Acquires longer context, constructs candidate views, and promotes views using independent internal validation examples.</p>
+<svg viewBox="0 0 400 185" role="img" aria-label="C connects acquired context bytes to the current representation"><g id="nodesC"></g></svg>
+<div class="kv"><span>Candidate representations</span><b id="candidates">—</b></div>
+<div class="kv"><span>Current perspective</span><b id="cPerspective">—</b></div></div>
+</div>
+<div class="results">
+<div class="card"><h2>LIVE MOVEMENT LAB / TEXT DECISIONS</h2>
+<p class="small">Actual byte predictions from the trainer. Correct target appears only after all learners have predicted.</p>
+<div class="kv"><span>Previous four characters</span><code id="context">—</code></div>
+<div class="kv"><span>Actual next character</span><code id="target">—</code></div>
+<div class="kv"><span>Prediction A</span><code id="predictionA">—</code></div>
+<div class="kv"><span>Prediction B</span><code id="predictionB">—</code></div>
+<div class="kv"><span>Prediction C</span><code id="predictionC">—</code></div>
+<h3>Recent observed predictions</h3><div class="mono" id="trace"></div></div>
+<div class="card"><h2>FROZEN GENERALIZATION / SAME HELD-OUT TEXT</h2>
+<p>No weight updates during evaluation. A higher training score is not proof of independent generalization.</p>
+<div id="evaluation" class="mono">Pause, then press Frozen held-out evaluation.</div>
+<h3>C's actual exploration history</h3><div class="mono" id="history">No observations yet.</div>
+</div>
+</div>
+<section class="card" style="margin-top:12px"><h2>NEW TEXT CURRICULUM / PRESERVE EXISTING LEARNING</h2>
+<p>Paste at least five lines of ASCII text. Every fifth substantial line is held out, never trained. Existing A/B/C weights are preserved, allowing transfer tests. Stop training first.</p>
+<textarea id="corpus" placeholder="Paste five or more lines, each 16+ characters.&#10;the small blue bird sings tonight.&#10;the red cat runs down the road.&#10;..."></textarea>
+<div class="toolbar" style="margin-top:10px"><label for="corpusFile">Choose your own .txt corpus:</label><input id="corpusFile" type="file" accept=".txt,text/plain"><button onclick="loadCorpusFile()">Load file into editor</button></div>
+<div class="toolbar" style="margin-top:10px"><button onclick="setCorpus()">Apply as new curriculum (keep brain)</button></div>
+<p class="small">Current limitation: ASCII and byte prediction, not Unicode, word semantics, natural-language reasoning, or general self-improvement.</p></section>
+<footer id="footer">Epistemic Text v1 • no answer or XOR formula injected into learner • all scores derived from real predictions.</footer>
+</div>
+<script>
+const q=id=>document.getElementById(id);
+const esc=s=>JSON.stringify(String(s));
+const symbol=v=>v===undefined||v===null?"—":v===10?"\\n":v===32?"␠":v<32?"0x"+v.toString(16):String.fromCharCode(v);
+const percent=v=>((Number(v)||0)*100).toFixed(1)+"%";
+let busy=false;
+async function command(path,body){
+ if(busy)return;busy=true;q("message").textContent="Executing…";
+ try{
+  const resp=await fetch(path,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  const result=await resp.json();
+  if(!resp.ok)throw Error(result.error||"Request failed");
+  q("message").textContent=body.action?body.action+" completed":"Curriculum changed; existing weights preserved.";
+  await refresh();
+ }catch(e){q("message").textContent="ERROR: "+e.message;}finally{busy=false;}
+}
+const control=(action,opts={})=>command("/api/control",{action,...opts});
+const setCorpus=()=>command("/api/corpus",{text:q("corpus").value});
+async function loadCorpusFile(){
+ const file=q("corpusFile").files?.[0];
+ if(!file){q("message").textContent="Choose a .txt file first.";return;}
+ if(file.size>100000){q("message").textContent="This research trainer supports files up to 100 KB. Use an ASCII subset.";return;}
+ try{
+  const data=await file.text();
+  q("corpus").value=data;
+  q("message").textContent="Loaded "+file.name+" ("+data.length+" characters). Pause and click Apply as new curriculum, then Start training.";
+ }catch(e){q("message").textContent="Could not read file: "+e.message;}
+}
+
+function node(x,y,label,color,r=18){
+ return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="#142b3d" stroke="'+color+'" stroke-width="2"/>'+
+ '<text x="'+x+'" y="'+(y+4)+'" text-anchor="middle">'+label+'</text>';
+}
+function link(x1,y1,x2,y2,color="#426d86"){
+ return '<path d="M'+x1+' '+y1+' L'+x2+' '+y2+'" stroke="'+color+'" stroke-width="2" fill="none" opacity=".9"/>';
+}
+function graphs(lag,active){
+ q("nodesA").innerHTML=Array.from({length:8},(_,i)=>node(30+i*48,95,"C"+i,"#65bbff",17)).join("");
+ let b=node(200,34,"Ω₂","#ffc86c",19)+node(100,92,"Ω₁","#33e2bd")+node(300,92,"Ω₁","#33e2bd");
+ for(let i=0;i<8;i++){const x=27+i*49;b+=link(i<4?100:300,104,x,149,"#2ab9a9")+node(x,160,"C"+i,"#5dc8ff",14);}
+ b=link(200,49,100,75,"#2ab9a9")+link(200,49,300,75,"#2ab9a9")+b;
+ q("nodesB").innerHTML=b;
+ const mask=Number((active||"exact:1").split(":")[1])||1;
+ let c=node(200,38,"P","#ffc86c",21);
+ for(let i=0;i<4;i++){const x=65+i*90;
+ if((mask&(1<<i))&&i<lag)c+=link(200,58,x,118,"#ffc86c");
+ c+=node(x,136,"-"+(i+1),i<lag?"#33e2bd":"#455c73",20);
+ }
+ q("nodesC").innerHTML=c;
+}
+function render(s){
+ const d=s.data,c=d.c;q("connection").textContent=s.running?"CONNECTED • TRAINING":"CONNECTED • PAUSED";
+ q("connection").style.color=s.running?"#33e2bd":"#ffca75";q("episodes").textContent=d.episodes.toLocaleString();
+ q("size").textContent=d.trainingCharacters+" train bytes / "+d.heldoutCharacters+" held-out bytes";
+ q("scoreA").textContent=percent(d.A);q("scoreB").textContent=percent(d.B);q("scoreC").textContent=percent(d.C);
+ q("lag").textContent=c.lag+" / 4";q("wallet").textContent="Wallet: "+c.wallet+" • context probes: "+c.meta.probes;
+ q("discoveries").textContent=c.meta.promotions;q("represent").textContent="Currently "+c.representation;
+ q("candidates").textContent=c.candidateCount;q("cPerspective").textContent=c.representation;
+ graphs(c.lag,c.representation);
+ const last=d.last||{};
+ q("context").textContent=last.context?esc(last.context):"—";q("target").textContent=symbol(last.actual);
+ for(const name of ["A","B","C"]){const output=last.outputs?.[name];
+ q("prediction"+name).textContent=symbol(output)+(output===undefined?"":last.correct[name]?" ✓":" ✕");}
+ q("trace").innerHTML=(d.traces||[]).slice(-24).reverse().map(x=>{
+ const cell=(name)=>'<span class="'+(x.correct[name]?"good":"bad")+'">'+symbol(x.outputs[name])+'</span>';
+ return '<div class="traceRow"><span>#'+x.episode+' '+esc(x.context)+' → '+symbol(x.actual)+'</span>'+
+ cell("A")+cell("B")+cell("C")+'</div>';
+ }).join("");
+ q("history").textContent=(c.events||[]).slice(-12).reverse().map(e=>
+ '#'+e.episode+' '+e.type+(e.to?" → "+e.to:e.after?" context="+e.after:"")).join("\n")||"No discoveries yet.";
+ const v=s.evaluation;
+ q("evaluation").textContent=v?"Samples: "+v.samples+"\n"+
+ Object.entries(v.accuracy).map(([k,val])=>k+": "+percent(val)).join("\n"):
+ "Not evaluated. Pause and press Frozen held-out evaluation.";
+ if(s.error)q("message").textContent="SERVER ERROR: "+s.error;
+ q("footer").textContent="Runtime: "+s.checkpointRoot+" • checkpoint generation: "+s.generation+
+ " • recovered: "+s.recovered+" • research only; no CUDA.";
+}
+async function refresh(){
+ try{const r=await fetch("/api/state",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);
+ const s=await r.json();render(s);}catch(e){q("connection").textContent="OFFLINE";
+ q("message").textContent=String(e.message||e);}
+}
+setInterval(()=>{if(!busy)refresh();},900);refresh();
+</script></body></html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Octopus Torus · Observatory</title>
+<style>
+:root{color-scheme:dark;--bg:#03070e;--panel:#0b1522;--panel2:#101e2e;--line:#26394d;--ink:#e5f5ff;--soft:#98b0c6;--cyan:#73e3eb;--gold:#ffc36a;--red:#ff6c85;--green:#5de1a8}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:13px/1.48 system-ui,"Segoe UI",sans-serif}
+button,select,input{font:inherit}button,select{background:#112238;color:var(--ink);border:1px solid #395069;border-radius:8px;padding:6px 10px;cursor:pointer}button:hover,select:hover{border-color:var(--cyan)}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+input[type=range]{accent-color:var(--cyan);width:100%}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+header{display:flex;align-items:center;gap:14px;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(100deg,#081424,#03070e)}
+h1{font-size:19px;letter-spacing:.045em;margin:0}h1 b{color:var(--cyan)}h2{font-size:12px;font-weight:650;letter-spacing:.13em;text-transform:uppercase;color:var(--soft);margin:0 0 8px}
+.meta{font-size:12px;color:var(--soft)}.actions,.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:11px;padding:3px 8px;border:1px solid #365a57;border-radius:99px;color:var(--green)}.tag.off{border-color:#864354;color:var(--red)}
+.layout{display:grid;grid-template-columns:minmax(420px,1fr) minmax(380px,1fr);height:calc(100vh - 67px)}
+.visual{min-width:0;overflow:auto;border-right:1px solid var(--line)}.native{min-width:0;display:flex;flex-direction:column;background:#02050a}
+.nativeTitle{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.nativeTitle span{color:var(--soft)}iframe{border:0;width:100%;flex:1;min-height:250px;background:#000}
+.canvasWrap{position:relative;height:min(58vh,620px);min-height:370px;background:radial-gradient(ellipse at 45% 35%,#101d31 0%,#03070e 58%);overflow:hidden}
+#graph{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#graph:active{cursor:grabbing}
+.overlay{position:absolute;pointer-events:none}.overlay.top{top:16px;left:18px;right:18px}.overlay.bottom{bottom:10px;left:14px;right:14px;display:flex;justify-content:space-between;gap:8px;align-items:flex-end}
+.mainTitle{font-size:17px;letter-spacing:.08em;font-weight:700}.hint{font-size:11px;color:var(--soft);max-width:480px}.small{font-size:11px;color:var(--soft)}
+.block{border-top:1px solid var(--line);padding:12px 16px}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.toolbar label{display:flex;gap:5px;align-items:center}
+select{max-width:210px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}.kpi{background:var(--panel);border:1px solid #15283b;border-radius:9px;padding:7px 9px;min-width:0}.kpi strong{font-size:18px;font-variant-numeric:tabular-nums;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kpi small{display:block;font-size:10px;color:var(--soft)}
+.settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px}.setting{min-width:0}.setting label{display:flex;justify-content:space-between;align-items:center;color:var(--soft);font-size:12px}.setting output{font-variant-numeric:tabular-nums;color:var(--ink)}
+#trend{width:100%;height:125px;background:#08101a;border:1px solid var(--line);border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:11px;color:var(--soft)}.dot{display:inline-block;border-radius:100%;width:9px;height:9px;background:var(--c);margin-right:5px}
+#eventLog{font:11.5px/1.5 ui-monospace,monospace;min-height:35px;color:#c4d7e6;white-space:pre-wrap;overflow-wrap:anywhere}
+details{color:var(--soft)}details summary{cursor:pointer}details p{margin:8px 0}
+body.mode-native .layout{grid-template-columns:1fr}body.mode-native .visual{display:none}
+body.mode-visual .layout{grid-template-columns:1fr}body.mode-visual .native{display:none}
+@media(max-width:920px){.layout{height:auto;grid-template-columns:1fr}.native{min-height:90vh;border-top:1px solid var(--line)}.canvasWrap{height:53vh;min-height:320px}.kpis{grid-template-columns:repeat(2,1fr)}.native iframe{min-height:82vh}}
+@media(max-width:550px){header{padding:10px}.block{padding:10px}.settings{grid-template-columns:1fr}.toolbar{gap:6px}h1{font-size:16px}}
+</style>
+</head>
+<body class="mode-split">
+<header>
+ <div><h1><b>OCTOPUS</b> / TORUS OBSERVATORY <span id="online" class="tag off">conectare…</span></h1>
+  <div class="meta">Strat nou de observație · date de la creierele reale · controalele originale sunt păstrate</div></div>
+ <nav class="actions" aria-label="Navigare interfețe">
+  <button type="button" id="split">Ambele</button><button type="button" id="justVisual">Doar vizualizator</button><button type="button" id="justNative">Doar controale</button>
+  <a href="/" target="_blank" rel="noopener">Interfața originală</a><a href="/dashboard" target="_blank" rel="noopener">Graficele originale</a>
+ </nav>
+</header>
+<div class="layout">
+<section class="visual" aria-label="Vizualizator suplimentar">
+ <div class="block">
+  <div class="toolbar">
+   <label for="worker">Creier <select id="worker" aria-label="Alege graful"></select></label>
+   <label for="role">Noduri <select id="role"><option value="all">Toate</option><option value="sym">Simboluri</option><option value="C">Perspective C</option><option value="A">Percepții A</option></select></label>
+   <button type="button" id="center">Centrează</button>
+   <label><input type="checkbox" id="motion" checked> impulsuri reale</label>
+   <label><input type="checkbox" id="edges" checked> conexiuni</label>
+   <label><input type="checkbox" id="freeze"> îngheață afișajul</label>
+  </div>
+  <div class="kpis" aria-live="polite">
+   <div class="kpi"><small>noduri existente</small><strong id="countNodes">—</strong></div>
+   <div class="kpi"><small>legături raportate</small><strong id="countEdges">—</strong></div>
+   <div class="kpi"><small>coordonate învățate</small><strong id="countDirect">—</strong></div>
+   <div class="kpi"><small>estimare / nepoziționate</small><strong id="countEstimated">—</strong></div>
+  </div>
+ </div>
+ <div class="canvasWrap">
+  <canvas id="graph" role="img" aria-label="Proiecție a feliei din torul în cinci dimensiuni, construită din telemetria reală"></canvas>
+  <div class="overlay top"><div class="mainTitle">T⁵ · SECȚIUNE DIN GEOMETRIA ÎNVĂȚATĂ</div>
+   <div class="hint">Pozițiile simbolurilor provin din coordonatele învățate U. Pozițiile A/C sunt estimări din legături și marcate diferit. Timpul NU este axa V.</div></div>
+  <div class="overlay bottom"><span class="small" id="viewNote">Aștept datele…</span><span class="small">drag = deplasare · scroll = zoom</span></div>
+ </div>
+ <div class="block">
+  <h2>Secțiune 5D, rotații și navigare</h2>
+  <div class="settings">
+   <div class="setting"><label for="x">Camera X <output id="xOut">0.50</output></label><input id="x" type="range" min="0" max="1" step="0.005" value="0.5"></div>
+   <div class="setting"><label for="y">Camera Y <output id="yOut">0.50</output></label><input id="y" type="range" min="0" max="1" step="0.005" value="0.5"></div>
+   <div class="setting"><label for="z">Camera Z <output id="zOut">0.50</output></label><input id="z" type="range" min="0" max="1" step="0.005" value="0.5"></div>
+   <div class="setting"><label for="w">Camera W <output id="wOut">0.50</output></label><input id="w" type="range" min="0" max="1" step="0.005" value="0.5"></div>
+   <div class="setting"><label for="v">Camera V <output id="vOut">0.50</output></label><input id="v" type="range" min="0" max="1" step="0.005" value="0.5"></div>
+   <div class="setting"><label for="zoom">Zoom <output id="zoomOut">1.00×</output></label><input id="zoom" type="range" min="0.35" max="4" step="0.05" value="1"></div>
+   <div class="setting"><label for="thickness">Grosimea secțiunii <output id="thicknessOut">0.45</output></label><input id="thickness" type="range" min="0.08" max="1.4" step="0.01" value="0.45"></div>
+   <div class="setting"><label for="plane">Plan de rotație
+    <select id="plane"><option>XY</option><option>XZ</option><option>XW</option><option>XV</option><option>YZ</option><option>YW</option><option>YV</option><option>ZW</option><option>ZV</option><option>WV</option></select></label>
+    <input id="angle" type="range" min="-180" max="180" step="1" value="0" aria-label="Unghiul planului selectat">
+   </div>
+  </div>
+  <p class="small">Algoritm de secționare periodică 5D reutilizat din <code>ui/view5.mjs</code>; nu sunt generate noduri decorative. Limita de afișare este separată de numărul total raportat.</p>
+ </div>
+ <div class="block">
+  <h2>Lumea transformărilor · intenție → intervenție → rezultat</h2>
+  <div class="toolbar"><button type="button" id="transPrev">◀</button><button type="button" id="transPlay">▶ Replay</button><button type="button" id="transNext">▶</button>
+   <label for="transFrame" style="flex:1;min-width:120px">Cadru <input id="transFrame" type="range" min="0" max="0" value="0"></label>
+   <span class="small" id="transIndex">—</span></div>
+  <canvas id="transformBoard" style="height:260px;width:100%;background:#08111b;border:1px solid var(--line);border-radius:8px" aria-label="Lumea transformărilor: stare observată și configurația dorită, raportate de motor"></canvas>
+  <p id="transInfo" class="small">Aștept observațiile din lumea transformărilor. Acest panou nu inventează exerciții.</p>
+  <p class="small">Culorile identifică simboluri brute; nu implică faptul că organismul a primit numele sau rolul obiectelor. 17 în configurația dorită înseamnă orice simbol.</p>
+ </div>
+ <div class="block">
+  <h2>Testare nevăzută — variație măsurată, nu simulată</h2>
+  <canvas id="trend" aria-label="Acuratețe pe text nevăzut pentru graful selectat"></canvas>
+  <div class="legend"><span><i class="dot" style="--c:var(--cyan)"></i>graf C↔A</span><span><i class="dot" style="--c:var(--gold)"></i>C singur</span><span><i class="dot" style="--c:var(--red)"></i>date indisponibile = linie absentă</span></div>
+  <div id="eventLog" aria-live="polite">Aștept primul snapshot real.</div>
+ </div>
+ <div class="block"><details><summary>Contract de observabilitate și limite</summary>
+  <p>Acest observator este strict read-only: schimbările de training se fac exclusiv din panoul original. Nodurile provin din <code>/graph</code>; evaluarea din <code>/state</code>; lista din <code>/graphs</code>. Nu există animații care să pretindă o activare neuronală care nu a fost raportată.</p>
+  <p>Impulsurile vizuale corespund tranzițiilor de simboluri înregistrate în <code>flow</code>, nu semnalelor electrice cerebrale. Reprezentarea pe coloane, geometria cristalelor și fractalii din exemplele de cercetare sunt analogii de design, nu dovezi despre structura fizică a creierului.</p>
+  <p>Predicția cauzală multi-etapă, descoperirea universală de transformări și validarea pe lumi noi rămân sarcini de antrenare separate; acest vizualizator nu le declară realizate.</p>
+ </details></div>
+</section>
+<section class="native" aria-label="Interfață originală, intactă">
+ <div class="nativeTitle"><div><b>CONTROALE ORIGINALE</b><br><span>Toate butoanele și funcționalitățile sunt servite de codul existent, nemodificat.</span></div>
+ <a href="/" target="_blank" rel="noopener">Deschide separat</a></div>
+ <iframe id="original" src="/transcend/torus-aether/ui/index.html?live=1" title="Torus Aether — interfața nativă completă"></iframe>
+</section>
+</div>
+<script type="module" src="observatory.mjs"></script>
+</body></html>
