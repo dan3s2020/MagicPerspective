@@ -43,7 +43,7 @@ test('both frontend scripts parse as Javascript, no fabricated fallback geometry
  assert.match(frontend,/CPU/i);
 });
 test('original real V17 worker provides pre-action evidence from text, maze and game',async()=>{
- const worker=new Worker(new URL('./v17_worker.mjs',import.meta.url));
+ const worker=new Worker(new URL('./v17_worker.mjs',import.meta.url),{env:{...process.env,MP_SESSION:'observatory-test-'+process.pid}});
  try{
   const initial=await new Promise((resolve,reject)=>{
    const timer=setTimeout(()=>reject(Error('V17 worker boot timeout')),45000);
