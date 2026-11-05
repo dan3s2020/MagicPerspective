@@ -1,0 +1,39 @@
+name: Isolated Noise Space — real V17 evidence and UI
+on:
+  push:
+    branches:
+      - experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105
+  workflow_dispatch:
+jobs:
+  real-v17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of original and isolated workers
+        run: |
+          node --check isolated/noise-space/server.mjs
+          node --check isolated/noise-space/v17_worker.mjs
+          node --check isolated/noise-space/v17_bridge.mjs
+          node --check isolated/noise-space/learning_geometry.mjs
+          node --check isolated/noise-space/interpret.mjs
+      - name: Synthetic regression and true V17 integration acceptance
+        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs
+  powershell:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell launcher parse
+        shell: powershell
+        run: |
+          foreach ($p in @('START_NOISE_SPACE.ps1','isolated/noise-space/START_WINDOWS.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path,[ref]$tokens,[ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw "PowerShell parse failed: $p" }
+          }
+          Write-Host 'POWERSHELL_PARSE_OK'
