@@ -8,6 +8,7 @@ import path from "node:path";
 import {openTextDataset} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {GpuWorlds} from "../gpu/client.mjs";
+import {scoreSampling, writeSample} from "./stochastic-controls.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -27,20 +28,21 @@ async function* stream() {                                                 // th
 let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
+brain.setControls(workerData.controls || brain.controls); // same real brain, including restored checkpoints
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
 const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
-    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
+    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? {...brain.test(H), ...scoreSampling(brain, H, brain.controls.ttemp, brain.seed * 104729 + brain.chars)} : null, controls: {...brain.controls}, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null} : null,
     form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now();
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, controls: {...brain.controls}, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -50,7 +52,20 @@ const worldsOnce = async (record) => {                                     // on
   const G = await gpuOn();
   if (G) { try { if (MAZE) await brain.playMazesGPU(G, gpuSet.worlds); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds); return; } catch (err) { gpuError = err.message; } }
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } };
-parentPort.on("message", m => { if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } return; }
+parentPort.on("message", m => {
+  if (m && m.controls) {
+    try { parentPort.postMessage({type: "controls-ack", w: workerData.gw, controls: brain.setControls(m.controls)}); }
+    catch (err) { parentPort.postMessage({type: "controls-error", w: workerData.gw, error: err.message}); }
+    return;
+  }
+  if (m && m.evaluate) { report(); return; }
+  if (m && m.generate) {
+    try { parentPort.postMessage({type: "generated", w: workerData.gw, requestId: m.generate.requestId,
+      result: writeSample(brain, {temperature: brain.controls.wtemp, length: 240, seed: brain.seed * 104729 + brain.chars + m.generate.requestId})}); }
+    catch (err) { parentPort.postMessage({type: "generated", w: workerData.gw, requestId: m.generate.requestId, error: err.message}); }
+    return;
+  }
+  if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
 const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: brain.save(saveFile) / 1e6}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
