@@ -41,3 +41,16 @@ test('input boundaries prevent unbounded decoding and invalid checkpoints',()=>{
  assert.ok(n.plan('spell bananas',{maxSteps:100000,branching:1000,beamWidth:100}).actions.length<=128);
  assert.throws(()=>TextActionPaths.restore({version:1,vocab:[],edges:[],cues:[]}),/Invalid/);
 });
+test('user selects an observed word action and navigates from that state',()=>{
+ const n=new TextActionPaths();
+ for(let i=0;i<14;i++){
+  n.learn('What causes rainfall?','Water vapor condenses into droplets.');
+  n.learn('What causes snowfall?','Water vapor freezes into crystals.');
+ }
+ const choices=n.propose('What causes rainfall?',[],12);
+ assert.ok(choices.length>=2);
+ const chosen=choices.find(x=>x.token!==choices[0].token);
+ const route=n.plan('What causes rainfall?',{prefix:[chosen.token],maxSteps:12});
+ assert.deepEqual(route.prefix,[chosen.token]);
+ assert.ok(route.output.startsWith(chosen.token));
+});
