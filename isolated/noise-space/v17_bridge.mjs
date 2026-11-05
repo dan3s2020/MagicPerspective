@@ -8,7 +8,7 @@ worker.on('exit',code=>{state={...state,available:false,running:false,error:'Rea
 export const realState=()=>state;
 export function realCommand(command){
   if(!command||typeof command.action!=='string')throw Error('Missing action');
-  if(!['start','pause','resume','stop','save','load','reset','state'].includes(command.action))throw Error('Unknown action');
+  if(!['start','pause','resume','stop','save','load','reset','state','navigate','textAction'].includes(command.action))throw Error('Unknown action');
   if(!state.available&&command.action!=='state')throw Error('Real V17 worker is not available: '+state.error);
   worker.postMessage(command);
 }
