@@ -181,3 +181,7 @@ Parallel CI test workers write to separate run folders, not the actual local Bra
 See REGRESSION_TRACEABILITY.md for source-excerpt references, code paths, verified tests and
 explicit open items. Full historical Verbatim completeness remains BLOCKED under the
 canonical source policy; optional CUDA does not change that finding.
+
+## Real Q/A text action navigation experiment (2026-11-06)
+
+The optional **real-corpus word-action navigator** is integrated into this isolated original-V17 observatory, preserving the existing Brain, GPU TextCard, maze and transformation training. Select a **Parquet Q/A** source to train it; bundled V17 docs do not count as Q/A action training. The Text tab now displays frozen held-out paths and lets you enter a new question and select alternative learned word actions. Its learned text-path head runs on CPU while the ORIGINAL V17 text alignment remains eligible for verified CUDA batches. No universal semantic transfer or CUDA neural planner is claimed. See [REAL_TEXT_NAVIGATION.md](./REAL_TEXT_NAVIGATION.md) for data provenance, exact launcher commands, independent checkpoint, tests and limitations.
