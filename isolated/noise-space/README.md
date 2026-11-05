@@ -63,3 +63,15 @@ Real cross-world transfer across unrelated text/maze/transformation episodes is 
 6. Original UI, V17 checkpoints, organisms, and projects remain unchanged; this viewer does not pretend to reproduce every historical Portal 4D UI feature.
 
 The objective is to validate hidden-dynamics reconstruction and transferable transformations before proposing any integration with real V17 training.
+
+## V17 read-only world exporter (separate execution path)
+
+After Git cloning this branch, you can run the exporter against the included V17 source, WITHOUT altering V17 files:
+
+```powershell
+cd D:\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space
+node .\v17_export.mjs --seed 11 --maze 20 --transform 20 --text 'D:\octopus-text.txt'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\START_WINDOWS.ps1 -Events '.\runs\v17_events_11.jsonl'
+```
+
+`--text` is optional and must point to an existing text corpus; optionally add `--checkpoint PATH` for a V17 checkpoint to measure its text predictions read-only. Export records provenance for each event, with no assumed shared latent state across text/maze/transform. **This exporter is syntax-checked but has not been runtime-tested against V17 files in the user's Windows environment.** Real-world claims require held-out experiments and validation of the exported event sequences.
