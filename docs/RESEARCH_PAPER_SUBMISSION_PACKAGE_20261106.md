@@ -4,7 +4,7 @@
 
 ## Primary deliverable
 
-The finished working paper is named `MagicPerspective_Visual_Research_Atlas_Working_Paper_2026-11-06_v2.pdf` and is delivered as a file in the current ChatGPT conversation. It has **48 pages**, including **14 distinct custom research graphics**, illustrated summaries of **V1–V17**, original user screenshots, and a **16-page appendix copied from the earlier 21-entry conversation PDF**. The PDF embeds the prior 29,833-byte UTF-8 transcript and original images as attachments; its later user-turn supplement is explicitly partial. PDF SHA-256: `431bfa1efe6dfcd775b3bf4d63ba57236854b62f4ef6d3233ccd9219a60e02b7`.
+The finished working paper is named `MagicPerspective_Visual_Research_Atlas_Working_Paper_2026-11-06_v2.pdf` and is delivered as a file in the current ChatGPT conversation. It has **48 pages**, including **14 distinct custom research graphics**, illustrated summaries of **V1–V17**, original user screenshots, and a **16-page appendix copied from the earlier 21-entry conversation PDF**. The PDF embeds the prior 29,833-byte UTF-8 transcript and original images as attachments; its later user-turn supplement is explicitly partial. PDF SHA-256: `1f3486eac5c6c61a5b614c9b22178e02bd2164722031037c7d6e5c436d5ae64c`.
 
 The binary PDF was produced in the research workspace and **is not committed to GitHub by this document**. This source package is the durable GitHub index and evidence record. All figures and values have labels distinguishing source metrics, hypotheses, and schematics.
 
