@@ -11,16 +11,19 @@ import torch.nn.functional as F
 
 class ExpansionScale(nn.Module):
     """Local -> macro -> local coupling with new trainable channels."""
-    def __init__(self, input_dim: int, growth: int):
+    def __init__(self, input_dim: int, growth: int, memory_dim: int):
         super().__init__()
         self.local = nn.Linear(input_dim, growth)
         self.macro = nn.Linear(input_dim, growth, bias=False)
+        self.temporal = nn.Linear(memory_dim, growth, bias=False)
         self.return_to_local = nn.Linear(growth, input_dim, bias=False)
 
-    def forward(self, h, mask, local_noise=None, shared_noise=None):
+    def forward(self, h, mask, local_noise=None, shared_noise=None, history=None):
         divisor = mask.sum(dim=1, keepdim=True).clamp(min=1)
         macro = (h * mask).sum(dim=1, keepdim=True) / divisor
         preactivation = self.local(h) + self.macro(macro)
+        if history is not None:
+            preactivation = preactivation + self.temporal(history).unsqueeze(1)
         if local_noise is not None:
             preactivation = preactivation + local_noise
         if shared_noise is not None:
@@ -29,7 +32,10 @@ class ExpansionScale(nn.Module):
         collective = grown.sum(dim=1, keepdim=True) / divisor
         feedback = 0.1 * torch.tanh(self.return_to_local(collective))
         h = (h + feedback) * mask
-        coarse_grown = torch.tanh(self.local(macro) + self.macro(macro))
+        coarse_preactivation = self.local(macro) + self.macro(macro)
+        if history is not None:
+            coarse_preactivation = coarse_preactivation + self.temporal(history).unsqueeze(1)
+        coarse_grown = torch.tanh(coarse_preactivation)
         consistency = F.mse_loss(collective, coarse_grown)
         return torch.cat((h, grown), dim=-1), consistency
 
@@ -55,7 +61,7 @@ class PerspectiveExpansion(nn.Module):
         self.local_noise = float(local_noise)
         self.shared_noise = float(shared_noise)
         self.register_buffer('active_levels', torch.tensor(active_levels, dtype=torch.int32))
-        self.scales = nn.ModuleList([ExpansionScale(dim + growth*i, growth)
+        self.scales = nn.ModuleList([ExpansionScale(dim + growth*i, growth, dim)
                                      for i in range(max_levels)])
         self.readout = nn.Linear(dim + growth*max_levels, dim, bias=False)
         nn.init.zeros_(self.readout.weight)
@@ -91,16 +97,19 @@ class PerspectiveExpansion(nn.Module):
                   * self.shared_noise) if self.shared_noise else None
         return local, shared
 
-    def forward(self, h, mask, step=0, trace=False):
+    def forward(self, h, mask, step=0, trace=False, history=None):
         if h.ndim != 3 or h.shape[-1] != self.dim or mask.shape != (*h.shape[:2],1):
             raise ValueError('Expected h[B,N,dim] and mask[B,N,1]')
         mask = mask.to(h.dtype)
+        if history is not None and (history.shape != (h.shape[0],self.dim) or
+                                    not torch.isfinite(history).all()):
+            raise ValueError('Expected finite temporal history[B,dim]')
         consistency = h.new_zeros(())
         active = int(self.active_levels.item())
         for i,scale in enumerate(self.scales):
             if i < active:
                 local,shared = self._noise(h,step,i)
-                h,loss = scale(h,mask,local,shared)
+                h,loss = scale(h,mask,local,shared,history)
                 consistency = consistency + loss
             else:
                 h = torch.cat((h,h.new_zeros((*h.shape[:2],self.growth))),dim=-1)
@@ -118,6 +127,8 @@ class PerspectiveExpansion(nn.Module):
                 'level_capacity':self.max_levels,'latent_norm':round(norm,6),
                 'consistency_mse':round(float(self.last_consistency.detach()),8),
                 'local_noise':self.local_noise,'shared_noise':self.shared_noise,
+                'temporal_memory_norm':(round(float(history.detach().norm()),6)
+                                       if history is not None else 0.0),
                 'self_predicted_error':self_pred.detach().cpu().tolist()}
         else:
             self.last_diagnostics = None
