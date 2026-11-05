@@ -88,10 +88,12 @@ export class TextActionPaths{
   results.sort((a,b)=>b.score-a.score||a.id-b.id);return results.slice(0,clamp(limit,1,60));
  }
  // Beam search over learned text-production actions. At inference there is NO reference answer.
- plan(prompt,{maxSteps=48,beamWidth=4,branching=7}={}){
+ plan(prompt,{maxSteps=48,beamWidth=4,branching=7,prefix=[]}={}){
   if(typeof prompt!=='string'||!prompt.trim())throw Error('Expected non-empty prompt');
+  if(!Array.isArray(prefix)||prefix.length>64||prefix.some(x=>typeof x!=='string'||x.length>120))throw Error('Invalid navigation prefix');
+  const initial=prefix.map(normalize);
   const limit=clamp(maxSteps,1,128),width=clamp(beamWidth,1,12),fan=clamp(branching,1,20);
-  let beam=[{tokens:[],score:0,actions:[],done:false}],expanded=0;
+  let beam=[{tokens:initial.slice(),score:0,actions:[],done:false}],expanded=0;
   for(let step=0;step<limit;step++){
    const pool=[];
    for(const state of beam){if(state.done){pool.push(state);continue;}
@@ -111,7 +113,7 @@ export class TextActionPaths{
   }
   const selected=beam.find(x=>x.done)||beam[0]||{tokens:[],score:0,actions:[],done:false};
   const output=selected.tokens.join(' ').replace(/\s+([,.!?;:])/g,'$1');
-  return {prompt,output,actions:selected.actions,expanded,finished:selected.done,
+  return {prompt,prefix:initial,output,actions:selected.actions,expanded,finished:selected.done,
    trainedRows:this.rows,vocabulary:this.vocab.length,score:selected.score,
    note:'Actions are observed words appended to a text state; not proof of semantic correctness or hidden physical dimensions.'};
  }
