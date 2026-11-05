@@ -162,7 +162,7 @@ http.createServer((req, res) => {
       generatedPending.delete(requestId); if (!res.writableEnded) {res.writeHead(504); res.end("Brain did not respond to text generation");}
     }, 60000);
     generatedPending.set(requestId, {w: sl.w, res, timeout});
-    req.on("close", () => {if (!res.writableEnded && generatedPending.has(requestId)) {clearTimeout(timeout); generatedPending.delete(requestId);}});
+    res.on("close", () => {if (!res.writableEnded && generatedPending.has(requestId)) {clearTimeout(timeout); generatedPending.delete(requestId);}});
     sl.wk.postMessage({generate: {requestId}});
     return;
   }
