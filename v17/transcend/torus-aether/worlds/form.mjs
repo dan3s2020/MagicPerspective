@@ -79,7 +79,7 @@ export class FormOrganism extends CausalOrganism {
     const q = []; for (let v = 0; v < N; v++) if (d[v] < INF) q.push(v); q.sort((x, y) => d[x] - d[y]);
     for (let h = 0; h < q.length; h++) { const u = q[h]; for (const v of nb(u)) if ((walk(v) || (u === at && R.enter.has(b[v]))) && d[u] + 1 < d[v]) { d[v] = d[u] + 1; q.push(v); } }
     if (this.debug) this.debug({openers: [...openers].map(([k, v]) => [k, v]), d: Array.from(d).map(x => x >= INF ? -1 : x), me: Array.from(me).map(x => x >= INF ? -1 : x)});
-    let total = 0, wrong = 0;
+    let total = 0, wrong = 0;   // (tried: its own place counting only after the rest is arranged — unseen 52% -> 44%, removed)
     for (let g = 0; g < N; g++) { const s = goal[g]; if (s === ANY || b[g] === s) continue; wrong++; let c = INF;
       if (this.selfKinds.has(s)) c = d[g];                                              // itself is desired there
       for (const [obj, into] of R.push) for (const [tgt, res] of into) if (res === s) for (let i = 0; i < N; i++) if (b[i] === obj) { const w = objWay(i, g); if (w) c = Math.min(c, w.cost); }   // an object becomes it there
@@ -97,11 +97,12 @@ export class FormOrganism extends CausalOrganism {
     const at = this.findSelf(b), M = this.moves();
     if (this.noise && this.r.next() < this.noise) return {o: this.r.int(8), how: "noise", at};
     if (at < 0 || M.length < 4) return super.choose(b, n, goal);              // it does not know yet who it is or what it can do
-    const key = b.join(","); this.visits ||= new Map(); this.visits.set(key, (this.visits.get(key) || 0) + 1);
+    const key = b.join(","); this.visits ||= new Map(); this.visits.set(key, (this.visits.get(key) || 0) + 1); this.trail?.push(key);
     const here = this.potential(b, n, goal), opts = [];
     for (const o of M) { const p = this.predict(b, n, at, o);
       if (!p) { opts.push({o, v: here - .5, how: "curious"}); continue; }      // a consequence it has never seen: worth seeing
-      const v = this.potential(p.b, n, goal) + 2 * (this.visits.get(p.b.join(",")) || 0) + (p.b.join(",") === key ? 1 : 0); opts.push({o, v, how: "form"}); }
+      const k2 = p.b.join(","), W = this.worldMem?.get(this.world);   // what it lived in this same world before: where it got stuck repels, the way that worked attracts
+      const v = this.potential(p.b, n, goal) + 2 * (this.visits.get(k2) || 0) + (k2 === key ? 1 : 0) + (W ? 3 * (W.dead.get(k2) || 0) - (W.way.has(k2) ? 6 : 0) : 0); opts.push({o, v, how: "form"}); }
     const bestV = Math.min(...opts.map(x => x.v));
     if (here >= INF && bestV >= INF && !opts.some(x => x.how === "curious")) { this.stuck = (this.stuck || 0) + 1; if (this.stuck > 2 * n) return {o: null, how: "limitation", at}; }
     else this.stuck = 0;
@@ -111,5 +112,9 @@ export class FormOrganism extends CausalOrganism {
   }
   learn(before, after, n, at, o, goal) { super.learn(before, after, n, at, o); }
   // a new task: what it visited in the last one does not matter any more
-  begin() { this.visits = new Map(); this.stuck = 0; }
+  begin(world = null) { this.visits = new Map(); this.stuck = 0; this.world = world; this.trail = []; this.worldMem ||= new Map(); }
+  // an attempt on this world ended: if it did it, that way becomes part of its form for this world; if not, where it
+  // went repels next time (as walking into a wall repels in the labyrinth)
+  end(solved) { if (this.world == null) return; const W = this.worldMem.get(this.world) || {dead: new Map(), way: new Set()}; this.worldMem.set(this.world, W);
+    if (solved) for (const k of this.trail) W.way.add(k); else for (const k of this.trail) W.dead.set(k, (W.dead.get(k) || 0) + 1); }
 }

@@ -574,3 +574,13 @@ way further, but not for the step it can take right now; the price of a barrier 
 way FROM WHERE IT IS THEN; every way to open a barrier is kept, not only the cheapest.
 Not yet at the level of search: weakest are an object to bring beyond a lever door (39/47 in training), object + plate +
 lever (24/32), itself beyond a plate door (9/20). Not wired into the organism until it is as good as search.
+
+### The same world until it does it, then the next (laws/form-until.mjs, verbatim 2026-11-05 20:28)
+
+276 of 300 training worlds are done at the first attempt; when one is not, repetition almost never helps (11–12 worlds
+not done in 40 attempts), even with a memory of the same world (where it got stuck repels, the way that worked
+attracts). Unseen combinations fail most (itself + door 2/30): traced step by step, it walks through a door that closes
+behind it and is trapped, pulled by a curiosity bonus I had added, against its own understanding that leaving the plate
+closes the door. Tried: its own place counting only once the rest is arranged — unseen 52% → 44%, removed.
+Conclusion: the field of the form must not be written by me from its rules; it has to form inside it from what it lives
+(traps repel, the way that worked becomes part of it), on relations so that it carries to new worlds. Next step.
