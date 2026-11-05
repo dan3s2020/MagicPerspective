@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective · REAL V17 Worlds</title>
+<style>
+:root{color-scheme:dark;font:14px/1.48 system-ui,Segoe UI,sans-serif;background:#070b14;color:#e8edff}
+*{box-sizing:border-box}body{max-width:1550px;margin:auto;padding:16px}
+h1{margin:0;font-size:clamp(22px,3vw,34px)}h2{font-size:16px;margin:0 0 9px}h3{font-size:14px;margin:0 0 6px}
+p{margin:4px 0 12px;color:#a6b9d6}.top,.controls,.fields{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.top{justify-content:space-between;margin-bottom:14px}a{color:#9cb6ff}
+.panel,.stat{background:#11192b;border:1px solid #293956;border-radius:13px;padding:14px;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.9fr);gap:12px;margin-top:12px}
+.side{display:grid;gap:12px;align-content:start}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.stat{background:#0b1425}.stat b{display:block;font-size:23px}.stat small,.muted{color:#9cb0d2;font-size:12px}
+button,select,input,textarea{font:inherit;color:#edf2ff;background:#19243c;border:1px solid #405076;border-radius:8px;padding:8px}button{cursor:pointer}
+button:hover{background:#2b406b}button.primary{background:#5062be}label{color:#b3c3de;font-size:13px}
+label input[type=checkbox]{vertical-align:middle;accent-color:#8b97f1}.check{display:flex;align-items:center;gap:5px}
+input[type=number]{width:74px}input[type=range]{width:135px;padding:0;accent-color:#929bf0}
+textarea{width:100%;height:94px;resize:vertical}pre{font:12px/1.45 Consolas,monospace;color:#b3d9f3;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#080f1d;border-radius:8px;padding:12px;max-height:280px}
+canvas{width:100%;height:320px;background:#050a13;display:block;border:1px solid #243650;border-radius:10px}
+#graph{height:550px}#maze,#transform{height:320px}#status{color:#a9e5d1;min-height:22px}
+.notice{border-left:3px solid #7b86db;padding:7px 11px;color:#b1c1dd;background:#101a2c}
+@media(max-width:1050px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}#graph{height:420px}}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}body{padding:9px}}
+</style></head><body>
+<div class="top"><div><h1>MagicPerspective · Real V17 Worlds</h1><p>Existing V17 Brain, real exercises and learned graph. Separate checkpoint; no V17 source overwritten.</p></div>
+<div><a href="/">Synthetic 5D comparison lab</a></div></div>
+<div class="panel">
+<div class="controls">
+<label class="check"><input type="checkbox" id="textOn" checked>Text</label>
+<label class="check"><input type="checkbox" id="mazeOn" checked>Labyrinth</label>
+<label class="check"><input type="checkbox" id="transformOn" checked>Transformation game</label>
+<label>Episodes <input type="number" id="episodes" min="1" max="60" value="3"></label>
+<button id="once" class="primary">Train real exercises</button><button id="infinite">Infinite training</button>
+<button id="pause">Pause</button><button id="resume">Resume</button><button id="stop">Stop</button><button id="save">Save</button><button id="load">Load saved brain</button>
+</div>
+<p class="muted">Text defaults to the repository's V17 technical documentation. Paste your own training text below to override it. Each world feeds the SAME original V17 Brain. CPU mode; no synthetic metrics are used here.</p>
+<textarea id="custom" placeholder="Optional: paste REAL text for the Brain to learn. Leave empty to use V17 repository documentation."></textarea>
+<div id="status">Loading real V17 worker…</div>
+</div>
+<div class="stats">
+<div class="stat"><small>Lived symbols</small><b id="lived">—</b></div>
+<div class="stat"><small>Text held-out accuracy</small><b id="textScore">—</b></div>
+<div class="stat"><small>Maze solved</small><b id="mazeScore">—</b></div>
+<div class="stat"><small>Transform solved</small><b id="transformScore">—</b></div>
+<div class="stat"><small>Episodes run</small><b id="rounds">—</b></div>
+</div>
+<div class="grid">
+<section class="panel">
+<h2>Actual V17 learned graph · five-dimensional coordinates</h2>
+<p class="muted">Points: coordinates learned by V17 Geometry. Connections: actual recorded symbol transitions. Symbols without measured coordinates are not assigned invented positions.</p>
+<div class="fields">
+<label>XY angle <input id="xy" type="range" min="-180" max="180" value="15"></label>
+<label>XW angle <input id="xw" type="range" min="-180" max="180" value="20"></label>
+<label>YT angle <input id="yt" type="range" min="-180" max="180" value="25"></label>
+<label>Zoom <input id="zoom" type="range" min="30" max="350" value="120"></label>
+</div><canvas id="graph"></canvas><p id="graphInfo" class="muted">Awaiting learned coordinates</p>
+</section>
+<div class="side">
+<section class="panel">
+<h2>Text the brain is actually learning</h2>
+<p id="textInfo" class="muted">No text episode yet.</p><pre id="textView">(Train the text world to populate this view.)</pre>
+</section>
+<section class="panel">
+<h2>Labyrinth · real V17 episode replay</h2>
+<div class="fields"><label>Frame <input type="range" id="mazeFrame" min="0" max="1" value="0"></label><span id="mazeFrameLabel" class="muted"></span></div>
+<canvas id="maze"></canvas><p id="mazeInfo" class="muted">No labyrinth episode yet.</p>
+</section>
+<section class="panel">
+<h2>Transformation game · actual boards and desired state</h2>
+<div class="fields"><label>Frame <input type="range" id="transformFrame" min="0" max="1" value="0"></label><span id="transformFrameLabel" class="muted"></span></div>
+<canvas id="transform"></canvas><p id="transformInfo" class="muted">No transformation exercise yet.</p>
+</section>
+<section class="panel"><h2>Prediction feedback & provenance</h2><pre id="metrics">Awaiting exercises.</pre>
+<p class="notice">Hidden-trajectory correlation is a separate hypothesis. These V17 observations do not automatically establish that all worlds share one hidden state.</p></section>
+</div></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let S=null,mazeAt=0,transformAt=0,signature='';
+const fmt=(n)=>Number.isFinite(n)?n.toFixed(3):'—';
+async function api(action,more={}){
+  const r=await fetch('/api/v17',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...more})});
+  const data=await r.json();if(!r.ok)throw Error(data.error||'HTTP '+r.status);
+  $('status').textContent='Command sent: '+action;
+}
+async function refresh(){
+ try{const r=await fetch('/api/v17',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);S=await r.json();render();}
+ catch(e){$('status').textContent='Error: '+e.message;}
+}
+function canvas(id){
+ const c=$(id),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;
+ c.width=Math.max(1,Math.floor(r.width*d));c.height=Math.max(1,Math.floor(r.height*d));
+ const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);g.fillStyle='#060b14';g.fillRect(0,0,r.width,r.height);return {g,w:r.width,h:r.height};
+}
+const rotate=(p,a,b,angle)=>{const x=p[a],y=p[b],t=angle*Math.PI/180;p[a]=x*Math.cos(t)-y*Math.sin(t);p[b]=x*Math.sin(t)+y*Math.cos(t);};
+function graph(){
+ const {g,w,h}=canvas('graph');const data=S?.trace;
+ if(!data)return;
+ const points=new Map(),zoom=+$('zoom').value/100,k=Math.min(w,h)*.52*zoom;
+ for(const [symbol,xyz] of data.U||[]){
+  if(!Array.isArray(xyz)||xyz.length!==5||!xyz.every(Number.isFinite))continue;
+  const p=xyz.map(x=>x-.5);
+  rotate(p,0,1,+$('xy').value);rotate(p,0,3,+$('xw').value);rotate(p,1,4,+$('yt').value);
+  points.set('s:'+symbol,{x:w/2+p[0]*k,y:h/2-p[1]*k,p});
+ }
+ g.lineWidth=.7;g.strokeStyle='rgba(120,160,239,.26)';
+ let links=0;for(const e of data.edges||[]){const a=points.get(e[0]),b=points.get(e[1]);if(!a||!b)continue;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();links++;}
+ for(const [id,p] of points){const t=Number(id.slice(2));g.beginPath();g.arc(p.x,p.y,2.7,0,Math.PI*2);g.fillStyle=t<32?'#e4abfb':t<65?'#81ddae':'#7eaaff';g.fill();}
+ $('graphInfo').textContent=points.size+' learned symbol positions, '+links+' measured connections, '+(data.nodes?.length||0)+' total V17 nodes. Unplaced nodes remain unplaced.';
+}
+function drawMaze(){
+ const {g,w,h}=canvas('maze'),m=S?.last?.maze;if(!m)return;
+ const n=m.n,cell=Math.min(w,h)/(n+1),ox=(w-n*cell)/2,oy=(h-n*cell)/2;
+ for(let i=0;i<n*n;i++){const x=ox+(i%n)*cell,y=oy+Math.floor(i/n)*cell;
+ g.fillStyle=m.wall[i]?'#32415c':'#162438';g.fillRect(x+1,y+1,cell-2,cell-2);}
+ for(const [id,color] of [[m.goal,'#f4ce79'],[m.start,'#67c7a7']]){
+ const x=ox+(id%n)*cell,y=oy+Math.floor(id/n)*cell;g.fillStyle=color;g.fillRect(x+cell*.23,y+cell*.23,cell*.54,cell*.54);}
+ const i=Math.min(mazeAt,Math.max(0,m.path.length-1));g.beginPath();
+ for(let j=0;j<=i;j++){const id=m.path[j],x=ox+(id%n+.5)*cell,y=oy+(Math.floor(id/n)+.5)*cell;if(j===0)g.moveTo(x,y);else g.lineTo(x,y);}
+ g.lineWidth=Math.max(2,cell*.12);g.strokeStyle='#9ab1ff';g.stroke();const id=m.path[i]??m.start;
+ g.fillStyle='#edf5ff';g.beginPath();g.arc(ox+(id%n+.5)*cell,oy+(Math.floor(id/n)+.5)*cell,cell*.24,0,Math.PI*2);g.fill();
+ $('mazeFrameLabel').textContent=(i+1)+'/'+m.path.length;
+}
+function drawTransform(){
+ const {g,w,h}=canvas('transform'),m=S?.last?.transform;if(!m?.frames?.length)return;
+ const frame=m.frames[Math.min(transformAt,m.frames.length-1)],board=frame.b||[],n=m.n,cell=Math.min(w,h)/(n+1),ox=(w-n*cell)/2,oy=(h-n*cell)/2;
+ for(let i=0;i<n*n;i++){const s=board[i]??0,x=ox+(i%n)*cell,y=oy+Math.floor(i/n)*cell;
+ const c=s===1?'#354054':s===2||s===5||s===8||s===11||s===15?'#79bcff':s===3||s===6||s===12||s===16?'#c896ff':s===9||s===13?'#af5574':s===10||s===14?'#65bfb2':'#1b2d43';
+ g.fillStyle=c;g.fillRect(x+1,y+1,cell-2,cell-2);
+ if(m.goal?.[i]!==17&&m.goal?.[i]!==undefined){g.strokeStyle='#e9ca77';g.lineWidth=2;g.strokeRect(x+2,y+2,cell-4,cell-4);}
+ g.fillStyle=(s===1||s===9||s===13)?'#d7e1ff':'#d1d9f5';g.font=Math.max(9,cell*.28)+'px monospace';g.textAlign='center';g.fillText(String(s),x+cell*.5,y+cell*.63);
+ }
+ $('transformFrameLabel').textContent=(Math.min(transformAt,m.frames.length-1)+1)+'/'+m.frames.length;
+}
+function render(){
+ if(!S)return;
+ $('status').textContent=S.error?'V17 error: '+S.error:S.running?(S.paused?'V17 paused':'V17 training live'):S.available?'V17 ready · real exercises':'Waiting for V17 worker';
+ $('lived').textContent=S.learned??'—';$('rounds').textContent=S.episode??'—';
+ $('mazeScore').textContent=S.mazePlayed?S.mazeWon+'/'+S.mazePlayed:'—';
+ $('transformScore').textContent=S.transformPlayed?S.transformWon+'/'+S.transformPlayed:'—';
+ $('textScore').textContent=S.evaluation?.text?fmt(S.evaluation.text.aligned*100)+'%':'—';
+ const t=S.last?.text,m=S.last?.maze,x=S.last?.transform;
+ if(t){$('textView').textContent=t.actual;$('textInfo').textContent=t.source+' · '+t.characters+' observed bytes · online accuracy '+fmt(t.onlineAccuracy*100)+'%';}
+ if(m){const key='maze:'+m.episode;if(!signature.includes(key)){mazeAt=0;$('mazeFrame').max=Math.max(0,m.path.length-1);$('mazeFrame').value=0;signature=key+' '+(x?'transform:'+x.episode:'');}
+ $('mazeInfo').textContent=(m.solved?'Solved':'Not solved')+' · '+m.n+'x'+m.n+' · '+m.steps+' actions · optimal '+m.optimal+' · predicted initial shape score '+fmt(m.first);}
+ if(x){const key='transform:'+x.episode;if(!signature.includes(key)){transformAt=0;$('transformFrame').max=Math.max(0,x.frames.length-1);$('transformFrame').value=0;signature=(m?'maze:'+m.episode:'')+' '+key;}
+ $('transformInfo').textContent=(x.solved?'Solved':'Not solved')+' · '+x.steps+' actions · goals '+x.goals.join(', ')+' · prediction mismatches '+x.failed+'/'+x.predicted;}
+ $('metrics').textContent=JSON.stringify({engine:S.engine,source:S.source,real_exercises:S.episode,learned_symbols:S.learned,heldout_text:S.evaluation?.text||null,unseen_mazes:S.evaluation?.maze||null,last_save:S.lastSave||null,checkpoint:S.checkpoint,worlds_enabled:S.modes},null,2);
+ graph();drawMaze();drawTransform();
+}
+$('once').onclick=()=>start(false);$('infinite').onclick=()=>start(true);
+async function start(infinite){
+ const worlds=[['textOn','text'],['mazeOn','maze'],['transformOn','transform']].filter(([id])=>$(id).checked).map(x=>x[1]);
+ try{await api('start',{worlds,infinite,episodes:+$('episodes').value,text:$('custom').value,resume:true});setTimeout(refresh,250);}
+ catch(e){$('status').textContent='Error: '+e.message;}
+}
+for(const action of ['pause','resume','stop','save','load'])$(action).onclick=async()=>{try{await api(action);setTimeout(refresh,250);}catch(e){$('status').textContent='Error: '+e.message;}};
+$('mazeFrame').oninput=e=>{mazeAt=+e.target.value;drawMaze();};$('transformFrame').oninput=e=>{transformAt=+e.target.value;drawTransform();};
+for(const id of ['xy','xw','yt','zoom'])$(id).oninput=graph;
+window.addEventListener('resize',render);setInterval(refresh,1300);refresh();
+</script></body></html>
