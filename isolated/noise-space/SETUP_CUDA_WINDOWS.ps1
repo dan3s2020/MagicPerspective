@@ -33,7 +33,9 @@ if (-not (Test-Path $py)) {
 if (-not (Test-Path $py)) { throw "Isolated Python not found after setup: $py" }
 & $py -m pip install --upgrade pip
 if ($LASTEXITCODE -ne 0) { throw "pip upgrade failed." }
-& $py -m pip install numpy torch --index-url "https://download.pytorch.org/whl/$Cuda"
+& $py -m pip install numpy
+if ($LASTEXITCODE -ne 0) { throw "NumPy installation failed; environment remains isolated." }
+& $py -m pip install torch --index-url "https://download.pytorch.org/whl/$Cuda"
 if ($LASTEXITCODE -ne 0) { throw "PyTorch CUDA installation failed; environment remains isolated." }
 & $py -c "import torch; print('torch=',torch.__version__,'cuda=',torch.version.cuda,'available=',torch.cuda.is_available()); assert torch.cuda.is_available(); print('GPU=',torch.cuda.get_device_name(0))"
 if ($LASTEXITCODE -ne 0) { throw "PyTorch did not confirm a real CUDA GPU. No silent CPU fallback." }
