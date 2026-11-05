@@ -43,3 +43,13 @@ test('cross-seed heldout bench outperforms uninformed random actions, without an
  assert.equal(r.summary.predictionConsistency,1);
  assert.equal(r.failures.length,0);
 });
+test('unknown transformations remain unsupported rather than hallucinating a path',()=>{
+ const m=new DiscoveredEffects(),u=UTTERANCES[0];
+ for(const state of [['a','b','c','d','e'],['f','g','h','i','j','k','l'],['m','n','o','p','q']]){
+  const next=state.slice();[next[2],next[3]]=[next[3],next[2]];
+  m.observe({utterance:u,before:state,after:next});
+ }
+ assert.equal(m.hypothesis(u).rule,null);
+ const p=plan(['a','b','c','d','e'],['a','b','d','c','e'],m);
+ assert.equal(p.found,false);assert.equal(p.reason,'Action effects not identified');
+});
