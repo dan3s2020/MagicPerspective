@@ -10,7 +10,11 @@ import {IsolatedGpuRunner} from './gpu_runner.mjs';
 import {openTextDataset} from '../../v17/transcend/torus-aether/data/text-dataset.mjs';
 import {nextTrainingSlice,rotatingHeldout,byteEvidence} from './text_schedule.mjs';
 
-const here=path.dirname(fileURLToPath(import.meta.url)),dir=path.join(here,'runs','real-v17');
+const here=path.dirname(fileURLToPath(import.meta.url));
+// Isolate parallel regression runs; default user's existing checkpoint path is unchanged.
+const session=process.env.MP_SESSION||'real-v17';
+if(!/^[A-Za-z0-9_-]{1,70}$/.test(session))throw Error('Invalid isolated session name');
+const dir=path.join(here,'runs',session);
 fs.mkdirSync(dir,{recursive:true});
 const checkpoint=path.join(dir,'brain.v8'),geoFile=path.join(dir,'geometry.json'),obsFile=path.join(dir,'observatory.json');
 const docs=path.resolve(here,'../../v17/docs/TORUS_AETHER_ABC_20261104.md');
