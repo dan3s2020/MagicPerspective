@@ -20,8 +20,12 @@ jobs:
           node --check isolated/noise-space/v17_bridge.mjs
           node --check isolated/noise-space/learning_geometry.mjs
           node --check isolated/noise-space/interpret.mjs
+          node --check isolated/noise-space/gpu_runner.mjs
+          node --check isolated/noise-space/text_schedule.mjs
+      - name: Install NumPy for CPU verification of the original GPU protocol
+        run: python -m pip install --quiet numpy
       - name: Synthetic regression and true V17 integration acceptance
-        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs
+        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs isolated/noise-space/gpu_runner.test.mjs
   powershell:
     runs-on: windows-latest
     timeout-minutes: 5
@@ -30,7 +34,7 @@ jobs:
       - name: Windows PowerShell launcher parse
         shell: powershell
         run: |
-          foreach ($p in @('START_NOISE_SPACE.ps1','isolated/noise-space/START_WINDOWS.ps1')) {
+          foreach ($p in @('START_NOISE_SPACE.ps1','isolated/noise-space/START_WINDOWS.ps1','isolated/noise-space/SETUP_CUDA_WINDOWS.ps1')) {
             $tokens = $null
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path,[ref]$tokens,[ref]$errors) | Out-Null
