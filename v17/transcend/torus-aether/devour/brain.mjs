@@ -123,8 +123,9 @@ export class Brain {
     if (!this.disc) this.disc = new Discoverer(this.seed); const out = [];
     for (const n of sizes) for (let k = 0; k < per; k++) { const c = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); c.r = Object.assign(Object.create(RNG.prototype), c.r);
       const w = makeMaze(seedOf(SEEDS.test, 5000 + n * 101 + k), n), r = playExercise(w, c, () => {}, {record: true});
-      out.push({n, k, solved: r.solved, steps: r.steps, optimal: r.optimal, first: r.first, path: r.path, shapes: r.shapes, wall: r.wall, start: r.start, goal: r.goal, knows: r.knows}); }
-    return {played: this.mazes.played, mazes: out};
+      out.push({n, k, solved: r.solved, steps: r.steps, optimal: r.optimal, first: r.first, path: r.path, shapes: r.shapes, wall: r.wall, start: r.start, goal: r.goal, knows: r.knows, how: r.how}); }
+    const D = this.disc;   // what it knows when the exam starts: why a perfect shape may still not be walked
+    return {played: this.mazes.played, mazes: out, mind: {trust: D.trust, effects: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), self: D.self(), moves: D.world.moves, gpu: this.mazes.gpu || null}};
   }
   // ---- evaluation on what it never lived (the Evaluare tab; run on the CPU, on a copy loaded from the save) ----
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
