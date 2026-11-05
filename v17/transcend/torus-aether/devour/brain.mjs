@@ -9,13 +9,14 @@ import {EmergentChain, EmergentA, Wire, Trust, EventClock, argmax} from "../emer
 import {Geometry} from "../concepts.mjs";
 import {LivedField, MomentSpace} from "../fractal.mjs";
 import {GraphTrace} from "./trace.mjs";
+import {AligningGraph, AlignMemory, AlignIndex, SelfMem} from "../align.mjs";
 import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
 import {Discoverer, playExercise} from "../worlds/exercise.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 export class Brain {
@@ -33,6 +34,7 @@ export class Brain {
   histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   live(y, detailed = false) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
+    (this.align ||= new AligningGraph()).live(y);                           // the graph that aligns itself to the context: keeps everything
     const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), h = this.histOf(past, i), m = chain.play(e, ctx, h);
     chain.learn(h, y, m); e.c.observe(ctx, y); this.field.live(y, this.place);
     trace.record(e, chain, ctx, h, y, m, "c:" + e.c.active, detailed); past.push(y); if (past.length > 64) past.splice(0, 32); this.lived++;
@@ -44,10 +46,12 @@ export class Brain {
     const asc = s => { const o = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; o.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return o; };
     const prompt = asc(history.map(([who, text]) => (who === "you" ? "Q: " : "A: ") + text + "\n" + (who === "you" ? "" : "\n")).join("") + "A: ");
     if (learn) for (const y of prompt) this.live(y);
-    const out = prompt.slice(), keep = this.chain.rand, ans = []; this.chain.rand = rngFrom(seed);
-    for (let k = 0; k < max; k++) { const i = out.length, y = this.chain.pick(this.chain.play(this.e, this.ctxOf(out, i), this.histOf(out, i)).out, T);
-      if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
-    this.chain.rand = keep;
+    let ans;
+    if (this.align) { const r = rngFrom(seed); ans = this.align.write(prompt, {max, T, rand: r, stop: stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null}); if (stopBlank && ans.at(-1) === 10) ans.pop(); }   // the aligning graph writes
+    else { const out = prompt.slice(), keep = this.chain.rand; ans = []; this.chain.rand = rngFrom(seed);
+      for (let k = 0; k < max; k++) { const i = out.length, y = this.chain.pick(this.chain.play(this.e, this.ctxOf(out, i), this.histOf(out, i)).out, T);
+        if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
+      this.chain.rand = keep; }
     if (learn) for (const y of [...ans, 10, 10]) this.live(y);
     return {text: String.fromCharCode(...ans), T, seed, lived: this.lived};
   }
@@ -132,7 +136,8 @@ export class Brain {
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
     for (let i = 0; i < H.length; i++) { const ctx = this.ctxOf(H, i), h = this.histOf(H, i), y = H[i], L = chain.play(e, ctx, h).out, g = argmax(L), gc = argmax(distC(e.c, ctx));
       live += g === y; c += gc === y; rows.push([y, g, +L[y].toFixed(3)]); }
-    return {n: H.length, live: live / H.length, C: c / H.length, rows};
+    let aligned = null; if (this.align) { const old = rows.map(r => r[1]); aligned = this.align.readFrozen(H, (i, y, g) => { rows[i][1] = g; rows[i][3] = old[i]; }); }
+    return {n: H.length, live: live / H.length, C: c / H.length, aligned, rows};   // rows: [symbol, aligned graph's guess (or old graph's), p old, old graph's guess]
   }
   evalTransforms(count = 12, impossible = 4) {                                // desired configurations of kinds it never encountered, and impossible ones, from the first attempt
     this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], out = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = Object.assign(Object.create(RNG.prototype), c.r); return c; };
@@ -177,8 +182,10 @@ export class Brain {
     for (let i = 4; i < H.length; i++, N++) { const ctx = this.ctxOf(H, i), h = this.histOf(H, i), y = H[i], L = chain.play(e, ctx, h).out, p = F[i];
       c += argmax(distC(e.c, ctx)) === y; live += argmax(L) === y; masked += argmax(chain.play(e, ctx, h, true).out) === y; bits -= Math.log2(L[y]);
       const T = p ? L.map((v, j) => .5 * v + .5 * p[j]) : L; fld += p ? argmax(p) === y : 0; tog += argmax(T) === y; tbits -= Math.log2(Math.max(1e-9, T[y])); }
-    return {C: c / N, live: live / N, masked: masked / N, bits: bits / N, field: fld / N, together: tog / N, tbits: tbits / N, n: N};
+    const aligned = this.align ? this.align.readFrozen(H.slice(4)) : null;   // the aligning graph, frozen, on the same unseen text
+    return {C: c / N, live: live / N, masked: masked / N, bits: bits / N, field: fld / N, together: tog / N, tbits: tbits / N, n: N, aligned};
   }
+  beginExercise() { (this.align ||= new AligningGraph()).begin(); }          // a new exercise of a world starts: its own memory starts empty
   dissolve() {                                                               // solve: rows lived only once are let go
     let gone = 0; const drop = m => { for (const [k, v] of m) if (typeof v === "number") { m.delete(k); gone++; } };
     for (const m of Object.values(this.e.c.models)) drop(m.entries); for (const A of this.chain.A) for (const wi of A.wires) drop(wi.rows); return gone;

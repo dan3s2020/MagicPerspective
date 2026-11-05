@@ -468,3 +468,50 @@ PC.
 
 Measured here (numpy stand-in, 2 cores): a batch of 256 labyrinths takes 12 s, mostly the brain living the experiences.
 A batch of 256 transformation tasks takes 140 s, mostly imagination on the CPU.
+
+## The graph that aligns itself to the context and loses nothing (2026-11-05, align.mjs, laws/align-*.mjs)
+
+The requirement (verbatim, 2026-11-05): the graph must know how to align itself according to the context, lose
+nothing, and know when and how to take whatever form is needed; the longer a text exercise, the closer it is to a
+1000×1000 labyrinth, and it must cope gradually from the smallest to the largest, as it learns labyrinths.
+
+What the old text graph did instead: it guessed the next character from at most 12 exact characters (A) and 4 (C),
+links faded and rows lived once were dissolved. On text it plateaus.
+
+The aligning graph (align.mjs):
+- everything lived is kept, every symbol of every world, in order (no fading, no dissolving);
+- at every moment the whole present context, read backwards as far as it goes, is aligned with all the past at once
+  (suffix arrays over the reversed memory: the deepest alignment and the shallower ones);
+- it also aligns with the exercise being lived (its own earlier parts, a suffix automaton) and, at the level of FORM,
+  with the past where every digit is the same symbol (the structure of a solution, whatever the numbers; which number,
+  the concrete alignments say);
+- which alignment to follow, when, is learned: before every symbol it predicts, then sees what came, and each kind of
+  alignment (source, depth, how much past supports it) earns or loses trust.
+
+Measured on GSM8K (7,473 Q→A reasoning exercises, the text world available here; OpenThoughts is not reachable from
+this machine), curriculum from the shortest exercise to the longest, tested frozen on 240 unseen test exercises
+spread over all lengths; accuracy on the characters of the ANSWER, guessed at the first try:
+
+| exercises lived | current V17 brain (stable+many) | aligning: memory only | + its own exercise | + form |
+|---|---|---|---|---|
+| 500 | 50.3% | 52.4% | 65.8% | 67.0% |
+| 1,000 | 53.2% | 56.2% | 67.5% | 69.3% |
+| 2,000 | 55.3% | 59.6% | 69.3% | 71.4% |
+| 4,000 | 56.7% | 63.0% | 70.5% | 72.4% |
+| 7,473 | — | — | 72.0% | 73.9% |
+
+By exercise length (answer accuracy at 7,473; lengths <300, 300–450, 450–650, 650–900, >900 characters):
+73.5%, 72.1%, 73.7%, 74.4%, 76.3%. The longest exercises are not harder for it: the more of the exercise it has
+lived, the more it has to align with.
+
+Online (as the trainer lives it, align-online.mjs): 66.8% after 500 exercises, 68.6% after 1,000, ~5,500 symbols/s.
+In the trainer (GSM8K text + labyrinths, held-out paragraphs): ALIGNED 63.3% → 65.6% at 0.1M → 0.2M characters,
+against the old graph's 58.0% → 59.6%.
+
+In V17 the aligning graph lives every symbol of every world (Brain.live), is saved with the brain, is what writes in
+the chat, and is what reads in Evaluare → text. The old graph is kept and still measured, for comparison.
+Not yet done: the labyrinths and the transformations are still decided by Discoverer and CausalOrganism, not by the
+aligning graph; the graph drawn on the page is still the old trace, not the aligning graph.
+
+Reproduce: `GSM=<path to grade-school-math/grade_school_math/data> node transcend/torus-aether/laws/align-align2.mjs`
+(SIZES=500,1000,… NT=240 G=8), and `laws/align-baseline.mjs` for the old brain.
