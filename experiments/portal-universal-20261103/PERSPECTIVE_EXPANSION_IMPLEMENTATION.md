@@ -100,3 +100,25 @@ in the existing 5D explorer. The 3D/4D cameras are not replaced.
 
 This experimental branch changes the running learner only when explicitly
 enabled. It does NOT replace the project with a simplified simulation.
+
+## Safe first run in Windows PowerShell — no original checkpoint touched
+
+```powershell
+$repo = "D:\MagicPerspective-Expansion"
+$data = "D:\MagicPerspective-Expansion-State"
+if (Test-Path -LiteralPath $repo) { throw "Folder already exists: $repo. Inspect before running." }
+git clone --branch experiment/PERSPECTIVE-EXPANSION-MULTISCALE-20261105 https://github.com/dan3s2020/MagicPerspective.git $repo
+if ($LASTEXITCODE -ne 0) { throw "Clone failed" }
+$env:PORTAL_DATA_DIR = $data
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$repo\experiments\portal-universal-20261103\START_PORTAL_UNIVERSAL_CUDA.ps1"
+```
+
+The opt-in `PORTAL_DATA_DIR` environment variable points this experiment to
+a separate data root. Do **not** start a branch-experimental trainer against
+the pre-existing production `D:\training\MagicPerspective-PortalUniversal`
+checkpoint without a separately verified backup and resume test.
+
+After startup, open `http://127.0.0.1:3050/`; activate the perspective
+expansion checkbox **before** training. If the test run is restarted, keep
+`PORTAL_DATA_DIR` unchanged to resume its own checkpoint. The original
+project directory and saved brain are never selected by this command.
