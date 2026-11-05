@@ -510,3 +510,23 @@ fetch("/corpus").then(r => r.json()).then(c => {
   const all = (c.train.join("\n") + "\n" + c.held.join("\n")); real5 = new Set(); for (let i = 0; i + 5 <= all.length; i++) real5.add(all.slice(i, i + 5));
   reset(); loop();
 }).catch(err => { $("corpus").textContent = "Nu pot încărca /corpus: " + err; });
+
+// ---- talking to the graph: the conversation goes to the selected graph (POST /chat), which writes the answer itself ----
+{ let talk = []; const log = $("chatLog"), esc = t => t.replace(/[&<]/g, c => c === "&" ? "&amp;" : "&lt;");
+  const add = (cls, html) => { const d = document.createElement("div"); d.className = "msg " + cls; d.innerHTML = html; log.append(d); log.scrollTop = log.scrollHeight; return d; };
+  for (const id of ["cTemp", "cMax", "cHist"]) { const el = $(id), out = $(id + "Out"); el.oninput = () => out.textContent = el.value; }
+  $("chatTab").onclick = () => { $("chatPane").classList.toggle("on"); $("chatW").textContent = "#" + liveW; $("chatIn").focus(); };
+  $("chatClose").onclick = () => $("chatPane").classList.remove("on");
+  $("chatClear").onclick = () => { talk = []; log.innerHTML = ""; };
+  $("chatIn").onkeydown = ev => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); $("chatForm").requestSubmit(); } };
+  $("chatForm").onsubmit = async ev => { ev.preventDefault(); const text = $("chatIn").value.trim(); if (!text) return;
+    $("chatIn").value = ""; $("chatW").textContent = "#" + liveW; add("you", esc(text)); talk.push(["you", text]);
+    if (!LIVE) { add("err", "Chat-ul vorbește cu grafurile din trainer: pornește START_V17.ps1 și deschide pagina lui."); return; }
+    const opts = {T: +$("cTemp").value, max: +$("cMax").value, stopBlank: $("cStop").checked, learn: $("cLearn").checked}, keep = +$("cHist").value;
+    const wait = add("him", "<span class='dim'>scrie…</span>"); $("chatSend").disabled = true;
+    try { const r = await (await fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: talk.slice(-(2 * keep + 1)), opts})})).json();
+      if (r.error) { wait.className = "msg err"; wait.textContent = r.error; talk.pop(); }
+      else { wait.innerHTML = esc(r.text || "(nimic)") + `<small>graful #${liveW} · T ${r.T} · ${r.text.length} simboluri${r.fromSave ? " · oprit: răspunde din ultimul save" : opts.learn ? " · a trăit conversația" : ""}</small>`; talk.push(["him", r.text]); } }
+    catch (err) { wait.className = "msg err"; wait.textContent = "nu am putut ajunge la trainer: " + err.message; talk.pop(); }
+    $("chatSend").disabled = false; };
+}

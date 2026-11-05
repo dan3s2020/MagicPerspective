@@ -37,6 +37,20 @@ export class Brain {
     chain.learn(h, y, m); e.c.observe(ctx, y); this.field.live(y, this.place);
     trace.record(e, chain, ctx, h, y, m, "c:" + e.c.active, detailed); past.push(y); if (past.length > 64) past.splice(0, 32); this.lived++;
   }
+  // talking to it: the conversation in the shape of what it devoured ("Q: …\nA: …"), and it writes the answer symbol by
+  // symbol from its own graph (chain.play → chain.pick at temperature T: the same way "Scrie liber" writes on the page).
+  // learn = it also lives the words it is told (and its own answer), like any other world; otherwise it only answers.
+  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
+    const asc = s => { const o = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; o.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return o; };
+    const prompt = asc(history.map(([who, text]) => (who === "you" ? "Q: " : "A: ") + text + "\n" + (who === "you" ? "" : "\n")).join("") + "A: ");
+    if (learn) for (const y of prompt) this.live(y);
+    const out = prompt.slice(), keep = this.chain.rand, ans = []; this.chain.rand = rngFrom(seed);
+    for (let k = 0; k < max; k++) { const i = out.length, y = this.chain.pick(this.chain.play(this.e, this.ctxOf(out, i), this.histOf(out, i)).out, T);
+      if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
+    this.chain.rand = keep;
+    if (learn) for (const y of [...ans, 10, 10]) this.live(y);
+    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived};
+  }
   // what the brain expects next, after everything it has lived (the graph's own distribution over the next symbol)
   predict(past = this.past) { const i = past.length; return this.chain.play(this.e, this.ctxOf(past, i), this.histOf(past, i)).out; }
   // the shape of the solution: it writes its next K moves ahead, imagining also what it will perceive after each one,

@@ -34,6 +34,13 @@
   .liveList{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}.lgc{border:1px solid #23384c;border-radius:8px;padding:6px 8px;font-size:12px}.lgc.on{border-color:var(--gold)}.lgc .t{cursor:pointer}.lgc .sc{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:4px 0}.lgc .sc b{font-weight:600}.lgc .bt{display:flex;gap:4px;flex-wrap:wrap}.lgc .bt button{padding:2px 7px;font-size:12px}.st{font-size:11px;padding:1px 6px;border-radius:6px;background:#1d2b3a}.st.run{background:#174a2c;color:#7ee0a1}.lg{text-align:left;font-size:12px;padding:6px 8px}.lg small{color:var(--dim);font-size:11px}.lg.on{border-color:var(--gold);color:var(--gold)}
   body.live #run,body.live #reset,body.live .sl:has(#speed),body.live .sl:has(#ltemp),body.live .sl:has(#pnoise),body.live .sl:has(#dims),body.live .sl:has(#bud),body.live .sl:has(#wires),body.live .sl:has(#gnoise),body.live .sl:has(#glr),body.live .sl:has(#repel){display:none}
   .gen{margin-top:6px;font:12px/1.5 ui-monospace,monospace;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 8px;word-break:break-all}
+  #chatTab{position:fixed;right:16px;bottom:16px;z-index:30;background:var(--gold);color:#000;border:0;font-weight:600;box-shadow:0 4px 18px #0008}
+  #chatPane{position:fixed;right:16px;bottom:64px;z-index:30;width:min(440px,calc(100vw - 32px));height:min(640px,calc(100vh - 90px));display:none;flex-direction:column;background:#070d14;border:1px solid #29425a;border-radius:12px;box-shadow:0 10px 40px #000c}
+  #chatPane.on{display:flex}#chatPane header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}#chatPane header b{flex:1}
+  #chatSet{padding:8px 12px;border-bottom:1px solid var(--line);font-size:12.5px;display:grid;gap:4px}#chatSet .sl{display:flex;align-items:center;gap:8px}#chatSet .sl label{width:120px;color:var(--dim)}
+  #chatLog{flex:1;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+  .msg{max-width:88%;padding:7px 10px;border-radius:10px;white-space:pre-wrap;word-break:break-word;font-size:13px}.msg.you{align-self:flex-end;background:#13314d}.msg.him{align-self:flex-start;background:#0d1824;font-family:ui-monospace,monospace}.msg.err{align-self:center;color:var(--red);font-size:12px}.msg small{display:block;color:var(--dim);font-size:10.5px;margin-top:3px;font-family:system-ui}
+  #chatForm{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}#chatIn{flex:1;resize:none;height:42px;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px 9px;font:inherit}
 </style>
 </head>
 <body>
@@ -151,6 +158,18 @@
     <div class="sl"><label for="ttemp">temperatura la test</label><input id="ttemp" type="range" min="0" max="1.5" step="0.05" value="0.6"><span id="ttempOut" class="dim">0.6</span><small>0 = determinist, mereu același rezultat; peste 0 graful alege prin tragere la sorți, deci halucinează și fiecare test diferă</small></div>
     <div id="evalOut">—</div>
   </aside>
+</div>
+<button id="chatTab">💬 Vorbește cu el</button>
+<div id="chatPane"><header><b>Vorbește cu graful <span id="chatW">#0</span></b><button id="chatClear" title="începe o conversație nouă">nouă</button><button id="chatClose">✕</button></header>
+  <div id="chatSet">
+    <div class="sl"><label for="cTemp">temperatura</label><input id="cTemp" type="range" min="0" max="2" step="0.05" value="0.6"><span id="cTempOut" class="dim">0.6</span></div>
+    <div class="sl"><label for="cMax">lungime maximă</label><input id="cMax" type="range" min="20" max="2000" step="20" value="400"><span id="cMaxOut" class="dim">400</span></div>
+    <div class="sl"><label for="cHist">memorie (replici)</label><input id="cHist" type="range" min="0" max="20" step="1" value="6"><span id="cHistOut" class="dim">6</span></div>
+    <label class="dim"><input id="cStop" type="checkbox" checked> se oprește la rând gol (sfârșitul unui răspuns)</label>
+    <label class="dim"><input id="cLearn" type="checkbox"> învață din conversație (trăiește și ce îi spui)</label>
+  </div>
+  <div id="chatLog"><div class="msg err" style="color:var(--dim)">Scrie-i ceva. Răspunde graful selectat în stânga, din ce a trăit până acum, simbol cu simbol.</div></div>
+  <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
 </body>
