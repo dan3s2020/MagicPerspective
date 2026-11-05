@@ -138,7 +138,7 @@ export class Brain {
   examMazes(sizes = [7, 9, 11, 13, 15, 17, 19, 21, 25, 31], per = 1, seed = (Math.random() * 2 ** 31) >>> 0, {T = 0, noise = 0} = {}) {   // new unseen labyrinths every time
     if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}}); const out = [];
     for (const n of sizes) for (let k = 0; k < per; k++) { const c = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); c.r = Object.assign(Object.create(RNG.prototype), c.r);
-      c.r = new RNG(seed + 7 * n + k); c.temp = T; c.noise = noise;          // its own exploration draws differently every exam; the person's temperature and noise
+      c.r = new RNG((Math.random() * 2 ** 31) >>> 0); c.temp = T; c.noise = noise;   // the world comes from the seed; its own draws are new every time          // its own exploration draws differently every exam; the person's temperature and noise
       const w = makeMaze(seedOf(SEEDS.test, 100000 + (seed % 1000000) * 13 + n * 101 + k), n), r = playExercise(w, c, () => {}, {record: true});
       out.push({n, k, solved: r.solved, steps: r.steps, optimal: r.optimal, first: r.first, path: r.path, shapes: r.shapes, wall: r.wall, start: r.start, goal: r.goal, knows: r.knows, how: r.how}); }
     const D = this.disc;   // what it knows when the exam starts: why a perfect shape may still not be walked
@@ -170,13 +170,13 @@ export class Brain {
     return {n: H.length, live: live / H.length, C: c / H.length, aligned, rows};   // rows: [symbol, aligned graph's guess (or old graph's), p old, old graph's guess]
   }
   evalTransforms(count = 12, impossible = 4, seed = (Math.random() * 2 ** 31) >>> 0, {noise = 0} = {}) {   // new unseen configurations every time                                // desired configurations of kinds it never encountered, and impossible ones, from the first attempt
-    this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], out = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = new RNG(seed + 31 * out.length + 1); c.noise = noise; return c; };   // its own draws differ every evaluation
+    this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], out = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = new RNG((Math.random() * 2 ** 31) >>> 0); c.noise = noise; return c; };   // its own draws differ every evaluation
     const one = (L, imp) => { const r = liveTask(L, new TWorld(L, this.tMoves), copy(), {record: true});
       out.push({impossible: imp, goals: L.goals, n: L.n, goal: L.goal, optimal: L.optimal ?? null, solved: r.solved, steps: r.steps, said: r.said, predicted: r.predicted, failed: r.failed, frames: r.frames.map(f => ({b: f.b, how: f.how}))}); };
     const base = 3000000 + (seed % 100000) * 104729;
     for (let i = 0, k = 0; k < count && i < count * 20; i++) { const L = makeLevel(TSEEDS.test + base + i * 7919, {goals: kinds[i % 3]}); if (L) { one(L, false); k++; } }
     for (let i = 0, k = 0; k < impossible && i < impossible * 40; i++) { const L = makeLevel(TSEEDS.test + base + 1900000 + i * 7919, {goals: [["object"], ["self"]][i % 2], impossible: true}); if (L) { one(L, true); k++; } }
-    return {played: this.trans.played, tasks: out};
+    return {played: this.trans.played, seed, tasks: out};
   }
   // frozen test on exercises it never saw (V16's test seeds, sizes 7, 9, 11): a copy of what it discovered plays them
   testMazes(count = 30) {

@@ -541,7 +541,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
 }
 
 // ---- the Evaluare tab: a copy from the save, on the CPU, on unseen labyrinths / text / desired configurations; first attempt ----
-{ let R = null, kind = "maze", cur = 0, t0 = 0;
+{ let R = null, kind = "maze", cur = 0, t0 = 0, evAgainNow = false;
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(1) + "%", side = document.querySelector("aside.side");
   $("tabTrain").onclick = () => { side.classList.remove("evalOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); };
   $("tabEval").onclick = () => { side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("evW").textContent = "#" + liveW; };
@@ -561,9 +561,9 @@ fetch("/corpus").then(r => r.json()).then(c => {
       (X.shape != null ? `<div style="margin-top:10px;color:var(--gold)">forma soluției, scrisă de el din întrebare, ÎNAINTE să vadă răspunsul (${(100 * (X.shapeSame || 0)).toFixed(0)}% din caractere la locul lor):</div><div style="color:#e6c56a">${Array.from(X.shape, c => esc(c.charCodeAt(0))).join("")}</div>` : ""); };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
-    kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
+    const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
       : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: +$("evMax").value || 20000} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
-    opts.T = +$("evT").value; opts.noise = +$("evNoise").value;
+    opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
       if (r.error) $("evOut").textContent = r.error;
@@ -577,6 +577,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
         show(0); } }
     catch (err) { $("evOut").textContent = "nu am putut ajunge la trainer: " + err.message; }
     $("evGo").disabled = false; };
+  $("evAgain").onclick = () => { if (!R) return; evAgainNow = true; $("evGo").click(); };
   $("evPrev").onclick = () => show(cur - 1); $("evNext").onclick = () => show(cur + 1);
   const hue = v => v === 0 ? "#0b1118" : v === 1 ? "#24384c" : `hsl(${(v * 47) % 360},70%,${45 + (v % 3) * 8}%)`;
   const draw = () => { requestAnimationFrame(draw); if (!R || kind === "text" || !side.classList.contains("evalOn")) return; const L = items()[cur]; if (!L) return;

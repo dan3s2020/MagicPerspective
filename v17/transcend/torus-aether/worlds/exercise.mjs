@@ -55,7 +55,8 @@ export class Discoverer {
         let b = 0; for (let a = 0; a < 4; a++) { const j = nextStep(n, i, a); if (j >= 0 && V[j] > b) b = V[j]; } const v = .97 * c * b; if (v > V[i] + 1e-12) { V[i] = v; ch = true; } }
       if (!ch) break; }
     const path = []; let p = me; const seen = new Set([p]);
-    for (let k = 0; k < n * n; k++) { let best = -1, bv = V[p]; for (let a = 0; a < 4; a++) { const j = nextStep(n, p, a); if (j >= 0 && !seen.has(j) && V[j] > bv) { bv = V[j]; best = a; } }
+    for (let k = 0; k < n * n; k++) { let best = -1, bv = V[p]; const up = []; for (let a = 0; a < 4; a++) { const j = nextStep(n, p, a); if (j >= 0 && !seen.has(j) && V[j] > V[p]) up.push([a, V[j]]); if (j >= 0 && !seen.has(j) && V[j] > bv) { bv = V[j]; best = a; } }
+      if (this.temp && up.length > 1) { let z = 0; const w = up.map(([a, v]) => { const q = Math.exp((v - bv) / (this.temp * .03 * bv + 1e-12)); z += q; return [a, q]; }); let r = this.r.next() * z; for (const [a, q] of w) { r -= q; if (r <= 0) { best = a; break; } } }   // alive: among ways that climb almost as well, it does not always take the same one
       if (best < 0) break; path.push(best); p = nextStep(n, p, best); seen.add(p); if (att[ret[p]] > .2) break; }
     return path.length ? path : null;
   }

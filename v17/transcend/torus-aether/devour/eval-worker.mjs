@@ -6,8 +6,8 @@ const brain = Brain.load(workerData.saveFile);
 parentPort.postMessage({type: "loaded", lived: brain.lived, chars: brain.chars});
 parentPort.on("message", m => { let r;
   try {
-    if (m.kind === "maze") r = brain.examMazes(m.opts.sizes, m.opts.per, undefined, {T: m.opts.T, noise: m.opts.noise});
-    else if (m.kind === "transform") r = brain.evalTransforms(m.opts.count, m.opts.impossible, undefined, {noise: m.opts.noise});
+    if (m.kind === "maze") r = brain.examMazes(m.opts.sizes, m.opts.per, m.opts.seed ?? undefined, {T: m.opts.T, noise: m.opts.noise});
+    else if (m.kind === "transform") r = brain.evalTransforms(m.opts.count, m.opts.impossible, m.opts.seed ?? undefined, {noise: m.opts.noise});
     else if (m.kind === "text") r = brain.evalTextExercises(m.opts.list, {T: m.opts.T, noise: m.opts.noise});
     else r = {error: "unknown kind " + m.kind};
   } catch (err) { r = {error: err.message}; }
