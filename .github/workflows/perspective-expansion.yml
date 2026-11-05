@@ -1,0 +1,37 @@
+name: MagicPerspective opt-in perspective expansion
+on:
+  push:
+    branches:
+      - experiment/PERSPECTIVE-EXPANSION-MULTISCALE-20261105
+  pull_request:
+    branches:
+      - main
+jobs:
+  real-cpu-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install CPU neural runtime (no simulated CUDA)
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Syntax and import checks
+        run: |
+          python -m py_compile experiments/portal-universal-20261103/engine.py experiments/portal-universal-20261103/server.py experiments/portal-universal-20261103/perspective_expansion.py experiments/portal-universal-20261103/spacetime_api.py experiments/portal-universal-20261103/ablate_expansion.py
+          node --check experiments/portal-universal-20261103/web/app.js
+          node --check experiments/portal-universal-20261103/web/spacetime.js
+      - name: Actual-optimizer expansion, checkpoint and baseline tests
+        run: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -p 'test_perspective_expansion.py' -v
+      - name: Matched-seed baseline/local/shared-noise ablation smoke
+        run: |
+          python experiments/portal-universal-20261103/ablate_expansion.py --domains yesno --rounds 1 --batch-size 1 --eval-worlds 1 --data-dir "$RUNNER_TEMP/ablation-$GITHUB_RUN_ID"
+      - name: Previously working Portal engine regression tests
+        run: PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -p 'test_portal.py' -v
+      - name: Existing read-only 5D observer tests
+        run: |
+          node --test experiments/portal-universal-20261103/tests/spacetime.test.mjs
+          PYTHONPATH=experiments/portal-universal-20261103 python -m unittest discover -s experiments/portal-universal-20261103/tests -p 'test_spacetime.py' -v

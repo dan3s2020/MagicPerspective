@@ -23,7 +23,8 @@ class SpacetimeReadTests(unittest.TestCase):
                   'step':index, 'action':'walk', 'active':[1,index],
                   'messages':[{'from':1,'to':index,'strength':0.5}],
                   'actual':{'effect':'moved'},'update_norm':.12,
-                  'growth':{'born':[index]}}
+                  'growth':{'born':[index]},
+                  'expansion':{'active_levels':1,'nodes':[{'id':1,'latent':[.1,.2,.3,.4]}]}}
         self.db.execute('INSERT INTO trace(episode,frame) VALUES(?,?)',
                         (1,json.dumps(evidence)))
 
@@ -42,6 +43,7 @@ class SpacetimeReadTests(unittest.TestCase):
         self.assertEqual(r['visible_total'],5)
         self.assertEqual([x['trace_id'] for x in r['events']],[3,4,5,6,7])
         self.assertEqual(r['events'][0]['messages'][0]['from'],1)
+        self.assertEqual(r['events'][0]['expansion']['nodes'][0]['latent'],[.1,.2,.3,.4])
         self.assertFalse(metadata(self.db)['has_wall_clock_time'])
 
     def test_wide_view_samples_only_existing_indices_with_exact_counts(self):
