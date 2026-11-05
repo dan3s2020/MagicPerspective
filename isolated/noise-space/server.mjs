@@ -16,7 +16,7 @@ const respond=async(req,res)=>{const u=new URL(req.url,'http://127.0.0.1');try{
  if(req.method==='GET'&&u.pathname==='/api/v17')return json(res,200,realState());
  if(req.method==='POST'&&u.pathname==='/api/v17'){const data=await parse(req);realCommand(data);return json(res,202,{accepted:true,action:data.action});}
  if(req.method==='GET'&&u.pathname==='/v17.html'){const b=fs.readFileSync(path.join(ROOT,'v17.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
- if(req.method==='GET'&&u.pathname==='/api/health')return json(res,200,{status:'ok',isolated:true,source,knownV17:false});
+ if(req.method==='GET'&&u.pathname==='/api/health')return json(res,200,{status:'ok',isolated:true,source,knownV17:realState().available,realTraining:realState().running,realError:realState().error});
  if(req.method==='GET'&&u.pathname==='/api/state')return json(res,200,summary());
  if(req.method==='POST'&&u.pathname==='/api/train'){if(running)throw Error('Stop continuous mode before one-shot training');const data=await parse(req);const r=train(data);return json(res,200,{status:'trained',scores:r.scores,options});}
  if(req.method==='POST'&&u.pathname==='/api/control'){const d=await parse(req);if(d.action==='start'){if(!running){running=true;paused=false;setTimeout(next,10);}}
@@ -25,7 +25,7 @@ const respond=async(req,res)=>{const u=new URL(req.url,'http://127.0.0.1');try{
  else if(d.action==='resume'){if(running){paused=false;setTimeout(next,10);}else throw Error('Not running');}
  else if(d.action==='save')persist();else if(d.action==='reset'){running=false;paused=false;series=[];current=null;external=null;persist();}else throw Error('Unknown action');return json(res,200,{status:'ok',running,paused,busy});}
  if(req.method==='POST'&&u.pathname==='/api/import'){if(running)throw Error('Stop training before importing');const d=await parse(req);const result=analyzeEvents(d.events||[]);external=result;source='external';persist();return json(res,200,{status:'imported',worlds:result.worlds,cross_world_state:result.cross_world_state});}
- if(req.method==='GET'&&u.pathname==='/'){const b=fs.readFileSync(path.join(ROOT,'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
+ if(req.method==='GET'&&(u.pathname==='/'||u.pathname==='/observatory.html'||u.pathname==='/synthetic.html')){const file=u.pathname==='/synthetic.html'?'index.html':'observatory.html';const b=fs.readFileSync(path.join(ROOT,file));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
  return json(res,404,{error:'Not found'});
  }catch(e){return json(res,/Invalid|Need |Unknown|Event |Events |Refusing|Not running|Stop /.test(e.message)?400:409,{error:e.message});}};
 if(process.argv.includes('--events')){const p=process.argv[process.argv.indexOf('--events')+1];try{external=readEvents(p);source='external';persist();console.log('Imported read-only:',p);}catch(e){console.error('Import rejected:',e.message);process.exitCode=2;}}
