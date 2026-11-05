@@ -15,6 +15,7 @@ param(
   [ValidateRange(1,1000000)][int]$GpuWorlds = 1024,
   [ValidateRange(0,128)][double]$Vram = 0,
   [ValidateRange(1,100)][int]$GpuUtil = 100,
+  [ValidateSet("cu124","cu126","cu128")][string]$Cuda = "cu126",
   [switch]$Start,
   [switch]$Fresh
 )
@@ -38,21 +39,45 @@ if ($Text -ne "") {
   if (-not (Test-Path -LiteralPath $Data -PathType Container)) { throw "Missing real parquet directory: $Data" }
   $sourceArgs = @("--data", $Data)
 }
-if ($Gpu -ne "off") {
-  $candidate = Join-Path $PSScriptRoot "transcend\torus-aether\gpu\.venv\Scripts\python.exe"
-  if ($env:OCTOPUS_PY) { $py = $env:OCTOPUS_PY }
-  elseif (Test-Path -LiteralPath $candidate -PathType Leaf) { $py = $candidate }
-  else { $py = "python" }
-  if ($Gpu -like "cuda*") {
-    & $py -c "import torch,numpy; assert torch.cuda.is_available(), 'CUDA not available'; print('GPU:',torch.cuda.get_device_name(0))"
-    if ($LASTEXITCODE -ne 0) { throw "CUDA verification failed. Install a working isolated PyTorch CUDA environment and set OCTOPUS_PY." }
-  }
-  & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\worlds_gpu.py") --selftest $Gpu
-  if ($LASTEXITCODE -ne 0) { throw "Real GPU world self-test failed. Training not launched." }
-  $env:OCTOPUS_PY = $py
-}
 $runtime = Join-Path $PSScriptRoot "runtime-live-controls-isolated"
 New-Item -ItemType Directory -Force -Path $runtime | Out-Null
+if ($Gpu -ne "off") {
+  # Python packages exist ONLY inside this NEW clone's gitignored runtime.
+  # Never reuse OCTOPUS_PY or an OctopusV2/global Torch installation.
+  $venv = Join-Path $runtime "python-worlds-venv"
+  $py = Join-Path $venv "Scripts\python.exe"
+  if (-not (Test-Path -LiteralPath $py -PathType Leaf)) {
+    if (Get-Command py -ErrorAction SilentlyContinue) {
+      & py -3.12 -m venv $venv
+      if ($LASTEXITCODE -ne 0) { & py -3.11 -m venv $venv }
+    } elseif (Get-Command python -ErrorAction SilentlyContinue) {
+      & python -m venv $venv
+    } else { throw "Python 3.11 or 3.12 required for isolated GPU world environment." }
+    if (-not (Test-Path -LiteralPath $py -PathType Leaf)) { throw "Cannot create isolated Python environment: $venv" }
+  }
+  $prevPref = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    & $py -c "import numpy" 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      & $py -m pip install numpy 2>&1 | Out-Host
+      if ($LASTEXITCODE -ne 0) { throw "Isolated NumPy installation failed." }
+    }
+    if ($Gpu -like "cuda*") {
+      & $py -c "import torch; assert torch.cuda.is_available()" 2>&1 | Out-Null
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "Installing PyTorch CUDA $Cuda in isolated venv ($venv)."
+        & $py -m pip install torch --index-url "https://download.pytorch.org/whl/$Cuda" 2>&1 | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "Isolated PyTorch CUDA installation failed." }
+      }
+      & $py -c "import torch,numpy; assert torch.cuda.is_available(); print('GPU:',torch.cuda.get_device_name(0))" 2>&1 | Out-Host
+      if ($LASTEXITCODE -ne 0) { throw "CUDA did not pass. The training will not pretend to be on the GPU." }
+    }
+    & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\worlds_gpu.py") --selftest $Gpu 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "Real GPU world self-test failed. Training not launched." }
+  } finally { $ErrorActionPreference = $prevPref }
+  $env:OCTOPUS_PY = $py
+}
 $memInvariant = $Mem.ToString([Globalization.CultureInfo]::InvariantCulture)
 $vramInvariant = $Vram.ToString([Globalization.CultureInfo]::InvariantCulture)
 $heap = [int][Math]::Ceiling($Mem * 1024 * 1.7)
