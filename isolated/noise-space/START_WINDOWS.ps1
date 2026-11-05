@@ -11,7 +11,7 @@ try {
   Write-Host '=== MAGIC PERSPECTIVE · ISOLATED NOISE SPACE ===' -ForegroundColor Cyan
   Write-Host "Location: $base"
   Write-Host 'No V17 source files are modified.'
-  & node --test "$base\test.mjs"
+  & node --test "$base\test.mjs" "$base\v17_smoke.test.mjs"
   if($LASTEXITCODE -ne 0){throw 'Acceptance tests failed; refusing to launch.'}
   $env:PORT = "$Port"
   $env:HOST = '127.0.0.1'
