@@ -14,6 +14,7 @@ import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyr
 import {Discoverer, playExercise} from "../worlds/exercise.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
+import {DEFAULT_CONTROLS, normalizeControls} from "./stochastic-controls.mjs";
 
 const CLASSES = {LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
@@ -24,16 +25,25 @@ export class Brain {
     this.precedent = new Precedent(); this.disc = new Discoverer(seed); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
+  setControls(next = {}) {                                                     // changes apply to the SAME real learner, without resetting its weights
+    this.controls = normalizeControls(next, this.controls || DEFAULT_CONTROLS);
+    if (this.trace?.geo) Object.assign(this.trace.geo, {neg: this.controls.gnoise, lr: this.controls.glr, repel: this.controls.repel, thr: this.controls.cthr});
+    return {...this.controls};
+  }
   revive() {                                                                 // what cannot be saved (the random streams) is reborn
     this.place = y => this.trace.geo.U.get(y) || [.5, .5, .5, .5, .5]; this.rand = rngFrom(this.seed * 7919 + this.lived);
     this.chain.rand = rngFrom(this.seed + this.lived); this.trace.geo.r = rngFrom(this.seed * 31 + this.lived);
+    this.setControls(this.controls || DEFAULT_CONTROLS);
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   live(y, detailed = false) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
-    const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), h = this.histOf(past, i), m = chain.play(e, ctx, h);
+    const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), h = this.histOf(past, i);
+    // Corrupt only the organism\'s historical perception, not the true label, corpus or held-out evaluator.
+    if (this.controls.pnoise && past.length) for (let k = 0; k < h.length; k++) if (this.rand() < this.controls.pnoise) h[k] = past[Math.floor(this.rand() * past.length)];
+    const m = chain.play(e, ctx, h, false, {temp: this.controls.ltemp});
     chain.learn(h, y, m); e.c.observe(ctx, y); this.field.live(y, this.place);
     trace.record(e, chain, ctx, h, y, m, "c:" + e.c.active, detailed); past.push(y); if (past.length > 64) past.splice(0, 32); this.lived++;
   }
