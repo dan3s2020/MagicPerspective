@@ -1,0 +1,27 @@
+name: Language-action highways isolated acceptance
+on:
+  push:
+    branches:
+      - experiment/LANGUAGE-ACTION-HIGHWAYS-ISOLATED-20261106
+    paths:
+      - isolated/language-paths/**
+      - .github/workflows/language-paths-isolated.yml
+  pull_request:
+    paths:
+      - isolated/language-paths/**
+      - .github/workflows/language-paths-isolated.yml
+jobs:
+  verify-isolated-language-learning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Regression and held-out acceptance tests
+        run: node --test isolated/language-paths/engine.test.mjs isolated/language-paths/relational.test.mjs
+      - name: Reproducible 210-task benchmark
+        run: node isolated/language-paths/benchmark.mjs --tasks 35 --oracle 10 --out /tmp/language-paths.json
+      - name: Assert measured outcomes
+        run: |
+          node -e "const r=require('/tmp/language-paths.json');if(r.summary.plannerSuccess<.95||r.relational.summary.plannerSuccess<.95||r.summary.optimalMatches!==r.summary.oracleSampleCount||r.relational.summary.optimalMatches!==r.relational.summary.tested)process.exit(1)"
