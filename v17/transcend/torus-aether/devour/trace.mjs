@@ -41,7 +41,7 @@ export class GraphTrace {
     const edges = [...this.edges.values()].sort((a, b) => b.w - a.w).slice(0, 2500).map(x => [x.a, x.b, x.kind, +x.w.toFixed(3)]);
     const s = {nodes: [...this.nodes.values()].map(n => [n.id, n.type, n.label, +n.act.toFixed(2), n.born]), edges,
       U: [...this.geo.U.entries()].map(([k, v]) => [k, v.map(x => +x.toFixed(5))]), flow: this.flow.slice(), strip: this.strip.slice(),
-      accC: this.seen ? this.hitC / this.seen : 0, accF: this.seen ? this.hitF / this.seen : 0};
+      accC: this.seen ? (this.accC = this.hitC / this.seen) : (this.accC ?? 0), accF: this.seen ? (this.accF = this.hitF / this.seen) : (this.accF ?? 0)};   // nothing lived since the last picture (a GPU batch deciding): keep the last measured
     this.hitC = this.hitF = this.seen = 0;
     if (withText) s.text = Buffer.from(this.text.slice(-60000)).toString("latin1");
     return s;
