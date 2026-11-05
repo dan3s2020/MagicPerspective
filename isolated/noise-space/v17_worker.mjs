@@ -9,6 +9,7 @@ import {labelEvent} from './interpret.mjs';
 import {IsolatedGpuRunner} from './gpu_runner.mjs';
 import {openTextDataset} from '../../v17/transcend/torus-aether/data/text-dataset.mjs';
 import {nextTrainingSlice,rotatingHeldout,byteEvidence} from './text_schedule.mjs';
+import {TextActionPaths,matchScore} from './text_action_paths.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 // Isolate parallel regression runs; default user's existing checkpoint path is unchanged.
@@ -17,9 +18,10 @@ if(!/^[A-Za-z0-9_-]{1,70}$/.test(session))throw Error('Invalid isolated session 
 const dir=path.join(here,'runs',session);
 fs.mkdirSync(dir,{recursive:true});
 const checkpoint=path.join(dir,'brain.v8'),geoFile=path.join(dir,'geometry.json'),obsFile=path.join(dir,'observatory.json');
+const pathFile=path.join(dir,'text_action_paths.json');
 const docs=path.resolve(here,'../../v17/docs/TORUS_AETHER_ABC_20261104.md');
 const modesAllowed=['text','maze','transform'];
-let brain=null,geo=null,run=false,paused=false,remaining=0,modes=modesAllowed.slice();
+let brain=null,geo=null,pathHead=null,run=false,paused=false,remaining=0,modes=modesAllowed.slice();
 let episode=0,idx=0,cursor=0,sourceText='',userText=false,seenTexts=0;
 let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=null,evaluation={};
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
@@ -36,6 +38,7 @@ function ensureBrain(resume=true){
  if(resume&&fs.existsSync(checkpoint)&&!fs.existsSync(obsFile))backupLegacy=true;
  if(resume&&fs.existsSync(geoFile)){geo=GeometricLearningLab.restore(JSON.parse(fs.readFileSync(geoFile,'utf8')));}
  else geo=new GeometricLearningLab(brain.seed||11);
+ pathHead=resume&&fs.existsSync(pathFile)?TextActionPaths.restore(JSON.parse(fs.readFileSync(pathFile,'utf8'))):new TextActionPaths();
  if(resume&&fs.existsSync(obsFile)){
   const m=JSON.parse(fs.readFileSync(obsFile,'utf8'));
   if(m.version!==2&&fs.existsSync(checkpoint))backupLegacy=true;
@@ -82,6 +85,7 @@ function state(withTrace=true){
   sourceTextLabel:userText?'User-supplied text':'V17 repository technical documentation',
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
   last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
+  textPaths:pathHead?.summary()||null,
   lastSave,error,lastDurationMs,checkpoint:path.relative(here,checkpoint),
   trace:withTrace&&brain?copyTrace():null,
   crossWorld:{status:'UNVERIFIED',why:'Training the same Brain in several worlds does not by itself prove that their observations share a single hidden trajectory. Pair identifiers or independent transfer tests are needed.'}};
@@ -97,6 +101,7 @@ function save(){
  }
  const bytes=brain.save(checkpoint);
  writeJSON(geoFile,geo.export());
+ writeJSON(pathFile,pathHead.export());
  lastSave={at:new Date().toISOString(),bytes};
  writeJSON(obsFile,{version:2,episode,idx,cursor,sourceText,userText,seenTexts,history,evaluation,last,lastSave,
   sourceRoot,datasetIndex,datasetTestIndex,corpusCycles,heldWindowIndex,sourceSamples,gpuWorldsProcessed});
@@ -124,7 +129,8 @@ async function nextTextExamples(count){
    const item=await ds.exercise(datasetIndex++);
    const q=String(item.prompt||''),a=String(item.answer||''),raw='Q: '+q+'\nA: '+a+'\n\n';
    const bytes=ascii(raw).slice(0,1600);
-   if(bytes.length)examples.push({bytes,source:'Parquet training row '+item.index,nonAscii:[...raw].filter(x=>x.codePointAt(0)>127).length});
+   if(bytes.length)examples.push({bytes,prompt:q,answer:a,rowIndex:item.index,
+    source:'Parquet training row '+item.index,nonAscii:[...raw].filter(x=>x.codePointAt(0)>127).length});
   }
  }else{
   const data=splitSource();if(!data.train.length)throw Error('Training text is empty');
@@ -139,11 +145,26 @@ async function nextTextExamples(count){
  if(!examples.length)throw Error('No text exercises available');
  return examples;
 }
+// This path head never sees a held-out answer until AFTER it finishes its rollout.
+function assessNavigation(ex){
+ if(!ex?.prompt||!ex?.answer)return {status:'NO_QA_DATA'};
+ if(!pathHead?.rows)return {status:'NO_TRAINING_ROWS'};
+ const result=pathHead.evaluate(String(ex.prompt),String(ex.answer),{maxSteps:48,beamWidth:4,branching:7});
+ let baseline;
+ try{
+  const generated=brain.chat([['you',String(ex.prompt)]],{T:0,max:160,stopBlank:true,learn:false,seed:11});
+  baseline={...matchScore(generated.text,String(ex.answer)),output:generated.text.slice(0,360)};
+ }catch(e){baseline={error:String(e)};}
+ return {status:'EVALUATED',prompt:String(ex.prompt).slice(0,400),reference:String(ex.answer).slice(0,400),
+  route:result.route,metrics:result.metrics,baseline,
+  evaluationOnly:true,goalHiddenDuringPlanning:true,
+  warning:'Lexical F1 is not semantic correctness. Natural-language solution paths are unverified.'};
+}
 async function evaluateText(){
  if(seenTexts%4!==0)return;
- const ds=await ensureDataset();let H,meta;
+ const ds=await ensureDataset();let H,meta,navHoldout=null;
  if(ds){
-  const ex=await ds.heldOut(datasetTestIndex++);
+  const ex=await ds.heldOut(datasetTestIndex++);navHoldout=ex;
   const raw='Q: '+String(ex.prompt||'')+'\nA: '+String(ex.answer||'')+'\n\n';
   H=ascii(raw).slice(0,420);meta={heldoutSource:'Parquet heldout row',heldoutIndex:ex.index,heldoutWindow:datasetTestIndex-1,totalWindows:ds.held};
  }else{
@@ -152,12 +173,13 @@ async function evaluateText(){
   H=r.bytes;meta={heldoutSource:'Frozen 20% corpus',heldoutIndex:r.offset,heldoutWindow:r.window,totalWindows:r.totalWindows};
  }
  if(H.length<80){evaluation.text={frozen:true,n:H.length,aligned:null,chain:null,persistence:null,
-  assessment:labelEvent('text',{n:H.length}) ,...meta};return;}
+  assessment:labelEvent('text',{n:H.length}),navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},...meta};return;}
  const r=brain.evalText(H,H.length);
  const baseline=H.reduce((sum,y,i)=>sum+(i>0&&y===H[i-1]),0)/H.length;
  evaluation.text={frozen:true,n:H.length,aligned:r.aligned,chain:r.live,persistence:baseline,
   sampledPredictions:r.rows.slice(0,100).map((z,i)=>({step:i,actual:z[0],predicted:z[1],old:z[3]})),
   assessment:labelEvent('text',{n:H.length,heldoutAccuracy:r.aligned,heldoutPersistence:baseline}),
+  navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},
   ...meta,checkedAtEpisode:episode};
 }
 async function textEpisode(){
@@ -189,6 +211,12 @@ async function textEpisode(){
   gpuWorldsProcessed++;
   acc=(A.hits-beforeHits)/Math.max(1,A.lived-beforeSeen);
  }
+ // Real Parquet Q/A trains an independent goal-conditioned action head alongside ORIGINAL V17.
+ // The source row enters learning ONLY here; heldout rows are never passed to learn().
+ let pathRows=0;
+ for(const row of batch)if(row.prompt?.trim()&&row.answer?.trim()){
+  if(pathHead.learn(row.prompt,row.answer).trained)pathRows++;
+ }
  seenTexts++;
  geometryForText(bytes,heldoutGeo);
  await evaluateText();
@@ -198,11 +226,13 @@ async function textEpisode(){
   exercisesInBatch:batch.length,onlineAccuracy:acc,observations,heldout:evaluation.text||null,
   measuredNonAscii:batch.reduce((s,x)=>s+x.nonAscii,0),geometryHeldout:heldoutGeo,
   corpusCycles,sourceNewExamples:corpusCycles===0,trainingPath:gpuMeta?'Original V17 GPU alignment + one CPU replay sample':'Original V17 CPU Brain.live',
-  gpuBatch:gpuMeta,assessment};
+  gpuBatch:gpuMeta,pathRows,goalNavigation:evaluation.text?.navigation||null,assessment};
  last.text=item;
  return {world:'text',episode,trainSymbols:item.totalBatchCharacters,source:item.source,corpusCycles,worldsInBatch:batch.length,
    gpuBatch:gpuMeta,heldoutAccuracy:evaluation.text?.aligned??null,heldoutPersistence:evaluation.text?.persistence??null,
-   heldoutCheckedAt:evaluation.text?.checkedAtEpisode??null,heldoutWindow:evaluation.text?.heldoutWindow??null,assessment};
+   heldoutCheckedAt:evaluation.text?.checkedAtEpisode??null,heldoutWindow:evaluation.text?.heldoutWindow??null,
+   pathRows,goalNavigationF1:evaluation.text?.navigation?.metrics?.f1??null,
+   v17GenerationBaselineF1:evaluation.text?.navigation?.baseline?.f1??null,assessment};
 }
 function mazeEpisode(){
  stage='learning maze';const D=brain.disc,origChoose=D.choose,origLearn=D.learnStep;
@@ -419,13 +449,13 @@ parentPort.on('message',async m=>{
    else save();
   }else if(action==='load'){
    if(run||activeStep||preparing)throw Error('Stop training before loading');
-   gpuRunner.close();brain=null;geo=null;dataset=null;ensureBrain(true);publish();
+   gpuRunner.close();brain=null;geo=null;pathHead=null;dataset=null;ensureBrain(true);publish();
   }else if(action==='reset'){
    if(run||activeStep||preparing)throw Error('Stop before resetting the isolated brain');
    gpuRunner.close();
    const stamp=new Date().toISOString().replace(/[^0-9]/g,'');
-   for(const file of [checkpoint,geoFile,obsFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
-   brain=null;geo=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
+   for(const file of [checkpoint,geoFile,obsFile,pathFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
+   brain=null;geo=null;pathHead=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
    datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=throughputBase=0;
    backupLegacy=false;
    last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;
@@ -435,4 +465,4 @@ parentPort.on('message',async m=>{
  }catch(e){preparing=false;run=false;error=String(e.stack||e);stage='error';publish();}
 });
 try{if(fs.existsSync(checkpoint))ensureBrain(true);else ensureBrain(false);publish();}
-catch(e){error=String(e.stack||e);stage='error';brain=null;geo=null;publish();}
+catch(e){error=String(e.stack||e);stage='error';brain=null;geo=null;pathHead=null;publish();}
