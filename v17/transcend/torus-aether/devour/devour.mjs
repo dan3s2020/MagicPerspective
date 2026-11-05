@@ -78,7 +78,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; graphs.set(sl.w, m); return; }   // its living graph
     if (m.type === "chat") { const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
-    if (m.type === "saved") { sl.savedMB = m.MB; return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
+    if (m.type === "saved") { sl.savedMB = m.MB; for (const f of sl.onSaved?.splice(0) || []) f(); return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
     if (m.final) sl.status = "gata";
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
@@ -86,7 +86,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
       (t ? ` | unseen: graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
       (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
-  wk.on("exit", () => { if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata") sl.status = "oprit"; } });
+  wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata") sl.status = "oprit"; } });
 }
 function gpuFor() { const share = Math.max(1, slots.filter(x => x.worlds.some(w => w !== "text")).length); return gpuSettings.device === "off" ? null : {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0}; }
 function addSlot(armName, worlds) { const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
@@ -114,6 +114,20 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
+  if (req.method === "POST" && url === "/eval") {                        // the Evaluare tab: body {w, kind: maze|text|transform, opts}; a copy from the save, on the CPU
+    let body = ""; req.on("data", d => body += d); req.on("end", async () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
+      const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
+      const f = saveOf(sl);
+      if (sl.wk) await new Promise(ok => { (sl.onSaved ||= []).push(ok); sl.wk.postMessage("save"); setTimeout(ok, 30000); });   // if it cannot save within 30 s, the last save is used   // the newest brain: it saves itself first
+      if (!fs.existsSync(f)) return json(res, {error: "graful nu are încă un save"});
+      const mt = fs.statSync(f).mtimeMs;
+      if (!sl.ev || sl.ev.mt !== mt || sl.ev.dead) { sl.ev?.wk.terminate(); const wk = new Worker(path.join(here, "eval-worker.mjs"), {workerData: {saveFile: f}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+        const ev = sl.ev = {wk, mt, wait: new Map(), id: 0}; ev.ready = new Promise((ok, no) => { wk.on("message", r => { if (r.type === "loaded") return ok(); const cb = ev.wait.get(r.id); if (cb) { ev.wait.delete(r.id); cb(r); } });
+          wk.on("error", err => { ev.dead = true; no(err); for (const cb of ev.wait.values()) cb({error: err.message}); }); wk.on("exit", () => { ev.dead = true; }); }); }
+      const ev = sl.ev; try { await ev.ready; } catch (err) { return json(res, {error: "save-ul nu s-a putut încărca: " + err.message}); }
+      const opts = m.opts || {};
+      if (m.kind === "text") { const src = opts.text && opts.text.trim() ? opts.text : evalText; opts.bytes = Array.from(src, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; }).filter(c => c !== 13); opts.own = !!(opts.text && opts.text.trim()); delete opts.text; }
+      const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "textul ținut deoparte din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
     const sl = slots.find(x => x.w === +q.get("w")), sizes = (q.get("sizes") || "7,9,11,13,15,17,19,21,25,31,41,51").split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per = Math.max(1, Math.min(10, +q.get("per") || 1));
     if (!sl) return json(res, {error: "nu există graful"});

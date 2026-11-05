@@ -126,6 +126,21 @@ export class Brain {
       out.push({n, k, solved: r.solved, steps: r.steps, optimal: r.optimal, first: r.first, path: r.path, shapes: r.shapes, wall: r.wall, start: r.start, goal: r.goal, knows: r.knows}); }
     return {played: this.mazes.played, mazes: out};
   }
+  // ---- evaluation on what it never lived (the Evaluare tab; run on the CPU, on a copy loaded from the save) ----
+  evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
+    const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
+    for (let i = 0; i < H.length; i++) { const ctx = this.ctxOf(H, i), h = this.histOf(H, i), y = H[i], L = chain.play(e, ctx, h).out, g = argmax(L), gc = argmax(distC(e.c, ctx));
+      live += g === y; c += gc === y; rows.push([y, g, +L[y].toFixed(3)]); }
+    return {n: H.length, live: live / H.length, C: c / H.length, rows};
+  }
+  evalTransforms(count = 12, impossible = 4) {                                // desired configurations of kinds it never encountered, and impossible ones, from the first attempt
+    this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], out = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = Object.assign(Object.create(RNG.prototype), c.r); return c; };
+    const one = (L, imp) => { const r = liveTask(L, new TWorld(L, this.tMoves), copy(), {record: true});
+      out.push({impossible: imp, goals: L.goals, n: L.n, goal: L.goal, optimal: L.optimal ?? null, solved: r.solved, steps: r.steps, said: r.said, predicted: r.predicted, failed: r.failed, frames: r.frames.map(f => ({b: f.b, how: f.how}))}); };
+    for (let i = 0, k = 0; k < count && i < count * 20; i++) { const L = makeLevel(TSEEDS.test + 900000 + i * 7919, {goals: kinds[i % 3]}); if (L) { one(L, false); k++; } }
+    for (let i = 0, k = 0; k < impossible && i < impossible * 40; i++) { const L = makeLevel(TSEEDS.test + 1900000 + i * 7919, {goals: [["object"], ["self"]][i % 2], impossible: true}); if (L) { one(L, true); k++; } }
+    return {played: this.trans.played, tasks: out};
+  }
   // frozen test on exercises it never saw (V16's test seeds, sizes 7, 9, 11): a copy of what it discovered plays them
   testMazes(count = 30) {
     if (!this.disc) this.disc = new Discoverer(this.seed);

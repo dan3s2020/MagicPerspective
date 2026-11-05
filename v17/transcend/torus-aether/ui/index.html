@@ -41,6 +41,11 @@
   #chatLog{flex:1;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
   .msg{max-width:88%;padding:7px 10px;border-radius:10px;white-space:pre-wrap;word-break:break-word;font-size:13px}.msg.you{align-self:flex-end;background:#13314d}.msg.him{align-self:flex-start;background:#0d1824;font-family:ui-monospace,monospace}.msg.err{align-self:center;color:var(--red);font-size:12px}.msg small{display:block;color:var(--dim);font-size:10.5px;margin-top:3px;font-family:system-ui}
   #chatForm{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}#chatIn{flex:1;resize:none;height:42px;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px 9px;font:inherit}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:0;z-index:5;background:#000;padding:6px 0}.tabs button.on{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600}
+  aside.side.evalOn > :not(.tabs):not(#evalPane){display:none}#evalPane{display:none}aside.side.evalOn #evalPane{display:block}
+  #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+  #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
+  #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
 </style>
 </head>
 <body>
@@ -64,6 +69,21 @@
     </div>
   </div>
   <aside class="side">
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button></div>
+    <div id="evalPane">
+      <h2>Evaluare pe ce n-a trăit niciodată — din prima încercare</h2>
+      <p class="note">O copie a grafului <b id="evW">#0</b>, încărcată din save-ul lui (îl salvează chiar atunci), rulează pe procesor. Antrenarea merge mai departe neatinsă; copia nu învață între lumi.</p>
+      <div class="row"><select id="evKind"><option value="maze">labirinte nevăzute, de la mic la mare</option><option value="text">text nevăzut</option><option value="transform">configurații dorite nevăzute (transformări)</option></select><button id="evGo">▶ Evaluează</button></div>
+      <div class="row" data-k="maze"><label class="dim">mărimi <input id="evSizes" value="7,9,11,13,15,17,19,21,25,31,41,51" style="width:210px"></label><label class="dim">câte din fiecare <input id="evPer" type="number" min="1" max="10" value="1" style="width:50px"></label></div>
+      <div data-k="text" hidden><textarea id="evTextIn" placeholder="lasă gol = textul ținut deoparte din OpenThoughts (nevăzut la antrenare); sau lipește aici orice text" style="width:100%;height:70px;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:6px"></textarea>
+        <label class="dim">câte caractere <input id="evMax" type="number" min="100" max="20000" step="100" value="3000" style="width:80px"></label></div>
+      <div class="row" data-k="transform" hidden><label class="dim">sarcini <input id="evCount" type="number" min="1" max="60" value="12" style="width:55px"></label><label class="dim">imposibile <input id="evImp" type="number" min="0" max="20" value="4" style="width:55px"></label></div>
+      <div class="row"><label class="dim">viteză <input id="evSpeed" type="range" min="20" max="600" step="20" value="160"></label><button id="evPrev">◀</button><button id="evNext">▶</button></div>
+      <p class="note" id="evOut">—</p>
+      <canvas id="evCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
+      <div id="evalText" hidden></div>
+      <div id="evalTab" class="dim"></div>
+    </div>
     <div id="livePanel" hidden>
       <h2>Grafurile care devorează acum (alege unul ca să intri în spațiul lui)</h2>
       <div id="liveList" class="liveList"></div>
@@ -78,14 +98,6 @@
         <h2>Labirintul pe care îl trăiește același creier</h2>
         <canvas id="mazeCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
         <p class="note" id="mazeOut">—</p>
-      </div>
-      <div id="examBox">
-        <h2>Examen după antrenare: labirinte nevăzute, de la mic la mare</h2>
-        <div class="row"><label class="dim">mărimi <input id="examSizes" value="7,9,11,13,15,17,19,21,25,31,41,51" style="width:210px"></label><label class="dim">câte din fiecare <input id="examPer" type="number" min="1" max="10" value="1" style="width:50px"></label><button id="examGo">▶ Examen</button></div>
-        <div class="row"><label class="dim">viteză <input id="examSpeed" type="range" min="40" max="600" step="20" value="160"></label><button id="examPrev">◀</button><button id="examNext">▶</button></div>
-        <canvas id="examCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
-        <p class="note" id="examOut">Creierul înghețat (nu mai învață în examen) primește labirinte pe care nu le-a văzut niciodată. Întâi vezi, punctat auriu, toată traiectoria pe care o prezice ÎNAINTE de prima mișcare; apoi pornește și vezi drumul real.</p>
-        <div id="examTab" class="dim" style="font-size:12px"></div>
       </div>
       <div id="transBox" hidden>
         <h2>Lumea transformărilor (obiecte, comutatoare, uși — fără nume)</h2>
