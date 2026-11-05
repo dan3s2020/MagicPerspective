@@ -1,6 +1,7 @@
 // Isolated local server: Node standard library, no writes outside this folder.
 import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import {fileURLToPath} from 'node:url';
 import {experiment,analyzeEvents,readEvents,validate} from './engine.mjs';
+import {realState,realCommand,closeRealWorker} from './v17_bridge.mjs';
 const ROOT=path.dirname(fileURLToPath(import.meta.url)),DIR=path.join(ROOT,'runs'),STATE=path.join(DIR,'latest.json');fs.mkdirSync(DIR,{recursive:true});
 const host=process.env.HOST||'127.0.0.1',port=Number(process.env.PORT||8897);let busy=false,running=false,paused=false,series=[],source='synthetic';
 let options={seed:11,n:1900,noise:.035,lag:5,draws:25},current=null,external=null;
@@ -12,6 +13,9 @@ const summary=()=>({options,source,running,paused,busy,series:series.slice(-100)
 const train=(config,overwrite=false)=>{if(busy)throw Error('Training already running');busy=true;try{options=validate({...options,...config});const result=experiment(options);current=result;if(overwrite)series=[];series.push({seed:options.seed,r:result.scores.delay.r,geo:result.scores.learned_metric.r,rmse:result.scores.delay.rmse,geo_rmse:result.scores.learned_metric.rmse,ts:new Date().toISOString()});source='synthetic';persist();return result;}finally{busy=false;}};
 const next=()=>{if(!running||paused){return;}if(busy){setTimeout(next,150);return;}try{train({...options,seed:options.seed+1});}catch(e){console.error('training error',e);running=false;}if(running)setTimeout(next,140);};
 const respond=async(req,res)=>{const u=new URL(req.url,'http://127.0.0.1');try{
+ if(req.method==='GET'&&u.pathname==='/api/v17')return json(res,200,realState());
+ if(req.method==='POST'&&u.pathname==='/api/v17'){const data=await parse(req);realCommand(data);return json(res,202,{accepted:true,action:data.action});}
+ if(req.method==='GET'&&u.pathname==='/v17.html'){const b=fs.readFileSync(path.join(ROOT,'v17.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
  if(req.method==='GET'&&u.pathname==='/api/health')return json(res,200,{status:'ok',isolated:true,source,knownV17:false});
  if(req.method==='GET'&&u.pathname==='/api/state')return json(res,200,summary());
  if(req.method==='POST'&&u.pathname==='/api/train'){if(running)throw Error('Stop continuous mode before one-shot training');const data=await parse(req);const r=train(data);return json(res,200,{status:'trained',scores:r.scores,options});}
@@ -27,4 +31,4 @@ const respond=async(req,res)=>{const u=new URL(req.url,'http://127.0.0.1');try{
 if(process.argv.includes('--events')){const p=process.argv[process.argv.indexOf('--events')+1];try{external=readEvents(p);source='external';persist();console.log('Imported read-only:',p);}catch(e){console.error('Import rejected:',e.message);process.exitCode=2;}}
 else if(!current){train(options);}
 const srv=http.createServer(respond);srv.listen(port,host,()=>console.log(`MagicPerspective isolated noise-space: http://${host}:${port}/\nWorking directory: ${ROOT}\nOriginal V17 source and checkpoints unchanged.`));
-process.on('SIGINT',()=>{running=false;persist();srv.close();});
+process.on('SIGINT',()=>{running=false;persist();closeRealWorker();srv.close();});
