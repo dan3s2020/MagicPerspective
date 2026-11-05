@@ -6,6 +6,9 @@ import {fileURLToPath} from 'node:url';
 import {Brain} from '../../v17/transcend/torus-aether/devour/brain.mjs';
 import {GeometricLearningLab,observedFeatures} from './learning_geometry.mjs';
 import {labelEvent} from './interpret.mjs';
+import {IsolatedGpuRunner} from './gpu_runner.mjs';
+import {openTextDataset} from '../../v17/transcend/torus-aether/data/text-dataset.mjs';
+import {nextTrainingSlice,rotatingHeldout,byteEvidence} from './text_schedule.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url)),dir=path.join(here,'runs','real-v17');
 fs.mkdirSync(dir,{recursive:true});
@@ -16,6 +19,8 @@ let brain=null,geo=null,run=false,paused=false,remaining=0,modes=modesAllowed.sl
 let episode=0,idx=0,cursor=0,sourceText='',userText=false,seenTexts=0;
 let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=null,evaluation={};
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
+let gpuRunner=new IsolatedGpuRunner(),gpuRequested=false,gpuError=null,sourceRoot='',dataset=null,datasetIndex=0,datasetTestIndex=0;
+let corpusCycles=0,heldWindowIndex=0,sourceSamples=0,gpuWorldsProcessed=0,learningStart=performance.now();
 const bounded=(a,k=300)=>a.length>k?a.slice(-k):a;
 const finite=v=>Number.isFinite(v)?v:null;
 const ascii=s=>Array.from(s,c=>{const n=c.charCodeAt(0);return n===10||n===9||(n>=32&&n<127)?n:63;});
@@ -34,9 +39,18 @@ function ensureBrain(resume=true){
   seenTexts=Number.isSafeInteger(m.seenTexts)?m.seenTexts:0;
   evaluation=m.evaluation||{};last=m.last||last;sourceText=m.sourceText||'';
   userText=!!m.userText;lastSave=m.lastSave||null;
+  sourceRoot=typeof m.sourceRoot==='string'?m.sourceRoot:'';
+  datasetIndex=Number.isSafeInteger(m.datasetIndex)?m.datasetIndex:0;
+  datasetTestIndex=Number.isSafeInteger(m.datasetTestIndex)?m.datasetTestIndex:0;
+  corpusCycles=Number.isSafeInteger(m.corpusCycles)?m.corpusCycles:0;
+  heldWindowIndex=Number.isSafeInteger(m.heldWindowIndex)?m.heldWindowIndex:0;
+  sourceSamples=Number.isSafeInteger(m.sourceSamples)?m.sourceSamples:0;
+  gpuWorldsProcessed=Number.isSafeInteger(m.gpuWorldsProcessed)?m.gpuWorldsProcessed:0;
  }
 }
 function getSource(){return userText&&sourceText.trim()?sourceText:fs.readFileSync(docs,'utf8');}
+async function ensureDataset(){if(!sourceRoot)return null;if(!dataset){dataset=await openTextDataset(sourceRoot);if(dataset.trainRows<2||dataset.held<1)throw Error('Parquet dataset must contain distinct training and held-out rows');}return dataset;}
+function sourceStatus(){const total=dataset?.trainRows||(userText?sourceText.length:fs.existsSync(docs)?fs.statSync(docs).size:0);return {name:sourceRoot?'Parquet dataset':userText?'User text':'V17 documentation',root:sourceRoot||null,trainRows:dataset?.trainRows??null,heldoutRows:dataset?.held??null,observedRows:datasetIndex,seenTrainingEpisodes:sourceSamples,finiteSourceCharacters:sourceRoot?null:total,cycles:corpusCycles,repetitionWarning:corpusCycles>0?'Training examples are repeating after a finite corpus cycle. Repetition is not novel evidence.':null};}
 function splitSource(){
  const chars=ascii(getSource());
  const cut=Math.min(chars.length,Math.max(100,Math.floor(chars.length*.8)));
@@ -49,12 +63,17 @@ function copyTrace(){
          unplaced:s.nodes.filter(n=>n[1]!=='sym').length};
 }
 function state(withTrace=true){
- return {available:true,real:true,engine:'Original MagicPerspective V17 Brain',device:'CPU in isolated Node Worker',running:run,paused,
+ const mem=process.memoryUsage(),gpu=gpuRunner.status();
+ return {available:true,real:true,engine:'Original MagicPerspective V17 Brain',device:gpu.active?gpu.info.device+' + CPU merge':'CPU in isolated Node Worker',running:run,paused,
   stage,progress,episode,modes,remaining,startedAt:history.at(-1)?.at||null,
   learned:brain?.lived||0,chars:brain?.chars||0,
   mazePlayed:brain?.mazes?.played||0,mazeWon:brain?.mazes?.won||0,
   transformPlayed:brain?.trans?.played||0,transformWon:brain?.trans?.won||0,
-  source:userText?'User-supplied text':'V17 repository technical documentation',
+  source:sourceStatus(),gpu:{...gpu,requested:gpuRequested,error:gpuError||gpu.error},
+  capacity:{heapMB:Math.round(mem.heapUsed/1e6),rssMB:Math.round(mem.rss/1e6),alignBytes:brain?.align?.mem?.n||0,brainFull:!!brain?.full,priorLearningDisabled:!!brain?.full,observedWorlds:gpuWorldsProcessed,
+    note:brain?.full?'Some older V17 organs stopped updating due to brain.full; alignment memory may still grow.':'Brain.full is not set. Plateau may be caused by repeated text or heldout metrics.'},
+  trainingRate:{worlds:gpuWorldsProcessed,elapsedSec:Math.round((performance.now()-learningStart)/1000),worldsPerSec:gpuWorldsProcessed/Math.max(1,(performance.now()-learningStart)/1000)},
+  sourceTextLabel:userText?'User-supplied text':'V17 repository technical documentation',
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
   last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
   lastSave,error,lastDurationMs,checkpoint:path.relative(here,checkpoint),
@@ -68,7 +87,8 @@ function save(){
  const bytes=brain.save(checkpoint);
  writeJSON(geoFile,geo.export());
  lastSave={at:new Date().toISOString(),bytes};
- writeJSON(obsFile,{version:1,episode,idx,cursor,sourceText,userText,seenTexts,history,evaluation,last,lastSave});
+ writeJSON(obsFile,{version:1,episode,idx,cursor,sourceText,userText,seenTexts,history,evaluation,last,lastSave,
+  sourceRoot,datasetIndex,datasetTestIndex,corpusCycles,heldWindowIndex,sourceSamples,gpuWorldsProcessed});
  publish();
 }
 function geoSample(world,x,y,prev,action,heldout){
