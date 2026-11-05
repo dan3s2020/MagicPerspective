@@ -43,10 +43,12 @@ class Index {
 class Memory {
   constructor(isForm = false) { this.isForm = isForm; this.buf = new Uint8Array(1 << 16); this.n = 0; this.big = null; this.bigTo = 0; this.small = null; this.smallTo = 0; }
   push(y) { if (this.n === this.buf.length) { const b = new Uint8Array(this.buf.length * 2); b.set(this.buf); this.buf = b; } this.buf[this.n++] = this.isForm ? form(y) : y;
+    if (this.lazy) return;                                                  // fed by the card: indexed only when it is read
     if (this.n - this.bigTo > Math.max(20000, this.bigTo / 4)) { this.big = new Index(this.buf, 0, this.n); this.bigTo = this.n; this.small = null; this.smallTo = this.n; }
     else if (this.n - this.smallTo > 2000) { this.small = new Index(this.buf, this.bigTo, this.n); this.smallTo = this.n; } }
   // alignments, deepest first: from the big index, then the small one (the newest past)
-  props(h, i, src, depthN, cap, out) {
+  ready(full = false) { if (this.lazy && this.n > 1 && this.bigTo !== this.n && (full || this.n - this.bigTo > Math.max(20000, this.bigTo / 4))) { this.big = new Index(this.buf, 0, this.n); this.bigTo = this.n; this.small = null; } }   // reading: everything; living: when it grew by a quarter
+  props(h, i, src, depthN, cap, out) { this.ready();
     for (const ix of [this.big, this.small]) { if (!ix) continue; const al = ix.align(h, i), K = al.length;
       for (let d = 0; d < Math.min(K, depthN); d++) { const a = al[K - 1 - d], m = new Map(), tot = ix.next(a, m, cap); if (!tot) continue;
         let y = -1, c = 0; for (const [z, v] of m) if (v > c) { c = v; y = z; } out.push({src: src + (ix === this.small ? "n" : ""), d, sup: a.hi - a.lo, y, dist: m, tot, k: a.k}); } }
@@ -90,7 +92,7 @@ export class AligningGraph {
     for (const o of Object.values(out)) o.trust = +(o.right / Math.max(1, o.tried)).toFixed(3);
     return {sources: out, g: this.g, form: this.formW, history: (this.meta?.history || []).slice(-12)}; }
   begin() { this.h = []; this.fh = []; this.self = new SelfMem(); this.fself = new SelfMem(); }   // a new exercise starts
-  key(p) { return p.src + ":" + Math.min(p.d, 12) + ":" + (p.sup < 2 ? 0 : p.sup < 8 ? 1 : p.sup < 64 ? 2 : 3) + (p.far != null && this.farKey !== false ? ":" + Math.min(9, Math.floor(Math.log2(1 + p.far))) : ""); }   // for its own exercise: also how far back the alignment points
+  key(p) { return p.src + ":" + Math.min(p.d, 12) + ":" + (p.sup < 2 ? 0 : p.sup < 8 ? 1 : p.sup < 64 ? 2 : 3) + (p.far != null && this.farKey !== false ? ":" + Math.min(9, Math.floor(Math.log2(1 + p.far))) : "") + (p.cc ? ":c" : ""); }   // :c = it is living a world of control symbols (not text): trust is earned apart   // for its own exercise: also how far back the alignment points
   tr(k) { const t = this.trust.get((this.imagining ? "w|" : "") + k); return t ? (t[0] + 1) / (t[1] + 2) : (this.imagining ? this.tr0(k) : .5); }
   tr0(k) { const t = this.trust.get(k); return t ? (t[0] + 1) / (t[1] + 2) : .5; }   // before it has imagined anything, what it trusts when reading
   // everything that aligns with the present proposes; the trust earned decides
@@ -100,6 +102,7 @@ export class AligningGraph {
     const s = self.align(); if (s) P.push({src: "self", d: Math.min(s.k, 12), sup: 1, y: s.y, dist: new Map([[s.y, 1]]), tot: 1, k: s.k, far: s.far});
     this.fmem.props(fh, i, "form", this.formDepth, this.cap, P);
     const f = fself.align(); if (f) P.push({src: "fself", d: Math.min(f.k, 12), sup: 1, y: f.y, dist: new Map([[f.y, 1]]), tot: 1, k: f.k, far: f.far});
+    const last = h[i - 1]; if (last !== undefined && ((last < 32 && last !== 10 && last !== 9) || last === 127)) for (const p of P) p.cc = 1;
     return P; }
   distribution(P) {
     const score = new Map(), add = (y, v) => score.set(y, (score.get(y) || 0) + v); let digitMass = 0;
@@ -130,6 +133,18 @@ export class AligningGraph {
   see(y) { this.h.push(y); this.fh.push(form(y)); this.self.add(y); this.fself.add(form(y)); this.mem.push(y); this.fmem.push(y);
     if (this.h.length > this.window * 2) this.recenter(); }
   recenter() { const keep = this.h.slice(-this.window); this.begin(); for (const y of keep) { this.h.push(y); this.fh.push(form(y)); this.self.add(y); this.fself.add(form(y)); } }
+  // a batch lived on the card (gpu/text_gpu.py): add the totals — the trust each kind of alignment earned, how often
+  // it guessed right, how its variations did — and keep every exercise in memory
+  absorb(R, exs) {
+    this.mem.lazy = this.fmem.lazy = true;
+    for (const [name, right, tried] of R.trust) { const t = this.trust.get(name) || [0, 0]; t[0] += right; t[1] += tried; this.trust.set(name, t); }
+    this.hits += R.hits; this.seen += R.seen; this.lived += R.seen;
+    if (this.meta && R.variants?.length) { const M = this.meta, vs = this.variants(), keep = [this.g, this.formW], base = R.hits; let best = keep, bh = base;
+      vs.forEach(([g, f], i) => { if (R.variants[i] > bh * 1.002) { bh = R.variants[i]; best = [g, f]; } });
+      if (best !== keep) { M.history.push({at: this.lived, from: {g: keep[0], form: keep[1]}, to: {g: best[0], form: best[1]}, before: +(base / R.seen).toFixed(4), after: +(bh / R.seen).toFixed(4)}); [this.g, this.formW] = best; } }
+    for (const e of exs) for (const y of e) { this.mem.push(y); this.fmem.push(y); }
+  }
+  trustForCard() { const out = []; for (const [k, t] of this.trust) { if (k.includes("n:") || k.endsWith(":c")) continue; out.push([k, t[0], t[1]]); } return out; }
   accuracy() { if (this.seen) this.last = this.hits / this.seen; this.hits = this.seen = 0; return this.last ?? null; }   // since it was last asked (the last one when nothing was lived)
   // frozen: read a text it never lived, guessing every next symbol (its own exercise-memory, nothing learned)
   // T = 0: always the most trusted symbol (determinism); T > 0: drawn from the trusted distribution (randomness);
@@ -138,13 +153,13 @@ export class AligningGraph {
     let best = 32, bv = -1; const w = [];
     for (const [c, v0] of d) { const v = noise ? v0 * Math.max(0, 1 + noise * (2 * rand() - 1)) : v0; if (v > bv) { bv = v; best = c; } w.push([c, v]); }
     if (!T) return best; let z = 0; for (const x of w) { x[1] = Math.pow(x[1], 1 / T); z += x[1]; } let r = rand() * z; for (const [c, x] of w) { r -= x; if (r <= 0) return c; } return best; }
-  readFrozen(bytes, onStep, opts = {}) {
+  readFrozen(bytes, onStep, opts = {}) { this.mem.ready(true); this.fmem.ready(true);
     const h = [], fh = [], self = new SelfMem(), fself = new SelfMem(); let ok = 0;
     for (let i = 0; i < bytes.length; i++) { const P = this.proposals(h, fh, self, fself), d = this.distribution(P), g = this.choose(d, opts), y = bytes[i]; ok += g === y; onStep?.(i, y, g, d);
       h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); }
     return ok / Math.max(1, bytes.length); }
   // writing: follow its own alignment, symbol after symbol (temperature over the trusted distribution)
-  write(prompt, {max = 400, T = 0, rand = Math.random, stop = null} = {}) {
+  write(prompt, {max = 400, T = 0, rand = Math.random, stop = null} = {}) { this.mem.ready(true); this.fmem.ready(true);
     const h = [], fh = [], self = new SelfMem(), fself = new SelfMem(), push = y => { h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); };
     for (const y of prompt) push(y); const out = []; this.imagining = true;
     for (let k = 0; k < max; k++) { const d = this.distribution(this.proposals(h, fh, self, fself)); let y = 32;

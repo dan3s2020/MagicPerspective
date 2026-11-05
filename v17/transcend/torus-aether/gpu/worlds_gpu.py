@@ -339,7 +339,7 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None
+    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
@@ -350,7 +350,8 @@ class Server:
             info.update(name=torch.cuda.get_device_name(idx), totalGB=round(total / 1e9, 2), vramGB=round(min(vram, total) / 1e9, 2) if vram > 0 else round(total / 1e9, 2))
         # how many worlds fill the memory it may use: one 11x11 labyrinth lived on the card holds ~14 grids of int64/float32
         budget = (float(m.get("vram", 0)) * 1e9 if float(m.get("vram", 0)) > 0 else (info.get("totalGB", 4) * 1e9 * .9 if self.B.torch else 2e9))
-        info["autoWorlds"] = int(max(256, min(65536, budget * .8 / (11 * 11 * 14 * 8))))
+        info["autoWorlds"] = int(max(256, min(65536, budget * .8 / (11 * 11 * 14 * 8)))) if self.B.torch else 2048
+        info["autoText"] = int(max(64, min(8192, budget * .8 / (1000 * 2 * 64 * 8 * 4)))) if self.B.torch else 256   # exercises per text batch: each position holds 2 x 64 alignment ranges
         return info
     def throttle(self, busy):                                 # the GPU works busy seconds, then rests so the average is util %
         if self.util < 100: time.sleep(busy * (100 / self.util - 1))
@@ -360,6 +361,17 @@ class Server:
         if c == "init": r = self.init(m)
         elif c == "exercise": r = {"worlds": exercise_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))}
         elif c == "exercise_learn": r = exercise_learn_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))
+        elif c == "text_load":                                  # the brain's whole text memory, when the card (re)starts: nothing lived is missing here
+            import base64
+            from text_gpu import TextCard
+            self.text = TextCard(self.B.device if self.B.torch else "numpy"); raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
+            if len(raw): self.text.append([raw])
+            r = {"memory": int(len(self.text.mem))}
+        elif c == "text_learn":                                 # text exercises lived on the card; only the totals go back
+            if self.text is None:
+                from text_gpu import TextCard
+                self.text = TextCard(self.B.device if self.B.torch else "numpy")
+            r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0), m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])])
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c == "maze_check": r = {"mazes": [make_maze(s, n) for s, n in m["items"]]}

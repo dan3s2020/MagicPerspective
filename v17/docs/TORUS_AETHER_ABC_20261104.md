@@ -584,3 +584,29 @@ behind it and is trapped, pulled by a curiosity bonus I had added, against its o
 closes the door. Tried: its own place counting only once the rest is arranged — unseen 52% → 44%, removed.
 Conclusion: the field of the form must not be written by me from its rules; it has to form inside it from what it lives
 (traps repel, the way that worked becomes part of it), on relations so that it carries to new worlds. Next step.
+
+## Everything heavy on the card, the brain on the CPU adds the totals (2026-11-05, night)
+
+Source (verbatim): "creierul să fie pe CPU dar toate lumile devorate în paralel pe GPU și adunate pe CPU după fiecare
+lot, dar GPU-ul să facă all the hard work și să aibă GPU la maxim și VRAM folosit la maxim".
+
+Labyrinths (gpu/worlds_gpu.py exercise_learn_batch): every world of a batch lived at once as tensors — decisions with
+what the brain knew at the start of the batch, physics, the attraction field, and everything the brain learns (what
+moved and how, what lets through, what blocks, what it entered when an exercise ended, its trust in the shape). The
+CPU brain adds the totals (Discoverer.absorb) while the card already lives the next batch. Batches of 256: everything
+discovered by batch 2, 256/256 solved from batch 4, unseen 7×7…51×51 solved 10/10; merge 17–82 ms per batch.
+
+Text (gpu/text_gpu.py TextCard): the memory and its suffix index live on the card; every position of every exercise
+of the batch is aligned with all the past at once (and with its own exercise, exactly as align.mjs, and at the level
+of form); before each symbol it predicts with the trust the brain has, then sees it; trust totals per kind of
+alignment, hits, the hits of its variations and its imagination (from every 31st moment, 48 symbols ahead, all at
+once) go back; the brain adds them (AligningGraph.absorb) and keeps every exercise. When the card (re)starts it
+receives the brain's whole memory first. Batch size fills the VRAM given (-GpuWorlds 0).
+
+GSM8K, 1,000 exercises, same unseen test: card 68.7% of answer characters (CPU-lived 67.9%), words of the real answer
+it writes 37.0% (CPU-lived 31.1% at 1,500); merge 0.02–0.03 s per 1,000 exercises. In the trainer (text + labyrinths,
+numpy here): aligned 68.1% on the held-out text at 1.23M characters, unseen labyrinths 100%.
+Found on the way: labyrinth symbols lived through the same trust spoiled text trust (68% → 60%); trust is now earned
+apart when it lives a world of control symbols (":c"), seen in its own context, not told.
+What the CPU no longer does in this mode: the older organs (A/C chain, field) live one exercise per text batch, so
+their own text scores stay low; the aligning graph is the text organ. Not yet on the card: the transformation world.

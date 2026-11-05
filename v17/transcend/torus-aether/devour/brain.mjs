@@ -42,10 +42,18 @@ export class Brain {
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
-  live(y, detailed = false) {                                                // one lived symbol, from any world
+  // text lived on the card: a whole batch of exercises, the aligning graph adds the totals and keeps every exercise
+  async learnTextGPU(gpu, exs) {
+    const A = (this.align ||= new AligningGraph()), ask = list => { const p = gpu.call({cmd: "text_learn", exercises: list, trust: A.trustForCard(), g: A.g, formW: A.formW, variants: A.variants()}); p.catch(() => {}); return p; };
+    if (SYNCED.get(gpu) !== this) { await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(0, A.mem.n)).toString("base64")}); SYNCED.set(gpu, this); }   // the card starts with everything this brain has lived
+    const t0 = performance.now(), R = await ask(exs), t1 = performance.now(); A.absorb(R, exs);
+    const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;
+    this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null};
+    return this.textGpu; }
+  live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
-    const prev = this.past.length ? this.past[this.past.length - 1] : null, al = (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
-    if (prev !== null) this.trace.aligned(prev, y, al.guess, al.src);        // in the drawn graph: the alignment it followed, or an impulse where it expected something else
+    const prev = this.past.length ? this.past[this.past.length - 1] : null, al = old ? {guess: -1, src: null} : (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
+    if (prev !== null && !old) this.trace.aligned(prev, y, al.guess, al.src);        // in the drawn graph: the alignment it followed, or an impulse where it expected something else
     const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), C = this.controls || this.setControls(), h0 = this.histOf(past, i), h = C.pnoise ? h0.map(x => (this.rand() < C.pnoise && past.length ? past[Math.floor(this.rand() * past.length)] : x)) : h0, m = chain.play(e, ctx, h, false, {temp: C.ltemp});
     if (!this.full) { chain.learn(h, y, m); e.c.observe(ctx, y); }   // over the memory budget the old graph stops growing; nothing is deleted
     this.field.live(y, this.place);
@@ -272,7 +280,7 @@ export class Brain {
     fix(data.brain); const b = Object.setPrototypeOf(data.brain, Brain.prototype); b.revive(); return b;
   }
 }
-const NEXT = new WeakMap();   // the batch the card is already living, per brain
+const NEXT = new WeakMap(), SYNCED = new WeakMap();   // the batch the card is already living; which brain's memory the card holds   // the batch the card is already living, per brain
 const TSYM = [0, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 127, 5, 6, 7, 8, 11, 12, 14, 15];   // transformation world: 18 board symbols (never in text), then the same 8 output symbols as the exercise
 const fileDir = f => f.replace(/[\\/][^\\/]*$/, "") || ".";
 export {MAZE_SYMBOLS};

@@ -39,3 +39,16 @@ test("labyrinths lived on the card: the brain only adds the totals and learns to
   assert.ok(ex.mazes.filter(m => m.solved).length >= 7, JSON.stringify(ex.mazes.map(m => [m.n, m.solved])));
   assert.ok(b.mazes.gpu.mergeMs < 1000);
 });
+
+test("text lived on the card: the aligning graph only adds the totals and reads unseen text as well as when it lives it itself", async () => {
+  const fs = await import("node:fs"), {AligningGraph} = await import("../transcend/torus-aether/align.mjs");
+  const txt = fs.readFileSync(new URL("../docs/TORUS_AETHER_ABC_20261104.md", import.meta.url), "utf8");
+  const bytes = Array.from(txt, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
+  const paras = []; for (let i = 0; i < 24000; i += 600) paras.push(bytes.slice(i, i + 600)); const held = bytes.slice(30000, 32000);
+  const cpu = new AligningGraph(); cpu.meta = null; for (const p of paras) { cpu.begin(); for (const y of p) cpu.live(y); }
+  const card = new AligningGraph(); card.meta = null; const g = new GpuWorlds({device: "numpy"}); await g.ready;
+  for (let i = 0; i < paras.length; i += 8) { const exs = paras.slice(i, i + 8); card.absorb(await g.call({cmd: "text_learn", exercises: exs, trust: card.trustForCard(), g: card.g, formW: card.formW, variants: []}), exs); }
+  g.close(); const a = cpu.readFrozen(held), b = card.readFrozen(held);
+  assert.equal(card.mem.n, paras.reduce((s, p) => s + p.length, 0), "every exercise kept");
+  assert.ok(b > a - .03, `card ${b} vs cpu ${a}`); assert.ok(card.trust.size > 10);
+});
