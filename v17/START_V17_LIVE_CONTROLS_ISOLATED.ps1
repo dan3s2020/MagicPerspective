@@ -53,10 +53,12 @@ if ($Gpu -ne "off") {
 }
 $runtime = Join-Path $PSScriptRoot "runtime-live-controls-isolated"
 New-Item -ItemType Directory -Force -Path $runtime | Out-Null
+$memInvariant = $Mem.ToString([Globalization.CultureInfo]::InvariantCulture)
+$vramInvariant = $Vram.ToString([Globalization.CultureInfo]::InvariantCulture)
 $heap = [int][Math]::Ceiling($Mem * 1024 * 1.7)
-$engineArgs = @("--max-old-space-size=$heap", $engine, "--workers", "$Workers", "--arms", $Arms, "--mem", "$Mem",
+$engineArgs = @("--max-old-space-size=$heap", $engine, "--workers", "$Workers", "--arms", $Arms, "--mem", $memInvariant,
   "--every", "$Every", "--chars", "$Chars", "--worlds", $Worlds, "--maze-every", "$MazeEvery",
-  "--port", "$Port", "--out", $runtime, "--gpu", $Gpu, "--gpu-worlds", "$GpuWorlds", "--vram", "$Vram", "--gpu-util", "$GpuUtil")
+  "--port", "$Port", "--out", $runtime, "--gpu", $Gpu, "--gpu-worlds", "$GpuWorlds", "--vram", $vramInvariant, "--gpu-util", "$GpuUtil")
 $engineArgs += $sourceArgs
 if (-not $Fresh) { $engineArgs += "--resume" }
 if ($Start) { $engineArgs += "--start" }
