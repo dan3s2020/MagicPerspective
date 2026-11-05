@@ -545,3 +545,32 @@ discovery and causal parts (now sharing one body and one self, drawn in the same
 itself; the written answers have the form of a solution but the numbers are mostly wrong (no arithmetic is learned);
 the 51×51 labyrinth that is predicted but not walked waits for the diagnostic from the user's own brain; OpenThoughts
 could not be measured from this machine (GSM8K was used).
+
+## The form of the solution as part of itself, without search (2026-11-05, worlds/form.mjs, laws/form.mjs) — experiment
+
+Source (verbatim, 2026-11-05 20:04): it must not compute all possibilities; it must learn enough to understand how the
+transformations/actions/moves work and understand the form of the solution as part of itself; the rest of the world
+arranges itself into it. Confirmed by the user (20:15) as: (1) discoveries are internal relations, (2) the solution is a
+form held inside it as an attractor that passes through causes, (3) at each step only the transformation that brings the
+world closer to that form, (4) the same for text later.
+
+FormOrganism keeps every discovery of the causal loop (who it is, what its outputs do, the rewrite rules) but never
+searches sequences. From its own rules it reads ENTER, PUSH, CAUSE (and whether a cause undoes itself when it leaves);
+the desired configuration becomes a field: each cell not yet as desired attracts what can make it so (itself, an object,
+a cause); a barrier passes the attraction on to the causes that open it (bringing the cause about, then the way from
+where it is then; a cause that undoes itself opens only the barrier next to it, for the step taken from it). At each
+step it does the one understood transformation that lowers the field most, alive (sampled, not always the same).
+
+Same protocol as laws/transform.mjs (train 300 single-kind tasks, test 90 unseen combinations + 20 impossible):
+
+| | train solved | unseen solved | steps/optimal | impossible recognised | time |
+|---|---|---|---|---|---|
+| causal loop (searches sequences) | 297/300 | 94.4% | 1.02 | 20/20 | 31 s |
+| form inside itself, no search (seeds 1/2/3) | 267/300 | 52.2% / 53.3% / 50.0% | ~2.0 | 17 / 17 / 16 | 3 s |
+
+What it needed on the way (each found by tracing a failing task): a door changing in front of it is a cause, not a push;
+a cause is only what changes the thing most times it is entered; what it holds open by standing on it is closed for its
+way further, but not for the step it can take right now; the price of a barrier is bringing the cause about and then the
+way FROM WHERE IT IS THEN; every way to open a barrier is kept, not only the cheapest.
+Not yet at the level of search: weakest are an object to bring beyond a lever door (39/47 in training), object + plate +
+lever (24/32), itself beyond a plate door (9/20). Not wired into the organism until it is as good as search.
