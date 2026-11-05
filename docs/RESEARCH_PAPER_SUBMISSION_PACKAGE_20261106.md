@@ -43,3 +43,11 @@ The binary PDF was produced in the research workspace and **is not committed to 
 ## Important nonclaims
 
 This paper does not establish P=NP, a new quantum phenomenon, physical extra dimensions, self-conscious AI, a completed universal solver, or a learned higher-dimensional backpropagation architecture. The learning geometry is currently a precise **hypothesis / engineering proposal** with mathematical antecedents.
+
+## All-branch tracked-file delta index (full path/SHA snapshots)
+
+- [Branches 1–10: full path/SHA deltas](branch-audit/BRANCH_BLOB_DIFFS_SEGMENT_1_20261106.md)
+- [Branches 11–20: full path/SHA deltas](branch-audit/BRANCH_BLOB_DIFFS_SEGMENT_2_20261106.md)
+- [Branches 21–28: full path/SHA deltas](branch-audit/BRANCH_BLOB_DIFFS_SEGMENT_3_20261106.md)
+
+These three ledgers cover all 28 branch heads listed in the branch census; they map tracked files by Git SHA but do not constitute an independent line-by-line algorithm audit or test reproduction. Each uses main at the time of its own segment; later additive research documentation can appear as absent in older branches.
