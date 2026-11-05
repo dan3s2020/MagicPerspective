@@ -954,7 +954,7 @@ class PortalEngine:
                 for i in range(count):
                     kind=domains[i%len(domains)]
                     world=build_world(kind,seed+i*7919,self.corpus)
-                    reward=0.;last=None
+                    reward=0.;last=None;temporal=None
                     while not world.done:
                         obs,opts=world.observation()
                         ids,act_ids,adj,n,m,_=graph.context(kind,obs,opts)
@@ -963,7 +963,10 @@ class PortalEngine:
                               torch.tensor([act_ids],dtype=torch.long,device=d),
                               torch.tensor([adj],dtype=torch.float32,device=d),
                               torch.tensor([[int(j<n) for j in range(MAX_OBS)]],device=d),
-                              torch.tensor([[int(j<m) for j in range(MAX_ACTIONS)]],device=d))
+                              torch.tensor([[int(j<m) for j in range(MAX_ACTIONS)]],device=d),
+                              history=temporal)
+                        if model.expansion is not None:
+                            temporal=model.last_macro.detach()
                         selected=int(logits[0,:m].argmax().item())
                         event=world.step(opts[selected]);reward+=event['reward'];last=event
                     solved=world.last_effect in ('goal','correct')
