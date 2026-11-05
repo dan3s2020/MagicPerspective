@@ -336,7 +336,8 @@ function draw() {
 // ---------- proof and free writing ----------
 function evaluate() {
   if (LIVE) { const T2 = liveSnap?.test, p2 = v => (100 * v).toFixed(1) + "%";
-    $("evalOut").innerHTML = T2 ? `${T2.n} caractere nevăzute, testate de trainer cu parametrii înghețați<br>graful LIVE <b style="color:var(--green)">${p2(T2.live)}</b> · graful MASKED <b>${p2(T2.masked)}</b> · C singur <b>${p2(T2.C)}</b> · ${T2.bits.toFixed(2)} biți` +
+    $("evalOut").innerHTML = T2 ? `${T2.n} caractere nevăzute, testate de trainer cu parametrii înghețați<br>graful LIVE determinist <b style="color:var(--green)">${p2(T2.live)}</b> · graful MASKED <b>${p2(T2.masked)}</b> · C singur <b>${p2(T2.C)}</b> · ${T2.bits.toFixed(2)} biți` +
+      (T2.sampled != null ? `<br>sampling real T=${T2.temperature.toFixed(2)}: graf <b>${p2(T2.sampled)}</b> · masked <b>${p2(T2.sampledMasked)}</b> · diferență față de argmax ${p2(T2.disagreement)}` : "") +
       (T2.field != null ? `<br>câmpul momentelor trăite <b>${p2(T2.field)}</b> · graful + câmpul împreună <b style="color:var(--green)">${p2(T2.together)}</b>` : "") : "aștept primul test al trainerului"; return; }
   const T = val("ttemp"), H = e.holdout, hit = {C: 0, det: 0, live: 0, masked: 0}, keep = chain.rand; let n = 0;
   chain.rand = rng((Math.random() * 2 ** 32) >>> 0);                         // a new draw every test
@@ -351,7 +352,17 @@ function evaluate() {
     `<br><span class="dim">la T=0 (fără halucinație): graful ${p(hit.det)} · C singur ${p(hit.C)}. La T&gt;0 fiecare test dă alt rezultat.</span>`;
 }
 function write() {
-  if (LIVE) { $("writeOut").textContent = "Scrierea liberă rulează în pagină doar în modul local (graful antrenat aici); aici graful trăiește în trainer."; return; }
+  if (LIVE) {
+    $("writeOut").textContent = "Generare din organismul real selectat…";
+    fetch("/write?w=" + liveW, {method: "POST"}).then(async r => {
+      if (!r.ok) throw Error(await r.text());
+      return r.json();
+    }).then(x => {
+      if (x.error) throw Error(x.error);
+      $("writeOut").textContent = "T " + x.result.temperature.toFixed(2) + " · generat din creierul #" + x.w + " · fără antrenare suplimentară\n" + x.result.text;
+    }).catch(e => { $("writeOut").textContent = "Scrierea live a eșuat: " + e.message; });
+    return;
+  }
   const T = val("wtemp"), out = e.holdout.slice(0, 12), N = 1200, keep = chain.rand; chain.rand = rng((Math.random() * 2 ** 32) >>> 0);
   for (let k = 0; k < N; k++) { const i = out.length, p = chain.play(e, ctxAt(out, i), histAt(out, i)).out; out.push(chain.pick(p, T)); }
   chain.rand = keep;
@@ -412,12 +423,53 @@ for (const id of ["speed", "wtemp", "ttemp", "ltemp", "pnoise", "gnoise", "glr",
   $(id).addEventListener("input", () => { $(id + "Out").textContent = (+$(id).value).toString(); view.dirty = true; });
 $("run").onclick = () => { running = !running; $("run").textContent = running ? "Pauză" : "Start"; };
 $("reset").onclick = () => reset();
-$("eval").onclick = () => evaluate();
+$("eval").onclick = async () => {
+  if (!LIVE) return evaluate();
+  $("evalOut").textContent = "Evaluarea reală pe date nevăzute a fost solicitată…";
+  try {
+    const r = await fetch("/evaluate?w=" + liveW, {method: "POST"});
+    if (!r.ok) throw Error(await r.text());
+    setTimeout(livePull, 800);
+  } catch (e) { $("evalOut").textContent = "Eroare la test: " + e.message; }
+};
 $("write").onclick = () => write();
-$("wtemp").addEventListener("change", () => { if (t) write(); });
+$("wtemp").addEventListener("change", () => { if (t && !LIVE) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
 const LIVE = new URLSearchParams(location.search).has("live");
 let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null;
+const LIVE_CONTROL_KEYS = ["wtemp", "ttemp", "ltemp", "pnoise", "gnoise", "glr", "repel", "cthr"];
+let lastControlW = null, liveControlDirty = false, controlSending = false;
+const setLiveStatus = text => $("liveControlsStatus").textContent = text;
+function readLiveControlsFromUI() { return Object.fromEntries(LIVE_CONTROL_KEYS.map(k => [k, $(k).value])); }
+function showLiveControls(settings) {
+  if (!settings) return;
+  for (const k of LIVE_CONTROL_KEYS) {
+    if (settings[k] === undefined) continue;
+    $(k).value = String(settings[k]);
+    $(k + "Out").textContent = String(settings[k]);
+  }
+}
+async function applyLiveControls(all = false) {
+  if (controlSending) return;
+  controlSending = true;
+  setLiveStatus("Transmit parametrii de antrenare către " + (all ? "toate creierele" : "creierul #" + liveW) + "…");
+  try {
+    const q = new URLSearchParams(readLiveControlsFromUI());
+    if (!all) q.set("w", String(liveW));
+    const r = await fetch("/controls?" + q, {method: "POST"});
+    if (!r.ok) throw Error(await r.text());
+    const result = await r.json();
+    liveControlDirty = false;
+    setLiveStatus("Configurație acceptată pentru " + result.brains.map(b => "#" + b.w).join(", ") + ". Aștept confirmarea workerelor…");
+    livePull();
+  } catch(e) { setLiveStatus("PARAMETRII NU AU FOST APLICAȚI: " + e.message); }
+  finally { controlSending = false; }
+}
+for (const id of LIVE_CONTROL_KEYS) $(id).addEventListener("input", () => {
+  if (LIVE) { liveControlDirty = true; setLiveStatus("Valori modificate în UI. Apasă «Aplică» pentru a le trimite organismului real."); }
+});
+$("liveControlsApply").onclick = () => applyLiveControls(false);
+$("liveControlsAll").onclick = () => applyLiveControls(true);
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
   for (const [id, type, label, act, born] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); keep.add(id); }
@@ -477,11 +529,20 @@ async function livePull() {
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.settings.worlds} lumi odată · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB`}</span>` : ""}
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
-      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w; nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull(); };
+      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w; lastControlW = null; liveControlDirty = false; nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull(); };
       for (const b of c.querySelectorAll("button")) b.onclick = async ev => { ev.stopPropagation(); const act = b.dataset.do;
         if ((act === "reset" || act === "remove") && !armedNow(c.dataset.w + act)) { armed.set(c.dataset.w + act, performance.now() + 4000); b.textContent = "sigur?"; return; }
         armed.delete(c.dataset.w + act);
         await control(act, +c.dataset.w); if (act === "reset" && +c.dataset.w === liveW) clearLive(); }; }
+    const selected = L.graphs.find(gr => gr.w === liveW);
+    if (selected?.controls) {
+      if (lastControlW !== liveW || !liveControlDirty) showLiveControls(selected.controls);
+      lastControlW = liveW;
+      if (!liveControlDirty && !controlSending)
+        setLiveStatus(selected.controlError ? "Eroare în worker: " + selected.controlError :
+          (selected.controlsApplied ? "Creier #" + liveW + " · setările sunt ACTIVE în worker. Textul și evaluarea folosesc T propriu; geometria se actualizează prin experiențe reale." :
+          "Creier #" + liveW + " · setări transmise, aștept confirmarea workerului."));
+    }
     if (L.gpu && !gpuShown) { gpuShown = true; if (![...$("gpuDev").options].some(o => o.value === L.gpu.device)) $("gpuDev").add(new Option(L.gpu.device, L.gpu.device)); $("gpuDev").value = L.gpu.device; $("gpuWorlds").value = L.gpu.worlds; $("gpuVram").value = L.gpu.vram; $("gpuUtil").value = L.gpu.util; $("gpuUtilOut").textContent = L.gpu.util; }
     if (!$("addArm").options.length && L.arms) $("addArm").innerHTML = L.arms.map(a => `<option${a === "stable+many" ? " selected" : ""}>${a}</option>`).join("");
   } catch { $("corpus").textContent = "trainerul nu răspunde"; }
@@ -501,7 +562,7 @@ function confirmReset() { const b = $("liveReset"); if (b.dataset.armed) { delet
 function bootLive() {
   D = 5; rand = rng(7); nodes = new Map(); edges = new Map(); recent = {C: [], F: []}; strip = []; groups = []; geo = {U: new Map(), V: new Map(), B: new Map()}; data = [];
   chain = {A: [{wires: [], form: () => liveSnap?.form || ""}]}; running = false;
-  $("livePanel").hidden = false; document.body.classList.add("live");
+  $("livePanel").hidden = false; $("liveControlsPanel").hidden = false; document.body.classList.add("live");
   livePull(); setInterval(livePull, 1500); loop();
 }
 if (LIVE) bootLive(); else
