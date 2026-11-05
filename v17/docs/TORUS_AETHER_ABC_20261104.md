@@ -495,7 +495,7 @@ spread over all lengths; accuracy on the characters of the ANSWER, guessed at th
 | exercises lived | current V17 brain (stable+many) | aligning: memory only | + its own exercise | + form |
 |---|---|---|---|---|
 | 500 | 50.3% | 52.4% | 65.8% | 67.0% |
-| 1,000 | 53.2% | 56.2% | 67.5% | 69.3% |
+| 1,000 | 53.2% | 56.2% | 67.5% | 69.1% |
 | 2,000 | 55.3% | 59.6% | 69.3% | 71.4% |
 | 4,000 | 56.7% | 63.0% | 70.5% | 72.4% |
 | 7,473 | — | — | 72.0% | 73.9% |
