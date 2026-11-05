@@ -31,12 +31,12 @@ if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 brain.setControls(workerData.controls || brain.controls); // same real brain, including restored checkpoints
 parentPort.postMessage({type: "controls-ack", w: workerData.gw, controls: {...brain.controls}});
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
-let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
+let evalNonce = 0, lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
 const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
-    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? {...brain.test(H), ...scoreSampling(brain, H, brain.controls.ttemp, brain.seed * 104729 + brain.chars)} : null, controls: {...brain.controls}, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
+    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? {...brain.test(H), ...scoreSampling(brain, H, brain.controls.ttemp, brain.seed * 104729 + brain.chars + (++evalNonce))} : null, controls: {...brain.controls}, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null} : null,
     form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; } catch (err) { msg.saveError = err.message; } }
