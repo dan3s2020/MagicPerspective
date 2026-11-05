@@ -95,7 +95,7 @@ export function playExercise(w, D, live = () => {}, {record = false, outputs = n
   while (pos !== w.goal && steps < lim) {
     const me = meNow(), plan = me >= 0 ? D.shape(ret, n, me) : null;
     if (steps === 0) first = plan ? planScore(w, pos, plan) : 0;
-    if (record) shapes.push(plan ? plan.slice(0, 30) : null);
+    if (record) shapes.push(plan ? (steps === 0 ? plan : plan.slice(0, 30)) : null);   // the first one whole: the shape predicted before any move
     const c = outputs ? {o: outputs[steps], how: plan && D.trust.plan[0] / D.trust.plan[1] >= D.trust.explore[0] / D.trust.explore[1] * .9 ? "plan" : "explore"} : D.choose(ret, n, me, visits, plan); how[c.how]++; live(OUTS[c.o]);
     if (outputs && c.o === undefined) break;
     const before = ret.slice(), dir = D.world.moves.indexOf(c.o);              // the world's physics

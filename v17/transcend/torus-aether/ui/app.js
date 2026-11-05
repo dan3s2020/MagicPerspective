@@ -530,3 +530,39 @@ fetch("/corpus").then(r => r.json()).then(c => {
     catch (err) { wait.className = "msg err"; wait.textContent = "nu am putut ajunge la trainer: " + err.message; talk.pop(); }
     $("chatSend").disabled = false; };
 }
+
+// ---- the exam after training: unseen labyrinths from small to large; first the whole predicted shape, then the walk ----
+{ let ex = null, cur = 0, t0 = 0;
+  const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(0) + "%";
+  const show = i => { if (!ex) return; cur = (i + ex.length) % ex.length; t0 = performance.now(); table(); };
+  const table = () => { $("examTab").innerHTML = `<table style="width:100%;border-collapse:collapse">` +
+    `<tr><th align=left>mărime</th><th>forma prezisă înainte</th><th>a ajuns</th><th>pași / optim</th></tr>` +
+    ex.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n}×${m.n}</td><td align=center>${pct(m.first)}</td><td align=center>${m.solved ? "<b style='color:var(--green)'>da</b>" : "nu"}</td><td align=center>${m.steps} / ${m.optimal}</td></tr>`).join("") + "</table>";
+    for (const tr of $("examTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); };
+  $("examGo").onclick = async () => {
+    if (!LIVE) { $("examOut").textContent = "Examenul rulează pe grafurile din trainer (START_V17.ps1)."; return; }
+    $("examOut").textContent = "graful #" + liveW + " dă examenul…"; $("examGo").disabled = true;
+    try { const r = await (await fetch(`/exam?w=${liveW}&sizes=${encodeURIComponent($("examSizes").value)}&per=${+$("examPer").value || 1}`, {method: "POST"})).json();
+      if (r.error) $("examOut").textContent = r.error;
+      else { ex = r.mazes; const ok = ex.filter(m => m.solved).length, sh = ex.reduce((a, m) => a + (m.first || 0), 0) / ex.length;
+        $("examOut").innerHTML = `graful #${liveW}${r.fromSave ? " (oprit: din ultimul save)" : ""}, după ${r.played} exerciții trăite: <b>${ok}/${ex.length} rezolvate</b> · forma prezisă dinainte, în medie <b>${pct(sh)}</b> corectă · auriu punctat = ce prezice, albastru = pe unde a mers`;
+        show(0); } }
+    catch (err) { $("examOut").textContent = "nu am putut ajunge la trainer: " + err.message; }
+    $("examGo").disabled = false; };
+  $("examPrev").onclick = () => show(cur - 1); $("examNext").onclick = () => show(cur + 1);
+  const draw = () => { requestAnimationFrame(draw); if (!ex) return; const L = ex[cur], c = $("examCv"), g = c.getContext("2d"), n = L.n, s = Math.min(c.width, c.height) / n, ox = (c.width - n * s) / 2;
+    const cx = i => ox + (i % n + .5) * s, cy = i => ((i / n | 0) + .5) * s, sp = +$("examSpeed").value, hold = 1800;   // first the prediction alone, then the walk
+    const el = performance.now() - t0, k = el < hold ? 0 : Math.min(L.path.length - 1, Math.floor((el - hold) / sp));
+    g.clearRect(0, 0, c.width, c.height);
+    for (let i = 0; i < n * n; i++) { g.fillStyle = L.wall[i] ? "#1d2b3a" : "#070b10"; g.fillRect(ox + (i % n) * s, (i / n | 0) * s, s - .5, s - .5); }
+    g.fillStyle = "rgba(61,220,132,.85)"; g.beginPath(); g.arc(cx(L.goal), cy(L.goal), s * .34, 0, 7); g.fill();
+    const line = (from, plan, style, w, dash) => { if (!plan) return; g.strokeStyle = style; g.lineWidth = w; g.setLineDash(dash); g.beginPath(); let p = from; g.moveTo(cx(p), cy(p));
+      for (const a of plan) { const x = p % n + DIRS[a][0], y = (p / n | 0) + DIRS[a][1]; if (x < 0 || y < 0 || x >= n || y >= n) break; p = y * n + x; g.lineTo(cx(p), cy(p)); } g.stroke(); g.setLineDash([]); };
+    if (el < hold) line(L.start, L.shapes[0], "rgba(245,179,1,.95)", Math.max(2, s * .16), [6, 4]);   // the whole shape, before the first move
+    else { line(L.start, L.shapes[0], "rgba(245,179,1,.25)", Math.max(1.5, s * .08), [4, 4]);
+      g.strokeStyle = "rgba(124,201,255,.85)"; g.lineWidth = Math.max(2, s * .14); g.beginPath(); for (let i = 0; i <= k; i++) i ? g.lineTo(cx(L.path[i]), cy(L.path[i])) : g.moveTo(cx(L.path[i]), cy(L.path[i])); g.stroke();
+      line(L.path[k], L.shapes[Math.min(k, L.shapes.length - 1)], "rgba(245,179,1,.9)", 2, [5, 4]); }
+    g.fillStyle = "#ff4d6d"; g.beginPath(); g.arc(cx(L.path[k]), cy(L.path[k]), s * .32, 0, 7); g.fill();
+    g.fillStyle = "#e6f3ff"; g.font = "13px system-ui"; g.fillText(`${n}×${n} · ${el < hold ? "forma prezisă înainte de prima mișcare" : `pasul ${k} / ${L.steps} (optim ${L.optimal})`}`, 8, c.height - 8);
+    if (el > hold + sp * (L.path.length + 6) && cur < ex.length - 1) show(cur + 1); };   // then the next, larger one
+  requestAnimationFrame(draw); }

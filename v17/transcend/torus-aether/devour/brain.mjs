@@ -117,6 +117,15 @@ export class Brain {
       if (k % 16 === 15) await tick("transformări: trăite de creier", k + 1, N); }
     T.gpu = {batch: N, busy, vramUsedGB: vram}; return T.gpu;
   }
+  // the exam to watch: after training, a frozen copy of what it discovered plays unseen labyrinths from small to large;
+  // every exercise is recorded with the whole trajectory it predicted BEFORE its first move (shapes[0]) and as it went
+  examMazes(sizes = [7, 9, 11, 13, 15, 17, 19, 21, 25, 31], per = 1) {
+    if (!this.disc) this.disc = new Discoverer(this.seed); const out = [];
+    for (const n of sizes) for (let k = 0; k < per; k++) { const c = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); c.r = Object.assign(Object.create(RNG.prototype), c.r);
+      const w = makeMaze(seedOf(SEEDS.test, 5000 + n * 101 + k), n), r = playExercise(w, c, () => {}, {record: true});
+      out.push({n, k, solved: r.solved, steps: r.steps, optimal: r.optimal, first: r.first, path: r.path, shapes: r.shapes, wall: r.wall, start: r.start, goal: r.goal, knows: r.knows}); }
+    return {played: this.mazes.played, mazes: out};
+  }
   // frozen test on exercises it never saw (V16's test seeds, sizes 7, 9, 11): a copy of what it discovered plays them
   testMazes(count = 30) {
     if (!this.disc) this.disc = new Discoverer(this.seed);

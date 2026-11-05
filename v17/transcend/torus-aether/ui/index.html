@@ -79,6 +79,14 @@
         <canvas id="mazeCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
         <p class="note" id="mazeOut">—</p>
       </div>
+      <div id="examBox">
+        <h2>Examen după antrenare: labirinte nevăzute, de la mic la mare</h2>
+        <div class="row"><label class="dim">mărimi <input id="examSizes" value="7,9,11,13,15,17,19,21,25,31,41,51" style="width:210px"></label><label class="dim">câte din fiecare <input id="examPer" type="number" min="1" max="10" value="1" style="width:50px"></label><button id="examGo">▶ Examen</button></div>
+        <div class="row"><label class="dim">viteză <input id="examSpeed" type="range" min="40" max="600" step="20" value="160"></label><button id="examPrev">◀</button><button id="examNext">▶</button></div>
+        <canvas id="examCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
+        <p class="note" id="examOut">Creierul înghețat (nu mai învață în examen) primește labirinte pe care nu le-a văzut niciodată. Întâi vezi, punctat auriu, toată traiectoria pe care o prezice ÎNAINTE de prima mișcare; apoi pornește și vezi drumul real.</p>
+        <div id="examTab" class="dim" style="font-size:12px"></div>
+      </div>
       <div id="transBox" hidden>
         <h2>Lumea transformărilor (obiecte, comutatoare, uși — fără nume)</h2>
         <canvas id="transCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
