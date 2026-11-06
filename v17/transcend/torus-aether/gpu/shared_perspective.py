@@ -124,9 +124,11 @@ class SharedPerspective:
 
     def train(self, samples):
         xs, actions, ys = self._pack(samples)
-        # The pre-update error is a genuine pre-action model prediction, compared
-        # only after observing the actual successor. It is NOT a held-out score.
+        # Retrospective PRE-UPDATE prediction from frozen weights, compared to
+        # the observed successor. It is NOT an online pre-action measurement or held-out score.
         pre = self.evaluate(samples)
+        # Capture the frozen, PRE-UPDATE prediction before these observations can alter weights.
+        pre_update_trace = self._trace(self.model, xs, actions, ys, samples[0])
         self.model.train()
         z, zp, pred = self.model(xs, actions)
         target_z = self.model.encoder(ys).detach()
@@ -143,7 +145,7 @@ class SharedPerspective:
         self.last = {'batch': len(samples), 'device': str(self.device), 'step': self.steps,
                      'preUpdatePredictionLoss': pre['loss'], 'identityBaselineLoss': pre['identityBaselineLoss'],
                      'trainingObjective': round(float(loss.item()), 7), 'domains': dict(self.counts),
-                     'trace': self._trace(self.model, xs, actions, ys, samples[0])}
+                     'trace': pre_update_trace}
         return self.last
 
     def save(self, filename):
