@@ -132,6 +132,10 @@
       <label>Țintă: <input id="textMazeGoal" type="text" size="16" placeholder="simbol din corpus"></label>
       <button id="textMazePlan" type="button">Prezice forma înainte de mișcare</button></div>
       <pre id="textMazePlanOut" style="white-space:pre-wrap;overflow:auto;max-height:220px;color:#f4d998;font:12px ui-monospace,monospace">Nu s-a cerut un traseu încă.</pre>
+      <h3>Test înghețat · texte nevăzute din split-ul original</h3>
+      <div class="row"><label>Documente ținute deoparte <input id="textMazeUnseenCount" type="number" min="1" max="20" value="8" style="width:56px"></label>
+        <button type="button" id="textMazeUnseen">Evaluează textul nevăzut, fără antrenare</button></div>
+      <pre id="textMazeUnseenOut" style="white-space:pre-wrap;max-height:240px;overflow:auto;color:#8ce1b4;font:12px ui-monospace,monospace">Nicio evaluare înghețată încă.</pre>
       <p class="note">Dovadă matematică verificabilă: V(țintă)=1, V(s)=0.97·max V(succesor). Residualul trebuie să fie aproape de 0. Un traseu optim și ascendent este o proprietate a grafului observat. Scorul pe documente noi este calculat ÎNAINTE să fie învățate. Aceste măsurători nu certifică înțelegerea semantică a limbajului.</p>
     </section>
     <div id="cognitiveBox" hidden style="margin:12px 0;border:1px solid #25887e;border-radius:10px;padding:12px">
