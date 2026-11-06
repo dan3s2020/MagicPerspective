@@ -1,0 +1,36 @@
+name: V17 Native Gear Integration
+on:
+  push:
+    branches:
+      - feature/V17-NATIVE-SELF-CODE-PORTALS-20261106
+  workflow_dispatch:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout unchanged V17 branch
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate native code syntax
+        run: |
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check isolated/noise-space/nested_text_gears.mjs
+          node --check isolated/noise-space/native_gear_drive.mjs
+      - name: Regression and observed-operator integration
+        run: |
+          node --test \
+            experimental/self-world/code-world.test.mjs \
+            v17/transcend/torus-aether/devour/selfcode-native.test.mjs \
+            v17/transcend/torus-aether/devour/selfcode-evaluator.test.mjs \
+            v17/transcend/torus-aether/shared/experience.test.mjs \
+            isolated/noise-space/nested_text_gears.test.mjs \
+            isolated/noise-space/native_gear_drive.test.mjs \
+            isolated/noise-space/streaming_gear.test.mjs \
+            v17/transcend/torus-aether/devour/brain.native-gear.test.mjs
