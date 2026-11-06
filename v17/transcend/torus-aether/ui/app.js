@@ -467,6 +467,11 @@ function renderShared(S) {
   if (!box || !info || !canvas) return;
   box.hidden = false;
   const R = S.training, domains = S.domains || {};
+  const sourceNote = $("sharedVectorSourceNote");
+  if (sourceNote) sourceNote.textContent = R?.step ?
+    "Proiecție 2/32 din vectorii REALI ai modelului antrenat pe " + R.device +
+      ": înainte / prezis / observat. Nu este dovadă de transfer universal." :
+    "Fără antrenare PyTorch confirmată: proiecția latentă 32D NU este activă. Pe Termux, zgomotul organismului se vede separat, mai jos.";
   const n = `observate maze ${domains.maze || 0} · transform ${domains.transform || 0} · text ${domains.text || 0} · în coadă ${S.queued || 0}`;
   info.textContent = R?.step ?
     `${n} | model ${R.device} · actualizări ${R.step} · eroare înainte de update ${R.preUpdatePredictionLoss} · identitate ${R.identityBaselineLoss}` :
