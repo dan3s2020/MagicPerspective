@@ -66,6 +66,7 @@ jobs:
             if ($exitCode -eq 0) { throw "An occupied port was wrongly accepted" }
             if ($output -notmatch 'PORT_IN_USE') { throw "Missing clear occupied-port diagnosis: $output" }
             Write-Host "PORT_IN_USE_GUARD_OK"
+            $global:LASTEXITCODE = 0  # The child launcher is EXPECTED to return nonzero on an occupied port.
           } finally {
             $listener.Stop()
           }
