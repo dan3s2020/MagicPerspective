@@ -26,7 +26,7 @@ parentPort.on("message", m => { let r;
     else if (m.kind === "text") {
       r = brain.evalTextExercises(m.opts.list, {T: m.opts.T, noise: m.opts.noise});
       const paths = observedWorld
-        ? frozenTextRoutes(m.opts.list,{...observedWorld,maxSteps:Math.max(8,Math.min(96,
+        ? frozenTextRoutes(m.opts.list.slice().sort((a,b)=>a.length-b.length),{...observedWorld,maxSteps:Math.max(8,Math.min(96,
             Number(m.opts.routeSteps)||48))})
         : {enabled:false,reason:worldError};
       r = {...r, observedTextWorld:paths};
