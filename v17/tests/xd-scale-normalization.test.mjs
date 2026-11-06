@@ -101,3 +101,25 @@ test("controlled scale normalization vs native on independent held-out 6000 char
  assert.equal(reports.length,8);
  console.log("XD_CONTROLLED_SCALE_NORMALIZATION",JSON.stringify(reports));
 });
+
+test("repeat the 64D–1024D scaling experiment with three independent initializations, not one lucky seed",()=>{
+ const reports=[];
+ for(const D of [64,256,1024])for(const seed of [17,19,23]){
+   const {g:native}=train(D,"native",seed);
+   const {g:scaled,alpha}=train(D,"sqrt",seed);
+   const nativeResult=evaluate(native,D,1,valEnd,text.length);
+   const scaledResult=evaluate(scaled,D,alpha,valEnd,text.length);
+   reports.push({D,seed,unalteredNative:nativeResult.pure,normalized:scaledResult.pure,
+     delta:scaledResult.pure-nativeResult.pure,
+     nativeSaturation:nativeResult.saturatedFraction,
+     normalizedSaturation:scaledResult.saturatedFraction});
+ }
+ const means=[64,256,1024].map(D=>{
+   const s=reports.filter(r=>r.D===D);
+   return {D,meanNative:s.reduce((a,b)=>a+b.unalteredNative,0)/s.length,
+     meanNormalized:s.reduce((a,b)=>a+b.normalized,0)/s.length,
+     meanGain:s.reduce((a,b)=>a+b.delta,0)/s.length};
+ });
+ assert.ok(means.every(m=>m.meanGain>.05),JSON.stringify({means,reports}));
+ console.log("XD_REPLICATED_NORMALIZATION",JSON.stringify({means,reports}));
+});
