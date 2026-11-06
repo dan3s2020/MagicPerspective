@@ -159,12 +159,28 @@ export class AligningGraph {
       h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); }
     return ok / Math.max(1, bytes.length); }
   // writing: follow its own alignment, symbol after symbol (temperature over the trusted distribution)
-  write(prompt, {max = 400, T = 0, rand = Math.random, stop = null} = {}) { this.mem.ready(true); this.fmem.ready(true);
+  write(prompt, {max = 400, T = 0, rand = Math.random, stop = null, loopPenalty = 0, loopWindow = 24} = {}) { this.mem.ready(true); this.fmem.ready(true);
     const h = [], fh = [], self = new SelfMem(), fself = new SelfMem(), push = y => { h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); };
     for (const y of prompt) push(y); const out = []; this.imagining = true;
-    for (let k = 0; k < max; k++) { const d = this.distribution(this.proposals(h, fh, self, fself)); let y = 32;
+    // Research-only optional loop resistance. The default (loopPenalty=0) preserves original V17 output exactly.
+    const resistance = Math.max(0, Number(loopPenalty) || 0), span = Math.max(4, Math.min(96, Math.floor(loopWindow) || 24));
+    const repeats = resistance > 0 ? new Map() : null;
+    const ending = (last = null) => String.fromCharCode(...h.slice(1 - span), ...(last === null ? [] : [last]));
+    if (repeats) for (let i = span - 1; i < h.length; i++) {
+      const key = String.fromCharCode(...h.slice(i - span + 1, i + 1));
+      repeats.set(key, (repeats.get(key) || 0) + 1);
+    }
+    for (let k = 0; k < max; k++) {
+      const original = this.distribution(this.proposals(h, fh, self, fself));
+      const d = repeats ? new Map([...original].map(([z,v]) => [z, v / (1 + resistance * (repeats.get(ending(z)) || 0))])) : original;
+      let y = 32;
       if (!T) { let b = -1; for (const [z, v] of d) if (v > b) { b = v; y = z; } }
       else { let z = 0; const w = [...d].map(([c, v]) => { const x = Math.pow(v, 1 / T); z += x; return [c, x]; }); let r = rand() * z; for (const [c, x] of w) { r -= x; if (r <= 0) { y = c; break; } } }
-      if (stop && stop(y, out)) break; out.push(y); push(y); }
+      if (stop && stop(y, out)) break; out.push(y); push(y);
+      if (repeats && h.length >= span) {
+        const key = ending();
+        repeats.set(key, (repeats.get(key) || 0) + 1);
+      }
+    }
     this.imagining = false; return out; }
 }
