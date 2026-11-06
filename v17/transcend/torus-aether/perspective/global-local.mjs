@@ -28,18 +28,21 @@ function rememberedPatch(initial,n,origin,selfKind,radius=1){
   }
   return out;
 }
-export function relocalize(initial,n,observed,predicted,selfKind,{radius=1}={}){
+export function relocalize(initial,n,observed,predicted,selfKind,{radius=1,weights=null,priorWeight=.055}={}){
   if(!Array.isArray(initial)||initial.length!==n*n||!Array.isArray(observed)||observed.length!==(2*radius+1)**2)
     throw Error('Invalid global-map/local-patch dimensions');
   // The actual coordinate is never an argument: rank candidate positions using ONLY remembered landmarks.
+  const W=Array.isArray(weights)&&weights.length===observed.length&&weights.every(x=>Number.isFinite(x)&&x>0)?weights:null;
+  const norm=W?W.reduce((a,b)=>a+b,0):observed.length;
+  const prior=Number.isFinite(priorWeight)?Math.max(0,Math.min(.25,priorWeight)):.055;
   let first=null,second=null;
   for(let i=0;i<initial.length;i++){
     if(initial[i]===KIND.wall)continue;
     const sample=rememberedPatch(initial,n,i,selfKind,radius);
-    let matches=0,total=0;
-    for(let k=0;k<sample.length;k++){total++;if(sample[k]===observed[k])matches++;}
+    let matches=0,total=0,weighted=0;
+    for(let k=0;k<sample.length;k++){total++;if(sample[k]===observed[k]){matches++;weighted+=W?W[k]:1;}}
     const distance=Math.abs(i%n-predicted%n)+Math.abs(Math.floor(i/n)-Math.floor(predicted/n));
-    const score=matches/Math.max(1,total)-.055*distance;
+    const score=weighted/Math.max(1e-8,norm)-prior*distance;
     const candidate={cell:i,match:matches/Math.max(1,total),score,distance};
     if(!first||score>first.score){second=first;first=candidate;}
     else if(!second||score>second.score)second=candidate;
@@ -59,7 +62,7 @@ export function cloneDiscoverer(d){
   copy.noise=0;copy.temp=0;return copy;
 }
 // The evaluator is permitted to know truePosition/goal only for physics and AFTER-the-fact scoring.
-export function playLocalPerspective(world,discoverer,bodyMemory=new BodyPerspectiveMemory(),{maxTrace=250,localRadius=1}={}){
+export function playLocalPerspective(world,discoverer,bodyMemory=new BodyPerspectiveMemory(),{maxTrace=250,localRadius=1,learnedLocalizer=true}={}){
   const D=cloneDiscoverer(discoverer),n=world.n,initial=globalGlance(world),selfKind=D.self();
   const firstShape=selfKind>=0?D.shape(initial,n,initial.indexOf(selfKind)):null;
   const firstPath=selfKind>=0?planCells(n,initial.indexOf(selfKind),firstShape):[];
@@ -97,7 +100,9 @@ export function playLocalPerspective(world,discoverer,bodyMemory=new BodyPerspec
     if(to>=0&&!world.wall[to])pos=to;else blocked++;
     // The policy observes ONLY the resulting 3x3 egocentric patch.
     const patch=localRetina(world,pos,localRadius);
-    const match=relocalize(initial,n,patch,expectedPos,selfKind,{radius:localRadius});
+    const match=relocalize(initial,n,patch,expectedPos,selfKind,{radius:localRadius,
+      weights:learnedLocalizer&&bodyMemory.localSamples>0?bodyMemory.localWeights:null,
+      priorWeight:learnedLocalizer&&bodyMemory.localSamples>0?bodyMemory.priorWeight:.055});
     if(match){estimate=match.cell;relocalized++;if(match.ambiguous)ambiguous++;}
     else estimate=expectedPos;
     visits[estimate]++;
@@ -115,7 +120,8 @@ export function playLocalPerspective(world,discoverer,bodyMemory=new BodyPerspec
     locality:{globalObservations:1,localObservations:visible,patchSide:2*localRadius+1,
       afterFirstFullMapRead:false},
     poseAccuracy:visible?poseHits/visible:null,followed,explored,relocalized,ambiguous,blocked,
-    rememberedMapUsed:true,actorKnowsTruePosition:false,bodyEffectsKnown:effectiveCount(bodyMemory,D)};
+    rememberedMapUsed:true,actorKnowsTruePosition:false,bodyEffectsKnown:effectiveCount(bodyMemory,D),
+    learnedLocalizer:learnedLocalizer&&bodyMemory.localSamples>0};
 }
 function effectiveCount(memory,D){return Array.from({length:8},(_,i)=>memory.effect(i)||D.effect(i)).filter(Boolean).length;}
 const summarize=rows=>{
@@ -129,22 +135,25 @@ export function evaluateBodyPerspective(brain,memory,{sizes=[7,9,11],per=2,seed=
   throw Error('sizes must be an array of 5..31 odd integers');
  if(!Number.isInteger(per)||per<1||per>10||!Number.isSafeInteger(seed))throw Error('Invalid perspective exam options');
  if(!brain?.disc)throw Error('Original Brain Discoverer is missing');
- const cases=[],base=[],body=[];
+ const cases=[],base=[],body=[],fixed=[];
  for(const n of sizes)for(let k=0;k<per;k++){
   const world=makeMaze(seedOf(SEEDS.test,(seed%100000)*13+n*101+k),n);
   const native=playExercise(world,cloneDiscoverer(brain.disc),()=>{},{record:true});
   const local=playLocalPerspective(world,brain.disc,memory,{maxTrace});
-  base.push(native);body.push(local);
-  cases.push({...local,index:cases.length,baseline:{solved:native.solved,steps:native.steps,optimal:native.optimal,
+  const fixedLocal=playLocalPerspective(world,brain.disc,memory,{maxTrace,learnedLocalizer:false});
+  base.push(native);body.push(local);fixed.push(fixedLocal);
+  cases.push({...local,index:cases.length,fixedLocalizer:{solved:fixedLocal.solved,steps:fixedLocal.steps,
+    extraSteps:fixedLocal.extraSteps,poseAccuracy:fixedLocal.poseAccuracy},baseline:{solved:native.solved,steps:native.steps,optimal:native.optimal,
     first:native.first,how:native.how,firstPath:native.shapes?.[0]||[]},scoreSource:'Oracle shortest distance and true pose appear ONLY in evaluator'});
  }
  return {protocol:'ONE_GLOBAL_GLANCE_THEN_ONLY_3X3_LOCAL_PATCHES',realMazePhysics:true,
    frozen:true,actor:'trained V17 Discoverer + separately trained body-effect memory',
-   controls:{sizes,per,seed},cases,summary:{native:summarize(base),body:summarize(body),
+   controls:{sizes,per,seed},cases,summary:{native:summarize(base),body:summarize(body),fixedLocalizer:summarize(fixed),
     poseAccuracy:body.filter(x=>x.poseAccuracy!==null).length?
       body.filter(x=>x.poseAccuracy!==null).reduce((a,x)=>a+x.poseAccuracy,0)/body.filter(x=>x.poseAccuracy!==null).length:null,
     totalGlobalReads:body.length,totalLocalReads:body.reduce((a,x)=>a+x.locality.localObservations,0),
-    bodyTraining:memory.summary()},
+    bodyTraining:memory.summary(),
+    learnedVsFixedDeltaSolved:body.filter(x=>x.solved).length-fixed.filter(x=>x.solved).length},
    limitations:['V17 action outputs are fixed compass moves; body orientation rotation is not modeled',
      'The global map is shown once and then stored intact as memory; active SLAM of an unknown map is not yet implemented',
      'Frozen evaluation updates pose belief but not neural weights; learned motor effects were collected from prior V17 training',
