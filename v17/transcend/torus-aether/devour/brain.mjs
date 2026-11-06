@@ -185,7 +185,10 @@ export class Brain {
       const w=makeMaze(seedOf(SEEDS.test,400000+seed*211+i*103),[7,9,11,13][i%4]);
       rows.push(frozen.navigateBlind(w,{train:false,record:record&&i<2}));
       const direct=frozen.construct(Array.from(w.wall),w.n,w.start,w.goal);
-      full.push({n:w.n,optimal:w.dist[w.start],completeViewPath:direct.length});
+      // Evaluator-only reference for TRUE side-by-side replay. It is returned
+      // AFTER blind navigation; it is never an input to the blind policy.
+      full.push({n:w.n,optimal:w.dist[w.start],completeViewPath:direct.length,
+        seed:w.seed,start:w.start,goal:w.goal,referenceWall:record&&i<2?Array.from(w.wall):undefined});
     }
     const success=rows.filter(r=>r.solved);
     return {count,seed,trainedPairs:P.paired,results:rows,solved:success.length,
