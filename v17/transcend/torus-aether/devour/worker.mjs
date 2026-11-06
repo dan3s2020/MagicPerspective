@@ -317,6 +317,7 @@ for await (const ex of stream()) {
     }
     textBatch = []; textMeta = []; shot(true);
   }
+  const startedAtChars=brain.chars;
   brain.exercises = (brain.exercises || 0) + (TEXT ? 1 : 0); if (TEXT) brain.beginExercise();
   for (const y of ex.bytes) {
     brain.live(y, brain.chars % 50 === 0); brain.chars++;
@@ -326,7 +327,9 @@ for await (const ex of stream()) {
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
-  if (TEXT && !stop && brain.chars < maxChars) {
+  if (TEXT && !stop && brain.chars-startedAtChars===ex.bytes.length) {
+    // Always absorb the LAST completely lived row even when the text budget
+    // reaches exactly its end. Never teach from a partly unseen final row.
     absorbLanguage(ex); absorbConstructed(ex); absorbObservedDifferences(ex);
     absorbText(ex); await flushShared(); }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
