@@ -1,7 +1,7 @@
 # Opt-in Windows launcher for real V17 multiworld training after the live-graph fix.
 # Run from a clean, updated clone on D:. Never deletes or overwrites old checkpoints.
 param(
-    [string]$Data = "D:\\training\\OpenThoughts3-1.2M",
+    [string]$Data = "D:\training\OpenThoughts3-1.2M",
     [int]$Port = 8872,
     [int]$GpuWorlds = 64,
     [int]$GpuTextBatch = 8,
@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $branch = "feature/V17-NATIVE-SELF-CODE-PORTALS-20261106"
-$runtime = Join-Path $root "v17\\runtime-native-selfcode-windows"
+$runtime = Join-Path $root "v17\runtime-native-selfcode-windows"
 if (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) { throw "Launcher must run from a Git clone." }
 $actualBranch = (& git -C $root branch --show-current).Trim()
 if ($LASTEXITCODE -ne 0 -or $actualBranch -ne $branch) { throw "Wrong Git branch: $actualBranch" }
@@ -47,7 +47,7 @@ Write-Host "Browser: http://127.0.0.1:$Port/"
 Write-Host "Checkpoints (resume, not reset): $runtime"
 Write-Host "Worlds: text,maze,transform,selfcode"
 Write-Host "GPU: $Gpu, VRAM budget: $Vram GB, parallel worlds: $GpuWorlds, text batch: $GpuTextBatch"
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "v17\\START_V17.ps1") `
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "v17\START_V17.ps1") `
     -Workers $Workers -Arms "stable+many" -Mem $Mem `
     -Worlds "text,maze,transform,selfcode" -Data $Data -Out $runtime -Port $Port `
     -Gpu $Gpu -GpuWorlds $GpuWorlds -GpuTextBatch $GpuTextBatch -Vram $Vram `
