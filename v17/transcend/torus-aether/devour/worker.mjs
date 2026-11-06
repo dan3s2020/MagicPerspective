@@ -149,7 +149,7 @@ const report = (final = false) => {
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
-const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
+const shot = (force) => { if (!force && performance.now() - lastShot < 1100) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
