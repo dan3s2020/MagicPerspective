@@ -1,0 +1,46 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "V18-ORIGINAL-MAZE-TO-LANGUAGE-SHAPE-20261106",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-06-MAZE-LANGUAGE-MYSTIC-PERSPECTIVE-USER-TURNS-VERBATIM-PARTIAL.md",
+    "exact_user_quote": "SI CUM REZOLVAM? CUM FACEM CA GHICIREA FIECARUI CARACTER SA FIE UN MAZE HYPERDIMENSIONAL+TRANSFORMARI HYPERDIMENSIONALE? FIECARE CARACTER GHIIT REPREZINTA UN LABIRINT PARCURS CORECT,DAR TEXTUL FINAL ESTE UN LABIRINT COMPLEX DIN MAI MULTE LABIRINTE SUCCESIVE, IDEEA E CA EL STIE RASPUNSUL,TREBUIE DOAR SA INVETE CAILE SI TRANSFORMARILE SA AJUNGA DE LA INPUT LA OUTPUT NU? E ATAT DE SIMPLU,TREBUIE SA ABSOARBA IN EL,LUMEA TEXTULUI,LA FEL CUM DEVORA LABIRINTUL,PERETII,CAILE,TARGETUL,CARACTERUL,ETC , TREBUIE TOTUL TRADUS PRINTR-O PERSPECTIVA MISTICA"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape() unchanged, matching 0.97 attraction propagation, conduct/attract and uphill path",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/language-maze/shape-topology.mjs",
+    "v17/transcend/torus-aether/language-maze/language-world.mjs",
+    "v17/transcend/torus-aether/language-maze/language-world.test.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/perspective-studio.js",
+    "v17/transcend/torus-aether/ui/language-maze-studio.js",
+    "v17/START_MAZE_LANGUAGE_V18.ps1",
+    ".github/workflows/v18-maze-language.yml"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "v17/transcend/torus-aether/language-maze/language-world.test.mjs",
+    "v17/transcend/torus-aether/perspective/body-perspective.test.mjs"
+  ],
+  "actual_observed_results": "GitHub Actions #42271162297: 9 V18 tests passed, 12 preserved original V17 tests passed; Windows PowerShell parser passed; RTX actual speed and free-form language generalization NOT VERIFIED.",
+  "limitations": [
+    "Only 10 visible USER turns archived exactly; intermediate assistant/tool messages unavailable in this transcript export",
+    "Original 2D maze algorithm left unchanged and 88 parity cases passed; graph-topology lift implements same field law, not a new planner",
+    "Observed Q/A corridors and learned finite character-position transformations can generalize for some symbolic transductions; arbitrary natural-language understanding NOT demonstrated",
+    "Bounded in-memory record cache may displace older examples; full unbounded corpus graph and true arbitrary-dimensional manifold NOT implemented",
+    "GPU original V17 retained; new graph-topology world is a CPU-side JavaScript learner, not an end-to-end CUDA graph kernel",
+    "This is an isolated experimental version and not a completed universal release"
+  ],
+  "verification_status": "TESTED",
+  "full_verbatim_gate": "BLOCKED"
+}
