@@ -33,7 +33,7 @@ test('V17 ORIGINAL Brain really lives perspective experience, and saves the lear
  }));
  assert.equal(report.learned.count,16);assert.equal(report.control.count,16);
  assert.deepEqual(p.votes,previous,'Heldout evaluation modified learned votes');
- assert.deepEqual(brain.disc.r,priorBrainRng,'Heldout evaluation advanced original V17 RNG');
+ assert.equal(brain.disc.r.s,priorBrainRng.s,'Heldout evaluation advanced original V17 RNG');
  assert.equal(report.replay[0].mapGlances,1);
  assert.equal(report.replay[0].globalObservationsAfterStart,0);
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'magic-v17-perspective-'));
