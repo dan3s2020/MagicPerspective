@@ -119,6 +119,8 @@ const worldsOnce = async (record) => {                                     // on
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 8)));
 const processGpuText = async (exs, meta) => {
+  const profileText = process.env.MP_PROFILE_TEXT === "1";
+  const profStart = profileText ? performance.now() : 0;
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
   const startChars = brain.chars;
@@ -126,14 +128,29 @@ const processGpuText = async (exs, meta) => {
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
     shot();
   });
+  const profCardEnd = profileText ? performance.now() : 0;
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+  const profTraceEnd = profileText ? performance.now() : 0;
   if (CODE) for (let i = 0; i < 4; i++) codeWorld.step();
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  const profCausalEnd = profileText ? performance.now() : 0;
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
+  const profSharedEnd = profileText ? performance.now() : 0;
   if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+  if (profileText && brain.textGpu) {
+    const end = performance.now();
+    brain.textGpu.hostMs = {
+      card: +(profCardEnd - profStart).toFixed(2),
+      originalGraphTrace: +(profTraceEnd - profCardEnd).toFixed(2),
+      causalTextAndCode: +(profCausalEnd - profTraceEnd).toFixed(2),
+      sharedPyTorch: +(profSharedEnd - profCausalEnd).toFixed(2),
+      mazeAndTransform: +(end - profSharedEnd).toFixed(2),
+      total: +(end - profStart).toFixed(2)
+    };
+  }
   batchNow = null;
   // Report the first committed batch immediately, not only after 60,000 bytes.
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
