@@ -30,6 +30,8 @@ for (let k = 0; k < seedCount; k++) {
   const Fm = fixed.testMazes(testCount), Rm = fixedRandom.testMazes(testCount), Om = own.testMazes(testCount);
   const evalTransforms = b => trainTransforms ? b.testTransforms(Math.max(1, Math.min(testCount, 8))) : null;
   const Ft = evalTransforms(fixed), Rt = evalTransforms(fixedRandom), Ot = evalTransforms(own);
+  const Omi = own.testMazes(testCount, {autonomousNoise:true});
+  const Oti = trainTransforms ? own.testTransforms(Math.max(1, Math.min(testCount, 8)), {autonomousNoise:true}) : null;
   if (agency.total !== steps) throw Error('Frozen evaluation changed noise policy');
   const s = agency.status();
   if (!s.decisions || !s.bySite.none || !s.noiseChoices) throw Error('No actual autonomous noise choices: ' + JSON.stringify(s.bySite));
@@ -38,6 +40,7 @@ for (let k = 0; k < seedCount; k++) {
     brainOnly: {maze: Fm, transform: Ft},
     fixedRandomTraining: {maze: Rm, transform: Rt},
     brainWithAgency: {maze: Om, transform: Ot},
+    brainWithAgencyAtInference: {maze: Omi, transform: Oti},
     endogenousNoise: {decisions:s.decisions, noiseRate:s.noiseRate, bySite:s.bySite,
       cumulativeReward:s.cumulativeReward},
     noiseCausedTrainingDifference: Fm.solved !== Om.solved || Fm.ratio !== Om.ratio ||
@@ -47,9 +50,11 @@ for (let k = 0; k < seedCount; k++) {
 const metric = (arm, world, key) => avg(result.map(r => r[arm][world]?.[key]).filter(Number.isFinite));
 const fixedMaze = metric('brainOnly','maze','solved'), ownMaze = metric('brainWithAgency','maze','solved');
 const randomMaze = metric('fixedRandomTraining','maze','solved');
+const activeMaze = metric('brainWithAgencyAtInference','maze','solved');
 const fixedShape = metric('brainOnly','maze','shape'), ownShape = metric('brainWithAgency','maze','shape');
 const fixedTransform = metric('brainOnly','transform','solved'), ownTransform = metric('brainWithAgency','transform','solved');
 const randomTransform = metric('fixedRandomTraining','transform','solved');
+const activeTransform = metric('brainWithAgencyAtInference','transform','solved');
 console.log(JSON.stringify({protocol: 'SAME_SEEDS_SAME_WORLD_EPISODES_FROZEN_UNSEEN_TESTS',
   caveat: 'Descriptive paired training ablation; no universal transfer or statistically significant benefit implied',
   trainMazes, trainTransforms, testCount, seedCount,
@@ -58,11 +63,13 @@ console.log(JSON.stringify({protocol: 'SAME_SEEDS_SAME_WORLD_EPISODES_FROZEN_UNS
     mazeSuccessNoAgency: fixedMaze, mazeSuccessFixedRandom: randomMaze, mazeSuccessOwnAgency: ownMaze,
     mazeSuccessDifference: ownMaze - fixedMaze,
     mazeSuccessDifferenceVsFixedRandom: ownMaze - randomMaze,
+    mazeSuccessAgencyActiveAtInference: activeMaze,
     mazeFirstShapeNoAgency: fixedShape, mazeFirstShapeOwnAgency: ownShape,
     mazeFirstShapeDifference: ownShape - fixedShape,
     transformSuccessNoAgency: fixedTransform, transformSuccessFixedRandom: randomTransform,
     transformSuccessOwnAgency: ownTransform,
     transformSuccessDifference: fixedTransform === null ? null : ownTransform - fixedTransform,
     transformSuccessDifferenceVsFixedRandom: randomTransform === null ? null : ownTransform - randomTransform,
+    transformSuccessAgencyActiveAtInference: activeTransform,
   },
 }, null, 2));
