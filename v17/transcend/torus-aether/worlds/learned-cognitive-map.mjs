@@ -12,6 +12,23 @@ const key=a=>a.join(SEP);
 const ruleId=(at,from,to)=>JSON.stringify([at,from,to]);
 const valid=(n,lo,hi)=>Number.isInteger(n)&&n>=lo&&n<=hi;
 const clone=x=>JSON.parse(JSON.stringify(x));
+const unkey=s=>s?String(s).split(SEP):[];
+const contextOf=(at,before,kind='replace')=>{
+ const tokens=unkey(before),right=kind==='insert'?tokens[at]:tokens[at+1];
+ return {left:tokens[at-1]??null,right:right??null,
+  atEnd:kind==='insert'?at===tokens.length:at===tokens.length-1};
+};
+const contextMatches=(r,t,op)=>{
+ if(!r.contexts?.length)return true; // explicit observed action models lack this assumption.
+ return r.contexts.some(c=>{
+  const atEnd=op==='insert'?r.at===t.length:r.at===t.length-1;
+  if(c.atEnd!==atEnd)return false;
+  if(c.left!==null && c.left!==t[r.at-1])return false;
+  const right=op==='insert'?t[r.at]:t[r.at+1];
+  if(c.right!==null && c.right!==right)return false;
+  return true;
+ });
+};
 
 export class LearnedCognitiveMap {
   constructor({maxExamples=50000,maxRules=30000,maxNodes=768,maxDepth=12}={}){
@@ -80,6 +97,9 @@ export class LearnedCognitiveMap {
       this.rules.set(name,r);
     }
     const pair=before+' → '+after;
+    const ctx=contextOf(at,before,'replace');
+    r.contexts ||= [];
+    if(!r.contexts.some(x=>JSON.stringify(x)===JSON.stringify(ctx))&&r.contexts.length<24)r.contexts.push(ctx);
     if(!r.sources.includes(pair)){r.observations++;if(r.sources.length<12)r.sources.push(pair);}
   }
   #editEvidence(operation,at,from,to,before,after){
@@ -91,6 +111,9 @@ export class LearnedCognitiveMap {
       this.rules.set(name,r);
     }
     const pair=before+' → '+after;
+    const ctx=contextOf(at,before,operation);
+    r.contexts ||= [];
+    if(!r.contexts.some(x=>JSON.stringify(x)===JSON.stringify(ctx))&&r.contexts.length<24)r.contexts.push(ctx);
     if(!r.sources.includes(pair)){r.observations++;if(r.sources.length<12)r.sources.push(pair);}
   }
   // A real before/action/after observation can teach an unfamiliar
@@ -154,6 +177,7 @@ export class LearnedCognitiveMap {
       if(r.at>t.length||r.at+r.from.length>t.length||
         JSON.stringify(t.slice(r.at,r.at+r.from.length))!==JSON.stringify(r.from))return null;
     }else return null;
+    if(!contextMatches(r,t,op))return null;
     const observed=this.interventions.get(key(t)+'|'+action);
     if(observed?.blocked&&(!observed.accepted||observed.blocked>observed.accepted))return null;
     if(r.rejected>r.accepted+Math.max(1,r.observations))return null;
