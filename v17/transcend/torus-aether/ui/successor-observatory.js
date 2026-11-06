@@ -478,4 +478,10 @@ el("scEvaluate").addEventListener("click",async()=>{
 // Real telemetry while this tab is visible; no synthetic chart updates.
 setInterval(()=>{if(active())refreshLive();},2300);
 resetPlans();clearEvaluation();
-if(location.hash==="#successor")openTab();
+// This IS the dedicated isolated V18 Successor checkout. On the genuine
+// live server landing page show the new observatory immediately; old V17
+// Train/Eval/Graph tabs remain available and retain their own handlers.
+const initialGraphMatch=/(?:^|[?&])w=(\d+)/.exec(location.search);
+if(initialGraphMatch)el("scGraphId").value=initialGraphMatch[1];
+if(location.hash==="#successor"||
+   (location.hash===""&&/(?:^|[?&])live(?:=1|&|$)/.test(location.search)))openTab();
