@@ -17,6 +17,7 @@ import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_worl
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), CODE = worlds.includes("code"), MAPTEXT = worlds.includes("maptext");
+const MAP_ONLY = MAPTEXT && !TEXT && !MAZE && !TRANS && !CODE;
 
 async function* stream() {                                                 // this brain's share of the world, once
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
@@ -84,7 +85,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
-let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
+let gpuSet = !MAP_ONLY && workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
 const gpuOn = async () => {
   // Never kill a Python process while a CUDA batch is in flight. Apply changes at the next batch boundary.
   if (gpuResetPending) { gpu?.close(); gpu = null; sharedLoaded = false; gpuResetPending = false; }
@@ -95,7 +96,9 @@ const gpuOn = async () => {
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
-  if (!gpuSet) { shared.error = "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
+  if (!gpuSet) { shared.error = MAP_ONLY
+    ? "Map-only: full-map path search runs on CPU; shared PyTorch transitions are queued but not trained in this mode."
+    : "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
   const G = await gpuOn();
   if (!G) { shared.error = gpuError || "PyTorch process not ready"; return; }
   const samples = shared.take(96);
@@ -188,7 +191,9 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
   }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
-  if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
+  if (m && m.gpu) { gpuSet = MAP_ONLY || m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null;
+    if (MAP_ONLY && m.gpu.device !== "off") parentPort.postMessage({type: "note", w: workerData.gw, text: "Maptext-only is CPU; rejected unnecessary CUDA activation."});
+    return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
 const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
