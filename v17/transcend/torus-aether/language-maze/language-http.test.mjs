@@ -31,7 +31,9 @@ test("all original native graph/train/eval/CUDA tabs remain with real new langua
  assert.match(client,/fetch\("\/language-maze\/plan"/);
  assert.match(client,/result\.trace/);
  const worker=fs.readFileSync(path.join(root,"transcend/torus-aether/devour/worker.mjs"),"utf8");
- assert.match(worker,/languageMaze\.learn\(row\.prompt,row\.answer\)/);
+ assert.match(worker,/observeCompletedTrainingRows\(meta,languageMaze\)/);
+ assert.match(worker,/observeCompletedTrainingRows\(\[row\],languageMaze\)/);
+ assert.match(worker,/import \{observeCompletedTrainingRows\}/);
  assert.match(worker,/saveLanguageMaze\(\)/);
  assert.match(worker,/LanguageMazeMemory\.restore/);
 });
