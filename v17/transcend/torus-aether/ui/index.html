@@ -46,6 +46,29 @@
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
+
+  /* New research tabs: no change to the native graph/camera or training controls. */
+  .tabs{flex-wrap:wrap}
+  .studio-pane{display:none}
+  aside.side.psOn > :not(.tabs):not(#psPane){display:none}
+  aside.side.metricsOn > :not(.tabs):not(#metricsPane){display:none}
+  aside.side.transferOn > :not(.tabs):not(#transferPane){display:none}
+  aside.side.psOn #psPane,aside.side.metricsOn #metricsPane,aside.side.transferOn #transferPane{display:block}
+  .studio-panel{border:1px solid #29425a;background:#08111a;border-radius:10px;padding:12px;margin:10px 0}
+  .studio-panel h3{font-size:14px;margin:0 0 8px;color:#e6f3ff}
+  .studio-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .studio-row label{font-size:12px;color:var(--dim)}
+  .studio-row input,.studio-row select{background:#0a1824;color:var(--ink);border:1px solid #34516b;border-radius:6px;padding:5px;max-width:100%}
+  .studio-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .studio-kpis .m b{font-size:17px}
+  .studio-split{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:10px}
+  .studio-canvas{width:100%;height:auto;background:#030c14;border:1px solid #243c52;border-radius:9px}
+  .studio-trend{width:100%;height:165px;background:#030c14;border-radius:8px}
+  .studio-log{white-space:pre-wrap;word-break:break-word;font:11px/1.5 ui-monospace,monospace;color:#b7cfdf;max-height:220px;overflow:auto}
+  .studio-good{color:#61e1a4}.studio-bad{color:#ff7080}.studio-warn{color:#f5c16f}
+  .studio-caption{font-size:12px;color:var(--dim)}
+  .studio-actions{display:grid;gap:4px;font:12px ui-monospace,monospace}
+
 </style>
 </head>
 <body>
@@ -73,7 +96,79 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button></div>
+    <section id="psPane" class="studio-pane">
+      <h2>Perspectiva globală → perspectiva locală a corpului</h2>
+      <p class="note">Un singur instantaneu al hărții globale, urmat de observații reale 3×3 în jurul corpului. Organismul nu primește coordonata adevărată după primul pas. Poziția reală este desenată separat de evaluator.</p>
+      <div class="studio-panel">
+        <h3>Experimente înghețate pe labirinturi nevăzute</h3>
+        <div class="studio-row">
+          <label>Graful V17 <input id="psGraph" type="number" min="0" value="0" style="width:65px"></label>
+          <label>Mărimi <input id="psSizes" value="7,9,11" style="width:120px"></label>
+          <label>Lumi/mărime <input id="psPer" type="number" min="1" max="10" value="2" style="width:60px"></label>
+          <label>Seed <input id="psSeed" type="number" value="9173" style="width:100px"></label>
+          <button id="psCompare">Compară V17 cu perspectiva corpului</button>
+        </div>
+        <p class="studio-caption" id="psStatus">Evaluează o COPIE a creierului salvat. Nu antrenează pe lumile nevăzute și nu modifică checkpointul.</p>
+        <div class="studio-kpis">
+          <div class="m"><small>Rezolvate V17 original</small><b id="psBaseWin">—</b></div>
+          <div class="m"><small>Rezolvate perspectiva locală</small><b id="psBodyWin">—</b></div>
+          <div class="m"><small>Pași suplimentari V17 / corp</small><b id="psExtra">—</b></div>
+          <div class="m"><small>Localizare exactă în pași</small><b id="psPose">—</b></div>
+          <div class="m"><small>Vederi globale după primul pas</small><b id="psLeaks">—</b></div>
+          <div class="m"><small>Efecte motorii învățate</small><b id="psKnown">—</b></div>
+        </div>
+      </div>
+      <div class="studio-panel">
+        <div class="studio-row">
+          <label>Labirint <select id="psCase" style="width:190px"></select></label>
+          <button id="psPlay">▶ Replay</button>
+          <label>Pas <input id="psStep" type="range" min="0" max="0" value="0" style="min-width:130px"></label>
+          <span id="psStepLabel" class="dim">—</span>
+        </div>
+        <div class="studio-split">
+          <div><h3>Harta memorată + forma inițială</h3><canvas id="psGlobal" class="studio-canvas" width="420" height="420"></canvas><p class="studio-caption">Turcoaz: traseul anticipat înaintea acțiunii. Albastru: poziția estimată. Portocaliu: poziția reală (evaluator).</p></div>
+          <div><h3>Ce vede corpul acum (doar 3×3)</h3><canvas id="psLocal" class="studio-canvas" width="420" height="420"></canvas><p class="studio-caption">Senzorii locali nu primesc harta globală actualizată. Se compară cu imaginea păstrată în memorie.</p></div>
+        </div>
+        <pre id="psExplanation" class="studio-log">Nicio evaluare efectuată.</pre>
+      </div>
+      <div class="studio-panel"><h3>Istoric acțiuni și explicații</h3><div id="psActions" class="studio-actions"></div></div>
+    </section>
+    <section id="metricsPane" class="studio-pane">
+      <h2>Metrici reale din backend</h2>
+      <p class="note">Fiecare punct este capturat din /graph sau /graphs pentru creierul selectat; graficele nu fabrică episoade și nu transformă valorile repetate în măsurători noi. Istoricul de pe această pagină începe la deschidere.</p>
+      <div class="studio-kpis" id="metricsKpis">
+        <div class="m"><small>Caractere trăite</small><b id="mChars">—</b></div>
+        <div class="m"><small>Labirinturi trăite</small><b id="mMazes">—</b></div>
+        <div class="m"><small>Transformări trăite</small><b id="mTrans">—</b></div>
+        <div class="m"><small>Efecte motorii învățate</small><b id="mMotor">—</b></div>
+        <div class="m"><small>Tranziții globale→locale observate</small><b id="mBodyObs">—</b></div>
+        <div class="m"><small>PyTorch / GPU real</small><b id="mGpu">—</b></div>
+      </div>
+      <div class="studio-panel"><h3>Evaluări înghețate · procent 0–100%</h3><canvas id="mAccuracyCv" class="studio-trend" width="780" height="180"></canvas><p class="studio-caption">Turcoaz: text; portocaliu: labirint; mov: jocuri. Valorile lipsă nu sunt completate artificial.</p></div>
+      <div class="studio-panel"><h3>Loss model comun · PyTorch</h3><canvas id="mLossCv" class="studio-trend" width="780" height="180"></canvas><p class="studio-caption">Turcoaz: MSE înainte de actualizare. Gri: baseline de persistență. Mai mic e mai bine.</p></div>
+      <div class="studio-panel"><h3>Acțiunile corpului învățate prin experiență</h3><div id="mActions" class="studio-actions">Nicio acțiune încă.</div></div>
+      <div class="studio-panel"><h3>Ultima observație backend</h3><pre id="mRaw" class="studio-log">—</pre></div>
+    </section>
+    <section id="transferPane" class="studio-pane">
+      <h2>Model comun · transfer · CUDA</h2>
+      <p class="note">Un singur model 32D PyTorch primește tranziții reale text/labirint/transformări; predicțiile next-state nu sunt dovadă de transfer semantic. Butonul de test folosește evaluatorul înghețat existent.</p>
+      <div class="studio-panel">
+        <div class="studio-kpis">
+          <div class="m"><small>Tranziții observate</small><b id="trObs">—</b></div>
+          <div class="m"><small>Actualizări model comun</small><b id="trSteps">—</b></div>
+          <div class="m"><small>Repartiție text / labirint / joc</small><b id="trDomains">—</b></div>
+          <div class="m"><small>Device raportat</small><b id="trDevice">—</b></div>
+        </div>
+        <button id="trEval">Evaluează modelul comun înghețat (lumi nevăzute)</button>
+        <p class="note" id="trStatus">Aștept antrenarea modelului comun.</p>
+        <pre id="trEvidence" class="studio-log">—</pre>
+      </div>
+      <div class="studio-panel"><h3>Ce a învățat, ce nu demonstrează și de ce</h3>
+        <p class="note">Înainte: observație. Acțiune: comandă emisă. Prezis: următoarea stare în reprezentarea 32D. Real: observația care a urmat. Eroarea compară predicția cu observația, nu rezolvarea unui text sau a unui labirint.</p>
+        <div id="trReasons" class="studio-log"></div>
+      </div>
+    </section>
     <div id="evalPane">
       <h2>Evaluare pe ce n-a trăit niciodată — din prima încercare</h2>
       <p class="note">O copie a grafului <b id="evW">#0</b>, încărcată din save-ul lui (îl salvează chiar atunci), rulează pe procesor. Antrenarea merge mai departe neatinsă; copia nu învață între lumi.</p>
@@ -211,5 +306,6 @@
   <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
+<script type="module" src="perspective-studio.js"></script>
 </body>
 </html>
