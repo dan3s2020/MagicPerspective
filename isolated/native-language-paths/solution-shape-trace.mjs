@@ -80,7 +80,7 @@ export function captureSolutionShape(graph,brain,{gamma=.9,actorPolicy='native',
     reroutes=0,actualMoves=0,fieldUpdates=0;
   const executed=[at],visited=new Set(executed),frames=[];
   function frame({action=null,from=null,actual=null,predictedNext=null}={}){
-    const field=nativeAttractionField(graph,brain,at);
+    const field=nativeAttractionField(graph,brain,at,{recordSweeps:true});
     const local=nativePlan(graph,brain,at);
     fieldUpdates++;
     const choices=optionsFor(graph,at,field,sr,exact,visited);
@@ -99,6 +99,7 @@ export function captureSolutionShape(graph,brain,{gamma=.9,actorPolicy='native',
       targetReached:graph.nodes[at].kind===KIND.target,
       shape:local,globalShape:original,
       field:Array.from(field.values,cleanValue),
+      fieldWave:field.wave||[],fieldSweeps:field.sweeps,
       fieldL1Delta:delta===null?null:cleanValue(delta),
       shortestDistance:Number.isFinite(shortest.dist[at])?shortest.dist[at]:null,
       shortestPaths:shortest.counts[at].toString(),
