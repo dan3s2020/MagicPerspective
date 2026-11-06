@@ -34,7 +34,8 @@ export class LearnedCognitiveMap {
   constructor({maxExamples=50000,maxRules=30000,maxNodes=768,maxDepth=12}={}){
     this.limits={maxExamples,maxRules,maxNodes,maxDepth};
     this.examples=new Map();this.skeletons=new Map();this.rules=new Map();this.shorterIndex=new Map();
-    this.interventions=new Map();this.documents=0;this.evaluations=0;
+    this.interventions=new Map();this.externalEdges=new Map();this.externalObservations=0;
+    this.documents=0;this.evaluations=0;
     this.last=null;this.version=1;
   }
   // One complete input is perceived before any attempt to move.
@@ -187,6 +188,61 @@ export class LearnedCognitiveMap {
     else t[r.at]=r.to;
     return t;
   }
+  // All V17 domains can share observed state/action/next-state relations
+  // without copying simulator physics, BFS maps, or hidden desired answers.
+  observeExternalTransition({domain,before,action,after,context=""}={}){
+    if(!['maze','transform','text','code'].includes(domain))throw Error('Unknown observation domain');
+    const s=x=>typeof x==='string'?x:Array.isArray(x)?x.slice():null;
+    const a=s(before),b=s(after);
+    if(a===null||b===null||action===undefined)throw Error('Real observed transition required');
+    const start=JSON.stringify([domain,a]),end=JSON.stringify([domain,b]);
+    const index=start+SEP+String(action);
+    let transition=this.externalEdges.get(index);
+    if(transition&&transition.to!==end){transition.ambiguous=true;}
+    if(!transition){
+      if(this.externalEdges.size>=50000)throw Error('Cross-world observed-state atlas reached its configured memory limit');
+      transition={domain,from:start,to:end,before:a,after:b,action:String(action),
+        count:0,ambiguous:false,context:String(context).slice(0,128)};
+      this.externalEdges.set(index,transition);
+    }
+    transition.count++;this.externalObservations++;
+    return {known:true,domain,conflict:transition.ambiguous,count:transition.count};
+  }
+  // The ORIGINAL V17 shape operator also runs over observed non-language edges.
+  // Unlike the explicit hypercube this graph contains ONLY experienced edges.
+  formObservedWorld(domain,initial,goal,{disc=null,maxNodes=512}={}){
+    if(!['maze','transform','text','code'].includes(domain))throw Error('Unknown world domain');
+    const start=JSON.stringify([domain,initial]),states=[initial],keys=new Map([[start,0]]);
+    const outgoing=new Map();
+    for(const e of this.externalEdges.values()){
+      if(e.domain!==domain||e.ambiguous)continue;
+      if(!outgoing.has(e.from))outgoing.set(e.from,[]);
+      outgoing.get(e.from).push(e);
+    }
+    const neighbors=[[]];
+    for(let i=0;i<states.length;i++){
+      const id=JSON.stringify([domain,states[i]]);
+      for(const edge of outgoing.get(id)||[]){
+        let to=keys.get(edge.to);
+        if(to===undefined){
+          if(states.length>=maxNodes)continue;
+          to=states.length;states.push(edge.after);keys.set(edge.to,to);neighbors.push([]);
+        }
+        neighbors[i].push({to,action:edge.action,transformation:'observed:'+domain});
+      }
+    }
+    const targets=states.flatMap((state,i)=>LearnedCognitiveMap.matchGoal(state,goal)?[i]:[]);
+    if(!targets.length)return {found:false,reason:'GOAL_NOT_REACHED_IN_OBSERVED_TRANSITIONS',
+      domain,states:states.length,learnedEdges:outgoing.size,path:[]};
+    const kinds=states.map((_,i)=>i===0?KIND.self:targets.includes(i)?KIND.target:KIND.floor);
+    const field=shapeOnLearnedTopology({kinds,neighbors,start:0,
+      conduct:k=>k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1,
+      attract:k=>k===KIND.target?1:0});
+    return {found:!!field.path&&targets.includes(field.path.at(-1)?.to),
+      domain,states:states.length,learnedEdges:outgoing.size,
+      path:field.path||[],field,plannedBeforeAction:true,
+      interpretation:'Original V17 shape over observed transitions ONLY; no unseen action physics inferred.'};
+  }
   // Goal is a CHECKABLE predicate on the generated state; the finished sentence
   // is NEVER supplied as a target string, node, hidden path, or teacher-forced prefix.
   static matchGoal(tokens,goal){
@@ -300,20 +356,25 @@ export class LearnedCognitiveMap {
     });
   }
   report(){return {version:1,documents:this.documents,observedSentences:this.examples.size,
-    inducedActionRules:this.rules.size,realObservedActions:[...this.interventions.values()].reduce((s,e)=>s+e.accepted+e.blocked,0),
+    inducedActionRules:this.rules.size,externalTransitionObservations:this.externalObservations,
+    observedDomainEdges:this.externalEdges.size,
+    realObservedActions:[...this.interventions.values()].reduce((s,e)=>s+e.accepted+e.blocked,0),
     confirmedActions:[...this.rules.values()].filter(r=>r.accepted>0).length,
     rejectedActions:[...this.rules.values()].reduce((s,r)=>s+r.rejected,0),last:this.last,
     interpretation:'Rules learned from contrasts are hypotheses until actions are observed. No next-token trainer.'};}
   export(){return {version:1,limits:this.limits,documents:this.documents,
     examples:[...this.examples],skeletons:[...this.skeletons].map(([k,m])=>[k,[...m]]),
     shorterIndex:[...this.shorterIndex],
-    rules:[...this.rules],interventions:[...this.interventions],last:this.last};}
+    rules:[...this.rules],interventions:[...this.interventions],
+    externalEdges:[...this.externalEdges],externalObservations:this.externalObservations,last:this.last};}
   static restore(data){
     if(data?.version!==1)throw Error('Incompatible cognitive map checkpoint version');
     const m=new LearnedCognitiveMap(data.limits);m.documents=data.documents;
     m.examples=new Map(data.examples);m.skeletons=new Map(data.skeletons.map(([k,a])=>[k,new Map(a)]));
     m.shorterIndex=new Map(data.shorterIndex||[]);
-    m.rules=new Map(data.rules);m.interventions=new Map(data.interventions);m.last=data.last||null;
+    m.rules=new Map(data.rules);m.interventions=new Map(data.interventions);
+    m.externalEdges=new Map(data.externalEdges||[]);m.externalObservations=data.externalObservations||0;
+    m.last=data.last||null;
     return m;
   }
 }
