@@ -66,7 +66,8 @@ const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
-    perspective: g?.perspective || t?.perspective || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
+    perspective: g?.perspective || t?.perspective || null,
+    language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
@@ -146,6 +147,20 @@ http.createServer((req, res) => {
         const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
         opts.list = list.map(t => toB(t).slice(0, Math.max(50, +opts.max || 20000))); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
+  // Frozen multilingual/token-scale continuation from the SAME lived source.
+  // The model gets no held-out training updates during this endpoint.
+  if (req.method === "POST" && url === "/language-eval") {
+    const sl=slots.find(x=>x.w===+(q.get('w')||0));
+    if(!sl||!sl.worlds.includes('text')||!sl.wk)
+      return json(res,{error:'Select a running graph training actual text'});
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:'Language evaluation timed out'});
+    },180000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({languageExam:{id,limit:Math.max(100,Math.min(10000,
+      Math.trunc(+(q.get('limit')||1800)))),seed:+(q.get('seed')||11)}});
+    return;
+  }
   // The selected ORIGINAL Brain predicts and executes unseen global->local
   // perspective tasks with no online updates to the shared learned mapping.
   if (req.method === "POST" && url === "/perspective-eval") {
