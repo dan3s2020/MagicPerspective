@@ -127,7 +127,7 @@ function liveCausalExperience(events){
   const before=e.before.join(' ').slice(-56),after=e.after.join(' ').slice(-56);
   const reward=Math.round(100*(e.feedback?.delta||0));
   const line='ACTION '+e.action.tool+' '+e.action.token+' BEFORE '+before+' AFTER '+after+' REWARD '+reward+'\n';
-  for(const ch of line.slice(0,135))brain.live(ch.charCodeAt(0),false);
+  for(const ch of line.slice(0,135))brain.live(ch.charCodeAt(0),false,{old:gpuRunner.active});
  }
 }
 function geometryForText(bytes,heldout){
