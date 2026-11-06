@@ -165,7 +165,7 @@ export class AligningGraph {
     // Research-only optional loop resistance. The default (loopPenalty=0) preserves original V17 output exactly.
     const resistance = Math.max(0, Number(loopPenalty) || 0), span = Math.max(4, Math.min(96, Math.floor(loopWindow) || 24));
     const repeats = resistance > 0 ? new Map() : null;
-    const ending = (last = null) => String.fromCharCode(...h.slice(1 - span), ...(last === null ? [] : [last]));
+    const ending = (last = null) => String.fromCharCode(...h.slice(last === null ? -span : 1 - span), ...(last === null ? [] : [last]));
     if (repeats) for (let i = span - 1; i < h.length; i++) {
       const key = String.fromCharCode(...h.slice(i - span + 1, i + 1));
       repeats.set(key, (repeats.get(key) || 0) + 1);
