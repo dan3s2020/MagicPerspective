@@ -19,6 +19,7 @@ jobs:
           node --check v17/transcend/torus-aether/language-maze/shape-topology.mjs
           node --check v17/transcend/torus-aether/language-maze/language-world.mjs
           node --check v17/transcend/torus-aether/ui/language-maze-studio.js
+          node --check v17/transcend/torus-aether/ui/successor-observatory.js
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
       - name: Original maze parity, live learned text, successor exact ties and hierarchical 112531-character path
