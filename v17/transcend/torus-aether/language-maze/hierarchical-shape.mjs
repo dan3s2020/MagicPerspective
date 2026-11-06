@@ -16,6 +16,9 @@
 import {shapeOnLearnedTopology} from "./shape-topology.mjs";
 import {KIND} from "../worlds/exercise.mjs";
 
+// 256 is a NUMERICAL tile size: with 0.97 attenuation the original
+// 1e-12 convergence criterion can be retained within each tile. It is
+// not a cognitive-dimensionality definition.
 const FANOUT=256;
 function grouped(items,size=FANOUT){
  const result=[];for(let i=0;i<items.length;i+=size)result.push(items.slice(i,i+size));
@@ -32,7 +35,6 @@ function makeTree(chars){
 }
 function createPortalWorld(children){
  const kinds=[KIND.self,...children.map(()=>KIND.floor)];
- if(children.length)kinds.at(-1);
  if(children.length)kinds[kinds.length-1]=KIND.target;
  const neighbors=Array.from({length:kinds.length},()=>[]);
  for(let i=0;i<children.length;i++)neighbors[i].push({
@@ -61,17 +63,18 @@ export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,
  // This recursively computes all global/layer plans BEFORE beginning execution.
  if(tree.root.kind==="group")prepare(tree.root,conduct,attract);
  const initialShape=chars.slice(),emitted=[],trace=[],pathNodes=[0],graphNodes=[
-  {id:0,kind:KIND.self,state:"body",lastCharacter:null,potential:1}
- ],graphEdges=[],values=[1];
+  {id:0,kind:KIND.self,state:"body",lastCharacter:null,potential:null}
+ ],graphEdges=[],values=[null];
  let agreement=0,macroMoves=0,blocked=0;
- const follow=node=>{
+ const follow=(node,potential)=>{
   if(node.kind==="character"){
    emitted.push(node.character);
    const i=emitted.length;
    if(i<=maxReplay){
     pathNodes.push(i);
     graphNodes.push({id:i,kind:i===chars.length?KIND.target:KIND.floor,state:"character",
-      lastCharacter:node.character,potential:1});
+      lastCharacter:node.character,potential});
+    values.push(potential);
     graphEdges.push({from:i-1,to:i,character:node.character});
    }
    return;
@@ -101,15 +104,20 @@ export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,
       policy:"local_neighbor_hillclimb_of_remembered_global_field",
       hierarchyLevels:tree.levels});
    }
-   follow(child);
+   if(follow(child,V[position])===false)return false;
   }
   return true;
  };
  if(tree.root.kind==="character"){
   // Degenerate one-character observed world is still a one-cell submaze.
   const only={kind:"group",children:[tree.root]};
-  prepare(only,conduct,attract);follow(only);
- }else follow(tree.root);
+  prepare(only,conduct,attract);
+  values[0]=only.field.values[0];graphNodes[0].potential=values[0];
+  follow(only,values[0]);
+ }else {
+  values[0]=tree.root.field.values[0];graphNodes[0].potential=values[0];
+  follow(tree.root,values[0]);
+ }
  const complete=emitted.length===chars.length&&blocked===0;
  return {
   protocol:"ONE_MAZE_LAW_OVER_OBSERVED_TEXT_TRANSITIONS",
