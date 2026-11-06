@@ -181,3 +181,42 @@ Parallel CI test workers write to separate run folders, not the actual local Bra
 See REGRESSION_TRACEABILITY.md for source-excerpt references, code paths, verified tests and
 explicit open items. Full historical Verbatim completeness remains BLOCKED under the
 canonical source policy; optional CUDA does not change that finding.
+
+
+### Incomplete Torch environment repair (Windows)
+
+Error example: \`ModuleNotFoundError: No module named 'torch.torch_version'\` from
+\`isolated/noise-space/.venv/Lib/site-packages/torch/__init__.py\`.
+
+This indicates that the selected local torch package cannot import completely.
+Do **not** infer a driver/GPU fault before torch can import. The old launch wrapper
+only checked the existence of \`.venv/Scripts/python.exe\`, so it could mistakenly
+accept this damaged installation.
+
+The corrected setup is **idempotent**: always run it when repairing or first
+enabling CUDA, even when \`python.exe\` already exists:
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File D:\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space\SETUP_CUDA_WINDOWS.ps1
+
+It performs these steps:
+1. Run \`CHECK_CUDA_ENV.py\` with the *actual local venv interpreter*. The probe
+   imports \`torch\`, \`torch.torch_version\`, and \`numpy\`; requires
+   \`torch.cuda.is_available()\`; executes and verifies a real CUDA matrix multiply.
+2. If that fails, choose a validated external Python 3.10–3.12 interpreter,
+   remove **only** the known local \`isolated/noise-space/.venv\` dependency folder
+   (refusing linked folders), and create a clean virtual environment.
+3. Reinstall NumPy from pip and the CUDA PyTorch wheel with \`--no-cache-dir\`.
+   Defaults to \`cu126\`. \`-Cuda cu130\` is available for users with a compatible
+   driver; do not assume driver support.
+4. Re-run the real CUDA probe and the original V17 512-world CUDA self-test.
+   Installation is not considered healthy unless both succeed.
+
+Existing \`runs/real-v17/brain.v8\`, \`geometry.json\`, \`observatory.json\`, all
+other runs, Git history, original \`v17\` source, and user files remain untouched.
+If the probe fails on normal launch, \`START_WINDOWS.ps1\` permits explicit CPU
+training without pointing V17 to an invalid GPU Python. It will not claim CUDA
+is active when CUDA verification fails. The repair script needs internet access
+and enough disk space for PyTorch CUDA wheels.
+
+Windows PowerShell parse and Python syntax are checked in CI. End-to-end
+RTX 3050 Ti execution remains to be verified on the user's actual NVIDIA GPU.
