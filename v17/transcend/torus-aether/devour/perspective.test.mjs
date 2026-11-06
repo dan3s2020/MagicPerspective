@@ -85,3 +85,26 @@ test('ORIGINAL V17 live UI and server keep their existing entrypoints and contro
  assert.ok(html.includes('<script type="module" src="app.js">'));
  assert.ok(!/DEMO_MODE|synthetic_(maze|perspective)/.test(js));
 });
+
+test('pre-perspective checkpoint survives upgrade and begins training without reset',()=>{
+ const oldBrain=new Brain({seed:31,rules:{}});
+ for(let i=0;i<7;i++)oldBrain.playMaze(false);
+ const before=oldBrain.mazes.played;
+ delete oldBrain.perspective; // Mimic an original old V17 checkpoint.
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'magic-old-v17-'));
+ try{
+  const checkpoint=path.join(tmp,'brain-0-winner.v8');
+  oldBrain.save(checkpoint);
+  const upgraded=Brain.load(checkpoint);
+  assert.equal(upgraded.mazes.played,before);
+  assert.ok(upgraded.perspective instanceof PerspectiveLearner);
+  assert.equal(upgraded.perspective.episodes,0);
+  upgraded.playMaze(true);
+  assert.equal(upgraded.mazes.played,before+1);
+  assert.equal(upgraded.perspective.episodes,1);
+  upgraded.save(checkpoint);
+  const resumed=Brain.load(checkpoint);
+  assert.equal(resumed.perspective.episodes,1);
+  console.log('LEGACY_V17_MIGRATION_OK '+JSON.stringify({oldMazePlayed:before,newMazePlayed:resumed.mazes.played,newPerspectiveEpisodes:resumed.perspective.episodes}));
+ }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});
