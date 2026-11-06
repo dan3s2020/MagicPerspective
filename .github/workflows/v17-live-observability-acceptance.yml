@@ -1,0 +1,47 @@
+name: Original V17 living UI + full real observability acceptance
+on:
+  push:
+    branches:
+      - experiment/V17-LIVE-OBSERVABILITY-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-native-trainer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse actual HTML companion, original UI and backend
+        run: |
+          node --check v17/transcend/torus-aether/ui/observatory.js
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+      - name: Render all seven real observability tabs and reject stale selected-graph responses
+        run: node --test v17/tests/torus-observatory-ui.test.mjs
+      - name: Launch the REAL original V17 trainer, verify live counting, measured time series, HTTP and async CUDA evaluation errors
+        run: node --test v17/tests/torus-live-observability.test.mjs
+      - name: Preserve all original organism, transformed text and live four-world behavior
+        run: |
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/torus-all-worlds-live.test.mjs
+  windows-ps:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse both original Windows PowerShell launchers with no modification
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($f in @('v17/START_V17.ps1','v17/START_V17_TRANSFER.ps1')){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($f+': '+($errors -join '; '))}
+          }
