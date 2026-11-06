@@ -153,7 +153,9 @@ export class TextHypermaze {
   }
   const found=pos===b;
   return {found,start,goal,reason:found?"GOAL_REACHED":"PATH_LIMIT",
-   path:ids.map(id=>this.nodes[id].label),links,distance:dist[a],truncated:!found,
+   path:ids.map(id=>this.nodes[id].label),links,
+   routeNodes:ids.map(id=>{const n=this.nodes[id];return {id:n.id,label:n.label,count:n.count,features:this.features(n)};}),
+   distance:dist[a],truncated:!found,
    math:{maxResidual:residual,reachable:queue.length,
     optimal:found&&links.length===dist[a],strictUphill:links.every(e=>e.vTo>e.vFrom),
     pathLength:links.length,field:"V(goal)=1; V(s)=0.97 max V(successor)=0.97^d(s,goal)",
