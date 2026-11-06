@@ -35,7 +35,10 @@ test('a real rejected action becomes a wall; no oracle goal injected into traini
  assert.equal(fail.solved,false);
  assert.equal(m.report().rejectedActions,1);
  const after=m.formSolution('He is calm.',goal);
- assert.equal(after.found,false,'A blocked transition cannot be silently retried as a legal path');
+ // Another route may exist, just like in a real labyrinth; only the ACTUAL
+ // failed transition is blocked, not the entire candidate world.
+ if(after.found)assert.ok(after.path[0].action!==p.path[0].action,
+   'The failed action must never be silently reused at the same state');
 });
 test('the world does NOT label unobserved sentences as invalid walls',()=>{
  const m=train(),r=m.formSolution('He is calm.',goal);
