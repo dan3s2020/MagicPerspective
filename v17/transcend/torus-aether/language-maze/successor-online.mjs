@@ -39,6 +39,7 @@ export class OnlineSuccessor {
   this.rows=0;this.characters=0;this.updates=0;
   this.evicted=0;this.absTdMean=0;this.lastTd=0;
   this.lastLength=0;this.levelUpdates=new Array(SCALES.length).fill(0);
+  this.hierarchicalBridges=0; // observed temporal coarsening influences finer decisions
   this.trainedSinceBoot=0;this.restored=false;
  }
  #get(key){
@@ -79,13 +80,23 @@ export class OnlineSuccessor {
   // An episode's terminal must be represented at EVERY level, not faked
   // at a fixed arbitrary length or taken from a held-out reference.
   const last=suffix(ring);
-  for(let level=0;level<SCALES.length;level++){
+  // Solve from the most global perspective back to the finest character
+  // scale. Coarser already-trained values become bootstrap targets ONLY
+  // at genuine observed block boundaries in this SAME training episode.
+  for(let level=SCALES.length-1;level>=0;level--){
    const term=stateKey(level,pos,last),keys=stages[level];
    if(keys.at(-1)!==term)keys.push(term);
    // One reverse TD sweep on the real complete training trajectory.
    let future=this.#update(keys.at(-1),1,level);
    for(let i=keys.length-2;i>=0;i--){
-    future=this.#update(keys[i],this.gamma*future,level);
+    const depth=i*SCALES[level];
+    let target=this.gamma*future;
+    if(level+1<SCALES.length&&depth>0&&depth%SCALES[level+1]===0){
+     const code=keys[i],first=code.indexOf(":"),second=code.indexOf(":",first+1),
+       tail=code.slice(second+1),higher=this.#get(stateKey(level+1,depth,tail));
+     if(higher&&higher.value>target){target=higher.value;this.hierarchicalBridges++;}
+    }
+    future=this.#update(keys[i],target,level);
    }
   }
   this.rows++;this.trainedSinceBoot++;this.characters+=pos;this.lastLength=pos;
@@ -125,6 +136,7 @@ export class OnlineSuccessor {
    gamma:this.gamma,alpha:this.alpha,tdAbsMean:this.absTdMean,
    lastTd:this.lastTd,lastEpisodeLength:this.lastLength,
    levels:SCALES.slice(),levelUpdates:this.levelUpdates.slice(),evicted:this.evicted,
+   hierarchicalBridges:this.hierarchicalBridges,
    trainedSinceBoot:this.trainedSinceBoot,restored:this.restored,
    numericValueNotAnswerAccuracy:true};
  }
@@ -133,6 +145,7 @@ export class OnlineSuccessor {
    states:[...this.states.entries()],rows:this.rows,characters:this.characters,
    updates:this.updates,evicted:this.evicted,absTdMean:this.absTdMean,
    lastTd:this.lastTd,lastLength:this.lastLength,
+   hierarchicalBridges:this.hierarchicalBridges,
    levelUpdates:this.levelUpdates.slice()};
  }
  static restore(data){
@@ -159,6 +172,10 @@ export class OnlineSuccessor {
   model.updates=data.updates;model.evicted=data.evicted;
   model.absTdMean=data.absTdMean;model.lastTd=data.lastTd;
   model.lastLength=data.lastLength;
+  if(data.hierarchicalBridges!==undefined){
+   if(!isNonNegativeInt(data.hierarchicalBridges))throw Error("Invalid hierarchical successor bridges");
+   model.hierarchicalBridges=data.hierarchicalBridges;
+  }
   model.levelUpdates=data.levelUpdates.slice();model.restored=true;
   return model;
  }
