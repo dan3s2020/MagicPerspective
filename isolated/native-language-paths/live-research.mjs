@@ -19,13 +19,15 @@ export class LiveResearch {
       noGraph:0,goalReachedNative:0,goalReachedSR:0};
     this.history=[];this.last=null;this.error=null;this.heldout=null;this.progress=null;this.trainingChars=0;
     this.characterTrace=[];this.characterSeen=0;this.characterHits=0;this.characterTraceSource='original-v17-brain-live';
+    this.frozenCharacterTrace=[];this.frozenCharacterSourceIndex=null;this.frozenCharacterAccuracy=null;
   }
   static restore(saved,config={}){
     if(saved?.version!==1)throw Error('Unsupported live research checkpoint');
     const a=new LiveResearch({...saved.config,...config});
     a.atlas=ObservedQAAtlas.restore(saved.atlas);
     for(const k of ['observed','attempts','tested','cumulative','exacts','repeat','usages',
-      'history','last','heldout','trainingChars','characterTrace','characterSeen','characterHits'])if(saved[k]!==undefined)a[k]=saved[k];
+      'history','last','heldout','trainingChars','characterTrace','characterSeen','characterHits',
+      'frozenCharacterTrace','frozenCharacterSourceIndex','frozenCharacterAccuracy'])if(saved[k]!==undefined)a[k]=saved[k];
     a.atlas.maxEntries=Math.max(a.atlas.maxEntries,a.config.maxEntries);
     return a;
   }
@@ -35,7 +37,10 @@ export class LiveResearch {
       cumulative:this.cumulative,exacts:this.exacts,repeat:this.repeat,
       usages:this.usages,history:this.history,last:this.last,
       heldout:this.heldout,trainingChars:this.trainingChars,
-      characterTrace:this.characterTrace,characterSeen:this.characterSeen,characterHits:this.characterHits};
+      characterTrace:this.characterTrace,characterSeen:this.characterSeen,characterHits:this.characterHits,
+      frozenCharacterTrace:this.frozenCharacterTrace,
+      frozenCharacterSourceIndex:this.frozenCharacterSourceIndex,
+      frozenCharacterAccuracy:this.frozenCharacterAccuracy};
   }
   recordCharacter(event) {
     // Exact prediction already calculated by original AligningGraph.live(y).
@@ -49,6 +54,22 @@ export class LiveResearch {
       source:event.src||null
     });
     if(this.characterTrace.length>768)this.characterTrace.splice(0,this.characterTrace.length-768);
+  }
+  captureFrozenCharacters(index,question,answer,brain) {
+    // This is a PRE-OBSERVATION teacher-forced evaluation on the CURRENT
+    // real Parquet row. It uses original AligningGraph.readFrozen and does NOT
+    // perform learning or invent the CUDA training GPU's own prediction path.
+    if(!brain.align)return;
+    const text='Q: '+String(question).slice(0,320)+'\nA: '+String(answer).slice(0,240);
+    const bytes=Array.from(text,ch=>{const y=ch.charCodeAt(0);
+      return y===9||y===10||(y>=32&&y<127)?y:63;});
+    const seen=[];
+    const acc=brain.align.readFrozen(bytes,(i,actual,guess)=>{
+      seen.push({at:i,actual,guess,correct:actual===guess,source:'frozen-preobservation'});
+    },{T:0});
+    this.frozenCharacterTrace=seen;
+    this.frozenCharacterSourceIndex=index;
+    this.frozenCharacterAccuracy=acc;
   }
   // This is a frozen comparison, not a new language learner. It uses the
   // exact same original Brain that experiences maze and characters.
@@ -124,6 +145,8 @@ export class LiveResearch {
       this.exacts[k]+=Number(predicted[k].slice(0,this.config.characterLimit).trim()===truth.trim());
     }
     this.attempts++;
+    if(this.attempts===1||this.attempts%this.config.reportEvery===0)
+      this.captureFrozenCharacters(index,question,answer,brain);
     const repOrig=repeatedWindowFraction(predicted.char,this.config.loopWindow);
     const repGuard=repeatedWindowFraction(predicted.guarded,this.config.loopWindow);
     this.repeat.original+=repOrig;this.repeat.guarded+=repGuard;
@@ -197,7 +220,10 @@ export class LiveResearch {
       characterTelemetry:{
         source:this.characterTraceSource,seen:this.characterSeen,hits:this.characterHits,
         accuracy:this.characterSeen?this.characterHits/this.characterSeen:null,
-        recent:this.characterTrace
+        recent:this.characterTrace,
+        frozenRecent:this.frozenCharacterTrace,
+        frozenRow:this.frozenCharacterSourceIndex,
+        frozenAccuracy:this.frozenCharacterAccuracy
       },
       error:this.error,progress:this.progress,config:this.config,...extra
     };
