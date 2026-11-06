@@ -382,7 +382,7 @@ function stats() {
 let frame = 0;
 function loop() {
   if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); if(frame%3===0)drawPerspective(); }
+  if (LIVE) { drawMaze(); drawTrans(); if(frame%3===0)perspectiveDraw(); }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
   for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
@@ -476,7 +476,7 @@ function renderSelfcode(S) {
     S.lastProbe?'Ultima intervenție reală: '+S.lastProbe.slot+' → '+S.lastProbe.value+
       ' · diferență măsurată '+S.lastProbe.delta:'Fără rezultate independente încă.';
 }
-function drawPerspective() {
+function perspectiveDraw() {
   const P=perspectiveLast,box=$('perspectiveBox');if(!P?.world||!P.physicalPath?.length||box.hidden)return;
   const C=$('perspectiveCv'),ctx=C.getContext('2d'),W=C.width,H=C.height;
   const n=P.world.n,cell=Math.min(W,H)/n,ox=(W-n*cell)/2,cy=i=>((i/n)|0)*cell+cell/2;
@@ -501,9 +501,9 @@ function drawPerspective() {
     ' · zgomot ales '+(tr?.noise??'none');
 }
 $('perspectiveReplay').onclick=()=>{perspectiveT0=performance.now();};
-$('perspectiveEval').onclick=async()=>{
+$('perspEvaluate').onclick=async()=>{
   if(!LIVE)return;
-  const out=$('perspectiveEvalOut'),btn=$('perspectiveEval');btn.disabled=true;
+  const out=$('perspectiveEvalOut'),btn=$('perspEvaluate');btn.disabled=true;
   out.textContent='Evaluarea organismului înghețat pe hărți nevăzute...';
   try{const r=await(await fetch('/perspective-eval?w='+liveW+'&count=20&seed=73',{method:'POST'})).json();
     if(r.error)throw Error(r.error);
