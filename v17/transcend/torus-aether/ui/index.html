@@ -54,7 +54,8 @@
   aside.side.metricsOn > :not(.tabs):not(#metricsPane){display:none}
   aside.side.transferOn > :not(.tabs):not(#transferPane){display:none}
   aside.side.langOn > :not(.tabs):not(#langPane){display:none}
-  aside.side.psOn #psPane,aside.side.metricsOn #metricsPane,aside.side.transferOn #transferPane,aside.side.langOn #langPane{display:block}
+  aside.side.successorOn > :not(.tabs):not(#successorPane){display:none}
+  aside.side.psOn #psPane,aside.side.metricsOn #metricsPane,aside.side.transferOn #transferPane,aside.side.langOn #langPane,aside.side.successorOn #successorPane{display:block}
   .studio-panel{border:1px solid #29425a;background:#08111a;border-radius:10px;padding:12px;margin:10px 0}
   .studio-panel h3{font-size:14px;margin:0 0 8px;color:#e6f3ff}
   .studio-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
@@ -71,6 +72,40 @@
   .studio-actions{display:grid;gap:4px;font:12px ui-monospace,monospace}
   #liveTelemetry{margin-top:10px;border:1px solid #426378;border-radius:7px;background:rgba(2,16,28,.93);padding:8px 11px;color:#95e7e0;font:12px/1.45 ui-monospace,monospace;white-space:pre-line;overflow-wrap:anywhere;max-height:115px;overflow:hidden}
   #mPhase{border:1px solid #37546e;border-radius:7px;padding:9px;background:#091522;font:12px/1.5 ui-monospace,monospace;white-space:pre-line}
+
+
+  /* Dedicated successor observatory: additive to the existing V17 and V18 tabs. */
+  #successorPane{--sc-muted:#94b4c9;--sc-edge:#244153;--sc-cyan:#67d7e9;--sc-green:#64d9a5}
+  #successorPane .sc-card{border:1px solid var(--sc-edge);border-radius:11px;background:#071522;padding:12px;margin:10px 0}
+  #successorPane .sc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:9px;flex-wrap:wrap}
+  #successorPane h2{font-size:19px;margin:0 0 6px}
+  #successorPane h3{font-size:14px;color:#e8f4fc;margin:0 0 8px}
+  #successorPane p{margin:5px 0 9px;color:var(--sc-muted);font-size:12px;line-height:1.5}
+  #successorPane .sc-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+  #successorPane .sc-toolbar label{font-size:12px;color:var(--sc-muted);display:grid;gap:3px}
+  #successorPane input,#successorPane select,#successorPane textarea{max-width:100%;border:1px solid #345a70;background:#05111c;color:#f1f9ff;border-radius:7px;padding:7px;font:inherit}
+  #successorPane textarea{width:100%;resize:vertical;min-height:66px}
+  #successorPane button{border:1px solid #426b7d;border-radius:7px;background:#143348;color:#eafaff;padding:8px 10px;cursor:pointer;font:inherit}
+  #successorPane button:disabled{opacity:.45;cursor:not-allowed}
+  #successorPane .sc-primary{background:#176967;border-color:#3ddbbd;color:white}
+  #successorPane .sc-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  #successorPane .sc-kpi{min-width:0;background:#0d2533;border:1px solid #294252;border-radius:8px;padding:10px}
+  #successorPane .sc-kpi b{display:block;font-size:19px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.2;margin:2px 0}
+  #successorPane .sc-kpi small{font-size:11px;color:#a7bfd0;display:block}
+  #successorPane .sc-kpi em{font-size:10.5px;color:#85adbb;font-style:normal}
+  #successorPane .sc-2col{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:9px}
+  #successorPane .sc-canvas{width:100%;height:auto;border:1px solid #294658;background:#030d16;border-radius:8px;display:block}
+  #successorPane .sc-legend{display:flex;flex-wrap:wrap;gap:7px 13px;font-size:11px;color:#aac8d7;margin-top:7px}
+  #successorPane .sc-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+  #successorPane .sc-raw{font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;color:#c6dce7}
+  #successorPane .sc-callout{background:#0b2030;border-left:2px solid #3dabb4;padding:9px 11px;font-size:12px;color:#c6e3e9;margin-top:8px}
+  #successorPane .sc-status{font-size:12px;color:#b9d9e3;line-height:1.5}
+  #successorPane .sc-table-wrap{overflow:auto;max-height:260px}
+  #successorPane table{border-collapse:collapse;width:100%;font-size:11px;min-width:340px}
+  #successorPane th,#successorPane td{padding:7px;text-align:left;border-bottom:1px solid #254152;vertical-align:top;word-break:break-word}
+  #successorPane th{color:#79e2df;position:sticky;top:0;background:#071522}
+  #successorPane .sc-quiet{color:#9fb9ca}
+  #successorPane input[type=range]{padding:0;accent-color:#52dabc;flex:1;min-width:120px}
 
 </style>
 </head>
@@ -100,7 +135,104 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button><button id="tabLang">Limbaj · labirintul caracterelor</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button><button id="tabLang">Limbaj · labirintul caracterelor</button><button id="tabSuccessor" type="button">Puzzle · Successor / rezultate</button></div>
+
+    <section id="successorPane" class="studio-pane" aria-labelledby="scHeading">
+      <div class="sc-card">
+        <div class="sc-head">
+          <div>
+            <h2 id="scHeading">PUZZLE · Câmpul V17 + Successor</h2>
+            <p>Observator al mecanismelor reale: același creier și aceeași lume textuală antrenată, două politici de alegere, valori și trasee comparabile.</p>
+          </div>
+          <span id="scServerStatus" class="sc-status" role="status">Conectez backendul…</span>
+        </div>
+        <div class="sc-toolbar">
+          <label>Creier / graf # <input id="scGraphId" type="number" min="0" value="0" style="width:76px"></label>
+          <button id="scRefresh" type="button">Actualizează datele</button>
+          <button id="scUsePrompt" type="button">Preia întrebarea din Limbaj</button>
+          <span id="scGraphState" class="sc-status">Fără telemetrie încă</span>
+        </div>
+      </div>
+      <div class="sc-card">
+        <h3>1 · Ce învață efectiv organismul acum?</h3>
+        <div class="sc-kpis">
+          <div class="sc-kpi"><small>Caractere procesate · graful V17</small><b id="scChars">—</b><em>Progresul antrenării, nu precizia răspunsurilor</em></div>
+          <div class="sc-kpi"><small>Întrebări/răspunsuri observate</small><b id="scRows">—</b><em>Exemple din corpus folosite la topologia textului</em></div>
+          <div class="sc-kpi"><small>Tranziții/caractere observate</small><b id="scTransitions">—</b><em>Experiențe de construire a răspunsurilor</em></div>
+          <div class="sc-kpi"><small>Ținte înregistrate din experiență</small><b id="scGoals">—</b><em>Finaluri deja văzute, nu răspunsuri noi dovedite</em></div>
+          <div class="sc-kpi"><small>Reguli poziționale descoperite</small><b id="scRulesCount">—</b><em>Compoziție observată; distinctă de semantica liberă</em></div>
+          <div class="sc-kpi"><small>Procesare GPU / backend</small><b id="scGpu">—</b><em>Mod configurat; nu procent de utilizare măsurat</em></div>
+        </div>
+        <div id="scLive" class="sc-callout" role="status">Citesc progresul din /graphs și /telemetry. Câmpurile neantrenate nu primesc rezultate inventate.</div>
+      </div>
+      <div class="sc-card">
+        <h3>2 · Întrebare reală → două forme ale soluției</h3>
+        <label for="scPrompt" class="sc-status">Input nou, fără răspunsul corect introdus în planificator</label>
+        <textarea id="scPrompt" spellcheck="false" placeholder="Introdu o întrebare pentru care există sau ar putea exista tranziții învățate în corpus…"></textarea>
+        <div class="sc-toolbar">
+          <button id="scAnalyze" class="sc-primary" type="button">Propagă ambele câmpuri din backend</button>
+          <button id="scReplay" type="button">▶ Replay traseu real</button>
+          <button id="scReset" type="button">Înapoi la perspectiva globală</button>
+          <label for="scStep">Pas <input id="scStep" type="range" min="0" max="0" value="0"></label>
+          <span id="scStepLabel" class="sc-quiet">0 / 0</span>
+        </div>
+        <div class="sc-status" id="scPlanStatus" role="status">Niciun traseu calculat. Apasă „Propagă” pentru măsurarea reală pe creierul selectat.</div>
+        <div class="sc-kpis" style="margin-top:10px">
+          <div class="sc-kpi"><small>V17: atracția la intrare V(start)</small><b id="scV">—</b><em>Crește către țintă; ecuația originală 0.97 × conduct × max(vecin)</em></div>
+          <div class="sc-kpi"><small>Successor: ocupația viitoare S(start)</small><b id="scS">—</b><em>Valoare amortizată din tranzițiile observate, NU probabilitatea de adevăr</em></div>
+          <div class="sc-kpi"><small>Căi candidate antrenate</small><b id="scCandidates">—</b><em>Răspunsuri finale memorate și compuneri observate</em></div>
+          <div class="sc-kpi"><small>Departajări Successor global / local</small><b id="scTies">—</b><em>Intervine numai când V este exact egal pentru două căi</em></div>
+          <div class="sc-kpi"><small>Traseu original vs. hibrid</small><b id="scDivergence">—</b><em>Identic = noul operator nu a schimbat alegerea</em></div>
+          <div class="sc-kpi"><small>Potrivire local ↔ global</small><b id="scAgreement">—</b><em>Concordanța internă NU dovedește că răspunsul e corect</em></div>
+        </div>
+      </div>
+      <div class="sc-card">
+        <h3>3 · Graful învățat și propagarea prin noduri</h3>
+        <p>Muchiile, câmpurile și traseul provin din JSON-ul trimis de backend. Pozițiile 2D sunt doar o proiecție pentru citire, nu o geometrie 4D învățată.</p>
+        <canvas id="scPathCanvas" class="sc-canvas" width="640" height="360" aria-label="Graful cu conexiuni observate, drum și nod activ"></canvas>
+        <div class="sc-legend"><span><i class="sc-dot" style="background:#37dbc4"></i>calea hibridă</span><span><i class="sc-dot" style="background:#efb85e"></i>nodul curent</span><span><i class="sc-dot" style="background:#cf7ad9"></i>țintă observată</span><span><i class="sc-dot" style="background:#4c7691"></i>alte conexiuni</span></div>
+        <div class="sc-2col" style="margin-top:10px">
+          <div>
+            <h3>V și S pe traseul ales</h3>
+            <canvas id="scFieldCanvas" class="sc-canvas" width="520" height="225" aria-label="Valorile măsurate ale atracției și ocupației viitoare"></canvas>
+          </div>
+          <div>
+            <h3>Acțiunea locală actuală</h3>
+            <div id="scStepDetail" class="sc-raw">Nu există încă un traseu.</div>
+            <div id="scPathDiff" class="sc-callout">Nu există încă un traseu.</div>
+          </div>
+        </div>
+        <h3 style="margin-top:12px">Alternative reale la pasul curent</h3>
+        <div class="sc-table-wrap"><table><thead><tr><th>Tranziție / caracter</th><th>V vecin</th><th>S vecin</th><th>Suport</th><th>Alegere</th></tr></thead><tbody id="scEdges"><tr><td colspan="5">Fără traseu calculat</td></tr></tbody></table></div>
+      </div>
+      <div class="sc-card">
+        <h3>4 · Rezultat obiectiv: întrebări OpenThoughts nevăzute</h3>
+        <p>Comparația rulează pe exact aceleași exemple și pe același checkpoint, în două moduri înghețate. „—” înseamnă nemăsurat, nu zero.</p>
+        <div class="sc-toolbar">
+          <button id="scEvaluate" class="sc-primary" type="button">Rulează evaluarea reală (8 Q/A)</button>
+          <button id="scInspectEval" type="button">Vezi ultima evaluare a serverului</button>
+        </div>
+        <div id="scEvalStatus" class="sc-status" role="status">Nicio evaluare încă. Necesită Q/A reale antrenate și corpus Parquet cu rânduri păstrate pentru test.</div>
+        <div class="sc-kpis" style="margin-top:10px">
+          <div class="sc-kpi"><small>Răspuns exact · original V17</small><b id="scExactOriginal">—</b><em>Proporția de răspunsuri complet corecte</em></div>
+          <div class="sc-kpi"><small>Răspuns exact · V17 + Successor</small><b id="scExactHybrid">—</b><em>Aceleași întrebări, fără antrenare în evaluare</em></div>
+          <div class="sc-kpi"><small>Δ răspuns exact</small><b id="scExactDelta">—</b><em>Puncte procentuale; pozitiv = mai bine</em></div>
+          <div class="sc-kpi"><small>Δ caractere corecte pe poziție</small><b id="scCharDelta">—</b><em>Puncte procentuale; nu reprezintă semantică demonstrată</em></div>
+        </div>
+        <div class="sc-table-wrap" style="margin-top:10px"><table><thead><tr><th>Întrebare</th><th>V17</th><th>Hibrid</th><th>Referință / rezultat</th></tr></thead><tbody id="scEvalRows"><tr><td colspan="4">Fără evaluare reală</td></tr></tbody></table></div>
+      </div>
+      <div class="sc-card">
+        <h3>5 · Ce înseamnă mecanismele și ce NU s-a demonstrat</h3>
+        <div class="sc-callout"><b>V17 Original</b> — propagă cea mai mare atracție disponibilă. Își păstrează aceeași ecuație, acțiuni și checkpointuri.</div>
+        <div class="sc-callout"><b>Successor S</b> — media ponderată a vizitelor viitoare la ținte cunoscute. Folosește suportul observațiilor din corpus; nu reprezintă interferență cuantică.</div>
+        <div class="sc-callout"><b>Hibrid</b> — nu înlocuiește propagarea V17 și nu adaugă răspunsuri. Alege cu S numai între continuări cu V exact egal și care urcă spre țintă.</div>
+        <div class="sc-callout"><b>Validare</b> — testele de cod și labirint verifică compatibilitatea. Exactitatea textului se măsoară separat, pe date nevăzute, fără răspuns-țintă la planificare.</div>
+        <div class="sc-callout"><b>Limită actuală</b> — ajungerea într-un terminal memorat nu este dovadă de înțelegere a limbajului. 100% GPU și avantaj cuantic nu sunt demonstrate de această integrare.</div>
+        <h3 style="margin-top:13px">Date brute / proveniență</h3>
+        <pre id="scEvidence" class="sc-raw">Niciun rezultat măsurat pe acest creier.</pre>
+      </div>
+    </section>
+
     <section id="langPane" class="studio-pane">
       <h2>V18 · O singură lege a labirintului, lumea textului</h2>
       <p class="note">Fiecare caracter reprezintă traversarea unei muchii realmente observate în antrenare. Forma răspunsului întreg este propagată ÎNAINTE de prima acțiune prin același câmp de atracție V17. Niciun latent 32D nu controlează acest plan. Nu este un demo și nu afirmă înțelegere lingvistică generală.</p>
@@ -370,5 +502,6 @@
 <script type="module" src="app.js"></script>
 <script type="module" src="perspective-studio.js"></script>
 <script type="module" src="language-maze-studio.js"></script>
+<script type="module" src="successor-observatory.js"></script>
 </body>
 </html>
