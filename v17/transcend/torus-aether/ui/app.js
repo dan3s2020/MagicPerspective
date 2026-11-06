@@ -586,10 +586,17 @@ async function pullSelectedGraph() {
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
     applySnap(gs); lastGraphVersion = Number.isFinite(gs.version) ? gs.version : -1;
-    if(gs.gears && $("gearStats")) $("gearStats").textContent =
-      "propoziții observate "+gs.gears.observedSentences+
-      " · transformări descoperite "+gs.gears.learnedOperators+
-      " · lungimi "+gs.gears.templateLengths.join(",");
+    if(gs.gears && $("gearStats")) {
+      const ng=gs.gears.native||{};
+      $("gearStats").textContent =
+        "training Q/A "+(ng.trainedRows||0)+
+        " · observații "+gs.gears.observedSentences+
+        " · operatori "+gs.gears.learnedOperators+
+        " · răspunsuri scrise prin angrenaj "+(ng.accepted||0)+
+        " · cazuri fără traseu "+(ng.blocked||0)+
+        " · caractere executate "+(ng.cursorSteps||0)+
+        (ng.preUpdateTests ? " · predicție pre-update "+(100*ng.preUpdateExact).toFixed(1)+"% / "+ng.preUpdateTests : "");
+    }
     const batch = gs.gpu?.batch;
     if (indicator) indicator.textContent = "VIZUALIZEZI GRAFUL #" + liveW +
       " · " + gs.nodes.length + " noduri · " + (gs.lived || 0).toLocaleString() +
@@ -618,6 +625,7 @@ async function livePull() {
       <div class="sc">${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
+        ${gr.gears?.native ? `<span>Angrenaj NATIV: ${gr.gears.native.trainedRows} Q/A · ${gr.gears.learnedOperators} operatori · ${gr.gears.native.accepted} răspunsuri generate din traseu · ${gr.gears.native.blocked} fără traseu · ${gr.gears.native.cursorSteps} caractere</span>` : ""}
         ${gr.worlds.includes("selfcode") ? `<span>Codul propriu</span><span>${gr.selfcode ? `pași ${gr.selfcode.ticks} · noduri ${gr.selfcode.graphNodes} · portaluri ${gr.selfcode.portals} · experimente ${gr.selfcode.probes} · lacăt ${gr.selfcode.lock?.status || "închis"}` : "așteaptă primele observații"}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
       </div><div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
@@ -679,11 +687,17 @@ fetch("/corpus").then(r => r.json()).then(c => {
     if(!r.ok)throw Error("HTTP "+r.status);
     return await r.json();
   };
-  const showStats=S=>{if(S)stats.textContent="propoziții observate "+S.observedSentences+
-    " · transformări învățate "+S.learnedOperators+" · lungimi "+S.templateLengths.join(",");};
+  const showStats=S=>{if(S){const N=S.native||{};
+    stats.textContent="Q/A antrenate "+(N.trainedRows||0)+
+      " · propoziții observate "+S.observedSentences+
+      " · operatori "+S.learnedOperators+
+      " · răspunsuri native "+(N.accepted||0)+
+      " · fallback "+(N.blocked||0)+
+      " · caractere "+(N.cursorSteps||0);
+  }};
   learn.onclick=async()=>{
     const examples=$("gearExamples").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-    if(!examples.length){box.textContent="Introdu mai întâi propoziții observate, una pe rând.";return;}
+    if(!examples.length){box.textContent="Introdu propoziții observate sau perechi întrebare => răspuns.";return;}
     learn.disabled=true;box.textContent="Învăț din observații reale...";
     try{const r=await send({mode:"observe",examples});
       box.textContent=r.error?"Eroare: "+r.error:"Observații noi: "+r.accepted+
@@ -696,7 +710,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
     const source=$("gearStart").value.trim(),entries=$("gearGoal").value.split(/[,\n]/).map(x=>x.trim()).filter(Boolean),goal={};
     try {
       for(const field of entries){const m=/^(\d+)\s*=\s*(\S+)$/.exec(field);
-        if(!m)throw Error("Obiectiv invalid: "+field+" (folosește 0=She,2=calm)");
+        if(!m)throw Error("Obiectiv invalid: "+field+" (folosește 0=valoare,2=valoare)");
         goal[m[1]]=m[2];
       }
       if(!Object.keys(goal).length)throw Error("Obiectivul nu poate fi gol");
@@ -735,7 +749,19 @@ fetch("/corpus").then(r => r.json()).then(c => {
     const wait = add("him", "<span class='dim'>scrie…</span>"); $("chatSend").disabled = true;
     try { const r = await (await fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: talk.slice(-(2 * keep + 1)), opts})})).json();
       if (r.error) { wait.className = "msg err"; wait.textContent = r.error; talk.pop(); }
-      else { wait.innerHTML = esc(r.text || "(nimic)") + `<small>graful #${liveW} · T ${r.T} · ${r.text.length} simboluri${r.fromSave ? " · oprit: răspunde din ultimul save" : opts.learn ? " · a trăit conversația" : ""}</small>`; talk.push(["him", r.text]); } }
+      else {
+        const used=!!r.gear?.used;
+        const engine=used ? " · NATIV: traseu "+(r.gear.route?.length||0)+" transformări → "+(r.gear.characters||0)+" caractere" :
+          " · generator V17 original (angrenaj: "+esc(String(r.gear?.reason||"insufficient evidence").slice(0,80))+")";
+        wait.innerHTML = esc(r.text || "(nimic)") +
+          `<small>graful #${liveW} · T ${r.T} · ${r.text.length} simboluri${engine}${r.fromSave ? " · salvat" : opts.learn ? " · a trăit conversația" : ""}</small>`;
+        talk.push(["him",r.text]);
+        if(used && $("gearOut")) $("gearOut").textContent =
+          "TRASEU REAL FOLOSIT DE Brain.chat()\n"+
+          (r.gear.route||[]).map((s,i)=>(i+1)+". "+s.before+" → "+s.after+
+            " (poziția "+s.slot+", dovezi "+s.evidence+")").join("\n")+
+          "\nCURSOR: "+r.gear.characters+" caractere emise · "+r.gear.expanded+" stări explorate.";
+      } }
     catch (err) { wait.className = "msg err"; wait.textContent = "nu am putut ajunge la trainer: " + err.message; talk.pop(); }
     $("chatSend").disabled = false; };
 }
