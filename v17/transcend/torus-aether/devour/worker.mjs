@@ -223,6 +223,17 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m && m.languageMaze){
+    const {id,required,start,maxDepth=4,localPolicy=true}=m.languageMaze;
+    try{
+      const result=brain.planObservedTransformation({required,start,maxDepth},
+        {trace:true,embodied:true,localPolicy});
+      parentPort.postMessage({type:"chat",id,languageMaze:true,...result,
+        perspectivePair:{global:"initial frozen plan + alternative search",
+          local:"actually selected learned text actions + fresh plan when diverging"}});
+    }catch(err){parentPort.postMessage({type:"chat",id,languageMaze:true,error:err.message});}
+    return;
+  }
   if(m && m.compositionGoal){
     const id=m.compositionGoal.id;
     let result;
