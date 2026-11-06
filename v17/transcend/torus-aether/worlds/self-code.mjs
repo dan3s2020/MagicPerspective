@@ -204,12 +204,49 @@ export class SelfCodeWorld{
   }
   return null;
  }
+ auditKnowledge(){
+  // STRICTLY FROZEN evaluation. No calls to learn(), live(), or trace mutations.
+  // The operator exists inside the hidden simulator, NOT in the learner hypothesis.
+  const s=this.state;
+  const cases=(xs,ps,shuffle=false)=>{
+   let n=0,correct=0,baseline=0,attempted=0,byGene=[];
+   for(let j=0;j<s.genes.length;j++){
+    const g=s.genes[j],hypothesis=s.genes[(j+1)%s.genes.length];
+    let hits=0,tries=0,base=0,total=0;
+    for(const x of xs)for(const p of ps){
+     const actual=OPS[g.op](x,p),guess=this.model.predict(shuffle?hypothesis.id:g.id,x,p);
+     const unchanged=OPS[g.op](x,g.param);
+     hits+=Number(guess!==null&&guess===actual);tries+=Number(guess!==null);
+     base+=Number(unchanged===actual);total++;
+    }
+    n+=total;correct+=hits;baseline+=base;attempted+=tries;
+    byGene.push({gene:g.id,operatorHiddenFromPredictor:g.op,
+     correct:hits,total,coverage:tries/total,accuracy:hits/total,baseline:base/total,
+     trainingExamples:(s.examples[g.id]||[]).length});
+   }
+   return {correct,total:n,accuracy:n?correct/n:null,coverage:n?attempted/n:null,
+    noEditBaseline:n?baseline/n:null,genes:byGene};
+  };
+  return {
+   heldoutInputs:cases([11,12,13,14],[1,2,3]),
+   newParameterValues:cases([11,12,13,14],[0,4,5,6]),
+   permutedGeneLabels:cases([11,12,13,14],[1,2,3],true),
+   sourceRegionCoverage:{visited:Object.keys(s.sourceVisits||{}).length,
+    total:this.map.nodes.length,visits:s.sourceVisits||{}},
+   portalChoiceCounts:{...(s.visits||{})},
+   codeModificationCount:s.edits.length,
+   trainingExamples:Object.values(s.examples).reduce((n,e)=>n+e.length,0)
+  };
+ }
  status(){
   const s=this.state;
   return {episodes:s.episodes,unlocked:s.codeUnlocked,
    lockAccuracy:s.lockAccuracy,baseline:s.baseline,
-   portalCost:s.portalCost,codeEdits:s.edits.slice(-3),
+   portalCost:s.portalCost,noiseBudgetRemaining:s.noiseBudget,
+   noiseRate:s.noiseRate,
+   codeEdits:s.edits.slice(-3),
    predictionAccuracy:s.predictions?s.hits/s.predictions:null,
-   portals:s.portals.slice(-12),lockHistory:s.lockHistory.slice(-8)};
+   portals:s.portals.slice(-12),lockHistory:s.lockHistory.slice(-8),
+   audit:this.auditKnowledge()};
  }
 }
