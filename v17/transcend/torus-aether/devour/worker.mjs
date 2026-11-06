@@ -107,12 +107,42 @@ const absorbLanguage = row => {
   brain.liveLanguage(Buffer.from(row.bytes).toString('latin1'));
 };
 const observedPipeline={called:0,accepted:0,unreadable:0,last: null};
+// Actual production 6-scale text path learner, captured BEFORE the
+// current row's observed answer is absorbed into the same native Brain.
+let textMazeLive={ready:false,reason:"waiting-for-observed-text",epoch:0,
+  source:"original-six-scale-text-learner"};
+let textMazeSeen=0;
+const previewCurrentLanguageWorld=row=>{
+  if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length)return;
+  textMazeSeen++;
+  if(textMazeSeen>4&&textMazeSeen%8!==0)return;
+  const actual=Buffer.from(row.bytes).toString("latin1");
+  const prompt=(typeof row.prompt==="string"&&row.prompt.trim()?
+    row.prompt:actual.slice(0,160)).trim();
+  if(!prompt)return;
+  try{
+    const before=brain.constructedPaths.textRows;
+    const episode=brain.constructedPaths.traceLiveTextMaze(prompt,{maxChars:24});
+    if(before!==brain.constructedPaths.textRows)
+      throw Error("Preview unexpectedly trained from the current answer");
+    textMazeLive={...episode,epoch:textMazeSeen,atChars:brain.chars,
+      mode:row.prompt?"observed-QA":"observed-text-prefix",
+      source:"original-six-scale-text-learner",
+      observedTrainingAnswerUsed:false};
+  }catch(err){
+    textMazeLive={ready:false,reason:"error: "+err.message,epoch:textMazeSeen,
+      atChars:brain.chars,source:"original-six-scale-text-learner"};
+  }
+};
 const absorbObservedDifferences = row => {
   observedPipeline.called++;
   if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length){
     observedPipeline.unreadable++;
     return;
   }
+  // In plain text worlds, no fictitious answer is invented: use the
+  // prefix genuinely observed before learning transformations from this row.
+  if(!row.prompt)previewCurrentLanguageWorld(row);
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
   const learned=brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
@@ -122,6 +152,7 @@ const absorbObservedDifferences = row => {
 const absorbConstructed = row => {
   if (typeof row?.prompt !== 'string' || typeof row?.answer !== 'string' ||
       !row.prompt.trim() || !row.answer.trim()) return;
+  previewCurrentLanguageWorld(row);
   // Every actual answer becomes a chain of observed character transitions.
   // No held-out sample enters this stream. The same Brain owns the path model.
   brain.learnConstructedText(row.prompt,row.answer);
@@ -144,6 +175,7 @@ const report = (final = false) => {
     shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
+    textMaze: textMazeLive,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
@@ -153,6 +185,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
+    textMaze: textMazeLive,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
