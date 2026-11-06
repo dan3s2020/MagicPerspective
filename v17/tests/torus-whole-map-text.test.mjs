@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeTextHypercube,mapFrom2DMaze,WholeWorldNavigator,NativeWholeTextWorld}
+import {makeTextHypercube,makeTextEditMaze,mapFrom2DMaze,WholeWorldNavigator,NativeWholeTextWorld}
   from '../transcend/torus-aether/worlds/whole-map-text.mjs';
 import {makeMaze} from '../transcend/torus-aether/worlds/labyrinth.mjs';
 
@@ -90,4 +90,41 @@ test('same original Brain instance receives actual cursor movements, not teacher
 });
 test('world size cap prevents pretending to absorb a partial world',()=>{
  assert.throws(()=>makeTextHypercube({dimensions:11,maxStates:256}),/explicit atlas limit/);
+});
+
+test('literal input and target are complete states; emitted characters are cursor changes, not predictions',()=>{
+ const world=makeTextEditMaze({input:'cat',target:'dog',forbidden:['dat'],seed:19});
+ assert.equal(world.nodes.length,8);
+ assert.equal(world.nodes.find(n=>n.id===world.start).label,'cat');
+ assert.equal(world.nodes.find(n=>n.id===world.goal).label,'dog');
+ assert.equal(world.nodes.find(n=>n.label==='dat').wall,true);
+ const nav=new WholeWorldNavigator();
+ nav.absorb(world);nav.propagate();const p=nav.plan();
+ assert.equal(p.solved,true);assert.equal(p.steps,3);
+ assert.equal(nav.cursor,world.start);assert.equal(nav.executed.length,0);
+ const emitted=[];
+ for(let move;(move=nav.moveOne())!==null;){
+  emitted.push(move.nextCharacter);
+  const next=world.nodes.find(n=>n.id===move.to);
+  assert.equal(next.label[move.axis],move.nextCharacter);
+  assert.notEqual(next.label,'dat');
+ }
+ assert.equal(nav.cursor,world.goal);
+ assert.equal(world.nodes.find(n=>n.id===nav.cursor).label,'dog');
+ assert.equal(emitted.length,3);
+});
+test('same Brain traces full input→target world; it moves only after an internal path exists',()=>{
+ const symbols=[],nodes=new Map(),edges=new Map();
+ const brain={seed:11,trace:{
+  edges,
+  node(id,type,label){const o=nodes.get(id)||{id,type,label};nodes.set(id,o);return o;},
+  setEdge(a,b,k,w){edges.set(a+'>'+b+'>'+k,{a,b,kind:k,w});},
+  fire(id){assert.ok(nodes.has(id));}
+ },live(v){symbols.push(v)},observeShared(){}};
+ const world=new NativeWholeTextWorld(brain,{input:'cat',target:'dog',wallRate:0});
+ const r=world.play(19);
+ assert.equal(r.input,'cat');assert.equal(r.target,'dog');
+ assert.equal(r.finalState,'dog');assert.equal(r.steps,3);
+ assert.equal(r.plannedBeforeFirstCharacter,true);
+ assert.equal(symbols.length,3);
 });
