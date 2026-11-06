@@ -43,3 +43,22 @@ jobs:
         run: python -m unittest test_shared_perspective -v
       - name: Preserve original Python GPU command syntax
         run: python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+
+  windows-powershell51:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse old and new V17 launchers with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          foreach ($p in @("v17/START_V17.ps1","v17/START_V17_UNIFIED.ps1")) {
+            $path=(Resolve-Path $p).Path
+            $tokens=$null
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($path,[ref]$tokens,[ref]$errors) | Out-Null
+            if ($errors.Count -ne 0) {
+              $errors | ForEach-Object { Write-Host $_.Message }
+              throw "PowerShell 5.1 parse failed: $p"
+            }
+          }
