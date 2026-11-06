@@ -148,11 +148,21 @@ export class NativeGearDrive {
       onStep?.({...action,goal:P.goal,source:'learned operator route'});
       this.cursorSteps++;
     }
+    // A second path is reported ONLY when another evidence-backed route
+    // actually exists after removing the first used operator; no fabricated branching.
+    let alternative=null;
+    if(route.route.length){
+      const search=this.gears.plan(P.from,P.goal,{seed,maxStates:400,maxDepth:12,
+        excludeOperator:route.route[0].operator});
+      if(search.ok && search.route.length)alternative={
+        route:search.route,expanded:search.expanded,method:'first-operator ablation'};
+    }
     this.accepted++;this.lastPlan={used:true,prompt:question,text:route.output,
       route:route.route,chars:route.cursor.length,expanded:route.expanded,goal:P.goal,
       origin:'learned observed transformations -> goal -> native V17 Brain.chat character actions'};
     return {used:true,text:route.output,chars:route.cursor.length,
-      route:route.route,goal:P.goal,expanded:route.expanded,source:'native gear cursor'};
+      route:route.route,goal:P.goal,from:P.from,steps:route.cursor,alternative,
+      expanded:route.expanded,source:'native gear cursor'};
   }
   fallback(reason='no verified plan') {this.fallbacks++;this.lastPlan={used:false,reason};}
   summary(){return {version:1,trainedRows:this.rows,learnedOperators:this.gears.operators.size,
