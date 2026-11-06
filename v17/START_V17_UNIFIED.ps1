@@ -1,4 +1,4 @@
-# MagicPerspective V17 Unified Living Perspective — NEW clone only; leaves the old port and saves untouched.
+# MagicPerspective V17 Unified Living Perspective - NEW clone only; leaves the old port and saves untouched.
 param(
   [string]$Data = "D:\training\OpenThoughts3-1.2M",
   [int]$Port = 8862,
