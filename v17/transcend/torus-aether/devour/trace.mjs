@@ -12,7 +12,7 @@ const cLabel = id => { const [k, m] = id.split(":"); let pos = ""; for (let i = 
 export class GraphTrace {
   constructor() {
     this.nodes = new Map(); this.edges = new Map(); this.geo = new Geometry({D: 5, every: 20000}); this.flow = []; this.text = [];
-    this.strip = []; this.hitC = 0; this.hitF = 0; this.seen = 0; this.steps = 0;
+    this.strip = []; this.hitC = 0; this.hitF = 0; this.seen = 0; this.steps = 0; this.textSteps = [];
   }
   node(id, type, label) { let n = this.nodes.get(id); if (!n) { n = {id, type, label, act: 1, born: this.steps}; this.nodes.set(id, n); } return n; }
   edge(a, b, kind, dw) { const k = a + ">" + b; let x = this.edges.get(k); if (!x) { x = {a, b, kind, w: 0}; this.edges.set(k, x); } x.w += dw; }
@@ -42,11 +42,17 @@ export class GraphTrace {
     }
     if (this.steps % 1000 === 0) { for (const x of this.edges.values()) x.w *= .97; for (const n of this.nodes.values()) n.act *= .5; }   // what is not lived again dims, but no link is ever deleted
   }
+  observeTextAction({actual, predicted, chainPrediction, source}) {
+    // Bounded genuine per-symbol training events. No fabricated plans or targets.
+    this.textSteps ||= [];
+    this.textSteps.push([this.steps,actual,predicted,chainPrediction,source]);
+    if(this.textSteps.length>1024)this.textSteps.splice(0,256);
+  }
   snapshot(withText) {
     const ORG = new Set(["is", "attract", "repel", "moves", "gear-transform", "gear-char", "gear-plan"]), all = [...this.edges.values()];   // the organism's own links are always shown
     const edges = [...all.filter(x => ORG.has(x.kind)), ...all.filter(x => !ORG.has(x.kind)).sort((a, b) => b.w - a.w).slice(0, 2500)].map(x => [x.a, x.b, x.kind, +x.w.toFixed(3), x.label || ""]);
     const s = {nodes: [...this.nodes.values()].map(n => { const r = [n.id, n.type, n.label, +n.act.toFixed(2), n.born, n.err ? 1 : 0]; n.err = 0; return r; }), edges,
-      U: [...this.geo.U.entries()].map(([k, v]) => [k, v.map(x => +x.toFixed(5))]), flow: this.flow.slice(), strip: this.strip.slice(),
+      U: [...this.geo.U.entries()].map(([k, v]) => [k, v.map(x => +x.toFixed(5))]), flow: this.flow.slice(), strip: this.strip.slice(), textSteps:(this.textSteps||[]).slice(-512),
       accC: this.seen ? (this.accC = this.hitC / this.seen) : (this.accC ?? 0), accF: this.seen ? (this.accF = this.hitF / this.seen) : (this.accF ?? 0)};   // nothing lived since the last picture (a GPU batch deciding): keep the last measured
     this.hitC = this.hitF = this.seen = 0;
     if (withText) s.text = Buffer.from(this.text.slice(-60000)).toString("latin1");
