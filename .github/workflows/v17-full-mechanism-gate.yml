@@ -46,6 +46,10 @@ jobs:
       - name: Shared PyTorch model handles four actual worlds and autonomous noise
         working-directory: v17/transcend/torus-aether/gpu
         run: python -m unittest -v test_shared_perspective test_transfer_benchmark
+      - name: Original FOUR-WORLD native live integration, self-code lock, noise, frozen perspective and native checkpoint
+        run: node --test v17/tests/torus-all-worlds-live.test.mjs
+      - name: Shared four-world real observation queue regression
+        run: node --test v17/transcend/torus-aether/shared/experience.test.mjs
       - name: Existing native HTTP and memory safety regression
         run: |
           node --test v17/tests/torus-unified-http.test.mjs
