@@ -178,6 +178,8 @@ export class Brain {
     if(!Number.isInteger(count)||count<1||count>80)throw Error('Count 1..80 required');
     const P=this.constructedPaths||new ConstructedPathLearner({seed:this.seed});
     const frozen=Object.assign(Object.create(ConstructedPathLearner.prototype),structuredClone(P));
+    frozen.links=Object.assign(Object.create(ConstructedTransitionGraph.prototype),frozen.links);
+    frozen.scales=frozen.scales.map(x=>Object.assign(Object.create(ConstructedTransitionGraph.prototype),x));
     const rows=[],full=[];
     for(let i=0;i<count;i++){
       const w=makeMaze(seedOf(SEEDS.test,400000+seed*211+i*103),[7,9,11,13][i%4]);
