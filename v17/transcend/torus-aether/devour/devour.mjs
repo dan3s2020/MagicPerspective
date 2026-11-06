@@ -24,7 +24,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --resume continues every brain from its save; /reset (the page's button) starts every brain again from nothing
 // many worlds at once on the GPU (gpu/worlds_gpu.py): --gpu cuda:0|cuda:1|cpu|off, --gpu-worlds N (no limit here),
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
-let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
+let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100), textBatch: +arg("gpu-text-batch", 4)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
 const researchSettings={enabled:process.argv.includes("--research"),maxEntries:+arg("research-entries",3000),reportEvery:+arg("research-every",5),evalCount:+arg("research-eval",4)};
 if(researchSettings.enabled&&!worldsArg.includes("text"))throw Error("Research requires the actual text world.");
