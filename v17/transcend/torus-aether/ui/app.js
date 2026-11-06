@@ -529,6 +529,18 @@ async function pullSelectedGraph() {
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
     applySnap(gs);
+    const M = gs.wholeMap, mbox = $("wholeMapBox");
+    if (mbox) {
+      mbox.hidden = !M;
+      if (M) {
+        const l = M.last;
+        $("wholeMapOut").textContent = "Lumi absorbite: " + M.episodes + " | Rezolvate: " + M.solved +
+         " | Succes: " + (100 * M.solveRate).toFixed(1) + "% | Ondă medie: " + M.meanWavePasses.toFixed(1) + "\n" +
+         (l ? "Ultima lume: " + l.dimensions + "D, " + l.states + " stări, " + l.walls + " ziduri; " +
+            l.steps + " pași / optim " + l.optimal + "; cursorul a emis: " + l.movementCharacters +
+            "; traseu cunoscut înainte de primul caracter: " + l.plannedBeforeFirstCharacter : "");
+      }
+    }
     const C = gs.selfCode, box = $("codeBox");
     if (box) {
       box.hidden = !C;
@@ -593,7 +605,7 @@ $("allStart").onclick = () => control("start"); $("allPause").onclick = () => co
 $("gpuUtil").oninput = () => $("gpuUtilOut").textContent = $("gpuUtil").value;
 $("gpuApply").onclick = async () => { await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&textBatch=${Math.max(1, Math.min(128, +$("gpuTextBatch").value | 0))}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"}).catch(() => {}); livePull(); };
 let gpuShown = false;
-$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code"].filter(Boolean); if (!worlds.length) return;
+$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext"].filter(Boolean); if (!worlds.length) return;
   await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${worlds.join(",")}`, {method: "POST"}).catch(() => {}); livePull(); };
 function confirmReset() { const b = $("liveReset"); if (b.dataset.armed) { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; return true; }
   b.dataset.armed = 1; b.textContent = "Sigur? apasă încă o dată"; setTimeout(() => { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; }, 4000); return false; }
