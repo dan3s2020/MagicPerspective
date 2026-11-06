@@ -73,7 +73,7 @@ export class LanguageMazeMemory {
    const rDen=r.tokens.reduce((s,w)=>s+weight(w),0)||1;
    const common=shared.reduce((s,w)=>s+weight(w),0);
    const score=exact?1:2*common/(qDen+rDen);
-   if(!exact&&score<.34)continue;
+   if(!exact&&score<.58)continue;
    results.push({record:r,score,shared:shared.length,exact});
   }
   results.sort((a,b)=>b.score-a.score||b.record.support-a.record.support||
