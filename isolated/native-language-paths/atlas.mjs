@@ -115,11 +115,11 @@ export class ObservedQAAtlas {
       evidenceIndex:terminal.source,similarity:round(terminal.score||0),
       graphNodes:g.nodes.length,graphEdges:g.adj.reduce((s,a)=>s+a.length,0)};
   }
-  snapshot() { return {entries:this.examples.length,totalObserved:this.totalObserved,
+  snapshot() { return {maxEntries:this.maxEntries,entries:this.examples.length,totalObserved:this.totalObserved,
     vocabulary:this.df.size,examples:this.examples.map(e=>({id:e.id,sourceIndex:e.sourceIndex,question:e.question,
       answer:e.answer,keys:e.keys,steps:e.steps})),df:[...this.df]};}
   static restore(s) {
-    const a=new ObservedQAAtlas({maxEntries:Math.max(1,s.entries)});
+    const a=new ObservedQAAtlas({maxEntries:Math.max(s.maxEntries || 5000,s.entries || 1)});
     a.examples=s.examples;a.df=new Map(s.df);a.totalObserved=s.totalObserved;return a;
   }
 }
