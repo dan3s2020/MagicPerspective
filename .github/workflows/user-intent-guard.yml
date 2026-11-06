@@ -1,0 +1,39 @@
+name: User intent guard - no unauthorized algorithm substitutions
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  user-intent-guard:
+    name: user-intent-guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax and regression-policy unit tests
+        run: |
+          node --check scripts/user-intent-gate.mjs
+          node --test tests/user-intent-gate.test.mjs
+      - name: Enforce literal user-to-code scope contract on PR changes
+        if: github.event_name == 'pull_request'
+        env:
+          USER_INTENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          node scripts/user-intent-gate.mjs --base "$USER_INTENT_BASE_SHA" --head HEAD
+      - name: Display non-bypass limitations
+        run: |
+          echo 'OPEN BLOCKING regression: MP-REG-2026-11-06-001'
+          echo 'Passing checks do not verify real user approval or solve language-world navigation.'
+          echo 'Protect main and make job user-intent-guard required; disallow direct pushes/admin bypass.'
