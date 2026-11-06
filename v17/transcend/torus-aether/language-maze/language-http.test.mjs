@@ -14,12 +14,19 @@ const ui=fs.readFileSync(path.join(root,"transcend/torus-aether/ui/index.html"),
 test("all original native graph/train/eval/CUDA tabs remain with real new language-world controls",()=>{
  for(const id of ["g","liveTelemetry","tabTrain","tabEval","tabPS","tabMetrics","tabTransfer",
   "tabLang","langPane","langPrompt","langGraph","langMode","langCompare","langCompareReport","langGlobal","langLocal","langPlan",
-  "langPlay","langStep","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
+  "langPlay","langStep","tabSuccessor","successorPane","scAnalyze","scEvaluate","scPathCanvas","scFieldCanvas","scEdges","scExactDelta","scServerStatus","scStep","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
   assert.match(ui,new RegExp('id="'+id+'"'),"Missing original or new V18 control: "+id);
  }
  assert.match(ui,/src="app\.js"/);
  assert.match(ui,/src="perspective-studio\.js"/);
  assert.match(ui,/src="language-maze-studio\.js"/);
+ assert.match(ui,/src="successor-observatory\.js"/);
+ assert.match(ui,/aside\.side\.successorOn #successorPane\{display:block\}/);
+ const observatory=fs.readFileSync(path.join(root,"transcend/torus-aether/ui/successor-observatory.js"),"utf8");
+ assert.match(observatory,/language-maze\/analyze/);
+ assert.match(observatory,/language-maze\/compare-last/);
+ assert.match(observatory,/function drawTopology/);
+ assert.match(observatory,/function plotValues/);
  const client=fs.readFileSync(path.join(root,"transcend/torus-aether/ui/language-maze-studio.js"),"utf8");
  assert.match(client,/fetch\("\/language-maze\/plan"/);
  assert.match(client,/result\.trace/);
@@ -71,6 +78,26 @@ test("original V17 server serves real V18 prompt-only language-maze without unse
    headers:{"content-type":"application/json"},
    body:JSON.stringify({w:0,prompt:"unknown question with no observed path",mode:"original"})});
   assert.equal((await baseMode.json()).successor.mode,"original");
+  const doc=await fetch(base+"/transcend/torus-aether/ui/successor-observatory.js");
+  assert.equal(doc.status,200);
+  assert.match(await doc.text(),/FROZEN_SAME_EXPERIENCED_TEXT_WORLD/);
+  const beforeLast=await fetch(base+"/language-maze/compare-last?w=0");
+  assert.equal((await beforeLast.json()).available,false);
+  const invalidPair=await fetch(base+"/language-maze/analyze",{method:"POST",
+   headers:{"content-type":"application/json"},
+   body:JSON.stringify({w:0,prompt:"unknown query",reference:"DO_NOT_LEAK"})});
+  assert.match((await invalidPair.json()).error,/forbidden/);
+  const paired=await fetch(base+"/language-maze/analyze",{method:"POST",
+   headers:{"content-type":"application/json"},
+   body:JSON.stringify({w:0,prompt:"unknown question with no observed path"})});
+  const joined=await paired.json();
+  assert.equal(joined.protocol,"FROZEN_SAME_EXPERIENCED_TEXT_WORLD");
+  assert.equal(joined.referenceEnteredPlanner,false);
+  assert.equal(joined.sameWorkerSnapshot,true);
+  assert.equal(joined.original.abstained,true);
+  assert.equal(joined.hybrid.abstained,true);
+  assert.equal(joined.original.output,"");
+  assert.equal(joined.hybrid.output,"");
   const comparison=await fetch(base+"/language-maze/compare?w=0&count=8",{method:"POST"});
   const frozen=await comparison.json();
   assert.match(frozen.error,/requires held-out Parquet/);
