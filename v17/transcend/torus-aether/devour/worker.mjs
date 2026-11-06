@@ -30,6 +30,7 @@ async function* stream() {                                                 // th
 let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
+if (workerData.endogenousNoise) brain.enableEndogenousNoise(); // policy is saved with the original Brain
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
@@ -82,13 +83,13 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shared: shared.status(), endogenousNoise: brain.noiseAgent?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
-    maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
+    maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
@@ -111,7 +112,15 @@ const flushShared = async (force = false) => {
       if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed});
       sharedLoaded = true;
     }
-    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed, adaptiveNoise: true});
+    // A single organism-owned policy chooses *where* to perturb the shared learner.
+    // If it is not enabled, keep the original adaptive-noise behavior unchanged.
+    const portal = brain.noiseAgent ? brain.noiseAgent.decide({domain: 'shared',
+      known: !!shared.training?.step, planned: samples.length > 24}) : null;
+    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile,
+      seed: brain.seed, adaptiveNoise: !portal,
+      noiseSelection: portal ? {site: portal.site, strength: portal.strength} : null});
+    if (portal && Number.isFinite(result.trainingNoiseGain))
+      brain.noiseAgent.learn(portal, {gain: result.trainingNoiseGain});
     shared.training = result; shared.error = null;
   } catch (err) {
     shared.requeue(samples); shared.error = "Shared model: " + err.message;
@@ -235,5 +244,6 @@ if (TEXT && gpuSet && !stop && textBatch.length) {
     parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
 }
 report(stop ? false : true);
+if (brain.noiseAgent) shot(true); // publish last real decisions even when a small phone corpus finishes before the 3s UI throttle
 if (gpu) gpu.close();
 parentPort.close();

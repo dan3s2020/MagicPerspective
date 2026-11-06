@@ -103,22 +103,37 @@ const nextStep = (n, i, a) => { const x = i % n + ACTIONS[a][0], y = ((i / n) | 
 const countOf = (arr, k) => { let c = 0; for (const v of arr) if (v === k) c++; return c; };
 
 // one exercise. live(sym) feeds every symbol to the brain's graph (the retina once, then every output and every change)
-export function playExercise(w, D, live = () => {}, {record = false, outputs = null, onTransition = null} = {}) {   // outputs: decisions already made (by the GPU batch) to live again
+export function playExercise(w, D, live = () => {}, {record = false, outputs = null, onTransition = null, noiseAgency = null, noiseFeedback = true} = {}) {   // outputs: decisions already made (by the GPU batch) to live again
   const n = w.n, ret = Array.from(w.wall, v => v ? KIND.wall : KIND.floor); ret[w.goal] = KIND.target; let pos = w.start; ret[pos] = KIND.self;
   const lim = 3 * w.dist[w.start] + 15, visits = new Uint16Array(n * n); visits[pos]++;
   for (const k of ret) live(SYMS[k]);                                        // the whole exercise, once
   const meNow = () => { const s = D.self(); if (s < 0) return -1; const i = ret.indexOf(s); return ret.lastIndexOf(s) === i ? i : -1; };
   let steps = 0, first = null; const how = {plan: 0, explore: 0, noise: 0}, path = [pos], shapes = [];
   while (pos !== w.goal && steps < lim) {
-    const me = meNow(), plan = me >= 0 ? D.shape(ret, n, me) : null;
+    const me = meNow(), initial = me >= 0 ? D.shape(ret, n, me) : null;
+    // Choose the internal intervention BEFORE acting or seeing the result.
+    // No choice uses w.dist, goal coordinates, or the simulator's output mapping.
+    const portal = noiseAgency && !outputs ? noiseAgency.decide({domain: 'maze', known: me >= 0, planned: !!initial}) : null;
+    const sensed = portal?.site === 'perception' ? noiseAgency.perceive(ret, portal) : ret;
+    const oldTemp = D.temp;
+    let plan;
+    if (portal?.site === 'imagination') D.temp = portal.strength;
+    try { plan = sensed === ret ? initial : me >= 0 ? D.shape(sensed, n, me) : null; }
+    finally { D.temp = oldTemp; }
     if (steps === 0) first = plan ? planScore(w, pos, plan) : 0;
     if (record) shapes.push(plan ? (steps === 0 ? plan : plan.slice(0, 30)) : null);   // the first one whole: the shape predicted before any move
-    const c = outputs ? {o: outputs[steps], how: plan && D.trust.plan[0] / D.trust.plan[1] >= D.trust.explore[0] / D.trust.explore[1] * .9 ? "plan" : "explore"} : D.choose(ret, n, me, visits, plan); how[c.how]++; live(OUTS[c.o]);
+    const c = outputs ? {o: outputs[steps], how: plan && D.trust.plan[0] / D.trust.plan[1] >= D.trust.explore[0] / D.trust.explore[1] * .9 ? "plan" : "explore"} : D.choose(sensed, n, me, visits, plan);
+    if (portal?.site === 'action') {
+      const changed = noiseAgency.output(c.o, 8, portal);
+      if (changed !== c.o) { c.o = changed; c.how = 'noise'; }
+    }
+    how[c.how]++; live(OUTS[c.o]);
     if (outputs && c.o === undefined) break;
     const before = ret.slice(), dir = D.world.moves.indexOf(c.o);              // the world's physics
     if (dir >= 0) { const j = nextCell(w, pos, dir); if (j >= 0 && !w.wall[j]) { ret[pos] = KIND.floor; pos = j; ret[pos] = KIND.self; visits[pos]++; path.push(pos); } }
     D.learnStep(before, ret, n, c.o, me);
     if (onTransition) onTransition({before, after: ret.slice(), action: c.o, n});  // actual observation, never oracle distance
+    if (portal && noiseFeedback) noiseAgency.learn(portal, {before, after: ret, solved: pos === w.goal});
     for (let i = 0; i < n * n; i++) if (before[i] !== ret[i]) live(SYMS[ret[i]]);   // what changed
     steps++;
   }

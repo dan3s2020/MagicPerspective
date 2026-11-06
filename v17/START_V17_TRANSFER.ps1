@@ -9,7 +9,8 @@ param(
   [int]$GpuTextBatch = 1,
   [int]$GpuTextChunk = 64,
   [switch]$Fresh,
-  [switch]$Paused
+  [switch]$Paused,
+  [switch]$DisableEndogenousNoise
 )
 $ErrorActionPreference = "Stop"
 if ($Port -in @(8841, 8862, 8897, 8898, 8899)) {
@@ -24,6 +25,7 @@ $cmd = @("-Workers", "1", "-Arms", "stable+many", "-Mem", "3",
   "-GpuUtil", "100", "-Cuda", "cu126", "-TraceTransformations")
 if (-not $Fresh) { $cmd += "-Resume" }
 if (-not $Paused) { $cmd += "-Start" }
+if (-not $DisableEndogenousNoise) { $cmd += "-EndogenousNoise" }
 Write-Host "Original V17 living graph: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "Isolated checkpoint/output: $runtime"
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "START_V17.ps1") @cmd

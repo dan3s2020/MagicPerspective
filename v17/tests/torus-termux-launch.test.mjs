@@ -53,17 +53,19 @@ test('native Termux CPU launch serves the original UI; Start trains in same brai
     assert.ok(ready,'No original V17 server: '+logs);
     const ui=await fetch(base+'/transcend/torus-aether/ui/index.html?live=1');
     assert.equal(ui.status,200);
-    assert.match(await ui.text(),/sharedBox/);
+    const html = await ui.text();
+    assert.match(html,/sharedBox/);
+    assert.match(html,/agentNoiseBox/);
     const start=await fetch(base+'/control?do=start&w=0',{method:'POST'});
     assert.equal((await start.json()).ok,true);
     let trained=false;
     for(let i=0;i<120;i++){
       if(proc.exitCode!==null)throw Error('Native Termux trainer exited: '+logs);
       const r=await fetch(base+'/graph?w=0');
-      if(r.ok){const j=await r.json();if(j.chars>0&&j.lived>0&&j.shared){trained=true;break;}}
+      if(r.ok){const j=await r.json();if(j.chars>0&&j.lived>0&&j.shared&&j.endogenousNoise?.decisions>0){trained=true;break;}}
       await sleep(250);
     }
-    assert.ok(trained,'No CPU learning in native V17: '+logs);
+    assert.ok(trained,'No real CPU learning or endogenous noise decisions in native V17: '+logs);
   }finally{
     // Kill the *whole* POSIX process group: the shell starts a child Node
     // server, which otherwise survives killing only the shell and pins CI.

@@ -131,7 +131,7 @@ class SharedPerspective:
                    'steps': self.steps, 'updates': False}
         return summary
 
-    def train(self, samples, adaptive_noise=False):
+    def train(self, samples, adaptive_noise=False, noise_selection=None):
         xs, actions, ys = self._pack(samples)
         # Retrospective PRE-UPDATE prediction from frozen weights, compared to
         # the observed successor. It is NOT an online pre-action measurement or held-out score.
@@ -139,9 +139,32 @@ class SharedPerspective:
         # Capture the frozen, PRE-UPDATE prediction before these observations can alter weights.
         pre_update_trace = self._trace(self.model, xs, actions, ys, samples[0])
         self.model.train()
-        before_noise = self.noise if adaptive_noise else 0.0
-        train_x = xs + torch.randn(xs.shape, device=self.device, generator=self.noise_rng) * before_noise if adaptive_noise else xs
-        z, zp, pred = self.model(train_x, actions)
+        # If the *organism* selected a noise portal, its site and amplitude
+        # replace the legacy fixed perturbation schedule for this training batch.
+        # Neither its choice nor its score is taken from held-out references.
+        selected_site = None
+        if noise_selection is not None:
+            if not isinstance(noise_selection, dict):
+                raise ValueError('noise selection must be an organism decision')
+            selected_site = noise_selection.get('site')
+            strength = noise_selection.get('strength', 0)
+            if selected_site not in ('none', 'perception', 'imagination', 'action'):
+                raise ValueError('unknown organism noise site')
+            if not isinstance(strength, (int, float)) or not 0 <= strength <= 1:
+                raise ValueError('organism noise strength must be in [0,1]')
+            before_noise = float(strength) * .08 if selected_site != 'none' else 0.0
+        else:
+            before_noise = self.noise if adaptive_noise else 0.0
+        train_x, train_a = xs, actions
+        if selected_site in (None, 'perception') and before_noise:
+            train_x = xs + torch.randn(xs.shape, device=self.device, generator=self.noise_rng) * before_noise
+        if selected_site == 'action' and before_noise:
+            train_a = actions + torch.randn(actions.shape, device=self.device, generator=self.noise_rng) * before_noise
+        z, zp, pred = self.model(train_x, train_a)
+        if selected_site == 'imagination' and before_noise:
+            # Counterfactual noise in the model's imagined successor, not the observed target.
+            zp = zp + torch.randn(zp.shape, device=self.device, generator=self.noise_rng) * before_noise
+            pred = self.model.decoder(zp)
         target_z = self.model.encoder(ys).detach()
         reconstruction = self.model.decoder(z)
         loss = F.mse_loss(pred, ys) + .2 * F.mse_loss(zp, target_z) + .12 * F.mse_loss(reconstruction, xs)
@@ -149,8 +172,8 @@ class SharedPerspective:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.)
         self.optimizer.step()
-        post = self.evaluate(samples) if adaptive_noise else None
-        if adaptive_noise:
+        post = self.evaluate(samples) if adaptive_noise or noise_selection is not None else None
+        if adaptive_noise and noise_selection is None:
             # Training-only objective progress controls how much representation noise
             # is injected into the *next training batch*. Held-out data never tunes it.
             gain = (pre['loss'] - post['loss']) / max(1e-8, pre['loss'])
@@ -164,10 +187,14 @@ class SharedPerspective:
         self.seen += len(samples)
         for s in samples:
             self.counts[s['domain']] += 1
+        gain = (pre['loss'] - post['loss']) / max(1e-8, pre['loss']) if post else None
         self.last = {'batch': len(samples), 'device': str(self.device), 'step': self.steps,
                      'preUpdatePredictionLoss': pre['loss'], 'identityBaselineLoss': pre['identityBaselineLoss'],
                      'trainingObjective': round(float(loss.item()), 7), 'domains': dict(self.counts),
-                     'noiseUsed': round(before_noise, 6), 'nextTrainingNoise': round(self.noise, 6),
+                     'noiseUsed': round(before_noise, 6), 'noiseSite': selected_site or ('perception' if adaptive_noise else 'none'),
+                     'organismSelected': noise_selection is not None,
+                     'trainingNoiseGain': round(float(gain), 7) if gain is not None else None,
+                     'nextTrainingNoise': round(self.noise, 6),
                      'noiseUpdates': self.noise_updates, 'trainPostUpdateLoss': post['loss'] if post else None,
                      'trace': pre_update_trace}
         return self.last

@@ -113,15 +113,29 @@ export class ImmediateController {
 }
 
 // one task: the organism lives it until the configuration is reached, it states a limitation, or time runs out
-export function liveTask(level, world, agent, {limit = null, record = false, learn = true, onTransition = null} = {}) {
+export function liveTask(level, world, agent, {limit = null, record = false, learn = true, onTransition = null, noiseAgency = null, noiseFeedback = true} = {}) {
   const n = level.n, goal = level.goal, lim = limit ?? 4 * (level.optimal || 20) + 40; let steps = 0, failed = 0, predicted = 0, how = {}, said = null, firstPlan = null; const frames = [];
   if (record) frames.push({b: world.board()});
   while (!world.reached() && steps < lim) {
-    const b = world.board(), c = agent.choose(b, n, goal); how[c.how] = (how[c.how] || 0) + 1;
+    const b = world.board(), org = agent.org || agent, at = org.findSelf(b);
+    const portal = noiseAgency ? noiseAgency.decide({domain: 'transform',
+      known: at >= 0, planned: at >= 0 && org.moves().length >= 4}) : null;
+    const sensed = portal?.site === 'perception' ? noiseAgency.perceive(b, portal) : b;
+    const c = agent.choose(sensed, n, goal);
+    if (portal?.site === 'action' && c.o !== null) {
+      const output = noiseAgency.output(c.o, 8, portal);
+      if (output !== c.o) { c.o = output; c.how = 'noise'; }
+    } else if (portal?.site === 'imagination' && c.o !== null) {
+      // Branch from the organism's known intervention repertoire, not an oracle plan.
+      const output = noiseAgency.output(c.o, 8, portal, org.moves());
+      if (output !== c.o) { c.o = output; c.how = 'noise'; }
+    }
+    how[c.how] = (how[c.how] || 0) + 1;
     if (steps === 0 && c.plan && c.how === "plan") firstPlan = c.plan.length;
     if (c.how === "limitation") { said = "limitation"; break; }
-    const org = agent.org || agent, guess = c.at >= 0 ? org.predict(b, n, c.at, c.o) : null;
+    const guess = c.at >= 0 ? org.predict(b, n, c.at, c.o) : null;
     world.step(c.o); const a = world.board(); steps++;
+    if (portal && noiseFeedback && learn) noiseAgency.learn(portal, {before: b, after: a, solved: world.reached()});
     if (onTransition) onTransition({domain: "transform", before: b, after: a, action: "output:" + c.o, context: "grid:" + n});
     if (guess) { predicted++; if (guess.b.some((v, i) => v !== a[i])) failed++; }
     if (learn) agent.learn(b, a, n, c.at, c.o, goal);

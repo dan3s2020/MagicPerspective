@@ -80,7 +80,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
-    traceTransformations: process.argv.includes("--trace-transformations")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
