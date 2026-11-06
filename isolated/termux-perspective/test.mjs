@@ -26,6 +26,7 @@ test('only one global memory snapshot is constructed for test navigation',()=>{
 });
 test('paired unseen mazes quantify the trained vs untrained navigation policies',()=>{
  const r=runExperiment({train:320,test:64,seed:29,size:11,noise:0});
+ console.log('HELDOUT_64_RESULT '+JSON.stringify({beforeSuccess:r.baseline.successRate,afterSuccess:r.trained.successRate,beforeExtra:r.baseline.meanExtraStepsSolved,afterExtra:r.trained.meanExtraStepsSolved,localizationBefore:r.baseline.localizationAccuracy,localizationAfter:r.trained.localizationAccuracy,train:r.learned.examples,test:r.trained.count}));
  assert.equal(r.metadata.trainedV17Brain,false);
  assert.equal(r.trained.count,64);assert.equal(r.baseline.count,64);
  assert.equal(r.learned.accuracy,1);
