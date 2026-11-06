@@ -27,6 +27,13 @@ test('original GPU card batch trains persistent body perspective in SAME V17 Bra
   assert.ok(brain.perspective.last?.trace?.length>0,
     'No recorded local observations after original card batch');
   assert.equal(brain.perspective.last.globalObservationsAfterStart,0);
+  const priorNoise=policy.total;
+  const priorTransform=brain.trans?.played || 0;
+  await brain.playTransformsGPU(gpu,1);
+  assert.equal(brain.trans.played,priorTransform+1,'Real GPU-physics causal task never completed');
+  assert.ok(policy.total>priorNoise,
+    'The same organism must select and receive feedback for each GPU-physics causal action');
+  assert.ok(brain.trans.gpu.organismNoise?.choices>priorNoise);
   console.log('V17_GPU_PROTOCOL_PERSPECTIVE '+JSON.stringify({
    protocolDevice:info.device,originalGpuWorlds:r.batch,originalGpuSolved:r.solved,
    sameBrainPerspectiveEpisodes:brain.perspective.episodes,localObservations:brain.perspective.last.bodyObservations,
