@@ -142,7 +142,9 @@ for await (const ex of stream()) {
   brain.exercises = (brain.exercises || 0) + (TEXT ? 1 : 0); if (TEXT) brain.beginExercise();
   let rowRead=0;
   for (const y of ex.bytes) {
-    brain.live(y, brain.chars % 50 === 0); brain.chars++;
+    brain.live(y, brain.chars % 50 === 0,
+      research?{onPrediction:(event)=>research.recordCharacter(event)}:undefined);
+    brain.chars++;
     if(research && ++rowRead % 512 === 0) {
       research.progress.bytesProcessed=rowRead;
       researchPulse();
