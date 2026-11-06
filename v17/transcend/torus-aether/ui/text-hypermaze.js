@@ -198,14 +198,17 @@ async function observedFromPrompt(prompt,{isTrainingExample=false}={}){
  const realBranches=new Set(branches);
  text("hmAlternative",fmt(realBranches.size)+" puncte");
  text("hmDeviation",d?(d.diverged?"pas "+fmt(d.firstDifferentNodeIndex):"nu există"):"neînregistrat");
- text("hmRevisions",h.viewpointEvidence?.actualRepropagationAfterEachMove?"vezi jurnal":"NEIMPLEMENTAT");
+ text("hmRevisions",h.revisionStats?
+  fmt(h.revisionStats.repropagations)+" reprop. / "+fmt(h.revisionStats.revisedGlobalShapes)+" revizii":
+  "fără jurnal");
  text("hmGoal",h.solvedKnownGoal?"terminal memorat":"NU / NECUNOSCUT");
  text("hmMeaning",
   "MODEL V18 · "+(isTrainingExample?"întrebare observată la antrenare":"input nou fără răspuns-țintă")+
   "\nAURIU = forma completă propagată ÎNAINTE de acțiune."+
   "\nTURCOAZ = nodurile vizitate efectiv de politica locală după fiecare caracter."+
+  "\nVIOLET PUNCTAT = forma recalculată cu legea V17 din poziția actuală a cursorului, înaintea mișcării următoare."+
   "\nGRI = conexiunile alternative deja observate, nu universuri inventate."+
-  "\nNu există încă un algoritm care să învețe un perete nou sau să repropagheze global după fiecare caracter. Abaterile se văd numai dacă se întâmplă în backend.");
+  "\nRecalcularea folosește TOPOLOGIA CUNOSCUTĂ; nu primește informații noi din text și NU înlocuiește politica locală de mișcare. Revizuirile sunt măsurate, nu animate fictiv.");
  text("hmProvenance","Din backend: /language-maze/analyze, același worker, graf observat și câmpuri V17/Successor."+
   "\nCoordonate 4D diagnostice:\n"+layout.dimensions.join("\n")+
   "\nNU este o topologie 4D învățată de organism. Fiecare răspuns memorat este în prezent o ramură de prefix (nu două drumuri către același terminal)."+
@@ -318,7 +321,12 @@ function stepMessageObserved(){
    " → "+(Number.isFinite(frame.successorAfter)?frame.successorAfter.toFixed(5):"—"),
    "Pași rămași pe prima formă: "+(remaining===null?"a ieșit din traseu":fmt(remaining)),
    "Output local până aici: "+cut(frame.prefix,450),
-   "Replanificare după acțiune: NU (backendul păstrează câmpul inițial).",
+   "Forma RECALCULATĂ acum: "+(h.replans?.[step]?
+     fmt(h.replans[step].fullNodes-1)+" pași viitori (preview "+fmt(h.replans[step].nodes.length-1)+")":
+     "fără nouă repropagare / terminal"),
+   "Replanificare: "+(h.replans?.[step]?.changedFromInitialContinuation?"TRASEU DIFERIT":"aceeași continuare / fără schimbare"),
+   "Nouă evidență învățată în timpul replay-ului: NU",
+   "Forma recalculată controlează acțiunea? NU; politica locală originală a rămas intactă.",
    "Prima abatere global/local: "+(firstDiff.diverged?fmt(firstDiff.firstDifferentNodeIndex):"niciuna")
  ].join("\n");
 }
@@ -412,6 +420,14 @@ function drawObserved(){
  // drawn as if they had already occurred.
  paintPath(actual,coords,{color:"#3de7d0",width:4,upto:step,
   sample:step>4500?Math.ceil(step/4500):1},shift);
+ // Diagnostic repropagation is computed by the SAME original law after each
+ // real local action. It visualizes a new planned future but NEVER claims
+ // that it replaced the original policy or observed an unknown wall.
+ const replan=h.replans?.[step];
+ if(replan?.nodes?.length>1)paintPath(replan.nodes,coords,{
+   color:"#c392f2",width:3,dashed:true,opacity:.95,
+   sample:replan.nodes.length>4000?Math.ceil(replan.nodes.length/4000):1
+ },shift);
  if(!graph.partialPreview)for(const goal of graph.goals||[])drawPoint(coords[goal.node],"#c181ea",4.5,shift);
  drawPoint(coords[pre[0]??0],"#94b8cd",5,shift,"START");
  drawPoint(coords[pos],"#f5a568",8,shift,"EU · "+step);
