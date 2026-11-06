@@ -1,0 +1,45 @@
+name: V18 successor field integration and original V17 regressions
+on:
+  push:
+    branches:
+      - experiment/V18-SUCCESSOR-TIEBREAK-INTEGRATED-20261106
+  workflow_dispatch:
+jobs:
+  source-and-native-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of modified JS and preserved original world
+        run: |
+          node --check v17/transcend/torus-aether/language-maze/successor-field.mjs
+          node --check v17/transcend/torus-aether/language-maze/shape-topology.mjs
+          node --check v17/transcend/torus-aether/language-maze/language-world.mjs
+          node --check v17/transcend/torus-aether/ui/language-maze-studio.js
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+      - name: Original maze parity, live learned text, successor exact ties and hierarchical 112531-character path
+        run: |
+          node --test v17/transcend/torus-aether/language-maze/successor-field.test.mjs v17/transcend/torus-aether/language-maze/language-world.test.mjs v17/transcend/torus-aether/language-maze/hierarchical-shape.test.mjs
+      - name: Native server trained on actual input text and frozen HTTP test
+        run: node --test v17/transcend/torus-aether/language-maze/language-http.test.mjs
+      - name: Unmodified body perspective and shared experience tests
+        run: node --test v17/transcend/torus-aether/perspective/body-perspective.test.mjs v17/transcend/torus-aether/perspective/body-studio.test.mjs v17/transcend/torus-aether/shared/experience.test.mjs
+  windows-powershell-51:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse unique isolated Windows startup script
+        shell: powershell
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path v17/START_SUCCESSOR_V18.ps1).Path,
+            [ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0){$errors | ForEach-Object { Write-Host $_.ToString() }; throw 'New launcher has parser errors'}
