@@ -113,7 +113,7 @@ export class ImmediateController {
 }
 
 // one task: the organism lives it until the configuration is reached, it states a limitation, or time runs out
-export function liveTask(level, world, agent, {limit = null, record = false, learn = true} = {}) {
+export function liveTask(level, world, agent, {limit = null, record = false, learn = true, onTransition = null} = {}) {
   const n = level.n, goal = level.goal, lim = limit ?? 4 * (level.optimal || 20) + 40; let steps = 0, failed = 0, predicted = 0, how = {}, said = null, firstPlan = null; const frames = [];
   if (record) frames.push({b: world.board()});
   while (!world.reached() && steps < lim) {
@@ -122,6 +122,7 @@ export function liveTask(level, world, agent, {limit = null, record = false, lea
     if (c.how === "limitation") { said = "limitation"; break; }
     const org = agent.org || agent, guess = c.at >= 0 ? org.predict(b, n, c.at, c.o) : null;
     world.step(c.o); const a = world.board(); steps++;
+    if (onTransition) onTransition({domain: "transform", before: b, after: a, action: "output:" + c.o, context: "grid:" + n});
     if (guess) { predicted++; if (guess.b.some((v, i) => v !== a[i])) failed++; }
     if (learn) agent.learn(b, a, n, c.at, c.o, goal);
     if (record) frames.push({b: a, o: c.o, how: c.how, plan: c.plan ? c.plan.slice(0, 40) : null});
