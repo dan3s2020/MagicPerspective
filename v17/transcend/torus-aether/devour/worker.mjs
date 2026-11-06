@@ -74,6 +74,12 @@ const saveText = () => {
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
 };
+// The very same corpus, already lived by the original AligningGraph, is also
+// learned at token/phrase/sentence scales within the SAME Brain and checkpoint.
+const absorbLanguage = row => {
+  if(!TEXT || !Array.isArray(row?.bytes) || !row.bytes.length)return;
+  brain.liveLanguage(Buffer.from(row.bytes).toString('latin1'));
+};
 const absorbText = row => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
   textPaths.learn(row.prompt, row.answer);
@@ -89,12 +95,14 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shared: shared.status(), language: brain.language?.report() || null,
+    endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), language: brain.language?.report() || null,
+    selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -152,6 +160,7 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+  for(const row of meta)absorbLanguage(row);
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
@@ -162,6 +171,13 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m && m.languageExam) {
+    const {id,limit=1800,seed=11}=m.languageExam;
+    let result;
+    try{result=brain.testLanguage(evalText,{maxTokens:Math.max(50,Math.min(10000,limit)),seed});}
+    catch(err){result={error:err.message};}
+    parentPort.postMessage({type:'chat',id,...result});return;
+  }
   if(m && m.perspectiveExam){
     const {id,count=20,seed=73}=m.perspectiveExam;
     let result;
@@ -231,7 +247,8 @@ for await (const ex of stream()) {
   if (TEXT && textBatch.length) {
     for (let j = 0; j < textBatch.length; j++) {
       brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
-      brain.exercises = (brain.exercises || 0) + 1; absorbText(textMeta[j]);
+      brain.exercises = (brain.exercises || 0) + 1;
+      absorbLanguage(textMeta[j]);absorbText(textMeta[j]);
     }
     textBatch = []; textMeta = []; shot(true);
   }
@@ -244,7 +261,8 @@ for await (const ex of stream()) {
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
-  if (TEXT && !stop && brain.chars < maxChars) { absorbText(ex); await flushShared(); }
+  if (TEXT && !stop && brain.chars < maxChars) {
+    absorbLanguage(ex); absorbText(ex); await flushShared(); }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
