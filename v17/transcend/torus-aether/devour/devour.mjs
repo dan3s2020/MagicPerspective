@@ -19,6 +19,7 @@ import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -236,6 +237,34 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  // Direct read-only navigation through this worker's REAL corpus-learned graph.
+  if (req.method === "POST" && url === "/hypermaze-plan") {
+    let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid text hypermaze request"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap"))return json(res,{error:"Select a graph with cognitivemap enabled"});
+      if(typeof m.start!=="string"||!m.start||m.start.length>256||
+         typeof m.goal!=="string"||!m.goal||m.goal.length>256)
+        return json(res,{error:"Provide a single observed start and goal token"});
+      const maxSteps=Math.max(1,Math.min(10000,Math.trunc(+m.maxSteps||160)));
+      if(!sl.wk){
+        try{
+          const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No saved hypermaze"});
+          const brain=Brain.load(save);
+          if(!brain.hypermaze)return json(res,{error:"No learned hypermaze in checkpoint"});
+          // Pure read-only plan on restored graph, never train on evaluation data.
+          const result=TextHypermaze.restore(brain.hypermaze).plan(m.start,m.goal,{maxSteps});
+          return json(res,{...result,frozen:true,fromSave:true});
+        }catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);json(res,{error:"Text hypermaze plan timed out"});
+      },60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.wk.postMessage({hypermazePlan:{id,start:m.start,goal:m.goal,maxSteps}});
+    });return;
+  }
   if (req.method === "POST" && url === "/cognitive-observe") {
     let body="";req.on("data",d=>{body+=d;if(body.length>32768)req.destroy();});
     req.on("end",()=>{
