@@ -158,6 +158,37 @@ http.createServer((req, res) => {
       try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; } return json(res, {...sl.talker.examMazes(sizes, per), fromSave: true}); } catch (err) { return json(res, {error: err.message}); } }
     const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 300 s"}); }, 300000);
     chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({exam: {id, sizes, per}}); return; }
+  // Read-only trained-world stats + real observed example. Works on a
+  // running worker or a saved V18 .language-maze sidecar; no fake content.
+  if(req.method==="GET"&&url==="/language-maze/observatory"){
+    const w=Number(q.get("w")??0),sl=slots.find(x=>x.w===w);
+    if(!Number.isInteger(w)||!sl)return json(res,{error:"graph not found"});
+    if(!sl.wk){
+      const file=saveOf(sl)+".language-maze.v18.json";
+      if(!fs.existsSync(file))return json(res,{
+        protocol:"OBSERVED_TRAINING_TEXT_WORLD",available:false,
+        observedPrompt:null,reason:"No trained language-world save yet"
+      });
+      try{
+        const memory=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(file,"utf8")));
+        const recent=[...memory.records].reverse();
+        const picked=recent.find(r=>r.prompt?.length<=2000&&r.answer?.length>0&&r.answer.length<=384)
+          ||recent.find(r=>r.prompt?.length<=2000&&r.answer?.length>0&&r.answer.length<=4000);
+        return json(res,{protocol:"OBSERVED_TRAINING_TEXT_WORLD",
+          available:memory.records.length>0,trainingMemory:memory.stats(),
+          observedPrompt:picked?.prompt||null,
+          observedAnswerLength:picked?.characters??null,
+          source:"previously_observed_training_question_not_unseen_test",
+          fromSavedWorld:true});
+      }catch(err){return json(res,{error:"language-world observatory: "+err.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"training-world status timeout"});
+    },20000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,result);});
+    sl.wk.postMessage({successorObservedStatus:{id}});
+    return;
+  }
   // Dedicated observatory: both policies evaluate one worker snapshot, not
   // two independently advancing training states. Never accept target answers.
   if(req.method==="POST"&&url==="/language-maze/analyze"){
