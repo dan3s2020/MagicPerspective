@@ -607,7 +607,16 @@ async function control(act, w) { await fetch("/control?do=" + act + (w == null ?
 $("liveReset").onclick = async () => { if (!confirmReset()) return; await control("reset"); clearLive(); };
 $("allStart").onclick = () => control("start"); $("allPause").onclick = () => control("pause"); $("allSave").onclick = () => control("save");
 $("gpuUtil").oninput = () => $("gpuUtilOut").textContent = $("gpuUtil").value;
-$("gpuApply").onclick = async () => { await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&textBatch=${Math.max(1, Math.min(128, +$("gpuTextBatch").value | 0))}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"}).catch(() => {}); livePull(); };
+$("gpuApply").onclick = async () => {
+  try {
+    const r = await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&textBatch=${Math.max(1, Math.min(128, +$("gpuTextBatch").value | 0))}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"});
+    if (!r.ok) {
+      const detail = await r.json().catch(() => ({reason: "GPU settings rejected"}));
+      alert(detail.reason || ("GPU settings rejected: HTTP " + r.status));
+    }
+  } catch (err) { alert("Nu pot aplica setările GPU: " + err.message); }
+  livePull();
+};
 let gpuShown = false;
 $("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext"].filter(Boolean); if (!worlds.length) return;
   await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${worlds.join(",")}`, {method: "POST"}).catch(() => {}); livePull(); };
