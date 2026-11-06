@@ -96,10 +96,11 @@ export class ObservedTransformations {
     this.order=[];
     this.index=new Map(); // length + token -> recent actual sentences
     this.operators=new Map(); // edit actions inferred from observation differences
+    this.operatorIndex=new Map(); // from-token / insertion-anchor -> only relevant possible actions
     this.invariants=new Map(); // learned contextual invariants at each length
     this.nextId=1;
     this.seen=0;this.newObservations=0;this.comparisons=0;this.matchingComparisons=0;
-    this.rejectedLong=0;this.evicted=0;
+    this.rejectedLong=0;this.evicted=0;this.droppedOperators=0;
     this.executed=0;this.correctEffects=0;this.failedEffects=0;
     this.lastPlan=null;
   }
@@ -121,6 +122,19 @@ export class ObservedTransformations {
       .sort((a,b)=>b[1]-a[1]||b[0]-a[0])
       .slice(0,this.maxCandidatePairs).map(([id])=>this.records.get(id));
   }
+  _operatorBucket(action){
+    return action.kind==="insert" ?
+      "i:"+(action.left??"^") : "e:"+action.from;
+  }
+  _ensureOperatorIndex() {
+    if(this.operatorIndex)return;
+    this.operatorIndex=new Map();
+    for(const [key,op] of this.operators){
+      const bucket=this._operatorBucket(op);
+      if(!this.operatorIndex.has(bucket))this.operatorIndex.set(bucket,new Set());
+      this.operatorIndex.get(bucket).add(key);
+    }
+  }
   _recordOperator(before,after) {
     const action=actionFrom(before,after);
     if(!action)return;
@@ -128,9 +142,13 @@ export class ObservedTransformations {
     const sample={from:renderObservation(before),to:renderObservation(after)};
     let op=this.operators.get(k);
     if(!op){
-      if(this.operators.size>=this.maxOperators)return;
+      if(this.operators.size>=this.maxOperators){this.droppedOperators++;return;}
       op={...action,sourceObservations:0,evidence:[],key:k};
       this.operators.set(k,op);
+      this._ensureOperatorIndex();
+      const bucket=this._operatorBucket(op);
+      if(!this.operatorIndex.has(bucket))this.operatorIndex.set(bucket,new Set());
+      this.operatorIndex.get(bucket).add(k);
     }
     op.sourceObservations++;
     if(op.evidence.length<4 &&
@@ -205,7 +223,17 @@ export class ObservedTransformations {
   }
   neighbors(tokens){
     const out=[],seen=new Set();
-    for(const op of this.operators.values()){
+    this._ensureOperatorIndex();
+    // Full-corpus scalability: look up only operators whose learned source
+    // symbol or left-insertion anchor exists in this state, instead of
+    // traversing ALL learned operators for every planned node.
+    const buckets=new Set(["i:^"]);
+    for(const token of tokens){buckets.add("e:"+token);buckets.add("i:"+token);}
+    const keys=new Set();
+    for(const b of buckets)for(const k of this.operatorIndex.get(b)||[])keys.add(k);
+    for(const k of keys){
+      const op=this.operators.get(k);
+      if(!op)continue;
       for(let i=0;i<tokens.length+(op.kind==="insert"?1:0);i++){
         const result=runAction(tokens,op,i);
         if(!result)continue;
@@ -322,7 +350,7 @@ export class ObservedTransformations {
     return {observed:this.newObservations,totalSeen:this.seen,activeObserved:this.records.size,
       comparedPairs:this.comparisons,oneChangePairs:this.matchingComparisons,
       learnedOperators:this.operators.size,learnedInvariantGroups:this.invariants.size,
-      evicted:this.evicted,skippedLong:this.rejectedLong,
+      evicted:this.evicted,skippedLong:this.rejectedLong,droppedNewOperators:this.droppedOperators,
       executed:this.executed,verifiedEffects:this.correctEffects,
       failedEffects:this.failedEffects,
       lastPlan:this.lastPlan?{found:this.lastPlan.found,unseen:this.lastPlan.unseen,
