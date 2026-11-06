@@ -41,6 +41,9 @@ function showOverlay(){
  if(!overlay.hidden)return;
  overlay.hidden=false;document.body.style.overflow="hidden";
  halt();draw();
+ if(!model&&lastFrozen?.result?.exercises?.length){
+  try{showFrozenExercise(lastFrozen.result,0);}catch(err){updateHud("Evaluare V17: "+err.message);}
+ }
  // Original tabs remain exactly as they were; no native handlers changed.
 }
 function hideOverlay(){
@@ -167,17 +170,22 @@ $("hmLoadObserved").addEventListener("click",()=>busyFetch(async()=>{
  $("hmPrompt").value=r.observedPrompt;
  await observedFromPrompt(r.observedPrompt,{isTrainingExample:true});
 }));
-$("hmUnseen").addEventListener("click",()=>busyFetch(async()=>{
+let lastFrozen=null; // original V17 /eval result from the user's actual Evaluare tab
+function showFrozenExercise(result,index=0,opts={}){
+ if(!result?.exercises?.length)throw Error("Nu există exerciții V17 de vizualizat.");
+ const i=Math.min(Math.max(0,Number(index)||0),result.exercises.length-1),ex=result.exercises[i];
+ if(!Array.isArray(ex.rows))throw Error("Evaluarea V17 nu a returnat predicțiile caracter cu caracter.");
  $("hmMode").value="unseen";
- const opts={count:1,max:Math.max(50,Math.min(12000,num("hmMax")||2000)),
-  T:Math.max(0,Math.min(1.5,num("hmTemp"))),noise:0};
- const r=await request("/eval",{method:"POST",headers:{"content-type":"application/json"},
-  body:JSON.stringify({w:w(),kind:"text",opts})});
- const ex=r.exercises?.[0];
- if(!ex||!Array.isArray(ex.rows))throw Error("Evaluarea V17 nu a returnat observații per caracter.");
- model={kind:"unseen",source:r.source,exercise:ex,layout:frozenTextLayout(ex),
-  frozenLived:r.lived,opts};
+ model={kind:"unseen",source:result.source,exercise:ex,layout:frozenTextLayout(ex),
+  frozenLived:result.lived,opts,exerciseIndex:i};
  layout=model.layout;
+ const drop=$("hmExercise");drop.replaceChildren();
+ result.exercises.forEach((entry,j)=>{
+  const option=document.createElement("option");option.value=String(j);
+  option.textContent="#"+j+" · "+fmt(entry.n)+" caractere · pred. "+pc(entry.answer);
+  drop.append(option);
+ });
+ drop.value=String(i);
  text("hmInitial",fmt([...String(ex.shape||"")].length));
  text("hmExecuted",fmt(layout.rows.length)+" pred.");
  text("hmAlternative","3 secvențe");
@@ -185,18 +193,44 @@ $("hmUnseen").addEventListener("click",()=>busyFetch(async()=>{
  text("hmRevisions","NU: teacher-forced");
  text("hmGoal",pc(ex.answer));
  text("hmMeaning",
-  "MODEL V17 ÎNGHEȚAT · exercițiu nevăzut, "+fmt(ex.n)+" caractere. "+
+  "MODEL V17 ÎNGHEȚAT · exercițiu #"+i+" · "+fmt(ex.n)+" caractere. "+
   "\nAURIU = forma de răspuns imaginată DIN ÎNTREBARE, înainte de a vedea răspunsul."+
   "\nTURCOAZ = predicția următorului caracter când modelul citește prefixul REAL al exercițiului."+
   "\nVIOLET = caracterele adevărate (referința folosită numai pentru scor)."+
   "\nTrei secvențe, NU trei drumuri valide printr-un labirint învățat. Nu există mișcare autonomă către o țintă semantică în acest test.");
  text("hmProvenance",
-  "Date reale de la /eval · Brain.load(checkpoint), fără învățare."+
+  "Date reale din testul V17 înghețat, după "+fmt(result.lived)+" pași trăiți anterior."+
   "\nScor predicții teacher-forced (răspuns): "+pc(ex.answer)+
   "\nForma înainte de acțiune vs referință: "+pc(ex.shapeSame)+
   "\nCoordonate 4D diagnostice:\n"+layout.dimensions.join("\n")+
   "\nNu reprezintă geometrie latentă reală, mecanism cuantic sau drum de planificare.");
  syncStep(0);
+}
+function showCachedFrozen(){
+ if(!lastFrozen?.result?.exercises?.length){
+  updateHud("Nicio evaluare V17 anterioară în această pagină. Deschide Evaluare → text nevăzut → Evaluează sau folosește butonul care rulează o evaluare nouă.");
+  return;
+ }
+ showFrozenExercise(lastFrozen.result,Number($("hmExercise").value)||0);
+}
+$("hmUseCurrent").addEventListener("click",showCachedFrozen);
+$("hmExercise").addEventListener("change",showCachedFrozen);
+window.addEventListener("magicperspective:text-frozen-evaluation",event=>{
+ const value=event.detail;
+ if(!value?.result?.exercises?.length)return;
+ lastFrozen=value;
+ if(open()&&(!model||model.kind==="unseen")){
+  try{showFrozenExercise(value.result,0);}catch(err){updateHud("Eroare de interpretare V17: "+err.message);}
+ }
+});
+$("hmUnseen").addEventListener("click",()=>busyFetch(async()=>{
+ $("hmMode").value="unseen";
+ const opts={count:1,max:Math.max(50,Math.min(12000,num("hmMax")||2000)),
+  T:Math.max(0,Math.min(1.5,num("hmTemp"))),noise:0};
+ const result=await request("/eval",{method:"POST",headers:{"content-type":"application/json"},
+  body:JSON.stringify({w:w(),kind:"text",opts})});
+ lastFrozen={w:w(),result};
+ showFrozenExercise(result,0,opts);
 }));
 function stepMessageObserved(){
  const h=model.pair.hybrid,global=h.globalPlanNodes||[],actual=h.pathNodes||[];
