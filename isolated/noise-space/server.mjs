@@ -28,7 +28,23 @@ const respond=async(req,res)=>{const u=new URL(req.url,'http://127.0.0.1');try{
  if(req.method==='GET'&&(u.pathname==='/'||u.pathname==='/observatory.html'||u.pathname==='/synthetic.html')){const file=u.pathname==='/synthetic.html'?'index.html':'observatory.html';const b=fs.readFileSync(path.join(ROOT,file));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
  return json(res,404,{error:'Not found'});
  }catch(e){return json(res,/Invalid|Need |Unknown|Event |Events |Refusing|Not running|Stop /.test(e.message)?400:409,{error:e.message});}};
-if(process.argv.includes('--events')){const p=process.argv[process.argv.indexOf('--events')+1];try{external=readEvents(p);source='external';persist();console.log('Imported read-only:',p);}catch(e){console.error('Import rejected:',e.message);process.exitCode=2;}}
-else if(!current){train(options);}
-const srv=http.createServer(respond);srv.listen(port,host,()=>console.log(`MagicPerspective isolated noise-space: http://${host}:${port}/\nWorking directory: ${ROOT}\nOriginal V17 source and checkpoints unchanged.`));
+// Do not write synthetic state or process event imports until the HTTP port is bound.
+// Prevents a second instance from altering shared session files on EADDRINUSE.
+const srv=http.createServer(respond);
+srv.on('error',err=>{
+  const msg=err?.code==='EADDRINUSE'
+    ? 'PORT_IN_USE '+host+':'+port+'. Another process is listening. Save and stop the existing session in its original terminal before restarting.'
+    : 'SERVER_LISTEN_ERROR '+(err?.code||'unknown')+': '+(err?.message||err);
+  console.error(msg);
+  closeRealWorker();
+  process.exitCode=1;
+});
+srv.listen(port,host,()=>{
+  if(process.argv.includes('--events')){
+    const p=process.argv[process.argv.indexOf('--events')+1];
+    try{external=readEvents(p);source='external';persist();console.log('Imported read-only:',p);}
+    catch(e){console.error('Import rejected:',e.message);process.exitCode=2;srv.close();closeRealWorker();return;}
+  }else if(!current){train(options);}
+  console.log('MagicPerspective isolated noise-space: http://'+host+':'+port+'/\nWorking directory: '+ROOT+'\nOriginal V17 source and checkpoints unchanged.');
+});
 process.on('SIGINT',()=>{running=false;persist();closeRealWorker();srv.close();});
