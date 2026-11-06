@@ -159,7 +159,7 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/reset") { for (const sl of slots) control(sl, "reset"); return json(res, {ok: true}); }
   if (req.method === "POST" && url === "/stop") { stopping = true; for (const sl of slots) sl.wk?.postMessage("stop"); res.writeHead(200); return res.end("ok"); }
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
-  if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
+  if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1" + (researchSettings.enabled ? "&research=1" : "")}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
   if (url === "/research") {
     const w=Number(q.get("w")||0),snap=researchLatest.get(w);
