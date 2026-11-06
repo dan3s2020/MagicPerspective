@@ -70,7 +70,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
