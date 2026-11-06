@@ -1,0 +1,45 @@
+name: V17 learned transformations from unlabeled observation differences
+on:
+  push:
+    branches:
+      - experiment/V17-OBSERVATIONAL-TRANSFORM-COMPOSITION-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  causal-composition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse production organism and action world
+        run: |
+          node --check v17/transcend/torus-aether/worlds/observed-transformations.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+      - name: Four sentences, unseen composition, negative ablations and counterfactual replay
+        run: node --test v17/tests/observed-transformations-v17.test.mjs
+      - name: Preserve real original Brain, end-to-end HTTP and living path worlds
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/torus-organism.test.mjs
+          node --test v17/tests/torus-all-worlds-live.test.mjs
+  windows-parse:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse original PowerShell launchers
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach ($p in @('v17/START_V17_TRANSFER.ps1','v17/START_V17.ps1')) {
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($p + ': ' + ($errors -join '; '))}
+          }
