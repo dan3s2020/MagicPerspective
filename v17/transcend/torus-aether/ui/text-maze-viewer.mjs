@@ -96,20 +96,21 @@ export function mountTextMaze5D(parent,{title='Traseul textului în 5D'}={}){
     drawPath(J.actual,COLORS.actual,{until:step,alpha:.9,width:2.5,kind:'observed'});
     // Draw only the latest relevant online guesses, not invented free-running moves.
     const span=Math.max(1,Math.floor(J.answerLength/210));
-    for(let i=0;i<step&&i<J.online.length;i+=span){
-      const x=J.online[i];if(x.valid)drawConnector(x.from,x.to,i===step-1?COLORS.error:COLORS.online,true,1.0);
+    for(const x of J.online){
+      if(x.i>=step)break;
+      if(x.i%span===0||x.i===step-1)if(x.valid)drawConnector(x.from,x.to,x.i===step-1?COLORS.error:COLORS.online,true,1.0);
     }
-    for(const i of J.errorIndices){if(i>=step)break;const p=J.actual[i+1];if(p?.valid && (i===step-1 || i%span===0))dot(p.u,COLORS.error,3,'#510f1a');}
+    for(const i of J.errorIndices){if(i>=step)break; if(i===step-1||i%span===0){const p=J.stateAt(i+1);if(p?.valid)dot(p.u,COLORS.error,3,'#510f1a');}}
     for(const r of J.replans){if(r.at>step)continue;
       drawPath(r.points,COLORS.replan,{dash:[3,5],alpha:r.at===step-1?.95:.5,width:1.8,kind:'replan'});
-      dot(J.actual[r.at]?.u,COLORS.replan,4,'#23686a');
+      dot(J.stateAt(r.at)?.u,COLORS.replan,4,'#23686a');
     }
   }else{
     drawPath(J.actual,COLORS.actual,{until:step,width:2.6,kind:'emitted'});
     for(const r of J.macro||[]){if(r.start.valid&&r.end.valid)drawConnector(r.start.u,r.end.u,COLORS.macro,false,3);}
     for(const r of J.alternatives||[]){if(r.start.valid&&r.end.valid)drawConnector(r.start.u,r.end.u,COLORS.alternate,true,2);}
   }
-  const current=J.actual[Math.max(0,Math.min(step,J.actual.length-1))];if(current?.valid)dot(current.u,'#ffffff',6,COLORS.actual);
+  const current=J.stateAt?.(step);if(current?.valid)dot(current.u,'#ffffff',6,COLORS.actual);
   ctx.fillStyle='#a9c5df';ctx.font='12px ui-monospace,monospace';
   ctx.fillText('V17 · 5D torus · X/Y + Z/W/V rotite · timp = pasul cursorului',12,20);
   if(J.knownGeometry===0){ctx.fillStyle='#ffb65c';ctx.fillText('Fără coordonate geometrice V17 în checkpoint — nu inventez harta.',12,40);}
