@@ -4,7 +4,7 @@
 // No language semantics oracle; an unsupported prompt falls back to V17's original writer.
 import {gearTokens} from './nested_text_gears.mjs';
 
-const MAX_CUES = 48, MAX_ROWS = 6000, MAX_WORDS = 9, MAX_STATES = 1200, MAX_CUE_BUCKETS=12000, MAX_LABELS_PER_CUE=80, MAX_GLOBAL_LABELS=12000;
+const MAX_CUES = 48, MAX_ROWS = 6000, MAX_WORDS = 9, MAX_STATES = 1200, MAX_CUE_BUCKETS=4000, MAX_LABELS_PER_CUE=32, MAX_GLOBAL_LABELS=8000;
 const key = (n,i,w) => JSON.stringify([n,i,w]);
 const normalize = s => String(s||'').normalize('NFKC').toLowerCase();
 const promptFeatures = s => [...new Set(gearTokens(s).slice(0,64).map(normalize))].slice(0,MAX_CUES);
