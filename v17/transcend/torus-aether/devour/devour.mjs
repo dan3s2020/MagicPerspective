@@ -271,9 +271,19 @@ http.createServer((req, res) => {
           return json(res,{...answer,source:"original-held-out",fromSave:true});
         }
         const id=++chatId,timer=setTimeout(()=>{
-          chats.delete(id);json(res,{error:"Frozen hypertext evaluation timeout"});
+          chats.delete(id);sl.pendingFrozen?.delete(id);json(res,{error:"Frozen hypertext evaluation timeout"});
         },60000);
         chats.set(id,result=>{clearTimeout(timer);json(res,{...result,source:"original-held-out"})});
+        sl.pendingFrozen.set(id,()=>{
+          clearTimeout(timer);
+          try {
+            const file=saveOf(sl);
+            if(!fs.existsSync(file))return json(res,{error:"Worker exited before any hypermaze checkpoint was saved"});
+            const brain=Brain.load(file);
+            const result=TextHypermaze.restore(brain.hypermaze).evaluateDocuments(texts);
+            return json(res,{...result,source:"original-held-out",frozen:true,fromSave:true});
+          }catch(e){return json(res,{error:e.message});}
+        });
         sl.wk.postMessage({hypermazeEval:{id,texts}});
       })().catch(err=>json(res,{error:err.message}));
     });
@@ -301,9 +311,19 @@ http.createServer((req, res) => {
         }catch(err){return json(res,{error:err.message});}
       }
       const id=++chatId,timer=setTimeout(()=>{
-        chats.delete(id);json(res,{error:"Text hypermaze plan timed out"});
+        chats.delete(id);sl.pendingFrozen?.delete(id);json(res,{error:"Text hypermaze plan timed out"});
       },60000);
       chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Worker exited before any hypermaze checkpoint was saved"});
+          const brain=Brain.load(file);
+          const result=TextHypermaze.restore(brain.hypermaze).plan(m.start,m.goal,{maxSteps});
+          return json(res,{...result,frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
       sl.wk.postMessage({hypermazePlan:{id,start:m.start,goal:m.goal,maxSteps}});
     });return;
   }
@@ -344,8 +364,18 @@ http.createServer((req, res) => {
           return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
         }catch(e){return json(res,{error:e.message});}
       }
-      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Cognitive evaluation timeout"});},60000);
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);sl.pendingFrozen?.delete(id);json(res,{error:"Cognitive evaluation timeout"});},60000);
       chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Worker exited before any cognitive checkpoint was saved"});
+          const brain=Brain.load(file),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
       sl.wk.postMessage({cognitiveEval:{id,initial:m.initial,goal:m.goal,
         maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),
         maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))}});
