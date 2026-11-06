@@ -25,3 +25,26 @@ jobs:
           node --check isolated/native-language-paths/multipath.mjs
           node --check isolated/native-language-paths/atlas.mjs
           node --check isolated/native-language-paths/repetition.mjs
+
+  powershell5-launcher:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse original PowerShell 5.1 launcher
+        shell: powershell
+        run: |
+          $errors = $null
+          $scriptText = Get-Content -LiteralPath 'START_NATIVE_LANGUAGE_PATHS.ps1' -Raw
+          [System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List | Out-String | Write-Host
+            throw 'PowerShell launcher syntax errors'
+          }
+      - name: Run V17 2D, graph and generator unit tests on Windows Node.js
+        shell: powershell
+        run: |
+          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Real-source regression tests failed on Windows' }
