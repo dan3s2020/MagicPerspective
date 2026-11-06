@@ -205,6 +205,10 @@ export class SelfCodeWorld{
   return null;
  }
  auditKnowledge(){
+  // Cache the read-only audit for 48 world steps: continuous Termux training must not
+  // run hundreds of counterfactual checks every step.
+  const bucket=Math.floor(this.state.episodes/48);
+  if(this._auditCache?.bucket===bucket)return this._auditCache.result;
   // STRICTLY FROZEN evaluation. No calls to learn(), live(), or trace mutations.
   // The operator exists inside the hidden simulator, NOT in the learner hypothesis.
   const s=this.state;
@@ -227,7 +231,7 @@ export class SelfCodeWorld{
    return {correct,total:n,accuracy:n?correct/n:null,coverage:n?attempted/n:null,
     noEditBaseline:n?baseline/n:null,genes:byGene};
   };
-  return {
+  const report={
    heldoutInputs:cases([11,12,13,14],[1,2,3]),
    newParameterValues:cases([11,12,13,14],[0,4,5,6]),
    permutedGeneLabels:cases([11,12,13,14],[1,2,3],true),
@@ -237,6 +241,7 @@ export class SelfCodeWorld{
    codeModificationCount:s.edits.length,
    trainingExamples:Object.values(s.examples).reduce((n,e)=>n+e.length,0)
   };
+  this._auditCache={bucket,result:report};return report;
  }
  status(){
   const s=this.state;
