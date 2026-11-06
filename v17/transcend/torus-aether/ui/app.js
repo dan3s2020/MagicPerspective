@@ -13,6 +13,7 @@ import {TextExperiment} from "../../epistemic-text/engine.mjs";
 import {Observatory} from "./observatory.js";
 import {LanguageMazeViewer} from "./language-maze-view.js";
 import {InlineTextMaze} from "./inline-text-maze.js";
+import {ObservedTextPathMap} from "./observed-text-path-map.js";
 import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
@@ -355,10 +356,22 @@ function evaluate() {
     `graful LIVE <b style="color:var(--green)">${p(hit.live)}</b> · graful MASKED <b>${p(hit.masked)}</b>` +
     `<br><span class="dim">la T=0 (fără halucinație): graful ${p(hit.det)} · C singur ${p(hit.C)}. La T&gt;0 fiecare test dă alt rezultat.</span>`;
 }
-function write() {
-  if (LIVE) { $("writeOut").textContent = "scrie…";                        // the graph in the trainer writes freely, at the writing temperature
-    fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: [], opts: {T: val("wtemp"), max: 1200, stopBlank: false}})}).then(r => r.json()).then(r => {
-      $("writeOut").innerHTML = r.error ? r.error : `T ${(+val("wtemp")).toFixed(2)} · graful #${liveW}<div class="gen">${String(r.text).replace(/</g, "&lt;").replace(/\n/g, " ⏎ ")}</div>`; }).catch(err => $("writeOut").textContent = err.message);
+function write(mapField = false) {
+  if (LIVE) {
+    $("writeOut").textContent = "scrie…"; // ORIGINAL live graph decides; path observation is optional.
+    const observation = !!$("observeTextPaths").checked || mapField;
+    const opts = {T:val("wtemp"),max:1200,stopBlank:false};
+    if (observation) { opts.observePath = true; opts.seed = (+$("textPathSeed").value >>> 0); }
+    if (mapField) opts.scanTemperatures = [0.1,0.5,0.95,1.3,1.8];
+    const chosenGraph = liveW;
+    fetch("/chat", {method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({w:chosenGraph,history:[],opts})}).then(r=>r.json()).then(r=>{
+      const safe = s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+      $("writeOut").innerHTML = r.error ? safe(r.error) :
+        `T ${(+r.T).toFixed(2)} · graful #${chosenGraph}<div class="gen">${safe(r.text).replace(/\n/g," ⏎ ")}</div>`;
+      if (!r.error && r.pathTrace) textPathMap.show(r);
+      else if (r.error) $("textPathStats").textContent = safe(r.error);
+    }).catch(err=>$("writeOut").textContent=err.message);
     return; }
   const T = val("wtemp"), out = e.holdout.slice(0, 12), N = 1200, keep = chain.rand; chain.rand = rng((Math.random() * 2 ** 32) >>> 0);
   for (let k = 0; k < N; k++) { const i = out.length, p = chain.play(e, ctxAt(out, i), histAt(out, i)).out; out.push(chain.pick(p, T)); }
@@ -400,7 +413,7 @@ function loop() {
     const tx = val("tx"), ty = val("ty"); if (tx || ty) nv.pan(-tx * 4, -ty * 4); }
   else if (fly) { view.zlog += fly * .02; view.dirty = true; }
   ["tx", "ty", "tz", "tw", "tv"].forEach((id, i) => { const v = val(id); if (v) { cam[i] = wrap1(cam[i] + v * .004); view.dirty = true; } });
-  draw(); frame++;
+  draw(); if (LIVE && frame % 5 === 0) textPathMap.draw(ang); frame++;
   if (frame % 6 === 0) stats(); if (frame % 60 === 0 && running) findConcepts();
   requestAnimationFrame(loop);
 }
@@ -431,9 +444,11 @@ $("reset").onclick = () => reset();
 $("eval").onclick = () => { if (!LIVE) return evaluate();                   // live: unseen exercises drawn at random, at the test temperature, in the Evaluare tab
   $("tabEval").click(); $("evKind").value = "text"; $("evKind").onchange(); $("evT").value = val("ttemp"); $("evTOut").textContent = val("ttemp"); $("evGo").click(); };
 $("write").onclick = () => write();
+$("scanTextPaths").onclick = () => write(true);
 $("wtemp").addEventListener("change", () => { if (t) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
 const LIVE = new URLSearchParams(location.search).has("live");
+const textPathMap = new ObservedTextPathMap($("textPathCanvas"), $("textPathStats"), $("textPathDetail"));
 let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null, liveSummary = null;
 let livePulling=false;
 const observatory = LIVE ? new Observatory({getGraph:()=>liveW}) : null;

@@ -1,0 +1,28 @@
+name: MagicPerspective V17 actual 5D text-path observation
+on:
+  push:
+    branches:
+      - experiment/V17-TEXT-MULTIDIMENSIONAL-PATH-OBSERVATION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  observational-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax of unchanged generator plus read-only observer and original UI
+        run: |
+          node --check v17/transcend/torus-aether/align.mjs
+          node --check v17/transcend/torus-aether/text-path-observer.mjs
+          node --check v17/transcend/torus-aether/ui/observed-text-path-map.js
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+      - name: Native generator unchanged by observation; 5D positions real; same-snapshot temperature scan
+        run: node --test v17/tests/observed-text-paths.test.mjs
+      - name: Original V17 graph and learned-state regression
+        run: node --test v17/tests/torus-observatory.test.mjs
