@@ -39,7 +39,7 @@ export class NativeGearDrive {
     const valid=typeof prompt==='string' && prompt.trim() && typeof answer==='string' && answer.trim();
     if(!valid)return {trained:false};
     const candidate=pickAnswer(answer);
-    if(candidate && this.rows>=3){
+    if(candidate && this.rows>=3 && this.rows % 16 === 0){
       const predicted=this.propose(prompt,{maxStates:400});
       if(predicted.used){this.tested++;this.preExact+=Number(equal(predicted.text,endpoint(candidate)));
         this.lastPreUpdate={correct:equal(predicted.text,endpoint(candidate)),beforeUpdate:predicted.text};}
