@@ -95,7 +95,7 @@ const flushShared = async (force = false) => {
       if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed});
       sharedLoaded = true;
     }
-    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed});
+    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed, adaptiveNoise: true});
     shared.training = result; shared.error = null;
   } catch (err) {
     shared.requeue(samples); shared.error = "Shared model: " + err.message;
