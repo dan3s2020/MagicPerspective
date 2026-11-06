@@ -373,7 +373,11 @@ function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
   $("steps").textContent = t.toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
-  $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
+  $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; const mapOnly = LIVE && Array.isArray(liveSnap?.worlds) && liveSnap.worlds.length === 1 && liveSnap.worlds[0] === "maptext";
+  if (mapOnly) {
+    $("accC").textContent = "N/A"; $("accF").textContent = "N/A"; $("accAl").textContent = "N/A";
+    $("selfModel").textContent = "Acest graf primește predominant mișcări binare, nu răspunsuri în limbaj. Scorurile de caractere și încredere nu indică învățarea navigării. Traseul curent este calculat de un algoritm prestabilit.";
+  } else if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
       `<br>cum citește acum: urmează alinierile de încredere cu ascuțimea <b>${M.g}</b>, forma cântărește <b>${M.form}</b>` +
       (M.history.length ? "<br>schimbări făcute de el însuși (G<sub>t</sub> → G<sub>t+1</sub>, adoptate doar dacă ghicesc mai bine ce n-a văzut): " + M.history.map(h => `la ${h.at.toLocaleString()}: ascuțime ${h.from.g}→${h.to.g}, formă ${h.from.form}→${h.to.form} (${(100 * h.before).toFixed(1)}%→${(100 * h.after).toFixed(1)}%)`).join("; ") : "<br>încă nicio schimbare a lui însuși: nicio variantă n-a ghicit mai bine"); }
@@ -422,7 +426,7 @@ for (const id of ["speed", "wtemp", "ttemp", "ltemp", "pnoise", "gnoise", "glr",
 $("run").onclick = () => { running = !running; $("run").textContent = running ? "Pauză" : "Start"; };
 $("reset").onclick = () => reset();
 $("eval").onclick = () => { if (!LIVE) return evaluate();                   // live: unseen exercises drawn at random, at the test temperature, in the Evaluare tab
-  $("tabEval").click(); $("evKind").value = "text"; $("evKind").onchange(); $("evT").value = val("ttemp"); $("evTOut").textContent = val("ttemp"); $("evGo").click(); };
+  $("tabEval").click(); $("evKind").value = liveSnap?.worlds?.length === 1 && liveSnap.worlds[0] === "maptext" ? "maptext" : "text"; $("evKind").onchange(); $("evT").value = val("ttemp"); $("evTOut").textContent = val("ttemp"); $("evGo").click(); };
 $("write").onclick = () => write();
 $("wtemp").addEventListener("change", () => { if (t) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
@@ -647,6 +651,10 @@ fetch("/corpus").then(r => r.json()).then(c => {
   $("chatForm").onsubmit = async ev => { ev.preventDefault(); const text = $("chatIn").value.trim(); if (!text) return;
     $("chatIn").value = ""; $("chatW").textContent = "#" + liveW; add("you", esc(text)); talk.push(["you", text]);
     if (!LIVE) { add("err", "Chat-ul vorbește cu grafurile din trainer: pornește START_V17.ps1 și deschide pagina lui."); return; }
+    if (liveSnap?.worlds?.length === 1 && liveSnap.worlds[0] === "maptext") {
+      add("err", "Acest creier a trăit numai labirinturi binare. Chatul de text încă nu a învățat limba naturală; răspunsurile repetate nu sunt soluții ale labirintului.");
+      talk.pop(); return;
+    }
     const opts = {T: +$("cTemp").value, max: +$("cMax").value, stopBlank: $("cStop").checked, learn: $("cLearn").checked}, keep = +$("cHist").value;
     const wait = add("him", "<span class='dim'>scrie…</span>"); $("chatSend").disabled = true;
     try { const r = await (await fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: talk.slice(-(2 * keep + 1)), opts})})).json();
@@ -693,7 +701,33 @@ fetch("/corpus").then(r => r.json()).then(c => {
   };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
-    const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
+    const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value;
+    if (kind === "maptext") {
+      $("evW").textContent = "#" + liveW;
+      $("evGo").disabled = true;
+      $("evCv").hidden = true; $("evalText").hidden = true;
+      $("evOut").textContent = "Testez doar algoritmul prestabilit pe hărți generate separat; nu este o evaluare a unui navigator învățat.";
+      try {
+        const seed = again && R?.seed != null ? R.seed : (Math.floor(Date.now() / 1000) >>> 0);
+        const response = await fetch("/maptext-audit?w=" + liveW + "&count=16&seed=" + seed, {cache: "no-store"});
+        const result = await response.json();
+        if (result.error) { $("evOut").textContent = result.error; R = null; }
+        else {
+          R = result;
+          $("evOut").textContent = "ALGORITM PRESTABILIT: " + result.solved + "/" + result.count +
+            " hărți rezolvate; " + (100 * result.optimalRate).toFixed(1) +
+            "% trasee optime; " + result.totalMillis.toFixed(1) +
+            " ms. TEST DE ÎNVĂȚARE: NEDISPONIBIL — nu există încă un model care construiește singur căile.";
+          $("evalTab").textContent = result.cases.map((c,i) => "#" + (i+1) + " " + c.dimensions +
+            "D · " + c.nodes + " stări · " + c.walls + " ziduri · " + c.steps +
+            " pași / optim " + c.optimal + " · coliziuni " + c.collisions).join("\n");
+          $("evalTab").style.whiteSpace = "pre-wrap";
+        }
+      } catch (err) { $("evOut").textContent = "Eroare test hărți N-D: " + err.message; R = null; }
+      $("evGo").disabled = false;
+      return;
+    }
+    const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
       : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value)} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
