@@ -440,6 +440,7 @@ function applySnap(gs) {
   renderPerspective(gs.perspective || null);
   renderSelfcode(gs.selfcode || null);
   renderLanguage(gs.language || null);
+  renderConstructed(gs.constructedPaths || null);
 }
 // Original Brain global->local observations, not a separate demo animation.
 let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
@@ -460,6 +461,42 @@ function renderPerspective(P) {
   if(key!==perspectiveEpisodeKey){perspectiveEpisodeKey=key;perspectiveT0=performance.now();}
   perspectiveLast=P.last||null;
 }
+function renderConstructed(S) {
+  const box=$('constructedBox');if(!box)return;box.hidden=!S;if(!S)return;
+  const m=S.lastMaze,scales=S.scaleGraphStates||[];
+  $('constructedStatus').textContent='Perechi complete/incomplete '+S.pairedWorlds+
+    ' · comparații '+S.pairedObservations+' · conexiuni observate '+(S.sharedRelations?.observedEdges||0)+
+    ' · rata de trecere învățată '+percentage(S.learnedUnknownOpenPrior)+
+    (m?' · ultima navigare orb: '+(m.solved?'rezolvat':'nerezolvat')+
+    ', '+m.steps+' acțiuni · '+m.initialUnknowns+' celule necunoscute la început'+
+    ' · '+m.routeRepairs+' reconstrucții':'');
+  $('constructedText').textContent='Răspunsuri reale procesate '+S.textQARows+
+    ' · caractere-ca-acțiuni '+S.textPathActions+' · forme compuse '+S.textCompletedPaths+
+    ' · contexte ('+scales.map(s=>s.scale+':'+s.distinctStates).join(', ')+')';
+  $('constructedTrace').textContent=m?.plannedInitial?.length?
+    m.plannedInitial.slice(0,28).map((e,i)=>(i+1)+': '+e.from+' → '+e.to+
+      (e.uncertain?' [cale necunoscută, ipoteză]':' [observată]')).join('\n'):
+    'Încă nu există o formă inițială prezisă pentru ultima lume incompletă.';
+}
+$('constructedExam').onclick=async()=>{
+  if(!LIVE)return;
+  const btn=$('constructedExam'),out=$('constructedResult');
+  btn.disabled=true;out.textContent='Copia înghețată construiește căi din observațiile locale...';
+  try{
+    const r=await(await fetch('/constructed-paths-eval?w='+liveW+'&count=12&seed=73',{method:'POST'})).json();
+    if(r.error)throw Error(r.error);
+    out.textContent='TEST PE '+r.count+' LUMI NEVĂZUTE: '+r.solved+' rezolvate ('+
+      percentage(r.successRate)+'), '+r.trainedPairs+' perechi învățate · lungimi forme inițiale: '+
+      r.initialBlindPathLengths.join(', ')+' · nimic antrenat în test: '+r.frozen+
+      ' · harta completă rămâne referință, nu observație a organismului.';
+    const R=r.results?.[0],trace=$('constructedTrace');
+    if(R?.trace?.length)trace.textContent='FORMA PREZISĂ ÎNAINTE DE ACȚIUNE: '+
+      (R.firstShape||[]).join('→')+'\n'+R.trace.slice(0,32).map(t=>t.step+
+      ': '+t.from+' → '+t.to+(t.moved?' · mers':' · blocat')+
+      ' · cunoscute '+t.sensedCells).join('\n');
+  }catch(e){out.textContent='Eroare în evaluarea reală: '+e.message;}
+  finally{btn.disabled=false;}
+};
 function renderLanguage(S) {
   const box=$('languageBox');if(!box)return;box.hidden=!S;if(!S)return;
   const lanes=(S.trust||[]).map(t=>'context '+t.scale+' tokeni: '+(t.seen||0)+
@@ -658,6 +695,7 @@ async function livePull() {
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>perspectivă corp→hartă</span><span>episoade reale <b>${gr.perspective?.episodes??0}</b> · orientare învățată ${pc(gr.perspective?.mappingAccuracy)} · poziție locală ${pc(gr.perspective?.poseAccuracy)}</span>` : ""}
+        ${gr.worlds.includes("maze") ? `<span>construirea căilor</span><span>perechi ${gr.constructedPaths?.pairedWorlds??0} · încercări partial-vizibile ${gr.constructedPaths?.lastMaze?.steps??0} · modele text ${gr.constructedPaths?.textQARows??0}</span>` : ""}
         ${gr.worlds.includes("text") ? `<span>perspective text</span><span>observate ${gr.language?.observedTokens??0} tokeni · ${gr.language?.states??0} perspective contextuale · ${gr.language?.edges??0} legături</span>` : ""}
         ${gr.worlds.includes("selfcode") ? `<span>propriul cod</span><span>pași ${gr.selfcode?.ticks??0} · probe independente ${gr.selfcode?.probes??0} · lacăt ${gr.selfcode?.lock?.locked===false?'deblocat numai în sandbox':'blocat'} · original neatins ${gr.selfcode?.originalUnchanged===false?'NU':'da'}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
@@ -727,7 +765,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
   const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; t0 = performance.now(); table(); if (kind === "text") textView(); };
   const table = () => { const L = items(); if (!L.length) { $("evalTab").innerHTML = ""; return; }
-    if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>continuare caractere (fără căi)</th><th>cale text prezisă înainte</th><th>cale: cuvinte F1</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td><td align=center>${pct(m.learnedRoute?.plannedCharacterPositionAccuracy)}</td><td align=center>${pct(m.learnedRoute?.plannedWordF1)}</td></tr>`).join("") + "</table>";
+    if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>continuare caractere (fără căi)</th><th>cale text prezisă înainte</th><th>cale: cuvinte F1</th><th>cale caractere compusă</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td><td align=center>${pct(m.learnedRoute?.plannedCharacterPositionAccuracy)}</td><td align=center>${pct(m.learnedRoute?.plannedWordF1)}</td><td align=center>${pct(m.constructedAccuracy)}</td></tr>`).join("") + "</table>";
       for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); return; }
     $("evalTab").innerHTML = kind === "maze"
       ? "<table><tr><th align=left>labirint</th><th>forma prezisă înainte</th><th>a ajuns</th><th>pași / optim</th><th>pași după formă / explorare</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n}×${m.n}</td><td align=center>${pct(m.first)}</td><td align=center>${m.solved ? "<b style='color:var(--green)'>da</b>" : "nu"}</td><td align=center>${m.steps} / ${m.optimal}</td><td align=center>${m.how?.plan ?? 0} / ${m.how?.explore ?? 0}</td></tr>`).join("") + "</table>"
@@ -736,6 +774,12 @@ fetch("/corpus").then(r => r.json()).then(c => {
   const textView = () => { const X = kind === "text" && R.exercises ? R.exercises[cur] : R, T = X.rows, a0 = X.a0 ?? -1, esc = c => c === 60 ? "&lt;" : c === 38 ? "&amp;" : c === 10 ? "⏎\n" : c < 32 || c > 126 ? "·" : String.fromCharCode(c);
     const safe = x => String(x ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
     const P=X.learnedRoute;
+    const construct=X.constructed;
+    const constructedView=construct ?
+      `<div style="margin-top:12px;color:var(--green)">CHARACTER-PATH: fiecare caracter este o ACȚIUNE; 1/2/4/8/16/32 contexte, ${construct.steps} tranziții, ${construct.contextGraphStates} stări observate · ${pct(X.constructedAccuracy)} corect înainte de răspuns</div>`+
+      `<div style="font:12px/1.5 monospace;white-space:pre-wrap">${safe(construct.predicted)}</div>`+
+      `<div style="font:11px/1.4 monospace;color:var(--dim)">Granițe compuse între cuvinte/propoziții: ${safe(construct.macroBoundaries?.join(', '))}</div>`
+      : `<div style="margin-top:12px;color:var(--red)">Căile caracter-cu-caracter din harta de transformări nu sunt încă învățate.</div>`;
     const route = P?.enabled ?
       `<div style="margin-top:13px;color:var(--ice)">CALE TEXT ÎNVĂȚATĂ · prezisă înainte de răspuns · ${P.routeLength} transformări reale · ${P.learnedGoalDimension} dimensiuni ale câmpului-țintă · F1 cuvinte ${pct(P.plannedWordF1)} · caractere la poziția corectă ${pct(P.plannedCharacterPositionAccuracy)}</div>`+
       `<div style="font:12px/1.6 monospace;color:var(--ink);white-space:pre-wrap">${safe(P.predictedBeforeAnswer)}</div>`+
@@ -744,7 +788,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
       `<div style="font:12px/1.6 monospace;white-space:pre-wrap">${safe(P.actionBasedPrediction)}</div>`
       : `<div style="margin-top:10px;color:var(--red)">Calea textuală NU a fost învățată sau nu există pentru acest exemplu: ${safe(P?.reason||R.observedTextWorld?.reason||"fără experiment cauzal text")}. Acest rezultat nu este 0%: mecanismul încă nu a fost evaluat.</div>`;
     $("evalText").innerHTML = T.map(([y, g], i) => (i === a0 ? `<b style="color:var(--gold)">▸ </b>` : "") + `<span class="${y === g ? "eh" : "em"}" title="a ghicit: ${esc(g)}">${esc(y)}</span>`).join("") +
-      (X.shape != null ? `<div style="margin-top:10px;color:var(--gold)">continuare de caractere AligningGraph (FĂRĂ navigare prin căile textului), din întrebare, înainte să vadă răspunsul (${(100 * (X.shapeSame || 0)).toFixed(0)}% din caractere la locul lor):</div><div style="color:#e6c56a">${Array.from(X.shape, c => esc(c.charCodeAt(0))).join("")}</div>` : "") + route; };
+      (X.shape != null ? `<div style="margin-top:10px;color:var(--gold)">continuare de caractere AligningGraph (FĂRĂ navigare prin căile textului), din întrebare, înainte să vadă răspunsul (${(100 * (X.shapeSame || 0)).toFixed(0)}% din caractere la locul lor):</div><div style="color:#e6c56a">${Array.from(X.shape, c => esc(c.charCodeAt(0))).join("")}</div>` : "") + route + constructedView; };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
     const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
