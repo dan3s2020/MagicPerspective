@@ -89,7 +89,8 @@ function renderCase(){
   'PROVENIENȚĂ: V17 Brain înghețat, labirint V17 nevăzut, acțiuni fizice reale.',
   'Global: 1 observație completă la început; ulterior numai 3×3 egocentric.',
   'V17 original: '+(c.baseline.solved?'REUȘIT':'NEREUȘIT')+' · '+c.baseline.steps+'/'+c.baseline.optimal+' pași · prima formă '+pct(c.baseline.first),
-  'Corpul local: '+(c.solved?'REUȘIT':'NEREUȘIT')+' · '+c.steps+'/'+c.optimal+' pași; surplus '+(c.extraSteps??'nedisponibil'),
+  'Corpul local cu transformare învățată: '+(c.solved?'REUȘIT':'NEREUȘIT')+' · '+c.steps+'/'+c.optimal+' pași; surplus '+(c.extraSteps??'nedisponibil'),
+  'Control cu potrivire locală FIXĂ: '+(c.fixedLocalizer?.solved?'REUȘIT':'NEREUȘIT')+' · '+(c.fixedLocalizer?.steps??'—')+' pași · poziționare '+pct(c.fixedLocalizer?.poseAccuracy),
   'Forma memorată: '+(c.initialShape?.length||0)+' direcții; localizare '+pct(c.poseAccuracy),
   'Vedere după primul pas: '+(c.locality?.afterFirstFullMapRead?'HARTA COMPLETĂ (eroare)':'NUMAI LOCAL'),
   'Starea corpului la pasul '+n+': '+(frame?'observație 3×3, ieșire '+frame.output+', '+frame.how:'harta văzută inițial, fără mișcare'),
@@ -137,10 +138,12 @@ $('psCompare').addEventListener('click',async()=>{
   exam=result;const z=result.summary;
   $('psBaseWin').textContent=z.native.solved+'/'+z.native.count;
   $('psBodyWin').textContent=z.body.solved+'/'+z.body.count;
+  $('psFixedWin').textContent=z.fixedLocalizer.solved+'/'+z.fixedLocalizer.count;
   $('psExtra').textContent=value(z.native.meanExtraStepsSolved,1)+' / '+value(z.body.meanExtraStepsSolved,1);
   $('psPose').textContent=pct(z.poseAccuracy);
   $('psLeaks').textContent=count(z.totalGlobalReads)+' inițiale; 0 actualizări complete';
   $('psKnown').textContent=count(z.bodyTraining.known)+' / 8';
+  $('psAlignUpdates').textContent=count(z.bodyTraining.localizer?.updates);
   $('psCase').replaceChildren();
   result.cases.forEach((m,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent='#'+i+' · '+m.n+'×'+m.n+' · '+(m.solved?'rezolvat':'nerezolvat');$('psCase').append(o);});
   $('psStatus').textContent='Evaluare înghețată · '+result.cases.length+' lumi nevăzute · '+result.protocol+' · seed '+result.controls.seed+'.';
@@ -187,6 +190,8 @@ function renderMetrics(g){
  $('mTrans').textContent=count(g?.transform?.played);
  $('mMotor').textContent=count(p.known)+' / 8';
  $('mBodyObs').textContent=count(p.observed);
+ $('mLocRate').textContent=pct(p.localizer?.trainingTop1Rate);
+ $('mLocWeights').textContent=p.localizer?'9 weighturi ale corespondenței dintre vecinătatea memorată și observația egocentrică: '+p.localizer.weights.map(v=>value(v,3)).join(', ')+'\nPrior mișcare: '+value(p.localizer.priorWeight,4)+'\nActualizări SGD/perceptron: '+count(p.localizer.updates)+'\nObservații de antrenare: '+count(p.localizer.samples)+'\nRata top-1 ÎN ANTRENARE: '+pct(p.localizer.trainingTop1Rate)+'\nAceastă rată nu este un scor de generalizare. Evaluarea înghețată pe hărți noi se face în tabul Perspectivă.':'Nu există încă date de învățare locală.';
  $('mGpu').textContent=gpu.error?'EROARE':gpu.info?.device||gpu.info?.name||gpu.settings?.device||'Fără raport GPU';
  plot('mAccuracyCv',state,[
   {key:'text',color:'#4ed6be'}, {key:'maze',color:'#f4b565'}, {key:'transform',color:'#be9ef5'}],{fixedMax:1,label:'Fracție corectă / rezolvată (0–100%)'});
