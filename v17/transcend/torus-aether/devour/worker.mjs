@@ -160,7 +160,15 @@ const processGpuText = async (exs, meta) => {
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
   shot(true);
 };
-parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
+parentPort.on("message", m => {
+  if(m && m.perspectiveExam){
+    const {id,count=20,seed=73}=m.perspectiveExam;
+    let result;
+    try{result=brain.testPerspective(count,seed);}
+    catch(err){result={error:err.message};}
+    parentPort.postMessage({type:'chat',id,...result});shot(true);return;
+  }
+  if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
   if (m && m.sharedEval) {
     const {id, seed = 74129} = m.sharedEval;
     void (async () => {
