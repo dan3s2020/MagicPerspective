@@ -150,6 +150,7 @@
           <label>Creier / graf # <input id="scGraphId" type="number" min="0" value="0" style="width:76px"></label>
           <button id="scRefresh" type="button">Actualizează datele</button>
           <button id="scUsePrompt" type="button">Preia întrebarea din Limbaj</button>
+          <button id="scObserved" type="button">Arată un traseu învățat real</button>
           <span id="scGraphState" class="sc-status">Fără telemetrie încă</span>
         </div>
       </div>
@@ -169,6 +170,7 @@
         <h3>2 · Întrebare reală → două forme ale soluției</h3>
         <label for="scPrompt" class="sc-status">Input nou, fără răspunsul corect introdus în planificator</label>
         <textarea id="scPrompt" spellcheck="false" placeholder="Introdu o întrebare pentru care există sau ar putea exista tranziții învățate în corpus…"></textarea>
+        <p id="scSampleStatus" class="sc-quiet">Traseul din corpus este o observație antrenată, NU un test pe input necunoscut.</p>
         <div class="sc-toolbar">
           <button id="scAnalyze" class="sc-primary" type="button">Propagă ambele câmpuri din backend</button>
           <button id="scReplay" type="button">▶ Replay traseu real</button>
