@@ -13,11 +13,12 @@ import {AligningGraph, AlignMemory, AlignIndex, SelfMem} from "../align.mjs";
 import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
 import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
+import {PerspectiveLearner, perspectiveEpisode, evaluatePerspective} from "../worlds/perspective.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -35,7 +36,7 @@ export class Brain {
   observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -52,6 +53,7 @@ export class Brain {
     this.place = y => this.trace.geo.U.get(y) || [.5, .5, .5, .5, .5]; this.rand = rngFrom(this.seed * 7919 + this.lived);
     this.chain.rand = rngFrom(this.seed + this.lived); this.trace.geo.r = rngFrom(this.seed * 31 + this.lived); this.setControls();
     this.body ||= {}; if (this.disc) this.disc.body = this.body; if (this.causal) this.causal.body = this.body;   // one body for every world
+    this.perspective ||= new PerspectiveLearner(); // older checkpoint compatibility
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
@@ -121,7 +123,36 @@ export class Brain {
     finally { this.liveWorld = priorWorld; }
     M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows;
     if (record) M.last = {...r, kind: w.n + "×" + w.n, i};
+    this.trainPerspective(w, record);
     return r;
+  }
+  // The same saved organism moves from one overhead view to local body vision.
+  // Initial global map is remembered once; later updates use only sensed patches,
+  // the actual action outcome and its learned body->world orientation.
+  trainPerspective(w, record = false) {
+    const P = this.perspective ||= new PerspectiveLearner();
+    const capture = record || P.episodes % 3 === 0;
+    const previous = this.liveWorld;
+    this.liveWorld = 'maze';
+    let result;
+    try {
+      result = perspectiveEpisode(w, this.disc, P, {
+        train: true, record: capture, seed: this.seed * 8191 + P.episodes,
+        live: y => this.live(y, this.lived % 50 === 0),
+        noiseAgency: this.noiseAgent || null
+      });
+    } finally { this.liveWorld = previous; }
+    if (capture) P.last = result;
+    return result;
+  }
+  // Frozen independent world tests cannot update the Brain or its perspective.
+  testPerspective(count = 20, seed = 73) {
+    const P = this.perspective ||= new PerspectiveLearner();
+    const result = evaluatePerspective(this.disc, P, {count, seed});
+    P.test = {seed: result.seed, count: result.count,
+      learned: result.learned, control: result.control,
+      improvementPoints: result.improvementPoints, explanation: result.explanation};
+    return result;
   }
   // ---- many worlds at once on the GPU (gpu/worlds_gpu.py), one brain: the worlds run in parallel with what the brain
   // knew at the start of the batch, then every world's experience is lived by this same brain, one after another ----
@@ -144,6 +175,7 @@ export class Brain {
     M.played += res.n; M.won += res.solved; const rate = res.solved / res.n; M.recent.push(rate); if (M.recent.length > 100) M.recent.shift();
     const R = res.record, w = makeMaze(R.seed, R.n), copy = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); copy.r = Object.assign(Object.create(RNG.prototype), copy.r);
     const r = playExercise(w, copy, y => this.live(y, this.lived % 50 === 0), {outputs: R.outputs, record: true, onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})}); M.knows = r.knows; M.last = {...r, kind: w.n + "×" + w.n, i: M.index};
+    this.trainPerspective(w, true);
     M.gpu = {batch: res.n, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, solved: res.solved, mergeMs: +(performance.now() - t0).toFixed(1), cardMs: +(1000 * (res.busy || 0)).toFixed(1)};
     return M.gpu;
   }
