@@ -43,6 +43,14 @@
   #chatForm{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}#chatIn{flex:1;resize:none;height:42px;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px 9px;font:inherit}
   .tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:0;z-index:5;background:#000;padding:6px 0}.tabs button.on{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600}
   aside.side.evalOn > :not(.tabs):not(#evalPane){display:none}#evalPane{display:none}aside.side.evalOn #evalPane{display:block}
+  aside.side.researchOn > :not(.tabs):not(#researchPane){display:none}
+  #researchPane{display:none}aside.side.researchOn #researchPane{display:block}
+  #researchPane canvas{width:100%;height:auto;background:#050d16;border:1px solid #274158;border-radius:9px}
+  #researchPane .researchStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  #researchPane .researchStats .m b{font-size:17px}
+  #researchPane .researchDetails{white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.6 ui-monospace,monospace;background:#08111c;padding:9px;border-radius:9px;max-height:280px;overflow:auto}
+  #researchPane .researchWarning{border-left:3px solid var(--red);padding-left:9px;color:#ff9eae}
+  #researchPane button.on{border-color:var(--gold)}
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
@@ -73,7 +81,31 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabResearch">Trasee / SR LIVE</button></div>
+    <div id="researchPane">
+      <h2>Trasee și reprezentări succesoare — măsurători reale</h2>
+      <p class="note">Date din același worker / creier V17. Predicția fiecărui exercițiu este înregistrată ÎNAINTE să observe răspunsul. Numărarea drumurilor și câmpul SR sunt măsurate separat de corectitudinea răspunsului.</p>
+      <p class="note" id="researchStatus" role="status">Se conectează la backend…</p>
+      <div class="researchStats">
+        <div class="m"><small>Exemple observate (Parquet real)</small><b id="rObserved">—</b></div>
+        <div class="m"><small>Caractere trăite de creier</small><b id="rChars">—</b></div>
+        <div class="m"><small>Scor F1 V17 → SR</small><b id="rF1">—</b></div>
+        <div class="m"><small>Scor F1 lexical / caracter</small><b id="rBaseline">—</b></div>
+        <div class="m"><small>Trasee folosite (apeluri originale / SR)</small><b id="rUsed">—</b></div>
+        <div class="m"><small>Departajări SR / egalități reale</small><b id="rChanged">—</b></div>
+        <div class="m"><small>Repetiție original → penalizată</small><b id="rRepeat">—</b></div>
+        <div class="m"><small>Scor test HELD-OUT înghețat</small><b id="rHeld">—</b></div>
+      </div>
+      <h2>Cât ajută la răspuns — progres măsurat per exercițiu</h2>
+      <canvas id="researchAccuracy" width="600" height="240" aria-label="Grafic live F1 măsurat"></canvas>
+      <h2>Când și cât este folosit — activări / alegeri modificate</h2>
+      <canvas id="researchUsage" width="600" height="200" aria-label="Grafic live al apelurilor SR și schimbărilor de decizie"></canvas>
+      <h2>Traseul REAL anticipat înainte de a vedea răspunsul</h2>
+      <canvas id="researchMap" width="600" height="300" aria-label="Graful observat, traseul original și traseul cu SR"></canvas>
+      <p class="note">Albastru = muchii observate din training; auriu = traseu V17 original; verde = traseu SR. Nodurile țintă sunt răspunsuri stocate din alte exerciții, NU soluțiile necunoscute.</p>
+      <div class="researchDetails" id="researchEvidence">Nu există încă trasee evaluate.</div>
+      <p class="note researchWarning">Câștigul semantic NU este demonstrat dacă SR și V17 aleg identic sau dacă scorul nu depășește recuperarea lexicală. Repetiția redusă nu înseamnă automat răspuns mai corect.</p>
+    </div>
     <div id="evalPane">
       <h2>Evaluare pe ce n-a trăit niciodată — din prima încercare</h2>
       <p class="note">O copie a grafului <b id="evW">#0</b>, încărcată din save-ul lui (îl salvează chiar atunci), rulează pe procesor. Antrenarea merge mai departe neatinsă; copia nu învață între lumi.</p>
