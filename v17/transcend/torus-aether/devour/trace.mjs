@@ -43,7 +43,7 @@ export class GraphTrace {
     if (this.steps % 1000 === 0) { for (const x of this.edges.values()) x.w *= .97; for (const n of this.nodes.values()) n.act *= .5; }   // what is not lived again dims, but no link is ever deleted
   }
   snapshot(withText) {
-    const ORG = new Set(["is", "attract", "repel", "moves"]), all = [...this.edges.values()];   // the organism's own links are always shown
+    const ORG = new Set(["is", "attract", "repel", "moves", "owns", "portal"]), all = [...this.edges.values()];   // the organism's own links are always shown
     const edges = [...all.filter(x => ORG.has(x.kind)), ...all.filter(x => !ORG.has(x.kind)).sort((a, b) => b.w - a.w).slice(0, 2500)].map(x => [x.a, x.b, x.kind, +x.w.toFixed(3), x.label || ""]);
     const s = {nodes: [...this.nodes.values()].map(n => { const r = [n.id, n.type, n.label, +n.act.toFixed(2), n.born, n.err ? 1 : 0]; n.err = 0; return r; }), edges,
       U: [...this.geo.U.entries()].map(([k, v]) => [k, v.map(x => +x.toFixed(5))]), flow: this.flow.slice(), strip: this.strip.slice(),
