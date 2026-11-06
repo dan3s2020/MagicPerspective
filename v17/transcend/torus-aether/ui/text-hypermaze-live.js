@@ -19,7 +19,9 @@ function canvas(){
  if(!graph?.sample?.nodes?.length){
   ctx.fillText("Aștept primul document real din corpus...",20,H/2);return;
  }
- const nodes=graph.sample.nodes,links=graph.sample.edges;
+ const byNodeId=new Map(graph.sample.nodes.map(n=>[n.id,n]));
+ for(const n of plan?.routeNodes||[])byNodeId.set(n.id,n);
+ const nodes=[...byNodeId.values()],links=graph.sample.edges;
  const positions=new Map();
  for(const n of nodes){
   const f=n.features,hash=(((Math.imul(n.id+1,2654435761)>>>0)/4294967296)-.5);
