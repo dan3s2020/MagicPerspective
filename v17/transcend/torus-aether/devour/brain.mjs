@@ -348,10 +348,29 @@ export class Brain {
       // the shape of the solution, before it is seen: from the question alone it writes the whole answer
       const shape = a0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
+      // Separate learned state/action WORLD, rather than the next-character
+      // AligningGraph. Its paths are constructed from the QUESTION only.
+      // The held-out answer is consulted only AFTER inference, for scoring.
+      let constructed=null,constructedAccuracy=null;
+      if(a0&&this.constructedPaths?.textRows){
+        const q=String.fromCharCode(...ex.slice(0,a0)).replace(/^\s*Q:\s*/,'').replace(/\nA:\s*$/,'').trim();
+        const planned=this.constructedPaths.imagineText(q,{maxChars:Math.min(20000,ex.length-a0+40),beamWidth:3});
+        let hits=0;
+        for(let i=0;i<Math.min(planned.predicted.length,ex.length-a0);i++)
+          hits+=+(planned.predicted.charCodeAt(i)===ex[a0+i]);
+        constructedAccuracy=an?hits/an:null;
+        constructed={predicted:planned.predicted,steps:planned.path.length,
+          firstUnseenAction:planned.path[0]?.action??null,
+          macroBoundaries:planned.wordOrSentenceBoundaries,
+          contextGraphStates:planned.graphStates,finished:planned.finished,
+          trace:planned.path.slice(0,120),beforeAnswer:true};
+      }
       out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
-        shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null}); }
+        shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null,
+        constructed,constructedAccuracy}); }
     const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
-    return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer")};
+    return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer"),
+      constructedAccuracy:av("constructedAccuracy")};
   }
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
