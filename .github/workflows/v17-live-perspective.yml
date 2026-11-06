@@ -28,8 +28,8 @@ jobs:
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/app.js
-      - name: Real V17 perspective training, heldout evaluation and checkpoint tests
-        run: node --test v17/transcend/torus-aether/devour/perspective.test.mjs
+      - name: Real V17 perspective training, heldout evaluation, HTTP live UI and checkpoint tests
+        run: node --test v17/transcend/torus-aether/devour/perspective.test.mjs v17/transcend/torus-aether/devour/perspective.http.test.mjs
       - name: PowerShell launcher parsing (Windows)
         if: matrix.os == 'windows-latest'
         shell: powershell
