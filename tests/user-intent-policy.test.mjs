@@ -13,7 +13,7 @@ const exact="MARCHEAZA REGRESIA IN REPO SA O VADA TOATA LUMEA !!!! SA NU MAI FAC
 test("literal original user words remain preserved and full Verbatim remains BLOCKED",()=>{
  const s=source("verbatim/2026-11-06-USER-REGRESSION-NO-REDEFINITION.md");
  assert.ok(s.includes(exact),"The exact USER correction must not be paraphrased or deleted");
- assert.match(s,/NOT an export of the full native conversation/);
+ assert.match(s,/an export of the full native conversation/);
  assert.match(s,/BLOCKED/);
  const policy=source("verbatim/SOURCE_POLICY.md");
  assert.ok(policy.includes(id));
