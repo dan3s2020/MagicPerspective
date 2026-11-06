@@ -8,6 +8,8 @@ CPU (trust right/tried per kind, hits of the brain and of its variations); the e
 there. Mirrors align.mjs (AligningGraph) exactly where it can; where it cannot (the longest earlier match inside the
 exercise is found at lengths 1, 2, 4 … 64, not exactly) it says so."""
 import numpy as np
+import os
+import time
 try:
     import torch
     HAVE_TORCH = True
@@ -117,6 +119,8 @@ class TextCard:
         return out
     def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None):
         """exs: exercises (lists of symbols) lived now. trust: {key_id: [right, tried]}. Returns the totals."""
+        profile = os.environ.get('MP_PROFILE_TEXT', '0') == '1'
+        if profile: self.X.sync(); t_start = time.perf_counter()
         X = self.X; flat = []; owner = []; posin = []; self._self = {}
         for e_i, e in enumerate(exs):
             for i in range(1, len(e)): flat.append(i); owner.append(e_i)
@@ -170,11 +174,21 @@ class TextCard:
         if progress is not None: progress(c0 + Q, total, 'alignment')
         # imagining: from every 31st moment it writes 48 symbols ahead from its own expectations (all at once); as the real
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
+        if profile: self.X.sync(); t_alignment = time.perf_counter()
         W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress)
+        if profile: self.X.sync(); t_imagination = time.perf_counter()
         if progress is not None: progress(0, 1, 'indexing')
         self.X.sync(); self.append(exs); self._self = {}
+        if profile: self.X.sync(); t_reindex = time.perf_counter()
         if progress is not None: progress(1, 1, 'completed')
-        return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem))}
+        result = {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem))}
+        if profile:
+            result["phaseMs"] = {"alignment": round(1000 * (t_alignment - t_start), 2),
+                                 "imagination": round(1000 * (t_imagination - t_alignment), 2),
+                                 "reindex": round(1000 * (t_reindex - t_imagination), 2),
+                                 "total": round(1000 * (t_reindex - t_start), 2),
+                                 "indexedCharacters": len(self.mem), "batchCharacters": total}
+        return result
     def _imagine(self, exs, trust, g, formW, every=31, K=48, progress=None):
         X = self.X; starts = [(o, i) for o, e in enumerate(exs) for i in range(every, len(e) - 1, every)]
         W_right, W_tried = {}, {}
