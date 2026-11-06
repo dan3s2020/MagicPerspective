@@ -19,7 +19,7 @@ try {
     Write-Host 'CUDA not installed here. GPU mode must be set up explicitly using SETUP_CUDA_WINDOWS.ps1.' -ForegroundColor Yellow
   }
   $testFiles = @("$base\test.mjs","$base\v17_smoke.test.mjs","$base\observatory.test.mjs","$base\http_observatory.test.mjs","$base\text_action_paths.test.mjs","$base\causal_text_world.test.mjs")
-  if(Test-Path -LiteralPath $gpuPy){$testFiles += "$base\gpu_runner.test.mjs"}
+  if(Test-Path -LiteralPath $gpuPy){$testFiles += "$base\gpu_runner.test.mjs";$testFiles += "$base\cuda_integration.test.mjs"}
   & node --test @testFiles
   if($LASTEXITCODE -ne 0){throw 'Acceptance tests failed; refusing to launch.'}
   $env:PORT = "$Port"
