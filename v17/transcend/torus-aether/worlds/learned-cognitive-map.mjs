@@ -117,7 +117,7 @@ export class LearnedCognitiveMap {
         observations:0,accepted:0,rejected:0,
         sources:[],kind:'causally-observed-action'};
       this.rules.set(action,r);
-    }else if(r.operation==='span'&&JSON.stringify(r.from)!==JSON.stringify(from)){
+    }else if(r.operation==='span'&&(r.at!==prefix||JSON.stringify(r.from)!==JSON.stringify(from)||JSON.stringify(r.to)!==JSON.stringify(to))){
       // Do not claim one action has a single known effect when observed
       // results contradict that hypothesis; abstain until disambiguated.
       r.ambiguous=true;
