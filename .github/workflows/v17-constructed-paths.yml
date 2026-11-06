@@ -1,0 +1,29 @@
+name: V17 path self-construction acceptance (no demo)
+on:
+  push:
+    branches:
+      - experiment/V17-PATH-CONSTRUCTION-TRANSFER-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate integrated source
+        run: |
+          node --check v17/transcend/torus-aether/worlds/constructed-paths.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/tests/constructed-paths-v17.test.mjs
+      - name: Construct paths from incomplete unseen mazes and own character transitions
+        run: node --test v17/tests/constructed-paths-v17.test.mjs
+      - name: Existing Brain, UI and prior noise remain working
+        run: |
+          node --test v17/tests/torus-organism.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+          node --test v17/tests/torus-text-hyperpaths.test.mjs
