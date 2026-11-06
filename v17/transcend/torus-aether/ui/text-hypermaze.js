@@ -282,7 +282,7 @@ window.addEventListener("magicperspective:text-frozen-evaluation",event=>{
 });
 $("hmUnseen").addEventListener("click",()=>busyFetch(async()=>{
  $("hmMode").value="unseen";
- const opts={count:1,max:Math.max(50,Math.min(12000,num("hmMax")||2000)),
+ const opts={count:1,max:Math.max(50,Math.min(20000,num("hmMax")||2000)),
   T:Math.max(0,Math.min(1.5,num("hmTemp"))),noise:0};
  const result=await request("/eval",{method:"POST",headers:{"content-type":"application/json"},
   body:JSON.stringify({w:w(),kind:"text",opts})});
