@@ -16,6 +16,7 @@ import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {requestedExerciseLength, limitExerciseBytes} from "./eval-text-length.mjs";
 import {Brain} from "./brain.mjs";
+import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -150,6 +151,7 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/eval") {                        // the Evaluare tab: body {w, kind: maze|text|transform, opts}; a copy from the save, on the CPU
     let body = ""; req.on("data", d => body += d); req.on("end", async () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
+      if (mapOnly(sl.worlds) && m.kind === "text") return json(res, {error: "Acest graf are doar lumea maptext: NU există exerciții textuale nevăzute. Selectează evaluarea hărților N-D (algoritm prestabilit)."});
       const f = saveOf(sl);
       if (sl.wk) await new Promise(ok => { (sl.onSaved ||= []).push(ok); sl.wk.postMessage("save"); setTimeout(ok, 30000); });   // if it cannot save within 30 s, the last save is used   // the newest brain: it saves itself first
       if (!fs.existsSync(f)) return json(res, {error: "graful nu are încă un save"});
@@ -184,6 +186,7 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/chat") {                        // body {w, history: [["you"|"him", text]…], opts: {T, max, stopBlank, learn}}
     let body = ""; req.on("data", d => body += d); req.on("end", () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
+      if (mapOnly(sl.worlds)) return json(res, {error: "Acest creier a perceput doar mișcări dintr-un hipercub binar. Nu a învățat limba naturală; chatul vechi de caractere nu poate răspunde relevant. Acest mesaj NU este un răspuns al organismului."});
       if (!sl.wk) {                                                        // stopped or finished: it answers from its last save
         const f = saveOf(sl); if (!fs.existsSync(f)) return json(res, {error: "graful #" + m.w + " nu rulează și nu are încă un save (apasă ▶)"});
         try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; }
@@ -195,6 +198,14 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  if (url === "/maptext-audit") {
+    const sl = slots.find(x => x.w === +(q.get("w") || 0));
+    if (!sl || !sl.worlds.includes("maptext")) return json(res, {error: "Workerul selectat nu are lumea maptext"});
+    try {
+      const count = +(q.get("count") || 16), seed = +(q.get("seed") || 1729);
+      return json(res, {w: sl.w, ...evaluateWholeMapBaseline({count,seed})});
+    } catch (err) { return json(res, {error: err.message}); }
+  }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
