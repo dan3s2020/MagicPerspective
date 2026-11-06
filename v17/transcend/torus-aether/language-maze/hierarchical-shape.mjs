@@ -54,7 +54,7 @@ function prepare(node,conduct,attract){
  node.world=world;node.field=field;node.planned=field.path.map(e=>e.to);
  for(const child of node.children)prepare(child,conduct,attract);
 }
-export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,source="observed_training_path"}={}){
+export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,source="observed_training_path",observeReplans=false}={}){
  if(!Array.isArray(chars)||chars.length===0||chars.some(c=>typeof c!=="string"))
   throw Error("Expected a nonempty observed character sequence");
  if(typeof conduct!=="function"||typeof attract!=="function")throw Error("Missing original V17 conduct/attract");
@@ -62,7 +62,7 @@ export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,
  const tree=makeTree(chars);
  // This recursively computes all global/layer plans BEFORE beginning execution.
  if(tree.root.kind==="group")prepare(tree.root,conduct,attract);
- const initialShape=chars.slice(),emitted=[],trace=[],pathNodes=[0],graphNodes=[
+ const initialShape=chars.slice(),emitted=[],trace=[],replans=[],pathNodes=[0],graphNodes=[
   {id:0,kind:KIND.self,state:"body",lastCharacter:null,potential:null}
  ],graphEdges=[],values=[null];
  let agreement=0,macroMoves=0,blocked=0;
@@ -82,6 +82,31 @@ export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,
   let position=0;const seen=new Set([0]),F=node.field,V=F.values;
   for(let i=0;i<node.children.length;i++){
    const local=node.world.neighbors[position];let chosen=null,bestValue=V[position];
+   // The hierarchical world ALSO recomputes the SAME original law after
+   // the observed body reaches each character boundary. Use its genuinely
+   // prepared submaze, not a pretend flat 112k-step attraction field.
+   // This is a frozen observational replan, never a policy substitution.
+   if(observeReplans&&node.children[position]?.kind==="character"&&
+      replans.length<maxReplay){
+     const fresh=shapeOnLearnedTopology({
+      ...node.world,start:position,conduct,attract
+     });
+     const remaining=node.field.path.slice(position);
+     const changed=remaining.length!==(fresh.path?.length||0)||
+       remaining.some((v,j)=>v.to!==fresh.path?.[j]?.to);
+     const from=emitted.length;
+     const ids=Array.from({length:Math.min(256,(fresh.path?.length||0)+1)},(_,j)=>from+j);
+     replans.push({
+       atStep:from+1,from,stepBeforeAction:true,
+       recomputedWith:"ORIGINAL_V17_LAW_ON_CURRENT_HIERARCHICAL_SUBMAZE",
+       nodes:ids,fullNodes:(fresh.path?.length||0)+1,
+       previewTruncated:(fresh.path?.length||0)+1>256,
+       changedFromInitialContinuation:changed,
+       firstPredictedCharacter:node.children[position]?.character??null,
+       usedForActualAction:false,evidenceChangedSinceLastStep:false,
+       hierarchyLevel:"character_submaze",hierarchyLevels:tree.levels
+     });
+   }
    for(const edge of local){
     if(!seen.has(edge.to)&&V[edge.to]>bestValue){chosen=edge;bestValue=V[edge.to];}
    }
@@ -127,13 +152,19 @@ export function travelHierarchicalLanguage(chars,{conduct,attract,maxReplay=256,
   steps:chars.length,locallyExecutedSteps:emitted.length,
   localAgreementRate:macroMoves?agreement/macroMoves:null,localBlockedSteps:blocked,
   bodyPolicy:"local_neighbor_hillclimb_of_remembered_global_field",
-  initialShape,trace,pathNodes,
+  initialShape,trace,replans,
+  revisionStats:{repropagations:replans.length,
+    revisedGlobalShapes:replans.filter(x=>x.changedFromInitialContinuation).length,
+    actuallyControlsAction:false,newWorldObservationsDuringReplay:false},
+  pathNodes,
   globalPlanNodes:pathNodes.slice(),
   viewpointEvidence:{
     globalBeforeFirstAction:true,localActionsFromObservedNeighbors:true,
     topology:"RECURSIVE_PRIORLY_OBSERVED_CORRIDOR",
-    actualRepropagationAfterEachMove:false,learned4DGeometry:false,
-    note:"Each submaze was planned before execution. The one known corridor is followed; no competing alternatives or revisions are established."
+    actualRepropagationAfterEachMove:observeReplans,observationalReplanOnly:true,learned4DGeometry:false,
+    note:observeReplans?
+      "After each local character movement, the ORIGINAL V17 law is recalculated within its genuine learned hierarchical submaze, for observability only. No new evidence is supplied and no policy is replaced.":
+      "Each submaze was planned before execution. The one known corridor is followed; no competing alternatives or revisions are established."
   },
   field:values,
   graph:{nodes:graphNodes,edges:graphEdges,goals:[{node:pathNodes.at(-1),source}],
