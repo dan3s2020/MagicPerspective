@@ -1,0 +1,60 @@
+{"family":"active_to_passive","split":"train","before":"mage pushes stone","after":"stone is pushed by mage"}
+{"family":"passive_to_toy_effect","split":"train","before":"stone is pushed by mage","after":"if mage pushes then stone moves"}
+{"family":"active_to_passive","split":"train","before":"thief pushes gate","after":"gate is pushed by thief"}
+{"family":"passive_to_toy_effect","split":"train","before":"gate is pushed by thief","after":"if thief pushes then gate moves"}
+{"family":"active_to_passive","split":"train","before":"sage pushes door","after":"door is pushed by sage"}
+{"family":"passive_to_toy_effect","split":"train","before":"door is pushed by sage","after":"if sage pushes then door moves"}
+{"family":"active_to_passive","split":"train","before":"ranger pushes crate","after":"crate is pushed by ranger"}
+{"family":"passive_to_toy_effect","split":"train","before":"crate is pushed by ranger","after":"if ranger pushes then crate moves"}
+{"family":"active_to_passive","split":"train","before":"pilot pushes chest","after":"chest is pushed by pilot"}
+{"family":"passive_to_toy_effect","split":"train","before":"chest is pushed by pilot","after":"if pilot pushes then chest moves"}
+{"family":"active_to_passive","split":"test","before":"farmer pushes cart","after":"cart is pushed by farmer"}
+{"family":"passive_to_toy_effect","split":"test","before":"cart is pushed by farmer","after":"if farmer pushes then cart moves"}
+{"family":"active_to_passive","split":"test","before":"farmer pushes shield","after":"shield is pushed by farmer"}
+{"family":"passive_to_toy_effect","split":"test","before":"shield is pushed by farmer","after":"if farmer pushes then shield moves"}
+{"family":"active_to_passive","split":"test","before":"farmer pushes barrel","after":"barrel is pushed by farmer"}
+{"family":"passive_to_toy_effect","split":"test","before":"barrel is pushed by farmer","after":"if farmer pushes then barrel moves"}
+{"family":"active_to_passive","split":"test","before":"farmer pushes chestnut","after":"chestnut is pushed by farmer"}
+{"family":"passive_to_toy_effect","split":"test","before":"chestnut is pushed by farmer","after":"if farmer pushes then chestnut moves"}
+{"family":"active_to_passive","split":"test","before":"farmer pushes boulder","after":"boulder is pushed by farmer"}
+{"family":"passive_to_toy_effect","split":"test","before":"boulder is pushed by farmer","after":"if farmer pushes then boulder moves"}
+{"family":"active_to_passive","split":"test","before":"captain pushes cart","after":"cart is pushed by captain"}
+{"family":"passive_to_toy_effect","split":"test","before":"cart is pushed by captain","after":"if captain pushes then cart moves"}
+{"family":"active_to_passive","split":"test","before":"captain pushes shield","after":"shield is pushed by captain"}
+{"family":"passive_to_toy_effect","split":"test","before":"shield is pushed by captain","after":"if captain pushes then shield moves"}
+{"family":"active_to_passive","split":"test","before":"captain pushes barrel","after":"barrel is pushed by captain"}
+{"family":"passive_to_toy_effect","split":"test","before":"barrel is pushed by captain","after":"if captain pushes then barrel moves"}
+{"family":"active_to_passive","split":"test","before":"captain pushes chestnut","after":"chestnut is pushed by captain"}
+{"family":"passive_to_toy_effect","split":"test","before":"chestnut is pushed by captain","after":"if captain pushes then chestnut moves"}
+{"family":"active_to_passive","split":"test","before":"captain pushes boulder","after":"boulder is pushed by captain"}
+{"family":"passive_to_toy_effect","split":"test","before":"boulder is pushed by captain","after":"if captain pushes then boulder moves"}
+{"family":"active_to_passive","split":"test","before":"archer pushes cart","after":"cart is pushed by archer"}
+{"family":"passive_to_toy_effect","split":"test","before":"cart is pushed by archer","after":"if archer pushes then cart moves"}
+{"family":"active_to_passive","split":"test","before":"archer pushes shield","after":"shield is pushed by archer"}
+{"family":"passive_to_toy_effect","split":"test","before":"shield is pushed by archer","after":"if archer pushes then shield moves"}
+{"family":"active_to_passive","split":"test","before":"archer pushes barrel","after":"barrel is pushed by archer"}
+{"family":"passive_to_toy_effect","split":"test","before":"barrel is pushed by archer","after":"if archer pushes then barrel moves"}
+{"family":"active_to_passive","split":"test","before":"archer pushes chestnut","after":"chestnut is pushed by archer"}
+{"family":"passive_to_toy_effect","split":"test","before":"chestnut is pushed by archer","after":"if archer pushes then chestnut moves"}
+{"family":"active_to_passive","split":"test","before":"archer pushes boulder","after":"boulder is pushed by archer"}
+{"family":"passive_to_toy_effect","split":"test","before":"boulder is pushed by archer","after":"if archer pushes then boulder moves"}
+{"family":"active_to_passive","split":"test","before":"queen pushes cart","after":"cart is pushed by queen"}
+{"family":"passive_to_toy_effect","split":"test","before":"cart is pushed by queen","after":"if queen pushes then cart moves"}
+{"family":"active_to_passive","split":"test","before":"queen pushes shield","after":"shield is pushed by queen"}
+{"family":"passive_to_toy_effect","split":"test","before":"shield is pushed by queen","after":"if queen pushes then shield moves"}
+{"family":"active_to_passive","split":"test","before":"queen pushes barrel","after":"barrel is pushed by queen"}
+{"family":"passive_to_toy_effect","split":"test","before":"barrel is pushed by queen","after":"if queen pushes then barrel moves"}
+{"family":"active_to_passive","split":"test","before":"queen pushes chestnut","after":"chestnut is pushed by queen"}
+{"family":"passive_to_toy_effect","split":"test","before":"chestnut is pushed by queen","after":"if queen pushes then chestnut moves"}
+{"family":"active_to_passive","split":"test","before":"queen pushes boulder","after":"boulder is pushed by queen"}
+{"family":"passive_to_toy_effect","split":"test","before":"boulder is pushed by queen","after":"if queen pushes then boulder moves"}
+{"family":"active_to_passive","split":"test","before":"merchant pushes cart","after":"cart is pushed by merchant"}
+{"family":"passive_to_toy_effect","split":"test","before":"cart is pushed by merchant","after":"if merchant pushes then cart moves"}
+{"family":"active_to_passive","split":"test","before":"merchant pushes shield","after":"shield is pushed by merchant"}
+{"family":"passive_to_toy_effect","split":"test","before":"shield is pushed by merchant","after":"if merchant pushes then shield moves"}
+{"family":"active_to_passive","split":"test","before":"merchant pushes barrel","after":"barrel is pushed by merchant"}
+{"family":"passive_to_toy_effect","split":"test","before":"barrel is pushed by merchant","after":"if merchant pushes then barrel moves"}
+{"family":"active_to_passive","split":"test","before":"merchant pushes chestnut","after":"chestnut is pushed by merchant"}
+{"family":"passive_to_toy_effect","split":"test","before":"chestnut is pushed by merchant","after":"if merchant pushes then chestnut moves"}
+{"family":"active_to_passive","split":"test","before":"merchant pushes boulder","after":"boulder is pushed by merchant"}
+{"family":"passive_to_toy_effect","split":"test","before":"boulder is pushed by merchant","after":"if merchant pushes then boulder moves"}
