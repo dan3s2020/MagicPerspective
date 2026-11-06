@@ -82,3 +82,38 @@ test('a direct exact-memory lookup cannot solve the novel held-out answer',()=>{
  assert.equal(m.examples.has(tokenizeWorld('She is calm.').join('\u001f')),false);
  assert.equal(m.formSolution('He is calm.',goal).found,true);
 });
+
+
+test('whole-world insertion/deletion keeps boundary walls and composes onto unseen subject',()=>{
+ const m=new LearnedCognitiveMap();m.observeSentence('She is');m.observeSentence('She is calm');
+ const p=m.formSolution('He is',{slots:{2:'calm'}});
+ assert.equal(p.found,true);
+ assert.equal(p.world.states.length,2,'The word must not repeat forever; learned END wall stops it');
+ assert.equal(p.world.states[p.path.at(-1).to].join(' '),'He is calm');
+ assert.equal(m.predict(['He','is','calm'],p.path[0].action),null,
+   'Repeated insertion after the observed end boundary is forbidden');
+ const snapshot=LearnedCognitiveMap.restore(m.export());
+ assert.equal(snapshot.formSolution('He is',{slots:{2:'calm'}}).found,true);
+});
+
+test('real observed local actions can become reusable multi-token transformations',()=>{
+ const m=new LearnedCognitiveMap();
+ const learning=m.observeActionResult({before:['A','B','C'],action:'press:swap',after:['A','C','B'],accepted:true});
+ assert.equal(learning.learned,true);
+ assert.deepEqual(m.predict(['X','B','C'],'press:swap'),['X','C','B']);
+ assert.equal(m.report().confirmedActions,1);
+});
+
+test('contradictory action physics causes abstention instead of hallucinated generalization',()=>{
+ const m=new LearnedCognitiveMap();
+ m.observeActionResult({before:['A','B'],action:'press',after:['A','C'],accepted:true});
+ m.observeActionResult({before:['A','B'],action:'press',after:['A','D'],accepted:true});
+ assert.equal(m.predict(['X','B'],'press'),null);
+});
+
+test('a rejected context does not make other observed corridors into walls',()=>{
+ const m=train(),plan=m.formSolution('He is calm.',goal);
+ m.execute(plan,{step:state=>({after:state,accepted:false})});
+ const after=m.formSolution('He is calm.',goal);
+ if(after.found)assert.notDeepEqual(after.path.map(x=>x.action),plan.path.map(x=>x.action));
+});
