@@ -33,3 +33,51 @@ The GitHub Actions isolated workflow checks Windows PowerShell 5.1 syntax, Node 
 
 ## Limitations
 This is a structural fix for UI responsiveness and GPU batch launch overhead. RTX 3050 Ti throughput improvement is **not yet empirically measured on the user's PC**, and a hardware-specific CUDA bottleneck is not proven resolved by CI's CPU-only runner. The code keeps the actual V17 learning equations and never claims a full CUDA port of JavaScript-side Brain or its layered organisms. Full Verbatim release coverage is still BLOCKED.
+
+
+## 112,530 symbols but 0 confirmed chars on CUDA (real user screenshot)
+
+Observed: \`text CUDA: aliniere · 19.9s · 0/112530 unități raportate\`;
+heartbeats continued every 0.2s and V17 reported 0 confirmed text characters.
+The original V17 contract \`Brain.learnTextGPU\` only increments \`brain.chars\`
+after an ENTIRE \`TextCard.live(exercises)\` request returns, while the OpenThoughts
+Parquet row can contain >112k original symbols. Heartbeat does not prove that
+GPU CUDA kernels are making progress; it proves the Node worker event loop is alive.
+Actual \`/telemetry\` stage and subsequent in-flight positions are needed to
+distinguish a long call from a backend hang.
+
+New changes preserve every input symbol in original order and split very large
+text rows into bounded, sequential **4096-character CUDA processing windows**.
+This changes the self-index/imagined-continuation context boundaries of the
+GPU text algorithm, so full-long-exercise prediction is NOT mathematically
+identical to the single-request baseline. The CPU-side original AligningGraph
+memory and CUDA suffix working set persist across windows. Accuracy must be
+compared on frozen held-out evaluations to verify the trade-off.
+
+Original Parquet rows and temporary CUDA windows are explicitly separate:
+- \`brain.sourceRows\` is the number of fully committed original source rows;
+- \`brain.sourceOffset\` is the exact byte offset in the current source row;
+- \`brain.sourceRowLength\` + SHA256 fingerprint detect dataset changes on resume;
+- \`brain.exercises\` counts original rows, not CUDA windows;
+- \`sourceWindow\` telemetry reports \`index/windows\`, original length and
+  already committed bytes; \`chars\` refers to completed GPU training windows.
+- On Save/Pause, the current **completed** window and source offset can be
+  checkpointed, and subsequent resume reads the same row at that offset.
+- On an exception before source cursor commit, the last previously saved
+  checkpoint remains untouched; an unconfirmed GPU step is NOT saved.
+- Every original source symbol is forwarded once. Causal text actions for the
+  original row are learned once, after all of its windows complete.
+- CPU fallback (deliberately selected) continues at the saved byte offset
+  instead of retraining the committed prefix.
+
+Configurable on the Windows launcher: \`-GpuMaxChars 4096\` (256–32768).
+Smaller values give more responsive intermediate commits but increase call
+and suffix-index overhead; larger values trade responsiveness for throughput.
+\`-GpuTextChunk\` independently controls the CUDA kernel's internal micro-batch,
+default 128 with an existing out-of-memory retry.
+
+Test acceptance: \`gpu-text-windows.test.mjs\` checks full byte equivalence for
+112,531 symbols, identical original-row count, 7-window stop/resume,
+no duplicate in-flight section, and actual V17 v8 serialized cursor persistence.
+Only RTX hardware can establish the actual speedup; this is not a claim
+that 112k character learning is computationally free.
