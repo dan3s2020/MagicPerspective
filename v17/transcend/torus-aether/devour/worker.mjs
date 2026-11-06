@@ -191,10 +191,9 @@ const worldsOnce = async (record) => {                                     // on
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
-const processGpuText = async (exs, meta,{allowHeavyReport=true}={}) => {
+const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   changePhase("text CUDA: aliniere",0,total); shot(true);
-  const startChars = brain.chars;
   await brain.learnTextGPU(gpu, exs, progress => {
     changePhase("text CUDA: "+progress.phase,progress.done,progress.total);
     shot();
@@ -208,12 +207,19 @@ const processGpuText = async (exs, meta,{allowHeavyReport=true}={}) => {
   if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   changePhase("GPU batch finished"); batchNow = null;
   emitTelemetry();
-  // Report the first committed batch immediately, not only after 60,000 bytes.
-  if (allowHeavyReport && (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every))) {
-    changePhase("CPU: frozen V17 evaluation + checkpoint"); emitTelemetry(); report(); changePhase("CPU: evaluation complete");
-  }
+  // Only the CALLER commits the durable dataset-row cursor. In particular,
+  // never save an intermediate GPU model under an older row cursor.
+  // Heavy frozen tests/checkpointing happen AFTER a fully committed text window.
   shot(true);
 };
+let lastCommitReportChars=brain.chars||0, reportedFirst=!!brain.chars;
+function reportAfterCommit(){
+  if(!reportedFirst || Math.floor(brain.chars/every)>Math.floor(lastCommitReportChars/every)){
+    changePhase("CPU: frozen V17 evaluation + checkpoint");emitTelemetry();
+    report();changePhase("CPU: evaluation complete");
+    lastCommitReportChars=brain.chars;reportedFirst=true;
+  }
+}
 parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
   if (m && m.sharedEval) {
     const {id, seed = 74129} = m.sharedEval;
@@ -248,6 +254,16 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
 const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), saveBodyPerspective(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
 let k = 0, textBatch = [], textMeta = [];
+const finishBatch=async()=>{
+  if(!textBatch.length)return;
+  const n=textMeta.length;
+  await processGpuText(textBatch,textMeta);
+  brain.sourceRows+=n;
+  brain.sourceOffset=0;
+  brain.exercises=brain.sourceRows;
+  textBatch=[];textMeta=[];
+  emitTelemetry();reportAfterCommit();
+};
 shot(true); await hold();
 for await (const ex of stream()) {
   await hold();
@@ -256,21 +272,61 @@ for await (const ex of stream()) {
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
   if (TEXT && gpuSet) {
-    if (gpuError || !(await gpuOn())) {
-      parentPort.postMessage({type: "fatal", w: workerData.gw, text: "CUDA unavailable: " + (gpuError || "backend did not initialize")});
-      stop = true; break;
+    if(gpuError||!(await gpuOn())){
+      parentPort.postMessage({type:"fatal",w:workerData.gw,text:"CUDA unavailable: "+(gpuError||"backend did not initialize")});
+      stop=true;break;
     }
-    textBatch.push(ex.bytes); textMeta.push(ex);
-    if (textBatch.length >= selectedTextBatch() || textBatch.reduce((n, b) => n + b.length, 0) >= 120000) {
-      const exs = textBatch, meta = textMeta;
-      try { await processGpuText(exs, meta); textBatch = []; textMeta = []; }
-      catch (err) {
-        gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
-        parentPort.postMessage({type: "fatal", w: workerData.gw, text: "GPU batch failed without CPU fallback: " + err.message});
-        stop = true; break;
+    try {
+      // Very long OpenThoughts answers can exceed 100,000 symbols. Training the entire
+      // answer as ONE GPU call held brain.chars=0 for minutes and made Save unresponsive.
+      // Work on bounded, ordered windows; each real symbol is processed once.
+      if(ex.bytes.length>GPU_MAX_WINDOW||brain.sourceOffset>0){
+        await finishBatch(); // previous short rows must commit first
+        const rowHash=createHash("sha256").update(Buffer.from(ex.bytes)).digest("hex");
+        if(brain.sourceOffset>0&&
+           (brain.sourceRowLength!==ex.bytes.length||brain.sourceRowFingerprint!==rowHash))
+          throw Error("Resumed Parquet row differs from saved partial-row fingerprint; stopping to protect the brain.");
+        brain.sourceRowLength=ex.bytes.length;brain.sourceRowFingerprint=rowHash;
+        const windows=gpuTextWindows(ex.bytes,{maxChars:GPU_MAX_WINDOW,offset:brain.sourceOffset});
+        activeSourceWindow={datasetRow:k-1,originalLength:ex.bytes.length,windows:windows.length,
+          firstOffset:brain.sourceOffset,index:0};
+        let finished=true;
+        for(let wi=0;wi<windows.length;wi++){
+          if(stop||brain.chars>=maxChars){finished=false;break;}
+          const part=windows[wi];
+          activeSourceWindow.index=wi+1;
+          changePhase("CUDA: text original row "+(k-1)+" · window "+(wi+1)+"/"+windows.length,0,part.bytes.length);
+          emitTelemetry();
+          // No substring is dropped. The bounded CUDA window shares learned trust
+          // and rolling full-CPU alignment memory with the previous window.
+          await processGpuText([part.bytes],[]);
+          applyCompletedWindow(brain,{rowChars:ex.bytes.length,from:part.from,to:part.to});
+          emitTelemetry();reportAfterCommit();
+          await hold(); // Save/Pause can now complete at a safe, committed window boundary.
+          if(stop){finished=false;break;}
+        }
+        if(finished&&brain.sourceOffset===0){
+          absorbText(ex); // learn causal text tools ONCE for the ORIGINAL Q/A row
+          await flushShared();
+        }
+        activeSourceWindow=null;
+        if(!finished||stop)break;
+      }else{
+        textBatch.push(ex.bytes);textMeta.push(ex);
+        if(textBatch.length>=selectedTextBatch()||
+           textBatch.reduce((n,b)=>n+b.length,0)>=GPU_MAX_WINDOW){
+          await finishBatch();
+        }
       }
+    }catch(err){
+      gpuError=String(err.stack||err.message||err);
+      changePhase("CUDA error: "+err.message);
+      parentPort.postMessage({type:"fatal",w:workerData.gw,text:"GPU text window failed without CPU fallback: "+err.message});
+      stop=true;break;
     }
-    if (brain.chars >= maxChars || stop) break; await new Promise(r => setImmediate(r)); continue;
+    if(brain.chars>=maxChars||stop)break;
+    await new Promise(r=>setImmediate(r));
+    continue;
   }
   // Explicitly switching to CPU drains any pending exercises rather than dropping them.
   if (TEXT && textBatch.length) {
@@ -296,11 +352,11 @@ for await (const ex of stream()) {
   if (brain.chars >= maxChars || stop) break;
   await new Promise(r => setImmediate(r));                                   // let the stop message in
 }
-// A dataset can end before the final batch reaches the configured size; those rows must still be trained.
-if (TEXT && gpuSet && !stop && textBatch.length) {
-  try { const G = await gpuOn(); if (!G) throw Error(gpuError || "CUDA unavailable"); await processGpuText(textBatch, textMeta); textBatch = []; textMeta = []; }
-  catch (err) { gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
-    parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
+// The last few normal Q/A rows are still committed in original source order.
+if(TEXT&&gpuSet&&!stop&&textBatch.length){
+  try{const G=await gpuOn();if(!G)throw Error(gpuError||"CUDA unavailable");await finishBatch();}
+  catch(err){gpuError=err.message;changePhase("CUDA error: "+err.message);
+    parentPort.postMessage({type:"fatal",w:workerData.gw,text:"Final GPU text batch failed: "+err.message});stop=true;}
 }
 changePhase(stop?"stopped":"completed"); emitTelemetry();
 clearInterval(heartbeat);
