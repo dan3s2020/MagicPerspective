@@ -972,13 +972,15 @@ fetch("/corpus").then(r => r.json()).then(c => {
     languageMazeViewer?.setActive(true);
     languageMazeViewer?.renderInfo();
   };
-  async function runLanguageMaze(localPolicy=true) {
-    const button=localPolicy?$("languageMazePlan"):$("languageMazeFollow");
+  let languageMazeRequesting=false,languageMazeAutoSeen=0;
+  async function runLanguageMaze(localPolicy=true,auto=false) {
+    if(languageMazeRequesting)return;
+    const button=auto?$("languageMazeAuto"):localPolicy?$("languageMazePlan"):$("languageMazeFollow");
     const start=$("languageMazeStart").value.trim();
     const required=$("languageMazeGoal").value.trim();
-    if(!required){$("languageMazeStatus").textContent=
+    if(!required&&!auto){$("languageMazeStatus").textContent=
       "Introdu condițiile obiectivului, separate prin virgule. Nu oferim răspunsul complet.";return;}
-    button.disabled=true;
+    languageMazeRequesting=true;button.disabled=true;
     $("languageMazeStatus").textContent=
       "Originalul V17 caută prin transformările învățate. Îngheț forma ÎNAINTE să execute orice acțiune...";
     const selected=liveW;
@@ -986,12 +988,17 @@ fetch("/corpus").then(r => r.json()).then(c => {
       const url="/language-maze?w="+selected+
         "&required="+encodeURIComponent(required)+
         "&start="+encodeURIComponent(start)+
-        "&local="+(localPolicy?"on":"off");
+        "&local="+(localPolicy?"on":"off")+
+        (auto?"&auto=1":"");
       const response=await fetch(url,{method:"POST",cache:"no-store"});
       if(!response.ok)throw Error("HTTP "+response.status);
       const r=await response.json();
       if(r.error)throw Error(r.error);
       if(selected!==liveW)return; // stale result from another brain is ignored
+      if(r.selfGoal){
+        $("languageMazeStart").value=r.selfGoal.start||"";
+        $("languageMazeGoal").value=(r.selfGoal.required||[]).join(",");
+      }
       languageMazeViewer?.setEpisode(r);
       $("languageMazeStatus").textContent=
         (r.found?"FORMA REALĂ ÎNGHEȚATĂ înainte de primul pas. Apasă Replay sau Pas ▶.":
@@ -1002,10 +1009,19 @@ fetch("/corpus").then(r => r.json()).then(c => {
     }catch(err){$("languageMazeStatus").textContent=
       "Căutarea nativă a eșuat: "+err.message+
       ". Nu afișez o cale simulată."; }
-    finally{button.disabled=false;}
+    finally{button.disabled=false;languageMazeRequesting=false;}
   }
   $("languageMazePlan").onclick=()=>runLanguageMaze(true);
   $("languageMazeFollow").onclick=()=>runLanguageMaze(false);
+  $("languageMazeAuto").onclick=()=>runLanguageMaze(true,true);
+  // Optional ACTUAL autonomous-operator structural probes while training
+  // evolves. Never generate decorative routes or replay a reference answer.
+  setInterval(()=>{
+    if(!$("languageMazeAutoLive").checked||!languageMazeViewer?.active||languageMazeRequesting)return;
+    const n=languageMazeViewer.snapshot?.observedTransformations?.learnedOperators||0;
+    if(n<=languageMazeAutoSeen||n<2)return;
+    languageMazeAutoSeen=n;runLanguageMaze(true,true);
+  },15000);
   $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
   const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
