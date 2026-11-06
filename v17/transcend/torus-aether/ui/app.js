@@ -626,7 +626,15 @@ $("gpuApply").onclick = async () => {
 };
 let gpuShown = false;
 $("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext"].filter(Boolean); if (!worlds.length) return;
-  await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${worlds.join(",")}`, {method: "POST"}).catch(() => {}); livePull(); };
+  try {
+    const response = await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${encodeURIComponent(worlds.join(","))}`, {method: "POST"});
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      alert("Nu am creat un graf nou: " + (result.error || "HTTP " + response.status) + ". Grafurile și checkpointurile existente rămân neschimbate.");
+      return;
+    }
+  } catch (err) { alert("Nu am creat un graf nou: " + err.message); return; }
+  livePull(); };
 function confirmReset() { const b = $("liveReset"); if (b.dataset.armed) { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; return true; }
   b.dataset.armed = 1; b.textContent = "Sigur? apasă încă o dată"; setTimeout(() => { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; }, 4000); return false; }
 function bootLive() {
