@@ -70,7 +70,7 @@ test('noise can only select among valid, goal-decreasing paths',()=>{
 test('same original Brain instance receives actual cursor movements, not teacher-forced text',()=>{
  const symbols=[],shared=[],nodes=new Map(),edges=new Map();
  const brain={seed:31,trace:{
-  node(id,type,label){nodes.set(id,{type,label});},
+  node(id,type,label){const n={type,label};nodes.set(id,n);return n;},
   setEdge(a,b,type,weight){edges.set(a+'>'+b+'>'+type,weight);},
   fire(id){assert.ok(nodes.has(id));}
  },live(char){symbols.push(char);},observeShared(event){shared.push(event);}};
