@@ -1,0 +1,45 @@
+name: Isolated V17 global-to-local body perspective
+on:
+  push:
+    branches:
+      - experiment/ISOLATED-V17-BODY-PERSPECTIVE-20261106
+  workflow_dispatch:
+jobs:
+  actual-v17-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks for original and new modules
+        run: |
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/eval-worker.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/perspective-studio.js
+          node --check v17/transcend/torus-aether/perspective/global-local.mjs
+          node --check v17/transcend/torus-aether/perspective/body-memory.mjs
+      - name: Frozen global-local actual maze, non-leakage, checkpoints, original V17 regression
+        run: |
+          node --test v17/transcend/torus-aether/perspective/body-perspective.test.mjs v17/transcend/torus-aether/perspective/body-studio.test.mjs v17/tests/torus-shared-perspective.test.mjs v17/transcend/torus-aether/shared/experience.test.mjs
+  launcher-windows:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 launcher parser
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path v17/START_BODY_PERSPECTIVE.ps1).Path,
+            [ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0){
+            $errors | ForEach-Object {Write-Host $_.ToString()}
+            throw 'Isolated launcher PowerShell syntax failed'
+          }
+          Write-Host 'WINDOWS_LAUNCHER_PARSE_OK'
