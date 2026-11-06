@@ -12,6 +12,7 @@
 import {TextExperiment} from "../../epistemic-text/engine.mjs";
 import {Observatory} from "./observatory.js";
 import {LanguageMazeViewer} from "./language-maze-view.js";
+import {InlineTextMaze} from "./inline-text-maze.js";
 import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
@@ -388,7 +389,8 @@ function stats() {
 let frame = 0;
 function loop() {
   if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); if(frame%3===0){perspectiveDraw();constructedDraw();} }
+  if (LIVE) { drawMaze(); drawTrans(); inlineTextMaze?.tick(performance.now());
+    if(frame%3===0){perspectiveDraw();constructedDraw();} }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
   for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
@@ -436,6 +438,7 @@ let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = nu
 let livePulling=false;
 const observatory = LIVE ? new Observatory({getGraph:()=>liveW}) : null;
 const languageMazeViewer = LIVE ? new LanguageMazeViewer() : null;
+const inlineTextMaze = LIVE ? new InlineTextMaze() : null;
 if(observatory)observatory.select(liveW);
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
@@ -457,6 +460,10 @@ function applySnap(gs) {
   renderConstructed(gs.constructedPaths || null);
   renderObservedTransformations(gs.observedTransformations || null);
   languageMazeViewer?.setGraph(gs);
+  // Same original snapshot: text is always visible on TRAINING, right
+  // beneath the 2D maze and transformation game, without a manual exam.
+  inlineTextMaze?.update(gs,!!liveSummary?.worlds?.includes("text")||
+    (!liveSummary && (gs.textMaze?.epoch||0)>0));
 }
 // Original Brain global->local observations, not a separate demo animation.
 let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
@@ -848,6 +855,8 @@ async function livePull() {
     if(requestedW===liveW){
       selectedSummary=L.graphs?.find(x=>x.w===requestedW)||null;
       liveSummary=selectedSummary;
+      inlineTextMaze?.update(selectedSnap||liveSnap,
+        !!selectedSummary?.worlds?.includes("text"));
     }
     const p2 = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("corpus").textContent = `lumea pe care o devorează: ${L.world}`;
@@ -867,7 +876,7 @@ async function livePull() {
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
       c.querySelector(".t").onclick = () => { liveW = +c.dataset.w;
-        languageMazeViewer?.reset();
+        languageMazeViewer?.reset();inlineTextMaze?.update(null,false);
         nodes.clear();edges.clear();liveSnap=null;liveSummary=null;data=[];
         view.path="";view.mode="inside";
         nv.cam={k:0,w:"",x:0,y:0,S:300};nv.placed=false;
