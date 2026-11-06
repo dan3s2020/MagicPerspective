@@ -31,6 +31,8 @@ jobs:
           python tests/create_ci_parquet_fixture.py
       - name: Boot original V17 HTTP worker and require actual research events + original UI tab
         run: node --test tests/live-research-http.test.mjs
+      - name: Test original UI real-shape and character cursor interactions
+        run: node --test tests/research-ui-interaction.test.mjs
       - name: Parse original engine and all isolated components
         run: |
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
