@@ -49,6 +49,12 @@ test('actual 2D maze and causal transformation physically use, update and save o
   const frozenBefore = N.total;
   b.test([65, 66, 65, 66, 65, 66, 65, 66]);
   b.testMazes(1);
+  const testWithNoise = b.testMazes(2, {autonomousNoise:true});
+  assert.ok(Object.values(testWithNoise.frozenNoiseChoices).reduce((sum, v)=>sum+v,0) > 0,
+    'frozen unseen worlds must actually execute organism-selected noise portals');
+  const transformWithNoise = b.testTransforms(2, {autonomousNoise:true});
+  assert.ok(Object.values(transformWithNoise.frozenNoiseChoices).reduce((sum, v)=>sum+v,0) > 0,
+    'unseen causal tasks must also execute the organism-owned policy');
   assert.equal(N.total, frozenBefore, 'frozen tests must not change organism-owned noise policy');
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-noise-check-'));
