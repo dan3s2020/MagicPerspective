@@ -16,7 +16,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 export class LearnedCognitiveMap {
   constructor({maxExamples=50000,maxRules=30000,maxNodes=768,maxDepth=12}={}){
     this.limits={maxExamples,maxRules,maxNodes,maxDepth};
-    this.examples=new Map();this.skeletons=new Map();this.rules=new Map();
+    this.examples=new Map();this.skeletons=new Map();this.rules=new Map();this.shorterIndex=new Map();
     this.interventions=new Map();this.documents=0;this.evaluations=0;
     this.last=null;this.version=1;
   }
@@ -50,6 +50,25 @@ export class LearnedCognitiveMap {
       }
       observed.set(t[at],id);this.skeletons.set(shape,observed);
     }
+    // A full sentence is a state, not a target to copy. Detect observed
+    // insertion/deletion and adjacent swap contrasts across independently
+    // observed complete strings (only hypotheses until intervention feedback).
+    for(let at=0;at<t.length;at++){
+      const shorter=t.slice(0,at).concat(t.slice(at+1));
+      const shortKey=key(shorter);
+      if(this.examples.has(shortKey)){
+        this.#editEvidence('insert',at,'',t[at],shortKey,id);
+        this.#editEvidence('delete',at,t[at],'',id,shortKey);
+      }
+      const previouslyLonger=this.shorterIndex.get(id);
+      if(previouslyLonger)for(const x of previouslyLonger){
+        this.#editEvidence('insert',x.at,'',x.token,id,x.longer);
+        this.#editEvidence('delete',x.at,x.token,'',x.longer,id);
+      }
+      const lst=this.shorterIndex.get(shortKey)||[];
+      if(lst.length<64)lst.push({at,token:t[at],longer:id});
+      this.shorterIndex.set(shortKey,lst);
+    }
     this.examples.set(id,{tokens:t,source});return true;
   }
   #evidence(at,from,to,before,after){
@@ -62,6 +81,50 @@ export class LearnedCognitiveMap {
     }
     const pair=before+' → '+after;
     if(!r.sources.includes(pair)){r.observations++;if(r.sources.length<12)r.sources.push(pair);}
+  }
+  #editEvidence(operation,at,from,to,before,after){
+    const name=JSON.stringify([operation,at,from,to]);let r=this.rules.get(name);
+    if(!r){
+      if(this.rules.size>=this.limits.maxRules)throw Error('Learned rule capacity exceeded');
+      r={id:name,operation,at,from,to,observations:0,accepted:0,rejected:0,
+        sources:[],kind:'observed-complete-state-edit-hypothesis'};
+      this.rules.set(name,r);
+    }
+    const pair=before+' → '+after;
+    if(!r.sources.includes(pair)){r.observations++;if(r.sources.length<12)r.sources.push(pair);}
+  }
+  // A real before/action/after observation can teach an unfamiliar
+  // contiguous string transformation; no predefined grammar labels.
+  observeActionResult({before,action,after,accepted}={}){
+    const b=Array.isArray(before)?before.slice():tokenizeWorld(before);
+    const a=Array.isArray(after)?after.slice():tokenizeWorld(after);
+    if(typeof action!=='string'||!action||typeof accepted!=='boolean')throw Error('Real action and accepted flag required');
+    const record=this.interventions.get(key(b)+'|'+action)||{accepted:0,blocked:0};
+    if(!accepted){
+      record.blocked++;this.interventions.set(key(b)+'|'+action,record);
+      const known=this.rules.get(action);if(known)known.rejected++;
+      return {learned:false,wall:true,action};
+    }
+    let prefix=0,suffix=0;
+    while(prefix<b.length&&prefix<a.length&&b[prefix]===a[prefix])prefix++;
+    while(suffix<b.length-prefix&&suffix<a.length-prefix&&b[b.length-suffix-1]===a[a.length-suffix-1])suffix++;
+    const from=b.slice(prefix,b.length-suffix),to=a.slice(prefix,a.length-suffix);
+    if(from.length>16||to.length>16)throw Error('Observation exceeds bounded local transformation span');
+    let r=this.rules.get(action);
+    if(!r){
+      if(this.rules.size>=this.limits.maxRules)throw Error('Learned rule capacity exceeded');
+      r={id:action,operation:'span',at:prefix,from,to,
+        observations:0,accepted:0,rejected:0,
+        sources:[],kind:'causally-observed-action'};
+      this.rules.set(action,r);
+    }else if(r.operation==='span'&&JSON.stringify(r.from)!==JSON.stringify(from)){
+      // Do not claim one action has a single known effect when observed
+      // results contradict that hypothesis; abstain until disambiguated.
+      r.ambiguous=true;
+    }
+    r.observations++;r.accepted++;
+    record.accepted++;this.interventions.set(key(b)+'|'+action,record);
+    return {learned:!r.ambiguous,wall:false,action,from,to,at:prefix};
   }
   // Grounded interventions: this method NEVER calls an oracle. Callers pass the
   // actual observed state after a real action, and whether it was accepted.
@@ -81,11 +144,24 @@ export class LearnedCognitiveMap {
   predict(input,action){
     const t=Array.isArray(input)?input.slice():tokenizeWorld(input);
     const r=this.rules.get(action);
-    if(!r||r.at>=t.length||t[r.at]!==r.from)return null;
+    if(!r||r.ambiguous)return null;
+    const op=r.operation||'replace';
+    if(op==='insert'){
+      if(r.at>t.length)return null;
+    }else if(op==='delete'||op==='replace'){
+      if(r.at>=t.length||t[r.at]!==r.from)return null;
+    }else if(op==='span'){
+      if(r.at>t.length||r.at+r.from.length>t.length||
+        JSON.stringify(t.slice(r.at,r.at+r.from.length))!==JSON.stringify(r.from))return null;
+    }else return null;
     const observed=this.interventions.get(key(t)+'|'+action);
     if(observed?.blocked&&(!observed.accepted||observed.blocked>observed.accepted))return null;
     if(r.rejected>r.accepted+Math.max(1,r.observations))return null;
-    t[r.at]=r.to;return t;
+    if(op==='insert')t.splice(r.at,0,r.to);
+    else if(op==='delete')t.splice(r.at,1);
+    else if(op==='span')t.splice(r.at,r.from.length,...r.to);
+    else t[r.at]=r.to;
+    return t;
   }
   // Goal is a CHECKABLE predicate on the generated state; the finished sentence
   // is NEVER supplied as a target string, node, hidden path, or teacher-forced prefix.
@@ -206,11 +282,13 @@ export class LearnedCognitiveMap {
     interpretation:'Rules learned from contrasts are hypotheses until actions are observed. No next-token trainer.'};}
   export(){return {version:1,limits:this.limits,documents:this.documents,
     examples:[...this.examples],skeletons:[...this.skeletons].map(([k,m])=>[k,[...m]]),
+    shorterIndex:[...this.shorterIndex],
     rules:[...this.rules],interventions:[...this.interventions],last:this.last};}
   static restore(data){
     if(data?.version!==1)throw Error('Incompatible cognitive map checkpoint version');
     const m=new LearnedCognitiveMap(data.limits);m.documents=data.documents;
     m.examples=new Map(data.examples);m.skeletons=new Map(data.skeletons.map(([k,a])=>[k,new Map(a)]));
+    m.shorterIndex=new Map(data.shorterIndex||[]);
     m.rules=new Map(data.rules);m.interventions=new Map(data.interventions);m.last=data.last||null;
     return m;
   }
