@@ -1,0 +1,66 @@
+name: V17 first training page real text labyrinth acceptance
+on:
+  push:
+    branches:
+      - fix/V17-INLINE-LANGUAGE-MAZE-TRAINING-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-first-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse original V17 text model, native worker and first-page visualizer
+        run: |
+          node --check v17/transcend/torus-aether/worlds/constructed-paths.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/inline-text-maze.js
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/language-maze-view.js
+      - name: Real original worker learns text and automatically emits global shape / local cursor next to 2D maze and transforms without answer leakage
+        run: node --test v17/tests/inline-language-maze-native.test.mjs
+      - name: Preserve real original Brain, causal transformations, path learning, and all world types
+        run: |
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+          node --test v17/tests/language-maze-perspectives.test.mjs
+          node --test v17/tests/language-maze-native-http.test.mjs
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/torus-live-observability.test.mjs
+  firefox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real headless Firefox
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps firefox
+      - name: Real Firefox FIRST PAGE automatically displays native char hypermaze beside working original 2D worlds, tests gold first line, body, step replay
+        run: node --test v17/tests/inline-language-maze-firefox.test.mjs
+      - name: Preserve existing Firefox 5D separate tab and previous 7 instrument tabs
+        run: |
+          node --test v17/tests/language-maze-firefox.test.mjs
+          node --test v17/tests/torus-observatory-browser.test.mjs
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse original PowerShell CUDA entry points without overwriting user scripts
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($f in @('v17/START_V17.ps1','v17/START_V17_TRANSFER.ps1')){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($f+': '+($errors -join '; '))}
+          }
