@@ -83,7 +83,7 @@ export function captureSolutionShape(graph,brain,{gamma=.9,actorPolicy='native',
     const field=nativeAttractionField(graph,brain,at,{recordSweeps:true});
     const local=nativePlan(graph,brain,at);
     fieldUpdates++;
-    const choices=optionsFor(graph,at,field,sr,exact,visited);
+    const choices=optionsFor(graph,at,field,sr,shortest,visited);
     const originalExpected=initialPrediction[executed.length]??null;
     const delta=previousField===null?null:
       field.values.reduce((sum,v,i)=>sum+Math.abs(v-previousField[i]),0);
