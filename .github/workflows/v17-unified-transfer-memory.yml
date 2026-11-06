@@ -32,8 +32,34 @@ jobs:
         run: node --test v17/tests/torus-shared-perspective.test.mjs
       - name: Existing transport invariant regression
         run: node --test isolated/language-paths/cross_world_transfer.test.mjs
+      - name: Native V17 original engine CPU+NumPy behavioral regression
+        env:
+          OCTOPUS_PY: python
+        run: |
+          node --test v17/tests/torus-gpu-worlds.test.mjs
+          node --test v17/tests/torus-gpu-text-progress.test.mjs
+          node --test v17/tests/torus-unified-gpu-text-boot.test.mjs
+          node --test v17/tests/torus-unified-http.test.mjs
+          node --test v17/tests/torus-organism.test.mjs
       - name: Syntax-check modified Node integration
         run: |
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/brain.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
+  windows-powershell-parse:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell 5.1 compatible launchers without executing training
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $files = @("v17/START_V17.ps1", "v17/START_V17_UNIFIED.ps1", "v17/START_V17_TRANSFER.ps1", "v17/AUDIT_V17_TRANSFER.ps1")
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw ("PowerShell parse failed: " + $file + " " + ($errors -join "; ")) }
+            Write-Host ("Parsed: " + $file)
+          }
