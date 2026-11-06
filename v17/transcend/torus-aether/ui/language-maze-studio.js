@@ -64,8 +64,8 @@ function drawGraph(){
  for(let index=0;index<limit;index++){
   const e=G.edges[index],a=coords[e.from],b=coords[e.to];
   if(!a||!b)continue;
-  const inPath=wanted.has(e.from)&&wanted.has(e.to)&&result.pathNodes.includes(e.from)&&
-    result.pathNodes[result.pathNodes.indexOf(e.from)+1]===e.to;
+  const fromIndex=onRoute.get(e.from);
+  const inPath=fromIndex!==undefined&&onRoute.get(e.to)===fromIndex+1;
   ctx.strokeStyle=inPath?(route.has(e.to)?"rgba(91,238,194,.96)":"rgba(91,238,194,.5)"):"rgba(82,113,139,.25)";
   ctx.lineWidth=inPath?2.8:1;
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
