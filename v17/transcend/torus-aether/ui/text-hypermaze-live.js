@@ -94,8 +94,10 @@ async function poll(){
   if(!data.hypermaze){el("textMazeStatus").textContent=
     "Graful #"+selected+" nu are cognitivemap activ. Activează lumea cognitivemap și pornește trainerul.";return;}
   graph=data.hypermaze;
-  const now=String(graph.documents)+":"+String(graph.last?.id??"");
+  const now=String(graph.last?.id??"")+":"+String(graph.last?.start??"")+":"+String(graph.last?.goal??"");
   if(now!==lastKey){lastKey=now;frame=0;plan=null;}
+  if(!el("textMazeStart").value&&graph.last?.start)el("textMazeStart").value=graph.last.start;
+  if(!el("textMazeGoal").value&&graph.last?.goal)el("textMazeGoal").value=graph.last.goal;
   el("textMazeStatus").textContent="LIVE · worker #"+selected+
    " · documente "+graph.documents+" · date reale din backend";
   render();
