@@ -208,6 +208,16 @@ export class ConstructedPathLearner {
     // ONE prediction from an INCOMPLETE world, before any action.
     const predictedInitial=this.construct(belief,n,pos,world.goal,{visited:visits});
     const firstRoute=predictedInitial.map(x=>({...x}));
+    // This is EVALUATOR-ONLY scoring, calculated strictly after the first
+    // route is frozen. The planner receives no true dist, wall or teacher path.
+    let p0=world.start,firstCorrect=0;
+    for(const edge of firstRoute){
+      if(edge.from!==p0||edge.to<0||world.wall[edge.to]||
+        world.dist[edge.to]>=world.dist[p0])break;
+      firstCorrect++;p0=edge.to;
+    }
+    const firstShapeAccuracy=firstCorrect/
+      Math.max(1,firstRoute.length,world.dist[world.start]);
     let chosen=predictedInitial,at=0,lastUncertain=null;
     const trace=[],path=[pos],beforeObservations=belief.filter(v=>v===-1).length;
     while(pos!==world.goal&&steps<maxSteps){
@@ -271,6 +281,7 @@ export class ConstructedPathLearner {
     }
     const result={n,seed:world.seed,solved:pos===world.goal,steps,bumps,
       initialUnknowns:beforeObservations,firstShapeLength:firstRoute.length,
+      firstShapeAccuracy,firstCorrectSteps:firstCorrect,
       firstShape:firstRoute.map(x=>x.action),firstUncertain:firstRoute.filter(x=>x.uncertain).length,
       routeRepairs,learnedTrainingPairs:this.paired,
       seenCells:belief.filter(x=>x!==-1).length,goalVisibleAsCoordinate:true,
