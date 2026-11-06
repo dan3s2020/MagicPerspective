@@ -116,7 +116,8 @@ function control(sl, act) {
 // a new run without --resume keeps the old saves aside and starts from nothing
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
-const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
+const chats = new Map(); let chatId = 0;
+const successorCompareCache=new Map(); // comparison results, separate from all original V17 saves and brains                                     // talking to a graph: page → worker → page
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
@@ -157,6 +158,47 @@ http.createServer((req, res) => {
       try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; } return json(res, {...sl.talker.examMazes(sizes, per), fromSave: true}); } catch (err) { return json(res, {error: err.message}); } }
     const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 300 s"}); }, 300000);
     chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({exam: {id, sizes, per}}); return; }
+  // Dedicated observatory: both policies evaluate one worker snapshot, not
+  // two independently advancing training states. Never accept target answers.
+  if(req.method==="POST"&&url==="/language-maze/analyze"){
+    let body="",tooLarge=false;
+    req.on("data",chunk=>{body+=chunk;if(body.length>24000){tooLarge=true;req.destroy();}});
+    req.on("end",()=>{
+      if(tooLarge)return json(res,{error:"Request too large"});
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"invalid JSON"});}
+      if(Object.hasOwn(m,"answer")||Object.hasOwn(m,"reference"))
+        return json(res,{error:"held-out answer/reference forbidden"});
+      const w=Number(m.w??0),prompt=m.prompt;
+      if(!Number.isInteger(w)||typeof prompt!=="string"||prompt.length>20000||!prompt.trim())
+        return json(res,{error:"invalid graph or prompt"});
+      const sl=slots.find(x=>x.w===w);
+      if(!sl)return json(res,{error:"graph not found"});
+      if(!sl.wk){
+        const file=saveOf(sl)+".language-maze.v18.json";
+        if(!fs.existsSync(file))return json(res,{error:"No trained language-world checkpoint available"});
+        try{
+          const memory=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(file,"utf8")));
+          return json(res,{protocol:"FROZEN_SAME_EXPERIENCED_TEXT_WORLD",
+            original:memory.plan(prompt,{mode:"original"}),
+            hybrid:memory.plan(prompt,{mode:"hybrid"}),
+            trainingMemory:memory.stats(),sameWorkerSnapshot:true,
+            referenceEnteredPlanner:false,fromSavedWorld:true});
+        }catch(err){return json(res,{error:"language-world snapshot: "+err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"successor snapshot evaluation timeout"});},120000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result);});
+      sl.wk.postMessage({successorPairExam:{id,prompt}});
+    });
+    return;
+  }
+  // Show the last measured held-out result without resampling the dataset.
+  // Cache is local to this running server and clearly not a live score.
+  if(req.method==="GET"&&url==="/language-maze/compare-last"){
+    const w=Number(q.get("w")??0);
+    if(!Number.isInteger(w)||!slots.some(x=>x.w===w))return json(res,{error:"graph not found"});
+    const lastResult=successorCompareCache.get(w);
+    return json(res,lastResult?{available:true,...lastResult}:{available:false,reason:"No frozen held-out comparison in this server session"});
+  }
   // The reference answers live ONLY in the parent evaluator and are read
   // AFTER both frozen planners have completed. The worker/trainer receives no
   // held-out reference and no training or model update is permitted here.
@@ -190,13 +232,16 @@ http.createServer((req, res) => {
         const hybrid=memory.frozenCompare(pairs,{mode:"hybrid"});
         if(JSON.stringify(memory.export())!==originalState)
           throw Error("Frozen comparison changed observed-world memory");
-        return json(res,{protocol:"FROZEN_HELDOUT_SAME_WORLD_ABLATION",
+        const result={protocol:"FROZEN_HELDOUT_SAME_WORLD_ABLATION",
           graph:sl.w,heldoutRows:pairs.length,trainingRowsSeen:memory.stats().rowsObserved,
           original,hybrid,
           exactDelta:(hybrid.exactRate??0)-(original.exactRate??0),
           characterDelta:(hybrid.accuracy??0)-(original.accuracy??0),
           referenceEnteredPlanner:false,modelMutated:false,
-          note:"Compare the same saved brain on held-out Q/A; this is not proof of open-ended semantics"});
+          note:"Compare the same saved brain on held-out Q/A; this is not proof of open-ended semantics",
+          evaluatedAt:new Date().toISOString()};
+        successorCompareCache.set(sl.w,result);
+        return json(res,result);
       }catch(err){return json(res,{error:"Frozen comparison: "+err.message});}
     })();
     return;
