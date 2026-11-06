@@ -37,6 +37,8 @@ test('native V17 initial shape, actual cursor moves and every replanning frame a
     assert.equal(f.forecastError,Number(f.actual!==f.predictedNext));
     assert.equal(f.shape[0],f.at);
     assert.equal(f.field.length,graph.nodes.length);
+    assert.ok(f.fieldWave.length>=1);
+    assert.deepEqual(f.fieldWave.at(-1).values,f.field,'final measured relaxation must match displayed field');
   }
 });
 test('successor actor traverses ONLY observed edges; divergences are counted, not manufactured',()=>{
@@ -109,4 +111,10 @@ test('read-only original V17 character observer emits actual pre-learning predic
   const old=research.save(),restored=LiveResearch.restore(old);
   assert.deepEqual(restored.characterTrace,research.characterTrace);
   assert.equal(restored.characterSeen,input.length);
+  const beforeHits=a.align.hits,beforeSeen=a.align.seen;
+  research.captureFrozenCharacters(17,'Where is the archive?','Inside the library.',a);
+  assert.ok(research.frozenCharacterTrace.length>10);
+  assert.equal(research.frozenCharacterSourceIndex,17);
+  assert.equal(a.align.hits,beforeHits,'frozen observation must not train original model');
+  assert.equal(a.align.seen,beforeSeen,'frozen observation must not change train counter');
 });
