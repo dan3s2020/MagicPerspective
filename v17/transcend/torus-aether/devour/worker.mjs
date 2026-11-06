@@ -110,9 +110,11 @@ const saveText = () => {
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
 };
-const absorbText = row => {
+const absorbText = (row,{languageAlreadyObserved=false}={}) => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
-  languageMaze.learn(row.prompt,row.answer); // each observed answer is a world of successive real character transitions
+  // Complete original Q/A row committed to the training stream. In CUDA
+  // batches, the new learner has already observed EVERY completed row below.
+  if(!languageAlreadyObserved)languageMaze.learn(row.prompt,row.answer);
   textPaths.learn(row.prompt, row.answer);
   causalText.train(row.prompt, row.answer, textPaths,
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
@@ -230,7 +232,18 @@ const processGpuText = async (exs, meta) => {
     }
     changePhase("text: integrare în graful V17",sample.length,sample.length);
   }
-  for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  // The original causal-text tools intentionally sample a limited number
+  // of rows per GPU batch. The NEW language-world / successor training must
+  // not inherit that subsampling: every real, completed Q/A observation is
+  // consumed exactly once in its original order, without altering the
+  // existing causal tool's behavior or the original V17 CUDA alignment.
+  for(const row of meta){
+    if(typeof row?.prompt==="string"&&typeof row?.answer==="string"&&
+       row.prompt.trim()&&row.answer.trim())
+      languageMaze.learn(row.prompt,row.answer);
+  }
+  for(let j=0;j<meta.length;j+=Math.max(1,Math.floor(meta.length/8)))
+    absorbText(meta[j],{languageAlreadyObserved:true});
   changePhase("CUDA: model comun de transformări",0,shared.queue.length);
   await flushShared();
   if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
