@@ -12,6 +12,7 @@ import {SharedExperience} from "../shared/experience.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 import {BodyPerspectiveMemory} from "../perspective/body-memory.mjs";
+import {LanguageMazeMemory} from "../language-maze/language-world.mjs";
 import {gpuTextWindows,resumeSourceState,applyCompletedWindow,DEFAULT_GPU_WINDOW_CHARS} from "./gpu-text-windows.mjs";
 import {createHash} from "node:crypto";
 
@@ -79,6 +80,20 @@ brain.setSharedObserver(sample => {
 });
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
+// V18 independent experienced-world memory. The unchanged V17 .v8 Brain and
+// prior language sidecar remain byte-compatible and usable by other agents.
+const languageMazeFile = saveFile ? saveFile + ".language-maze.v18.json" : null;
+let languageMaze = new LanguageMazeMemory();
+if(resume&&languageMazeFile&&fs.existsSync(languageMazeFile)){
+  try{languageMaze=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(languageMazeFile,"utf8")));}
+  catch(err){parentPort.postMessage({type:"note",w:workerData.gw,text:"V18 language-world restore failed: "+err.message});}
+}
+const saveLanguageMaze=()=>{
+  if(!languageMazeFile)return;
+  fs.mkdirSync(path.dirname(languageMazeFile),{recursive:true});
+  fs.writeFileSync(languageMazeFile+".tmp",JSON.stringify(languageMaze.export()));
+  fs.renameSync(languageMazeFile+".tmp",languageMazeFile);
+};
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
@@ -97,6 +112,7 @@ const saveText = () => {
 };
 const absorbText = row => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
+  languageMaze.learn(row.prompt,row.answer); // each observed answer is a world of successive real character transitions
   textPaths.learn(row.prompt, row.answer);
   causalText.train(row.prompt, row.answer, textPaths,
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
@@ -109,12 +125,12 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), bodyPerspective: bodyPerspective.summary(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
-  if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); saveBodyPerspective(); } catch (err) { msg.saveError = err.message; } }
+    shared: shared.status(), bodyPerspective: bodyPerspective.summary(), languageMaze:languageMaze.stats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+  if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); saveBodyPerspective(); saveLanguageMaze(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { const now=performance.now(); if (lastShot && now-lastShot<(force?650:3000)) return; lastShot=now; try { brain.organismView(); } catch {}
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), bodyPerspective: bodyPerspective.summary(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), bodyPerspective: bodyPerspective.summary(), languageMaze:languageMaze.stats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false, fatalTrainingError = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -152,6 +168,7 @@ const emitTelemetry=()=>{
     chars:brain.chars,exercises:brain.exercises||0,lived:brain.lived,mazePlayed:brain.mazes.played,
     transformPlayed:brain.trans?.played||0,bodyTransitions:bodyPerspective.observed,
     sharedObserved:shared.total,sharedUpdates:shared.training?.step||0,sharedError:shared.error||null,
+    languageMaze:languageMaze.stats(),
     heapMB:Math.round(process.memoryUsage().heapUsed/1048576),
     textCharsPerSecond:+((brain.chars-c0)/Math.max(1,(now-t0)/1000)).toFixed(2),
     gpuDevice:gpuInfo?.device||gpuSet?.device||'off',gpuError:gpuError||null,
@@ -259,12 +276,22 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     })().catch(err => parentPort.postMessage({type: "chat", id, kind: "shared", error: err.message}));
     return;
   }
+  if(m&&m.languageMazeExam){
+    const {id,prompt}=m.languageMazeExam;
+    try{
+      // The unseen reference is never accepted by this protocol.
+      const r=languageMaze.plan(prompt,{maxReplay:256});
+      parentPort.postMessage({type:"chat",id,kind:"language-maze",...r,
+        trainingMemory:languageMaze.stats(),backend:"original V17 worker, experienced Q/A only"});
+    }catch(err){parentPort.postMessage({type:"chat",id,kind:"language-maze",error:err.message});}
+    return;
+  }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
-const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), saveBodyPerspective(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
+const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), saveBodyPerspective(), saveLanguageMaze(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
 let k = 0, textBatch = [], textMeta = [];
 const finishBatch=async()=>{
   if(!textBatch.length)return;
