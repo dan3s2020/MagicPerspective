@@ -26,6 +26,8 @@ class TextProgressTests(unittest.TestCase):
         self.assertTrue(all(t == total for _, t in done))
         self.assertEqual(result["seen"], total)
         self.assertIn((1, 1, "completed"), events)
+        self.assertTrue(any(phase == "indexing symbols" and done > 0 for done, _, phase in events))
+        self.assertTrue(any(phase == "indexing form" and done > 0 for done, _, phase in events))
 
 
 if __name__ == "__main__":
