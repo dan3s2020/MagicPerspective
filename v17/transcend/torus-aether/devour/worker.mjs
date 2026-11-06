@@ -276,6 +276,23 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     })().catch(err => parentPort.postMessage({type: "chat", id, kind: "shared", error: err.message}));
     return;
   }
+  // Read-only statistics and a genuinely OBSERVED prompt to view the
+  // actual learned graph immediately. This is TRAINING evidence, NEVER a
+  // hidden/held-out answer or a claimed successful unseen prediction.
+  if(m&&m.successorObservedStatus){
+    const {id}=m.successorObservedStatus;
+    const eligible=languageMaze.records;
+    const recent=[...eligible].reverse();
+    const picked=recent.find(r=>r.prompt?.length<=2000&&r.answer?.length>0&&r.answer.length<=384)
+      ||recent.find(r=>r.prompt?.length<=2000&&r.answer?.length>0&&r.answer.length<=4000);
+    parentPort.postMessage({type:"chat",id,kind:"successor-observed-status",
+      protocol:"OBSERVED_TRAINING_TEXT_WORLD",available:eligible.length>0,
+      trainingMemory:languageMaze.stats(),
+      observedPrompt:picked?.prompt||null,
+      observedAnswerLength:picked?.characters??null,
+      source:"previously_observed_training_question_not_unseen_test"});
+    return;
+  }
   // Two views of one exact in-memory training-world snapshot, serialized by
   // this worker event loop. No reference answer and no training during either
   // plan(). The original policy is computed before the optional successor.
