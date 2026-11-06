@@ -71,6 +71,8 @@ After multiple independent maze/transform/text episodes, in a separate PowerShel
 
 The tool creates `v17/runtime-transfer-20261106/frozen-transfer-text.json`. For real CUDA benchmark tensor execution, specify `-Device cuda:0` only after verifying free GPU memory. This benchmark reads a snapshot of the trace and **does not update training checkpoints**.
 
+**Two separate kinds of evaluation:** The original V17 UI's **Evaluează modelul comun (înghețat, lumi nevăzute)** evaluates the **currently trained, saved shared model** on independent frozen world events. By contrast, `AUDIT_V17_TRANSFER.ps1` starts **new, equally initialized research replicas** of the shared model using the recorded *training* transitions, splits them by full episode, and compares source vs target transfer controls. Its offline "held-out" records have **not** been used by these research replicas, but may previously have been seen by the live original brain that produced the log. Therefore the offline result tests architecture/training-transfer methodology, **not the current live brain's true unseen score**. Report these separately and do not leak the offline held-out records into the replicas' training.
+
 The audit splits complete recorded training episode groups into a *new offline train/heldout split* **before model initialization**; it is separate from the original V17 corpus's designated held-out examples, which it never reads. It trains equal-update original-geometry heads and evaluates frozen next-state prediction, comparing:
 
 - joint shared training with adaptive input noise;
