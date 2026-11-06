@@ -68,6 +68,20 @@ test('multi-step composition exposes different global vs local paths and true co
     'An actual detour must record its consequent attempted replan');
  }
 });
+test('autonomous structural SELF-PROBE comes only from learned operator observations and never injects a complete target into training',()=>{
+ const o=make(),before=o.report();
+ const goal=o.selfSelectedChallenge();
+ assert.ok(goal,'Four sentences should contain a genuinely new structural recombination goal');
+ assert.ok(goal.requiredEdits>=2,'Prefer actual multiple learned actions (nested maze) over a one-character copy');
+ assert.equal(goal.noReferenceAnswerProvided,true);
+ assert.equal(goal.source,'learned-operator-self-probe');
+ const p=o.plan({...goal,recordSearch:true});
+ assert.equal(p.found,true);
+ assert.equal(p.unseen,true);
+ assert.ok(p.initialShape.length>=3);
+ assert.equal(o.containsSentence(p.predicted),false);
+ assert.deepEqual(o.report(),before,'Selecting a self-probe must not overwrite trained learner');
+});
 test('original V17 persistent Brain reports frozen global/cursor experience with its own endogenous noise, no checkpoint contamination',()=>{
  const brain=new Brain({rules:'winner',seed:1234});
  for(const s of training)brain.learnObservedTransformations(s);
