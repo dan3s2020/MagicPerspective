@@ -16,6 +16,28 @@ import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_worl
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
+// A real text corpus may be Q/A pairs OR free prose. Both contain observed
+// state transitions: explicit question->answer, or earlier->later sentence.
+// Never synthesize a desired answer, and never use held-out paragraphs here.
+const splitObservedText = source => {
+  const t=String(source||"").trim();
+  const a=/(?:^|\n)\s*(?:A|Assistant)\s*:\s*/im.exec(t);
+  if(a){
+    const prompt=t.slice(0,a.index).replace(/^\s*(?:Q|User)\s*:\s*/im,"").trim();
+    const answer=t.slice(a.index+a[0].length).trim();
+    if(prompt.length>=5&&answer.length>=5)return {prompt,answer,provenance:"observed-QA"};
+  }
+  const sentences=(t.match(/[^.!?\n]+(?:[.!?]+|$)/gu)||[])
+    .map(x=>x.trim()).filter(x=>x.length>=15);
+  if(sentences.length>=2)return {prompt:sentences[0],answer:sentences.slice(1,4).join(" "),
+    provenance:"observed-consecutive-sentences"};
+  if(t.length>=120){
+    const cut=Math.min(350,Math.max(40,Math.floor(t.length/3)));
+    return {prompt:t.slice(0,cut),answer:t.slice(cut,Math.min(t.length,cut+1000)),
+      provenance:"observed-contiguous-span"};
+  }
+  return null;
+};
 
 async function* stream() {                                                 // this brain's share of the world, once
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
@@ -24,7 +46,11 @@ async function* stream() {                                                 // th
     for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
   } else {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
-      if (para.trim().length < 20) continue; if (k++ % n === w && !source.heldSet.includes(k)) yield {k, bytes: ascii(para + "\n\n")}; }
+      if (para.trim().length < 20) continue;
+      if (k++ % n === w && !source.heldSet.includes(k)) {
+        const observed = splitObservedText(para);
+        yield {k, bytes: ascii(para + "\n\n"), ...observed};
+      } }
   }
 }
 
