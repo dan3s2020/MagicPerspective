@@ -276,6 +276,22 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     })().catch(err => parentPort.postMessage({type: "chat", id, kind: "shared", error: err.message}));
     return;
   }
+  // Two views of one exact in-memory training-world snapshot, serialized by
+  // this worker event loop. No reference answer and no training during either
+  // plan(). The original policy is computed before the optional successor.
+  if(m&&m.successorPairExam){
+    const {id,prompt}=m.successorPairExam;
+    try{
+      const original=languageMaze.plan(prompt,{maxReplay:256,mode:"original"});
+      const hybrid=languageMaze.plan(prompt,{maxReplay:256,mode:"hybrid"});
+      parentPort.postMessage({type:"chat",id,kind:"successor-pair",
+        protocol:"FROZEN_SAME_EXPERIENCED_TEXT_WORLD",
+        original,hybrid,trainingMemory:languageMaze.stats(),
+        sameWorkerSnapshot:true,referenceEnteredPlanner:false,
+        explanation:"Two read-only plans on the same real worker, no training or held-out answer within planning."});
+    }catch(err){parentPort.postMessage({type:"chat",id,kind:"successor-pair",error:err.message});}
+    return;
+  }
   if(m&&m.languageMazeExam){
     const {id,prompt,mode="hybrid"}=m.languageMazeExam;
     try{
