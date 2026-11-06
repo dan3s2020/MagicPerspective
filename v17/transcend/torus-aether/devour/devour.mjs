@@ -174,6 +174,39 @@ http.createServer((req, res) => {
         const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
         opts.list = list.map(t => toB(t).slice(0, Math.max(50, +opts.max || 20000))); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
+  // This is a second, instrumented view of the SAME original learner.
+  // Search on ACTUAL learned edges is captured before any body action, then
+  // local action choices and corrective replans are returned for native replay.
+  // The only supplied goal is required tokens; no answer text or teacher path.
+  if(req.method==="POST"&&url==="/language-maze"){
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("text"))
+      return json(res,{error:"Selectează un graf care învață lumea text."});
+    const required=(q.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(!required.length||required.length>8||required.some(x=>x.length>80))
+      return json(res,{error:"Obiectivul trebuie să conțină 1–8 simboluri, nu răspunsul complet."});
+    const start=q.get("start")?.trim()||null;
+    if(start&&start.length>500)return json(res,{error:"Starea de pornire este prea lungă"});
+    const maxDepth=Math.max(1,Math.min(7,Math.trunc(+(q.get("maxDepth")||4))));
+    const localPolicy=q.get("local")!=="off";
+    if(!sl.wk){
+      const file=saveOf(sl);
+      if(!fs.existsSync(file))return json(res,{error:"Nu există un checkpoint pentru acest graf."});
+      try{
+        const brain=Brain.load(file);
+        return json(res,{...brain.planObservedTransformation(
+          {required,start,maxDepth},{trace:true,embodied:true,localPolicy}),
+          w:sl.w,fromSave:true});
+      }catch(err){return json(res,{error:err.message});}
+    }
+    const id=++chatId;
+    const timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Căutarea reală a depășit 60 secunde"});
+    },60000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({languageMaze:{id,required,start,maxDepth,localPolicy}});
+    return;
+  }
   // Native V17: the original Brain constructs a NEW sentence by composing
   // effects learned from actual observed differences, with a partial GOAL.
   // The correct complete answer is deliberately NOT part of the request.
