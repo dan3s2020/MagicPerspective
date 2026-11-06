@@ -673,6 +673,27 @@ $("cognitiveEvaluate").onclick = async () => {
   }catch(err){output.textContent="EROARE: "+err.message;}
   finally{button.disabled=false;}
 };
+$("cognitiveRecord").onclick = async () => {
+  const button=$("cognitiveRecord"),out=$("cognitiveRecordOut");
+  const before=$("cognitiveBefore").value,after=$("cognitiveAfter").value,
+    action=$("cognitiveAction").value,accepted=$("cognitiveAccepted").checked;
+  if(!action.trim()||!before.trim()||!after.trim()){
+    out.textContent="Înregistrează numai o acțiune reală, cu observații înainte/după și rezultat explicit.";return;
+  }
+  button.disabled=true;out.textContent="Înregistrez intervenția observată în același creier...";
+  try{
+    const response=await fetch("/cognitive-observe",{method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({w:liveW,before,after,action,accepted})});
+    const data=await response.json();
+    if(data.error){out.textContent="EROARE: "+data.error;return;}
+    out.textContent="Feedback observat: "+JSON.stringify(data.result,null,2)+
+      "\nHarta actualizată: "+JSON.stringify(data.report,null,2)+
+      "\nCheckpoint: "+(data.savedMB!=null?data.savedMB.toFixed(2)+" MB":"așteaptă salvarea");
+    await pullSelectedGraph();
+  }catch(err){out.textContent="EROARE: "+err.message;}
+  finally{button.disabled=false;}
+};
 let gpuShown = false;
 $("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext", $("addCognitive").checked && "cognitivemap"].filter(Boolean); if (!worlds.length) return;
   try {
