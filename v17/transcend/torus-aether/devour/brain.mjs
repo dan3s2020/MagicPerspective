@@ -10,6 +10,7 @@ import {Geometry} from "../concepts.mjs";
 import {LivedField, MomentSpace} from "../fractal.mjs";
 import {GraphTrace} from "./trace.mjs";
 import {AligningGraph, AlignMemory, AlignIndex, SelfMem} from "../align.mjs";
+import {navigateWrittenText} from "../text-route-navigation.mjs";
 import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
 import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
@@ -93,18 +94,21 @@ export class Brain {
   // talking to it: the conversation in the shape of what it devoured ("Q: …\nA: …"), and it writes the answer symbol by
   // symbol from its own graph (chain.play → chain.pick at temperature T: the same way "Scrie liber" writes on the page).
   // learn = it also lives the words it is told (and its own answer), like any other world; otherwise it only answers.
-  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
+  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, navigation = false, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
     const asc = s => { const o = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; o.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return o; };
     const prompt = asc(history.map(([who, text]) => (who === "you" ? "Q: " : "A: ") + text + "\n" + (who === "you" ? "" : "\n")).join("") + "A: ");
     if (learn) for (const y of prompt) this.live(y);
-    let ans;
-    if (this.align) { const r = rngFrom(seed); ans = this.align.write(prompt, {max, T, rand: r, stop: stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null}); if (stopBlank && ans.at(-1) === 10) ans.pop(); }   // the aligning graph writes
+    let ans, route = null;
+    if (this.align) { const r = rngFrom(seed), stop = stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null;
+      if (navigation) { const output = navigateWrittenText(this.align, prompt, {max, T, rand: r, stop}); ans = output.bytes; route = output.route; }
+      else ans = this.align.write(prompt, {max, T, rand: r, stop});
+      if (stopBlank && ans.at(-1) === 10) ans.pop(); }   // the aligning graph writes
     else { const out = prompt.slice(), keep = this.chain.rand; ans = []; this.chain.rand = rngFrom(seed);
       for (let k = 0; k < max; k++) { const i = out.length, y = this.chain.pick(this.chain.play(this.e, this.ctxOf(out, i), this.histOf(out, i)).out, T);
         if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
       this.chain.rand = keep; }
     if (learn) for (const y of [...ans, 10, 10]) this.live(y);
-    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived};
+    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived, ...(route ? {route} : {})};
   }
   // A learned token/phrase perspective drawn from the SAME native text the Brain
   // lives, not a substituted language demo. Multiple context scales compete on

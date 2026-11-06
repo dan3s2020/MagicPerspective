@@ -357,8 +357,10 @@ function evaluate() {
 }
 function write() {
   if (LIVE) { $("writeOut").textContent = "scrie…";                        // the graph in the trainer writes freely, at the writing temperature
-    fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: [], opts: {T: val("wtemp"), max: 1200, stopBlank: false}})}).then(r => r.json()).then(r => {
-      $("writeOut").innerHTML = r.error ? r.error : `T ${(+val("wtemp")).toFixed(2)} · graful #${liveW}<div class="gen">${String(r.text).replace(/</g, "&lt;").replace(/\n/g, " ⏎ ")}</div>`; }).catch(err => $("writeOut").textContent = err.message);
+    fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: [], opts: {T: val("wtemp"), max: 1200, stopBlank: false, navigation: $("routeNav").checked}})}).then(r => r.json()).then(r => {
+      const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+      const route = r.route, info = route ? `<div class="dim">Traseu real: ${route.revisits} stări revizitate · ${route.alternativeEdges} tranziții alternative · ${(route.repetitionRate8*100).toFixed(1)}% 8-grame repetate · ${route.singleChoice} pași fără alternativă</div><details><summary>Ultimele ${route.path.length} tranziții reale (context → caracter)</summary><pre>${esc(route.path.map(x => x.step+" "+JSON.stringify(x.state)+" → "+JSON.stringify(x.character)+" ["+x.sources.join(",")+"]"+(x.newEdge?" ESCAPE":x.revisited?" revisit":"")).join("\n"))}</pre></details>` : "";
+      $("writeOut").innerHTML = r.error ? esc(r.error) : `T ${(+val("wtemp")).toFixed(2)} · graful #${liveW}<div class="gen">${esc(r.text).replace(/\n/g, " ⏎ ")}</div>${info}`; }).catch(err => $("writeOut").textContent = err.message);
     return; }
   const T = val("wtemp"), out = e.holdout.slice(0, 12), N = 1200, keep = chain.rand; chain.rand = rng((Math.random() * 2 ** 32) >>> 0);
   for (let k = 0; k < N; k++) { const i = out.length, p = chain.play(e, ctxAt(out, i), histAt(out, i)).out; out.push(chain.pick(p, T)); }
