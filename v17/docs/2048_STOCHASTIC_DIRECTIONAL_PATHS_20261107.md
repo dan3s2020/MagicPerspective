@@ -47,6 +47,43 @@ Checks:
 
 One benchmark state: left/right produce 22 next-world chance branches, up/down produce 18. The action changes the STRUCTURE of random future alternatives.
 
+## Exact directional NOISE AXES in a 16D board-state representation
+
+A 4×4 2048 board is spatially 2D, but represents a 16-component vector
+(1 feature per cell). After one legal action, noise creates a new tile at
+one of the currently free cell coordinates. This is NOT a physical 16D world,
+but a useful exact xD STATE SPACE of the same world.
+
+For n free cells, random increment X=V*e_J with J uniform on free cells
+and V independent, P(V=2)=.9, P(V=4)=.1.
+
+    E[V]=2.2
+    E[V^2]=5.2
+    Var[V]=0.36
+    E[X]=(2.2/n) * 1_free
+    Cov[X]_free = (5.2/n)*I - (4.84/n^2)*11^T.
+
+Eigenvalues:
+- 5.2/n, multiplicity n-1, for directions that shift chance between free cells;
+- 0.36/n, multiplicity 1, for the common direction (total injected value);
+- zero on every already occupied cell coordinate.
+
+Thus covariance rank is exactly n, and the supported axes depend directly
+on the ACTION because sliding/merging changes which cells are free.
+
+Verified all covariance entries from exact outcome enumeration to 1e-12:
+- LEFT: n=11 active dimensions, 22 possible next-world states
+- RIGHT: n=11 active dimensions, 22 outcomes, but different active coordinates
+- UP: n=9 active dimensions, 18 outcomes
+- DOWN: n=9 active dimensions, 18 outcomes, again different coordinates.
+
+This **proves action-dependent reshaping of the stochastic support subspace**
+for the 2048 environment. It does not prove that the noise literally is a
+rotation or that the original MagicPerspective xD geometry has learned it.
+A high-dimensional language hypothesis can now be tested by estimating
+actual post-action transition residual covariance and checking its causal
+dependence on action rather than merely visualizing random data.
+
 ## Another important clue: randomness supplies resources, not just uncertainty
 
 The first phase (all slides and merges) is CONSERVATIVE:
