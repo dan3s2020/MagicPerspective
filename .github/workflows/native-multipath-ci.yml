@@ -4,6 +4,7 @@ on:
     branches:
       - experiment/V17-MULTIPATH-SUCCESSOR-ISOLATED-20261106
       - experiment/V17-LIVE-MULTIPATH-OBSERVATORY-20261106
+      - experiment/V17-TEXT-SOLUTION-SHAPE-REPLAY-20261106
   workflow_dispatch:
 jobs:
   source-parity-and-research:
@@ -20,6 +21,7 @@ jobs:
           node --test isolated/native-language-paths/repetition.test.mjs
           node --test isolated/native-language-paths/live-research.test.mjs
           node --test isolated/native-language-paths/import-previous.test.mjs
+          node --test isolated/native-language-paths/solution-shape-trace.test.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -39,11 +41,14 @@ jobs:
           node --check isolated/native-language-paths/repetition.mjs
           node --check isolated/native-language-paths/live-research.mjs
           node --check isolated/native-language-paths/import-previous.mjs
+          node --check isolated/native-language-paths/solution-shape-trace.mjs
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/app.js
           node --check v17/transcend/torus-aether/ui/research-panel.mjs
           node --check v17/transcend/torus-aether/ui/research-charts.mjs
+          node --check v17/transcend/torus-aether/ui/research-replay.mjs
+          node --check v17/transcend/torus-aether/ui/research-replay-draw.mjs
 
   powershell5-launcher:
     runs-on: windows-latest
@@ -68,5 +73,5 @@ jobs:
       - name: Run V17 2D, graph and generator unit tests on Windows Node.js
         shell: powershell
         run: |
-          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs isolated/native-language-paths/live-research.test.mjs isolated/native-language-paths/import-previous.test.mjs
+          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs isolated/native-language-paths/live-research.test.mjs isolated/native-language-paths/import-previous.test.mjs isolated/native-language-paths/solution-shape-trace.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Real-source regression tests failed on Windows' }
