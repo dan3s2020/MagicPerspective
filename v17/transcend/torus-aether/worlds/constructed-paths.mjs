@@ -175,7 +175,7 @@ export class ConstructedPathLearner {
   // A test world contains only START + GOAL + currently sensed local patch.
   // Paths are proposed using its own belief map before an action, then revised
   // from observed movement/no-movement. Teacher BFS is metric-only.
-  navigateBlind(world,{maxSteps=world.n*world.n*6,record=false,train=false,noiseAgent=null}={}) {
+  navigateBlind(world,{maxSteps=world.n*world.n*6,record=false,train=false,noiseAgent=null,live=null,onTransition=null}={}) {
     const n=world.n,belief=new Int8Array(n*n).fill(-1),visits=new Uint16Array(n*n);
     let pos=world.start,steps=0,bumps=0,routeRepairs=0,madePredictions=0;
     ConstructedPathLearner.reveal(world,belief,pos,2);
@@ -202,6 +202,19 @@ export class ConstructedPathLearner {
       const portal=noiseAgent?.decide({domain:'maze',known:this.examples>0,planned:chosen.length>0})||null;
       if(portal&&['action','imagination'].includes(portal.site))
         a=noiseAgent.output(a,4,portal);
+      // This is a REAL local retinal view, not the hidden complete map.
+      // Feed the original V17 Brain (and optionally shared PyTorch transition
+      // queue) rather than training a disconnected demonstration agent.
+      if(live){
+        const S=[1,2,3,4];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+          const x=pos%n+dx,y=Math.floor(pos/n)+dy,j=y*n+x;
+          const v=x<0||y<0||x>=n||y>=n||belief[j]===-1?0:belief[j]===1?1:
+            j===world.goal?2:j===pos?3:0;
+          live(S[v]);
+        }
+        live([5,6,7,8][a]);
+      }
+      const beforeBelief=Array.from(belief);
       const j=nextCell(world,pos,a),before=pos;
       const moved=j>=0&&!world.wall[j];
       if(moved){pos=j;path.push(pos);visits[pos]++;} else bumps++;
@@ -212,6 +225,9 @@ export class ConstructedPathLearner {
       if(j>=0)belief[j]=moved?0:1;
       if(moved)ConstructedPathLearner.reveal(world,belief,pos,2);
       if(train)this.links.observe(state,action,'maze:'+world.seed+':'+n+':'+pos);
+      if(live)live(moved?30:31);
+      if(onTransition)onTransition({domain:'maze',before:beforeBelief,after:Array.from(belief),
+        action:'move:'+a,context:'mask:'+n,worldSeed:world.seed});
       if(portal&&train)noiseAgent.learn(portal,{before:[before],after:[pos],solved:pos===world.goal});
       if(record)trace.push({step:steps,from:before,to:pos,proposed,action:a,moved,
         sensedCells:belief.filter(x=>x!==-1).length,portal:portal?.site||'none',
