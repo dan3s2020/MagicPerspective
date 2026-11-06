@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {NestedTextGears} from '../isolated/noise-space/nested_text_gears.mjs';
+import {NestedTextGears} from './nested_text_gears.mjs';
 const asText=a=>a.join(' ')+'.';
 const cases=['She is happy','She is tired','He is tired','He is calm'];
 test('unseen combination is produced from learned transformations and executed per character',()=>{
