@@ -80,3 +80,22 @@ test("single original Brain can compare five temperatures from the same weights 
   assert.equal(brain.lived,beforeLived);
   assert.equal(plain.pathTrace,undefined);
 });
+
+test("causal control: permuting the learned 5D symbol positions changes the map but NOT the native text choice",()=>{
+  const brain=new Brain({rules:"winner",seed:13});
+  brain.align=trainedAlign();
+  for(let i=1;i<text.length;i++)brain.trace.geo.learn(text.charCodeAt(i-1),text.charCodeAt(i));
+  const opts={T:.95,max:210,seed:728,stopBlank:false,observePath:true};
+  const before=brain.chat([],opts);
+  const entries=[...brain.trace.geo.U.entries()];
+  const reversed=entries.map(x=>x[1].slice()).reverse();
+  for(let i=0;i<entries.length;i++)brain.trace.geo.U.set(entries[i][0],reversed[i]);
+  const after=brain.chat([],opts);
+  assert.equal(after.text,before.text,
+    "current write() is not causally conditioned on learned 5D symbol coordinates");
+  assert.deepEqual(after.pathTrace.steps.map(x=>x.byte),before.pathTrace.steps.map(x=>x.byte));
+  assert.notDeepEqual(after.pathTrace.steps.map(x=>x.to5D),
+    before.pathTrace.steps.map(x=>x.to5D),"the measured 5D map changed");
+  console.log("GEOMETRY_CAUSAL_CONTROL",
+    JSON.stringify({sameText:after.text===before.text,changedCoordinates:true,generated:before.text.length}));
+});
