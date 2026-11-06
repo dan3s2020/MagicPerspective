@@ -230,8 +230,7 @@ export class LanguageMazeMemory {
      transformation:best.transformation,localChoices:local.length,
      predictedCharacter:predicted,agreesWithGlobal:same,
      globalShapeLength:result.length,localRemaining:Math.max(0,result.length-i-1),
-     policy:successor?"local_neighbor_hillclimb_with_successor_exact_ties":
-       "local_neighbor_hillclimb_of_remembered_global_field",
+     policy:"local_neighbor_hillclimb_of_remembered_global_field",
      successorBefore:successor?.values[before]??null,
      successorAfter:successor?.values[bodyPosition]??null
     });
@@ -247,8 +246,7 @@ export class LanguageMazeMemory {
    input:prompt,output,propagation:field.propagation,solvedKnownGoal:!!result&&localReachedGoal,
    abstained:!result,reason:result&&!localReachedGoal?"LOCAL_PATH_BLOCKED":field.reason,steps:result?.length||0,
    locallyExecutedSteps:emitted.length,localAgreementRate:result?.length?localAgreement/result.length:null,
-   localBlockedSteps:blocked,bodyPolicy:successor?
-      "local_neighbor_hillclimb_with_successor_exact_ties":"local_neighbor_hillclimb_of_remembered_global_field",
+   localBlockedSteps:blocked,bodyPolicy:"local_neighbor_hillclimb_of_remembered_global_field",
    successor:successor?{enabled:true,mode,gamma:successor.gamma,converged:successor.converged,
       iterations:successor.iterations,rootOccupancy:successor.values[0],
       globalTieBreaks:field.successorTieBreaks,localTieBreaks:localSuccessorTies,
