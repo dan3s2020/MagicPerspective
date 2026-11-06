@@ -21,8 +21,23 @@ export class ObservedTextPathMap {
         " branches; "+q.repeatedContextStates+" revisited contexts; "+
         q.known5DTransitions+" actual 5D transitions";
     });
+    const reference=this.paths[this.selected];
+    if(this.paths.length>1) for(const other of this.paths) {
+      if(other===reference)continue;
+      const a=reference.trace.steps,b=other.trace.steps;
+      let first=-1;for(let i=0;i<Math.min(a.length,b.length);i++)if(a[i].byte!==b[i].byte){first=i;break;}
+      if(first<0&&a.length!==b.length)first=Math.min(a.length,b.length);
+      if(first<0) s.push("T "+other.T.toFixed(2)+" vs T "+reference.T.toFixed(2)+": identical on observed horizon");
+      else {
+        const x=a[first],y=b[first];
+        s.push("First true decision fork: T "+reference.T.toFixed(2)+" vs T "+other.T.toFixed(2)+
+          " · step "+first+" · "+JSON.stringify(x?.symbol)+" / "+JSON.stringify(y?.symbol)+
+          " · Δ5 "+JSON.stringify(x?.delta5D)+" / "+JSON.stringify(y?.delta5D)+
+          " · sources "+(x?.supportingPerspectives||[]).map(z=>z.perspective).slice(0,3).join(","));
+      }
+    }
     this.summary.textContent=s.join("\n")+
-      "\nView: actual symbol positions in learned 5-torus; contexts and proposals are separate, not geometric axes. No decoding or training is modified.";
+      "\nReplay of measured choices, frozen snapshot+seed. Coordinates belong to symbols, not whole sentences; no causal 5D choice is claimed.";
   }
   geometry(angles) {
     const axes=[0,1,2,3,4];
@@ -73,6 +88,20 @@ export class ObservedTextPathMap {
       const first=pts.find(Boolean),last=pts.findLast(Boolean);
       if(first){const v=at(first);g.fillStyle=colors[j%colors.length];g.fillRect(v.x-3,v.y-3,6,6);}
       if(last){const v=at(last);g.fillStyle=colors[j%colors.length];g.beginPath();g.arc(v.x,v.y,4,0,7);g.fill();}
+    });
+    // Animated REPLAY of the actually generated decision paths, not a synthetic path.
+    const replayStep=Math.floor(Date.now()/65);
+    projected.forEach((pts,j)=>{
+      if(!pts.length)return;
+      const target=pts[replayStep%pts.length];
+      if(!target)return;
+      const q=at(target);g.fillStyle=colors[j%colors.length];
+      g.beginPath();g.arc(q.x,q.y,j===this.selected?6:4,0,Math.PI*2);g.fill();
+      if(j===this.selected){
+        this.detail.textContent="Replay of actual step "+target.st.step+" · char "+JSON.stringify(target.st.symbol)+
+          " · context "+JSON.stringify(target.st.context.slice(-18))+
+          " · P "+target.st.probability+" · Δ5 "+JSON.stringify(target.st.delta5D);
+      }
     });
     g.font="12px ui-monospace,monospace";
     this.paths.forEach((p,i)=>{g.fillStyle=colors[i%colors.length];g.fillText("T "+p.T.toFixed(2),12+i*72,16)});
