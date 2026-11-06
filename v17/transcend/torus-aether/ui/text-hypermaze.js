@@ -349,6 +349,7 @@ function explainStep(){
  text("hmStepDetails",model.kind==="observed"?stepMessageObserved():stepMessageUnseen());
 }
 function visibleInSlice(coord){
+ if(!Array.isArray(coord))return false;
  if(!$("hmSliceEnabled").checked)return true;
  const w=(coord?.length===5?coord[4]:coord?.[3])??0;
  const slice=num("hmSlice")*2-1;
