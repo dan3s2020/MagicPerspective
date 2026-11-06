@@ -60,6 +60,21 @@ test('an ORIGINAL V17 text worker emits independent backend heartbeat on a real 
   const graphs=await r.json();
   assert.equal(graphs.graphs[0].w,0);
   assert.equal(graphs.graphs[0].progress.type,'telemetry');
+  // Native V17 graph API still serves actual scene snapshots separately.
+  const original=await fetch('http://127.0.0.1:'+port+'/graph?w=0');
+  assert.equal(original.status,200);
+  const scene=await original.json();
+  assert.ok(Array.isArray(scene.nodes),'Original native 5D graph scene must remain accessible');
+  // Heartbeat is independent: it can advance while scene snapshots are throttled.
+  const t0=t.observedAt;
+  let latest=null;
+  for(let i=0;i<28;i++){
+    await delay(250);
+    const now=await (await fetch('http://127.0.0.1:'+port+'/telemetry?w=0')).json();
+    if(now.telemetry?.observedAt>t0){latest=now.telemetry;break;}
+  }
+  assert.ok(latest,'Heartbeat timestamp did not advance with an actual worker');
+  assert.ok(latest.observedAt>t0);
  }finally{
   child.kill('SIGTERM');
   await delay(350);
