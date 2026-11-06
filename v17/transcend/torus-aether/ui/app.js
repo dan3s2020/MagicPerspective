@@ -14,6 +14,7 @@ import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
 import {NestView, PLANES6, rotation6} from "./nestview.mjs";
+import {setupResearchTab} from "./research-panel.mjs";
 const mazeLabel = c => { const i = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15].indexOf(c); return i < 0 ? null : i < 4 ? "◆" + "αβγδ"[i] : "▶" + (i - 4); };   // the exercise's raw symbols: no meaning given
 
 const ctxAt = (d, i) => Array.from({length: 4}, (_, j) => d[(i - j - 1 + d.length) % d.length]);
@@ -543,8 +544,8 @@ fetch("/corpus").then(r => r.json()).then(c => {
 // ---- the Evaluare tab: a copy from the save, on the CPU, on unseen labyrinths / text / desired configurations; first attempt ----
 { let R = null, kind = "maze", cur = 0, t0 = 0, evAgainNow = false;
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(1) + "%", side = document.querySelector("aside.side");
-  $("tabTrain").onclick = () => { side.classList.remove("evalOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); };
-  $("tabEval").onclick = () => { side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("evW").textContent = "#" + liveW; };
+  $("tabTrain").onclick = () => { side.classList.remove("evalOn","researchOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); $("tabResearch").classList.remove("on"); };
+  $("tabEval").onclick = () => { side.classList.remove("researchOn"); side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("tabResearch").classList.remove("on"); $("evW").textContent = "#" + liveW; };
   $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
   const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
@@ -612,3 +613,6 @@ fetch("/corpus").then(r => r.json()).then(c => {
   setInterval(() => { if (!LIVE || !liveSnap?.controls || shownFor === liveW) return; shownFor = liveW;
     for (const k of keys) if (liveSnap.controls[k] != null) { $(k).value = liveSnap.controls[k]; const o = $(k + "Out"); if (o) o.textContent = liveSnap.controls[k]; } }, 500);
 }
+
+// Opt-in observability from the exact original live V17 worker (no simulated data).
+setupResearchTab({getSelectedBrain:()=>liveW,isLive:()=>LIVE});
