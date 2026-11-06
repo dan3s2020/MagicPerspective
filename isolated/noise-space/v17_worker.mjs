@@ -23,7 +23,7 @@ const pathFile=path.join(dir,'text_action_paths.json');
 const causalFile=path.join(dir,'causal_text_world.json');
 const docs=path.resolve(here,'../../v17/docs/TORUS_AETHER_ABC_20261104.md');
 const modesAllowed=['text','maze','transform'];
-let brain=null,geo=null,pathHead=null,causalAgent=null,causalTraining=true,run=false,paused=false,remaining=0,modes=modesAllowed.slice();
+let brain=null,geo=null,pathHead=null,causalAgent=null,causalTraining=true,causalMaxActions=48,run=false,paused=false,remaining=0,modes=modesAllowed.slice();
 let episode=0,idx=0,cursor=0,sourceText='',userText=false,seenTexts=0;
 let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=null,evaluation={};
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
@@ -90,7 +90,7 @@ function state(withTrace=true){
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
   last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
   textPaths:pathHead?.summary()||null,navigationQuery,
-   causalMode:{enabled:causalTraining,world:'training Q/A intervention environment',actionValueDevice:'CPU/JavaScript',v17BrainReceivesActions:true},
+   causalMode:{enabled:causalTraining,maxActions:causalMaxActions,world:'training Q/A intervention environment',actionValueDevice:'CPU/JavaScript',v17BrainReceivesActions:true},
    causalText:causalAgent?.summary()||null,causalCheckpoint:path.relative(here,causalFile),
   lastSave,error,lastDurationMs,checkpoint:path.relative(here,checkpoint),
   trace:withTrace&&brain?copyTrace():null,
@@ -192,14 +192,14 @@ async function evaluateText(){
  }
  if(H.length<80){evaluation.text={frozen:true,n:H.length,aligned:null,chain:null,persistence:null,
   assessment:labelEvent('text',{n:H.length}),navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},
-  causalNavigation:navHoldout&&causalAgent.value.updates?causalAgent.evaluate(String(navHoldout.prompt),String(navHoldout.answer),pathHead,{steps:24}):{status:'NOT_TRAINED'},...meta};return;}
+  causalNavigation:navHoldout&&causalAgent.value.updates?causalAgent.evaluate(String(navHoldout.prompt),String(navHoldout.answer),pathHead,{steps:64}):{status:'NOT_TRAINED'},...meta};return;}
  const r=brain.evalText(H,H.length);
  const baseline=H.reduce((sum,y,i)=>sum+(i>0&&y===H[i-1]),0)/H.length;
  evaluation.text={frozen:true,n:H.length,aligned:r.aligned,chain:r.live,persistence:baseline,
   sampledPredictions:r.rows.slice(0,100).map((z,i)=>({step:i,actual:z[0],predicted:z[1],old:z[3]})),
   assessment:labelEvent('text',{n:H.length,heldoutAccuracy:r.aligned,heldoutPersistence:baseline}),
   navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},
-  causalNavigation:navHoldout&&causalAgent.value.updates?causalAgent.evaluate(String(navHoldout.prompt),String(navHoldout.answer),pathHead,{steps:24}):{status:'NOT_TRAINED'},
+  causalNavigation:navHoldout&&causalAgent.value.updates?causalAgent.evaluate(String(navHoldout.prompt),String(navHoldout.answer),pathHead,{steps:64}):{status:'NOT_TRAINED'},
   ...meta,checkedAtEpisode:episode};
 }
 async function textEpisode(){
@@ -239,7 +239,7 @@ async function textEpisode(){
   // The CURRENT answer remains inside the training environment reward.
   if(causalTraining){
    if(!causalAgent.dynamics.observations)causalAgent.probe(causalAgent.seed);
-   const trial=causalAgent.train(row.prompt,row.answer,pathHead,{maxActions:14,seed:causalAgent.episodes*7919+11});
+   const trial=causalAgent.train(row.prompt,row.answer,pathHead,{maxActions:causalMaxActions,seed:causalAgent.episodes*7919+11});
    if(trial.trained){causalRows++;causalActions+=trial.steps;liveCausalExperience(trial.events);}
   }
   if(pathHead.learn(row.prompt,row.answer).trained)pathRows++;
@@ -433,6 +433,7 @@ parentPort.on('message',async m=>{
    if(!selected.length)throw Error('Select at least one real world');
    modes=[...new Set(selected)];
    causalTraining=m.causalTextEnabled!==false;
+   causalMaxActions=Math.max(1,Math.min(256,Math.trunc(Number(m.causalMaxActions)||48)));
    const previousRoot=sourceRoot;
    if(m.sourceKind==='docs'){
     sourceRoot='';userText=false;if(previousRoot)cursor=0;
@@ -470,7 +471,7 @@ parentPort.on('message',async m=>{
    const prompt=String(m.prompt||'').trim().slice(0,1600);
    if(!prompt)throw Error('Enter a nonempty causal-language question');
    if(!causalAgent.value.updates)throw Error('Train on actual Q/A examples before causal navigation');
-   const route=causalAgent.navigate(prompt,pathHead,{steps:24});
+   const route=causalAgent.navigate(prompt,pathHead,{steps:64});
    navigationQuery={status:'CAUSAL_QUERY',prompt,causalRoute:route,at:new Date().toISOString(),
     note:'No reference answer or training reward supplied for this query.'};
    publish();
