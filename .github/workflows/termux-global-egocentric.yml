@@ -1,0 +1,34 @@
+name: Termux isolated global-to-body learning proof
+on:
+  push:
+    branches:
+      - experiment/TERMUX-GLOBAL-EGOCENTRIC-LEARNING-20261106
+    paths:
+      - 'isolated/termux-perspective/**'
+      - '.github/workflows/termux-global-egocentric.yml'
+      - 'v17/transcend/torus-aether/worlds/labyrinth.mjs'
+  workflow_dispatch:
+jobs:
+  node-portable:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static source checks
+        run: |
+          node --check isolated/termux-perspective/engine.mjs
+          node --check isolated/termux-perspective/run.mjs
+          node --check isolated/termux-perspective/test.mjs
+      - name: Learning, ablation and heldout regression tests
+        run: node --test isolated/termux-perspective/test.mjs
+      - name: Smoke CLI (no internet, no external dependencies)
+        run: node isolated/termux-perspective/run.mjs --train 64 --test 8 --size 9 --no-serve
+      - name: Verify persisted heldout evidence
+        run: node -e "const fs=require('fs');const p='isolated/termux-perspective/runs/latest.json';const s=JSON.parse(fs.readFileSync(p,'utf8'));if(s.metadata.trainedV17Brain!==false||s.trained.count!==8||s.replay[0].globalReReads!==0)process.exit(1);console.log('PERSISTED_EVIDENCE_OK')"
