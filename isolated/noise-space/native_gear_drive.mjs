@@ -131,6 +131,10 @@ export class NativeGearDrive {
     if(typeof question!=='string')return {used:false,reason:'no user goal'};
     const P=this.propose(question,{seed,maxStates:MAX_STATES});
     if(!P.used){this.blocked++;this.lastPlan={used:false,reason:P.reason};return P;}
+    // V17's original byte writer is ASCII-only; never claim that a Unicode
+    // plan was emitted unchanged if Brain.chat would replace chars with '?'.
+    if(/[^\x20-\x7E]/u.test(P.text)){this.blocked++;
+      return {used:false,reason:'original V17 character writer is ASCII-only; Unicode plan not emitted'};}
     if(P.text.length>Math.min(400,Math.max(1,Number(max)||400))){
       this.blocked++;return {used:false,reason:'limited by requested character budget'};
     }
