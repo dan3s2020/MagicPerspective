@@ -616,14 +616,14 @@ fetch("/corpus").then(r => r.json()).then(c => {
 }
 
 // ---- the Evaluare tab: a copy from the save, on the CPU, on unseen labyrinths / text / desired configurations; first attempt ----
-{ let R = null, kind = "maze", cur = 0, t0 = 0, evAgainNow = false;
+{ let R = null, kind = "maze", cur = 0, t0 = 0, evAgainNow = false, textPage = 0;
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(1) + "%", side = document.querySelector("aside.side");
   $("tabTrain").onclick = () => { side.classList.remove("evalOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); };
   $("tabEval").onclick = () => { side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("evW").textContent = "#" + liveW; };
   $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
   const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
-  const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; t0 = performance.now(); table(); if (kind === "text") textView(); };
+  const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; textPage = 0; t0 = performance.now(); table(); if (kind === "text") textView(); };
   const table = () => { const L = items(); if (!L.length) { $("evalTab").innerHTML = ""; return; }
     if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>forma scrisă înainte</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td></tr>`).join("") + "</table>";
       for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); return; }
@@ -631,13 +631,29 @@ fetch("/corpus").then(r => r.json()).then(c => {
       ? "<table><tr><th align=left>labirint</th><th>forma prezisă înainte</th><th>a ajuns</th><th>pași / optim</th><th>pași după formă / explorare</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n}×${m.n}</td><td align=center>${pct(m.first)}</td><td align=center>${m.solved ? "<b style='color:var(--green)'>da</b>" : "nu"}</td><td align=center>${m.steps} / ${m.optimal}</td><td align=center>${m.how?.plan ?? 0} / ${m.how?.explore ?? 0}</td></tr>`).join("") + "</table>"
       : "<table><tr><th align=left>sarcina</th><th>rezultat</th><th>pași / optim</th><th>predicții greșite</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.impossible ? "imposibilă" : m.goals.join(" + ")} ${m.n}×${m.n}</td><td align=center>${m.impossible ? (m.said ? "<b style='color:var(--green)'>a spus: imposibil</b>" : "n-a recunoscut") : m.solved ? "<b style='color:var(--green)'>atinsă</b>" : m.said ? "a spus imposibil" : "nu"}</td><td align=center>${m.steps} / ${m.optimal ?? "—"}</td><td align=center>${m.predicted ? m.failed + "/" + m.predicted : "—"}</td></tr>`).join("") + "</table>";
     for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); };
-  const textView = () => { const X = kind === "text" && R.exercises ? R.exercises[cur] : R, T = X.rows, a0 = X.a0 ?? -1, esc = c => c === 60 ? "&lt;" : c === 38 ? "&amp;" : c === 10 ? "⏎\n" : c < 32 || c > 126 ? "·" : String.fromCharCode(c);
-    $("evalText").innerHTML = T.map(([y, g], i) => (i === a0 ? `<b style="color:var(--gold)">▸ </b>` : "") + `<span class="${y === g ? "eh" : "em"}" title="a ghicit: ${esc(g)}">${esc(y)}</span>`).join("") +
-      (X.shape != null ? `<div style="margin-top:10px;color:var(--gold)">forma soluției, scrisă de el din întrebare, ÎNAINTE să vadă răspunsul (${(100 * (X.shapeSame || 0)).toFixed(0)}% din caractere la locul lor):</div><div style="color:#e6c56a">${Array.from(X.shape, c => esc(c.charCodeAt(0))).join("")}</div>` : ""); };
+  const textView = () => {
+    const X = kind === "text" && R.exercises ? R.exercises[cur] : R, T = X.rows || [], a0 = X.a0 ?? -1;
+    const esc = c => c === 60 ? "&lt;" : c === 38 ? "&amp;" : c === 10 ? "⏎\n" : c < 32 || c > 126 ? "·" : String.fromCharCode(c);
+    // Evaluation is performed on ALL selected characters. Only DOM rendering is paged to prevent
+    // thousands of spans from freezing the main viewer with 100k+ character exercises.
+    const PAGE = 2048, pages = Math.max(1, Math.ceil(T.length / PAGE));
+    textPage = Math.max(0, Math.min(pages - 1, textPage));
+    const start = textPage * PAGE, end = Math.min(T.length, start + PAGE);
+    const nav = T.length > PAGE ?
+      `<div class="row" style="margin:7px 0"><button type="button" data-text-nav="prev" ${!textPage ? "disabled" : ""}>◀ caractere</button><span class="dim">${(start + 1).toLocaleString()}–${end.toLocaleString()} / ${T.length.toLocaleString()} · pagina ${textPage + 1}/${pages}</span><button type="button" data-text-nav="next" ${textPage === pages - 1 ? "disabled" : ""}>caractere ▶</button>${a0 >= 0 ? '<button type="button" data-text-nav="answer">▸ răspuns</button>' : ""}</div>` : "";
+    const visible = T.slice(start, end).map(([y, g], i) => (start + i === a0 ? `<b style="color:var(--gold)">▸ </b>` : "") + `<span class="${y === g ? "eh" : "em"}" title="a ghicit: ${esc(g)}">${esc(y)}</span>`).join("");
+    const shape = X.shape != null ? `<div style="margin-top:10px;color:var(--gold)">forma soluției, scrisă de el din întrebare, ÎNAINTE să vadă răspunsul (${(100 * (X.shapeSame || 0)).toFixed(0)}% din caractere la locul lor):</div><div style="color:#e6c56a">${Array.from(X.shape, c => esc(c.charCodeAt(0))).join("")}</div>` : "";
+    $("evalText").innerHTML = nav + visible + shape;
+    for (const button of $("evalText").querySelectorAll("button[data-text-nav]")) button.onclick = () => {
+      const direction = button.dataset.textNav;
+      textPage = direction === "prev" ? textPage - 1 : direction === "next" ? textPage + 1 : Math.floor(Math.max(0, a0) / PAGE);
+      textView();
+    };
+  };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
     const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
-      : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: +$("evMax").value || 20000} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
+      : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value)} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
