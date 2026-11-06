@@ -28,6 +28,7 @@ export class LanguageMazeMemory {
   this.version=1;this.maxRecords=maxRecords;this.maxCandidates=maxCandidates;
   this.maxGraphNodes=maxGraphNodes;
   this.records=[];this.rowsSeen=0;this.rowsObserved=0;this.skippedEmpty=0;this.displaced=0;
+  this.reorderings=new Map();this.reorderSamples=0;
   this.evidence={pass:[1,1,1,1],block:[1,1,1,1],enter:[1,1,1,1],endIn:[0,0,0,0]};
   this.events=0;this.evaluations=0;this.evalSolved=0;this.evalCharacters=0;this.evalCorrect=0;
  }
@@ -48,6 +49,7 @@ export class LanguageMazeMemory {
    if(this.records.length>this.maxRecords){this.records.shift();this.displaced++;}
   }
   this.rowsObserved++;this.events+=chars.length;
+  this.learnPositionalTransform(prompt,answer);
   // Same kind-based empirical resistance / pass-through / goal counters as
   // Discoverer.learnStep()+endEpisode(): learned from physically observed
   // TRAINING character emissions and the fact the completed response ended.
@@ -56,6 +58,41 @@ export class LanguageMazeMemory {
   this.evidence.enter[KIND.target]++;
   this.evidence.endIn[KIND.target]++;
   return {learned:true,chars:chars.length,storedRecords:this.records.length};
+ }
+  // Discover the POSITION MAPPING from two genuinely different observed
+ // input-output examples. No reverse/copy/latent operation is provided.
+ learnPositionalTransform(prompt,answer){
+  const target=cp(answer);
+  if(target.length<2||target.length>128||new Set(target).size!==target.length)return false;
+  const signature=target.slice().sort().join("\u0001");
+  const matches=[...prompt.matchAll(/[\p{L}\p{N}]+/gu)].filter(m=>{
+   const source=cp(m[0]);return source.length===target.length&&
+    new Set(source).size===source.length&&source.slice().sort().join("\u0001")===signature;
+  });
+  if(!matches.length)return false;
+  const m=matches.at(-1),source=cp(m[0]),before=prompt.slice(0,m.index),
+   after=prompt.slice(m.index+m[0].length);
+  if(!before.trim()&&!after.trim())return false;
+  const permutation=target.map(ch=>source.indexOf(ch));
+  if(permutation.some(i=>i<0))return false;
+  const id=JSON.stringify([before,after,source.length,permutation]),old=this.reorderings.get(id);
+  if(old){if(!old.samples.includes(m[0])){old.samples.push(m[0]);old.support++;}}
+  else this.reorderings.set(id,{before,after,length:source.length,permutation,samples:[m[0]],support:1});
+  this.reorderSamples++;return true;
+ }
+ composedCandidates(prompt){
+  const found=[];
+  for(const rule of this.reorderings.values()){
+   if(rule.support<2||!prompt.startsWith(rule.before)||!prompt.endsWith(rule.after))continue;
+   const variable=prompt.slice(rule.before.length,prompt.length-rule.after.length),source=cp(variable);
+   if(source.length!==rule.length||new Set(source).size!==source.length||
+     rule.samples.includes(variable))continue;
+   const answer=rule.permutation.map(i=>source[i]).join("");
+   found.push({record:{prompt:key(prompt),tokens:[...wordSet(prompt)],answer,characters:cp(answer).length,
+     support:rule.support,source:"composed_from_observed_position_transformations"},
+     score:.995,shared:rule.support,exact:false,composed:true});
+  }
+  return found;
  }
  conduct(kind){return this.evidence.pass[kind]/(this.evidence.pass[kind]+this.evidence.block[kind]);}
  attract(kind){return this.evidence.endIn[kind]/this.evidence.enter[kind];}
@@ -66,7 +103,7 @@ export class LanguageMazeMemory {
   for(const record of all)for(const w of record.tokens)df.set(w,(df.get(w)||0)+1);
   const weight=w=>Math.log(1+(all.length+1)/(1+(df.get(w)||0)));
   const qDen=[...query].reduce((s,w)=>s+weight(w),0)||1;
-  const results=[];
+  const results=this.composedCandidates(prompt);
   for(const r of all){
    const exact=phrase===r.prompt,shared=r.tokens.filter(x=>query.has(x));
    if(!exact&&shared.length<2)continue; // no unsupported hallucinated routes from one generic word
@@ -106,18 +143,18 @@ export class LanguageMazeMemory {
     }
     if(!neighbors[at].some(e=>e.to===to&&e.character===character))
       neighbors[at].push({to,action:character,character,
-        transformation:"observed_character_transition"});
+        transformation:candidate.composed?"learned_positional_transformation":"observed_character_transition"});
     at=to;prefix=nextPrefix;
    }
    if(hitLimit)break;
    kinds[at]=KIND.target;
-   labels[at].state="learned_terminal";
+   labels[at].state=candidate.composed?"composed_terminal":"learned_terminal";
    subgoals.push({node:at,length:candidate.record.characters,
-     support:candidate.record.support,score:candidate.score});
+     source:candidate.record.source||"experienced_training_answer",support:candidate.record.support,score:candidate.score});
   }
   const world={input:prompt,root:0,kinds,neighbors,labels,
     candidates:selected.length,goals:subgoals,hitLimit,
-    provenance:"Edges from training-only observed answers. No heldout target or oracle in graph."};
+    provenance:"Observed training paths and composition from >=2 independently experienced character-position transformations. No unseen target oracle."};
   return world;
  }
  plan(prompt,{maxReplay=256}={}){
@@ -182,6 +219,7 @@ export class LanguageMazeMemory {
   return {version:this.version,rowsSeen:this.rowsSeen,rowsObserved:this.rowsObserved,
    skippedEmpty:this.skippedEmpty,displaced:this.displaced,stored:this.records.length,
    characterTransitionsObserved:this.events,knownGoalObservationCount:this.evidence.endIn[KIND.target],
+   observedPositionalRules:this.reorderings.size,observedPositionalSamples:this.reorderSamples,
    conductFloor:this.conduct(KIND.floor),attractGoal:this.attract(KIND.target),
    maxRecords:this.maxRecords,maxCandidates:this.maxCandidates,maxGraphNodes:this.maxGraphNodes,
    noLatentModel:true,originalMazeFormulaReused:true,
@@ -190,6 +228,7 @@ export class LanguageMazeMemory {
  export(){
   return {version:1,options:{maxRecords:this.maxRecords,maxCandidates:this.maxCandidates,maxGraphNodes:this.maxGraphNodes},
    records:this.records,evidence:this.evidence,rowsSeen:this.rowsSeen,rowsObserved:this.rowsObserved,
+   positionalRules:[...this.reorderings.entries()],reorderSamples:this.reorderSamples,
    skippedEmpty:this.skippedEmpty,displaced:this.displaced,events:this.events};
  }
  static restore(data){
@@ -202,6 +241,17 @@ export class LanguageMazeMemory {
       !Array.isArray(item.tokens)||item.tokens.some(x=>typeof x!=="string")||
       !Number.isSafeInteger(item.support)||item.support<1)throw Error("Corrupt language memory record");
    memory.records.push({...item});
+  }
+  if(data.positionalRules!==undefined){
+   if(!Array.isArray(data.positionalRules)||data.positionalRules.length>100000)
+    throw Error("Corrupt positional rule list");
+   for(const [id,rule]of data.positionalRules){
+    if(typeof id!=="string"||!rule||typeof rule.before!=="string"||typeof rule.after!=="string"||
+      !Array.isArray(rule.permutation)||!Array.isArray(rule.samples)||!Number.isSafeInteger(rule.support))
+      throw Error("Invalid learned position transformation");
+    memory.reorderings.set(id,rule);
+   }
+   memory.reorderSamples=Number.isSafeInteger(data.reorderSamples)&&data.reorderSamples>=0?data.reorderSamples:0;
   }
   for(const k of ["pass","block","enter","endIn"]){
    const row=data.evidence?.[k];
