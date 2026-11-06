@@ -103,7 +103,7 @@ const report = (final = false) => {
   if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); saveBodyPerspective(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
-const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
+const shot = (force) => { const now=performance.now(); if (lastShot && now-lastShot<(force?650:3000)) return; lastShot=now; try { brain.organismView(); } catch {}
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), bodyPerspective: bodyPerspective.summary(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
@@ -196,7 +196,9 @@ const processGpuText = async (exs, meta) => {
   changePhase("GPU batch finished"); batchNow = null;
   emitTelemetry();
   // Report the first committed batch immediately, not only after 60,000 bytes.
-  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
+  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
+    changePhase("CPU: frozen V17 evaluation + checkpoint"); emitTelemetry(); report(); changePhase("CPU: evaluation complete");
+  }
   shot(true);
 };
 parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
@@ -270,7 +272,7 @@ for await (const ex of stream()) {
     brain.live(y, brain.chars % 50 === 0); brain.chars++;
     if (brain.chars % 2000 === 0) shot();
     if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); shot(); }
-    if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } report(); }
+    if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } changePhase("CPU: frozen V17 evaluation + checkpoint"); emitTelemetry(); report(); changePhase("CPU: evaluation complete"); }
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
