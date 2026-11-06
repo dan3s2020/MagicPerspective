@@ -629,6 +629,12 @@ async function livePull() {
 }
 const armed = new Map(), armedNow = k => (armed.get(String(k)) || 0) > performance.now();   // a reset or removal asks once more before it happens
 const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; lastGraphVersion = -1; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; nvNeedsWorld = true; nv.last = null; };
+$("graphHome").onclick = () => {
+  // Reset only the observer's camera. No brain weights, checkpoints, or graph nodes are reset.
+  nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; nv.last = null;
+  nvNeedsWorld = true; view.path = ""; view.mode = "inside"; view.zlog = 0; view.dirty = true;
+  document.querySelector(".graph")?.scrollIntoView({behavior: "smooth", block: "start"});
+};
 async function control(act, w) { await fetch("/control?do=" + act + (w == null ? "" : "&w=" + w), {method: "POST"}).catch(() => {}); livePull(); }
 $("liveReset").onclick = async () => { if (!confirmReset()) return; await control("reset"); clearLive(); };
 $("allStart").onclick = () => control("start"); $("allPause").onclick = () => control("pause"); $("allSave").onclick = () => control("save");
