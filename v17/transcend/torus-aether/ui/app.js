@@ -436,6 +436,30 @@ function applySnap(gs) {
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
   strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
   if (gs.shared) renderShared(gs.shared);   // t: every step lived (text characters and every world's symbols)
+  renderAgentNoise(gs.endogenousNoise || null);
+}
+// These values are saved by the organism's own policy, not invented by rendering.
+// A missing agency stays visibly distinct from an enabled policy with zero noise.
+function renderAgentNoise(S) {
+  const box = $("agentNoiseBox"), summary = $("agentNoiseStatus"), modes = $("agentNoiseModes"), rec = $("agentNoiseRecent");
+  if (!box || !summary || !modes || !rec) return;
+  box.hidden = !S?.enabled;
+  if (!S?.enabled) return;
+  const B = S.bySite || {}, last = S.last;
+  summary.textContent = "Decizii " + S.decisions + " · zgomot ales " + S.noiseChoices +
+    " (" + (100 * (S.noiseRate || 0)).toFixed(1) + "%) · recompensă cumulată " +
+    (S.cumulativeReward ?? 0) + " · fără zgomot " + (B.none || 0) +
+    " · percepție " + (B.perception || 0) +
+    " · imaginație " + (B.imagination || 0) + " · acțiune " + (B.action || 0);
+  modes.textContent = last ? "Ultima decizie: " + last.domain + " → " + last.site +
+    " · intensitate " + last.strength +
+    " · recompensă observată " + last.reward +
+    (last.solved ? " · obiectiv atins" : "") : "Fără decizii încă.";
+  const ranked = Object.entries(S.contexts || {}).flatMap(([context, arms]) =>
+    arms.filter(a => a.n > 0).map(a => ({context, ...a}))
+  ).sort((a, b) => b.n - a.n).slice(0, 5);
+  rec.textContent = ranked.map(a => a.context + " / " + a.site + ":" + a.strength +
+    " · probe " + a.n + " · recompensă medie " + a.reward).join(" | ");
 }
 // Draw measured PyTorch training vectors, NOT fabricated graph nodes or arbitrary 5D geometry.
 function renderShared(S) {
