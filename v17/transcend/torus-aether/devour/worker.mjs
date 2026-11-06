@@ -12,23 +12,24 @@ import {SharedExperience} from "../shared/experience.mjs";
 import {SelfCodeWorld} from "../worlds/self-code.mjs";
 import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
+import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
-const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), CODE = worlds.includes("code"), MAPTEXT = worlds.includes("maptext");
-const MAP_ONLY = MAPTEXT && !TEXT && !MAZE && !TRANS && !CODE;
+const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), CODE = worlds.includes("code"), MAPTEXT = worlds.includes("maptext"), COGNITIVE = worlds.includes("cognitivemap");
+const MAP_ONLY = !TEXT && !MAZE && !TRANS && !CODE && (MAPTEXT || COGNITIVE);
 validateWorldSource(worlds, source); // fail closed BEFORE loading or changing any brain checkpoint
 
 async function* stream() {                                                 // this brain's share of the world, once
-  if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
+  if (!TEXT && !COGNITIVE) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
-    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
+    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer, worldText: "Q: " + x.prompt + "\nA: " + x.answer}; }
   } else if (source.kind === "text") {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
-      if (para.trim().length < 20) continue; if (k++ % n === w && !source.heldSet.includes(k)) yield {k, bytes: ascii(para + "\n\n")}; }
+      if (para.trim().length < 20) continue; if (k++ % n === w && !source.heldSet.includes(k)) yield {k, bytes: ascii(para + "\n\n"), worldText: para}; }
   } else {
     throw Error("Text source not configured. This worker cannot run text without a text or parquet dataset.");
   }
@@ -43,6 +44,28 @@ const shared = new SharedExperience({capacity: 384, seed: brain.seed});
 brain.setSharedObserver(sample => shared.observe(sample));
 const codeWorld = CODE ? new SelfCodeWorld(brain) : null; // shares the original V17 brain checkpoint
 const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : null;
+const cognitive = COGNITIVE ?
+  (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
+const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
+const saveCognitive = () => {if(cognitive)brain.cognitiveMap = cognitive.export();};
+const absorbCognitive = row => {
+  if(!cognitive)return null;
+  if(typeof row?.worldText !== "string")throw Error("Cognitive world requires complete original text, not ASCII token predictions");
+  const before=cognitive.rules.size;
+  const result=cognitive.observeWorld(row.worldText,{id:row.k});
+  brain.cognitiveDocuments=(brain.cognitiveDocuments||0)+1;
+  brain.cognitiveCharacters=(brain.cognitiveCharacters||0)+row.worldText.length;
+  if(cognitive.rules.size>before){
+    brain.trace.node("cognitive:world","world","Learned language transformation atlas");
+    const rules=[...cognitive.rules.values()].slice(-Math.min(5,cognitive.rules.size-before));
+    for(const rule of rules){
+      const id="cognitive:rule:"+rule.id;
+      brain.trace.node(id,"transformation",rule.from+" → "+rule.to+" @"+rule.at);
+      brain.trace.setEdge("cognitive:world",id,"observed-contrast",.9);
+    }
+  }
+  return result;
+};
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
@@ -75,8 +98,8 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
-  if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
+    shared: shared.status(), cognitive: cognitive?.report() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+  if (saveFile) { try { saveCognitive(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 let lastSentTextLength = -1;
@@ -85,7 +108,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const currentTextLength = brain.trace.text.length;
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), cognitive: cognitive?.report() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -142,6 +165,7 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+  if (COGNITIVE) for(const row of meta) absorbCognitive(row);
   const profTraceEnd = profileText ? performance.now() : 0;
   if (CODE) for (let i = 0; i < 4; i++) codeWorld.step();
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
@@ -166,7 +190,29 @@ const processGpuText = async (exs, meta) => {
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
   shot(true);
 };
-parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
+parentPort.on("message", m => {
+  if(m?.cognitiveEval){
+    const {id,initial,goal,maxNodes=384,maxDepth=8}=m.cognitiveEval;
+    try{
+      if(!cognitive)throw Error("This graph has no cognitive world");
+      const pre=cognitive.report(),plan=cognitive.formSolution(initial,goal,
+        {disc:brain.disc,maxNodes,maxDepth});
+      const reply={type:"chat",id,kind:"cognitive",frozen:true,found:plan.found,
+        reason:plan.reason||plan.field?.reason||null,
+        rules:plan.learnedRules,observedSentences:plan.world?.fromObservedExamples,
+        generatedStates:plan.world?.states.length,candidateGoals:plan.world?.targets.length,
+        novelGoal:plan.novelGoal||false,
+        start:plan.world?.states[0]?.join(" "),
+        plannedPath:plan.path?.map(e=>({action:e.action,after:plan.world.states[e.to]?.join(" ")})),
+        shapeField:plan.field?.values?.slice(0,128),
+        successor:plan.found?cognitive.successor(plan.world).map(x=>({gamma:x.gamma,goalOccupancyAtStart:x.goalOccupancyAtStart})):[],
+        law:plan.planningLaw||null,truncated:plan.world?.truncated||false};
+      if(JSON.stringify(pre)!==JSON.stringify(cognitive.report()))throw Error("Frozen evaluation changed learning state");
+      parentPort.postMessage(reply);
+    }catch(err){parentPort.postMessage({type:"chat",id,kind:"cognitive",error:err.message});}
+    return;
+  }
+  if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
   if (m && m.sharedEval) {
     const {id, seed = 74129} = m.sharedEval;
     void (async () => {
@@ -200,12 +246,22 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
-const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
+const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveCognitive(), saveText(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
 let k = 0, textBatch = [], textMeta = [];
 shot(true); await hold();
 for await (const ex of stream()) {
   await hold();
-  if (TEXT && k++ < skip) continue;                                         // a resumed brain does not live the same exercises twice
+  if (TEXT && k++ < skip) continue;
+  if (COGNITIVE && !TEXT && k++ < cognitionStart) continue;
+  if (COGNITIVE && !TEXT) {
+    absorbCognitive(ex); // COMPLETE document before any action; no Brain.live next-character training.
+    if(brain.cognitiveDocuments%25===0){
+      shot(true);report();
+    }
+    if(stop)break;
+    await new Promise(resolve=>setImmediate(resolve));
+    continue;
+  }                                         // a resumed brain does not live the same exercises twice
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
@@ -230,7 +286,7 @@ for await (const ex of stream()) {
   if (TEXT && textBatch.length) {
     for (let j = 0; j < textBatch.length; j++) {
       brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
-      brain.exercises = (brain.exercises || 0) + 1; absorbText(textMeta[j]);
+      brain.exercises = (brain.exercises || 0) + 1; absorbText(textMeta[j]); absorbCognitive(textMeta[j]);
     }
     textBatch = []; textMeta = []; shot(true);
   }
@@ -243,7 +299,7 @@ for await (const ex of stream()) {
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
-  if (TEXT && !stop && brain.chars < maxChars) { if (CODE && !gpuSet) codeWorld.step(); absorbText(ex); await flushShared(); }
+  if (TEXT && !stop && brain.chars < maxChars) { if (CODE && !gpuSet) codeWorld.step(); absorbText(ex); absorbCognitive(ex); await flushShared(); }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
