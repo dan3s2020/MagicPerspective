@@ -37,7 +37,7 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
 <body>
 <header>
  <div><strong>MAGICPERSPECTIVE · REAL TRAINING OBSERVATORY</strong><div class="sub">Original V17 Brain + isolated geometric learner · measured backend events</div></div>
- <div class="topline"><span id="runTag" class="tag">CONNECTING</span><span id="deviceTag" class="tag">CPU</span><a href="/synthetic.html">Synthetic projection lab</a></div>
+ <div class="topline"><span id="runTag" class="tag">CONNECTING</span><span id="deviceTag" class="tag">CPU</span><a href="/synthetic.html">Synthetic projection lab</a><a href="/language-actions.html">Causal language actions</a></div>
 </header>
 <main>
 <section class="panel">
@@ -53,6 +53,7 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
  </div>
  <div class="toolbar" style="margin-top:12px">
   <label class="check"><input id="gpuOn" type="checkbox"> Enable original V17 CUDA batches (not simulated)</label>
+  <label class="check"><input id="causalOn" type="checkbox" checked> Train observed causal text-world actions (CPU learning alongside V17)</label>
   <label>Parallel worlds/batch <input id="gpuWorlds" type="number" value="32" min="1" max="256"></label>
   <label>Text exercises/batch <input id="gpuTextBatch" type="number" value="4" min="1" max="32"></label>
   <label>GPU VRAM limit (GB) <input id="gpuVram" type="number" value="2.6" min="0.5" max="3.8" step="0.1"></label>
@@ -128,6 +129,7 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
  <h3>Exact predicted byte vs observed byte (prediction made before learning)</h3>
  <div class="scroll" id="predictions"></div>
   <h3>Corpus-derived text navigation: frozen held-out trajectories</h3>
+  <p><a href="/language-actions.html">Open measured causal text-world path replay (observed effects and reward)</a></p>
   <p class="brief">Real Parquet Q/A training, learned word-transition paths. The target answer is shown only after generation. This is not proof of semantic understanding or intrinsic higher-dimensional geometry.</p>
   <div class="toolbar"><label>Ask the learned world <input id="textPathPrompt" style="width:min(550px,72vw)" placeholder="Enter a new question; reference answer remains unknown"></label>
   <button id="textPathAsk">Navigate</button></div>
@@ -203,7 +205,7 @@ function start(infinite){
  const gpu={enabled:$('gpuOn').checked,device:'cuda:0',worlds:Number($('gpuWorlds').value),
   textBatch:Number($('gpuTextBatch').value),vram:Number($('gpuVram').value),util:Number($('gpuUtil').value)};
  call('start',{worlds,infinite,episodes:Number($('episodes').value),sourceKind,
-  datasetRoot:$('datasetRoot').value.trim(),text:$('custom').value,gpu,resume:true});
+  datasetRoot:$('datasetRoot').value.trim(),text:$('custom').value,gpu,causalTextEnabled:$('causalOn').checked,resume:true});
 }
 $('train').onclick=()=>start(false);$('infinite').onclick=()=>start(true);
 for(const a of ['pause','resume','stop','save','load'])$(a).onclick=()=>call(a);
