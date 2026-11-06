@@ -40,8 +40,15 @@ class TransferTests(unittest.TestCase):
         result = audit(rows, target='text', seed=7, steps=2, batch=3, device='cpu')
         self.assertEqual(result['targetHeldoutEvents'], 3)
         self.assertEqual(set(result['frozen']), {'shared_adaptive', 'shared_no_noise',
-                                                  'target_only', 'source_only', 'shuffled_actions'})
+                                                  'target_only', 'source_only', 'shuffled_actions',
+                                                  'source_then_target', 'target_matched_adaptation'})
         self.assertEqual(result['frozen']['shared_adaptive']['noiseUpdates'], 2)
+        self.assertEqual(result['pretrainSteps'], 1)
+        self.assertEqual(result['targetAdaptationSteps'], 1)
+        self.assertEqual(result['frozen']['target_matched_adaptation']['optimizerSteps'], 1)
+        self.assertEqual(result['frozen']['source_then_target']['optimizerSteps'], 2)
+        self.assertIsNotNone(result['zeroShotAfterSourcePretrain'])
+        self.assertIn('relativePretrainVsSameTargetAdaptation', result)
         self.assertTrue(all(v['updates'] is False for v in result['frozen'].values()))
 
 if __name__ == '__main__':
