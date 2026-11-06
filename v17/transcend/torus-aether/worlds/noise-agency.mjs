@@ -37,7 +37,7 @@ export class NoiseAgency {
   // Input contains only the organism's own state of knowledge, never a teacher
   // route, map distance, privileged simulator mechanics or a correct answer.
   decide({domain, known = false, planned = false} = {}) {
-    if (!['maze', 'transform', 'text', 'shared'].includes(domain)) throw Error('Unknown noise domain');
+    if (!['maze', 'transform', 'text', 'shared', 'selfcode'].includes(domain)) throw Error('Unknown noise domain');
     const key = domain + ':' + (known ? 'known' : 'unknown') + ':' + (planned ? 'plan' : 'search');
     const table = this.table(key), N = table.reduce((n, arm) => n + arm.n, 0);
     // Contextual bandit: every mode is genuinely available, including ZERO.
