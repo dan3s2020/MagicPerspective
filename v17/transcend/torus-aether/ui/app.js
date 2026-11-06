@@ -260,16 +260,17 @@ function drawOutside(W, H) {
 // (how long ago, on a logarithmic clock); turn it into the screen with the T planes.
 const nv = new NestView();
 const NEST = () => !$("torusView").checked;
-let nvKey = "", nvAt = -1;
+let nvKey = "", nvAt = -1, nvNeedsWorld = true, lastConceptScan = 0;
 function drawNest(W, H) {
   const lived = LIVE ? data : t !== nvAt && (frame % 60 === 0 || !nv.data.length) ? data.slice(0, Math.min(t, data.length)) : nv.data;
-  if (!lived || lived.length < 50 || !geo.U.size) { g.fillStyle = "#4a6075"; g.font = "15px system-ui"; g.textAlign = "center"; g.fillText("aștept primele momente trăite…", W / 2, H / 2); return; }
-  if (lived !== nv.data || frame % 30 === 0) { nvAt = t;
+  if (!lived || lived.length < 50 || !geo.U.size) { drawObservedTopology(W, H, "Proiecția geometrică se formează din momentele trăite"); return; }
+  if (nvNeedsWorld || lived !== nv.data) { nvNeedsWorld = false; nvAt = t;
     const prev = view.path; view.path = ""; const items = scene(); view.path = prev;
     const top = items.map(it => ({id: it.id, kind: it.n.type === "sym" ? "sym" : it.n.type, sym: it.n.type === "sym" ? +it.id.slice(2) : undefined, p: it.p, born: it.n.bt, node: it.n}));
     nv.setWorld({data: lived, U: geo.U, top, edges: [...edges.values()], now: t}); nvKey = ""; }
   const key = ang.map(a2 => a2.toFixed(3)).join(","); if (key !== nvKey) { nv.setRotation(rotation6(ang)); nvKey = key; }
-  const {discs, lines, frames} = nv.render(W, H);
+  const {discs, lines, frames} = nv.render(W, H, LIVE ? 1300 : 3500);
+  if (!discs.length && nodes.size) { drawObservedTopology(W, H, "Proiecția 5D nu are noduri vizibile la această cameră"); return; }
   const nodeOf = d => d.it?.node || nodes.get("s:" + d.sym), focus = $("focusLive").checked;
   // the regions of the open nodes: the faint rim of a node that is now seen from inside
   for (const F of frames) { if (F.r > 4 * Math.max(W, H)) continue; g.globalAlpha = .18 * F.alpha * (F.real ? 1 : .5); g.strokeStyle = F.real ? "#9fd8ff" : "#4d6a80"; g.lineWidth = 1;
@@ -428,7 +429,7 @@ $("wtemp").addEventListener("change", () => { if (t) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
 const LIVE = new URLSearchParams(location.search).has("live");
 const initialLiveParams = new URLSearchParams(location.search);
-let liveW = +(initialLiveParams.get("w") || 0), liveSnap = null;
+let liveW = +(initialLiveParams.get("w") || 0), liveSnap = null, lastGraphVersion = -1;
 let liveSelectionLocked = initialLiveParams.has("w");
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
@@ -437,7 +438,8 @@ function applySnap(gs) {
   edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : ""), {a: a2, b: b2, kind, w, label, hot: 1}]));
   if (typeof gs.text === "string" && (gs.text !== (liveSnap?.text || "") || !data.length)) { data = Array.from(gs.text, c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
-  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
+  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; nvNeedsWorld = true;
+  if (performance.now() - lastConceptScan > 20000) { lastConceptScan = performance.now(); findConcepts(); }
   if (gs.shared) renderShared(gs.shared);   // t: every step lived (text characters and every world's symbols)
 }
 // Draw measured PyTorch training vectors, NOT fabricated graph nodes or arbitrary 5D geometry.
@@ -446,7 +448,7 @@ function renderShared(S) {
   if (!box || !info || !canvas) return;
   box.hidden = false;
   const R = S.training, domains = S.domains || {};
-  const n = `observate maze ${domains.maze || 0} · transform ${domains.transform || 0} · text ${domains.text || 0} · în coadă ${S.queued || 0}`;
+  const n = `observate maze ${domains.maze || 0} · transform ${domains.transform || 0} · text ${domains.text || 0} · self-code ${domains.selfcode || 0} · în coadă ${S.queued || 0}`;
   info.textContent = R?.step ?
     `${n} | model ${R.device} · actualizări ${R.step} · eroare înainte de update ${R.preUpdatePredictionLoss} · identitate ${R.identityBaselineLoss}` :
     n + (S.error ? " | " + S.error : " | fără update PyTorch încă");
@@ -521,14 +523,15 @@ function drawTrans() {
 async function pullSelectedGraph() {
   const indicator = $("viewerStatus");
   try {
-    const r = await fetch("/graph?w=" + liveW, {cache: "no-store"});
+    const r = await fetch("/graph?w=" + liveW + (lastGraphVersion >= 0 ? "&since=" + lastGraphVersion : ""), {cache: "no-store"});
+    if (r.status === 204) return true;
     if (!r.ok) {
       if (indicator) indicator.textContent = "Graful #" + liveW + " nu are încă o captură; caut un graf activ...";
       return false;
     }
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
-    applySnap(gs);
+    applySnap(gs); lastGraphVersion = Number.isFinite(gs.version) ? gs.version : -1;
     const batch = gs.gpu?.batch;
     if (indicator) indicator.textContent = "VIZUALIZEZI GRAFUL #" + liveW +
       " · " + gs.nodes.length + " noduri · " + (gs.lived || 0).toLocaleString() +
@@ -540,7 +543,11 @@ async function pullSelectedGraph() {
     return false;
   }
 }
+let livePullBusy = false;
 async function livePull() {
+  if (livePullBusy) return;
+  livePullBusy = true;
+  try {
   await pullSelectedGraph();
   try { const L = await (await fetch("/graphs", {cache: "no-store"})).json(); const p2 = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     const visible = chooseVisibleGraph(L.graphs, liveW, liveSelectionLocked);
@@ -569,9 +576,10 @@ async function livePull() {
     if (L.gpu && !gpuShown) { gpuShown = true; if (![...$("gpuDev").options].some(o => o.value === L.gpu.device)) $("gpuDev").add(new Option(L.gpu.device, L.gpu.device)); $("gpuDev").value = L.gpu.device; $("gpuWorlds").value = L.gpu.worlds; $("gpuTextBatch").value = L.gpu.textBatch || 8; $("gpuVram").value = L.gpu.vram; $("gpuUtil").value = L.gpu.util; $("gpuUtilOut").textContent = L.gpu.util; }
     if (!$("addArm").options.length && L.arms) $("addArm").innerHTML = L.arms.map(a => `<option${a === "stable+many" ? " selected" : ""}>${a}</option>`).join("");
   } catch { $("corpus").textContent = "trainerul nu răspunde"; }
+  } finally { livePullBusy = false; }
 }
 const armed = new Map(), armedNow = k => (armed.get(String(k)) || 0) > performance.now();   // a reset or removal asks once more before it happens
-const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; };
+const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; lastGraphVersion = -1; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; nvNeedsWorld = true; nv.last = null; };
 async function control(act, w) { await fetch("/control?do=" + act + (w == null ? "" : "&w=" + w), {method: "POST"}).catch(() => {}); livePull(); }
 $("liveReset").onclick = async () => { if (!confirmReset()) return; await control("reset"); clearLive(); };
 $("allStart").onclick = () => control("start"); $("allPause").onclick = () => control("pause"); $("allSave").onclick = () => control("save");
@@ -586,7 +594,7 @@ function bootLive() {
   D = 5; rand = rng(7); nodes = new Map(); edges = new Map(); recent = {C: [], F: []}; strip = []; groups = []; geo = {U: new Map(), V: new Map(), B: new Map()}; data = [];
   chain = {A: [{wires: [], form: () => liveSnap?.form || ""}]}; running = false;
   $("livePanel").hidden = false; document.body.classList.add("live");
-  livePull(); setInterval(livePull, 1500); loop();
+  livePull(); setInterval(livePull, 1600); loop();
 }
 if (LIVE) bootLive(); else
 fetch("/corpus").then(r => r.json()).then(c => {
