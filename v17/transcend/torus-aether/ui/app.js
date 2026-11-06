@@ -536,7 +536,10 @@ async function pullSelectedGraph() {
         const pc = n => n == null ? "—" : (100 * n).toFixed(1) + "%";
         $("codeOut").textContent = "Trăite: " + C.episodes + " · portaluri: " + C.portalCost + " · predicții: " + pc(C.predictionAccuracy) +
           " · încuietoare: " + (C.unlocked ? "DESCHISĂ" : "ÎNCUIATĂ") + " · test nevăzut: " + pc(C.lockAccuracy) + " vs control " + pc(C.baseline) +
-          " · modificări aprobate: " + C.codeEdits.length;
+          " · modificări aprobate: " + C.codeEdits.length +
+          (C.audit ? " · cod pe intrări nevăzute: " + pc(C.audit.heldoutInputs?.accuracy) +
+          " · parametri noi: " + pc(C.audit.newParameterValues?.accuracy) +
+          " · control permutat: " + pc(C.audit.permutedGeneLabels?.accuracy) : "");
         $("codeTrail").textContent = (C.portals || []).map(x => "#" + x.episode + " " + x.from + " → " + x.to +
           " | prezis " + (x.prediction ?? "?") + " observat " + x.observed).join("\n");
       }
