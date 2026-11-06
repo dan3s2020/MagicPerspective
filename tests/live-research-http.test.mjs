@@ -53,6 +53,12 @@ test('REAL original worker emits research through HTTP and original UI displays 
       'Actual native shape replay frames missing');
     assert.ok(telemetry.last.navigation?.successor?.frames.length>=1,
       'SR actor trace missing');
+    assert.ok(telemetry.characterTelemetry?.seen>0,
+      'Original Brain.live per-character predictions are missing from CPU text training');
+    assert.ok(telemetry.characterTelemetry?.recent.length>0);
+    assert.ok(telemetry.characterTelemetry.recent.every(x=>
+      Number.isInteger(x.actual)&&Number.isInteger(x.guess)));
+
     for (const policy of ['native','successor']) {
       const t=telemetry.last.navigation[policy];
       assert.equal(t.summary.steps,t.frames.length-1);
@@ -70,7 +76,8 @@ test('REAL original worker emits research through HTTP and original UI displays 
       ['research-panel.mjs',"'/research?w='"],
       ['research-charts.mjs','function canvas'],
       ['research-replay.mjs','setupShapeReplay'],
-      ['research-replay-draw.mjs','drawGlobalShape']
+      ['research-replay-draw.mjs','drawGlobalShape'],
+      ['research-character-replay.mjs','setupCharacterReplay']
     ]){
       const res=await fetch(rootUrl+file);
       assert.equal(res.status,200,file+' not served from original V17');
