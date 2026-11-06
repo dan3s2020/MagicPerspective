@@ -157,7 +157,9 @@ export class Brain {
   // ---- many worlds at once on the GPU (gpu/worlds_gpu.py), one brain: the worlds run in parallel with what the brain
   // knew at the start of the batch, then every world's experience is lived by this same brain, one after another ----
   knowsForGpu() { const D = this.disc, s = D.self(); return {self: s, effect: [0, 1, 2, 3, 4, 5, 6, 7].map(o => D.effect(o)), conduct: [0, 1, 2, 3].map(k => D.conduct(k)), attract: [0, 1, 2, 3].map(k => D.attract(k)),
-    trust: D.trust, tries: D.tries.slice(), moves: D.world.moves, noise: D.noise || 0}; }
+    trust: D.trust, tries: D.tries.slice(), moves: D.world.moves,
+      noise: this.noiseAgent ? 0 : D.noise || 0,
+      noisePolicy: this.noiseAgent?.gpuPolicy('maze') || null}; }
   // the labyrinths LIVED on the card: the card plays every world of the batch AND works out everything the brain learns
   // from it; the brain only adds the totals (Discoverer.absorb). While it adds them the card is already living the next
   // batch (with what the brain knew a batch earlier). One world per batch is also lived here, symbol by symbol, so the
@@ -172,11 +174,16 @@ export class Brain {
     const p = ask(); p.catch(() => {}); NEXT.set(this, {gpu, p});            // the card starts the next batch now (never saved: it lives only while the card is there)
     await tick("labirinturi: adunate în creier", res.n, res.n);
     const t0 = performance.now(); this.disc.absorb(res.learn);
+    // The card actually executed every chosen portal; count its measured
+    // physical effects in the SAME persistent organism policy after the batch.
+    if (this.noiseAgent && res.noiseEvidence)
+      this.noiseAgent.absorbGpu(res.noiseEvidence, 'maze');
     M.played += res.n; M.won += res.solved; const rate = res.solved / res.n; M.recent.push(rate); if (M.recent.length > 100) M.recent.shift();
     const R = res.record, w = makeMaze(R.seed, R.n), copy = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); copy.r = Object.assign(Object.create(RNG.prototype), copy.r);
     const r = playExercise(w, copy, y => this.live(y, this.lived % 50 === 0), {outputs: R.outputs, record: true, onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})}); M.knows = r.knows; M.last = {...r, kind: w.n + "×" + w.n, i: M.index};
     this.trainPerspective(w, true);
-    M.gpu = {batch: res.n, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, solved: res.solved, mergeMs: +(performance.now() - t0).toFixed(1), cardMs: +(1000 * (res.busy || 0)).toFixed(1)};
+    M.gpu = {batch: res.n, busy: res.busy, noiseChoices: res.noiseEvidence?.counts || null,
+      vramUsedGB: res.vramUsedGB ?? null, solved: res.solved, mergeMs: +(performance.now() - t0).toFixed(1), cardMs: +(1000 * (res.busy || 0)).toFixed(1)};
     return M.gpu;
   }
   async playMazesGPU(gpu, N, tick = async () => {}) {   // tick(phase, done, total): the worker shows progress and lets pause/stop in
