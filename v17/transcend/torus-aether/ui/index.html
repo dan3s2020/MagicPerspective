@@ -122,6 +122,14 @@
       <div class="row"><label>Condiții ale țintei (poziție → simbol)<input id="cognitiveGoal" type="text" value='{"0":"She","2":"calm"}' size="40"></label></div>
       <div class="row"><button id="cognitiveEvaluate" type="button">Testează forma învățată pe o țintă nouă</button></div>
       <pre id="cognitiveResult" style="white-space:pre-wrap;overflow:auto;max-height:330px;color:#d3eedb;font:12px ui-monospace,monospace">Nicio evaluare încă.</pre>
+      <h3>Feedback real: verificarea unui zid sau a unei transformări</h3>
+      <p class="note">Înregistrează numai o acțiune executată efectiv și observația de după. Un traseu dedus din text rămâne o ipoteză până când lumea îi confirmă efectul.</p>
+      <div class="row"><label>Înainte <input id="cognitiveBefore" type="text" size="30" value="He is calm."></label></div>
+      <div class="row"><label>Acțiune observată (ID complet) <input id="cognitiveAction" type="text" size="42" placeholder='[0,"He","She"]'></label></div>
+      <div class="row"><label>După <input id="cognitiveAfter" type="text" size="30" value="She is calm."></label></div>
+      <label class="dim"><input id="cognitiveAccepted" type="checkbox"> Lumea a acceptat efectiv această acțiune</label>
+      <div class="row"><button id="cognitiveRecord" type="button">Înregistrează rezultatul observat</button></div>
+      <pre id="cognitiveRecordOut" style="white-space:pre-wrap;color:#aacde9;font:12px ui-monospace,monospace"></pre>
     </div>
     <div id="wholeMapBox" hidden style="margin:12px 0;border:1px solid #236a77;border-radius:10px;padding:12px">
       <h2>Harta completă a textului · navigare ca în labirintul 2D</h2>
