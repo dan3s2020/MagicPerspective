@@ -12,7 +12,7 @@
 import {ACTIONS} from "../worlds/labyrinth.mjs";
 
 const validate=({kinds,neighbors,start})=>{
- if(!Array.isArray(kinds)||!Array.isArray(neighbors)||kinds.length!==neighbors.length||kinds.length<2||
+ if(!Array.isArray(kinds)||!Array.isArray(neighbors)||kinds.length!==neighbors.length||kinds.length<1||
   !Number.isInteger(start)||start<0||start>=kinds.length)throw Error("Invalid observed world topology");
  if(kinds.some(k=>!Number.isInteger(k)||k<0||k>3))throw Error("Unknown observed cell kind");
  if(neighbors.some(row=>!Array.isArray(row)||row.some(e=>!Number.isInteger(e?.to)||e.to<0||e.to>=kinds.length)))
