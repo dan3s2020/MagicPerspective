@@ -4,12 +4,12 @@ import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import {fileURLToPath} from "node:url";
-import {observedLayout,frozenTextLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
+import {observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const html=fs.readFileSync(path.join(here,"index.html"),"utf8");
 const source=fs.readFileSync(path.join(here,"text-hypermaze.js"),"utf8")
- .replace(/^import \{observedLayout,frozenTextLayout,project4D,routeDivergence\} from "\.\/hypermaze-geometry\.mjs";\n/,"");
+ .replace(/^import \{observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence\} from "\.\/hypermaze-geometry\.mjs";\n/,"");
 
 function graphic(){
  const calls=[];
@@ -38,6 +38,8 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  assert.match(html,/id="hmOverlay"/);
  assert.match(html,/id="hmUseCurrent"/);
  assert.match(html,/id="hmExercise"/);
+ assert.match(html,/id="hmSpace"/);
+ assert.match(html,/id="hmSpaceStatus"/);
  assert.match(source,/\/language-maze\/observatory/);
  assert.match(source,/\/language-maze\/analyze/);
  assert.match(source,/magicperspective:text-frozen-evaluation/);
@@ -45,6 +47,7 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  const EMap=new Map(ids.map(id=>[id,new E(id)]));
  const $=id=>{assert.ok(EMap.has(id),"Missing actual control "+id);return EMap.get(id);};
  const document={getElementById:$,body:{style:{}},createElement:t=>new E(t)};
+ $("hmSpace").value="learned5";
  const events=new Map(),window={
   devicePixelRatio:1,addEventListener:(t,fn)=>events.set(t,fn),
   dispatchEvent:e=>events.get(e.type)?.(e),
@@ -84,12 +87,14 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
   const payload=url.startsWith("/language-maze/observatory")?{
    protocol:"OBSERVED_TRAINING_TEXT_WORLD",observedPrompt:"What is the route?"}:
    url==="/language-maze/analyze"?observed:
-   url==="/eval"?frozen:null;
+   url==="/eval"?frozen:
+   url.startsWith("/graph?")?{U:[[97,[.1,.2,.3,.4,.5]],[122,[.2,.3,.4,.5,.6]],
+    [98,[.3,.4,.5,.6,.7]],[65,[.4,.5,.6,.7,.8]],[66,[.5,.6,.7,.8,.9]]]}:null;
   if(!payload)throw Error("Unexpected endpoint "+url);
   return {ok:true,status:200,json:async()=>payload};
  };
  const ctx={document,window,location:{hash:"",search:"?live=1"},
-  URLSearchParams,console,fetch,observedLayout,frozenTextLayout,project4D,routeDivergence,
+  URLSearchParams,console,fetch,observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence,
   Math,JSON,Number,String,Array,Set,Map,Date,
   setInterval:()=>1,clearInterval:()=>{},cancelAnimationFrame:()=>{}};
  vm.runInNewContext(source,ctx,{filename:"text-hypermaze.js"});
@@ -97,6 +102,8 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  assert.equal($("hmOverlay").hidden,false);
  assert.ok($("hmCanvas").canvas.calls.some(c=>c.n==="fillText"));
  await $("hmLoadObserved").fire("click");
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.match($("hmSpaceStatus").textContent,/5D V17 ÎNVĂȚAT/);
  assert.equal($("hmInitial").textContent,"2");
  assert.equal($("hmExecuted").textContent,"2");
  assert.match($("hmMeaning").textContent,/observată la antrenare/);
@@ -125,5 +132,6 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  assert.equal($("hmOverlay").hidden,true);
  assert.equal(calls.filter(c=>c.url==="/eval").length,1);
  assert.equal(calls.filter(c=>c.url==="/language-maze/analyze").length,1);
+ assert.ok(calls.some(c=>c.url.startsWith("/graph?")), "Must fetch native learned 5D Geometry.U");
  assert.equal(Object.hasOwn(JSON.parse(calls.find(c=>c.url==="/language-maze/analyze").options.body),"answer"),false);
 });
