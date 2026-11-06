@@ -33,3 +33,12 @@ test('live training trace distinguishes CUDA C/A replay from online align and re
  const J=fromLiveTraining(T,geom);assert.equal(J.mode,'live-training');assert.equal(J.replay,1);
  assert.equal(J.aligned,1);assert.deepEqual(J.observed,[65,66]);assert.deepEqual(J.errorIndices,[0]);
 });
+test('long real held-out trace retains EVERY indexed step while drawing a bounded sampled 5D polyline',()=>{
+ const length=35050,rows=Array.from({length},()=>[65,65]);
+ const J=fromFrozenEvaluation({rows,a0:0,shape:'A'.repeat(length)},geom);
+ assert.equal(J.answerLength,length);
+ assert.ok(J.actual.length<=6002,'rendering must be bounded');
+ assert.ok(J.online.length<=1302,'counterfactual overlay must be bounded');
+ assert.equal(J.actual.at(-1).i,length-1);
+ assert.equal(J.stateAt(length).valid,true,'every exact cursor step is still inspectable');
+});
