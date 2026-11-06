@@ -5,11 +5,15 @@ import path from "node:path";
 import vm from "node:vm";
 import {fileURLToPath} from "node:url";
 import {observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
+import {committedTrainingMaze} from "./hypermaze-live-training.mjs";
+import {livingV17Trace} from "./hypermaze-native-live.mjs";
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const html=fs.readFileSync(path.join(here,"index.html"),"utf8");
 const source=fs.readFileSync(path.join(here,"text-hypermaze.js"),"utf8")
- .replace(/^import \{observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence\} from "\.\/hypermaze-geometry\.mjs";\n/m,"");
+ .replace(/^import \{observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence\} from "\.\/hypermaze-geometry\.mjs";\n/m,"")
+ .replace(/^import \{committedTrainingMaze\} from "\.\/hypermaze-live-training\.mjs";\n/m,"")
+ .replace(/^import \{livingV17Trace\} from "\.\/hypermaze-native-live\.mjs";\n/m,"");
 
 function graphic(){
  const calls=[];
@@ -101,7 +105,7 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
   return {ok:true,status:200,json:async()=>payload};
  };
  const ctx={document,window,location:{hash:"",search:"?live=1"},
-  URLSearchParams,console,fetch,observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence,
+  URLSearchParams,console,fetch,observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence,committedTrainingMaze,livingV17Trace,
   Math,JSON,Number,String,Array,Set,Map,Date,
   setInterval:()=>1,clearInterval:()=>{},cancelAnimationFrame:()=>{}};
  vm.runInNewContext(source,ctx,{filename:"text-hypermaze.js"});
