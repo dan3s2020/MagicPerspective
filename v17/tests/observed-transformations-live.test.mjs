@@ -48,7 +48,7 @@ test('real V17 corpus -> same Brain -> unlabeled edits -> unseen full goal -> fr
   assert.match(originalUI,/id="constructedBox"/);
   assert.match(originalUI,/id="agentNoiseBox"/);
   let learned=null,lastStatus=null;
-  for(let i=0;i<210;i++){
+  for(let i=0;i<70;i++){
    try{
     const r=await fetch(base+'/graphs');
     if(r.ok){
