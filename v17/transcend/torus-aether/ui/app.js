@@ -372,7 +372,11 @@ function write() {
 function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
-  $("steps").textContent = (LIVE ? (liveSummary?.chars ?? liveSnap?.chars ?? 0) : t).toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
+  $("steps").textContent = (LIVE ? (liveSummary?.chars ?? liveSnap?.chars ?? 0) : t).toLocaleString();
+  $("livedSteps").textContent = (LIVE ? (liveSummary?.lived ?? liveSnap?.lived ?? 0) : t).toLocaleString();
+  const at=liveSummary?.snapshotAt||liveSnap?.snapshotAt;
+  $("lastSnapshotAge").textContent=LIVE?(at?((Date.now()-at)/1000).toFixed(1)+" s":"—"):"—";
+  $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
   $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
       `<br>cum citește acum: urmează alinierile de încredere cu ascuțimea <b>${M.g}</b>, forma cântărește <b>${M.form}</b>` +
