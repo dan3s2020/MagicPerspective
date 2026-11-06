@@ -25,7 +25,7 @@ jobs:
       - name: Syntax and regression-policy unit tests
         run: |
           node --check scripts/user-intent-gate.mjs
-          node --test tests/user-intent-gate.test.mjs
+          node --test tests/user-intent-gate.test.mjs tests/user-intent-policy.test.mjs
       - name: Enforce literal user-to-code scope contract on PR changes
         if: github.event_name == 'pull_request'
         env:
