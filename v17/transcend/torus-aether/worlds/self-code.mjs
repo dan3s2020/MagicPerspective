@@ -44,7 +44,7 @@ export function sourceMap(paths=SOURCES.map(x=>[x,path.join(HOME,x)])){
 }
 export function newCodeState(seed=11){
  return {version:1,seed,episodes:0,genes:clone(GENES),examples:{},visits:{},
-  value:{},portals:[],edits:[],lockHistory:[],codeUnlocked:false,lockTests:0,
+  value:{},sourceVisits:{},portals:[],edits:[],lockHistory:[],codeUnlocked:false,lockTests:0,
   lockAccuracy:0,baseline:0,sourceHashes:null,noiseRate:.30,noiseBudget:10000,
   predictions:0,hits:0,portalCost:0};
 }
@@ -111,6 +111,21 @@ export class SelfCodeWorld{
   if(s.noiseBudget>0){s.noiseBudget--;s.portalCost++;}
   return rated.reduce((a,b)=>a.score>b.score?a:b).g;
  }
+ chooseSource(g){
+  const s=this.state,items=this.map.nodes;
+  if(!items.length)throw Error("No code source nodes available");
+  s.sourceVisits ||= {};
+  const score=n=>{
+   const visits=s.sourceVisits[n.id]||0;
+   const uncertainty=this.model.uncertainty(g.id);
+   const nameMatch=(/learn|live|trace|noise|perception|step|code/i.test(n.name))?.07:0;
+   return Math.sqrt(Math.log(s.episodes+2)/(visits+1))+.3*uncertainty+nameMatch;
+  };
+  const chosen=this.rand()<s.noiseRate?items[Math.floor(this.rand()*items.length)]
+   :items.reduce((a,b)=>score(a)>score(b)?a:b);
+  s.sourceVisits[chosen.id]=(s.sourceVisits[chosen.id]||0)+1;
+  return chosen;
+ }
  perceive(text){
   for(const c of text.slice(0,300))this.brain.live(byte(c),false);
  }
@@ -121,7 +136,7 @@ export class SelfCodeWorld{
   const prediction=this.model.predict(g.id,x,p);
   const actual=OPS[g.op](x,p);
   if(prediction!==null){s.predictions++;s.hits+=Number(prediction===actual);}
-  const n=this.map.nodes[Math.floor(this.rand()*this.map.nodes.length)];
+  const n=this.chooseSource(g);
   this.perceive('\n[CODE WORLD] '+n.name+': '+n.preview.slice(0,100)+
    '\nCODE '+g.id+' input='+x+' before='+old+' patch='+p+' after='+actual+'\n');
   this.model.learn(g.id,x,p,actual);
