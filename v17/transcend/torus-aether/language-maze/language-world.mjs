@@ -273,7 +273,17 @@ export class LanguageMazeMemory {
       {enabled:false,mode,training:this.onlineSuccessor.stats(),
        reason:mode==="original"?"original V17 only":"No competing observed complete paths"},
    initialShape:result?.map(e=>e.character)||[],
+   // These two sequences are FROM DIFFERENT STAGES of the real V17 law:
+   // predicted BEFORE action vs actually visited by the local body policy.
+   // Never infer the original global shape from the already executed path.
+   globalPlanNodes:field.nodes,
    pathNodes:paths,trace,field:field.values,
+   viewpointEvidence:{
+    globalBeforeFirstAction:true,localActionsFromObservedNeighbors:true,
+    topology:"OBSERVED_PREFIX_GRAPH",actualRepropagationAfterEachMove:false,
+    learned4DGeometry:false,
+    note:"V18 reuses the original global field during local movement; this is not the continuously rewritten V17 2D maze predictor."
+   },
    graph:{
     nodes:world.labels.map((v,i)=>({id:i,kind:world.kinds[i],state:v.state,
       lastCharacter:v.character??null,potential:field.values[i],
