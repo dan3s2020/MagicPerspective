@@ -1,0 +1,4 @@
+# A human repository owner must review all changes.
+# A CODEOWNERS file only enforces approval if GitHub main branch rules require
+# "Require review from Code Owners"; it does not block direct pushes by itself.
+* @dan3s2020
