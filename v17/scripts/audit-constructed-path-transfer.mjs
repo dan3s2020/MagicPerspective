@@ -22,6 +22,7 @@ for(let i=0;i<count;i++){
  pairs.push({n:world.n,optimal,trainedSolved:a.solved,controlSolved:b.solved,
    trainedSteps:a.steps,controlSteps:b.steps,
    initialBlindGuessSteps:a.firstShapeLength,initialUnknownCells:a.initialUnknowns,
+   trainedFirstShapeAccuracy:a.firstShapeAccuracy,controlFirstShapeAccuracy:b.firstShapeAccuracy,
    trainedRepairs:a.routeRepairs,controlRepairs:b.routeRepairs});
 }
 if(learned.pathPolicyUpdates!==updates||learned.examples!==examples)throw Error('Held-out leaked into training');
@@ -36,7 +37,9 @@ const report={protocol:'SAME_HIDDEN_MAZES_PAIRED_COMPLETE_MASKED_SUPERVISION_TRA
   testCount:pairs.length,mazeSeedsFrom:SEEDS.test,meanUnknownAtFirst:sum('initialUnknownCells')/pairs.length,
   paired:{trainedSolved:sum('trainedSolved'),controlSolved:sum('controlSolved'),
     trainedSteps:sum('trainedSteps'),controlSteps:sum('controlSteps'),
-    trainedRepairs:sum('trainedRepairs'),controlRepairs:sum('controlRepairs')},
+    trainedRepairs:sum('trainedRepairs'),controlRepairs:sum('controlRepairs'),
+    trainedFirstShapeAccuracy:sum('trainedFirstShapeAccuracy')/pairs.length,
+    controlFirstShapeAccuracy:sum('controlFirstShapeAccuracy')/pairs.length},
   verdict:'These are real unseen maze route outcomes. A positive difference is only suggestive. Language transfer and the learned algorithm have separate acceptance gates.',
   perWorld:pairs};
 console.log(JSON.stringify(report,null,2));
