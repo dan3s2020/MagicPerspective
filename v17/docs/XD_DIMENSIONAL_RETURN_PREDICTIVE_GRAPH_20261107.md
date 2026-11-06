@@ -67,7 +67,16 @@ We implemented ONLY in a standalone test a controlled alternative with:
 - angular update scaled by \`1/sqrt(D)\` (chain-rule consistent);
 - scalar bias update kept at its original rate.
 
-At D=1024, seed 17, this returned 16.98% geometry-only held-out accuracy vs 0.65% using the production rule, with no saturation by the |z|>8 diagnostic. The alternative is not part of the product and still does not beat the simple bigram. A second control with 1/D normalization was also tested (8.32% at D1024). Additional independent-seed runs are used to check robustness.
+At D=1024, seed 17, this returned 16.98% geometry-only held-out accuracy vs 0.65% using the production rule, with no saturation by the |z|>8 diagnostic. The alternative is not part of the product and still does not beat the simple bigram. A second control with 1/D normalization was also tested (8.32% at D1024). **Independent-seed replication PASSED:** seeds 17, 19, 23 trained separately at D=64,256,1024, all on the same 35k/6k/6k split. Geometry-only held-out top-1 (mean over 3 seeds):
+
+| D | Original native | Normalized 1/sqrt(D) | Mean gain (percentage points) |
+| ---: | ---: | ---: | ---: |
+| 64 | 2.161% | 17.244% | +15.083 pp |
+| 256 | 0.667% | 16.000% | +15.333 pp |
+| 1024 | 0.928% | 16.389% | +15.461 pp |
+
+The 1/sqrt(D) variant beat the production operator in every one of the 9 paired runs. Native D1024 saturation |z|>8 ranged 40.73% to 48.02%, whereas the normalized variant had zero measured saturation under this cutoff.
+This is evidence that the original D-scaling is an important cause of its high-dimensional degradation under this controlled corpus. The fix remains a *prototype only* and does NOT beat the existing bigram baseline 25.53%. These runs share one corpus and therefore do not establish universal cross-domain generalization.
 
 ## What would demonstrate the actual user's greater hypothesis?
 
