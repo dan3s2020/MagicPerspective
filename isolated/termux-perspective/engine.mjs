@@ -182,13 +182,13 @@ export function episode(model,seed,{size=11,trace=false,noise=0,seedSalt=117}={}
   if(noise>0)for(let j=0;j<patch.length;j++)if(rng.next()<noise)patch[j]=1-patch[j];
   const inferred=nav.observe(patch);
   locCount++;if(inferred.pos!==actual)positionErrors++;if(inferred.frame!==hiddenFrame)frameErrors++;
-  const decision=nav.choose(),trueGlobalDir=mod4(hiddenFrame+decision.bodyAction);
+  const decision=nav.choose(),trueGlobalDir=mod4(hiddenFrame+decision.bodyAction),actualBefore=actual;
   const next=nextCell(world,actual,trueGlobalDir),moved=next>=0&&!world.wall[next];
   if(moved)actual=next;else bumps++;
   nav.feedback(moved);moves++;
   if(physicalPath.at(-1)!==actual)physicalPath.push(actual);
-  if(trace)records.push({step:t+1,observedPatch:patch,estimatedPos:inferred.pos,realPos:actual,
-    poseBefore:moved?physicalPath.length>1?physicalPath.at(-2):world.start:actual,estimatedFrame:inferred.frame,
+  if(trace)records.push({step:t+1,observedPatch:patch,estimatedPos:inferred.pos,
+    actualPosBefore:actualBefore,actualPosAfter:actual,estimatedFrame:inferred.frame,
     realFrame:hiddenFrame,matchingErrors:inferred.errors,confidence:inferred.confidence,
     requestedGlobalDirection:decision.bestWorldDir,bodyAction:decision.bodyAction,
     realWorldDirection:trueGlobalDir,moved,remainingMapDistance:decision.mapDistance});
