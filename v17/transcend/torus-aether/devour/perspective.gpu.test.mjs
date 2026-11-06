@@ -8,6 +8,7 @@ import {GpuWorlds} from '../gpu/client.mjs';
 
 test('original GPU card batch trains persistent body perspective in SAME V17 Brain',async()=>{
  const brain=new Brain({seed:11,rules:{}});
+ const policy=brain.enableEndogenousNoise();
  const gpu=new GpuWorlds({device:'numpy',worlds:4,vram:1,util:100});
  try{
   const info=await gpu.ready;
@@ -19,6 +20,10 @@ test('original GPU card batch trains persistent body perspective in SAME V17 Bra
   assert.equal(brain.mazes.played,before+4);
   assert.equal(brain.perspective.episodes,P+1,
     'An actual V17 GPU batch should generate egocentric learning in same Brain');
+  assert.ok(policy.total>0,'The SAME organism must choose its own noise on actual parallel world steps');
+  assert.ok(policy.bySite.none>0||policy.noisy>0,'GPU decisions must credit real actions');
+  assert.ok(r.noiseChoices && r.noiseChoices.length===4,
+    'CUDA-compatible kernel must return measured per-context noise outcomes');
   assert.ok(brain.perspective.last?.trace?.length>0,
     'No recorded local observations after original card batch');
   assert.equal(brain.perspective.last.globalObservationsAfterStart,0);
