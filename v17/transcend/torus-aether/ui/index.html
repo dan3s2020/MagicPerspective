@@ -68,6 +68,8 @@
   .studio-good{color:#61e1a4}.studio-bad{color:#ff7080}.studio-warn{color:#f5c16f}
   .studio-caption{font-size:12px;color:var(--dim)}
   .studio-actions{display:grid;gap:4px;font:12px ui-monospace,monospace}
+  #liveTelemetry{margin-top:10px;border:1px solid #426378;border-radius:7px;background:rgba(2,16,28,.93);padding:8px 11px;color:#95e7e0;font:12px/1.45 ui-monospace,monospace;white-space:pre-line;overflow-wrap:anywhere;max-height:115px;overflow:hidden}
+  #mPhase{border:1px solid #37546e;border-radius:7px;padding:9px;background:#091522;font:12px/1.5 ui-monospace,monospace;white-space:pre-line}
 
 </style>
 </head>
@@ -79,6 +81,7 @@
       <h1>Graful viu <span>pornește gol</span></h1>
       <p>Nimic nu e dat de la început: niciun nod, nicio linie, nicio țintă, nicio acțiune. Fiecare nod se naște din experiență,
         fiecare legătură apare din ce s-a întâmplat și se stinge dacă nu se mai întâmplă. Fiecare nod trăiește într-un spațiu cu mai multe dimensiuni și se mișcă doar prin ce trăiește; ecranul e o felie din el, un tor infinit: mergi pe orice axă, faci zoom oricât, în afară sau înăuntru, și vezi mereu graf real.</p>
+      <div id="liveTelemetry" role="status" aria-live="polite">Aștept răspunsul backendului V17…</div>
     </div>
     <div class="legend">
       <span><i style="--c:#fff"></i>eu (ce mișcă ieșirile lui, descoperit)</span>
@@ -138,6 +141,7 @@
     </section>
     <section id="metricsPane" class="studio-pane">
       <h2>Metrici reale din backend</h2>
+      <div id="mPhase">Aștept telemetria de antrenare…</div>
       <p class="note">Fiecare punct este capturat din /graph sau /graphs pentru creierul selectat; graficele nu fabrică episoade și nu transformă valorile repetate în măsurători noi. Istoricul de pe această pagină începe la deschidere.</p>
       <div class="studio-kpis" id="metricsKpis">
         <div class="m"><small>Caractere trăite</small><b id="mChars">—</b></div>
