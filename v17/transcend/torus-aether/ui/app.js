@@ -390,7 +390,7 @@ function loop() {
   if (LIVE) { drawMaze(); drawTrans(); }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
-  for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
+  for (const [k, x] of edges) { if (LIVE && liveSnap?.wholeMap && (x.kind === "wall" || x.kind === "possible-action")) { x.hot *= .9; continue; } x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
   if ($("spin").checked) { const sp = val("spinSpeed") * .01; PLANES6.forEach((_, k) => { if ($("auto" + k).checked) { ang[k] = (ang[k] + sp) % 6.2832; $("rot" + k).value = ang[k]; $("rot" + k + "Out").textContent = ang[k].toFixed(2); view.dirty = true; } }); }
   const fly = val("fly");
   if (NEST()) { if (fly) nv.zoom(Math.exp(fly * .03), cv.clientWidth / 2, cv.clientHeight / 2, cv.clientWidth, cv.clientHeight);
@@ -438,7 +438,7 @@ function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
   for (const [id, type, label, act, born, err] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); if (err) n.err = performance.now(); keep.add(id); }
   for (const id of [...nodes.keys()]) if (!keep.has(id)) nodes.delete(id);
-  edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : ""), {a: a2, b: b2, kind, w, label, hot: 1}]));
+  edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (gs.wholeMap ? ">" + kind : (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : "")), {a: a2, b: b2, kind, w, label, hot: 1}]));
   if (typeof gs.text === "string" && (gs.text !== (liveSnap?.text || "") || !data.length)) { data = Array.from(gs.text, c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
   strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
