@@ -67,7 +67,9 @@ nor evidence that the brain has solved an autonomous 5D maze.
 Three existing-page sections render an interactive canvas with: global plan,
 observed path, predicted per-step branches, actual measured errors, genuine
 post-observation recalculations; individual step controls, playback, speed,
-5D rotation, zoom, W/V slice thickness, pan, and fullscreen.
+5D rotation, zoom, W/V slice thickness, pan, and fullscreen. For very long
+experiences, plotted polylines are sampled to cap rendering cost, while the
+full original character arrays and exact per-step inspection remain available.
 
 The canvas displays a 2D projection of 5D phase coordinates (not a flat invented
 network). Time is represented explicitly by the cursor step slider, not treated
@@ -84,8 +86,8 @@ missing, rather than assigned a fake 5D coordinate.
 
 ## Acceptance and limitations
 
-Pure coordinate and rendering data tests passed locally (5/5 source tests and
-1/1 mocked-canvas test). More regressions are added to the Windows launcher.
+Pure coordinate and rendering data tests passed locally (6/6 source tests and
+1/1 mocked-canvas test), including an exact 35,050-step trace with bounded plotted points. More regressions are added to the Windows launcher.
 There was **no successful end-to-end Windows CUDA + browser test** in the authoring
 environment; the user's Windows test must confirm the full pipeline.
 
