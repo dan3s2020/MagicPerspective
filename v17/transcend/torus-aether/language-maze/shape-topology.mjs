@@ -27,17 +27,28 @@ export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,te
  let any=false;
  for(let i=0;i<count;i++)if(att[kinds[i]]>.2&&i!==start){V[i]=att[kinds[i]];any=true;}
  if(!any)return {path:null,nodes:[start],values:Array.from(V),reason:"NO_LEARNED_ATTRACTOR"};
- for(let it=0;it<2*count;it++){
-  let changed=false;
-  for(let i=0;i<count;i++){
-   const k=kinds[i];if(att[k]>.2&&i!==start)continue;
-   const c=i===start?1:cond[k];if(c<.5)continue;
-   let best=0;
-   for(const edge of neighbors[i]){const v=V[edge.to];if(v>best)best=v;}
-   const v=.97*c*best;
-   if(v>V[i]+1e-12){V[i]=v;changed=true;}
+ // Exactly the SAME scalar update as original V17. A character-prefix DAG
+ // has transitions only towards later-created nodes: a reverse pass computes
+ // precisely the SAME converged field without 2*N repeated sweeps.
+ // The original 2D maze has cycles, so it retains the literal V17 iteration.
+ const relax=i=>{
+  const k=kinds[i];if(att[k]>.2&&i!==start)return false;
+  const c=i===start?1:cond[k];if(c<.5)return false;
+  let best=0;
+  for(const edge of neighbors[i]){const v=V[edge.to];if(v>best)best=v;}
+  const v=.97*c*best;
+  if(v>V[i]+1e-12){V[i]=v;return true;}
+  return false;
+ };
+ const isForwardDAG=neighbors.every((row,i)=>row.every(e=>e.to>i));
+ if(isForwardDAG){
+  for(let i=count-1;i>=0;i--)relax(i);
+ }else{
+  for(let it=0;it<2*count;it++){
+   let changed=false;
+   for(let i=0;i<count;i++)if(relax(i))changed=true;
+   if(!changed)break;
   }
-  if(!changed)break;
  }
  const path=[],nodes=[start],seen=new Set([start]);let pos=start;
  for(let k=0;k<count;k++){
@@ -60,7 +71,8 @@ export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,te
   if(att[kinds[pos]]>.2)break;
  }
  return {path:path.length?path:null,nodes,values:Array.from(V),
-  reason:path.length?"SHAPE_PROPAGATED":"NO_ASCENDING_PATH"};
+  reason:path.length?"SHAPE_PROPAGATED":"NO_ASCENDING_PATH",
+  propagation:isForwardDAG?"SAME_V17_LAW_EXACT_REVERSE_DAG":"SAME_V17_ORIGINAL_RELAXATION"};
 }
 /**
  * Original 2D topology, preserving the exact order of the four ACTIONS.
