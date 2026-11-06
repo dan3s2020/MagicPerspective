@@ -18,13 +18,14 @@ export class LiveResearch {
     this.usages={nativeCalls:0,srCalls:0,actualTies:0,changedDecisions:0,
       noGraph:0,goalReachedNative:0,goalReachedSR:0};
     this.history=[];this.last=null;this.error=null;this.heldout=null;this.progress=null;this.trainingChars=0;
+    this.characterTrace=[];this.characterSeen=0;this.characterHits=0;this.characterTraceSource='original-v17-brain-live';
   }
   static restore(saved,config={}){
     if(saved?.version!==1)throw Error('Unsupported live research checkpoint');
     const a=new LiveResearch({...saved.config,...config});
     a.atlas=ObservedQAAtlas.restore(saved.atlas);
     for(const k of ['observed','attempts','tested','cumulative','exacts','repeat','usages',
-      'history','last','heldout','trainingChars'])if(saved[k]!==undefined)a[k]=saved[k];
+      'history','last','heldout','trainingChars','characterTrace','characterSeen','characterHits'])if(saved[k]!==undefined)a[k]=saved[k];
     a.atlas.maxEntries=Math.max(a.atlas.maxEntries,a.config.maxEntries);
     return a;
   }
@@ -33,7 +34,21 @@ export class LiveResearch {
       observed:this.observed,attempts:this.attempts,tested:this.tested,
       cumulative:this.cumulative,exacts:this.exacts,repeat:this.repeat,
       usages:this.usages,history:this.history,last:this.last,
-      heldout:this.heldout,trainingChars:this.trainingChars};
+      heldout:this.heldout,trainingChars:this.trainingChars,
+      characterTrace:this.characterTrace,characterSeen:this.characterSeen,characterHits:this.characterHits};
+  }
+  recordCharacter(event) {
+    // Exact prediction already calculated by original AligningGraph.live(y).
+    // Called from original Brain.live for CPU text, before Brain's other
+    // original learning updates. Bounded rolling buffer, no fake history.
+    if(!event||!Number.isInteger(event.actual)||!Number.isInteger(event.guess))return;
+    this.characterSeen++;
+    this.characterHits+=Number(event.correct);
+    this.characterTrace.push({
+      at:event.at,guess:event.guess,actual:event.actual,correct:!!event.correct,
+      source:event.src||null
+    });
+    if(this.characterTrace.length>768)this.characterTrace.splice(0,this.characterTrace.length-768);
   }
   // This is a frozen comparison, not a new language learner. It uses the
   // exact same original Brain that experiences maze and characters.
@@ -179,6 +194,11 @@ export class LiveResearch {
       worldGraphActionsAreTokenEmissions:false,navigationTraceOnRealObservedEdges:true,
       rates:this.rate(),totals:{...this.usages},
       history:this.history.slice(-120),last:this.last,heldout:this.heldout,
+      characterTelemetry:{
+        source:this.characterTraceSource,seen:this.characterSeen,hits:this.characterHits,
+        accuracy:this.characterSeen?this.characterHits/this.characterSeen:null,
+        recent:this.characterTrace
+      },
       error:this.error,progress:this.progress,config:this.config,...extra
     };
   }
