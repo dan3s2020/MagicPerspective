@@ -5,7 +5,6 @@ Consumes ONLY opt-in actual (before, action, after) training events from
 Scores observable next-state prediction, not language comprehension or path success.
 """
 import argparse
-import hashlib
 import json
 import random
 from collections import defaultdict
@@ -102,36 +101,62 @@ def audit(rows, target='text', steps=80, batch=16, seed=20261106, device='cpu'):
         raise ValueError('Need disjoint target episodes and source-domain observations')
     pools = {'shared_adaptive': train, 'shared_no_noise': train,
              'target_only': target_train, 'source_only': sources,
-             'shuffled_actions': permuted_actions(train, seed)}
+             'shuffled_actions': permuted_actions(train, seed),
+             'source_then_target': sources, 'target_matched_adaptation': target_train}
     models = {name: SharedPerspective(device, seed=seed % 100000) for name in pools}
     baseline = models['shared_adaptive'].evaluate(target_held)
-    # Every comparison gets identical update count/batch size, but target-only
-    # revisits its smaller data pool. Disclose sample exposures as well.
+    pretrain_steps = max(1, steps // 2)
+    exposures = {}
+    zero_shot_after_pretrain = None
+    # The first five arms receive equal optimizer steps. The last two test
+    # sequential SOURCE pretraining -> TARGET adaptation against adaptation
+    # from random initialization with EXACTLY the same target minibatches.
     for name, pool in pools.items():
         rng = random.Random(seed + 417)
-        for _ in range(steps):
-            models[name].train(sample_batch(pool, rng, batch),
+        target_rng = random.Random(seed + 211)
+        observed = 0
+        for step in range(steps):
+            if name == 'source_then_target':
+                if step == pretrain_steps:
+                    zero_shot_after_pretrain = models[name].evaluate(target_held)
+                active = sources if step < pretrain_steps else target_train
+                step_rng = rng if step < pretrain_steps else target_rng
+            elif name == 'target_matched_adaptation':
+                if step < pretrain_steps:
+                    continue
+                active, step_rng = target_train, target_rng
+            else:
+                active, step_rng = pool, rng
+            models[name].train(sample_batch(active, step_rng, batch),
                                adaptive_noise=(name == 'shared_adaptive'))
+            observed += batch
+        exposures[name] = observed
     frozen = {}
     for name, model in models.items():
         score = model.evaluate(target_held)
         frozen[name] = {**score, 'trainPoolEvents': len(pools[name]),
                         'trainDomainCounts': {d: sum(r['domain'] == d for r in pools[name]) for d in DOMAINS},
-                        'trainingExposures': steps * batch,
+                        'trainingExposures': exposures[name], 'optimizerSteps': model.steps,
                         'noiseUpdates': model.noise_updates,
                         'noiseLevel': round(model.noise, 6)}
     shared_loss = frozen['shared_adaptive']['loss']
     target_loss = frozen['target_only']['loss']
+    matched_target_loss = frozen['target_matched_adaptation']['loss']
+    transfer_loss = frozen['source_then_target']['loss']
     return {'protocol': 'actual observed V17 transitions, episode-disjoint held-out, no oracle',
             'target': target, 'device': device, 'seed': seed,
-            'stepsPerArm': steps, 'batchPerStep': batch,
+            'stepsPerArm': steps, 'batchPerStep': batch, 'pretrainSteps': pretrain_steps,
+            'targetAdaptationSteps': steps - pretrain_steps,
             'episodes': split, 'targetHeldoutEvents': len(target_held),
-            'initialUntrained': baseline, 'frozen': frozen,
-            'relativeTransferVsTargetOnly': round((target_loss - shared_loss) / max(1e-12, target_loss), 6),
+            'initialUntrained': baseline, 'zeroShotAfterSourcePretrain': zero_shot_after_pretrain,
+            'frozen': frozen,
+            'relativeJointVsTargetOnly': round((target_loss - shared_loss) / max(1e-12, target_loss), 6),
+            'relativePretrainVsSameTargetAdaptation': round((matched_target_loss - transfer_loss) / max(1e-12, matched_target_loss), 6),
             'conclusion': 'NEXT_STATE_PREDICTION_ONLY_NOT_LANGUAGE_UNDERSTANDING',
-            'limitations': ['Same optimizer updates, but different unique training observations',
-                            'Source-only is zero-target-example, not a language comprehension test',
-                            'Task correctness, path optimality and confidence intervals require separate evaluations']}
+            'limitations': ['Joint and target-only have matched optimizer steps, but different unique training observations',
+                            'Source-then-target and fresh target adaptation share exact target minibatches',
+                            'Source-only/zero-shot are next-state tests, not a semantic language comprehension test',
+                            'Task correctness, path optimality, repeated seeds and confidence intervals require separate evaluations']}
 
 
 def main():
