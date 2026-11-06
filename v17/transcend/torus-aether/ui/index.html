@@ -107,6 +107,53 @@
   #successorPane .sc-quiet{color:#9fb9ca}
   #successorPane input[type=range]{padding:0;accent-color:#52dabc;flex:1;min-width:120px}
 
+
+  /* Full viewport research instrument. Does not replace native V17 camera. */
+  #hmOverlay[hidden]{display:none!important}
+  #hmOverlay{position:fixed;inset:0;z-index:2000;background:#020a12;color:#e5f4ff;
+    display:grid;grid-template-rows:auto minmax(0,1fr);font:13px/1.45 system-ui}
+  #hmOverlay button,#hmOverlay select,#hmOverlay input,#hmOverlay textarea{
+    background:#0d2538;border:1px solid #31536b;color:#e6f5ff;border-radius:7px;padding:7px;
+    font:inherit;max-width:100%}
+  #hmOverlay button{cursor:pointer}#hmOverlay button:disabled{opacity:.45;cursor:not-allowed}
+  #hmOverlay input[type=range]{padding:0;accent-color:#3bd7bd}
+  #hmOverlay label{display:grid;gap:2px;color:#a9bdca;font-size:11px}
+  #hmOverlay h2{margin:0;font-size:16px}#hmOverlay h3{font-size:13px;margin:8px 0 6px;color:#b6ddec}
+  .hm-head{border-bottom:1px solid #263f55;background:#061321;padding:10px 14px;display:grid;gap:9px}
+  .hm-actions{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+  .hm-actions>label{min-width:90px;flex:0 1 auto}
+  .hm-actions input[type=number]{width:70px}
+  #hmPrompt{width:min(400px,95vw);min-width:180px}
+  .hm-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,360px);min-height:0;overflow:hidden}
+  .hm-stage{position:relative;min-width:0;min-height:0;background:radial-gradient(ellipse at center,#0a2032 0%,#020911 77%)}
+  #hmCanvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+  #hmCanvas:active{cursor:grabbing}
+  .hm-float{position:absolute;left:12px;top:10px;pointer-events:none;
+    border:1px solid #264a5b;background:#041623d9;border-radius:8px;padding:8px 12px;
+    max-width:min(90%,500px);font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap}
+  .hm-legend{position:absolute;left:12px;bottom:10px;background:#04111cdd;
+    display:flex;gap:10px;flex-wrap:wrap;padding:8px;border-radius:6px;font-size:11px}
+  .hm-legend span{display:flex;gap:5px;align-items:center}
+  .hm-legend i{height:8px;width:8px;border-radius:50%;display:block}
+  .hm-panel{overflow:auto;border-left:1px solid #254358;padding:14px;min-width:0}
+  .hm-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .hm-metric{border:1px solid #1e4256;background:#0a2030;padding:8px;border-radius:7px}
+  .hm-metric b{display:block;font:18px ui-monospace,monospace;color:#e6f5ff}
+  .hm-metric small{font-size:10px;color:#99b8c8}
+  .hm-note{padding:8px 10px;border-left:2px solid #57c7bd;background:#0d2231;
+    color:#b8d4df;font-size:11px;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+  .hm-trace{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.6 ui-monospace,monospace;
+    color:#d3e6ef;background:#051625;padding:9px;border-radius:8px;max-height:310px;overflow:auto}
+  .hm-inline{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .hm-inline label{flex:1 1 80px}
+  .hm-inline input[type=range]{width:100%}
+  #hmScrub{flex:1;min-width:60px}
+  @media(max-width:850px){
+    .hm-body{grid-template-columns:1fr;grid-template-rows:minmax(260px,49%) minmax(260px,1fr)}
+    .hm-panel{border-left:none;border-top:1px solid #254358}
+    .hm-head{max-height:38vh;overflow:auto}
+  }
+
 </style>
 </head>
 <body>
@@ -135,7 +182,7 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button><button id="tabLang">Limbaj · labirintul caracterelor</button><button id="tabSuccessor" type="button">Puzzle · Successor / rezultate</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button><button id="tabLang">Limbaj · labirintul caracterelor</button><button id="tabSuccessor" type="button">Puzzle · Successor / rezultate</button><button id="tabHypermaze" type="button">Hiperlabirint 4D · trasee</button></div>
 
     <section id="successorPane" class="studio-pane" aria-labelledby="scHeading">
       <div class="sc-card">
@@ -524,6 +571,87 @@
     <div id="evalOut">—</div>
   </aside>
 </div>
+
+<!-- Separate full-viewport instrument. Original V17 canvas, tabs, training,
+     checkpoints and worker UI remain unchanged behind this overlay. -->
+<div id="hmOverlay" hidden role="dialog" aria-modal="true" aria-label="Hiperlabirintul textului — trasee din backend">
+ <div class="hm-head">
+  <div class="hm-actions">
+   <h2 style="flex:1 1 210px">HIPERLABIRINT 4D · TEXT / CORP / FORMĂ</h2>
+   <label>Modul real
+     <select id="hmMode">
+      <option value="observed">V18 · graf text învățat (navigare)</option>
+      <option value="unseen">V17 · test text nevăzut (predicții)</option>
+     </select>
+   </label>
+   <label>Creier # <input id="hmBrain" type="number" min="0" value="0"></label>
+   <button id="hmClose" type="button">✕ Închide · revino la V17</button>
+  </div>
+  <div class="hm-actions">
+   <label style="flex:1 1 280px">Întrebare / text
+    <input id="hmPrompt" type="text" placeholder="Întrebare nouă, fără răspunsul-țintă"></label>
+   <button id="hmLoadObserved" type="button">Afișează traseu real absorbit</button>
+   <button id="hmLoadPrompt" type="button">Planifică din întrebare</button>
+   <button id="hmUnseen" type="button">Evaluează 1 text nevăzut în creierul V17</button>
+   <label>Max caractere <input id="hmMax" type="number" min="50" max="12000" value="2000" style="width:80px"></label>
+   <label>T test <input id="hmTemp" type="number" min="0" max="1.5" step=".1" value="0" style="width:64px"></label>
+  </div>
+  <div class="hm-actions">
+   <button id="hmPlay" type="button">▶ Replay fiecare acțiune</button>
+   <button id="hmPrev" type="button">◀ Pas</button>
+   <button id="hmNext" type="button">Pas ▶</button>
+   <button id="hmRestart" type="button">↺ Înainte de acțiune (pas 0)</button>
+   <input id="hmScrub" aria-label="Selectează pasul" type="range" min="0" max="0" value="0">
+   <span id="hmStepNum" style="min-width:85px;font-variant-numeric:tabular-nums">0 / 0</span>
+   <label>Perspectivă
+    <select id="hmPerspective"><option value="global">De sus · întreaga formă</option><option value="local">Cursor · mă urmărește</option></select>
+   </label>
+  </div>
+ </div>
+ <div class="hm-body">
+  <div class="hm-stage">
+   <canvas id="hmCanvas" width="1200" height="760" aria-label="Proiecție 4D rotativă a stărilor text și a traseelor reale"></canvas>
+   <div class="hm-float" id="hmHud" role="status">Nu există date de traseu încă. Alege un mod și încarcă din backend.</div>
+   <div class="hm-legend">
+     <span><i style="background:#f5c45c"></i>forma globală ÎNAINTE</span>
+     <span><i style="background:#4ae5cf"></i>calea efectivă / predicții în lectură</span>
+     <span><i style="background:#f5a568"></i>EU / cursor</span>
+     <span><i style="background:#c181ea"></i>țintă / reference</span>
+     <span><i style="background:#496c88"></i>alternative observate</span>
+   </div>
+  </div>
+  <aside class="hm-panel">
+   <h3>Control perspectivă 4D</h3>
+   <p style="color:#a7bdcd;font-size:11px">Rotește cu mouse-ul, zoom cu rotița; pozițiile au patru coordonate din date reale. NU sunt coordonate 4D învățate de model.</p>
+   <div class="hm-inline">
+    <label>Rotire X–W <input id="hmXW" type="range" min="-3.14" max="3.14" step=".02" value=".65"></label>
+    <label>Rotire Y–W <input id="hmYW" type="range" min="-3.14" max="3.14" step=".02" value="-.27"></label>
+    <label>Rotire Z–W <input id="hmZW" type="range" min="-3.14" max="3.14" step=".02" value=".25"></label>
+    <label>Secțiune W <input id="hmSlice" type="range" min="0" max="1" step=".02" value="1"></label>
+    <label>Zoom <input id="hmZoom" type="range" min=".2" max="5" step=".05" value="1"></label>
+   </div>
+   <div class="hm-inline" style="margin:10px 0">
+    <button id="hmResetCamera" type="button">Reinițializează camera</button>
+    <label><input type="checkbox" id="hmSliceEnabled"> Activează secțiunea W</label>
+   </div>
+   <h3>Ce face organismul?</h3>
+   <div class="hm-metrics">
+    <div class="hm-metric"><small>Forma anticipată</small><b id="hmInitial">—</b></div>
+    <div class="hm-metric"><small>Pași efectivi / observații</small><b id="hmExecuted">—</b></div>
+    <div class="hm-metric"><small>Alternative reale</small><b id="hmAlternative">—</b></div>
+    <div class="hm-metric"><small>Prima abatere de la forma inițială</small><b id="hmDeviation">—</b></div>
+    <div class="hm-metric"><small>Revizuiri de plan observate</small><b id="hmRevisions">—</b></div>
+    <div class="hm-metric"><small>Țintă cunoscută atinsă</small><b id="hmGoal">—</b></div>
+   </div>
+   <div class="hm-note" id="hmMeaning">În V18: graf al tranzițiilor efectiv învățate. În V17: forma generată înainte și predicțiile făcute cu adevărat în evaluare. Acestea sunt mecanisme diferite.</div>
+   <h3>Perspectivă locală · pasul curent</h3>
+   <pre id="hmStepDetails" class="hm-trace">Nu există acțiuni până la încărcarea datelor.</pre>
+   <h3>De ce arată așa?</h3>
+   <div class="hm-note" id="hmProvenance">X, Y, Z, W sunt coordonate măsurabile pentru vizualizare, nu un labirint 4D fizic. Calea și rezultatele nu sunt fabricate.</div>
+  </aside>
+ </div>
+</div>
+
 <button id="chatTab">💬 Vorbește cu el</button>
 <div id="chatPane"><header><b>Vorbește cu graful <span id="chatW">#0</span></b><button id="chatClear" title="începe o conversație nouă">nouă</button><button id="chatClose">✕</button></header>
   <div id="chatSet">
@@ -540,5 +668,6 @@
 <script type="module" src="perspective-studio.js"></script>
 <script type="module" src="language-maze-studio.js"></script>
 <script type="module" src="successor-observatory.js"></script>
+<script type="module" src="text-hypermaze.js"></script>
 </body>
 </html>
