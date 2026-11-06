@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/V17-UNIFIED-LIVING-PERSPECTIVE-20261106
+      - fix/V17-UNIFIED-TEXT-BATCH-PROGRESS-20261106
   workflow_dispatch:
 jobs:
   real-integration-node:
@@ -13,6 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install NumPy for original text-card protocol regression
+        run: python -m pip install --quiet numpy
       - name: Preserve original V17 worker and native UI syntax
         run: |
           node --check v17/transcend/torus-aether/devour/worker.mjs
@@ -25,6 +31,7 @@ jobs:
           node --test v17/transcend/torus-aether/shared/experience.test.mjs
           node --test v17/tests/torus-shared-perspective.test.mjs
           node --test v17/tests/torus-unified-http.test.mjs
+          node --test v17/tests/torus-gpu-text-progress.test.mjs
           node --test isolated/noise-space/text_action_paths.test.mjs isolated/noise-space/causal_text_world.test.mjs
       - name: Original V17 regression suite
         working-directory: v17
@@ -43,7 +50,9 @@ jobs:
         working-directory: v17/transcend/torus-aether/gpu
         run: python -m unittest test_shared_perspective -v
       - name: Preserve original Python GPU command syntax
-        run: python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
 
   windows-powershell51:
     runs-on: windows-latest
