@@ -75,7 +75,7 @@ if ($Text) {
 }
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $brainDir=Join-Path $Out "brains"
-$resume = Test-Path $brainDir -PathType Container -and @(Get-ChildItem -LiteralPath $brainDir -Filter 'brain-*.v8' -ErrorAction SilentlyContinue).Count -gt 0
+$resume = (Test-Path -LiteralPath $brainDir -PathType Container) -and (@(Get-ChildItem -LiteralPath $brainDir -Filter 'brain-*.v8' -ErrorAction SilentlyContinue).Count -gt 0)
 $opts=@(
   "--workers",[string]$Workers,"--arms","winner",
   "--mem","3","--every","20000","--chars","0",
