@@ -105,6 +105,32 @@ const worldsOnce = async (record) => {                                     // on
   if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
+  if (m && m.sharedEval) {
+    const {id, seed = 74129} = m.sharedEval;
+    void (async () => {
+      if (!gpuSet) throw Error("Choose a real PyTorch device (CUDA or explicit CPU) before shared evaluation");
+      if (!shared.training?.step && !(sharedFile && fs.existsSync(sharedFile))) throw Error("Shared head has not trained yet");
+      const observed = [], count = {maze: 0, transform: 0, text: 0};
+      const collect = (domain, cap) => e => { if (count[domain] >= cap) return;
+        observed.push({domain: e.domain, before: e.before, after: e.after, action: e.action, context: e.context}); count[domain]++; };
+      if (MAZE) brain.examMazes([7, 9, 11], 1, seed, {onTransition: collect("maze", 40)});
+      if (TRANS && brain.causal) brain.evalTransforms(3, 0, seed, {onTransition: collect("transform", 40)});
+      const held = /Q:\s*([^\r\n]+)\r?\nA:/.exec(evalText);
+      if (TEXT && held) {
+        const episode = causalText.navigate(held[1], textPaths, {steps: 24, seed});
+        for (const e of episode.events) { if (count.text >= 24) break;
+          observed.push({domain: "text", before: e.before, after: e.after,
+            action: "speech-tool:" + e.action.tool + ":" + e.action.token, context: held[1].slice(0, 256)}); count.text++; }
+      }
+      if (!observed.length) throw Error("No unseen actions could be observed by frozen evaluators");
+      const G = await gpuOn(); if (!G) throw Error(gpuError || "PyTorch device not ready");
+      if (!sharedLoaded) { if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed}); sharedLoaded = true; }
+      const results = await G.call({cmd: "shared_eval", samples: observed.slice(0, 128), seed: brain.seed});
+      parentPort.postMessage({type: "chat", id, kind: "shared", seed, counts: count, ...results, frozen: true,
+        explanation: "Unseen V17 world transitions; no training, no BFS oracle or heldout answer provided to the shared learner."});
+    })().catch(err => parentPort.postMessage({type: "chat", id, kind: "shared", error: err.message}));
+    return;
+  }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } sharedLoaded = false; return; }

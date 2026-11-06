@@ -149,6 +149,14 @@ http.createServer((req, res) => {
       try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; } return json(res, {...sl.talker.examMazes(sizes, per), fromSave: true}); } catch (err) { return json(res, {error: err.message}); } }
     const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 300 s"}); }, 300000);
     chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({exam: {id, sizes, per}}); return; }
+  if (req.method === "POST" && url === "/shared-eval") {
+    const sl = slots.find(x => x.w === +(q.get("w") || 0));
+    if (!sl || !sl.wk) return json(res, {error: "The selected V17 graph is not running"});
+    const id = ++chatId, timer = setTimeout(() => { chats.delete(id); json(res, {error: "Shared PyTorch evaluation timeout"}); }, 180000);
+    chats.set(id, result => { clearTimeout(timer); json(res, result); });
+    sl.wk.postMessage({sharedEval: {id, seed: +(q.get("seed") || 74129)}});
+    return;
+  }
   if (req.method === "POST" && url === "/chat") {                        // body {w, history: [["you"|"him", text]…], opts: {T, max, stopBlank, learn}}
     let body = ""; req.on("data", d => body += d); req.on("end", () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
