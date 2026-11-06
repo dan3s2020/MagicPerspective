@@ -12,6 +12,7 @@ import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {NestedTextGears} from "../../../../isolated/noise-space/nested_text_gears.mjs";
+import {NativeGearDrive} from "../../../../isolated/noise-space/native_gear_drive.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
@@ -42,27 +43,37 @@ brain.setSharedObserver(sample => shared.observe(sample));
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed}), nestedGears = new NestedTextGears();
+let restoredNativeGears = null;
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
     const t = JSON.parse(fs.readFileSync(textFile, "utf8"));
     if (t.version !== 1) throw Error("unknown language sidecar");
     textPaths = TextActionPaths.restore(t.paths); causalText = CausalTextAgent.restore(t.causal);
     if(t.gears) nestedGears = NestedTextGears.restore(t.gears);
+    if(t.nativeGears) restoredNativeGears = t.nativeGears;
   } catch (err) {
     parentPort.postMessage({type: "note", w: workerData.gw, text: "language sidecar not loaded: " + err.message});
   }
 }
+let nativeGears;
+try { nativeGears=restoredNativeGears ?
+  NativeGearDrive.restore(restoredNativeGears,{gears:nestedGears}) :
+  new NativeGearDrive({gears:nestedGears,seed:brain.seed}); }
+catch(err) { nativeGears=new NativeGearDrive({gears:nestedGears,seed:brain.seed});
+  parentPort.postMessage({type:'note',w:workerData.gw,text:'native gear checkpoint ignored: '+err.message}); }
+brain.setGearDriver(nativeGears);
+const gearStatus=()=>({...nestedGears.summary(),native:nativeGears.summary()});
 const saveText = () => {
   if (!textFile) return;
   fs.mkdirSync(path.dirname(textFile), {recursive: true});
-  fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export(), gears: nestedGears.export()}));
+  fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export(), gears: nestedGears.export(), nativeGears:nativeGears.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
 };
 const absorbGears = row => {
   if(typeof row?.answer!=='string'||!row.answer.trim())return;
   // All observed training answers, not only the 8 sampled for the old causal head.
   let emitted=0;
-  nestedGears.observeAnswer(row.answer.slice(0,4096), {limit:8, onEvidence:e=>{
+  nativeGears.observePair(String(row.prompt||''),row.answer.slice(0,4096), {onEvidence:e=>{
     if(emitted++<12)brain.observeShared({domain:'text',before:e.before,after:e.after,
       action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:String(row.prompt||'').slice(0,256)});
   }});
@@ -82,7 +93,7 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), selfcode: selfcode?.status() || null, gears: nestedGears.summary(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shared: shared.status(), selfcode: selfcode?.status() || null, gears: gearStatus(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
@@ -92,7 +103,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const currentTextLength = brain.trace.text.length;
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfcode: selfcode?.status() || null, gears: nestedGears.summary(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfcode: selfcode?.status() || null, gears: gearStatus(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -204,7 +215,16 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
         let accepted=0, observations=0;
         for(const sentence of req.examples) {
           if(typeof sentence!=='string'||sentence.length>600)throw Error('Invalid training observation');
-          if(nestedGears.observeSentence(sentence,e=>{
+          const split=sentence.indexOf('=>');
+          if(split>0){
+            const prompt=sentence.slice(0,split).trim(),answer=sentence.slice(split+2).trim();
+            if(!prompt||!answer)throw Error('Expected question => observed answer');
+            const result=nativeGears.observePair(prompt,answer,{onEvidence:e=>{
+              if(observations++<128)brain.observeShared({domain:'text',before:e.before,after:e.after,
+                action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:prompt.slice(0,256)});
+            }});
+            if(result.conditional||result.observed)accepted++;
+          } else if(nestedGears.observeSentence(sentence,e=>{
             if(observations++<128)brain.observeShared({domain:'text',before:e.before,after:e.after,
               action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:'user observed sentence'});
           }))accepted++;
@@ -231,7 +251,7 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     } catch(err){result={ok:false,error:err.message,summary:nestedGears.summary()};}
     parentPort.postMessage({type:'chat',kind:'gear',id:req.id,...result});return;
   }
-  if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
+  if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn || r.gear?.used) shot(true); return; }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
   if (m === "stop") stop = true; else if (m === "pause") { paused = true; selfcode?.pause(); } else if (m === "resume") { paused = false; selfcode?.resume(); } else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
