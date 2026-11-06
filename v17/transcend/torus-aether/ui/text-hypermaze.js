@@ -676,6 +676,13 @@ async function pollLive(){
     if(!open()||id!==w()||!liveEnabled)return;
     nativeStream=livingV17Trace(graph);
     if(!model||model.kind==="native-stream"){
+      const statsText=$("hmLiveMetrics").textContent;
+      text("hmLiveMetrics",statsText+"\nV17 C: "+pc(nativeStream.accC)+
+        " · câmp: "+pc(nativeStream.accF)+
+        "\nNoduri V17: "+fmt(nativeStream.nodes.length)+
+        " · muchii: "+fmt(nativeStream.links.length));
+    }
+    if(!model||model.kind==="native-stream"){
       model={kind:"native-stream",source:"LIVE_V17_GRAPHTRACE",layout:null};
       text("hmInitial","formă V17 în curs");
       text("hmExecuted",fmt(nativeStream.stream.length)+" observații recente");
@@ -701,6 +708,34 @@ async function pollLive(){
    "\nAsigură-te că serverul nou rulează; nu afișez demo.");
  }finally{liveInFlight=false;}
 }
+function drawNativeInset(){
+ const inset=$("hmNativeInset"),ctx=inset.getContext("2d"),W=inset.width,H=inset.height;
+ ctx.clearRect(0,0,W,H);ctx.fillStyle="#051524";ctx.fillRect(0,0,W,H);
+ if(!nativeStream){
+  ctx.fillStyle="#8dbccc";ctx.font="11px ui-monospace,monospace";
+  ctx.fillText("Aștept graful real V17…",10,H/2);return;
+ }
+ const nodes=nativeStream.nodes;
+ const point=v=>project4D(v.slice(0,4),{...camera,zoom:.72},W,H);
+ ctx.lineWidth=.65;
+ for(const e of nativeStream.links.slice(0,700)){
+  const a=nodes[e.fromIndex]?.coord,b=nodes[e.toIndex]?.coord;
+  if(!a||!b)continue;
+  const x=point(a),y=point(b);
+  ctx.globalAlpha=.25;ctx.strokeStyle=e.kind==="world"?"#4bdfc8":"#78a0bf";
+  ctx.beginPath();ctx.moveTo(x.x,x.y);ctx.lineTo(y.x,y.y);ctx.stroke();
+ }
+ ctx.globalAlpha=1;
+ for(const node of nodes.slice(0,280)){
+  if(!node.coord)continue;
+  const p=point(node.coord);
+  ctx.fillStyle=node.error?"#fa697b":node.type==="sym"?"#44dac6":
+    node.type==="A"?"#ebbf67":"#b791dd";
+  ctx.beginPath();ctx.arc(p.x,p.y,node.error?2.7:1.7,0,Math.PI*2);ctx.fill();
+ }
+ ctx.fillStyle="#b4e6e2";ctx.font="10px ui-monospace,monospace";
+ ctx.fillText(fmt(nodes.length)+" noduri · "+fmt(nativeStream.links.length)+" legături",6,H-7);
+}
 function draw(){
  if(!open())return;
  const rect=cv.getBoundingClientRect();
@@ -723,6 +758,7 @@ function draw(){
   g.textAlign="left";return;
  }
  if(!model){
+  drawNativeInset();
   g.fillStyle="#b0cfdd";g.textAlign="center";g.font="16px system-ui";
   g.fillText("Selectează un traseu real sau un test pe text nevăzut.",W/2,H/2);
   g.fillText("Globala → corp → fiecare pas · proiecție rotativă a 4 componente",W/2,H/2+30);
@@ -731,6 +767,7 @@ function draw(){
  if(model.kind==="observed")drawObserved();
  else if(model.kind==="native-stream")drawNativeStream();
  else drawUnseen();
+ drawNativeInset();
  g.fillStyle="#8aacc1";g.textAlign="left";g.font="11px ui-monospace,monospace";
  g.fillText($("hmSpace").value==="learned5"?
   "Geometria REALĂ a simbolurilor V17 · Geometry.U[0..4] · torus 5D, secțiune 4D":
