@@ -27,7 +27,8 @@ foreach ($file in @(
     "v17/transcend/torus-aether/devour/devour.mjs",
     "v17/transcend/torus-aether/devour/worker.mjs",
     "v17/transcend/torus-aether/ui/app.js",
-    "v17/transcend/torus-aether/devour/selfcode-native.mjs"
+    "v17/transcend/torus-aether/devour/selfcode-native.mjs",
+    "isolated/noise-space/nested_text_gears.mjs"
 )) {
     & node --check (Join-Path $root $file)
     if ($LASTEXITCODE -ne 0) { throw "Syntax check failed: $file" }
@@ -37,7 +38,8 @@ $tests = @(
     "v17/transcend/torus-aether/devour/selfcode-native.test.mjs",
     "v17/transcend/torus-aether/devour/selfcode-evaluator.test.mjs",
     "experimental/self-world/code-world.test.mjs",
-    "v17/transcend/torus-aether/shared/experience.test.mjs"
+    "v17/transcend/torus-aether/shared/experience.test.mjs",
+    "isolated/noise-space/nested_text_gears.test.mjs"
 )
 & node --test @($tests | ForEach-Object { Join-Path $root $_ })
 if ($LASTEXITCODE -ne 0) { throw "Regression tests failed, training will not start." }
@@ -45,7 +47,7 @@ if ($LASTEXITCODE -ne 0) { throw "Regression tests failed, training will not sta
 Write-Host "=== V17 NATIVE SELF-CODE TRAINING (CUDA, real trainer) ===" -ForegroundColor Green
 Write-Host "Browser: http://127.0.0.1:$Port/"
 Write-Host "Checkpoints (resume, not reset): $runtime"
-Write-Host "Worlds: text,maze,transform,selfcode"
+Write-Host "Worlds: text,maze,transform,selfcode + nested-language gears inside text"
 Write-Host "GPU: $Gpu, VRAM budget: $Vram GB, parallel worlds: $GpuWorlds, text batch: $GpuTextBatch"
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "v17\START_V17.ps1") `
     -Workers $Workers -Arms "stable+many" -Mem $Mem `
