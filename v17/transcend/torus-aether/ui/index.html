@@ -60,6 +60,26 @@
   #obsMeta,#obsHealth{font-size:12px;overflow-wrap:anywhere}
   #obsHealth{color:#8ed1ef}
   #obsCaveat{font-size:11.5px;color:var(--dim);line-height:1.6}
+  .app.languageWorld #g,.app.languageWorld .hud,.app.languageWorld .legend{display:none}
+  #languageMazeCv{display:none;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+  .app.languageWorld #languageMazeCv{display:block}
+  .app.languageWorld #languageMazeCv:active{cursor:grabbing}
+  aside.side.languageOn > :not(.tabs):not(#languageMazePane){display:none}
+  #languageMazePane{display:none;min-width:0}
+  aside.side.languageOn #languageMazePane{display:block}
+  #languageMazePane input,#languageMazePane select{background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:7px;padding:6px;font:inherit;max-width:100%}
+  #languageMazePane .lmrow{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  #languageMazePane .lmrow label{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--dim)}
+  #languageMazePane input[type=range]{accent-color:var(--gold);min-width:110px}
+  #languageMazePane button{padding:6px 9px;font-size:12px}
+  #languageMazeStatus{color:#84c7ea;font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  #languageMazeMetrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  #languageMazeMetrics div{border:1px solid #254157;border-radius:8px;padding:7px;background:#0a1420;min-width:0}
+  #languageMazeMetrics small{display:block;color:var(--dim);font-size:11px}
+  #languageMazeMetrics b{font:600 16px ui-monospace,monospace;overflow-wrap:anywhere}
+  #languageMazeFrame{padding:9px;background:#0a121c;border:1px solid #223a50;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 ui-monospace,monospace;max-height:300px;overflow:auto}
+  #languageMazePath{padding:8px;border-left:2px solid var(--gold);color:#dceefa;max-height:270px;overflow:auto;white-space:pre-wrap;font:11px/1.6 ui-monospace,monospace}
+  .lmNote{color:var(--dim);font-size:11px;line-height:1.6}
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
@@ -69,6 +89,7 @@
 <div class="app">
   <div class="graph">
     <canvas id="g"></canvas>
+    <canvas id="languageMazeCv" hidden aria-label="Proiecție navigabilă 5D a stărilor textuale observate, cu calea prezisă și traseul real al cursorului"></canvas>
     <div class="hud">
       <h1>Graful viu <span>pornește gol</span></h1>
       <p>Nimic nu e dat de la început: niciun nod, nicio linie, nicio țintă, nicio acțiune. Fiecare nod se naște din experiență,
@@ -90,7 +111,7 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabObserve">Observator LIVE · grafice</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabObserve">Observator LIVE · grafice</button><button id="tabLanguageMaze">Labirintul limbajului · 5D</button></div>
     <div id="evalPane">
       <h2>Evaluare pe ce n-a trăit niciodată — din prima încercare</h2>
       <p class="note">O copie a grafului <b id="evW">#0</b>, încărcată din save-ul lui (îl salvează chiar atunci), rulează pe procesor. Antrenarea merge mai departe neatinsă; copia nu învață între lumi.</p>
@@ -127,6 +148,62 @@
       <p id="obsCaveat">Graficele folosesc exclusiv contoare, tranziții, poziții și activări reale ale backendului.</p>
       <div class="row"><button id="obsExport">Exportă instantaneele reale (JSON)</button></div>
       <pre id="obsDetails"></pre>
+    </div>
+    <div id="languageMazePane">
+      <h2>Labirintul limbajului · stări, tranziții și perspective</h2>
+      <p class="lmNote">Același graf învățat de V17. Auriu = forma globală prezisă înainte de prima mișcare; albastru = pașii executați de politica locală; roșu = abatere; gri = ramuri căutate sau observate. Poți roti proiecția și urmări fiecare acțiune.</p>
+      <p class="lmNote"><b>Perspectiva globală:</b> căutare pe căi din operații învățate. <b>Perspectiva corpului:</b> starea curentă, alternativele accesibile, acțiunea efectiv aleasă și eventualele recalculări ale formei. Geometria afișată este o proiecție explicată din date reale, nu un spațiu semantic 5D deja demonstrat.</p>
+      <div class="lmrow">
+        <label style="flex:1;min-width:180px">Stare observată de pornire
+          <input id="languageMazeStart" placeholder="Introdu o propoziție văzută în corpus" style="width:100%">
+        </label>
+      </div>
+      <div class="lmrow">
+        <label style="flex:1;min-width:180px">Condiții obiectiv (tokenuri, nu răspunsul)
+          <input id="languageMazeGoal" placeholder="ex.: She,calm" style="width:100%">
+        </label>
+      </div>
+      <div class="lmrow">
+        <button id="languageMazePlan">Prezice forma → execută în lumea învățată</button>
+        <button id="languageMazeFollow">Urmărește planul, fără politica locală</button>
+      </div>
+      <p id="languageMazeStatus">Aștept date reale din antrenamentul original.</p>
+      <div id="languageMazeMetrics"></div>
+      <div class="lmrow">
+        <button id="languageMazePlay">▶ Replay</button>
+        <button id="languageMazePause">⏸ Pauză</button>
+        <button id="languageMazePrev">◀ Pas</button>
+        <button id="languageMazeNext">Pas ▶</button>
+        <button id="languageMazeRestart">↺ De la început</button>
+      </div>
+      <div class="lmrow">
+        <label style="flex:1">Cadru <input id="languageMazeScrub" type="range" min="0" max="0" step="1" value="0"></label>
+        <b id="languageMazeFrameNo" class="dim">0 / 0</b>
+      </div>
+      <div class="lmrow">
+        <label>Viteză replay <input id="languageMazeSpeed" type="range" min="100" max="1300" step="100" value="450"></label>
+        <label>Perspective <select id="languageMazePerspective">
+          <option value="both">Global + corp</option>
+          <option value="global">Numai global</option>
+          <option value="body">Din corp</option>
+        </select></label>
+      </div>
+      <div class="lmrow">
+        <label>Rotație 5D <select id="languageMazeRotation">
+          <option value="01">X ↔ Y</option><option value="02">X ↔ Z</option>
+          <option value="03">X ↔ W</option><option value="14">Y ↔ V</option>
+          <option value="34">W ↔ V</option>
+        </select></label>
+        <label>Felie <select id="languageMazeSlice"><option value="all">Toate conexiunile</option>
+          <option value="w">Secțiune pe W</option><option value="v">Secțiune pe V</option></select></label>
+        <button id="languageMazeRecenter">Recentrează</button>
+      </div>
+      <p id="languageMazeGeometry" class="lmNote">Mișcă mouse-ul cu butonul apăsat pentru rotație. Rotița mărește sau micșorează graful. Pozițiile sunt calculate din observații reale.</p>
+      <h2>Cadru curent · predicție, acțiune, efect, delta</h2>
+      <div id="languageMazeFrame">Nicio cale testată încă. Pe canvas poți vedea transformările observate chiar dacă nu ai ales o țintă.</div>
+      <h2>Traseu inițial, ramificații și actualizări</h2>
+      <div id="languageMazePath">Aștept antrenamentul limbajului.</div>
+      <p class="lmNote">Execuția de text este verificată în modelul de editări învățat. Nu există încă un evaluator semantic independent; nu afirmăm 100% corectitudine lingvistică din succesul navigării interne.</p>
     </div>
     <div id="livePanel" hidden>
       <h2>Grafurile care devorează acum (alege unul ca să intri în spațiul lui)</h2>
