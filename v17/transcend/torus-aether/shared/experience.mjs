@@ -1,6 +1,6 @@
 // SharedPerspective observed-experience bridge. One queue/model per ORIGINAL V17 Brain.
 // Does not use solutions, BFS distance fields, simulator private mechanics, or held-out answers.
-const DOMAIN = new Set(['maze', 'transform', 'text']);
+const DOMAIN = new Set(['maze', 'transform', 'text', 'code']);
 const cap = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const simple = value => {
   if (typeof value === 'string') return value.slice(0, 4096);
@@ -12,7 +12,7 @@ export class SharedExperience {
     this.capacity = cap(capacity | 0, 8, 4096);
     this.seed = seed;
     this.queue = [];
-    this.counts = {maze: 0, transform: 0, text: 0};
+    this.counts = {maze: 0, transform: 0, text: 0, code: 0};
     this.total = 0;
     this.unknown = 0;
     this.latest = null;
