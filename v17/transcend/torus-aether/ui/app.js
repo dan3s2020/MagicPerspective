@@ -418,8 +418,14 @@ function loop() {
   if (LIVE && now - lastLiveDraw < 55) { requestAnimationFrame(loop); return; }
   lastLiveDraw = now;
   try {
-    if (LIVE && frame % 90 === 0) evaluate();
-    if (LIVE) { drawMaze(); drawTrans(); }
+    if (LIVE && frame % 90 === 0) {
+      try { evaluate(); } catch (err) { console.warn("Live evaluation panel:", err.message); }
+    }
+    if (LIVE) {
+      // Optional panels must never prevent rendering the main graph.
+      try { drawMaze(); } catch (err) { console.warn("Maze viewer:", err.message); }
+      try { drawTrans(); } catch (err) { console.warn("Transform viewer:", err.message); }
+    }
     if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
     for (const n of nodes.values()) n.act *= .93;
     for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
