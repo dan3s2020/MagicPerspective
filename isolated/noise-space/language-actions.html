@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MagicPerspective · Language Intervention Observatory</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Segoe UI,sans-serif;color:#e8f1ff;background:#070c16}
+*{box-sizing:border-box}body{margin:0;padding:14px;max-width:1600px;margin-inline:auto}a{color:#9dcbff}h1{font-size:22px;margin:6px 0}.sub{color:#a5b7cf}header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;padding:10px 0 16px;border-bottom:1px solid #30405d}main{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(320px,1fr);gap:14px;padding-top:14px}.panel{border:1px solid #30405d;border-radius:13px;padding:15px;background:#111b2b;margin-bottom:13px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:12px;background:#15243a;border-radius:10px}.metric b{display:block;font-size:25px}.metric small{color:#abc0dc}canvas{display:block;width:100%;height:360px;background:#09111e;border:1px solid #3c5373;border-radius:9px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#08111e;color:#d5e4f9;padding:13px;border-radius:7px;max-height:330px;overflow:auto}button,input,select{border:1px solid #587096;background:#1c2e49;color:white;border-radius:8px;padding:8px;font:inherit}button{cursor:pointer}button:focus-visible{outline:2px solid #b1d4ff}label{display:inline-flex;gap:6px;align-items:center}input[type=range]{width:100%;max-width:520px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:7px;border-bottom:1px solid #344a63}th{color:#bfd3ee}.good{color:#72dfb1}.bad{color:#fb9b9b}.dim{color:#a5b7cf}.tags{display:flex;gap:8px;flex-wrap:wrap}.tag{border:1px solid #445b80;border-radius:20px;padding:4px 9px;font-size:12px}@media(max-width:950px){main{display:block}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<header><div><h1>MagicPerspective · Language Action World</h1><div class="sub">Measured action → predicted effect → observed effect → reward — ORIGINAL V17 training companion</div></div><div class="tags"><a href="/">Return to V17 observatory</a><span id="status" class="tag">CONNECTING</span></div></header>
+<section class="panel" style="margin-top:13px"><strong>Interpretation boundary</strong><p class="sub">This is a real state-transition graph for word-edit actions learned from Q/A examples. The horizontal direction is time, not a measured hyperdimensional coordinate. An action path is not proof of semantic comprehension or cross-world generalization. Only training exercises supply feedback from the reference answer. Held-out paths have no reference or reward during execution.</p></section>
+<div class="metrics"><div class="metric"><small>Training episodes</small><b id="eps">–</b></div><div class="metric"><small>Observed interventions</small><b id="acts">–</b></div><div class="metric"><small>Dynamics observations</small><b id="dyn">–</b></div><div class="metric"><small>Value updates</small><b id="value">–</b></div></div>
+<main><div><section class="panel"><h2>Actual action trajectories</h2><div class="tags"><label>Sequence <select id="which"><option value="last">Recent training</option><option value="heldout">Frozen held-out</option></select></label><span id="meta" class="tag"></span></div><canvas id="graph"></canvas><p class="sub">Nodes = observed text states. Edges = organism actions. Green = positive measured training reward; red = negative; blue = held-out without feedback. Predictions are shown only when available.</p><label>Replay step <input type="range" id="step" min="0" max="0" value="0"></label><button id="prev">◀</button><button id="next">▶</button><button id="play">Play</button><pre id="frame">No observed text-world actions yet.</pre></section><section class="panel"><h2>Goal-conditioned experience</h2><pre id="reward"></pre></section></div><div><section class="panel"><h2>What the organism has discovered</h2><p class="sub">The original action IDs are opaque to the learner. Effects below were induced from observed interventions, not read from world physics.</p><table><thead><tr><th>Action ID</th><th>Observed effects</th><th>Most supported</th></tr></thead><tbody id="effectRows"></tbody></table></section><section class="panel"><h2>Frozen held-out evaluation</h2><pre id="eval"></pre></section><section class="panel"><h2>Back-end integrity</h2><pre id="info"></pre></section></div></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);let state=null,current=0,play=null,lastSignature='';
+const pretty=v=>JSON.stringify(v,null,2);const pct=n=>Number.isFinite(n)?(n*100).toFixed(1)+'%':'—';
+const route=()=>$('which').value==='heldout'?state?.causalText?.heldout:state?.causalText?.last;
+const html=(tag,s)=>{const e=document.createElement(tag);e.textContent=String(s);return e};
+function details(){const a=route(),events=a?.events||[];const step=Math.min(current,events.length-1),e=events[step];
+ $('step').max=Math.max(0,events.length-1);$('step').value=Math.max(0,step);
+ $('meta').textContent=(a?'Steps '+events.length+' · '+('reward'in a?pct(a.reward):'reference hidden'):'No recorded run');
+ $('frame').textContent=!e?'No actual actions recorded. Select a Parquet Q/A source and enable language-world training in V17.':
+ pretty({step:e.step,observedBefore:e.before,action:e.action,modelPrediction:e.model?.predictedBeforeObservation??e.predicted??null,predictionMatched:e.model?.predictionMatched??null,observedAfter:e.after,feedback:e.feedback??'held-out: unavailable',alternatives:e.alternatives||null});
+ const {canvas,g,w,h}=measureCanvas();g.clearRect(0,0,w,h);g.fillStyle='#09111e';g.fillRect(0,0,w,h);
+ if(!events.length){g.fillStyle='#a5b7cf';g.font='15px sans-serif';g.fillText('No training trajectory yet',20,h/2);return;}
+ const count=events.length,pad=36,gap=(w-2*pad)/Math.max(1,count),y=h/2;
+ for(let i=0;i<count;i++){
+  const ev=events[i],x=pad+i*gap,nx=pad+(i+1)*gap;
+  const color=ev.feedback==null?'#84aeff':ev.feedback.delta>0?'#58dbad':ev.feedback.delta<0?'#fd9aa5':'#c9ab6a';
+  g.strokeStyle=color;g.lineWidth=3;g.beginPath();g.moveTo(x,y);g.lineTo(nx,y);g.stroke();
+  g.fillStyle=i===step?'#fff':color;g.beginPath();g.arc(x,y,5+(i===step?4:0),0,2*Math.PI);g.fill();
+  if(i===step||count<14){g.fillStyle='#d8e8fb';g.font='11px sans-serif';g.fillText('a'+ev.action.tool,x-7,y-20);}
+ }
+ g.fillStyle='#9dcbff';g.font='12px sans-serif';g.fillText('start',8,28);g.fillText('end',w-35,28);
+}
+function measureCanvas(){const canvas=$('graph'),rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(200,Math.floor(rect.width*dpr)),h=Math.max(150,Math.floor(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}const g=canvas.getContext('2d');return{canvas,g,w,h};}
+function render(){if(!state)return;const s=state.causalText;
+ $('status').textContent=state.error?'ERROR':state.running?'TRAINING':'READY';
+ for(const [id,val] of [['eps',s?.episodes],['acts',s?.interventions],['dyn',s?.dynamics?.observations],['value',s?.value?.updates]])$(id).textContent=val?.toLocaleString()||'0';
+ const rows=$('effectRows');rows.replaceChildren();for(const x of s?.dynamics?.effects||[]){const tr=html('tr','');for(const v of [x.tool,(x.observed||[]).map(y=>y.join(':')).join(', '),x.prediction||'UNKNOWN'])tr.appendChild(html('td',v));rows.appendChild(tr);}
+ $('reward').textContent=pretty({training:s?.last?{steps:s.last.steps,reward:s.last.reward,solved:s.last.solved,final:s.last.final}:null,
+  value:s?.value,goalLengthExamples:s?.goalLengthExamples});
+ $('eval').textContent=pretty(s?.heldout?{prompt:s.heldout.prompt,generated:s.heldout.generated,reference:s.heldout.reference,metrics:s.heldout.metrics,
+  intendedLength:s.heldout.intendedLength,referenceReadAfterPlanning:s.heldout.referenceReadAfterPlanning}:state?.evaluation?.text?.causalNavigation||{status:'No Q/A held-out test'});
+ $('info').textContent=pretty({engine:state?.engine,device:state?.device,causal:state?.causalMode,checkpoint:state?.causalCheckpoint,
+  dataset:state?.source?.root,training:state?.running,error:state?.error,limits:s?.notImplemented});
+ const events=route()?.events||[],signature=[route()?.prompt,events.length,$('which').value].join('|');if(signature!==lastSignature){current=0;lastSignature=signature;}
+ details();
+}
+async function refresh(){try{const r=await fetch('/api/v17',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);state=await r.json();render();}catch(e){$('status').textContent='ERROR: '+e.message;}}
+$('which').onchange=()=>{current=0;lastSignature='';render();};$('step').oninput=()=>{current=Number($('step').value);details();};$('prev').onclick=()=>{current=Math.max(0,current-1);details();};$('next').onclick=()=>{current=Math.min((route()?.events?.length||1)-1,current+1);details();};
+$('play').onclick=()=>{if(play){clearInterval(play);play=null;$('play').textContent='Play';return;}$('play').textContent='Pause';play=setInterval(()=>{const n=route()?.events?.length||0;if(current>=n-1){$('play').click();return;}current++;details();},500);};
+window.addEventListener('resize',()=>details());refresh();setInterval(refresh,1100);
+</script></body></html>
