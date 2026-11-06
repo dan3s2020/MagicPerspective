@@ -164,6 +164,20 @@
           <div class="sc-kpi"><small>Reguli poziționale descoperite</small><b id="scRulesCount">—</b><em>Compoziție observată; distinctă de semantica liberă</em></div>
           <div class="sc-kpi"><small>Procesare GPU / backend</small><b id="scGpu">—</b><em>Mod configurat; nu procent de utilizare măsurat</em></div>
         </div>
+        <div class="sc-card" style="background:#092330;border-color:#258a80">
+          <h3>Successor TD · ÎNVĂȚARE REALĂ, în timpul antrenării</h3>
+          <p>Actualizări din fiecare răspuns Q/A finalizat de worker, inclusiv toate rândurile confirmate după un batch CUDA. Valorile sunt învățate și salvate. Nicio predicție de text nou nu este declarată corectă doar pentru că valoarea TD crește.</p>
+          <div class="sc-kpis">
+            <div class="sc-kpi"><small>Exemple Q/A antrenate de Successor</small><b id="scTdRows">—</b><em>Nu este un calcul la apăsarea butonului Planifică</em></div>
+            <div class="sc-kpi"><small>Actualizări TD reale</small><b id="scTdUpdates">—</b><em>Corecții ale valorilor viitoare în timpul învățării</em></div>
+            <div class="sc-kpi"><small>Stări învățate / capacitate</small><b id="scTdStates">—</b><em>Memorie de trasee, salvată odată cu lumea textului</em></div>
+            <div class="sc-kpi"><small>Eroare temporală TD |Δ| medie</small><b id="scTdError">—</b><em>Eroare de actualizare, NU procent de răspunsuri corecte</em></div>
+            <div class="sc-kpi"><small>Caractere observate în TD</small><b id="scTdCharacters">—</b><em>Din rândurile de antrenare Q/A confirmate</em></div>
+            <div class="sc-kpi"><small>Scări învățate · 1 / 64 / 4096 / 262144</small><b id="scTdScales">—</b><em>Propagare locală și ierarhică, pe aceeași observație</em></div>
+          </div>
+          <canvas id="scTdCanvas" class="sc-canvas" width="600" height="210" style="margin-top:10px" aria-label="Grafic live al actualizărilor și erorii TD din antrenare"></canvas>
+          <div id="scTdStatus" class="sc-status" role="status">Aștept primele actualizări TD din corpus. O valoare «—» nu este un rezultat de antrenare.</div>
+        </div>
         <div id="scLive" class="sc-callout" role="status">Citesc progresul din /graphs și /telemetry. Câmpurile neantrenate nu primesc rezultate inventate.</div>
       </div>
       <div class="sc-card">
@@ -186,6 +200,8 @@
           <div class="sc-kpi"><small>Departajări Successor global / local</small><b id="scTies">—</b><em>Intervine numai când V este exact egal pentru două căi</em></div>
           <div class="sc-kpi"><small>Traseu original vs. hibrid</small><b id="scDivergence">—</b><em>Identic = noul operator nu a schimbat alegerea</em></div>
           <div class="sc-kpi"><small>Potrivire local ↔ global</small><b id="scAgreement">—</b><em>Concordanța internă NU dovedește că răspunsul e corect</em></div>
+          <div class="sc-kpi"><small>Noduri cu valoare TD învățată</small><b id="scOnlineCovered">—</b><em>Acoperirea reală; restul folosesc fallback-ul empiric</em></div>
+          <div class="sc-kpi"><small>Successor empiric vs. TD la început</small><b id="scOnlineRoot">—</b><em>Distingem valoarea învățată de calculul static anterior</em></div>
         </div>
       </div>
       <div class="sc-card">
@@ -226,7 +242,8 @@
       <div class="sc-card">
         <h3>5 · Ce înseamnă mecanismele și ce NU s-a demonstrat</h3>
         <div class="sc-callout"><b>V17 Original</b> — propagă cea mai mare atracție disponibilă. Își păstrează aceeași ecuație, acțiuni și checkpointuri.</div>
-        <div class="sc-callout"><b>Successor S</b> — media ponderată a vizitelor viitoare la ținte cunoscute. Folosește suportul observațiilor din corpus; nu reprezintă interferență cuantică.</div>
+        <div class="sc-callout"><b>Successor S în antrenare</b> — primește fiecare rând Q/A real confirmat, actualizează online valori de viitor cu diferențe temporale și le salvează în sidecar. Folosește scări 1/64/4096/262144 de caractere. V17 nu este rescris, iar regula hibridă consultă aceste valori numai pentru egalități de atracție.</div>
+        <div class="sc-callout"><b>Successor empiric (control)</b> — calculul static din traseele deja observate rămâne fallback pentru stări fără antrenament TD. Nici empiricul, nici TD nu sunt interferență cuantică.</div>
         <div class="sc-callout"><b>Hibrid</b> — nu înlocuiește propagarea V17 și nu adaugă răspunsuri. Alege cu S numai între continuări cu V exact egal și care urcă spre țintă.</div>
         <div class="sc-callout"><b>Validare</b> — testele de cod și labirint verifică compatibilitatea. Exactitatea textului se măsoară separat, pe date nevăzute, fără răspuns-țintă la planificare.</div>
         <div class="sc-callout"><b>Limită actuală</b> — ajungerea într-un terminal memorat nu este dovadă de înțelegere a limbajului. 100% GPU și avantaj cuantic nu sunt demonstrate de această integrare.</div>
