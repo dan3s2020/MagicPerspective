@@ -366,6 +366,8 @@ if (TEXT && gpuSet && !stop && textBatch.length) {
   catch (err) { gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
     parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
 }
+// Publish the FINAL real corpus state even when fewer than 25 documents remain.
+shot(true);
 report(stop ? false : true);
 if (gpu) gpu.close();
 parentPort.close();
