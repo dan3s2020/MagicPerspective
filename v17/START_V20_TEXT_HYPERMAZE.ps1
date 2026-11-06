@@ -1,5 +1,5 @@
 # MagicPerspective V20 - REAL text hypermaze, isolated from V17 and V19 sessions.
-# This world is the native JavaScript observed-transition graph (CPU).
+# This world runs ONLY the observed-token graph; other worlds and V19 atlas are disabled.
 # It does NOT claim CUDA training or semantic understanding of natural language.
 param(
   [string]$Data = "D:\training\OpenThoughts3-1.2M",
@@ -32,7 +32,7 @@ $heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
 $argsNative = @(
   "--max-old-space-size=$heap", $runner, "--workers", "$Workers",
   "--arms", "stable+many", "--mem", "$Mem", "--every", "50000",
-  "--out", $Out, "--port", "$Port", "--worlds", "cognitivemap",
+  "--out", $Out, "--port", "$Port", "--worlds", "hypertext",
   "--gpu", "off", "--start"
 ) + $src
 if ($Resume) { $argsNative += "--resume" }
