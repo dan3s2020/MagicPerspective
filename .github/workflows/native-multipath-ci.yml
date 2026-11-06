@@ -44,14 +44,15 @@ jobs:
       - name: Parse original PowerShell 5.1 launcher
         shell: powershell
         run: |
-          $errors = $null
-          $scriptText = Get-Content -LiteralPath 'START_NATIVE_LANGUAGE_PATHS.ps1' -Raw
-          $scriptText += "`n" + (Get-Content -LiteralPath 'START_LIVE_MULTIPATH_V17.ps1' -Raw)
-          $scriptText += "`n" + (Get-Content -LiteralPath 'v17/START_V17.ps1' -Raw)
-          [System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) {
-            $errors | Format-List | Out-String | Write-Host
-            throw 'PowerShell launcher syntax errors'
+          foreach ($file in @('START_NATIVE_LANGUAGE_PATHS.ps1','START_LIVE_MULTIPATH_V17.ps1','v17/START_V17.ps1')) {
+            $errors = @()
+            $scriptText = Get-Content -LiteralPath $file -Raw
+            [System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              Write-Host "Syntax errors in $file"
+              $errors | Format-List | Out-String | Write-Host
+              throw 'PowerShell launcher syntax errors'
+            }
           }
       - name: Run V17 2D, graph and generator unit tests on Windows Node.js
         shell: powershell
