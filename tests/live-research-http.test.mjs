@@ -36,7 +36,7 @@ test('REAL original worker emits research through HTTP and original UI displays 
       try{
         const res=await fetch('http://127.0.0.1:'+port+'/research?w=0');
         const data=await res.json();
-        if(data.enabled&&data.attempts>=1&&data.last){
+        if(data.enabled&&data.attempts>=1&&data.last&&data.characterTelemetry?.seen>0){
           telemetry=data;break;
         }
       }catch{}
