@@ -19,6 +19,7 @@ jobs:
           node --test isolated/native-language-paths/multipath.test.mjs
           node --test isolated/native-language-paths/repetition.test.mjs
           node --test isolated/native-language-paths/live-research.test.mjs
+          node --test isolated/native-language-paths/import-previous.test.mjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -67,5 +68,5 @@ jobs:
       - name: Run V17 2D, graph and generator unit tests on Windows Node.js
         shell: powershell
         run: |
-          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs isolated/native-language-paths/live-research.test.mjs
+          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs isolated/native-language-paths/live-research.test.mjs isolated/native-language-paths/import-previous.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Real-source regression tests failed on Windows' }
