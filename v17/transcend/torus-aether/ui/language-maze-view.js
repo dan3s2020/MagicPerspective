@@ -181,7 +181,7 @@ export class LanguageMazeViewer {
   this.angles={"01":-.20,"02":.14,"03":.12,"14":-.10,"34":.05};
   this.graph={nodes:[],edges:[]};this.coords=new Map();
   this.coordSource="fără stări";
-  this.geometryKey="";this.lastPointer=null;
+  this.geometryKey="";this.lastGeometryAt=0;this.lastPointer=null;
   this.setupControls();this.bindCamera();
   this._loop=timestamp=>{
    if(!this.active){this._raf=null;return;}
@@ -228,9 +228,15 @@ export class LanguageMazeViewer {
   $("languageMazePerspective").onchange=()=>this.draw();
   $("languageMazeSlice").onchange=()=>this.draw();
  }
+ reset(){
+  this.pause();this.episode=null;this.snapshot=null;this.frame=0;
+  this.geometryKey="";this.history=null;this.build();
+  $("languageMazeScrub").value="0";$("languageMazeScrub").max="0";
+  this.renderInfo();
+ }
  setActive(value){
   const active=!!value;
-  this.active=active;
+  this.active=active;this.canvas.hidden=!active;
   if(!active)this.playing=false;
   if(active&&!this._raf)this._raf=requestAnimationFrame(this._loop);
  }
@@ -239,13 +245,13 @@ export class LanguageMazeViewer {
   const newKey=JSON.stringify([
    snap.observedTransformations?.learnedOperators||0,
    snap.U?.length||0,
-   snap.chars||0,
    this.episode?.predicted||"",
    this.episode?.search?.nodes?.length||0
   ]);
   this.snapshot=snap;
-  if(this.geometryKey!==newKey) {
-   this.geometryKey=newKey;this.build();
+  const now=performance.now();
+  if(this.geometryKey!==newKey||now-this.lastGeometryAt>5000){
+   this.geometryKey=newKey;this.lastGeometryAt=now;this.build();
   }
  }
  setEpisode(episode){
