@@ -18,7 +18,7 @@ if ($Port -in @(8841, 8862, 8897, 8898, 8899)) {
 }
 $runtime = Join-Path $PSScriptRoot "runtime-transfer-20261106"
 $cmd = @("-Workers", "1", "-Arms", "stable+many", "-Mem", "3",
-  "-Worlds", "text,maze,transform", "-MazeEvery", "4000", "-Every", "60000",
+  "-Worlds", "text,maze,transform,selfcode", "-MazeEvery", "4000", "-Every", "60000",
   "-Data", "$Data", "-Out", "$runtime", "-Port", "$Port",
   "-Gpu", "$Gpu", "-GpuWorlds", "$GpuWorlds", "-GpuTextBatch", "$GpuTextBatch",
   "-GpuTextChunk", "$GpuTextChunk", "-Vram", "$Vram",
