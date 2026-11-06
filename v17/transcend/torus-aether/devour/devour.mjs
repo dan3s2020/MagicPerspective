@@ -24,7 +24,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --resume continues every brain from its save; /reset (the page's button) starts every brain again from nothing
 // many worlds at once on the GPU (gpu/worlds_gpu.py): --gpu cuda:0|cuda:1|cpu|off, --gpu-worlds N (no limit here),
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
-let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
+let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 2), textChunk: +arg("gpu-text-chunk", 128), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
 for (const x of worldsArg) if (!["text", "maze", "transform"].includes(x)) throw Error("unknown world " + x + " (text, maze = the labyrinths, transform = objects, switches, doors)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
@@ -70,7 +70,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
@@ -79,7 +79,8 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
+    traceTransformations: process.argv.includes("--trace-transformations")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;

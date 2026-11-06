@@ -33,7 +33,23 @@ if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
-brain.setSharedObserver(sample => shared.observe(sample));
+const traceFile = workerData.traceTransformations && saveFile ? saveFile + ".transitions.jsonl" : null;
+let traced = 0;
+let traceBytes = traceFile && fs.existsSync(traceFile) ? fs.statSync(traceFile).size : 0;
+// Explicit opt-in: record only real TRAINING observations, no oracle or held-out
+// reference, with a bounded file size and a group ID for episode-disjoint tests.
+brain.setSharedObserver(sample => {
+  const item = shared.observe(sample);
+  if (traceFile && traced < 50000 && traceBytes < 64 * 1024 * 1024) {
+    const i = item.domain === "maze" ? brain.mazes.index : item.domain === "transform" ? brain.trans?.index : brain.exercises;
+    const episode = item.domain + ":" + String(i ?? 0);
+    fs.mkdirSync(path.dirname(traceFile), {recursive: true});
+    const line = JSON.stringify({...item, episode}) + "\n";
+    fs.appendFileSync(traceFile, line);
+    traceBytes += Buffer.byteLength(line);
+    traced++;
+  }
+});
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
@@ -95,7 +111,7 @@ const flushShared = async (force = false) => {
       if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed});
       sharedLoaded = true;
     }
-    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed});
+    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed, adaptiveNoise: true});
     shared.training = result; shared.error = null;
   } catch (err) {
     shared.requeue(samples); shared.error = "Shared model: " + err.message;
@@ -109,7 +125,7 @@ const worldsOnce = async (record) => {                                     // on
   if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
-const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 8)));
+const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
@@ -177,7 +193,7 @@ for await (const ex of stream()) {
       stop = true; break;
     }
     textBatch.push(ex.bytes); textMeta.push(ex);
-    if (textBatch.length >= selectedTextBatch()) {
+    if (textBatch.length >= selectedTextBatch() || textBatch.reduce((n, b) => n + b.length, 0) >= 120000) {
       const exs = textBatch, meta = textMeta;
       try { await processGpuText(exs, meta); textBatch = []; textMeta = []; }
       catch (err) {

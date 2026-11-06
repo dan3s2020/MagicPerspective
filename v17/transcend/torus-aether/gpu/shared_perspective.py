@@ -83,6 +83,12 @@ class SharedPerspective:
         self.seen = 0
         self.counts = {d: 0 for d in DOMAINS}
         self.last = None
+        # Training-only, bounded self-adjusting exploration; NEVER applied in frozen evaluation.
+        self.noise = 0.015
+        self.noise_stall = 0
+        self.noise_updates = 0
+        self.noise_rng = torch.Generator(device=self.device)
+        self.noise_rng.manual_seed(seed + 1907)
 
     def _pack(self, samples):
         if not 1 <= len(samples) <= 512:
@@ -125,7 +131,7 @@ class SharedPerspective:
                    'steps': self.steps, 'updates': False}
         return summary
 
-    def train(self, samples):
+    def train(self, samples, adaptive_noise=False):
         xs, actions, ys = self._pack(samples)
         # Retrospective PRE-UPDATE prediction from frozen weights, compared to
         # the observed successor. It is NOT an online pre-action measurement or held-out score.
@@ -133,7 +139,9 @@ class SharedPerspective:
         # Capture the frozen, PRE-UPDATE prediction before these observations can alter weights.
         pre_update_trace = self._trace(self.model, xs, actions, ys, samples[0])
         self.model.train()
-        z, zp, pred = self.model(xs, actions)
+        before_noise = self.noise if adaptive_noise else 0.0
+        train_x = xs + torch.randn(xs.shape, device=self.device, generator=self.noise_rng) * before_noise if adaptive_noise else xs
+        z, zp, pred = self.model(train_x, actions)
         target_z = self.model.encoder(ys).detach()
         reconstruction = self.model.decoder(z)
         loss = F.mse_loss(pred, ys) + .2 * F.mse_loss(zp, target_z) + .12 * F.mse_loss(reconstruction, xs)
@@ -141,6 +149,17 @@ class SharedPerspective:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.)
         self.optimizer.step()
+        post = self.evaluate(samples) if adaptive_noise else None
+        if adaptive_noise:
+            # Training-only objective progress controls how much representation noise
+            # is injected into the *next training batch*. Held-out data never tunes it.
+            gain = (pre['loss'] - post['loss']) / max(1e-8, pre['loss'])
+            self.noise_stall = self.noise_stall + 1 if gain < .003 else 0
+            if self.noise_stall >= 3:
+                self.noise = min(.08, self.noise * 1.12)
+            elif gain >= .003:
+                self.noise = max(.002, self.noise * .97)
+            self.noise_updates += 1
         self.steps += 1
         self.seen += len(samples)
         for s in samples:
@@ -148,6 +167,8 @@ class SharedPerspective:
         self.last = {'batch': len(samples), 'device': str(self.device), 'step': self.steps,
                      'preUpdatePredictionLoss': pre['loss'], 'identityBaselineLoss': pre['identityBaselineLoss'],
                      'trainingObjective': round(float(loss.item()), 7), 'domains': dict(self.counts),
+                     'noiseUsed': round(before_noise, 6), 'nextTrainingNoise': round(self.noise, 6),
+                     'noiseUpdates': self.noise_updates, 'trainPostUpdateLoss': post['loss'] if post else None,
                      'trace': pre_update_trace}
         return self.last
 
@@ -158,7 +179,9 @@ class SharedPerspective:
         dest.parent.mkdir(parents=True, exist_ok=True)
         temp = dest.with_name(dest.name + '.tmp-' + str(os.getpid()))
         payload = {'version': VERSION, 'weights': self.model.state_dict(), 'optimizer': self.optimizer.state_dict(),
-                   'steps': self.steps, 'seen': self.seen, 'counts': self.counts}
+                   'steps': self.steps, 'seen': self.seen, 'counts': self.counts,
+                   'adaptive': {'noise': self.noise, 'stall': self.noise_stall, 'updates': self.noise_updates,
+                                'rng': self.noise_rng.get_state()}}
         try:
             torch.save(payload, str(temp))
             os.replace(str(temp), str(dest))
@@ -179,7 +202,13 @@ class SharedPerspective:
         self.steps = int(payload['steps'])
         self.seen = int(payload['seen'])
         self.counts = dict(payload['counts'])
-        return {'loaded': True, 'steps': self.steps, 'seen': self.seen}
+        adapt = payload.get('adaptive') or {}
+        self.noise = max(.002, min(.08, float(adapt.get('noise', self.noise))))
+        self.noise_stall = int(adapt.get('stall', 0))
+        self.noise_updates = int(adapt.get('updates', 0))
+        if 'rng' in adapt:
+            self.noise_rng.set_state(adapt['rng'].cpu())
+        return {'loaded': True, 'steps': self.steps, 'seen': self.seen, 'nextTrainingNoise': self.noise}
 
 if __name__ == '__main__':
     import sys

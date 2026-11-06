@@ -339,19 +339,38 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None
+    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None; self.text_limit = 32768; self.text_chunk = 128
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
         if self.B.torch and dev.startswith("cuda"):
             idx = int(dev.split(":")[1]) if ":" in dev else 0; total = torch.cuda.get_device_properties(idx).total_memory
-            vram = float(m.get("vram", 0)) * 1e9
-            if vram > 0: torch.cuda.set_per_process_memory_fraction(min(1.0, vram / total), idx)
-            info.update(name=torch.cuda.get_device_name(idx), totalGB=round(total / 1e9, 2), vramGB=round(min(vram, total) / 1e9, 2) if vram > 0 else round(total / 1e9, 2))
-        # how many worlds fill the memory it may use: one 11x11 labyrinth lived on the card holds ~14 grids of int64/float32
-        budget = (float(m.get("vram", 0)) * 1e9 if float(m.get("vram", 0)) > 0 else (info.get("totalGB", 4) * 1e9 * .9 if self.B.torch else 2e9))
-        info["autoWorlds"] = int(max(256, min(65536, budget * .8 / (11 * 11 * 14 * 8)))) if self.B.torch else 2048
-        info["autoText"] = int(max(64, min(8192, budget * .8 / (1000 * 2 * 64 * 8 * 4)))) if self.B.torch else 256   # exercises per text batch: each position holds 2 x 64 alignment ranges
+            requested = float(m.get("vram", 0)) * 1e9
+            free, _ = torch.cuda.mem_get_info(idx)
+            # Other CUDA users and display memory live outside the PyTorch process cap.
+            # Keep a physical free-memory margin rather than promising the full nominal 4 GB.
+            effective = min(requested if requested > 0 else free * .75, free * .75, total)
+            if effective < 384e6:
+                raise RuntimeError("Insufficient free CUDA memory for V17: %.2f GB free" % (free / 1e9))
+            torch.cuda.set_per_process_memory_fraction(effective / total, idx)
+            info.update(name=torch.cuda.get_device_name(idx), totalGB=round(total / 1e9, 2),
+                        freeAtInitGB=round(free / 1e9, 3), vramGB=round(effective / 1e9, 3),
+                        requestedVramGB=round(requested / 1e9, 3))
+        # Physical free-memory-aware budget. Text exercises can be tens of thousands
+        # of characters, so old "autoText=585 exercises" was a misleading estimate.
+        budget = info.get("vramGB", 0) * 1e9 if dev.startswith("cuda") else 1e9
+        self.text_limit = int(max(8192, min(65536, budget / 60000))) if dev.startswith("cuda") else 65536
+        self.text_chunk = int(max(32, min(192, budget / 12000000)))
+        # The old GPU auto setting selected 65,536 worlds even on a 4 GB card.
+        # Keep the default modest; explicit world counts remain user-selectable.
+        if dev.startswith("cuda"):
+            auto_cap = 256 if budget <= 4e9 else 4096
+            info["autoWorlds"] = int(max(16, min(auto_cap, budget * .4 / (11 * 11 * 14 * 8))))
+        else:
+            info["autoWorlds"] = 2048
+        info["autoText"] = 2
+        info["textMemoryWindow"] = self.text_limit
+        info["textChunk"] = self.text_chunk
         return info
     def throttle(self, busy):                                 # the GPU works busy seconds, then rests so the average is util %
         if self.util < 100: time.sleep(busy * (100 / self.util - 1))
@@ -364,21 +383,35 @@ class Server:
         elif c == "text_load":                                  # the brain's whole text memory, when the card (re)starts: nothing lived is missing here
             import base64
             from text_gpu import TextCard
-            self.text = TextCard(self.B.device if self.B.torch else "numpy"); raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
+            self.text = TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit); raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
             if len(raw): self.text.append([raw])
             r = {"memory": int(len(self.text.mem))}
         elif c == "text_learn":                                 # text exercises lived on the card; only the totals go back
             if self.text is None:
                 from text_gpu import TextCard
-                self.text = TextCard(self.B.device if self.B.torch else "numpy")
+                self.text = TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit)
             def text_progress(done, total, phase):
                 if "id" in m:
                     sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
                                                  "done": int(done), "total": int(total)}) + "\n")
                     sys.stdout.flush()
-            r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),
-                               m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])],
-                               progress=text_progress)
+            chunk = max(32, min(512, int(m.get("chunk") or self.text_chunk)))
+            while True:
+                try:
+                    r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),
+                                       m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])],
+                                       chunk=chunk, progress=text_progress)
+                    r["textChunk"] = chunk
+                    break
+                except RuntimeError as exc:
+                    if not (self.B.torch and str(self.B.device).startswith("cuda") and
+                            "out of memory" in str(exc).lower() and chunk > 32):
+                        raise
+                    # A failed live() has not appended memory or changed Node's weights.
+                    self.text._self = {}
+                    torch.cuda.empty_cache()
+                    chunk = max(32, chunk // 2)
+                    text_progress(0, 1, "retry-smaller-cuda-chunk")
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c in ("shared_load", "shared_train", "shared_eval", "shared_save"):
@@ -388,7 +421,7 @@ class Server:
                 self.shared = SharedPerspective(str(self.B.device), seed=int(m.get("seed", 11)))
             if c == "shared_load": r = self.shared.load(m["checkpoint"])
             elif c == "shared_train":
-                r = self.shared.train(m["samples"])
+                r = self.shared.train(m["samples"], adaptive_noise=bool(m.get("adaptiveNoise", False)))
                 if m.get("checkpoint"): r["checkpoint"] = self.shared.save(m["checkpoint"])
             elif c == "shared_eval": r = self.shared.evaluate(m["samples"])
             else: r = self.shared.save(m["checkpoint"])

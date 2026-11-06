@@ -33,6 +33,29 @@ class SharedTests(unittest.TestCase):
             self.assertEqual(n.evaluate(SAMPLES)['loss'],m.evaluate(SAMPLES)['loss'])
         with self.assertRaisesRegex(ValueError,'oracle'):
             m.train([{**SAMPLES[0], 'optimal':1}])
+    def test_adaptive_noise_is_training_only_and_resumable(self):
+        m = SharedPerspective('cpu', seed=123)
+        held = m.evaluate(SAMPLES)
+        self.assertEqual(m.noise_updates, 0)
+        self.assertEqual(m.steps, 0)
+        train = m.train(SAMPLES, adaptive_noise=True)
+        self.assertEqual(m.noise_updates, 1)
+        self.assertGreater(train['noiseUsed'], 0)
+        self.assertGreater(train['nextTrainingNoise'], 0)
+        frozen = m.evaluate(SAMPLES)
+        self.assertEqual(m.noise_updates, 1)
+        self.assertFalse(frozen['updates'])
+        self.assertNotEqual(held['loss'], frozen['loss'])
+        with tempfile.TemporaryDirectory() as tmp:
+            save = os.path.join(tmp, 'adaptive.pt')
+            m.save(save)
+            copy = SharedPerspective('cpu', seed=999)
+            copy.load(save)
+            self.assertEqual(copy.noise_updates, m.noise_updates)
+            self.assertEqual(copy.noise, m.noise)
+            self.assertEqual(copy.noise_rng.get_state().tolist(), m.noise_rng.get_state().tolist())
+            self.assertEqual(copy.evaluate(SAMPLES), m.evaluate(SAMPLES))
+
     def test_cuda_no_silent_fallback(self):
         import torch
         if not torch.cuda.is_available():
