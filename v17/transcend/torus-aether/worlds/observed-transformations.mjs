@@ -334,6 +334,8 @@ export class ObservedTransformations {
       mark(text,0,true,"origin");
     }
     let expanded=0;
+    const sharedRanking={candidateEdgesScored:0,nonzeroScores:0,
+      candidateOrderChanges:0,meanAbsScore:0};
     while(q.length&&expanded<budget) {
       const current=q.shift();expanded++;
       const currentText=renderObservation(current.tokens);
@@ -348,6 +350,8 @@ export class ObservedTransformations {
           return {found:true,start:startText,predicted:answer,
             unseen:this.containsSentence(answer)===false,
             goal:{required:req},steps:current.steps,expanded,
+            sharedRanking:{...sharedRanking,meanAbsScore:sharedRanking.candidateEdgesScored?
+              sharedRanking.meanAbsScore/sharedRanking.candidateEdgesScored:0},
             initialShape:current.states,search,
             structure:support,
             plannedBeforeAnswer:true,referenceProvided:false,
@@ -358,9 +362,19 @@ export class ObservedTransformations {
       const edges=this.neighbors(current.tokens);
       // One shared effect learner ranks the EXACT SAME learned-operator edges
       // as the baseline; it cannot invent operators or inspect an answer.
-      if(worldCore&&edges.length>1)edges.sort((a,b)=>
-        worldCore.scoreText(current.tokens,b.tokens,b.action,req)-
-        worldCore.scoreText(current.tokens,a.tokens,a.action,req));
+      if(worldCore&&edges.length>1){
+        const originalOrder=edges.map(x=>freezeKey(x.tokens));
+        for(const candidate of edges){
+          candidate.sharedScore=worldCore.scoreText(current.tokens,candidate.tokens,
+            candidate.action,req);
+          sharedRanking.candidateEdgesScored++;
+          sharedRanking.nonzeroScores+=Number(Math.abs(candidate.sharedScore)>1e-8);
+          sharedRanking.meanAbsScore+=Math.abs(candidate.sharedScore);
+        }
+        edges.sort((a,b)=>b.sharedScore-a.sharedScore);
+        sharedRanking.candidateOrderChanges+=Number(edges.some((v,i)=>
+          freezeKey(v.tokens)!==originalOrder[i]));
+      }
       for(const next of edges){
         const key=freezeKey(next.tokens),name=renderObservation(next.tokens);
         const prior=visited.has(key);
@@ -384,7 +398,9 @@ export class ObservedTransformations {
     }
     if(search)search.expanded=expanded;
     return {found:false,reason:"no-learned-path-satisfies-goal",goal:{required:req},
-      expanded,search,observed:this.records.size,operators:this.operators.size};
+      expanded,search,observed:this.records.size,operators:this.operators.size,
+      sharedRanking:{...sharedRanking,meanAbsScore:sharedRanking.candidateEdgesScored?
+        sharedRanking.meanAbsScore/sharedRanking.candidateEdgesScored:0}};
   }
   // A bounded SELF-PROBE chooses goal CONSTRAINTS from actual operations
   // that the original organism learned. This is NOT an independent language
@@ -525,11 +541,13 @@ export class ObservedTransformations {
       const completed=this._goal(actual,required)&&support.consistent;
       frames.push({index:k+1,stage:"after-action",before:state,state:after,
         plannedNext:intended,chosen:choice.action,selectedIndex:choiceIndex,
+        sharedPolicyContribution:choice.sharedContribution||0,
         after,worldModelExpected:renderObservation(choice.tokens),
         predictionMatched:matched,causalEffectMatched:after===renderObservation(choice.tokens),
         alternativePath:!matched,localCandidateCount:ranked.length,
         alternatives:ranked.slice(0,8).map(x=>({state:renderObservation(x.tokens),
-          score:+x.score.toFixed(5),observedSupport:x.action.observedSupport,
+          score:+x.score.toFixed(5),sharedPolicyContribution:x.sharedContribution||0,
+          observedSupport:x.action.observedSupport,
           action:x.action})),why,noise,
         goalReached:completed,remainingShape:currentPlan.initialShape||null,
         correctedShape:updated?.found?updated.initialShape:null,
