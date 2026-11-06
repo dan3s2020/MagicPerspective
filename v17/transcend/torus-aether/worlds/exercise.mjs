@@ -103,7 +103,7 @@ const nextStep = (n, i, a) => { const x = i % n + ACTIONS[a][0], y = ((i / n) | 
 const countOf = (arr, k) => { let c = 0; for (const v of arr) if (v === k) c++; return c; };
 
 // one exercise. live(sym) feeds every symbol to the brain's graph (the retina once, then every output and every change)
-export function playExercise(w, D, live = () => {}, {record = false, outputs = null, onTransition = null, noiseAgency = null} = {}) {   // outputs: decisions already made (by the GPU batch) to live again
+export function playExercise(w, D, live = () => {}, {record = false, outputs = null, onTransition = null, noiseAgency = null, noiseFeedback = true} = {}) {   // outputs: decisions already made (by the GPU batch) to live again
   const n = w.n, ret = Array.from(w.wall, v => v ? KIND.wall : KIND.floor); ret[w.goal] = KIND.target; let pos = w.start; ret[pos] = KIND.self;
   const lim = 3 * w.dist[w.start] + 15, visits = new Uint16Array(n * n); visits[pos]++;
   for (const k of ret) live(SYMS[k]);                                        // the whole exercise, once
@@ -133,7 +133,7 @@ export function playExercise(w, D, live = () => {}, {record = false, outputs = n
     if (dir >= 0) { const j = nextCell(w, pos, dir); if (j >= 0 && !w.wall[j]) { ret[pos] = KIND.floor; pos = j; ret[pos] = KIND.self; visits[pos]++; path.push(pos); } }
     D.learnStep(before, ret, n, c.o, me);
     if (onTransition) onTransition({before, after: ret.slice(), action: c.o, n});  // actual observation, never oracle distance
-    if (portal) noiseAgency.learn(portal, {before, after: ret, solved: pos === w.goal});
+    if (portal && noiseFeedback) noiseAgency.learn(portal, {before, after: ret, solved: pos === w.goal});
     for (let i = 0; i < n * n; i++) if (before[i] !== ret[i]) live(SYMS[ret[i]]);   // what changed
     steps++;
   }
