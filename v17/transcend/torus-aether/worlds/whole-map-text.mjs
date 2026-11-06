@@ -102,6 +102,7 @@ export class WholeWorldNavigator{
     absorbedAtOnce:true};
   this.map=map;this.inward=inward;this.outward=outward;
   this.values=new Map([[world.goal,0]]);this.history=[];this.stats=null;
+  this.cursor=world.start;this.internalPath=null;this.nextMoveIndex=0;this.executed=[];this.characters=[];
   return {domain:world.domain,states:map.size,edges:edges.length,
    walls:[...map.values()].filter(v=>v.wall).length,
    start:world.start,goal:world.goal,dimensions:world.dimensions};
@@ -134,8 +135,11 @@ export class WholeWorldNavigator{
   if(!Number.isFinite(noise)||noise<0||noise>1)throw Error('Noise must be 0..1');
   let here=this.atlas.start;
   const states=[here],actions=[],choices=[];
-  if(!this.values.has(here))return {solved:false,reason:'no-legal-path',states,actions,
-   walls:this.atlas.nodes.filter(x=>x.wall).length, ...this.stats};
+  if(!this.values.has(here)){
+   this.internalPath=null;this.cursor=here;this.executed=[];this.characters=[];
+   return {solved:false,reason:'no-legal-path',states,actions,
+    walls:this.atlas.nodes.filter(x=>x.wall).length, ...this.stats};
+  }
   while(here!==this.atlas.goal){
    const d=this.values.get(here);
    // NO random action is permitted to cross a wall or increase target distance.
@@ -149,10 +153,38 @@ export class WholeWorldNavigator{
    if(actions.length>this.atlas.nodes.length)throw Error('Route loop');
   }
   this.history=choices;
+  // This entire route exists INSIDE the navigator BEFORE any observable character moves.
+  this.internalPath={states:states.slice(),actions:actions.slice(),choices:choices.map(x=>({...x}))};
+  this.cursor=here===this.atlas.goal ? this.atlas.start : states[0];
+  this.nextMoveIndex=0;this.executed=[];this.characters=[];
   return {solved:true,states,actions,steps:actions.length,optimal:this.stats.initialDistance,
    walls:this.atlas.nodes.filter(x=>x.wall).length,
    firstAction:actions[0]??null,choices,
+   plannedBeforeMovement:true,executedMovements:0,
    ...this.stats};
+ }
+ // Called only AFTER plan() has discovered the internal route.
+ // The emitted "next character" is the organism's NEW POSITION, not a token prediction.
+ moveOne(){
+  if(!this.internalPath)throw Error('Find an internal path before moving the character');
+  const i=this.nextMoveIndex,states=this.internalPath.states;
+  if(i>=this.internalPath.actions.length)return null;
+  const from=states[i],to=states[i+1],action=this.internalPath.actions[i];
+  if(this.cursor!==from)throw Error('Cursor drifted away from the internally discovered path');
+  const edge=(this.outward.get(from)||[]).find(e=>e.to===to&&e.action===action);
+  if(!edge||edge.blocked)throw Error('The chosen movement crossed a wall');
+  const before=this.map.get(from),after=this.map.get(to);
+  // A one-coordinate hypercube movement changes one bit: that bit is the visible
+  // character after motion. Other worlds may define their own position symbol.
+  const char=edge.axis<after.label.length&&this.atlas.domain==='text'
+    ? after.label[edge.axis] : after.label;
+  this.cursor=to;this.nextMoveIndex++;
+  const record={step:this.nextMoveIndex,from,to,axis:edge.axis,action,
+   nextCharacter:char,position:after.position.slice(),
+   remaining:this.internalPath.actions.length-this.nextMoveIndex,
+   reachedGoal:to===this.atlas.goal};
+  this.executed.push(record);this.characters.push(char);
+  return record;
  }
 }
 
@@ -186,20 +218,36 @@ export class NativeWholeTextWorld{
   const header='[WHOLE MAP] '+w.domain+' dim='+w.dimensions+' start='+w.start+
     ' goal='+w.goal+' states='+w.nodes.length+' walls=';
   const all=header+w.nodes.filter(n=>n.wall).map(n=>n.label).join(',')+'\n';
-  for(const y of ascii(all.slice(0,this.emitSymbols)))this.brain.live(y,false);
+  // Full structural absorption is atomic in GraphTrace and the navigator: no
+  // teacher-forced string stream is used to construct the path. We keep the
+  // entire sensory descriptor with this episode for auditing, not as a
+  // next-character training target.
+  this.lastAbsorbedDescriptor=all;
   const field=nav.propagate(),route=nav.plan();
-  for(let j=0;j<route.actions.length;j++){
-   const from=w.nodes.find(n=>n.id===route.states[j]),to=w.nodes.find(n=>n.id===route.states[j+1]);
+  // All walls, nodes, connections and goal were absorbed before planning.
+  // No character is emitted until an ENTIRE internal solution path exists.
+  const physicalMoves=[];
+  if(route.solved)for(let move; (move=nav.moveOne())!==null;){
+   physicalMoves.push(move);
+   const from=w.nodes.find(n=>n.id===move.from),to=w.nodes.find(n=>n.id===move.to);
    t.fire(nodeid(to.id));t.setEdge(nodeid(from.id),nodeid(to.id),'traversed',3);
+   // NEXT CHARACTER = CURRENT POSITION AFTER MOVEMENT, NOT A GENERATED GUESS.
+   for(const y of ascii(move.nextCharacter))this.brain.live(y,false);
    this.brain.observeShared?.({domain:'text',before:from.position,after:to.position,
-    action:route.actions[j],context:'whole-text-hypercube-'+w.dimensions});
+    action:move.action,context:'whole-text-cursor-'+w.dimensions});
   }
+  if(route.solved&&nav.cursor!==w.goal)throw Error('Internal route did not reach target');
   const s=this.brain.wholeText;s.episodes++;s.solved+=Number(route.solved);
   s.totalSteps+=route.steps;s.totalWalls+=route.walls;s.wavePasses+=field.wavePasses;
   const row={seed,states:w.nodes.length,dimensions:w.dimensions,walls:route.walls,
    solved:route.solved,steps:route.steps,optimal:route.optimal,
    wallCollisions:0,wavePasses:field.wavePasses,
-   firstAction:route.firstAction,absorbBeforeFirstStep:true};
+   firstAction:route.firstAction,absorbBeforeFirstStep:true,
+   plannedBeforeFirstCharacter:true,
+   internalPlannedStates:route.states,
+   actualMovements:physicalMoves.length,
+   movementTrace:physicalMoves,
+   movementCharacters:physicalMoves.map(x=>x.nextCharacter).join('')};
   s.last=row;s.recent.push(row);if(s.recent.length>24)s.recent.shift();
   return row;
  }
