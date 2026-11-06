@@ -17,6 +17,8 @@ const rng=seed=>()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4
 function trainedAlign(){
   const g=new AligningGraph({g:8});g.imagineEvery=0;
   for(const c of text)g.live(c.charCodeAt(0));
+  // Small test corpus is below the native 20k indexing threshold: build the actual indexes.
+  g.mem.lazy = g.fmem.lazy = true; g.mem.ready(true); g.fmem.ready(true);
   return g;
 }
 test("observer follows the EXACT native choices with no resampling, penalty, additional candidate or training",()=>{
