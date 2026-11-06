@@ -112,7 +112,15 @@ const flushShared = async (force = false) => {
       if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed});
       sharedLoaded = true;
     }
-    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed, adaptiveNoise: true});
+    // A single organism-owned policy chooses *where* to perturb the shared learner.
+    // If it is not enabled, keep the original adaptive-noise behavior unchanged.
+    const portal = brain.noiseAgent ? brain.noiseAgent.decide({domain: 'shared',
+      known: !!shared.training?.step, planned: samples.length > 24}) : null;
+    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile,
+      seed: brain.seed, adaptiveNoise: !portal,
+      noiseSelection: portal ? {site: portal.site, strength: portal.strength} : null});
+    if (portal && Number.isFinite(result.trainingNoiseGain))
+      brain.noiseAgent.learn(portal, {gain: result.trainingNoiseGain});
     shared.training = result; shared.error = null;
   } catch (err) {
     shared.requeue(samples); shared.error = "Shared model: " + err.message;
