@@ -65,6 +65,9 @@ if ($Gpu -ne "off") {
   Write-Host "Test on the graphics card ($Gpu)..."
   & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\worlds_gpu.py") --selftest $Gpu 2>&1 | Out-Host
   if ($LASTEXITCODE -ne 0) { Write-Host "The test on the graphics card did NOT pass. Send me the text above." -ForegroundColor Red; exit 1 }
+  Write-Host "Testing the shared latent learner on the actual selected PyTorch device..."
+  & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\shared_perspective.py") --selftest $Gpu 2>&1 | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "Shared perspective CUDA gradient self-test FAILED. Original trainer not started." }
   $env:OCTOPUS_PY = $py
   $ErrorActionPreference = "Stop"
 }
