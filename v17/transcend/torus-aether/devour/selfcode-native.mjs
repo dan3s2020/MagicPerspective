@@ -92,8 +92,14 @@ export class NativeSelfCodeWorld {
     // Budget replenishment is a resource law; spending it is the organism's action.
     if(this.ticks%6===0)this.world.portal.budget=Math.min(40,this.world.portal.budget+1);
     const from=this.nodes[this.cursor%this.nodes.length],seen=this.world.portal.visits;
-    const action=this.policy.choose({random:()=>this.world.portal.random(),remaining:this.world.portal.budget,
-      context:this.nodes.length?seen.size/this.nodes.length:0});
+    // The SAME organism-owned noise policy selects code portals. Never confuse
+    // external controls or the old standalone CodeActionPolicy with its agency.
+    const portal=this.brain.noiseAgent?.decide({domain:'selfcode',
+      known:seen.size>0,planned:this.world.effectModel.probes.length>3})||null;
+    const action=portal ? (portal.site!=='none'&&this.world.portal.budget>0 &&
+      this.brain.noiseAgent.random()<portal.strength ? 'portal':'walk')
+      : this.policy.choose({random:()=>this.world.portal.random(),remaining:this.world.portal.budget,
+        context:this.nodes.length?seen.size/this.nodes.length:0});
     let target,move;
     if(action==='portal'){
       const uncertainties=Object.fromEntries(this.nodes.map(n=>[n.id,1/(1+(seen.get(n.id)?.n||0))]));
@@ -106,7 +112,10 @@ export class NativeSelfCodeWorld {
     }
     const old=seen.get(target.id)?.n||0;
     const p=typeof this.brain.predict==='function'?this.brain.predict():null;
-    const inspected=this.world.perceive(target.id);
+    const priorWorld=this.brain.liveWorld;
+    this.brain.liveWorld='selfcode';
+    let inspected;
+    try {inspected=this.world.perceive(target.id);} finally {this.brain.liveWorld=priorWorld;}
     // One actual observed code-state transition enters the existing V17 shared
     // PyTorch queue too (when enabled). No source-edit oracle/held-out answer.
     if(typeof this.brain.observeShared==='function'){
@@ -120,6 +129,12 @@ export class NativeSelfCodeWorld {
     const novelty=old===0?1:1/(1+old);
     const reward=clip(.75*novelty+.2*surprise-(action==='portal'?.25:.05),-1,1);
     this.policy.learn(action,reward);
+    if(portal){
+      const prior=this.world.atlas.inspect(from.id).code.slice(0,320);
+      const observed=inspected.code.slice(0,320);
+      const bytes=x=>Array.from(x,c=>c.charCodeAt(0));
+      this.brain.noiseAgent.learn(portal,{before:bytes(prior),after:bytes(observed)});
+    }
     this.world.feedOutcome(target.id,reward);
     const a=this.graphNode(from.id),b=this.graphNode(target.id);
     if(a&&b)this.brain.trace.setEdge(a,b,action==='portal'?'self-code-portal':'self-code-walk',Math.max(.05,reward+0.3));
@@ -145,6 +160,8 @@ export class NativeSelfCodeWorld {
     ranked.sort((a,b)=>b.score-a.score);
     const selected=r()<.20?ranked[Math.floor(r()*ranked.length)]:ranked[0];
     this.inflight=true;this.probeAction=this.policy.last?.action||'walk';
+    this.probePortal=this.brain.noiseAgent?.decide({domain:'selfcode',
+      known:true,planned:true})||null;
     this.worker.postMessage({kind:'probe',index:++this.probeNumber,slot:selected.slot,value:selected.value});
     this.world.experience({kind:'code-experiment-requested',slot:selected.slot,value:selected.value});
   }
@@ -159,6 +176,8 @@ export class NativeSelfCodeWorld {
       this.lastProbe={index:msg.index,slot:msg.slot,value:msg.value,delta:msg.delta};
       this.world.experience({kind:'measured-source-change',slot:msg.slot,value:msg.value,delta:msg.delta});
       this.policy.learn(this.probeAction||'walk',clip(msg.delta*8,-1,1));this.probeAction=null;
+      if(this.probePortal)this.brain.noiseAgent.learn(this.probePortal,{gain:clip(msg.delta,-1,1)});
+      this.probePortal=null;
       this.brain.trace.node('code:effect:'+msg.slot,'self',msg.slot);
       this.brain.trace.setEdge('code:effect:'+msg.slot,'code:unknown','counterfactual',Math.max(.1,Math.abs(msg.delta)));
       if(this.probeNumber>=24&&this.probeNumber%24===0&&this.lockAttempts<this.probeNumber/24)this.launchLock();
