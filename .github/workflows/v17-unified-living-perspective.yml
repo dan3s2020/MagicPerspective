@@ -5,6 +5,7 @@ on:
       - feature/V17-UNIFIED-LIVING-PERSPECTIVE-20261106
       - fix/V17-UNIFIED-TEXT-BATCH-PROGRESS-20261106
       - fix/V17-AUTO-FOLLOW-GRAPH-CUDA-ALIGN-20261106
+      - fix/V17-UNLIMITED-EVAL-TEXT-20261106
   workflow_dispatch:
 jobs:
   real-integration-node:
@@ -27,6 +28,7 @@ jobs:
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
           node --check v17/transcend/torus-aether/ui/app.js
           node --check v17/transcend/torus-aether/ui/live-follow.mjs
+          node --check v17/transcend/torus-aether/devour/eval-text-length.mjs
           node --check v17/transcend/torus-aether/shared/experience.mjs
       - name: Original V17 and cross-domain runtime tests
         run: |
@@ -35,6 +37,7 @@ jobs:
           node --test v17/tests/torus-unified-http.test.mjs
           node --test v17/tests/torus-gpu-text-progress.test.mjs
           node --test v17/tests/torus-live-follow.test.mjs
+          node --test v17/tests/torus-unlimited-eval-text.test.mjs
           node --test v17/tests/torus-unified-gpu-text-boot.test.mjs
           node --test isolated/noise-space/text_action_paths.test.mjs isolated/noise-space/causal_text_world.test.mjs
       - name: Original V17 regression suite
