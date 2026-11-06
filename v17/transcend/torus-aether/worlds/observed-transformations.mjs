@@ -98,6 +98,7 @@ export class ObservedTransformations {
     this.operators=new Map(); // edit actions inferred from observation differences
     this.operatorIndex=new Map(); // from-token / insertion-anchor -> only relevant possible actions
     this.invariants=new Map(); // learned contextual invariants at each length
+    this.editablePositions=new Map(); // observed effects falsify apparent invariants
     this.nextId=1;
     this.seen=0;this.newObservations=0;this.comparisons=0;this.matchingComparisons=0;
     this.rejectedLong=0;this.evicted=0;this.droppedOperators=0;
@@ -159,6 +160,11 @@ export class ObservedTransformations {
     const direct=oneEdit(previous,current);
     if(!direct)return;
     this.matchingComparisons++;
+    if(previous.length===current.length){
+      let variable=this.editablePositions.get(previous.length);
+      if(!variable){variable=new Set();this.editablePositions.set(previous.length,variable);}
+      variable.add(direct.index);
+    }
     this._recordOperator(previous,current);
     this._recordOperator(current,previous);
     // Comparison discovers which positions can vary while other dimensions
@@ -251,8 +257,12 @@ export class ObservedTransformations {
   structuralSupport(tokens) {
     const info=this.invariants.get(tokens.length);
     if(!info)return {verified:false,consistent:false,matched:0,total:0};
+    // An axis which has ever changed in a real one-step observed effect is
+    // a reusable VARIABLE, regardless of how frequently one value recurs.
+    const editable=this.editablePositions?.get(tokens.length)||new Set();
     let matched=0,total=0;
     for(let j=0;j<info.length;j++){
+      if(editable.has(j))continue;
       const entries=[...info[j].entries()].filter(([,n])=>n>=1)
         .sort((a,b)=>b[1]-a[1]);
       if(!entries.length)continue;
