@@ -47,6 +47,19 @@ Checks:
 
 One benchmark state: left/right produce 22 next-world chance branches, up/down produce 18. The action changes the STRUCTURE of random future alternatives.
 
+## Another important clue: randomness supplies resources, not just uncertainty
+
+The first phase (all slides and merges) is CONSERVATIVE:
+    total_tile_value(after_slide_and_merge) = total_tile_value(before).
+
+Each stochastic spawn injects new material:
+    total_tile_value(after_spawn) = total_tile_value(after_slide)+R, R∈{2,4}.
+    E[R] = 0.9*2 + 0.1*4 = 2.2.
+
+Therefore from only two low-value initial tiles, NO sequence of moves and merges without spawns can ever reach 2048: mass conservation forbids it. World-noise is a new external resource source AND an adversarial-looking positional disruption. The player learns to combine growth, compressive merges, space management and uncertainty-aware positioning.
+
+This is NOT the claim that artificial stochastic noise creates valid semantic information in a language model: random pieces in 2048 are constrained by explicit game rules. A text analogue would require a genuine observable source of new inputs and a learned test of whether their transformations help solve goals.
+
 ## Measured experimental decision impact
 
 Two controlled, explicitly hand-designed policies, both playing the faithful 2048 environment:
