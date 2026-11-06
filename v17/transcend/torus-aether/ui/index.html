@@ -102,7 +102,7 @@
         <label class="dim">VRAM GB <input id="gpuVram" type="number" min="0" step="0.5" value="0" style="width:60px" title="0 = cât are placa"></label>
         <label class="dim">GPU % <input id="gpuUtil" type="range" min="5" max="100" step="5" value="100"><span id="gpuUtilOut">100</span></label>
         <button id="gpuApply">Aplică</button></div>
-      <div class="row"><select id="addArm"></select><label class="dim"><input id="addText" type="checkbox" checked> text</label><label class="dim"><input id="addMaze" type="checkbox"> labirinturi</label><label class="dim"><input id="addTrans" type="checkbox"> transformări</label><label class="dim"><input id="addCode" type="checkbox"> codul propriu</label><label class="dim"><input id="addMapText" type="checkbox"> text ca labirint N-D</label><button id="addGraph">+ Adaugă graf</button></div>
+      <div class="row"><select id="addArm"></select><label class="dim"><input id="addText" type="checkbox" checked> text</label><label class="dim"><input id="addMaze" type="checkbox"> labirinturi</label><label class="dim"><input id="addTrans" type="checkbox"> transformări</label><label class="dim"><input id="addCode" type="checkbox"> codul propriu</label><label class="dim"><input id="addMapText" type="checkbox"> text ca labirint N-D</label><label class="dim"><input id="addCognitive" type="checkbox"> hartă cognitivă învățată din corpus</label><button id="addGraph">+ Adaugă graf</button></div>
       <div id="mazeBox" hidden>
         <h2>Labirintul pe care îl trăiește același creier</h2>
         <canvas id="mazeCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
@@ -113,6 +113,15 @@
         <canvas id="transCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
         <p class="note" id="transOut">—</p>
       </div>
+    </div>
+    <div id="cognitiveBox" hidden style="margin:12px 0;border:1px solid #25887e;border-radius:10px;padding:12px">
+      <h2>Harta cognitivă a limbajului · ORIGINAL Discoverer.shape()</h2>
+      <p class="note">Absoarbe observații complete, deduce transformări din contraste și propagă forma soluției înainte de acțiune. Regulile deduse sunt ipoteze până la verificarea efectelor într-o lume reală. Propoziția-țintă NU este transmisă creierului.</p>
+      <pre id="cognitiveStats" style="white-space:pre-wrap;color:#b8ebf5;font:12px ui-monospace,monospace">Aștept observații.</pre>
+      <div class="row"><label>Stare inițială <input id="cognitiveInitial" type="text" value="He is calm." size="30"></label></div>
+      <div class="row"><label>Condiții ale țintei (poziție → simbol)<input id="cognitiveGoal" type="text" value='{"0":"She","2":"calm"}' size="40"></label></div>
+      <div class="row"><button id="cognitiveEvaluate" type="button">Testează forma învățată pe o țintă nouă</button></div>
+      <pre id="cognitiveResult" style="white-space:pre-wrap;overflow:auto;max-height:330px;color:#d3eedb;font:12px ui-monospace,monospace">Nicio evaluare încă.</pre>
     </div>
     <div id="wholeMapBox" hidden style="margin:12px 0;border:1px solid #236a77;border-radius:10px;padding:12px">
       <h2>Harta completă a textului · navigare ca în labirintul 2D</h2>
