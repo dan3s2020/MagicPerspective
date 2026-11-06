@@ -641,7 +641,7 @@ $("allStart").onclick = () => control("start"); $("allPause").onclick = () => co
 $("gpuUtil").oninput = () => $("gpuUtilOut").textContent = $("gpuUtil").value;
 $("gpuApply").onclick = async () => { await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&textBatch=${Math.max(1, Math.min(128, +$("gpuTextBatch").value | 0))}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"}).catch(() => {}); livePull(); };
 let gpuShown = false;
-$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform"].filter(Boolean); if (!worlds.length) return;
+$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addSelfcode").checked && "selfcode"].filter(Boolean); if (!worlds.length) return;
   await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${worlds.join(",")}`, {method: "POST"}).catch(() => {}); livePull(); };
 function confirmReset() { const b = $("liveReset"); if (b.dataset.armed) { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; return true; }
   b.dataset.armed = 1; b.textContent = "Sigur? apasă încă o dată"; setTimeout(() => { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; }, 4000); return false; }
