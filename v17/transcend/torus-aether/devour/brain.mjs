@@ -20,12 +20,17 @@ const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem,
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
+const GEAR_HOOKS = new WeakMap();   // native planner runs in THIS brain's text writer, not only a side panel
 export class Brain {
   setSharedObserver(callback) {
     if (callback !== null && typeof callback !== "function") throw Error("shared observer must be a function or null");
     if (callback) SHARED_HOOKS.set(this, callback); else SHARED_HOOKS.delete(this);
   }
   observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
+  setGearDriver(driver) {
+    if (driver!==null && typeof driver?.generate!=='function') throw Error('native gear requires generate(history,opts)');
+    if(driver) GEAR_HOOKS.set(this,driver); else GEAR_HOOKS.delete(this);
+  }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
     this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
@@ -72,14 +77,42 @@ export class Brain {
     const asc = s => { const o = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; o.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return o; };
     const prompt = asc(history.map(([who, text]) => (who === "you" ? "Q: " : "A: ") + text + "\n" + (who === "you" ? "" : "\n")).join("") + "A: ");
     if (learn) for (const y of prompt) this.live(y);
+    // A learned operator plan now drives the ACTUAL V17 character writer when
+    // sufficient evidence exists. Unsupported queries keep the original V17
+    // alignment writer unchanged; no forced fabricated semantic answers.
+    const gearDriver=GEAR_HOOKS.get(this);let gear=null;
+    if(gearDriver)try{gear=gearDriver.generate(history,{T,max,seed});}
+      catch(err){gear={used:false,reason:String(err?.message||err)};gearDriver.fallback?.(gear.reason);}
     let ans;
-    if (this.align) { const r = rngFrom(seed); ans = this.align.write(prompt, {max, T, rand: r, stop: stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null}); if (stopBlank && ans.at(-1) === 10) ans.pop(); }   // the aligning graph writes
+    if(gear?.used) {
+      ans=asc(gear.text);
+      // Draw the route actually chosen by Brain.chat, not an unrelated demo.
+      const trace=this.trace,base='gear:chat:'+seed;
+      trace.node(base+':goal','world','obiectiv: '+JSON.stringify(gear.goal).slice(0,100));
+      let previous=base+':goal';
+      for(let k=0;k<gear.route.length&&k<32;k++){
+        const op=gear.route[k],id=base+':op:'+k;
+        trace.node(id,'world',op.from+' → '+op.to+' · '+op.slot);
+        trace.setEdge(previous,id,'gear-transform',Math.max(.1,Math.min(4,op.evidence||1)),
+          op.before+' → '+op.after);
+        previous=id;
+      }
+      for(let i=0;i<ans.length&&i<400;i++){
+        const id=base+':char:'+i;
+        trace.node(id,'world',String.fromCharCode(ans[i])===' '?'␣':String.fromCharCode(ans[i]));
+        trace.setEdge(previous,id,'gear-char',1,'cursor '+i+' / '+ans.length);
+        previous=id;
+      }
+    }
+    else if (this.align) { const r = rngFrom(seed); ans = this.align.write(prompt, {max, T, rand: r, stop: stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null}); if (stopBlank && ans.at(-1) === 10) ans.pop(); }   // the aligning graph writes
     else { const out = prompt.slice(), keep = this.chain.rand; ans = []; this.chain.rand = rngFrom(seed);
       for (let k = 0; k < max; k++) { const i = out.length, y = this.chain.pick(this.chain.play(this.e, this.ctxOf(out, i), this.histOf(out, i)).out, T);
         if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
       this.chain.rand = keep; }
     if (learn) for (const y of [...ans, 10, 10]) this.live(y);
-    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived};
+    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived,
+      gear: gear?.used ? {used:true,source:gear.source,goal:gear.goal,route:gear.route,characters:gear.chars,expanded:gear.expanded}
+        : {used:false,reason:gear?.reason||'native operator route not available; original V17 writer used'}};
   }
   // what the brain expects next, after everything it has lived (the graph's own distribution over the next symbol)
   predict(past = this.past) { const i = past.length; return this.chain.play(this.e, this.ctxOf(past, i), this.histOf(past, i)).out; }
