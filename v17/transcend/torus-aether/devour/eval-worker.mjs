@@ -2,13 +2,20 @@
 // (unseen labyrinths from small to large, unseen text, unseen desired configurations). Training goes on untouched.
 import {parentPort, workerData} from "node:worker_threads";
 import {Brain} from "./brain.mjs";
+import fs from "node:fs";
+import {BodyPerspectiveMemory} from "../perspective/body-memory.mjs";
+import {evaluateBodyPerspective} from "../perspective/global-local.mjs";
 const brain = Brain.load(workerData.saveFile);
+let bodyPerspective=new BodyPerspectiveMemory();
+const sidecar=workerData.saveFile+".body-perspective.json";
+if(fs.existsSync(sidecar))bodyPerspective=BodyPerspectiveMemory.restore(JSON.parse(fs.readFileSync(sidecar,"utf8")));
 parentPort.postMessage({type: "loaded", lived: brain.lived, chars: brain.chars});
 parentPort.on("message", m => { let r;
   try {
     if (m.kind === "maze") r = brain.examMazes(m.opts.sizes, m.opts.per, m.opts.seed ?? undefined, {T: m.opts.T, noise: m.opts.noise});
     else if (m.kind === "transform") r = brain.evalTransforms(m.opts.count, m.opts.impossible, m.opts.seed ?? undefined, {noise: m.opts.noise});
     else if (m.kind === "text") r = brain.evalTextExercises(m.opts.list, {T: m.opts.T, noise: m.opts.noise});
+    else if (m.kind === "perspective") r = evaluateBodyPerspective(brain,bodyPerspective,m.opts||{});
     else r = {error: "unknown kind " + m.kind};
   } catch (err) { r = {error: err.message}; }
   parentPort.postMessage({type: "result", id: m.id, lived: brain.lived, chars: brain.chars, ...r}); });
