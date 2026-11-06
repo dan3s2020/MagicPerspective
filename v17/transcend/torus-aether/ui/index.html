@@ -113,10 +113,12 @@
         <div class="studio-kpis">
           <div class="m"><small>Rezolvate V17 original</small><b id="psBaseWin">—</b></div>
           <div class="m"><small>Rezolvate perspectiva locală</small><b id="psBodyWin">—</b></div>
+          <div class="m"><small>Rezolvate localizare FIXĂ (control)</small><b id="psFixedWin">—</b></div>
           <div class="m"><small>Pași suplimentari V17 / corp</small><b id="psExtra">—</b></div>
           <div class="m"><small>Localizare exactă în pași</small><b id="psPose">—</b></div>
           <div class="m"><small>Vederi globale după primul pas</small><b id="psLeaks">—</b></div>
           <div class="m"><small>Efecte motorii învățate</small><b id="psKnown">—</b></div>
+          <div class="m"><small>Actualizări transformare locală învățată</small><b id="psAlignUpdates">—</b></div>
         </div>
       </div>
       <div class="studio-panel">
@@ -143,10 +145,12 @@
         <div class="m"><small>Transformări trăite</small><b id="mTrans">—</b></div>
         <div class="m"><small>Efecte motorii învățate</small><b id="mMotor">—</b></div>
         <div class="m"><small>Tranziții globale→locale observate</small><b id="mBodyObs">—</b></div>
+        <div class="m"><small>Învățare localizare: rata training</small><b id="mLocRate">—</b></div>
         <div class="m"><small>PyTorch / GPU real</small><b id="mGpu">—</b></div>
       </div>
       <div class="studio-panel"><h3>Evaluări înghețate · procent 0–100%</h3><canvas id="mAccuracyCv" class="studio-trend" width="780" height="180"></canvas><p class="studio-caption">Turcoaz: text; portocaliu: labirint; mov: jocuri. Valorile lipsă nu sunt completate artificial.</p></div>
       <div class="studio-panel"><h3>Loss model comun · PyTorch</h3><canvas id="mLossCv" class="studio-trend" width="780" height="180"></canvas><p class="studio-caption">Turcoaz: MSE înainte de actualizare. Gri: baseline de persistență. Mai mic e mai bine.</p></div>
+      <div class="studio-panel"><h3>Transformarea globală → locală: coeficienți învățați</h3><div id="mLocWeights" class="studio-log">Aștept tranziții observate.</div></div>
       <div class="studio-panel"><h3>Acțiunile corpului învățate prin experiență</h3><div id="mActions" class="studio-actions">Nicio acțiune încă.</div></div>
       <div class="studio-panel"><h3>Ultima observație backend</h3><pre id="mRaw" class="studio-log">—</pre></div>
     </section>
