@@ -1,0 +1,59 @@
+name: V17 original Brain - one shared learned transformation core
+on:
+  push:
+    branches:
+      - experiment/V17-ONE-SHARED-TRANSFORMATION-CORE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-original-brain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse original Brain and all modified modules
+        run: |
+          node --check v17/transcend/torus-aether/worlds/shared-transformation-core.mjs
+          node --check v17/transcend/torus-aether/worlds/observed-transformations.mjs
+          node --check v17/transcend/torus-aether/worlds/constructed-paths.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/shared-world-view.mjs
+      - name: Confirm one shared model, actual cross-domain updates, no leaked target and save-resume
+        run: node --test v17/tests/shared-world-core-v17.test.mjs
+      - name: Existing original V17 structural text paths and maze regression
+        run: |
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/language-maze-perspectives.test.mjs
+      - name: Boot actual original worker + HTTP + unchanged 5D UI and compare A/B
+        run: node --test v17/tests/shared-world-core-http.test.mjs
+  windows-power-shell:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse new isolated D drive launch and original Windows V17 start
+        shell: powershell
+        run: |
+          foreach ($p in @('v17/START_V17.ps1','START_UNIFIED_WORLD_V17.ps1')) {
+            $tokens=$null
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $p),[ref]$tokens,[ref]$errors) | Out-Null
+            if ($errors.Count) { throw ($p+': '+($errors -join '; ')) }
+          }
+      - name: Cross-world learner and save/resume in native Windows Node.js
+        shell: powershell
+        run: |
+          node --test v17/tests/shared-world-core-v17.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "Original Brain shared-core regression failed on Windows" }
