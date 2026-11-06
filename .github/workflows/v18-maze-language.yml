@@ -1,0 +1,38 @@
+name: V18 same maze law in language world
+on:
+  push:
+    branches:
+      - experiment/V18-MAZE-LANGUAGE-ONE-MECHANISM-ISOLATED-20261106
+  workflow_dispatch:
+jobs:
+  identical-maze-law:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax and original maze-law parity with language topology
+        run: |
+          node --check v17/transcend/torus-aether/language-maze/shape-topology.mjs
+          node --check v17/transcend/torus-aether/language-maze/language-world.mjs
+          node --test v17/transcend/torus-aether/language-maze/language-world.test.mjs
+      - name: Native V17 original maze, body, CUDA bridge, UI preservation and checkpoint regressions
+        run: |
+          node --test v17/transcend/torus-aether/perspective/body-perspective.test.mjs v17/transcend/torus-aether/perspective/body-studio.test.mjs v17/tests/torus-shared-perspective.test.mjs v17/transcend/torus-aether/shared/experience.test.mjs
+  windows-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 parser
+        shell: powershell
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path v17/START_MAZE_LANGUAGE_V18.ps1).Path,
+            [ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0){$errors | ForEach-Object {Write-Host $_.ToString()};throw 'Bad V18 launcher syntax'}
