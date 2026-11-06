@@ -196,6 +196,23 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m?.cognitiveObserve){
+    const {id,before,action,after,accepted}=m.cognitiveObserve;
+    try{
+      if(!cognitive)throw Error("Cognitive world not enabled for this brain");
+      if(typeof action!=="string"||!action||action.length>256||
+        typeof accepted!=="boolean")throw Error("Explicit real action and accepted/blocked result required");
+      const result=cognitive.rules.has(action)?
+        cognitive.observeIntervention({before,action,after,accepted}):
+        cognitive.observeActionResult({before,action,after,accepted});
+      saveCognitive(); // native versioned Brain checkpoint, no separate model
+      const savedMB=saveFile?brain.save(saveFile)/1e6:null;
+      shot(true);
+      parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,
+        result,report:cognitive.report(),savedMB});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,error:err.message});}
+    return;
+  }
   if(m?.cognitiveEval){
     const {id,initial,goal,maxNodes=384,maxDepth=8}=m.cognitiveEval;
     try{
