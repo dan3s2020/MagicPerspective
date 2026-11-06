@@ -14,11 +14,12 @@ import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
 import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
 import {PerspectiveLearner, perspectiveEpisode, evaluatePerspective} from "../worlds/perspective.mjs";
+import {TextPerspectives} from "../language-universe/perspectives.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -36,7 +37,7 @@ export class Brain {
   observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -54,6 +55,7 @@ export class Brain {
     this.chain.rand = rngFrom(this.seed + this.lived); this.trace.geo.r = rngFrom(this.seed * 31 + this.lived); this.setControls();
     this.body ||= {}; if (this.disc) this.disc.body = this.body; if (this.causal) this.causal.body = this.body;   // one body for every world
     this.perspective ||= new PerspectiveLearner(); // older checkpoint compatibility
+    this.language ||= new TextPerspectives({maxStates:85000});
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
@@ -99,6 +101,33 @@ export class Brain {
       this.chain.rand = keep; }
     if (learn) for (const y of [...ans, 10, 10]) this.live(y);
     return {text: String.fromCharCode(...ans), T, seed, lived: this.lived};
+  }
+  // A learned token/phrase perspective drawn from the SAME native text the Brain
+  // lives, not a substituted language demo. Multiple context scales compete on
+  // observed accuracy. Goal value is propagated along observed text edges.
+  liveLanguage(text) {
+    const R=(this.language ||= new TextPerspectives({maxStates:85000})).observe(text);
+    const trace=this.trace;
+    const L=this.language.report();
+    trace.node('lang:world','self','limbaj');
+    for(const scale of L.trust){
+      const id='lang:perspective:'+scale.scale;
+      trace.node(id,'A','limbaj·'+scale.scale);
+      trace.setEdge('lang:world',id,'language-scale',
+        Math.max(.1,1+2*(scale.accuracy||0)),
+        scale.seen+' probe');
+    }
+    return R;
+  }
+  testLanguage(text,{maxTokens=2000,seed=11}={}) {
+    if(typeof text!=='string')throw Error('A real held-out text passage is required');
+    const source=this.language||new TextPerspectives();
+    const held=TextPerspectives.restore(source.serialize());
+    const prefix=text.trim().split(/\s+/u).slice(0,8).join(' ');
+    return {tokenPrediction:held.evaluate(text,{useField:false,limit:maxTokens}),
+      fieldPrediction:held.evaluate(text,{useField:true,limit:maxTokens}),
+      preActionShape:held.navigate(prefix,{steps:32,useField:true}),
+      perspective:held.report(),frozen:true,seed};
   }
   // what the brain expects next, after everything it has lived (the graph's own distribution over the next symbol)
   predict(past = this.past) { const i = past.length; return this.chain.play(this.e, this.ctxOf(past, i), this.histOf(past, i)).out; }
