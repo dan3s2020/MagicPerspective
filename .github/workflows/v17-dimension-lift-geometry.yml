@@ -1,0 +1,23 @@
+name: MagicPerspective V17 dimensional lift and quantum-noise analogy falsification
+on:
+  push:
+    branches:
+      - experiment/V17-CAUSAL-5D-SOLUTION-ALIGNMENT-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dimensional-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Real 2D-3D-5D lift / 5D noise rotation and heldout geometry vs shuffled
+        run: node --test v17/tests/dimensional-lift-noise.test.mjs
+      - name: Discover actual directions and measure each learned axis on unseen text
+        run: node --test v17/tests/learned-direction-axis-probe.test.mjs
+      - name: Original MagicPerspective language text-path observer tests remain green
+        run: node --test v17/tests/observed-text-paths.test.mjs
