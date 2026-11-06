@@ -119,3 +119,54 @@ test("real native V17 process exposes live observed text and frozen HTTP paths",
   await pause(250);rmSync(dir,{recursive:true,force:true});
  }
 });
+
+test("hypertext-only world absorbs the entire real corpus without V19 atlas or transfer",
+ {timeout:55000},async()=>{
+ const dir=mkdtempSync(path.join(os.tmpdir(),"mp-v20-only-"));
+ const input=path.join(dir,"world.txt"),out=path.join(dir,"runtime"),port=await freePort();
+ const docs=Array.from({length:52},(_,i)=>
+  "North east south west. North goes east and south goes west. "+i+".");
+ writeFileSync(input,docs.join("\n\n")+"\n","utf8");
+ const cwd=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+ const proc=spawn(process.execPath,[
+  "transcend/torus-aether/devour/devour.mjs","--workers","1",
+  "--arms","stable+many","--worlds","hypertext","--gpu","off",
+  "--text",input,"--out",out,"--port",String(port),"--start","--mem","2"],{
+   cwd,detached:true,env:{...process.env,MP_NO_BROWSER:"1"},stdio:["ignore","pipe","pipe"]
+ });
+ let log="";for(const stream of [proc.stdout,proc.stderr])stream.on("data",b=>
+  log=(log+b.toString()).slice(-10000));
+ const host="http://127.0.0.1:"+port;
+ try{
+  let snapshot=null;const began=Date.now();
+  while(Date.now()-began<30000){
+   if(proc.exitCode!==null&&proc.exitCode!==0)throw Error("Failed: "+log);
+   try{
+    const r=await fetch(host+"/graph?w=0",{signal:AbortSignal.timeout(2000)});
+    if(r.ok)snapshot=await r.json();
+    if(snapshot?.hypermaze?.documents>=30)break;
+   }catch{}
+   await pause(120);
+  }
+  assert.ok(snapshot?.hypermaze?.documents>=30,"Hypertext-only did not absorb: "+log);
+  assert.equal(snapshot.cognitive,null,"Do not run V19 atlas in text-only world");
+  assert.equal(snapshot.chars,0,"Do not secretly train old byte LM");
+  assert.ok(snapshot.hypermaze.onlinePredictions>100);
+  assert.ok(snapshot.hypermaze.nodes>0 && snapshot.hypermaze.edges>0);
+  const body=JSON.stringify({w:0,start:"North",goal:"west"});
+  const plan=await fetch(host+"/hypermaze-plan",{method:"POST",
+    headers:{"content-type":"application/json"},body});
+  assert.equal((await plan.json()).math.optimal,true);
+  const gpu=await fetch(host+"/gpu?device=cuda:0",{method:"POST"});
+  assert.equal(gpu.status,409,"Never claim CUDA for CPU native symbolic graph");
+  const saved=path.join(out,"brains","brain-0-stable+many.v8");
+  for(let j=0;j<30&&!existsSync(saved);j++)await pause(100);
+  assert.ok(existsSync(saved),"No native hypertext-only checkpoint saved");
+  const brain=Brain.load(saved);
+  assert.ok(brain.hypermaze?.nodes.length>0);
+  assert.ok(!brain.cognitiveMap,"No V19 atlas should be trained");
+ }finally{
+  try{process.kill(-proc.pid,"SIGTERM");}catch{try{proc.kill("SIGTERM");}catch{}}
+  await pause(250);rmSync(dir,{recursive:true,force:true});
+ }
+});
