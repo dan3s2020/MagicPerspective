@@ -123,16 +123,16 @@
       <p class="note">Proiecție 2/32 din vectorii reali ai modelului: înainte / prezis / observat. Scorul nu reprezintă încă transfer universal.</p>
     </div>
     <div id="gearBox" style="margin:12px 0;border:1px solid #375573;border-radius:10px;padding:12px">
-      <h2>Angrenajul limbajului · transformări și sublabirinturi reale</h2>
-      <p class="note">Același worker V17 învață din perechi de propoziții observate. Fiecare caracter emis necesită un traseu de transformări revalidat. Nu primește răspunsul complet la test și nu schimbă modelul în evaluare.</p>
+      <h2>Angrenaj nativ V17 · învățare, planificare și caractere emise</h2>
+      <p class="note">Acest controler este conectat direct la <b>Brain.chat()</b> și învață din perechile întrebare–răspuns ale corpusului CUDA. Dacă nu există un traseu verificabil, răspunsul este produs de generatorul V17 original (fallback declarat). Nu este încă o dovadă de înțelegere generală a limbajului.</p>
       <p class="note" id="gearStats">Așteaptă observații din corpusul de antrenare.</p>
-      <label class="dim" for="gearExamples">Observații suplimentare (una pe rând; opțional, învață în graful selectat)</label>
-      <textarea id="gearExamples" placeholder="She is happy.&#10;She is tired.&#10;He is tired.&#10;He is calm." style="width:100%;height:84px;resize:vertical;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:8px"></textarea>
+      <label class="dim" for="gearExamples">Experiențe suplimentare: „întrebare =&gt; răspuns observat” sau numai propoziții (câte una pe rând)</label>
+      <textarea id="gearExamples" placeholder="Întrebare observată =&gt; Răspuns observat&#10;Alte propoziții observate, una pe rând" style="width:100%;height:84px;resize:vertical;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:8px"></textarea>
       <div class="row"><button type="button" id="gearLearn">Învață observațiile</button></div>
       <label class="dim" for="gearStart">Stare de pornire</label>
-      <input id="gearStart" value="He is tired" style="width:100%;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px">
+      <input id="gearStart" placeholder="O stare observată din training" style="width:100%;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px">
       <label class="dim" for="gearGoal">Obiectiv (poziție=valoare; nu propoziția completă)</label>
-      <input id="gearGoal" value="0=She,2=calm" style="width:100%;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px">
+      <input id="gearGoal" placeholder="0=valoare,2=valoare" style="width:100%;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px">
       <div class="row"><label class="dim" for="gearNoise">Noise portals (0–1)</label><input id="gearNoise" type="range" min="0" max="1" step=".05" value="0"><span id="gearNoiseOut" class="dim">0</span></div>
       <div class="row"><button type="button" id="gearPlan">Rezolvă global → subprobleme → cursor</button></div>
       <pre id="gearOut" style="white-space:pre-wrap;overflow:auto;max-height:360px;font:12px/1.55 ui-monospace,monospace;background:#05080c;border:1px solid #1b2a39;border-radius:8px;padding:9px">Nu există încă un traseu executat.</pre>
