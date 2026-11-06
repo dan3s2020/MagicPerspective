@@ -27,7 +27,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
-for (const x of worldsArg) if (!["text", "maze", "transform"].includes(x)) throw Error("unknown world " + x + " (text, maze = the labyrinths, transform = objects, switches, doors)");
+for (const x of worldsArg) if (!["text", "maze", "transform", "selfcode"].includes(x)) throw Error("unknown world " + x + " (text, maze = the labyrinths, transform = objects, switches, doors)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
 // C's laws (laws/cexp.mjs): "stable" — C needs more evidence to change perspective; "grow" — C's attention may grow to 6
@@ -66,12 +66,12 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".selfcode.json"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
@@ -116,11 +116,11 @@ const json = (res, o) => { res.writeHead(200, {"content-type": "application/json
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
   if (url === "/state") return json(res, {world, worlds: worldsArg, workers: slots.length, arms: arms.map(a => a.name), every, memGB, started, stopping,
-    graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent})), last: h.at(-1)}))});
+    graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent, selfcode: m.selfcode ? {ticks:m.selfcode.ticks,probes:m.selfcode.probes,portals:m.selfcode.portals,lock:m.selfcode.lock} : null})), last: h.at(-1)}))});
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
     for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
-  if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
+  if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform", "selfcode"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
