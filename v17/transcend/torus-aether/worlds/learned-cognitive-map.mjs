@@ -334,6 +334,9 @@ export class LearnedCognitiveMap {
   // must emerge from learned transition hypotheses.
   formSolution(initial,goal,{disc=null,maxNodes,maxDepth}={}){
     const world=this.buildWorld(initial,goal,{maxNodes,maxDepth});
+    if(world.targets.includes(0))return {found:true,path:[],world,field:{reason:'ALREADY_AT_GOAL',values:[]},
+      goal:clone(goal),learnedRules:this.rules.size,novelGoal:false,
+      plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
     if(!world.targets.length)return {found:false,reason:'NO_GOAL_STATE_IN_LEARNED_MAP',world,
       learnedRules:this.rules.size,path:[],field:null};
     const kinds=world.states.map((_,i)=>i===world.start?KIND.self:world.targets.includes(i)?KIND.target:KIND.floor);
