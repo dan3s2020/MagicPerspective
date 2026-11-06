@@ -182,8 +182,9 @@ http.createServer((req, res) => {
     const sl=slots.find(x=>x.w===+(q.get("w")||0));
     if(!sl||!sl.worlds.includes("text"))
       return json(res,{error:"Selectează un graf care învață lumea text."});
+    const auto=q.get("auto")==="1";
     const required=(q.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean);
-    if(!required.length||required.length>8||required.some(x=>x.length>80))
+    if(!auto&&(!required.length||required.length>8||required.some(x=>x.length>80)))
       return json(res,{error:"Obiectivul trebuie să conțină 1–8 simboluri, nu răspunsul complet."});
     const start=q.get("start")?.trim()||null;
     if(start&&start.length>500)return json(res,{error:"Starea de pornire este prea lungă"});
@@ -194,9 +195,14 @@ http.createServer((req, res) => {
       if(!fs.existsSync(file))return json(res,{error:"Nu există un checkpoint pentru acest graf."});
       try{
         const brain=Brain.load(file);
-        return json(res,{...brain.planObservedTransformation(
-          {required,start,maxDepth},{trace:true,embodied:true,localPolicy}),
-          w:sl.w,fromSave:true});
+        const selfGoal=auto?brain.observedTransformations?.selfSelectedChallenge():null;
+        if(auto&&!selfGoal)return json(res,{found:false,selfProbe:true,
+          reason:"no-reachable-novel-self-probe-from-observed-operators"});
+        const actualGoal=selfGoal?{required:selfGoal.required,start:selfGoal.start,maxDepth}:
+          {required,start,maxDepth};
+        return json(res,{...brain.planObservedTransformation(actualGoal,
+          {trace:true,embodied:true,localPolicy}),
+          w:sl.w,fromSave:true,selfProbe:!!selfGoal,selfGoal:selfGoal||null});
       }catch(err){return json(res,{error:err.message});}
     }
     const id=++chatId;
@@ -204,7 +210,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Căutarea reală a depășit 60 secunde"});
     },60000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({languageMaze:{id,required,start,maxDepth,localPolicy}});
+    sl.wk.postMessage({languageMaze:{id,required,start,maxDepth,localPolicy,auto}});
     return;
   }
   // Native V17: the original Brain constructs a NEW sentence by composing
