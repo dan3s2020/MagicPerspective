@@ -92,6 +92,7 @@ export class ObservedTransformations {
     this.maxCandidatePairs=maxCandidatePairs;
     this.maxTokens=maxTokens;
     this.records=new Map(); // actual corpus sentences only
+    this.lookup=new Map(); // exact observed strings for O(1) no-memorized-answer check
     this.order=[];
     this.index=new Map(); // length + token -> recent actual sentences
     this.operators=new Map(); // edit actions inferred from observation differences
@@ -103,7 +104,7 @@ export class ObservedTransformations {
     this.lastPlan=null;
   }
   tokenize(s){return tokenizeObservation(s);}
-  containsSentence(s){return this.records.has(freezeKey(tokenizeObservation(s)));}
+  containsSentence(s){return this.lookup.has(freezeKey(tokenizeObservation(s)));}
   _indexKeys(tokens) {
     return unique(tokens).map(x=>tokens.length+"|"+normalized(x));
   }
@@ -163,13 +164,16 @@ export class ObservedTransformations {
     this.seen++;
     if(tokens.length>this.maxTokens){this.rejectedLong++;return {learned:false,reason:"max-tokens"};}
     const key=freezeKey(tokens);
-    for(const saved of this.records.values())if(freezeKey(saved.tokens)===key) {
+    const already=this.lookup.get(key);
+    if(already&&this.records.has(already)){
+      const saved=this.records.get(already);
       saved.count++;return {learned:false,reason:"duplicate",count:saved.count};
     }
     const candidates=this._candidateSentences(tokens);
     for(const item of candidates)this._compare(item.tokens,tokens);
     const id=this.nextId++;
     this.records.set(id,{id,tokens,count:1});
+    this.lookup.set(key,id);
     this.newObservations++;
     this.order.push(id);
     for(const k of this._indexKeys(tokens)){
@@ -179,7 +183,9 @@ export class ObservedTransformations {
       if(arr.length>96)arr.shift();
     }
     if(this.order.length>this.maxObserved){
-      const old=this.order.shift();this.records.delete(old);this.evicted++;
+      const old=this.order.shift(),record=this.records.get(old);
+      if(record)this.lookup.delete(freezeKey(record.tokens));
+      this.records.delete(old);this.evicted++;
     }
     return {learned:true,matched:candidates.length,operators:this.operators.size};
   }
