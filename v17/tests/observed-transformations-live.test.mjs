@@ -47,12 +47,14 @@ test('real V17 corpus -> same Brain -> unlabeled edits -> unseen full goal -> fr
   assert.match(originalUI,/id="observedTransformBox"/);
   assert.match(originalUI,/id="constructedBox"/);
   assert.match(originalUI,/id="agentNoiseBox"/);
-  let learned=null;
+  let learned=null,lastStatus=null;
   for(let i=0;i<210;i++){
    try{
     const r=await fetch(base+'/graphs');
     if(r.ok){
      const g=(await r.json()).graphs?.[0];
+     lastStatus={status:g?.status,error:g?.error,chars:g?.chars,
+       observed:g?.observedTransformations,source:g?.worlds};
      if(g?.observedTransformations?.observed>=4&&g.observedTransformations.learnedOperators>=6){
       learned=g;break;
      }
@@ -60,7 +62,8 @@ test('real V17 corpus -> same Brain -> unlabeled edits -> unseen full goal -> fr
    }catch{}
    await sleep(120);
   }
-  assert.ok(learned,'Four real unlabeled short sentences never produced reusable edits: '+logs);
+  assert.ok(learned,'Four real unlabeled short sentences never produced reusable edits: '+
+    JSON.stringify(lastStatus)+'; console='+logs);
   const url=base+'/composition-plan?w=0&required='+encodeURIComponent('She,calm')+
     '&start='+encodeURIComponent('He is calm.');
   const response=await fetch(url,{method:'POST'});
