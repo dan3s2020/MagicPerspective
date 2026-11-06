@@ -76,7 +76,7 @@ class Index:                                     # suffix array of the REVERSED 
                 a = lo.clone() if X.t else lo.copy(); b = hi.clone() if X.t else hi.copy()
                 for _ in range(steps):
                     go = a < b
-                    if not bool(go.any()): break
+                    if not X.t and not bool(go.any()): break  # GPU: avoid a blocking host/device sync on every binary-search iteration
                     m = (a + b) // 2; p = sa[X.clip(m, 0, n - 1)] + k; v = X.where(p < n, R[X.clip(p, 0, n - 1)], X.zeros(Q, np.int64) - 1)
                     less = (v <= c) if strict else (v < c)
                     a = X.where(go & less, m + 1, a); b = X.where(go & ~less, m, b)
