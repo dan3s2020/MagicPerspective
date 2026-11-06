@@ -273,10 +273,10 @@ export class LanguageMazeMemory {
   };
  }
  /** Heldout reference is accessed only AFTER plan() has already returned. */
- frozenCompare(pairs){
+ frozenCompare(pairs,{mode="hybrid"}={}){
   if(!Array.isArray(pairs)||pairs.length>200)throw Error("Invalid frozen test set");
   const cases=pairs.map(({prompt,answer})=>{
-   const result=this.plan(prompt,{maxReplay:12});
+   const result=this.plan(prompt,{maxReplay:12,mode});
    const expected=String(answer),actual=result.output,actualCP=cp(actual),refCP=cp(expected);
    const equal=actual===expected;
    let correct=0;for(let i=0;i<Math.min(actualCP.length,refCP.length);i++)correct+=+(actualCP[i]===refCP[i]);
@@ -287,7 +287,7 @@ export class LanguageMazeMemory {
   return {cases,accuracy:totalChars?correctChars/totalChars:null,
    exactRate:cases.length?cases.filter(x=>x.equal).length/cases.length:null,
    abstained:cases.filter(x=>!x.hasKnownPath).length,
-   protocol:"FROZEN_NO_REFERENCE_TO_WORLD_CONSTRUCTION"};
+   protocol:"FROZEN_NO_REFERENCE_TO_WORLD_CONSTRUCTION",mode};
  }
  stats(){
   return {version:this.version,rowsSeen:this.rowsSeen,rowsObserved:this.rowsObserved,
