@@ -66,13 +66,14 @@ export function discountedGoalOccupancy(graph,{gamma=.9,iterations=512,epsilon=1
 }
 // Reproduce the original V17 scalar relaxation solely for tracing/tie inspection;
 // parity against Discoverer.shape() is asserted in tests. No replacement planner.
-export function nativeAttractionField(graph,discoverer,origin=0){
+export function nativeAttractionField(graph,discoverer,origin=0,{recordSweeps=false,maxRecordedSweeps=120}={}){
   const n=inspect(graph),ret=graph.nodes.map(x=>x.kind),V=new Float64Array(n);
   const att=[0,1,2,3].map(k=>discoverer.attract(k));
   const cond=[0,1,2,3].map(k=>discoverer.conduct(k));
   let any=false;
   for(let i=0;i<n;i++)if(att[ret[i]]>.2&&i!==origin){V[i]=att[ret[i]];any=true;}
-  if(!any)return {values:V,hasGoal:false,sweeps:0};
+  const wave=recordSweeps?[{iteration:0,values:Array.from(V,x=>Number(x.toFixed(7)))}]:null;
+  if(!any)return {values:V,hasGoal:false,sweeps:0,wave};
   let sweeps=0;
   for(let it=0;it<2*n;it++){
     let changed=false;sweeps++;
@@ -85,9 +86,15 @@ export function nativeAttractionField(graph,discoverer,origin=0){
       const value=.97*conduct*best;
       if(value>V[i]+1e-12){V[i]=value;changed=true;}
     }
+    // Same numerical relaxation as the original Discoverer.shape, recorded
+    // only for inspection. Never substitute this module for the native planner.
+    if(wave&&wave.length<maxRecordedSweeps)
+      wave.push({iteration:it+1,values:Array.from(V,x=>Number(x.toFixed(7)))});
     if(!changed)break;
   }
-  return {values:V,hasGoal:true,sweeps};
+  if(wave&&wave.at(-1)?.iteration!==sweeps)
+    wave.push({iteration:sweeps,values:Array.from(V,x=>Number(x.toFixed(7)))});
+  return {values:V,hasGoal:true,sweeps,wave};
 }
 function follow(graph,actions,origin){
   const path=[origin];let at=origin;
