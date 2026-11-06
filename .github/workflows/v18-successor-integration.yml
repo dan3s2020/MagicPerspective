@@ -16,6 +16,8 @@ jobs:
       - name: Syntax of modified JS and preserved original world
         run: |
           node --check v17/transcend/torus-aether/language-maze/successor-field.mjs
+          node --check v17/transcend/torus-aether/language-maze/successor-online.mjs
+          node --check v17/transcend/torus-aether/language-maze/observe-committed.mjs
           node --check v17/transcend/torus-aether/language-maze/shape-topology.mjs
           node --check v17/transcend/torus-aether/language-maze/language-world.mjs
           node --check v17/transcend/torus-aether/ui/language-maze-studio.js
@@ -24,7 +26,7 @@ jobs:
           node --check v17/transcend/torus-aether/devour/devour.mjs
       - name: Original maze parity, live learned text, successor exact ties and hierarchical 112531-character path
         run: |
-          node --test v17/transcend/torus-aether/language-maze/successor-field.test.mjs v17/transcend/torus-aether/language-maze/language-world.test.mjs v17/transcend/torus-aether/language-maze/hierarchical-shape.test.mjs
+          node --test v17/transcend/torus-aether/language-maze/successor-online.test.mjs v17/transcend/torus-aether/language-maze/successor-field.test.mjs v17/transcend/torus-aether/language-maze/language-world.test.mjs v17/transcend/torus-aether/language-maze/hierarchical-shape.test.mjs
       - name: Dedicated browser-tab interaction and original tab isolation
         run: node --test v17/transcend/torus-aether/ui/successor-observatory.test.mjs
       - name: Native server trained on actual input text and frozen HTTP test
