@@ -357,7 +357,15 @@ export class ObservedTransformations {
       predictionMatchedExecution:result===plan.predicted};
   }
   report() {
-    return {observed:this.newObservations,totalSeen:this.seen,activeObserved:this.records.size,
+    // Real learned actions and example provenance, never generated/fabricated
+    // labels. Bounded payload for responsive UI and large corpora.
+    const topOperators=[...this.operators.values()]
+      .sort((a,b)=>b.sourceObservations-a.sourceObservations)
+      .slice(0,24)
+      .map(a=>({kind:a.kind,from:a.from,to:a.to,left:a.left,right:a.right,
+        observedSupport:a.sourceObservations,examples:a.evidence.slice(0,2)}));
+    return {topOperators,
+      observed:this.newObservations,totalSeen:this.seen,activeObserved:this.records.size,
       comparedPairs:this.comparisons,oneChangePairs:this.matchingComparisons,
       learnedOperators:this.operators.size,learnedInvariantGroups:this.invariants.size,
       evicted:this.evicted,skippedLong:this.rejectedLong,droppedNewOperators:this.droppedOperators,
