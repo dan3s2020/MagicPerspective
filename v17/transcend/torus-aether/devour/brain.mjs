@@ -50,9 +50,13 @@ export class Brain {
     const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;
     this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null};
     return this.textGpu; }
-  live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
+  live(y, detailed = false, {old = false, onPrediction = null} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
     const prev = this.past.length ? this.past[this.past.length - 1] : null, al = old ? {guess: -1, src: null} : (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
+    // Optional read-only observability: prediction already computed before
+    // AligningGraph saw this byte. Default remains the original V17 behavior.
+    if (!old && onPrediction) onPrediction({guess:al.guess,actual:y,src:al.src,
+      correct:al.guess===y,at:this.chars});
     if (prev !== null && !old) this.trace.aligned(prev, y, al.guess, al.src);        // in the drawn graph: the alignment it followed, or an impulse where it expected something else
     const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), C = this.controls || this.setControls(), h0 = this.histOf(past, i), h = C.pnoise ? h0.map(x => (this.rand() < C.pnoise && past.length ? past[Math.floor(this.rand() * past.length)] : x)) : h0, m = chain.play(e, ctx, h, false, {temp: C.ltemp});
     if (!this.full) { chain.learn(h, y, m); e.c.observe(ctx, y); }   // over the memory budget the old graph stops growing; nothing is deleted
