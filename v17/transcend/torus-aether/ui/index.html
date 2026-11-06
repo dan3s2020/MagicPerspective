@@ -233,6 +233,23 @@
         <h3 style="margin-top:13px">Date brute / proveniență</h3>
         <pre id="scEvidence" class="sc-raw">Niciun rezultat măsurat pe acest creier.</pre>
       </div>
+      <div class="sc-card">
+        <h3>6 · Rezultatele cercetării inițiale — separat de antrenarea live</h3>
+        <p>Aceste valori provin din experimentele Python izolate din arhiva de cercetare a puzzle-ului, NU din checkpointul tău V17/V18, NU de pe CUDA și NU din OpenThoughts. Testele automate izolate au fost rerulate: <b>9/9 trecute</b>.</p>
+        <div class="sc-table-wrap"><table>
+          <thead><tr><th>Experiment izolat</th><th>Rezultat măsurat</th><th>Ce ne spune</th></tr></thead>
+          <tbody>
+            <tr><td>V17 max · 600 labirinturi cunoscute</td><td>600/600 optime</td><td>Legea originală găsește excelent drumul într-o topologie cunoscută</td></tr>
+            <tr><td>Successor, aceleași labirinturi</td><td>600/600 rezolvate, 587/600 optime</td><td>Câmpul de viitor NU este automat superior celui original</td></tr>
+            <tr><td>Departajare în lume stocastică</td><td>Original 4.911/10.000; Successor 7.549/10.000</td><td>Ajută când două continuări au V egal, dar șanse diferite</td></tr>
+            <tr><td>Transformări simbolice compuse</td><td>500/500 ținte noi</td><td>Transfer prin permutări simple, NU înțelegere de limbaj natural</td></tr>
+            <tr><td>Grover, simulare cuantică</td><td>96,13% cu oracle; 6,25% fără</td><td>Faza amplifică o țintă MARCATĂ; nu află singură răspunsul</td></tr>
+            <tr><td>Coridor de 112.531 pași cunoscuți</td><td>3 niveluri ierarhice</td><td>Împărțirea pe scări evită dispariția numerică a câmpului</td></tr>
+          </tbody>
+        </table></div>
+        <p>Rezultatele <b>actualului creier</b> se află în secțiunile 1–4 de mai sus și pot fi diferite sau nemăsurate. Păstrează această diferență când interpretezi un procent de succes.</p>
+        <p><a style="color:#69dada" href="https://github.com/dan3s2020/MagicPerspective/blob/experiment/V18-SUCCESSOR-TIEBREAK-INTEGRATED-20261106/v17/docs/SUCCESSOR_RESEARCH_RESULTS_AND_LIMITATIONS_20261106.md" target="_blank" rel="noopener noreferrer">Surse și limitări ale experimentelor</a> · <a style="color:#69dada" href="https://github.com/dan3s2020/MagicPerspective/actions/workflows/v18-successor-integration.yml" target="_blank" rel="noopener noreferrer">Teste automate ale versiunii V18 integrate</a></p>
+      </div>
     </section>
 
     <section id="langPane" class="studio-pane">
