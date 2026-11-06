@@ -12,6 +12,7 @@
  */
 import {shapeOnLearnedTopology} from "./shape-topology.mjs";
 import {successorGoalField,selectUphillEdge} from "./successor-field.mjs";
+import {OnlineSuccessor} from "./successor-online.mjs";
 import {travelHierarchicalLanguage} from "./hierarchical-shape.mjs";
 import {KIND} from "../worlds/exercise.mjs";
 
@@ -30,6 +31,7 @@ export class LanguageMazeMemory {
   this.version=1;this.maxRecords=maxRecords;this.maxCandidates=maxCandidates;
   this.maxGraphNodes=maxGraphNodes;
   this.records=[];this.rowsSeen=0;this.rowsObserved=0;this.skippedEmpty=0;this.displaced=0;
+  this.onlineSuccessor=new OnlineSuccessor();
   this.reorderings=new Map();this.reorderSamples=0;
   this.evidence={pass:[1,1,1,1],block:[1,1,1,1],enter:[1,1,1,1],endIn:[0,0,0,0]};
   this.events=0;this.evaluations=0;this.evalSolved=0;this.evalCharacters=0;this.evalCorrect=0;
@@ -59,7 +61,12 @@ export class LanguageMazeMemory {
   this.evidence.enter[KIND.floor]+=chars.length;
   this.evidence.enter[KIND.target]++;
   this.evidence.endIn[KIND.target]++;
-  return {learned:true,chars:chars.length,storedRecords:this.records.length};
+  // Actual online learning at ORIGINAL completed training-row commit.
+  // One update for every observed character and every recursive time scale.
+  // Previous V17 Brain, existing sidecars and shape() are not changed.
+  const successorTraining=this.onlineSuccessor.observe(answer);
+  return {learned:true,chars:chars.length,storedRecords:this.records.length,
+    successorUpdates:successorTraining.updates};
  }
   // Discover the POSITION MAPPING from two genuinely different observed
  // input-output examples. No reverse/copy/latent operation is provided.
@@ -131,17 +138,19 @@ export class LanguageMazeMemory {
   */
  worldFor(prompt){
   const selected=this.candidates(prompt),kinds=[KIND.self],neighbors=[[]],
-    labels=[{prefix:"",state:"body"}],prefixes=new Map([["",0]]),subgoals=[];
+    labels=[{prefix:"",state:"body",depth:0,tail:""}],prefixes=new Map([["",0]]),subgoals=[];
   let hitLimit=false;
   for(const candidate of selected){
-   let prefix="",at=0;
+   let prefix="",at=0,depth=0,tail=[];
    for(const character of cp(candidate.record.answer)){
+    depth++;tail.push(character);if(tail.length>12)tail.shift();
     const nextPrefix=prefix+character;let to=prefixes.get(nextPrefix);
     if(to===undefined){
      if(kinds.length>=this.maxGraphNodes){hitLimit=true;break;}
      to=kinds.length;prefixes.set(nextPrefix,to);
      kinds.push(KIND.floor);neighbors.push([]);
-     labels.push({prefix:nextPrefix,state:"character",character});
+     labels.push({prefix:nextPrefix,state:"character",character,
+       depth,tail:tail.join("")});
     }
     // Keep genuine OBSERVED completed-example counts on each shared edge.
     // No held-out answer, simulated action or correctness oracle is introduced.
@@ -176,7 +185,9 @@ export class LanguageMazeMemory {
    return {...travelHierarchicalLanguage(cp(picked.answer),{
       conduct:k=>this.conduct(k),attract:k=>this.attract(k),maxReplay,
       source:picked.source||"priorly_observed_training_answer"
-    }),input:prompt,successor:{enabled:false,mode,reason:"Only one previously observed answer path; original recursive V17 law remains authoritative"},candidateEvidence:{
+    }),input:prompt,successor:{enabled:false,mode,
+      training:this.onlineSuccessor.stats(),
+      reason:"Only one previously observed answer path; original recursive V17 law remains authoritative"},candidateEvidence:{
      score:evidence[0].score,support:picked.support,
      provenance:picked.source||"priorly_observed_training_answer"}};
   }
@@ -191,9 +202,14 @@ export class LanguageMazeMemory {
   const successor=mode==="hybrid"&&world.candidates>1?
     successorGoalField({kinds:world.kinds,neighbors:world.neighbors,start:0,
      conduct:k=>this.conduct(k),attract:k=>this.attract(k),goalRewards,gamma:.9}):null;
+  // The successor model is updated during ACTUAL corpus training, not while
+  // this read-only plan is evaluated. Missing states use the older empirical
+  // field instead of an invented value, preserving old checkpoint behavior.
+  const onlineProjection=successor?this.onlineSuccessor.valuesFor(world.labels,successor.values):null;
+  const successorValues=onlineProjection?.values??successor?.values??null;
   const field=shapeOnLearnedTopology({kinds:world.kinds,neighbors:world.neighbors,
    start:0,conduct:k=>this.conduct(k),attract:k=>this.attract(k),
-   tieBreakValues:successor?.values??null});
+   tieBreakValues:successorValues});
   const result=field.path;
   // A real LOCAL body policy. It does not read the globally selected next
   // character from result.path. It only perceives neighbors of its CURRENT
@@ -207,7 +223,7 @@ export class LanguageMazeMemory {
     // The body's local view uses the SAME globally computed attraction field
     // and the SAME exact-tie rule; it never receives reference.path as policy.
     if(successor){
-     const choice=selectUphillEdge(local,bodyPosition,field.values,seen,successor.values);
+     const choice=selectUphillEdge(local,bodyPosition,field.values,seen,successorValues);
      if(choice.index>=0)best=local[choice.index];
      if(choice.usedSuccessor)localSuccessorTies++;
     }else for(const edge of local){
@@ -231,8 +247,8 @@ export class LanguageMazeMemory {
      predictedCharacter:predicted,agreesWithGlobal:same,
      globalShapeLength:result.length,localRemaining:Math.max(0,result.length-i-1),
      policy:"local_neighbor_hillclimb_of_remembered_global_field",
-     successorBefore:successor?.values[before]??null,
-     successorAfter:successor?.values[bodyPosition]??null
+     successorBefore:successorValues?.[before]??null,
+     successorAfter:successorValues?.[bodyPosition]??null
     });
     if(this.attract(world.kinds[bodyPosition])>.2)break;
    }
@@ -248,16 +264,22 @@ export class LanguageMazeMemory {
    locallyExecutedSteps:emitted.length,localAgreementRate:result?.length?localAgreement/result.length:null,
    localBlockedSteps:blocked,bodyPolicy:"local_neighbor_hillclimb_of_remembered_global_field",
    successor:successor?{enabled:true,mode,gamma:successor.gamma,converged:successor.converged,
-      iterations:successor.iterations,rootOccupancy:successor.values[0],
+      iterations:successor.iterations,rootOccupancy:successorValues[0],
+      empiricalRootOccupancy:successor.values[0],
+      onlineCoveredNodes:onlineProjection.covered,onlineNodes:onlineProjection.nodes,
+      onlineSource:onlineProjection.source,training:this.onlineSuccessor.stats(),
       globalTieBreaks:field.successorTieBreaks,localTieBreaks:localSuccessorTies,
-      interpretation:successor.interpretation}:
-      {enabled:false,mode,reason:mode==="original"?"original V17 only":"No competing observed complete paths"},
+      interpretation:"Observed online reverse TD at four temporal scales; fallback is empirical terminal occupancy. Neither equals answer correctness."}:
+      {enabled:false,mode,training:this.onlineSuccessor.stats(),
+       reason:mode==="original"?"original V17 only":"No competing observed complete paths"},
    initialShape:result?.map(e=>e.character)||[],
    pathNodes:paths,trace,field:field.values,
    graph:{
     nodes:world.labels.map((v,i)=>({id:i,kind:world.kinds[i],state:v.state,
       lastCharacter:v.character??null,potential:field.values[i],
-      successorOccupancy:successor?.values[i]??null})),
+      successorOccupancy:successorValues?.[i]??null,
+      successorEmpirical:successor?.values[i]??null,
+      successorOnline:this.onlineSuccessor.valueAt(v.depth??0,v.tail??"").value})),
     edges:world.neighbors.flatMap((row,i)=>row.map(e=>({from:i,to:e.to,character:e.character,
       observedSupport:e.support??1}))),
     goals:world.goals,hitLimit:world.hitLimit
@@ -268,7 +290,8 @@ export class LanguageMazeMemory {
     "Only observed answer paths and shared prefixes are traversable. Unknown valid routes may exist.",
     "A known terminal is NOT necessarily the correct answer to an unseen question.",
     "This does NOT demonstrate general semantic understanding or arbitrary 4D/5D cognition.",
-    "Successor occupancy ranks only exact original-field ties using completed training example evidence; it is not a correctness probability."
+    "Successor occupancy ranks only exact original-field ties using completed training example evidence; it is not a correctness probability.",
+    "Online successor temporal-difference values are trained on Q/A answer trajectories, not the semantics of unknown answers."
    ]
   };
  }
@@ -294,6 +317,7 @@ export class LanguageMazeMemory {
    skippedEmpty:this.skippedEmpty,displaced:this.displaced,stored:this.records.length,
    characterTransitionsObserved:this.events,knownGoalObservationCount:this.evidence.endIn[KIND.target],
    observedPositionalRules:this.reorderings.size,observedPositionalSamples:this.reorderSamples,
+   successorTraining:this.onlineSuccessor.stats(),
    conductFloor:this.conduct(KIND.floor),attractGoal:this.attract(KIND.target),
    maxRecords:this.maxRecords,maxCandidates:this.maxCandidates,maxGraphNodes:this.maxGraphNodes,
    noLatentModel:true,originalMazeFormulaReused:true,
@@ -302,6 +326,7 @@ export class LanguageMazeMemory {
  export(){
   return {version:1,options:{maxRecords:this.maxRecords,maxCandidates:this.maxCandidates,maxGraphNodes:this.maxGraphNodes},
    records:this.records,evidence:this.evidence,rowsSeen:this.rowsSeen,rowsObserved:this.rowsObserved,
+   successorOnline:this.onlineSuccessor.export(),
    positionalRules:[...this.reorderings.entries()],reorderSamples:this.reorderSamples,
    skippedEmpty:this.skippedEmpty,displaced:this.displaced,events:this.events};
  }
@@ -309,6 +334,8 @@ export class LanguageMazeMemory {
   if(!data||data.version!==1||!Array.isArray(data.records)||!data.options)
     throw Error("Invalid LanguageMazeMemory sidecar");
   const memory=new LanguageMazeMemory(data.options);
+  if(data.successorOnline!==undefined)
+   memory.onlineSuccessor=OnlineSuccessor.restore(data.successorOnline);
   if(data.records.length>memory.maxRecords)throw Error("Unbounded language memory sidecar");
   for(const item of data.records){
    if(typeof item.prompt!=="string"||typeof item.answer!=="string"||
