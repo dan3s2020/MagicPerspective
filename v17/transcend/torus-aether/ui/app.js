@@ -616,3 +616,5 @@ fetch("/corpus").then(r => r.json()).then(c => {
 
 // Opt-in observability from the exact original live V17 worker (no simulated data).
 setupResearchTab({getSelectedBrain:()=>liveW,isLive:()=>LIVE});
+// Only the isolated research launcher auto-opens this tab. Ordinary V17 UI keeps its original default.
+if (LIVE && new URLSearchParams(location.search).has('research')) document.getElementById('tabResearch')?.click();
