@@ -1,0 +1,25 @@
+name: V17 endogenous noise in the living organism
+on:
+  push:
+    branches:
+      - experiment/V17-ENDOGENOUS-NOISE-AGENCY-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-endogenous:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native organism agency, real maze/transformation and saved checkpoint
+        run: node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: Termux-compatible launcher, live brain, live UI and selected noise
+        run: |
+          sh -n v17/RUN_TERMUX_V17.sh
+          node --test v17/tests/torus-termux-launch.test.mjs
+      - name: Legacy invariants are not broken
+        run: node --test v17/tests/torus-organism.test.mjs
