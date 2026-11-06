@@ -39,6 +39,43 @@ export class TextHypermaze {
   const id=this.index.get(String(token).normalize("NFC"));
   return id===undefined||this.nodes[id].bestTo<0?null:this.nodes[this.nodes[id].bestTo].label;
  }
+ // Frozen test over truly withheld corpus rows. NO calls to intern or transition.
+ // No target answer is injected: a visible end token is supplied only for
+ // a separate known-goal reachability task, analogous to the 2D target cell.
+ evaluateDocuments(documents,{maxRouteSamples=3}={}){
+  if(!Array.isArray(documents)||documents.some(x=>typeof x!=="string"))
+   throw Error("Expected an array of withheld original text documents");
+  if(!Number.isInteger(maxRouteSamples)||maxRouteSamples<0||maxRouteSamples>20)
+   throw Error("Invalid route sample count");
+  const before=JSON.stringify([this.documents,this.nodes.length,this.edges.size,
+   this.observedTokens,this.onlineCorrect,this.onlineTested]);
+  let observed=0,covered=0,hits=0,unigramHits=0,reachable=0,unknown=0;
+  const samples=[],frequent=this.frequentId>=0?this.nodes[this.frequentId].label:null;
+  for(const document of documents){
+   const words=textTokens(document);
+   for(let i=1;i<words.length;i++){
+    observed++;const guess=this.predict(words[i-1]);
+    if(guess!==null){covered++;hits+=Number(guess===words[i]);}
+    unigramHits+=Number(frequent===words[i]);
+   }
+   if(samples.length<maxRouteSamples&&words.length>1){
+    const path=this.plan(words[0],words.at(-1),{maxSteps:160});
+    if(path.found)reachable++;else unknown++;
+    samples.push({start:words[0],goal:words.at(-1),found:path.found,
+     optimal:path.math?.optimal??false,residual:path.math?.maxResidual??null,
+     predicted:path.path,actual:words.slice(0,90),observedWords:words.length});
+   }
+  }
+  if(before!==JSON.stringify([this.documents,this.nodes.length,this.edges.size,
+   this.observedTokens,this.onlineCorrect,this.onlineTested]))
+   throw Error("Frozen test must never change learning state");
+  return {frozen:true,documents:documents.length,observedTransitions:observed,
+   predictionsCovered:covered,accuracy:covered?hits/covered:null,
+   coverage:observed?covered/observed:null,
+   baselineUnigramAccuracy:observed?unigramHits/observed:null,
+   routeSamples:samples.length,routeReachable:reachable,routeUnreachable:unknown,samples,
+   notes:"Accuracy is next-token observation, path success is known-goal reachability; not semantic understanding."};
+ }
  // A document is an independent world observation. Its first and last symbols
  // are a visible start/goal; unseen intermediate text is withheld from planner.
  observeWorld(document,{id=null}={}){
