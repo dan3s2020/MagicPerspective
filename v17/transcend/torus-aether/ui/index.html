@@ -100,7 +100,7 @@
         <label class="dim">VRAM GB <input id="gpuVram" type="number" min="0" step="0.5" value="0" style="width:60px" title="0 = cât are placa"></label>
         <label class="dim">GPU % <input id="gpuUtil" type="range" min="5" max="100" step="5" value="100"><span id="gpuUtilOut">100</span></label>
         <button id="gpuApply">Aplică</button></div>
-      <div class="row"><select id="addArm"></select><label class="dim"><input id="addText" type="checkbox" checked> text</label><label class="dim"><input id="addMaze" type="checkbox"> labirinturi</label><label class="dim"><input id="addTrans" type="checkbox"> transformări</label><button id="addGraph">+ Adaugă graf</button></div>
+      <div class="row"><select id="addArm"></select><label class="dim"><input id="addText" type="checkbox" checked> text</label><label class="dim"><input id="addMaze" type="checkbox"> labirinturi</label><label class="dim"><input id="addTrans" type="checkbox"> transformări</label><label class="dim"><input id="addSelfcode" type="checkbox"> propriul cod</label><button id="addGraph">+ Adaugă graf</button></div>
       <div id="mazeBox" hidden>
         <h2>Labirintul pe care îl trăiește același creier</h2>
         <canvas id="mazeCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
@@ -126,6 +126,20 @@
       <p id="agentNoiseStatus" class="note">Așteaptă acțiunile organismului.</p>
       <div id="agentNoiseModes" class="dim" style="font-size:13px;white-space:pre-wrap"></div>
       <div id="agentNoiseRecent" class="dim" style="font-size:12px"></div>
+    </div>
+    <div id="perspectiveBox" hidden style="margin:12px 0;border:1px solid #375574;border-radius:10px;padding:12px">
+      <h2>Perspectiva organismului · de sus → din corp</h2>
+      <p class="note" id="perspectiveOut">Fără episoade de perspectivă încă.</p>
+      <div class="row"><button id="perspectiveEval">Verifică pe lumi nevăzute (înghețat)</button><button id="perspectiveReplay">Reia traseul învățat</button></div>
+      <p id="perspectiveEvalOut" class="note">Se compară aceeași formă inițială cu orientarea învățată și cu una neantrenată.</p>
+      <canvas id="perspectiveCv" width="420" height="300" style="width:100%;background:#061524;border-radius:8px"></canvas>
+      <p class="note" id="perspectiveFrame">Imaginea globală se vede o singură dată; după aceea, organismul primește numai fragmente locale.</p>
+    </div>
+    <div id="selfcodeBox" hidden style="margin:12px 0;border:1px solid #695036;border-radius:10px;padding:12px">
+      <h2>Codul organismului · univers observabil, modificări izolate</h2>
+      <p id="selfcodeOut" class="note">Fără experiențe din propriul cod.</p>
+      <p id="selfcodeLock" class="note">Accesul la modificare rămâne blocat până la verificări independente.</p>
+      <p id="selfcodeProbe" class="note">Experimentele executabile rulează numai în evaluatorul izolat.</p>
     </div>
     <h2>Mediu</h2>
     <p class="note" id="corpus">se încarcă…</p>
