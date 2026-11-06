@@ -820,8 +820,29 @@ function drawTrans() {
   for (let i = 0; i < n * n; i++) if (L.goal[i] !== 17) { g2.strokeStyle = hue(L.goal[i]); g2.lineWidth = 3; g2.setLineDash([4, 3]); g2.strokeRect(ox + (i % n) * s2 + 3, (i / n | 0) * s2 + 3, s2 - 6, s2 - 6); g2.setLineDash([]); }
 }
 async function livePull() {
-  try { const r = await fetch("/graph?w=" + liveW, {cache: "no-store"}); if (r.ok) { const gs = await r.json(); if (gs.nodes) applySnap(gs); } } catch {}
-  try { const L = await (await fetch("/graphs", {cache: "no-store"})).json(); const p2 = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
+  // Never overlap three large graph snapshots from multiple polling timers.
+  // Capture the selected identity: a delayed response from #0 may NOT reset
+  // the UI after the user switches to graph #1.
+  if(livePulling)return;
+  livePulling=true;
+  const requestedW=liveW;
+  let selectedSnap=null,selectedSummary=null,selectedTelemetry=null,pullError=null;
+  try {
+    const r=await fetch("/graph?w="+requestedW,{cache:"no-store"});
+    if(r.ok){
+      const gs=await r.json();
+      if(Array.isArray(gs.nodes)&&requestedW===liveW){selectedSnap=gs;applySnap(gs);}
+    }else pullError="snapshot HTTP "+r.status;
+  }catch(err){pullError="snapshot: "+err.message;}
+  try {
+    const response=await fetch("/graphs",{cache:"no-store"});
+    if(!response.ok)throw Error("HTTP "+response.status);
+    const L=await response.json();
+    if(requestedW===liveW){
+      selectedSummary=L.graphs?.find(x=>x.w===requestedW)||null;
+      liveSummary=selectedSummary;
+    }
+    const p2 = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("corpus").textContent = `lumea pe care o devorează: ${L.world}`;
     // one card per graph: its own score in every world it lives, its state, and its own controls
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
@@ -838,17 +859,37 @@ async function livePull() {
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
-      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w; nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull(); };
+      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w;
+        nodes.clear();edges.clear();liveSnap=null;liveSummary=null;data=[];
+        view.path="";view.mode="inside";
+        nv.cam={k:0,w:"",x:0,y:0,S:300};nv.placed=false;
+        observatory?.select(liveW);livePull(); };
       for (const b of c.querySelectorAll("button")) b.onclick = async ev => { ev.stopPropagation(); const act = b.dataset.do;
         if ((act === "reset" || act === "remove") && !armedNow(c.dataset.w + act)) { armed.set(c.dataset.w + act, performance.now() + 4000); b.textContent = "sigur?"; return; }
         armed.delete(c.dataset.w + act);
         await control(act, +c.dataset.w); if (act === "reset" && +c.dataset.w === liveW) clearLive(); }; }
     if (L.gpu && !gpuShown) { gpuShown = true; if (![...$("gpuDev").options].some(o => o.value === L.gpu.device)) $("gpuDev").add(new Option(L.gpu.device, L.gpu.device)); $("gpuDev").value = L.gpu.device; $("gpuWorlds").value = L.gpu.worlds; $("gpuTextBatch").value = L.gpu.textBatch || 8; $("gpuVram").value = L.gpu.vram; $("gpuUtil").value = L.gpu.util; $("gpuUtilOut").textContent = L.gpu.util; }
     if (!$("addArm").options.length && L.arms) $("addArm").innerHTML = L.arms.map(a => `<option${a === "stable+many" ? " selected" : ""}>${a}</option>`).join("");
-  } catch { $("corpus").textContent = "trainerul nu răspunde"; }
+  }catch(err){
+    pullError=(pullError?pullError+" · ":"")+"graphs: "+err.message;
+    $("corpus").textContent="trainerul nu răspunde: "+err.message;
+  }
+  if(requestedW===liveW&&observatory){
+    try{
+      const r=await fetch("/telemetry?w="+requestedW+
+        "&after="+observatory.since(),{cache:"no-store"});
+      if(!r.ok)throw Error("HTTP "+r.status);
+      selectedTelemetry=await r.json();
+      if(selectedTelemetry.error)throw Error(selectedTelemetry.error);
+    }catch(err){pullError=(pullError?pullError+" · ":"")+
+      "telemetrie: "+err.message;}
+    observatory.ingest({w:requestedW,summary:selectedSummary,
+      graph:selectedSnap,telemetry:selectedTelemetry,error:pullError});
+  }
+  livePulling=false;
 }
 const armed = new Map(), armedNow = k => (armed.get(String(k)) || 0) > performance.now();   // a reset or removal asks once more before it happens
-const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; };
+const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; liveSummary=null; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; };
 async function control(act, w) { await fetch("/control?do=" + act + (w == null ? "" : "&w=" + w), {method: "POST"}).catch(() => {}); livePull(); }
 $("liveReset").onclick = async () => { if (!confirmReset()) return; await control("reset"); clearLive(); };
 $("allStart").onclick = () => control("start"); $("allPause").onclick = () => control("pause"); $("allSave").onclick = () => control("save");
@@ -863,6 +904,7 @@ function bootLive() {
   D = 5; rand = rng(7); nodes = new Map(); edges = new Map(); recent = {C: [], F: []}; strip = []; groups = []; geo = {U: new Map(), V: new Map(), B: new Map()}; data = [];
   chain = {A: [{wires: [], form: () => liveSnap?.form || ""}]}; running = false;
   $("livePanel").hidden = false; document.body.classList.add("live");
+  observatory?.select(liveW);
   livePull(); setInterval(livePull, 1100); loop();
 }
 if (LIVE) bootLive(); else
