@@ -116,7 +116,7 @@ const report = (final = false) => {
 const shot = (force) => { const now=performance.now(); if (lastShot && now-lastShot<(force?650:3000)) return; lastShot=now; try { brain.organismView(); } catch {}
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), bodyPerspective: bodyPerspective.summary(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
-let stop = false, paused = !!workerData.paused, saveNow = false;
+let stop = false, paused = !!workerData.paused, saveNow = false, fatalTrainingError = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
 const gpuOn = async () => {
@@ -286,7 +286,7 @@ for await (const ex of stream()) {
   if (TEXT && gpuSet) {
     if(gpuError||!(await gpuOn())){
       parentPort.postMessage({type:"fatal",w:workerData.gw,text:"CUDA unavailable: "+(gpuError||"backend did not initialize")});
-      stop=true;break;
+      stop=true;fatalTrainingError=true;break;
     }
     try {
       // Very long OpenThoughts answers can exceed 100,000 symbols. Training the entire
@@ -334,7 +334,7 @@ for await (const ex of stream()) {
       gpuError=String(err.stack||err.message||err);
       changePhase("CUDA error: "+err.message);
       parentPort.postMessage({type:"fatal",w:workerData.gw,text:"GPU text window failed without CPU fallback: "+err.message});
-      stop=true;break;
+      stop=true;fatalTrainingError=true;break;
     }
     if(brain.chars>=maxChars||stop)break;
     await new Promise(r=>setImmediate(r));
@@ -379,10 +379,15 @@ for await (const ex of stream()) {
 if(TEXT&&gpuSet&&!stop&&textBatch.length){
   try{const G=await gpuOn();if(!G)throw Error(gpuError||"CUDA unavailable");await finishBatch();}
   catch(err){gpuError=err.message;changePhase("CUDA error: "+err.message);
-    parentPort.postMessage({type:"fatal",w:workerData.gw,text:"Final GPU text batch failed: "+err.message});stop=true;}
+    parentPort.postMessage({type:"fatal",w:workerData.gw,text:"Final GPU text batch failed: "+err.message});stop=true;fatalTrainingError=true;}
 }
-changePhase(stop?"stopped":"completed"); emitTelemetry();
+changePhase(fatalTrainingError?"stopped after GPU error":stop?"stopped":"completed");emitTelemetry();
 clearInterval(heartbeat);
-report(stop ? false : true);
+// If a GPU batch has already updated trust but failed before its source cursor
+// was committed, writing that partially processed state would cause duplicate
+// learning on restart. Keep the last previously committed checkpoint instead.
+if(!fatalTrainingError)report(stop?false:true);
+else parentPort.postMessage({type:"note",w:workerData.gw,text:
+  "GPU error: checkpoint NOT overwritten; restart will resume at the last previously saved confirmed CUDA window."});
 if (gpu) gpu.close();
 parentPort.close();
