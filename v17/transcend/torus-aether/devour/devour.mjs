@@ -38,7 +38,7 @@ const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {n
 let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
 if (arg("text")) {
   const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = [], heldParas = []; let k = 0;
-  for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (para.trim().length < 20) continue; k++;
+  for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (!para.trim()) continue; k++;
     if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
   heldPick = async n => Array.from({length: n}, () => heldParas[Math.floor(Math.random() * heldParas.length)]);
   source = {kind: "text", files, heldSet};
