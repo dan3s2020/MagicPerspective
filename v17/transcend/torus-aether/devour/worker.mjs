@@ -327,11 +327,19 @@ for await (const ex of stream()) {
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
-  if (TEXT && !stop && brain.chars-startedAtChars===ex.bytes.length) {
-    // Always absorb the LAST completely lived row even when the text budget
-    // reaches exactly its end. Never teach from a partly unseen final row.
-    absorbLanguage(ex); absorbConstructed(ex); absorbObservedDifferences(ex);
-    absorbText(ex); await flushShared(); }
+  const livedChars=brain.chars-startedAtChars;
+  if(TEXT&&livedChars>0){
+    // The structural learner must receive EVERY actually lived symbol, not
+    // depend on a training budget that can end at the same moment as a row.
+    // If a row is truncated, only use the observed PREFIX, never the
+    // unobserved continuation (strict no-leak partial-observation rule).
+    const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars)};
+    absorbObservedDifferences(livedRow);
+    if(livedChars===ex.bytes.length&&!stop){
+      absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
+      await flushShared();
+    }
+  }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
