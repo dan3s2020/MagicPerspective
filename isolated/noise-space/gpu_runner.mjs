@@ -57,10 +57,10 @@ export class IsolatedGpuRunner{
   if(this.settings.device.startsWith('cuda')&&!String(r.device).startsWith('cuda'))throw Error('Goal field did not train on CUDA');
   this.auxLast={kind:'latent',trained:r.trained,elapsedMs:r.elapsedMs,peakVramGB:r.peakVramGB,device:r.device};return r;
  }
- status(){return {enabled:this.active,requested:!!this.settings,device:this.info?.device||null,
+ status(){const cuda=this.active&&String(this.info?.device||'').startsWith('cuda');return {enabled:this.active,requested:!!this.settings,device:this.info?.device||null,
   info:this.info,config:this.settings,last:this.last,auxLast:this.auxLast,error:this.error,
-  trainableCuda:{v17TextAlignment:this.active,mazeWorldBatches:this.active,transformWorldPhysics:this.active,
-   geometricSGD:this.active,causal32DGoalField:this.active},
+  trainableCuda:{v17TextAlignment:cuda,mazeWorldBatches:cuda,transformWorldPhysics:cuda,
+   geometricSGD:cuda,causal32DGoalField:cuda},
   remainingCPU:['V17 legacy LeanC/EmergentChain associative updates','Discoverer and CausalOrganism sparse rule merges',
    'CausalTextAgent action-effect and reward-value maps','TextActionPaths word-transition counts',
    'language-world interventions, scoring, text corpus IO and UI'],
