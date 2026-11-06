@@ -45,7 +45,7 @@ function showOverlay(){
  if(!overlay.hidden)return;
  overlay.hidden=false;document.body.style.overflow="hidden";
  halt();draw();startLive();
- if(!model&&lastFrozen?.result?.exercises?.length){
+ if(!liveEnabled&&!model&&lastFrozen?.result?.exercises?.length){
   try{showFrozenExercise(lastFrozen.result,0);}catch(err){updateHud("Evaluare V17: "+err.message);}
  }
  // Original tabs remain exactly as they were; no native handlers changed.
@@ -310,6 +310,33 @@ function stepMessageObserved(){
  const outgoing=h.graph.edges.filter(e=>e.from===curr);
  const firstDiff=routeDivergence(global,actual);
  const remaining=(global.includes(curr)?global.length-1-global.indexOf(curr):null);
+ if(model.trainingLive){
+  const event=model.liveEvent,info=model.liveInfo;
+  if(!frame)return [
+   "LIVE · T=0 · ÎNAINTE DE ACTUALIZAREA ACESTUI RÂND Q/A",
+   "Întrebare reală: "+cut(event.prompt,240),
+   "Predicția existentă în MEMORIA V18 ÎNAINTE de noul rând: "+
+     (event.before?.before?cut(event.before.before,320):"ABȚINERE · nicio soluție cunoscută"),
+   "Răspunsul real de antrenare are "+fmt(event.fullAnswerChars)+" caractere.",
+   "Copacul a fost construit numai din tranziții deja învățate și din noua observație efectivă.",
+   "Fără răspuns ascuns și fără traseu inventat."
+  ].join("\n");
+  return [
+   "LIVE · CHAR #"+fmt(step)+" DIN Q/A FINALIZAT",
+   "Întrebare: "+cut(event.prompt,170),
+   "Nod din copacul real: "+frame.source+" → "+frame.target,
+   "CARACTER CITIT EFECTIV DIN CORPUS: "+JSON.stringify(frame.character),
+   "PREDICȚIE disponibilă înainte de rând: "+JSON.stringify(frame.predictedCharacter),
+   "Potrivire: "+(frame.agreesWithGlobal?"CORECT":"DIFERIT / NEMĂSURAT"),
+   "Alte căi din același nod: "+fmt(frame.localChoices),
+   "V17 atracție după antrenare: "+fmt(frame.potentialBefore)+" → "+fmt(frame.potentialAfter),
+   "Successor după antrenare: "+fmt(frame.successorBefore)+" → "+fmt(frame.successorAfter),
+   "Cuvinte/simboluri recente: "+cut(frame.prefix,260),
+   "Succesor TD la rândul curent: "+fmt(info.metrics.successorUpdates)+" actualizări",
+   "Aceasta este deplasarea cursorului de OBSERVAȚIE din antrenare, nu o acțiune autonomă.",
+   "Forma violet: rezultat calculat după învățarea acestui rând."
+  ].join("\n");
+ }
  if(!frame)return [
    "T=0 · ÎNAINTE SĂ SE MIȘTE",
    "Poziție actuală: start #0. Rol: perspectiva globală.",
@@ -436,13 +463,44 @@ function drawObserved(){
  // real local action. It visualizes a new planned future but NEVER claims
  // that it replaced the original policy or observed an unknown wall.
  const replan=h.replans?.[step];
+ const postCommit=model.trainingLive?h.postCommitNodes:null;
+ if(postCommit?.length>1)paintPath(postCommit,coords,{
+   color:"#c392f2",width:3,dashed:true,opacity:.90,
+   sample:postCommit.length>4000?Math.ceil(postCommit.length/4000):1
+ },shift);
  if(replan?.nodes?.length>1)paintPath(replan.nodes,coords,{
    color:"#c392f2",width:3,dashed:true,opacity:.95,
    sample:replan.nodes.length>4000?Math.ceil(replan.nodes.length/4000):1
  },shift);
  if(!graph.partialPreview)for(const goal of graph.goals||[])drawPoint(coords[goal.node],"#c181ea",4.5,shift);
  drawPoint(coords[pre[0]??0],"#94b8cd",5,shift,"START");
- drawPoint(coords[pos],"#f5a568",8,shift,"EU · "+step);
+ drawPoint(coords[pos],"#f5a568",8,shift,(model.trainingLive?"CITESC ":"EU · ")+step);
+ // Display REAL branch characters and answer-word fragments directly next
+ // to actual nodes, rather than showing only mathematical line geometry.
+ const route=model.trainingLive?actual:pre;
+ if(route.length){
+   g.font="12px ui-monospace,monospace";
+   const stride=Math.max(1,Math.ceil(route.length/25));
+   for(let i=0;i<route.length;i+=stride){
+     const id=route[i],coord=coords[id];
+     if(!coord||!visibleInSlice(coord))continue;
+     const label=model.trainingLive?
+        model.liveEvent.observedAnswer.slice(Math.max(0,i-12),i+1):
+        graph.nodes[id]?.lastCharacter;
+     if(!label)continue;
+     const p=projectCoord(coord);
+     g.fillStyle="#b6f3e8";g.fillText(cut(label,20),p.x+shift.x+10,p.y+shift.y-9);
+   }
+ }
+ if(model.trainingLive){
+   const observedText=model.liveEvent.observedAnswer;
+   const prefix=observedText.slice(0,Math.min(step,observedText.length));
+   g.fillStyle="#103b48";g.fillRect(18,cv.height-91,Math.min(cv.width-36,900),64);
+   g.fillStyle="#e2fcf4";g.font="13px ui-monospace,monospace";
+   g.fillText("TEXT OBSERVAT LIVE: "+cut(prefix.slice(-92),92),30,cv.height-64);
+   g.fillStyle="#e9c65a";
+   g.fillText("FORMA ANTERIOARĂ: "+cut(model.liveEvent.before?.before??"(abținere)",95),30,cv.height-42);
+ }
 }
 function drawUnseen(){
  const tracks=currentGeometry().tracks;
@@ -657,7 +715,7 @@ function draw(){
   const x=W*k/8,y=H*k/8;
   g.moveTo(x,0);g.lineTo(x,H);g.moveTo(0,y);g.lineTo(W,y);
  }g.stroke();
- if(model&&$("hmSpace").value==="learned5"&&!model.native){
+ if(model&&model.kind!=="native-stream"&&$("hmSpace").value==="learned5"&&!model.native){
   g.fillStyle="#c4dde8";g.textAlign="center";g.font="15px system-ui";
   g.fillText(torusLoading?"Citesc Geometry.U din creierul original V17…":
     "Coordonatele 5D V17 lipsesc; nu inventez un torus.",W/2,H/2);
