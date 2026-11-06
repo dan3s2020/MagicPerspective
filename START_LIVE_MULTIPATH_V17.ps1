@@ -15,6 +15,7 @@ param(
   [int]$ResearchEvery = 5,
   [int]$ResearchEntries = 3000,
   [int]$ResearchEval = 4,
+  [string]$ImportPrevious = "",
   [switch]$Resume
 )
 $ErrorActionPreference = "Stop"
@@ -46,6 +47,16 @@ $nodeMajor = [int](& node -p "Number(process.versions.node.split('.')[0])")
 if($LASTEXITCODE -ne 0 -or $nodeMajor -lt 20) {
   throw "Node.js 20+ required."
 }
+$bootResume = [bool]$Resume
+if(-not [string]::IsNullOrWhiteSpace($ImportPrevious)) {
+  if($Resume) { throw "Use -ImportPrevious for first import, then -Resume for continuation." }
+  $migration = Join-Path $root "isolated\native-language-paths\import-previous.mjs"
+  if(-not (Test-Path -LiteralPath $migration -PathType Leaf)) { throw "Migration source missing." }
+  Write-Host "Importing real previous Brain without modifying its source..." -ForegroundColor Cyan
+  & node $migration --source $ImportPrevious --destination $Out
+  if($LASTEXITCODE -ne 0) { throw "Import from previous real V17 run failed." }
+  $bootResume = $true
+}
 Write-Host "=== MAGIC PERSPECTIVE V17 / ORIGINAL GRAPH + RESEARCH LIVE ===" -ForegroundColor Cyan
 Write-Host "Source code: $root"
 Write-Host "Real corpus: $Data"
@@ -76,7 +87,7 @@ $arg = @{
 # Windows PowerShell 5.1 supports splatting switch parameters as boolean.
 $arg["Research"] = $true
 $arg["AutoStart"] = $true
-$arg["Resume"] = [bool]$Resume
+$arg["Resume"] = $bootResume
 & $start @arg
 if($LASTEXITCODE -ne 0) {
   throw "Original V17 trainer exited with code $LASTEXITCODE. The output above shows the cause."
