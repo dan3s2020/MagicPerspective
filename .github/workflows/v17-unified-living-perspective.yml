@@ -32,6 +32,7 @@ jobs:
           node --test v17/tests/torus-shared-perspective.test.mjs
           node --test v17/tests/torus-unified-http.test.mjs
           node --test v17/tests/torus-gpu-text-progress.test.mjs
+          node --test v17/tests/torus-unified-gpu-text-boot.test.mjs
           node --test isolated/noise-space/text_action_paths.test.mjs isolated/noise-space/causal_text_world.test.mjs
       - name: Original V17 regression suite
         working-directory: v17
