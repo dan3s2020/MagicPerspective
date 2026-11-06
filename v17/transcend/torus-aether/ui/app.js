@@ -382,7 +382,7 @@ function stats() {
 let frame = 0;
 function loop() {
   if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); if(frame%3===0)perspectiveDraw(); }
+  if (LIVE) { drawMaze(); drawTrans(); if(frame%3===0){perspectiveDraw();constructedDraw();} }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
   for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
@@ -461,6 +461,53 @@ function renderPerspective(P) {
   if(key!==perspectiveEpisodeKey){perspectiveEpisodeKey=key;perspectiveT0=performance.now();}
   perspectiveLast=P.last||null;
 }
+let constructedReplay=null,constructedReplayStart=0;
+function constructedDraw(){
+  if(!constructedReplay)return;
+  const {r,ref}=constructedReplay,canvas=$('constructedCanvas');if(!canvas||!ref?.referenceWall)return;
+  const ctx=canvas.getContext('2d'),n=r.n,W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#a6beca';ctx.font='12px monospace';
+  ctx.fillText('VEDERE COMPLETĂ (evaluator)',10,17);
+  ctx.fillText('VEDERE INCOMPLETĂ (organism)',W/2+5,17);
+  const size=Math.min((W/2-14)/n,(H-35)/n),oy=28;
+  const k=Math.min((r.trace||[]).length,Math.floor((performance.now()-constructedReplayStart)/240));
+  const known=(r.initialBelief||[]).slice();
+  const path=r.path||[ref.start];
+  for(let t=0;t<Math.min(k,path.length);t++){
+    const p=path[t],px=p%n,py=Math.floor(p/n);
+    for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+      const x=px+dx,y=py+dy;if(x<0||y<0||x>=n||y>=n)continue;
+      known[y*n+x]=ref.referenceWall[y*n+x];
+    }
+  }
+  const draw=(ox,belief,full)=>{
+    for(let i=0;i<n*n;i++){
+      const v=belief[i];
+      ctx.fillStyle=v===-1?'#52616a':v===1?'#203047':'#051521';
+      ctx.fillRect(ox+i%n*size,oy+Math.floor(i/n)*size,Math.max(1,size-.8),Math.max(1,size-.8));
+    }
+    const x=i=>ox+((i%n)+.5)*size,y=i=>oy+(Math.floor(i/n)+.5)*size;
+    ctx.fillStyle='#54db91';ctx.beginPath();ctx.arc(x(ref.goal),y(ref.goal),Math.max(2,size*.28),0,7);ctx.fill();
+    const plan=r.plannedInitial||[];
+    if(!full&&plan.length){
+      ctx.strokeStyle='#ffba4a';ctx.lineWidth=Math.max(1.2,size*.17);ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.moveTo(x(ref.start),y(ref.start));
+      for(const edge of plan)ctx.lineTo(x(edge.to),y(edge.to));
+      ctx.stroke();ctx.setLineDash([]);
+    }
+    ctx.strokeStyle='#65aaff';ctx.lineWidth=Math.max(1.2,size*.16);
+    ctx.beginPath();path.slice(0,Math.max(1,k+1)).forEach((p,i)=>i?ctx.lineTo(x(p),y(p)):ctx.moveTo(x(p),y(p)));ctx.stroke();
+    const pos=path[Math.min(k,path.length-1)];
+    ctx.fillStyle='#f26bab';ctx.beginPath();ctx.arc(x(pos),y(pos),Math.max(2,size*.3),0,7);ctx.fill();
+  };
+  draw(8,ref.referenceWall,true);draw(W/2+8,known,false);
+  $('constructedFrame').textContent='CADRUL '+k+'/'+r.steps+
+    ' · celule cunoscute '+known.filter(v=>v!==-1).length+'/'+(n*n)+
+    ' · predicția inițială '+r.firstShapeLength+' pași ('+r.firstUncertain+
+    ' prin teritoriu necunoscut) · '+r.routeRepairs+' revizuiri · rezultatul real '+
+    (r.solved?'scop atins':'scop neatins');
+}
 function renderConstructed(S) {
   const box=$('constructedBox');if(!box)return;box.hidden=!S;if(!S)return;
   const m=S.lastMaze,scales=S.scaleGraphStates||[];
@@ -490,6 +537,10 @@ $('constructedExam').onclick=async()=>{
       r.initialBlindPathLengths.join(', ')+' · nimic antrenat în test: '+r.frozen+
       ' · harta completă rămâne referință, nu observație a organismului.';
     const R=r.results?.[0],trace=$('constructedTrace');
+    if(R?.trace?.length&&r.completeViewComparisons?.[0]?.referenceWall){
+      constructedReplay={r:R,ref:r.completeViewComparisons[0]};
+      constructedReplayStart=performance.now();
+    }
     if(R?.trace?.length)trace.textContent='FORMA PREZISĂ ÎNAINTE DE ACȚIUNE: '+
       (R.firstShape||[]).join('→')+'\n'+R.trace.slice(0,32).map(t=>t.step+
       ': '+t.from+' → '+t.to+(t.moved?' · mers':' · blocat')+
