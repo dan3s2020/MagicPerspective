@@ -135,7 +135,9 @@ export class LiveResearch {
     return sample;
   }
   rate(){
-    const n=Math.max(1,this.attempts);
+    if(!this.attempts) return {native:null,sr:null,lexical:null,char:null,guarded:null,
+      repeatOriginal:null,repeatGuarded:null,exactNative:null,exactSr:null};
+    const n=this.attempts;
     return {native:this.cumulative.native/n,sr:this.cumulative.sr/n,
       lexical:this.cumulative.lexical/n,char:this.cumulative.char/n,guarded:this.cumulative.guarded/n,
       repeatOriginal:this.repeat.original/n,repeatGuarded:this.repeat.guarded/n,
@@ -164,9 +166,9 @@ export class LiveResearch {
   status(extra={}){
     return {
       enabled:true,observed:this.observed,attempts:this.attempts,
-      trainedCharacters:this.trainingChars,graphEntries:this.atlas.examples.length,
+      observedCharacters:this.trainingChars,graphEntries:this.atlas.examples.length,
       source:'real OpenThoughts3 Parquet, current V17 worker Brain',
-      workerModel:'Original V17 Brain (same worker), observed Q/A evidence graph',
+      workerModel:'Original V17 Brain plus an isolated Q/A evidence atlas in the SAME worker; the SR planner is an evaluated extension, not the next-character learning engine',
       goalIsTrainingAnswer:true,semanticsProven:false,
       rates:this.rate(),totals:{...this.usages},
       history:this.history.slice(-120),last:this.last,heldout:this.heldout,
