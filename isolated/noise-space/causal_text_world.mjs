@@ -230,6 +230,7 @@ export class CausalTextAgent {
     this.learnGoalLength(prompt,answer);this.latent.fit(prompt,answer);
     this.episodes++;const result={trained:true,seed,steps:events.length,solved:world.reward()===1,
       final:text(world.tokens),reward:world.reward(),bestReward:best,events};
+    result.goalLatent=this.latent.goal(prompt);
     if(result.solved)this.solved++;this.last=result;return result;
   }
   // A frozen test: held-out reference is NOT provided until after .navigate returns.
@@ -252,7 +253,7 @@ export class CausalTextAgent {
       // Stop when the model does not believe another action gives positive expected progress.
       if(i>1&&ranked[0].score<-.08)break;
     }
-    return {prompt,generated:text(world.tokens),steps:events.length,intendedLength,events,
+    return {prompt,generated:text(world.tokens),steps:events.length,intendedLength,goalLatent:this.latent.goal(prompt),events,
       origin:'original V17 corpus-derived TextActionPaths candidates + observed action dynamics + learned value field',
       caveat:'The field is learned from observed lexical reward; semantic correctness not guaranteed.'};
   }
