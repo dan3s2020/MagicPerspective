@@ -522,7 +522,7 @@ async function livePull() {
     // one card per graph: its own score in every world it lives, its state, and its own controls
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("liveList").innerHTML = L.graphs.map(gr => `<div class="lgc${gr.w === liveW ? " on" : ""}" data-w="${gr.w}">
-      <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span> · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
+      <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span>${gr.error ? ` · <span style="color:#ff4d6d">${String(gr.error).replace(/</g,"&lt;")}</span>` : ""} · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
       <div class="sc">${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
@@ -534,7 +534,7 @@ async function livePull() {
         if ((act === "reset" || act === "remove") && !armedNow(c.dataset.w + act)) { armed.set(c.dataset.w + act, performance.now() + 4000); b.textContent = "sigur?"; return; }
         armed.delete(c.dataset.w + act);
         await control(act, +c.dataset.w); if (act === "reset" && +c.dataset.w === liveW) clearLive(); }; }
-    if (L.gpu && !gpuShown) { gpuShown = true; if (![...$("gpuDev").options].some(o => o.value === L.gpu.device)) $("gpuDev").add(new Option(L.gpu.device, L.gpu.device)); $("gpuDev").value = L.gpu.device; $("gpuWorlds").value = L.gpu.worlds; $("gpuVram").value = L.gpu.vram; $("gpuUtil").value = L.gpu.util; $("gpuUtilOut").textContent = L.gpu.util; }
+    if (L.gpu && !gpuShown) { gpuShown = true; if (![...$("gpuDev").options].some(o => o.value === L.gpu.device)) $("gpuDev").add(new Option(L.gpu.device, L.gpu.device)); $("gpuDev").value = L.gpu.device; $("gpuWorlds").value = L.gpu.worlds; $("gpuTextBatch").value = L.gpu.textBatch || 8; $("gpuVram").value = L.gpu.vram; $("gpuUtil").value = L.gpu.util; $("gpuUtilOut").textContent = L.gpu.util; }
     if (!$("addArm").options.length && L.arms) $("addArm").innerHTML = L.arms.map(a => `<option${a === "stable+many" ? " selected" : ""}>${a}</option>`).join("");
   } catch { $("corpus").textContent = "trainerul nu răspunde"; }
 }
@@ -544,7 +544,7 @@ async function control(act, w) { await fetch("/control?do=" + act + (w == null ?
 $("liveReset").onclick = async () => { if (!confirmReset()) return; await control("reset"); clearLive(); };
 $("allStart").onclick = () => control("start"); $("allPause").onclick = () => control("pause"); $("allSave").onclick = () => control("save");
 $("gpuUtil").oninput = () => $("gpuUtilOut").textContent = $("gpuUtil").value;
-$("gpuApply").onclick = async () => { await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"}).catch(() => {}); livePull(); };
+$("gpuApply").onclick = async () => { await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&textBatch=${Math.max(1, Math.min(128, +$("gpuTextBatch").value | 0))}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"}).catch(() => {}); livePull(); };
 let gpuShown = false;
 $("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform"].filter(Boolean); if (!worlds.length) return;
   await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${worlds.join(",")}`, {method: "POST"}).catch(() => {}); livePull(); };
