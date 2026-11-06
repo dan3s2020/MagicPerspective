@@ -84,7 +84,7 @@ test('original V17 persistent Brain reports frozen global/cursor experience with
  assert.deepEqual(brain.observedTransformations.report(),original);
  assert.deepEqual(brain.noiseAgent?.status(),agent);
  assert.equal(brain.noiseAgent?.rng,rng,'Test must not mutate the original noise policy');
- const impossible=brain.planObservedTransformation({required:['unseen-token'],start:'He is calm.'},
+ const impossible=brain.planObservedTransformation({required:['foobarbaz'],start:'He is calm.'},
    {trace:true,embodied:true});
  assert.equal(impossible.found,false);
  assert.ok(impossible.search?.nodes.length>=1);
