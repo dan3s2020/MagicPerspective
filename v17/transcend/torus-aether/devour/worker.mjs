@@ -236,5 +236,6 @@ if (TEXT && gpuSet && !stop && textBatch.length) {
     parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
 }
 report(stop ? false : true);
+if (brain.noiseAgent) shot(true); // publish last real decisions even when a small phone corpus finishes before the 3s UI throttle
 if (gpu) gpu.close();
 parentPort.close();
