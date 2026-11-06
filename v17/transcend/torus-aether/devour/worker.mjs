@@ -42,6 +42,8 @@ const researchPulse=(force=false)=>{
   parentPort.postMessage({type:"research",w:workerData.gw,arm:arm.name,
     ...research.status({brainCharacters:brain?.chars||0,mazeEpisodes:brain?.mazes?.played||0,
       targetAttraction:brain?.disc?.attract(2)||0,
+      gpu:gpuSet?{requested:gpuSet.device,ready:!!gpuInfo,info:gpuInfo,
+        error:gpuError,batch:batchNow,text:brain?.textGpu||null}:{requested:"off"},
       realTraining:true,heldoutNeverTrained:true})});
 };
 
