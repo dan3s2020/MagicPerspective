@@ -1,0 +1,21 @@
+name: V17 native Termux-compatible CPU smoke
+on:
+  push:
+    branches:
+      - experiment/V17-UNIFIED-TRANSFER-MEMORY-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check POSIX Termux runner and boot the original V17 brain/UI
+        run: |
+          sh -n v17/RUN_TERMUX_V17.sh
+          node --test v17/tests/torus-termux-launch.test.mjs
