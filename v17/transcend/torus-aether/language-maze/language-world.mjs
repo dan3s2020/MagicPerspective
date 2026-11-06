@@ -11,6 +11,7 @@
  * demonstrated open-domain understanding. Missing routes => abstain honestly.
  */
 import {shapeOnLearnedTopology} from "./shape-topology.mjs";
+import {travelHierarchicalLanguage} from "./hierarchical-shape.mjs";
 import {KIND} from "../worlds/exercise.mjs";
 
 const wordSet=string=>new Set((String(string||"").toLocaleLowerCase("und")
@@ -159,6 +160,20 @@ export class LanguageMazeMemory {
  }
  plan(prompt,{maxReplay=256}={}){
   if(typeof prompt!=="string"||prompt.length>20000)throw Error("Prompt is missing or exceeds safe request size");
+  // A long observed answer is a hierarchy of successive submazes, not a
+  // 112k-node flat field whose 0.97^112k attraction becomes numerically zero.
+  // This branch is used only with ONE evidence-supported known corridor;
+  // ambiguous alternatives are never silently discarded to force an answer.
+  const evidence=this.candidates(prompt);
+  if(evidence.length===1&&evidence[0].record.characters>512){
+   const picked=evidence[0].record;
+   return {...travelHierarchicalLanguage(cp(picked.answer),{
+      conduct:k=>this.conduct(k),attract:k=>this.attract(k),maxReplay,
+      source:picked.source||"priorly_observed_training_answer"
+    }),input:prompt,candidateEvidence:{
+     score:evidence[0].score,support:picked.support,
+     provenance:picked.source||"priorly_observed_training_answer"}};
+  }
   const world=this.worldFor(prompt);
   const field=shapeOnLearnedTopology({kinds:world.kinds,neighbors:world.neighbors,
    start:0,conduct:k=>this.conduct(k),attract:k=>this.attract(k)});
