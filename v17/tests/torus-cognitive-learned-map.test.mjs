@@ -142,3 +142,32 @@ test('cross-domain goal must be grounded in actual observations, never inferred 
  assert.equal(unseen.found,false);
  assert.equal(unseen.reason,'GOAL_NOT_REACHED_IN_OBSERVED_TRANSITIONS');
 });
+
+
+test('already-met goal emits zero actions and never hallucinates an extra path',()=>{
+ const m=train(),p=m.formSolution('She is calm.',goal);
+ assert.equal(p.found,true);
+ assert.equal(p.path.length,0);
+ assert.equal(p.field.reason,'ALREADY_AT_GOAL');
+ const result=m.execute(p,{step:()=>{throw Error('No action may execute')}});
+ assert.equal(result.solved,true);
+ assert.equal(result.attempts,0);
+});
+test('bounded map can keep absorbing a corpus larger than its active-example window',()=>{
+ const m=new LearnedCognitiveMap({maxExamples:5,maxRules:20,maxNodes:32,maxDepth:5});
+ for(let i=0;i<120;i++)m.observeSentence('The uniqueToken'+i+' works.');
+ const report=m.report();
+ assert.equal(report.sentenceObservations,120);
+ assert.ok(report.activeSentenceMemory<=5);
+ assert.ok(report.compactedExamples>=115);
+ assert.equal(LearnedCognitiveMap.restore(m.export()).report().compactedExamples,report.compactedExamples);
+});
+test('same cognitive atlas continually absorbs original maze action transitions without dropping its full cumulative count',()=>{
+ const m=new LearnedCognitiveMap();
+ for(let i=0;i<10;i++)
+   m.observeExternalTransition({domain:'maze',before:[i,0],action:'move',after:[i+1,0]});
+ assert.equal(m.report().externalTransitionObservations,10);
+ assert.equal(m.report().observedDomainEdges,10);
+ const restored=LearnedCognitiveMap.restore(m.export());
+ assert.equal(restored.report().externalTransitionObservations,10);
+});
