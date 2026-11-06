@@ -25,12 +25,23 @@ Write-Host "Training data and checkpoints are outside .venv and will not be chan
 
 $healthy = $false
 if ((Test-Path -LiteralPath $py -PathType Leaf) -and -not $ForceRepair) {
-    Write-Host "Checking EXISTING PyTorch installation (import + real CUDA computation)..." -ForegroundColor Cyan
+    Write-Host "Checking existing PyTorch wheel integrity (no GPU required yet)..." -ForegroundColor Cyan
+    $wheelHealthy = $false
     try {
-        & $py $probe
-        if ($LASTEXITCODE -eq 0) { $healthy = $true }
+        & $py $probe --wheel-only
+        if ($LASTEXITCODE -eq 0) { $wheelHealthy = $true }
     } catch {
-        Write-Host "Existing PyTorch installation is unhealthy: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "PyTorch wheel import failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    if ($wheelHealthy) {
+        Write-Host "Complete CUDA-enabled torch wheel detected. Checking actual GPU..." -ForegroundColor Cyan
+        & $py $probe
+        if ($LASTEXITCODE -ne 0) {
+            throw "The PyTorch CUDA wheel is intact, but GPU execution failed. Check NVIDIA driver/device before reinstalling; the virtualenv was NOT removed."
+        }
+        $healthy = $true
+    } else {
+        Write-Host "Broken or CPU-only PyTorch wheel detected; isolated venv must be rebuilt." -ForegroundColor Yellow
     }
 }
 
