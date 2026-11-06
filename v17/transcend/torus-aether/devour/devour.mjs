@@ -17,6 +17,7 @@ import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {requestedExerciseLength, limitExerciseBytes} from "./eval-text-length.mjs";
 import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
+import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -28,7 +29,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
-for (const x of worldsArg) if (!["text", "maze", "transform", "code", "maptext"].includes(x)) throw Error("unknown world " + x + " (text, maze = the labyrinths, transform = objects, switches, doors)");
+for (const x of worldsArg) if (!WORLD_TYPES.includes(x)) throw Error("unknown world " + x + " (text, maze, transform, code, maptext)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
 // C's laws (laws/cexp.mjs): "stable" — C needs more evidence to change perspective; "grow" — C's attention may grow to 6
@@ -53,6 +54,7 @@ if (!worldsArg.includes("text")) {
   heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
+validateWorldSource(worldsArg, source);
 evalText = evalText.slice(0, evalChars);
 fs.mkdirSync(out, {recursive: true}); const log = fs.createWriteStream(path.join(out, "log.jsonl"), {flags: "a"});
 console.log(`worlds: ${worldsArg.join(" + ")} in the same brains${worldsArg.includes("maze") ? ` (a labyrinth every ${mazeEvery.toLocaleString()} chars)` : ""} · saves in ${path.join(out, "brains")}${resume ? " · resuming" : ""}`);
@@ -64,7 +66,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
-const world = source.kind === "parquet" ? source.root : source.kind === "text" ? source.files.map(f => path.basename(f)).join(", ") : "local code and simulation worlds";
+const world = source.kind === "parquet" ? source.root : source.kind === "text" ? source.files.map(f => path.basename(f)).join(", ") : "simulation worlds: " + worldsArg.join(", ");
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
 const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} : ARMS[name] ? {name, rules: ARMS[name]} : null;
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
@@ -96,11 +98,22 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
     if (m.final) sl.status = "gata";
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
-    const wm = m.wholeMap, progress = wm ? ` | HARTĂ N-D: ${wm.episodes} lumi, ${wm.solved} rezolvate (${(100 * wm.solveRate).toFixed(1)}%), ${wm.last?.steps ?? "—"}/${wm.last?.optimal ?? "—"} pași, ${wm.meanWavePasses.toFixed(1)} propagări, ${(wm.episodes / Math.max(.001, (Date.now() - new Date(started).getTime()) / 1000)).toFixed(2)} lumi/s` : "";
+    const wm = m.wholeMap;
+    let mapSpeed = "—";
+    if (wm) {
+      const now = Date.now(), prev = sl.lastMapRate;
+      if (prev && wm.episodes >= prev.episodes && now > prev.at) {
+        const dt = (now - prev.at) / 1000;
+        mapSpeed = ((wm.episodes - prev.episodes) / dt).toFixed(2);
+      }
+      // Use DELTA worlds / DELTA seconds. Cumulative worlds may predate this process (resume).
+      sl.lastMapRate = {at: now, episodes: wm.episodes};
+    }
+    const progress = wm ? ` | HARTĂ N-D: ${wm.episodes} lumi, ${wm.solved} rezolvate (${(100 * wm.solveRate).toFixed(1)}%), ${wm.last?.steps ?? "—"}/${wm.last?.optimal ?? "—"} pași, ${wm.meanWavePasses.toFixed(1)} propagări, ${mapSpeed} lumi/s (ultimul interval; algoritm prestabilit)` : "";
     console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` + progress +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
       (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
-  wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
+  wk.on("error", err => { if (gen !== sl.gen) return; sl.lastError = err.message; sl.status = "eroare"; console.error(`#${sl.w} error:`, err.message); });
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
 const mapOnly = worlds => worlds.length === 1 && worlds[0] === "maptext";
@@ -111,7 +124,7 @@ function gpuFor(worlds = worldsArg) {
   const share = Math.max(1, slots.filter(x => !mapOnly(x.worlds) && x.worlds.some(w => w !== "text")).length);
   return {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0};
 }
-function addSlot(armName, worlds) { const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
+function addSlot(armName, worlds) { validateWorldSource(worlds, source); const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
   const w = slots.length ? Math.max(...slots.map(x => x.w)) + 1 : 0, sl = {w, arm, worlds, share: Math.floor(w / arms.length), gen: 0, wk: null, status: "oprit"}; slots.push(sl); launch(sl, {fresh: false, fromSave: resume || booted}); return sl; }
 function control(sl, act) {
   if (act === "start") { if (!sl.wk) launch(sl, {paused: false}); else { sl.wk.postMessage("resume"); sl.status = "antrenează"; } }
@@ -132,7 +145,12 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
     for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
-  if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform", "code", "maptext"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
+  if (req.method === "POST" && url === "/add") { try {
+    const requested = (q.get("worlds") || "").split(",").map(x => x.trim()).filter(Boolean);
+    validateWorldSource(requested, source); // reject BEFORE allocating worker / checkpoint
+    const sl = addSlot(q.get("arm") || "stable+many", requested);
+    return json(res, {ok: true, w: sl.w, worlds: sl.worlds});
+  } catch (err) { res.writeHead(400, {"content-type": "application/json", "cache-control": "no-store"}); return res.end(JSON.stringify({ok: false, error: err.message})); } }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every eligible brain
     if (slots.length && slots.every(sl => mapOnly(sl.worlds))) {
       // A UI request may arrive even when launcher started with --gpu off.
