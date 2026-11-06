@@ -37,7 +37,7 @@ test('actual ORIGINAL V17 HTTP trainer serves live edited UI, learns inside work
   assert.match(html,/id="mazeCv"/);
   assert.match(html,/id="chatForm"/);
   const js=await (await fetch(url+'/transcend/torus-aether/ui/app.js')).text();
-  assert.match(js,/function perspectiveDraw\(/);
+  assert.match(js,/function drawPerspective\(/);
   let g=null;
   for(let i=0;i<250;i++){
    try{const r=await fetch(url+'/graph?w=0');if(r.ok){const v=await r.json();if(v.perspective?.episodes>=1){g=v;break;}}}
