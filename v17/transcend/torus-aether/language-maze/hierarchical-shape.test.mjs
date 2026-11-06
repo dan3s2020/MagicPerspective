@@ -47,7 +47,7 @@ test("original learned memory routes a long previously experienced response thro
  assert.equal(r.trace.length,256);
  assert.equal(r.hierarchy.plannedBeforeFirstAction,true);
  assert.equal(r.graph.partialPreview,true);
- assert.equal(r.candidateEvidence.source,"priorly_observed_training_answer");
+ assert.equal(r.candidateEvidence.provenance,"priorly_observed_training_answer");
  assert.equal(JSON.stringify(m.export()),frozen);
 });
 test("unobserved long answer is not supplied by a target oracle",()=>{
@@ -61,6 +61,7 @@ test("small sequences preserve real original-goal field at every visible node",(
  const r=travelHierarchicalLanguage([...("ABCD")],{conduct,attract,maxReplay:30});
  assert.equal(r.output,"ABCD");
  assert.deepEqual(r.graph.nodes.map(x=>x.potential),r.field);
- assert.ok(r.field.every(x=>x!==1&&Number.isFinite(x)));
+ assert.ok(r.field.slice(0,-1).every(x=>x!==1&&Number.isFinite(x)));
+ assert.equal(r.field.at(-1),1,"an observed goal must legitimately have value one");
  assert.equal(r.graph.nodes.at(-1).potential,1,"original field assigns observed goal attraction 1");
 });
