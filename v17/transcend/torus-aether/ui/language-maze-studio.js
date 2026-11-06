@@ -162,6 +162,7 @@ $("langPlan").addEventListener("click",async()=>{
    actualGoals:r.graph.goals.length,learnedPaths:r.candidates,
    firstAttraction:r.field[0],graphTruncated:r.graph.hitLimit,
    bodyPolicy:r.bodyPolicy,localAgreementRate:r.localAgreementRate,
+   propagation:r.propagation,
    localSteps:r.locallyExecutedSteps,bodyBlocked:r.localBlockedSteps,
    caveats:r.limitations
   },null,2);
