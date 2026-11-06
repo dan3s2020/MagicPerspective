@@ -6,8 +6,8 @@ import path from 'node:path';
 import {NativeSelfCodeWorld,CodeActionPolicy} from './selfcode-native.mjs';
 
 function fakeBrain(){
- const ev=[],nodes=new Map(),edges=[];
- return {events:ev,trace:{nodes,edges,node(id,type,label){if(!nodes.has(id))nodes.set(id,{id,type,label});return nodes.get(id)},
+ const ev=[],nodes=new Map(),edges=[],shared=[];
+ return {events:ev,shared,observeShared(e){shared.push(e)},trace:{nodes,edges,node(id,type,label){if(!nodes.has(id))nodes.set(id,{id,type,label});return nodes.get(id)},
   fire(id){const x=nodes.get(id);if(x)x.fired=true},setEdge(...a){edges.push(a)}},
  live(b){if(!Number.isSafeInteger(b))throw Error('Bad symbol');ev.push(b)},
  predict(){return Array.from({length:128},()=>1/128)}};
@@ -18,6 +18,8 @@ test('native learner uses the very same Brain.live and trace',()=>{
  const initial=brain.events.length;
  for(let i=0;i<15;i++)a.step();
  const s=a.status();assert.equal(initial,0);assert.ok(brain.events.length>300);
+ assert.equal(brain.shared.length,15);assert.ok(brain.shared.every(e=>e.domain==='selfcode'));
+ assert.ok(brain.shared.every(e=>typeof e.before==='string'&&typeof e.after==='string'));
  assert.ok(s.graphNodes>=40);assert.equal(s.ticks,15);
  assert.ok(brain.trace.nodes.has('code:unknown'));
  assert.ok([...brain.trace.nodes.keys()].some(x=>x.startsWith('code:self/')));
