@@ -54,7 +54,7 @@ test('real V17 corpus -> same Brain -> unlabeled edits -> unseen full goal -> fr
     if(r.ok){
      const g=(await r.json()).graphs?.[0];
      lastStatus={status:g?.status,error:g?.error,chars:g?.chars,
-       observed:g?.observedTransformations,source:g?.worlds};
+       observed:g?.observedTransformations,pipeline:g?.observedPipeline,source:g?.worlds};
      if(g?.observedTransformations?.observed>=4&&g.observedTransformations.learnedOperators>=6){
       learned=g;break;
      }
