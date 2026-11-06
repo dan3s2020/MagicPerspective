@@ -30,7 +30,7 @@ export class NestedTextGears {
     const a=gearTokens(sentence),n=a.length;
     if(n<2||n>MAX_TOKENS)return false;
     const full=key(a);if(this.sentences.has(full))return false;
-    if(this.examples.length>=MAX_EXAMPLES){const gone=this.examples.shift();this.sentences.delete(key(gone));}
+    if(this.examples.length>=MAX_EXAMPLES){const gone=this.examples[this.observed%MAX_EXAMPLES];this.sentences.delete(key(gone));}
     this.sentences.add(full);
     for(let i=0;i<n;i++){
       const mask=key([n,i,...a.filter((_,j)=>j!==i)]);
@@ -42,7 +42,9 @@ export class NestedTextGears {
       }
       if(seen.length<MAX_BUCKET)seen.push(a);
     }
-    this.examples.push(a);this.observed++;
+    if(this.examples.length<MAX_EXAMPLES)this.examples.push(a);
+    else this.examples[this.observed%MAX_EXAMPLES]=a;
+    this.observed++;
     return true;
   }
   observeAnswer(answer,{limit=8,onEvidence=null}={}){
