@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective · Termux proof: harta → corp</title>
+<style>
+:root{color-scheme:dark;font:14px/1.5 system-ui,Segoe UI,sans-serif;background:#07101b;color:#e7f1ff}
+*{box-sizing:border-box}body{margin:0 auto;padding:16px;max-width:1250px}header{margin-bottom:16px}
+h1{margin:2px 0;font-size:clamp(21px,3vw,30px)}h2{font-size:17px;margin:0 0 8px}
+p{color:#bed0e8;margin:5px 0 12px}small{color:#a6b6d0}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+.card,.panel{background:#111f32;border:1px solid #36516e;border-radius:12px;padding:13px}
+.card span{color:#abc0dc;font-size:12px;display:block}.card b{display:block;font-size:24px;margin:5px 0}
+.layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(310px,.8fr);gap:12px}
+.canvas-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;align-items:start}
+canvas{width:100%;display:block;background:#071422;border:1px solid #304663;border-radius:10px;aspect-ratio:1}
+#learning{aspect-ratio:3/1;max-height:260px}#world{max-height:530px}#local{max-height:270px}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:10px 0}
+button,select,input{font:inherit;background:#1b2d45;border:1px solid #50678b;color:#e9f2ff;border-radius:8px;padding:8px}
+button{cursor:pointer}input[type=range]{flex:1;min-width:125px;accent-color:#8dccff}table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{padding:7px;text-align:left;border-bottom:1px solid #2d4864}th{color:#b4c9df}
+.good{color:#78ddaf}.warn{color:#efc47c}.bad{color:#ff9f9c}
+.legend{display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:#b3c5de;margin:6px 0}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;color:#c6dcf5}
+.note{border-left:3px solid #7b9fe8;padding:9px 12px;background:#0d1a2b;margin:10px 0;color:#bdcce3}
+@media(max-width:860px){.cards{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:520px){body{padding:9px}.canvas-grid{grid-template-columns:1fr 1fr}.card b{font-size:19px}}
+</style></head><body>
+<header>
+ <small>MAGICPERSPECTIVE / TERMUX / EXPERIMENT IZOLAT</small>
+ <h1>Învață organismul să privească aceeași hartă din interior?</h1>
+ <p>Harta este arătată o singură dată. Ulterior agentul primește doar un câmp vizual local 5×5, își estimează orientarea și se deplasează folosind transformarea învățată.</p>
+</header>
+<div id="loading" class="panel">Se încarcă rezultatele reale generate de backend…</div>
+<div id="dashboard" hidden>
+ <div class="cards">
+  <div class="card"><span>Control, fără transformare</span><b id="before">—</b><small>Rezolvate pe test nevăzut</small></div>
+  <div class="card"><span>După calibrare</span><b id="after">—</b><small>Rezolvate pe aceleași teste</small></div>
+  <div class="card"><span>Avantaj în puncte procentuale</span><b id="gain">—</b><small>Diferență, nu certitudine</small></div>
+  <div class="card"><span>Transformări corp→hartă învățate</span><b id="mapping">—</b><small>Din 16 asocieri discrete</small></div>
+ </div>
+ <div class="layout">
+  <section class="panel">
+   <h2>Curba învățării — validare independentă</h2>
+   <canvas id="learning"></canvas>
+   <div class="legend"><span><span class="dot" style="background:#7cdfb0"></span>Reușită pe labirinturi de validare</span><span><span class="dot" style="background:#95adff"></span>Corectitudine transformare pe cele 16 combinații</span></div>
+   <p id="curveInfo"></p>
+   <h2>Rezultate pe labirinturi noi</h2>
+   <table><thead><tr><th>Măsură</th><th>Fără învățare</th><th>După învățare</th></tr></thead><tbody id="metrics"></tbody></table>
+   <div class="note" id="verdict"></div>
+  </section>
+  <section class="panel">
+   <h2>Replay: aceeași lume, două perspective</h2>
+   <div class="row">
+    <label for="variant">Agent:</label><select id="variant"><option value="after">Cu transformare învățată</option><option value="before">Control neantrenat</option></select>
+    <label for="episode">Labirint:</label><select id="episode"><option value="0">1</option><option value="1">2</option></select>
+   </div>
+   <div class="canvas-grid">
+    <div><small>Harta reținută și traseul efectiv</small><canvas id="world"></canvas></div>
+    <div><small>Ce vede corpul (5×5)</small><canvas id="local"></canvas></div>
+   </div>
+   <div class="legend">
+    <span><span class="dot" style="background:#81acff"></span>Traseu inițial</span>
+    <span><span class="dot" style="background:#70e0b3"></span>Mișcări reale</span>
+    <span><span class="dot" style="background:#f6c66d"></span>Poziția estimată</span>
+    <span><span class="dot" style="background:#ff9393"></span>Poziția reală (doar evaluator)</span>
+   </div>
+   <div class="row"><button id="prev">◀</button><button id="play">Play</button><button id="next">▶</button><input id="step" type="range" min="0" max="0" value="0"><span id="stepLabel">—</span></div>
+   <pre id="actionInfo">Aștept datele experimentului.</pre>
+  </section>
+ </div>
+ <section class="panel" style="margin-top:12px">
+  <h2>Ce demonstrează și ce NU demonstrează acest test</h2>
+  <p id="source"></p>
+  <div class="note"><b>Demonstrabil:</b> dacă o asociere corp→hartă, învățată din deplasări etichetate în faza de calibrare, generalizează la hărți noi și permite navigarea cu percepție locală. <b>Nedemonstrat:</b> că V17 a învățat singur această transformare, că s-a descoperit un spațiu hiperdimensional universal sau că perspectivele textului și labirintului sunt deja unificate.</div>
+ </section>
+</div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),state={report:null,t:0,timer:null};
+const pct=v=>v==null?'—':(v*100).toFixed(1)+'%';
+const fixed=v=>v==null?'—':v.toFixed(2);
+function fit(id){const canvas=$(id),bb=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=Math.max(1,Math.floor(bb.width*d));canvas.height=Math.max(1,Math.floor(bb.height*d));const g=canvas.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,bb.width,bb.height);return {g,w:bb.width,h:bb.height};}
+function circle(g,x,y,r,color){g.beginPath();g.fillStyle=color;g.arc(x,y,r,0,2*Math.PI);g.fill();}
+function plotCurve(){
+ const {g,w,h}=fit('learning'),s=state.report,rows=s.learningCurve;if(!rows.length)return;
+ const pad=30,x0=pad,y0=h-pad,ww=w-2*pad,hh=h-2*pad,max=Math.max(1,...rows.map(r=>r.samples));
+ g.strokeStyle='#45607e';g.lineWidth=1;for(let k=0;k<=4;k++){const y=y0-k*hh/4;g.beginPath();g.moveTo(x0,y);g.lineTo(x0+ww,y);g.stroke();g.fillStyle='#a9c0dc';g.font='10px system-ui';g.fillText((k*25)+'%',2,y+3);}
+ for(const [key,color] of [['validationSuccessRate','#7cdfb0'],['mappingAccuracy','#95adff']]){
+  g.beginPath();g.strokeStyle=color;g.lineWidth=2.6;
+  rows.forEach((r,i)=>{const x=x0+r.samples/max*ww,y=y0-r[key]*hh;if(!i)g.moveTo(x,y);else g.lineTo(x,y);});g.stroke();
+  rows.forEach(r=>{const x=x0+r.samples/max*ww,y=y0-r[key]*hh;circle(g,x,y,3,color);});
+ }
+ g.fillStyle='#a9c0dc';g.font='10px system-ui';g.fillText('0',x0,y0+16);g.fillText('Calibrări: '+max,x0+ww-75,y0+16);
+ $('curveInfo').textContent='Eșantioanele de validare au semințe separate de cele '+s.metadata.test+' labirinturi ale testului final. Curba este măsurată, nu desenată procedural.';
+}
+function panelMetrics(){
+ const s=state.report;
+ $('before').textContent=pct(s.baseline.successRate);
+ $('after').textContent=pct(s.trained.successRate);
+ $('gain').textContent=(s.improvement.successRatePoints>=0?'+':'')+fixed(s.improvement.successRatePoints)+' pp';
+ $('mapping').textContent=pct(s.learned.accuracy);
+ $('verdict').textContent=s.verdict;
+ const rows=[
+ ['Labirinturi rezolvate',s.baseline.solved+'/'+s.baseline.count,s.trained.solved+'/'+s.trained.count],
+ ['Pași suplimentari — numai reușite',fixed(s.baseline.meanExtraStepsSolved),fixed(s.trained.meanExtraStepsSolved)],
+ ['Raport pași / optim — numai reușite',fixed(s.baseline.meanStepsToOptimalSolved),fixed(s.trained.meanStepsToOptimalSolved)],
+ ['Precizie localizare',pct(s.baseline.localizationAccuracy),pct(s.trained.localizationAccuracy)],
+ ['Precizie orientare',pct(s.baseline.orientationAccuracy),pct(s.trained.orientationAccuracy)],
+ ['Ciocniri medii cu pereții',fixed(s.baseline.meanBumps),fixed(s.trained.meanBumps)],
+ ['Harta completă reobservată după start','0','0']
+ ];
+ const body=$('metrics');body.replaceChildren();
+ rows.forEach(row=>{const tr=document.createElement('tr');row.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});body.appendChild(tr);});
+ $('source').textContent='Generator de labirinturi: V17/V16 original, fără modificări. '+s.metadata.train+
+ ' exemple de calibrare supravegheată; '+s.metadata.test+' labirinturi noi de test, cu orientare ascunsă și doar observații locale; '+s.metadata.size+'×'+s.metadata.size+'. CPU/Node.js, nu CUDA. Zgomot vizual: '+pct(s.metadata.noise)+'.';
+}
+function selected(){const r=state.report;const i=Number($('episode').value);return ($('variant').value==='before'?r.baselineReplay:r.replay)[i];}
+function drawWorld(){
+ const sample=selected(),{g,w,h}=fit('world');if(!sample)return;
+ const m=sample.world,n=m.n,cell=Math.min(w,h)*.91/n,ox=(w-n*cell)/2,oy=(h-n*cell)/2;
+ const point=p=>[ox+(p%n+.5)*cell,oy+(Math.floor(p/n)+.5)*cell];
+ for(let i=0;i<m.wall.length;i++){g.fillStyle=m.wall[i]?'#41516b':'#152c42';g.fillRect(ox+(i%n)*cell+1,oy+Math.floor(i/n)*cell+1,cell-2,cell-2);}
+ const route=sample.initialGlobalRoute||[];if(route.length){
+  g.beginPath();route.forEach((p,i)=>{const [x,y]=point(p);if(!i)g.moveTo(x,y);else g.lineTo(x,y);});
+  g.lineWidth=Math.max(2,cell*.19);g.strokeStyle='#81acff';g.stroke();
+ }
+ const rec=sample.records||[],end=Math.min(state.t,Math.max(0,rec.length-1));
+ const seen=rec.slice(0,end+1),path=[m.start,...seen.filter(x=>x.moved).map(x=>x.actualPosAfter)];
+ if(path.length>1){g.beginPath();path.forEach((p,i)=>{const [x,y]=point(p);if(!i)g.moveTo(x,y);else g.lineTo(x,y);});g.lineWidth=Math.max(2,cell*.17);g.strokeStyle='#70e0b3';g.stroke();}
+ circle(g,...point(m.start),cell*.23,'#bad0fe');circle(g,...point(m.goal),cell*.25,'#fbd58a');
+ const at=rec[end];if(at){circle(g,...point(at.estimatedPos),cell*.23,'#f6c66d');circle(g,...point(at.actualPosBefore),cell*.15,'#ff9393');}
+}
+function drawLocal(){
+ const sample=selected(),{g,w,h}=fit('local');if(!sample)return;
+ const rec=sample.records||[],a=rec[Math.min(state.t,rec.length-1)];if(!a)return;
+ const tiles=a.observedPatch,n=5,cell=Math.min(w,h)*.91/n,ox=(w-n*cell)/2,oy=(h-n*cell)/2;
+ for(let i=0;i<25;i++){
+  g.fillStyle=tiles[i]?'#425773':'#1e3a53';
+  g.fillRect(ox+(i%n)*cell+1,oy+Math.floor(i/n)*cell+1,cell-2,cell-2);
+ }
+ circle(g,ox+2.5*cell,oy+2.5*cell,cell*.34,'#81acff');
+ g.fillStyle='white';g.font=Math.max(10,cell*.38)+'px system-ui';g.textAlign='center';g.fillText('↑',ox+2.5*cell,oy+2.65*cell);
+}
+function renderFrame(){
+ const x=selected();if(!x)return;const end=Math.max(0,(x.records||[]).length-1);
+ state.t=Math.min(state.t,end);$('step').max=end;$('step').value=state.t;
+ $('stepLabel').textContent=(end?state.t+1:0)+'/'+(end+1);
+ const a=x.records?.[state.t];
+ $('actionInfo').textContent=a?'Step '+a.step+' • body action '+['FORWARD','RIGHT','BACK','LEFT'][a.bodyAction]+
+ '\nRequested global direction '+['NORTH','EAST','SOUTH','WEST'][a.requestedGlobalDirection]+
+ '\nTrue movement direction '+['NORTH','EAST','SOUTH','WEST'][a.realWorldDirection]+
+ '\nMovement '+(a.moved?'moved':'BLOCKED')+
+ '\nEstimated vs actual orientation '+a.estimatedFrame+' / '+a.realFrame+
+ '\nEstimated vs actual position '+a.estimatedPos+' / '+a.actualPosBefore+
+ '\nLocal patch matching errors '+a.matchingErrors+' • match confidence gap '+a.confidence+
+ '\nResult '+(x.solved?'SOLVED':'NOT SOLVED')+' • '+x.steps+' steps vs '+x.optimal+' shortest':
+ 'This scenario has no recorded actions.';
+ drawWorld();drawLocal();
+}
+function switchReplay(){
+ if(state.timer){clearInterval(state.timer);state.timer=null;$('play').textContent='Play';}
+ state.t=0;renderFrame();
+}
+$('variant').onchange=switchReplay;$('episode').onchange=switchReplay;
+$('step').oninput=e=>{state.t=Number(e.target.value);renderFrame();};
+$('prev').onclick=()=>{state.t=Math.max(0,state.t-1);renderFrame();};
+$('next').onclick=()=>{state.t++;renderFrame();};
+$('play').onclick=()=>{
+ if(state.timer){clearInterval(state.timer);state.timer=null;$('play').textContent='Play';return;}
+ $('play').textContent='Pause';state.timer=setInterval(()=>{
+  const x=selected();if(state.t>=Math.max(0,(x.records?.length||1)-1)){
+   clearInterval(state.timer);state.timer=null;$('play').textContent='Play';return;
+  }state.t++;renderFrame();
+ },340);
+};
+window.addEventListener('resize',()=>{if(state.report){plotCurve();renderFrame();}});
+fetch('/api/report',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Report HTTP '+r.status);return r.json();}).then(r=>{
+ state.report=r;$('loading').hidden=true;$('dashboard').hidden=false;panelMetrics();plotCurve();renderFrame();
+}).catch(e=>{$('loading').textContent='Report unavailable: '+e.message;});
+</script></body></html>
