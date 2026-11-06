@@ -4,6 +4,7 @@ on:
     branches:
       - experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105
       - experiment/V17-REAL-TEXT-NAVIGATION-20261106
+      - experiment/V17-CAUSAL-LANGUAGE-ACTIONS-20261106
   workflow_dispatch:
 jobs:
   real-v17:
@@ -24,10 +25,11 @@ jobs:
           node --check isolated/noise-space/gpu_runner.mjs
           node --check isolated/noise-space/text_schedule.mjs
           node --check isolated/noise-space/text_action_paths.mjs
+          node --check isolated/noise-space/causal_text_world.mjs
       - name: Install NumPy for CPU verification of the original GPU protocol
         run: python -m pip install --quiet numpy
       - name: Synthetic regression and true V17 integration acceptance
-        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs isolated/noise-space/gpu_runner.test.mjs isolated/noise-space/text_action_paths.test.mjs
+        run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs isolated/noise-space/gpu_runner.test.mjs isolated/noise-space/text_action_paths.test.mjs isolated/noise-space/causal_text_world.test.mjs
   powershell:
     runs-on: windows-latest
     timeout-minutes: 5
