@@ -25,6 +25,8 @@ jobs:
       - name: Original maze parity, live learned text, successor exact ties and hierarchical 112531-character path
         run: |
           node --test v17/transcend/torus-aether/language-maze/successor-field.test.mjs v17/transcend/torus-aether/language-maze/language-world.test.mjs v17/transcend/torus-aether/language-maze/hierarchical-shape.test.mjs
+      - name: Dedicated browser-tab interaction and original tab isolation
+        run: node --test v17/transcend/torus-aether/ui/successor-observatory.test.mjs
       - name: Native server trained on actual input text and frozen HTTP test
         run: node --test v17/transcend/torus-aether/language-maze/language-http.test.mjs
       - name: Unmodified body perspective and shared experience tests
