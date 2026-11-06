@@ -162,6 +162,21 @@ http.createServer((req, res) => {
     sl.wk.postMessage({sharedEval: {id, seed: +(q.get("seed") || 74129)}});
     return;
   }
+  if (req.method === "POST" && url === "/gear") {
+    // Same running V17 worker and same V17 graph; this is not a standalone demo process.
+    let body="",tooLarge=false;
+    req.on("data",d=>{body+=d;if(body.length>64000)tooLarge=true;});
+    req.on("end",()=>{
+      if(tooLarge)return json(res,{ok:false,error:"Request too large"});
+      let m;try{m=JSON.parse(body);}catch{return json(res,{ok:false,error:"Invalid JSON"});}
+      const sl=slots.find(x=>x.w===Number(m.w));
+      if(!sl)return json(res,{ok:false,error:"Selected V17 brain not found"});
+      if(!sl.wk)return json(res,{ok:false,error:"Start the V17 training worker before using the nested planner"});
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{ok:false,error:"Nested planner timeout"});},30000);
+      chats.set(id,r=>{clearTimeout(timer);json(res,r);});
+      sl.wk.postMessage({gear:{id,mode:m.mode,examples:m.examples,start:m.start,goal:m.goal,noise:m.noise,seed:m.seed}});
+    });return;
+  }
   if (req.method === "POST" && url === "/chat") {                        // body {w, history: [["you"|"him", text]…], opts: {T, max, stopBlank, learn}}
     let body = ""; req.on("data", d => body += d); req.on("end", () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
