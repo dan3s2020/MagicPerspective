@@ -37,7 +37,7 @@ const CLAWS = {stable: {margin: .05, window: 400}, grow: {cap: 6}, "stable+grow"
 const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {name: a, rules: ARMS.winner, c: CLAWS[a]};
   if (!ARMS[a]) throw Error("unknown arm " + a + " (" + [...Object.keys(ARMS), ...Object.keys(CLAWS)] + ")"); return {name: a, rules: ARMS[a]}; });
 
-let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
+let source, evalText = "", heldPick = async () => [], heldoutDataset = null;          // heldPick(n): n unseen exercises drawn at random (Evaluare)
 if (arg("text")) {
   const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = [], heldParas = []; let k = 0;
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (para.trim().length < 20) continue; k++;
@@ -46,6 +46,7 @@ if (arg("text")) {
   source = {kind: "text", files, heldSet};
 } else {
   const root = arg("data", DEFAULT_TEXT_ROOT), ds = await openTextDataset(root);
+  heldoutDataset = ds;
   for (let k = 0; k < ds.held && evalText.length < evalChars; k++) { const x = await ds.heldOut(k); evalText += "Q: " + x.prompt + "\nA: " + x.answer + "\n\n"; }
   source = {kind: "parquet", root};
   heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
@@ -156,6 +157,50 @@ http.createServer((req, res) => {
       try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; } return json(res, {...sl.talker.examMazes(sizes, per), fromSave: true}); } catch (err) { return json(res, {error: err.message}); } }
     const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 300 s"}); }, 300000);
     chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({exam: {id, sizes, per}}); return; }
+  // The reference answers live ONLY in the parent evaluator and are read
+  // AFTER both frozen planners have completed. The worker/trainer receives no
+  // held-out reference and no training or model update is permitted here.
+  if(req.method==="POST"&&url==="/language-maze/compare"){
+    const sl=slots.find(x=>x.w===Number(q.get("w")??0));
+    const n=Math.max(1,Math.min(16,Number(q.get("count")||8)|0));
+    if(!sl)return json(res,{error:"graph not found"});
+    if(!heldoutDataset?.held)return json(res,{error:"Frozen Q/A comparison requires held-out Parquet rows, not plain TXT"});
+    void (async()=>{
+      try{
+        if(sl.wk){
+          await new Promise((resolve,reject)=>{
+            const timeout=setTimeout(()=>reject(Error("saving live trained language world timed out")),30000);
+            (sl.onSaved ||= []).push(()=>{clearTimeout(timeout);resolve();});
+            sl.wk.postMessage("save");
+          });
+        }
+        const file=saveOf(sl)+".language-maze.v18.json";
+        if(!fs.existsSync(file))throw Error("No real language-world checkpoint yet; train on Parquet, then save");
+        const memory=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(file,"utf8")));
+        const originalState=JSON.stringify(memory.export());
+        const pairs=[];
+        for(let i=0;i<Math.min(n,heldoutDataset.held);i++){
+          const {prompt,answer}=await heldoutDataset.heldOut(i);
+          if(prompt.trim()&&answer) pairs.push({prompt,answer});
+        }
+        if(!pairs.length)throw Error("No valid held-out question/answer rows");
+        // The answer is never passed into plan(). frozenCompare calls plan()
+        // first, then computes scores using the withheld answer.
+        const original=memory.frozenCompare(pairs,{mode:"original"});
+        const hybrid=memory.frozenCompare(pairs,{mode:"hybrid"});
+        if(JSON.stringify(memory.export())!==originalState)
+          throw Error("Frozen comparison changed observed-world memory");
+        return json(res,{protocol:"FROZEN_HELDOUT_SAME_WORLD_ABLATION",
+          graph:sl.w,heldoutRows:pairs.length,trainingRowsSeen:memory.stats().rowsObserved,
+          original,hybrid,
+          exactDelta:(hybrid.exactRate??0)-(original.exactRate??0),
+          characterDelta:(hybrid.accuracy??0)-(original.accuracy??0),
+          referenceEnteredPlanner:false,modelMutated:false,
+          note:"Compare the same saved brain on held-out Q/A; this is not proof of open-ended semantics"});
+      }catch(err){return json(res,{error:"Frozen comparison: "+err.message});}
+    })();
+    return;
+  }
   // V18: one full global shape BEFORE the first character, then each local
   // character transition. No reference-answer field is accepted at inference.
   if(req.method==="POST"&&url==="/language-maze/plan"){
