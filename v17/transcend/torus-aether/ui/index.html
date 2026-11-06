@@ -625,13 +625,21 @@
    </div>
   </div>
   <aside class="hm-panel">
+   <h3>Geometrie: ce spațiu privești?</h3>
+   <label>Sursa REALĂ a coordonatelor
+    <select id="hmSpace">
+     <option value="learned5">V17 · torus 5D învățat Geometry.U (4D + secțiune)</option>
+     <option value="diagnostic4">V18 · 4D diagnostic (adâncime / ramură / V / S)</option>
+    </select>
+   </label>
+   <div class="hm-note" id="hmSpaceStatus">În modul 5D, pozițiile vin exclusiv din Geometry.U al grafului V17 curent. Dacă un caracter nu are poziție învățată, nu inventăm una.</div>
    <h3>Control perspectivă 4D</h3>
-   <p style="color:#a7bdcd;font-size:11px">Rotește cu mouse-ul, zoom cu rotița; pozițiile au patru coordonate din date reale. NU sunt coordonate 4D învățate de model.</p>
+   <p style="color:#a7bdcd;font-size:11px">Rotește cu mouse-ul, zoom cu rotița. Mod V17: patru coordonate ÎNVĂȚATE din torusul cu cinci dimensiuni, a cincea folosită drept secțiune. Mod V18: patru valori derivate din graful de căi, nu o geometrie latentă învățată.</p>
    <div class="hm-inline">
     <label>Rotire X–W <input id="hmXW" type="range" min="-3.14" max="3.14" step=".02" value=".65"></label>
     <label>Rotire Y–W <input id="hmYW" type="range" min="-3.14" max="3.14" step=".02" value="-.27"></label>
     <label>Rotire Z–W <input id="hmZW" type="range" min="-3.14" max="3.14" step=".02" value=".25"></label>
-    <label>Secțiune W <input id="hmSlice" type="range" min="0" max="1" step=".02" value="1"></label>
+    <label>Secțiune W / U[4] <input id="hmSlice" type="range" min="0" max="1" step=".02" value="1"></label>
     <label>Zoom <input id="hmZoom" type="range" min=".2" max="5" step=".05" value="1"></label>
    </div>
    <div class="hm-inline" style="margin:10px 0">
