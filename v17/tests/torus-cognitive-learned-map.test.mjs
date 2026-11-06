@@ -117,3 +117,28 @@ test('a rejected context does not make other observed corridors into walls',()=>
  const after=m.formSolution('He is calm.',goal);
  if(after.found)assert.notDeepEqual(after.path.map(x=>x.action),plan.path.map(x=>x.action));
 });
+
+
+test('the same V17 attraction law navigates only real observed maze action edges',()=>{
+ const m=new LearnedCognitiveMap();
+ m.observeExternalTransition({domain:'maze',before:[0,0],action:'move-right',
+   after:[1,0],context:'real V17 observation'});
+ m.observeExternalTransition({domain:'maze',before:[1,0],action:'move-right',
+   after:[2,0],context:'real V17 observation'});
+ const before=m.formObservedWorld('maze',[0,0],{slots:{0:2,1:0}});
+ assert.equal(before.found,true);
+ assert.equal(before.path.length,2);
+ assert.equal(m.report().externalTransitionObservations,2);
+ assert.equal(m.report().observedDomainEdges,2);
+ const resumed=LearnedCognitiveMap.restore(m.export());
+ assert.equal(resumed.formObservedWorld('maze',[0,0],{slots:{0:2,1:0}}).found,true);
+});
+
+test('cross-domain goal must be grounded in actual observations, never inferred from hidden maze oracle',()=>{
+ const m=new LearnedCognitiveMap();
+ m.observeExternalTransition({domain:'transform',before:[0,0],action:'switch',
+   after:[1,0]});
+ const unseen=m.formObservedWorld('transform',[0,0],{slots:{0:9}});
+ assert.equal(unseen.found,false);
+ assert.equal(unseen.reason,'GOAL_NOT_REACHED_IN_OBSERVED_TRANSITIONS');
+});
