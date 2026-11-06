@@ -96,7 +96,7 @@ async function getJson(url,options={}){
  return value;
 }
 function renderTdTraining(stat,w){
- const ids=["scTdRows","scTdUpdates","scTdStates","scTdError","scTdCharacters","scTdScales"];
+ const ids=["scTdRows","scTdUpdates","scTdStates","scTdError","scTdCharacters","scTdScales","scTdBridges"];
  if(!stat||stat.enabled!==true){
   for(const id of ids)message(id,"—");
   message("scTdStatus","Backendul încă nu raportează antrenare TD. Dacă actualizezi codul în timpul unui server pornit, salvează și repornește.");
@@ -108,6 +108,7 @@ function renderTdTraining(stat,w){
  message("scTdError",fixed(stat.tdAbsMean,7));
  message("scTdCharacters",number(stat.characters));
  message("scTdScales",(stat.levelUpdates||[]).map(number).join(" / "));
+ message("scTdBridges",number(stat.hierarchicalBridges));
  const samples=tdHistory.get(w)||[];
  const newPoint={at:Date.now(),updates:stat.updates,error:stat.tdAbsMean,states:stat.states};
  if(!samples.length||samples.at(-1).updates!==newPoint.updates||
