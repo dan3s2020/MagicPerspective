@@ -1,0 +1,25 @@
+name: Original V17 multi-path/loop research integration
+on:
+  push:
+    branches:
+      - experiment/V17-MULTIPATH-SUCCESSOR-ISOLATED-20261106
+  workflow_dispatch:
+jobs:
+  source-parity-and-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original 2D and real-graph source tests
+        run: |
+          node --test isolated/native-language-paths/native.test.mjs
+          node --test isolated/native-language-paths/multipath.test.mjs
+      - name: Parse original engine and all isolated components
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/align.mjs
+          node --check isolated/native-language-paths/train.mjs
+          node --check isolated/native-language-paths/multipath.mjs
+          node --check isolated/native-language-paths/atlas.mjs
