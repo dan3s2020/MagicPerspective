@@ -2,8 +2,6 @@
 // ABSORB THE COMPLETE WORLD FIRST. No teacher-forced next-character target is used by the navigator.
 // One generic goal-wave mechanism works for 2D mazes and finite N-dimensional text-state hypercubes.
 // These are explicit finite graph worlds, NOT a semantic map inferred from arbitrary natural language.
-import {makeMaze} from './labyrinth.mjs';
-
 const finite=(x,low,high)=>Number.isInteger(x)&&x>=low&&x<=high;
 const rng=seed=>{let n=seed>>>0||1;return()=>{n^=n<<13;n^=n>>>17;n^=n<<5;return (n>>>0)/4294967296;}};
 const id=(domain,k)=>domain+':'+k;
@@ -11,7 +9,7 @@ const verifyWord=(s,bits)=>typeof s==='string'&&s.length===bits&&/^[01]+$/.test(
 
 // States are points in {0,1}^D. Legal transitions toggle EXACTLY ONE coordinate,
 // not an arbitrary next-token distribution. Walls are forbidden states / edges.
-export function makeTextHypercube({dimensions=6,seed=1,start=null,goal=null,wallRate=.18,maxStates=2048,forbidden=[]}={}){
+export function makeTextHypercube({dimensions=6,seed=1,start=null,goal=null,wallRate=.18,maxStates=2048,forbidden=[],ensureConnected=true}={}){
  if(!finite(dimensions,1,11)||!Number.isFinite(wallRate)||wallRate<0||wallRate>.85)
   throw Error('Text hypercube requires 1..11 binary dimensions and wallRate 0..0.85');
  const n=2**dimensions;
@@ -37,9 +35,9 @@ export function makeTextHypercube({dimensions=6,seed=1,start=null,goal=null,wall
     if(!walls.has(next)&&!reachable.has(next)){reachable.add(next);queue.push(next);}
    }
   }
-  if(reachable.has(goal))break;
+  if(reachable.has(goal)||!ensureConnected)break;
  }
- if(attempts===40)throw Error('No connected wall layout found; lower wallRate');
+ if(attempts===40)throw Error('No connected wall layout found; lower wallRate or set ensureConnected=false');
  const nodes=words.map(w=>({id:id('text',w),label:w,position:[...w].map(Number),wall:walls.has(w)}));
  const edges=[];
  for(const w of words){
