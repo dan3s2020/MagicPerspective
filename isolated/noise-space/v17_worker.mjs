@@ -240,7 +240,17 @@ async function textEpisode(){
   if(causalTraining){
    if(!causalAgent.dynamics.observations)causalAgent.probe(causalAgent.seed);
    const trial=causalAgent.train(row.prompt,row.answer,pathHead,{maxActions:causalMaxActions,seed:causalAgent.episodes*7919+11});
-   if(trial.trained){causalRows++;causalActions+=trial.steps;liveCausalExperience(trial.events);}
+   if(trial.trained){
+    causalRows++;causalActions+=trial.steps;
+    // The existing shared geometric learner sees genuine observed action steps;
+    // it still does NOT establish aligned semantics with maze/game coordinates.
+    for(const ev of trial.events){
+     if(ev.latentBefore?.length>=5&&ev.latentAfter?.length>=5)
+      geoSample('text',ev.latentBefore.slice(0,5),ev.latentAfter.slice(0,5),
+       ev.latentBefore.slice(0,5),ev.action.tool,heldoutGeo);
+    }
+    liveCausalExperience(trial.events);
+   }
   }
   if(pathHead.learn(row.prompt,row.answer).trained)pathRows++;
  }
