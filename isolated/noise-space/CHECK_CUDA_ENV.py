@@ -20,6 +20,17 @@ def main():
         installed = pathlib.Path(torch.__file__).resolve()
         if not installed.is_relative_to(env):
             raise RuntimeError("torch was imported outside the selected virtualenv: " + str(installed))
+        if "--wheel-only" in sys.argv:
+            if torch.version.cuda is None:
+                raise RuntimeError("This torch wheel has no CUDA support (CPU-only wheel)")
+            print("CUDA_WHEEL_OK " + json.dumps({
+                "torch": torch.__version__,
+                "torch_cuda": torch.version.cuda,
+                "torch_file": str(installed),
+                "virtualenv": str(env)
+            }))
+            return 0
+
         if not torch.cuda.is_available():
             raise RuntimeError("torch imported, but CUDA is not available to this Python interpreter")
         if torch.cuda.device_count() < 1:
