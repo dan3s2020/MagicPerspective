@@ -23,9 +23,13 @@ jobs:
           node --check v17/transcend/torus-aether/perspective/body-memory.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/perspective/live-telemetry.test.mjs
+          node --check v17/transcend/torus-aether/devour/gpu-text-windows.mjs
+          node --check v17/transcend/torus-aether/devour/gpu-text-windows.test.mjs
       - name: Frozen global-local actual maze, non-leakage, checkpoints, original V17 regression
         run: |
           node --test v17/transcend/torus-aether/perspective/body-perspective.test.mjs v17/transcend/torus-aether/perspective/body-studio.test.mjs v17/tests/torus-shared-perspective.test.mjs v17/transcend/torus-aether/shared/experience.test.mjs
+      - name: Regression: 112531-byte lossless CUDA work windows + original Brain checkpoint resume
+        run: node --test v17/transcend/torus-aether/devour/gpu-text-windows.test.mjs
       - name: Spawn original V17 live server and verify real telemetry streaming without GPU
         run: node --test v17/transcend/torus-aether/perspective/live-telemetry.test.mjs
   launcher-windows:
