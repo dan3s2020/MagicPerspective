@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
+import {requestedExerciseLength, limitExerciseBytes} from "./eval-text-length.mjs";
 import {Brain} from "./brain.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -142,7 +143,9 @@ http.createServer((req, res) => {
       const toB = t => Array.from(t, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; }).filter(c => c !== 13);
       if (m.kind === "text") { opts.own = !!(opts.text && opts.text.trim());     // your text, or unseen exercises drawn at random, new every time
         const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
-        opts.list = list.map(t => toB(t).slice(0, Math.max(50, +opts.max || 20000))); delete opts.text; }
+        let requestedMax; try { requestedMax = requestedExerciseLength(opts.max); }
+        catch (err) { return json(res, {error: err.message}); }
+        opts.list = list.map(t => limitExerciseBytes(toB(t), requestedMax)); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
     const sl = slots.find(x => x.w === +q.get("w")), sizes = (q.get("sizes") || "7,9,11,13,15,17,19,21,25,31,41,51").split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per = Math.max(1, Math.min(10, +q.get("per") || 1));
