@@ -82,7 +82,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(sl.worlds), controls: sl.controls || null}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
@@ -94,13 +94,21 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
     if (m.final) sl.status = "gata";
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
-    console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` +
+    const wm = m.wholeMap, progress = wm ? ` | HARTĂ N-D: ${wm.episodes} lumi, ${wm.solved} rezolvate (${(100 * wm.solveRate).toFixed(1)}%), ${wm.last?.steps ?? "—"}/${wm.last?.optimal ?? "—"} pași, ${wm.meanWavePasses.toFixed(1)} propagări, ${(wm.episodes / Math.max(.001, (Date.now() - new Date(started).getTime()) / 1000)).toFixed(2)} lumi/s` : "";
+    console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` + progress +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
       (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
-function gpuFor() { const share = Math.max(1, slots.filter(x => x.worlds.some(w => w !== "text")).length); return gpuSettings.device === "off" ? null : {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0}; }
+const mapOnly = worlds => worlds.length === 1 && worlds[0] === "maptext";
+function gpuFor(worlds = worldsArg) {
+  // The N-D world uses the exact graph navigator on CPU, NOT a PyTorch GPU kernel.
+  // Never start an unrelated Python process for a maptext-only brain.
+  if (mapOnly(worlds) || gpuSettings.device === "off") return null;
+  const share = Math.max(1, slots.filter(x => !mapOnly(x.worlds) && x.worlds.some(w => w !== "text")).length);
+  return {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0};
+}
 function addSlot(armName, worlds) { const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
   const w = slots.length ? Math.max(...slots.map(x => x.w)) + 1 : 0, sl = {w, arm, worlds, share: Math.floor(w / arms.length), gen: 0, wk: null, status: "oprit"}; slots.push(sl); launch(sl, {fresh: false, fromSave: resume || booted}); return sl; }
 function control(sl, act) {
@@ -123,9 +131,17 @@ http.createServer((req, res) => {
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
     for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
   if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform", "code", "maptext"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
-  if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
+  if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every eligible brain
+    if (slots.length && slots.every(sl => mapOnly(sl.worlds))) {
+      // A UI request may arrive even when launcher started with --gpu off.
+      // Reject, preserve the running CPU map and its checkpoint.
+      res.writeHead(409, {"content-type": "application/json", "cache-control": "no-store"});
+      return res.end(JSON.stringify({ok: false, gpu: {device: "off"},
+        reason: "maptext is a whole-map CPU navigator; CUDA would only start an unrelated PyTorch process. Nothing changed."}));
+    }
     for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
-    for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
+    for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor(sl.worlds) || {device: "off"}});
+    console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
   if (req.method === "POST" && url === "/controls") {                    // ?w=<graph> (none = every graph) &ltemp=&pnoise=&gnoise=&glr=&repel=&wtemp=&ttemp=
     const c = {}; for (const k of ["ltemp", "pnoise", "gnoise", "glr", "repel", "wtemp", "ttemp"]) if (q.has(k) && Number.isFinite(+q.get(k))) c[k] = +q.get(k);
     const to = q.has("w") ? slots.filter(x => x.w === +q.get("w")) : slots; for (const sl of to) { sl.controls = {...(sl.controls || {}), ...c}; sl.wk?.postMessage({controls: c}); }
