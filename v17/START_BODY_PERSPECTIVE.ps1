@@ -6,11 +6,12 @@ param(
   [int]$Port = 8876,
   [string]$Gpu = "cuda:0",
   [int]$GpuWorlds = 16,
-  [int]$GpuTextBatch = 1,
-  [int]$GpuTextChunk = 32,
+  [int]$GpuTextBatch = 2,
+  [int]$GpuTextChunk = 128,
   [double]$Vram = 1.8,
   [int]$Workers = 1,
   [string]$PythonExe = "",
+  [switch]$FullGpuSelfTest,
   [switch]$Paused
 )
 $ErrorActionPreference = "Stop"
@@ -64,12 +65,16 @@ if($Gpu -ne "off"){
   $old = $ErrorActionPreference
   $ErrorActionPreference = "Continue"
   try {
-    & $PythonExe -c 'import torch,numpy; assert torch.cuda.is_available()'
-    if($LASTEXITCODE -ne 0){throw "PyTorch CUDA import failed."}
-    & $PythonExe $gpuWorld --selftest $Gpu
-    if($LASTEXITCODE -ne 0){throw "Original V17 CUDA maze self-test failed."}
-    & $PythonExe $sharedModel --selftest $Gpu
-    if($LASTEXITCODE -ne 0){throw "Shared PyTorch perspective gradient CUDA self-test failed."}
+    # Fast real device proof. Avoid re-running a 512-world benchmark + shared-gradient
+    # benchmark on every ordinary restart; those are available with -FullGpuSelfTest.
+    & $PythonExe -c 'import torch,numpy; assert torch.cuda.is_available(); a=torch.ones(8,8).cuda(); assert float((a@a)[0,0])==8.0'
+    if($LASTEXITCODE -ne 0){throw "Actual CUDA tensor computation failed."}
+    if($FullGpuSelfTest){
+      & $PythonExe $gpuWorld --selftest $Gpu
+      if($LASTEXITCODE -ne 0){throw "Original V17 CUDA maze self-test failed."}
+      & $PythonExe $sharedModel --selftest $Gpu
+      if($LASTEXITCODE -ne 0){throw "Shared PyTorch perspective gradient CUDA self-test failed."}
+    }
   }finally{$ErrorActionPreference = $old}
   $env:OCTOPUS_PY = $PythonExe
   Write-Host "Verified CUDA Python selected: $PythonExe" -ForegroundColor Green
@@ -104,6 +109,8 @@ Write-Host "=== MAGIC PERSPECTIVE / BODY PERSPECTIVE ISOLATED ===" -ForegroundCo
 Write-Host "Branch: $branch"
 Write-Host "Source: $gitRoot"
 Write-Host "Checkpoint root: $runtime"
+Write-Host "CUDA text: batch=$GpuTextBatch, chunk=$GpuTextChunk; GPU worlds/batch=$GpuWorlds; VRAM requested=$Vram GB"
+Write-Host "Startup: quick REAL CUDA tensor check; pass -FullGpuSelfTest for the original 512-world and PyTorch self-tests."
 Write-Host "Native V17 graph + training + new tabs: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "To exit safely: Save in UI, Stop, then Ctrl+C once. Original processes and files are untouched."
 Push-Location $root
