@@ -114,10 +114,12 @@
         <textarea id="langPrompt" rows="3" placeholder="Scrie o întrebare sau un input care trebuie transformat..." style="width:100%;background:#071522;color:#e7f5ff;border:1px solid #29425a;border-radius:7px;padding:9px"></textarea>
         <div class="studio-row">
           <button id="langPlan">Propagă forma SOLUȚIEI înainte de primul caracter</button>
+          <button id="langCompare">Evaluează 8 Q/A nevăzute · original vs successor</button>
           <button id="langPlay">▶ Replay caractere</button>
           <button id="langResetView">⟲ Perspectivă globală</button>
         </div>
         <p class="studio-caption" id="langStatus">Se folosesc numai experiențele reale ale acestui creier. Dacă lumea nu conține o cale către o țintă învățată, organismul spune NECUNOSCUT.</p>
+        <pre class="studio-caption" id="langCompareReport" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto" aria-live="polite">Comparația rulează pe Q/A Parquet ținute în afara antrenării și folosește același checkpoint înghețat.</pre>
         <div class="studio-kpis">
           <div class="m"><small>Rânduri Q/A observate</small><b id="langRows">—</b></div>
           <div class="m"><small>Transformări/caractere observate</small><b id="langObserved">—</b></div>
