@@ -46,7 +46,7 @@ async function* stream() {                                                 // th
     for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
   } else {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
-      if (para.trim().length < 20) continue;
+      if (!para.trim()) continue;  // 4-word sentences are valid structural training observations
       if (k++ % n === w && !source.heldSet.includes(k)) {
         const observed = splitObservedText(para);
         yield {k, bytes: ascii(para + "\n\n"), ...observed};
@@ -106,6 +106,12 @@ const absorbLanguage = row => {
   if(!TEXT || !Array.isArray(row?.bytes) || !row.bytes.length)return;
   brain.liveLanguage(Buffer.from(row.bytes).toString('latin1'));
 };
+const absorbObservedDifferences = row => {
+  if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length)return;
+  // Exactly the text already lived by AligningGraph, including short
+  // unlabeled sentences; do not invent teacher classes or complete goals.
+  brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
+};
 const absorbConstructed = row => {
   if (typeof row?.prompt !== 'string' || typeof row?.answer !== 'string' ||
       !row.prompt.trim() || !row.answer.trim()) return;
@@ -129,6 +135,7 @@ const report = (final = false) => {
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
     shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
+    observedTransformations: brain.observedTransformations?.report() || null,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
@@ -136,6 +143,7 @@ const report = (final = false) => {
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
+    observedTransformations: brain.observedTransformations?.report() || null,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
@@ -195,7 +203,7 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
-  for(const row of meta){absorbLanguage(row);absorbConstructed(row);}
+  for(const row of meta){absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
@@ -206,6 +214,19 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m && m.compositionGoal){
+    const id=m.compositionGoal.id;
+    let result;
+    try {
+      // Goal is a set of required tokens, not a supplied correct sentence.
+      result=brain.planObservedTransformation({
+        required:m.compositionGoal.required,start:m.compositionGoal.start??null,
+        maxDepth:m.compositionGoal.maxDepth??4
+      });
+    }catch(err){result={error:err.message};}
+    parentPort.postMessage({type:"chat",id,compositionGoal:true,...result});
+    return;
+  }
   if(m && m.constructedPathExam){
     const {id,count=12,seed=73}=m.constructedPathExam;
     let result;
@@ -291,7 +312,8 @@ for await (const ex of stream()) {
     for (let j = 0; j < textBatch.length; j++) {
       brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
       brain.exercises = (brain.exercises || 0) + 1;
-      absorbLanguage(textMeta[j]);absorbConstructed(textMeta[j]);absorbText(textMeta[j]);
+      absorbLanguage(textMeta[j]);absorbConstructed(textMeta[j]);
+      absorbObservedDifferences(textMeta[j]);absorbText(textMeta[j]);
     }
     textBatch = []; textMeta = []; shot(true);
   }
@@ -305,7 +327,8 @@ for await (const ex of stream()) {
     if (paused || saveNow) { shot(true); await hold(); }
   }
   if (TEXT && !stop && brain.chars < maxChars) {
-    absorbLanguage(ex); absorbConstructed(ex); absorbText(ex); await flushShared(); }
+    absorbLanguage(ex); absorbConstructed(ex); absorbObservedDifferences(ex);
+    absorbText(ex); await flushShared(); }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
