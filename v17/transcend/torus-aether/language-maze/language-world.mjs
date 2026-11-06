@@ -81,7 +81,7 @@ export class LanguageMazeMemory {
   if(!results.length)return [];
   // Only paths with comparable evidence may form a traversable world.
   // We do not label unrelated/unknown alternatives as physically proven walls.
-  const cutoff=results[0].exact?1:Math.max(.34,results[0].score*.8);
+  const cutoff=results[0].exact?1:Math.max(.58,results[0].score*.8);
   return results.filter(x=>x.score>=cutoff).slice(0,this.maxCandidates);
  }
  /**
