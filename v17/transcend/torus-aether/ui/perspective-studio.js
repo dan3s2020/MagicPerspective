@@ -10,7 +10,7 @@ const value=(v,d=2)=>Number.isFinite(v)?Number(v).toFixed(d):'—';
 const count=v=>Number.isFinite(v)?Math.trunc(v).toLocaleString('ro-RO'):'—';
 const num=(v,def=0)=>Number.isFinite(Number(v))?Number(v):def;
 function activate(mode){
- side.classList.remove('evalOn','psOn','metricsOn','transferOn');
+ side.classList.remove('evalOn','psOn','metricsOn','transferOn','langOn');
  for(const b of side.querySelectorAll('.tabs button'))b.classList.remove('on');
  const id={ps:'tabPS',metrics:'tabMetrics',transfer:'tabTransfer',train:'tabTrain',eval:'tabEval'}[mode];
  if(id)$(id).classList.add('on');
@@ -22,7 +22,7 @@ for(const [id,mode]of [['tabPS','ps'],['tabMetrics','metrics'],['tabTransfer','t
  $(id).addEventListener('click',()=>activate(mode));
 }
 for(const id of ['tabTrain','tabEval'])$(id).addEventListener('click',()=>{
- side.classList.remove('psOn','metricsOn','transferOn');
+ side.classList.remove('psOn','metricsOn','transferOn','langOn');
  for(const b of ['tabPS','tabMetrics','tabTransfer'])$(b).classList.remove('on');
 },{capture:true});
 // Follow an original V17 graph selection without editing app.js's working native picker.
