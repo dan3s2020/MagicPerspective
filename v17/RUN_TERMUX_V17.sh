@@ -19,7 +19,7 @@ Options:
   --text FILE        Training text with paragraphs separated by blank lines
   --data DIR         Existing OpenThoughts (or compatible) Parquet files
   --sample           Use the repository's existing V17 documentation as TEXT
-  --worlds LIST      text,maze,transform (default), or any subset
+  --worlds LIST      text,maze,transform,selfcode (default), or any subset
   --port PORT        HTTP port (default 8866)
   --out DIR          Isolated runtime directory
   --mem GB           Node per-brain budget (default 0.65 GB)
@@ -49,7 +49,7 @@ NODE_MAJOR=$(node -p "parseInt(process.versions.node.split('.')[0],10)")
   exit 1
 }
 
-WORLDS="text,maze,transform"
+WORLDS="text,maze,transform,selfcode"
 PORT=8866
 MEM=0.65
 EVERY=50000
@@ -90,10 +90,23 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-case "$WORLDS" in
-  text|maze|transform|text,maze|maze,text|text,transform|transform,text|maze,transform|transform,maze|text,maze,transform|text,transform,maze|maze,text,transform|maze,transform,text|transform,text,maze|transform,maze,text) ;;
-  *) echo "Invalid --worlds list: $WORLDS" >&2; exit 2 ;;
-esac
+CHECK_WORLDS=$WORLDS
+SEEN_WORLDS=""
+while [ -n "$CHECK_WORLDS" ]; do
+  case "$CHECK_WORLDS" in
+    *,*) WORLD_ITEM=${CHECK_WORLDS%%,*}; CHECK_WORLDS=${CHECK_WORLDS#*,};;
+    *) WORLD_ITEM=$CHECK_WORLDS; CHECK_WORLDS="";;
+  esac
+  case "$WORLD_ITEM" in
+    text|maze|transform|selfcode) ;;
+    *) echo "Invalid --worlds item: $WORLD_ITEM" >&2; exit 2 ;;
+  esac
+  case ",$SEEN_WORLDS," in
+    *,"$WORLD_ITEM",*) echo "Duplicate --worlds item: $WORLD_ITEM" >&2; exit 2;;
+  esac
+  SEEN_WORLDS=${SEEN_WORLDS:+$SEEN_WORLDS,}$WORLD_ITEM
+done
+[ "$SEEN_WORLDS" = "$WORLDS" ] || { echo "Invalid --worlds list: $WORLDS" >&2; exit 2; }
 case "$PORT" in ''|*[!0-9]*) echo "Invalid port: $PORT" >&2; exit 2 ;; esac
 [ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || { echo "Port must be 1024..65535" >&2; exit 2; }
 case "$CHARS" in ''|*[!0-9]*) echo "Invalid --chars: $CHARS" >&2; exit 2 ;; esac
@@ -154,7 +167,7 @@ if [ "$TRACE" -eq 1 ]; then set -- "$@" --trace-transformations; fi
 if [ "$AGENT_NOISE" -eq 1 ]; then set -- "$@" --endogenous-noise; fi
 
 echo "Original V17 UI: http://127.0.0.1:$PORT/transcend/torus-aether/ui/index.html?live=1"
-echo "CPU mode: original brain/maze/transform/text, NO CUDA, NO PyTorch shared updates."
+echo "CPU mode: original brain/text/maze/transform/selfcode/perspective, NO CUDA, NO PyTorch shared updates."
 echo "Organism-owned noise policy: $(if [ "$AGENT_NOISE" -eq 1 ]; then echo enabled; else echo disabled-on-fresh-brains; fi)."
 echo "Runtime: $OUT"
 echo "Use Ctrl+C once to stop and save."
