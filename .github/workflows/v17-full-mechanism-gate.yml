@@ -1,0 +1,66 @@
+name: V17 full mechanism integration acceptance (no demo)
+on:
+  push:
+    branches:
+      - experiment/V17-UNIFIED-ALL-REQUIREMENTS-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install actual CPU testing backend for GPU-compatible protocol
+        run: |
+          python -m pip install numpy
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Parse all changed runtime and UI files
+        run: |
+          for f in v17/transcend/torus-aether/devour/{brain,devour,worker,selfcode-native,selfcode-evaluator}.mjs v17/transcend/torus-aether/worlds/{noise-agency,perspective}.mjs v17/transcend/torus-aether/ui/app.js; do node --check "$f" || exit 1; done
+          python -m py_compile v17/transcend/torus-aether/gpu/shared_perspective.py v17/transcend/torus-aether/gpu/worlds_gpu.py
+          sh -n v17/RUN_TERMUX_V17.sh
+      - name: Real original Brain, endogenous noise, self-code and embodied perspective
+        run: |
+          node --test v17/tests/torus-organism.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+          node --test v17/transcend/torus-aether/devour/selfcode-native.test.mjs
+          node --test v17/transcend/torus-aether/devour/perspective.test.mjs
+      - name: Independent real source edits remain isolated in evaluator
+        run: node --test v17/transcend/torus-aether/devour/selfcode-evaluator.test.mjs
+      - name: Original V17 live UI, HTTP and Termux status
+        run: |
+          node --test v17/tests/torus-termux-launch.test.mjs
+          node --test v17/transcend/torus-aether/devour/perspective.http.test.mjs
+      - name: Real GPU-world protocol tested with CPU NumPy backend
+        env:
+          OCTOPUS_PY: python
+        run: node --test v17/transcend/torus-aether/devour/perspective.gpu.test.mjs
+      - name: Shared PyTorch model handles four actual worlds and autonomous noise
+        working-directory: v17/transcend/torus-aether/gpu
+        run: python -m unittest -v test_shared_perspective test_transfer_benchmark
+      - name: Existing native HTTP and memory safety regression
+        run: |
+          node --test v17/tests/torus-unified-http.test.mjs
+          node --test v17/tests/torus-shared-perspective.test.mjs
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Windows PowerShell 5.1 launcher syntax
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($f in @('v17/START_V17.ps1','v17/START_V17_TRANSFER.ps1')){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($f+': '+($errors -join '; '))}
+          }
