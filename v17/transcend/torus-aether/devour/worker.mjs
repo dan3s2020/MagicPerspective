@@ -11,6 +11,7 @@ import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {SelfCodeWorld} from "../worlds/self-code.mjs";
 import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
+import {validateWorldSource} from "./world-source.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
@@ -18,15 +19,18 @@ const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], m
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), CODE = worlds.includes("code"), MAPTEXT = worlds.includes("maptext");
 const MAP_ONLY = MAPTEXT && !TEXT && !MAZE && !TRANS && !CODE;
+validateWorldSource(worlds, source); // fail closed BEFORE loading or changing any brain checkpoint
 
 async function* stream() {                                                 // this brain's share of the world, once
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
     for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
-  } else {
+  } else if (source.kind === "text") {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
       if (para.trim().length < 20) continue; if (k++ % n === w && !source.heldSet.includes(k)) yield {k, bytes: ascii(para + "\n\n")}; }
+  } else {
+    throw Error("Text source not configured. This worker cannot run text without a text or parquet dataset.");
   }
 }
 
