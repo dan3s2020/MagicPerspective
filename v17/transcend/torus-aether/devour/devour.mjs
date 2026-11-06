@@ -57,7 +57,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
-const slots = [], last = new Map(), history = new Map(), graphs = new Map(); let started = new Date().toISOString(), stopping = false;
+const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetries = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
@@ -65,7 +65,7 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, progress: telemetries.get(sl.w)||null, gpu: G, chars: telemetries.get(sl.w)?.chars ?? g?.chars ?? t?.chars ?? 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
@@ -75,7 +75,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
   }
-  if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
+  if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); telemetries.delete(sl.w); }
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
@@ -85,6 +85,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   wk.on("message", m => {
     if (gen !== sl.gen) return;
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
+    if (m.type === "telemetry") { telemetries.set(sl.w,m); return; } // 1 Hz: no graph rebuild, no disk I/O
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; graphs.set(sl.w, m); return; }   // its living graph
     if (m.type === "chat") { const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
@@ -106,7 +107,7 @@ function control(sl, act) {
   else if (act === "pause") { sl.wk?.postMessage("pause"); if (sl.wk) sl.status = "pauză"; }
   else if (act === "reset") launch(sl, {fresh: true, paused: sl.status !== "antrenează"});
   else if (act === "save") sl.wk?.postMessage("save");
-  else if (act === "remove") { sl.gen++; sl.wk?.terminate(); slots.splice(slots.indexOf(sl), 1); last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
+  else if (act === "remove") { sl.gen++; sl.wk?.terminate(); slots.splice(slots.indexOf(sl), 1); last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); telemetries.delete(sl.w); }
 }
 // a new run without --resume keeps the old saves aside and starts from nothing
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
@@ -174,6 +175,9 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  if (url === "/telemetry") { const w=+(q.get("w")||0),sample=telemetries.get(w);
+    return json(res,{w,available:!!sample,telemetry:sample||null,serverAt:Date.now(),
+      status:slots.find(s=>s.w===w)?.status||"unknown",error:slots.find(s=>s.w===w)?.lastError||null}); }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
