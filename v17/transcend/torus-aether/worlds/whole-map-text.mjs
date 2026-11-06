@@ -223,17 +223,20 @@ export class WholeWorldNavigator{
 
 const ascii=s=>[...s].map(ch=>{const code=ch.charCodeAt(0);return code===10||code===9||(code>=32&&code<127)?code:63;});
 export class NativeWholeTextWorld{
- constructor(brain,{dimensions=6,wallRate=.18,emitSymbols=320}={}){
+ constructor(brain,{dimensions=6,wallRate=.18,emitSymbols=320,input=null,target=null}={}){
   if(!brain||typeof brain.live!=='function'||!brain.trace)throw Error('Native V17 Brain required');
   if(!finite(dimensions,2,9))throw Error('Native world supports 2..9 dimensions');
   this.brain=brain;this.dimensions=dimensions;this.wallRate=wallRate;this.emitSymbols=emitSymbols;
+  this.input=input;this.target=target;
   brain.wholeText ||= {episodes:0,solved:0,totalSteps:0,totalWalls:0,
    wavePasses:0,errors:0,recent:[],last:null};
  }
  // Absorb entire map before step 1. Goal is visible as in a 2D maze.
  // This is NOT the private unknown answer to an OpenThoughts question.
  play(seed){
-  const w=makeTextHypercube({dimensions:this.dimensions,wallRate:this.wallRate,seed});
+  const w=this.input===null
+    ? makeTextHypercube({dimensions:this.dimensions,wallRate:this.wallRate,seed})
+    : makeTextEditMaze({input:this.input,target:this.target,wallRate:this.wallRate,seed});
   const nav=new WholeWorldNavigator();nav.absorb(w);
   const t=this.brain.trace; t.node('whole:text:universe','world','Text as complete map');
   t.node('whole:text:goal','goal','Target');
@@ -287,6 +290,8 @@ export class NativeWholeTextWorld{
    plannedBeforeFirstCharacter:true,
    internalPlannedStates:route.states,
    actualMovements:physicalMoves.length,
+   input:w.metadata.input??null,target:w.metadata.target??null,
+   finalState:w.nodes.find(n=>n.id===nav.cursor)?.label??null,
    movementTrace:physicalMoves,
    movementCharacters:physicalMoves.map(x=>x.nextCharacter).join('')};
   s.last=row;s.recent.push(row);if(s.recent.length>24)s.recent.shift();
