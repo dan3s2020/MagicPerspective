@@ -586,6 +586,10 @@ async function pullSelectedGraph() {
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
     applySnap(gs); lastGraphVersion = Number.isFinite(gs.version) ? gs.version : -1;
+    if(gs.gears && $("gearStats")) $("gearStats").textContent =
+      "propoziții observate "+gs.gears.observedSentences+
+      " · transformări descoperite "+gs.gears.learnedOperators+
+      " · lungimi "+gs.gears.templateLengths.join(",");
     const batch = gs.gpu?.batch;
     if (indicator) indicator.textContent = "VIZUALIZEZI GRAFUL #" + liveW +
       " · " + gs.nodes.length + " noduri · " + (gs.lived || 0).toLocaleString() +
@@ -663,6 +667,58 @@ fetch("/corpus").then(r => r.json()).then(c => {
   const all = (c.train.join("\n") + "\n" + c.held.join("\n")); real5 = new Set(); for (let i = 0; i + 5 <= all.length; i++) real5.add(all.slice(i, i + 5));
   reset(); loop();
 }).catch(err => { $("corpus").textContent = "Nu pot încărca /corpus: " + err; });
+
+// ---- nested language gears: use the SAME V17 training worker, not a second demo server ----
+{
+  const box=$("gearOut"),stats=$("gearStats"),learn=$("gearLearn"),plan=$("gearPlan");
+  $("gearNoise").oninput=()=>$("gearNoiseOut").textContent=$("gearNoise").value;
+  const send=async payload=>{
+    if(!LIVE)throw Error("Pornește trainerul V17 și folosește interfața live.");
+    const r=await fetch("/gear",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({w:liveW,...payload})});
+    if(!r.ok)throw Error("HTTP "+r.status);
+    return await r.json();
+  };
+  const showStats=S=>{if(S)stats.textContent="propoziții observate "+S.observedSentences+
+    " · transformări învățate "+S.learnedOperators+" · lungimi "+S.templateLengths.join(",");};
+  learn.onclick=async()=>{
+    const examples=$("gearExamples").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    if(!examples.length){box.textContent="Introdu mai întâi propoziții observate, una pe rând.";return;}
+    learn.disabled=true;box.textContent="Învăț din observații reale...";
+    try{const r=await send({mode:"observe",examples});
+      box.textContent=r.error?"Eroare: "+r.error:"Observații noi: "+r.accepted+
+        " (propozițiile identice nu sunt reînvățate).\nTransformări găsite: "+r.summary.learnedOperators;
+      showStats(r.summary);
+    }catch(e){box.textContent="Eroare: "+e.message;}
+    finally{learn.disabled=false;}
+  };
+  plan.onclick=async()=>{
+    const source=$("gearStart").value.trim(),entries=$("gearGoal").value.split(/[,\n]/).map(x=>x.trim()).filter(Boolean),goal={};
+    try {
+      for(const field of entries){const m=/^(\d+)\s*=\s*(\S+)$/.exec(field);
+        if(!m)throw Error("Obiectiv invalid: "+field+" (folosește 0=She,2=calm)");
+        goal[m[1]]=m[2];
+      }
+      if(!Object.keys(goal).length)throw Error("Obiectivul nu poate fi gol");
+      plan.disabled=true;box.textContent="Caut traseul înaintea primului caracter...";
+      const r=await send({mode:"plan",start:source,goal,noise:+$("gearNoise").value});
+      showStats(r.summary);
+      if(!r.ok){box.textContent="LACĂT ÎNCHIS / FĂRĂ TRASEU\n"+(r.error||r.reason)+
+        "\nNu emit caractere fără un plan fundamentat în transformări observate.";return;}
+      const steps=r.route.map((x,i)=>(i+1)+". "+x.before+" -> "+x.after+
+        "\n   slot "+x.slot+" : "+x.from+" -> "+x.to+" (dovezi "+x.evidence+")").join("\n");
+      const chars=r.cursor.slice(0,48).map(x=>x.at+": '"+x.predicted+"'"+
+        " [traseu "+x.subproblems+" pași; "+x.expanded+" stări]").join("\n");
+      box.textContent="REZULTAT GENERAT: "+r.output+
+        "\n\nTRASEUL GLOBAL ÎNVĂȚAT ("+r.route.length+" transformări):\n"+
+        (steps||"Obiectiv deja îndeplinit")+
+        "\n\nCURSORUL (predicție/verificare înainte de caracter):\n"+chars+
+        (r.cursor.length>48?"\n... "+(r.cursor.length-48)+" alte caractere":"")+
+        "\n\nStări explorate: "+r.expanded+" · evaluare fără modificarea operatorilor";
+    }catch(e){box.textContent="Eroare: "+e.message;}
+    finally{plan.disabled=false;}
+  };
+}
 
 // ---- talking to the graph: the conversation goes to the selected graph (POST /chat), which writes the answer itself ----
 { let talk = []; const log = $("chatLog"), esc = t => t.replace(/[&<]/g, c => c === "&" ? "&amp;" : "&lt;");
