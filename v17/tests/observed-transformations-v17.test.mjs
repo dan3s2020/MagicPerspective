@@ -38,6 +38,53 @@ test('UNLABELED four examples -> learn reversible differences, compose unseen Sh
  assert.equal(execution.actionCount,1);
  assert.equal(m.containsSentence('She is calm.'),false,'Executing a proposed action may not contaminate held-out training');
 });
+test('two learned actions compose across DIFFERENT source contexts to reach an unseen goal',()=>{
+ const m=learner();
+ const planned=m.plan({required:['She','calm'],start:'She is happy.',maxDepth:4});
+ assert.ok(planned.found,JSON.stringify(planned));
+ assert.equal(planned.predicted,'She is calm.');
+ assert.equal(planned.unseen,true);
+ assert.equal(planned.steps.length,2);
+ assert.deepEqual(planned.steps.map(x=>x.from+'->'+x.to),['happy->tired','tired->calm']);
+ assert.equal(planned.steps[0].learnedFrom?.from,'She is happy.');
+ assert.ok(planned.steps[1].learnedFrom?.from.includes('He is'),
+   'Second action must be transferred from a DIFFERENT subject/context');
+ const outcome=m.execute(planned,{record:false});
+ assert.equal(outcome.verified,true);
+ assert.deepEqual(outcome.experience.map(x=>x.after),
+   ['She is tired.','She is calm.']);
+});
+test('sparse 5x5 cross-product: 9 unlabeled experiences produce 16 unobserved combinations',()=>{
+ const subjects=['She','He','They','We','I'];
+ const descriptors=['happy','tired','calm','ready','brave'];
+ const observed=[
+   ...descriptors.map(x=>'She is '+x+'.'),
+   ...subjects.slice(1).map(x=>x+' is happy.')
+ ];
+ assert.equal(observed.length,9);
+ const m=learner(observed),controls=learner(observed);
+ controls.operators.clear();
+ let total=0;
+ for(const subject of subjects.slice(1))for(const descriptor of descriptors.slice(1)){
+   const target=subject+' is '+descriptor+'.';
+   assert.equal(m.containsSentence(target),false);
+   const plan=m.plan({required:[subject,descriptor],start:'She is happy.',maxDepth:3});
+   assert.equal(plan.found,true,target+' / '+JSON.stringify(plan));
+   assert.equal(plan.predicted,target);
+   assert.equal(plan.unseen,true);
+   assert.equal(plan.steps.length,2);
+   assert.equal(m.execute(plan,{record:false}).verified,true);
+   assert.equal(controls.plan({required:[subject,descriptor],start:'She is happy.'}).found,false);
+   total++;
+ }
+ assert.equal(total,16);
+ console.log('SPARSE_UNLABELED_HELDOUT_GENERALIZATION '+JSON.stringify({
+   observedSentences:observed.length,
+   neverSeenCombinations:total,
+   correctCompositions:total,
+   manualClassesProvided:0,
+   fixedGrammarTemplatesProvided:0}));
+});
 test('the solver is goal-conditioned, can choose a starting perspective without the answer',()=>{
  const m=learner();
  const predicted=m.plan({required:['She','calm']});
