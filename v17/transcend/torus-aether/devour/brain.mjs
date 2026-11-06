@@ -54,7 +54,7 @@ export class Brain {
     if (SYNCED.get(gpu) !== this) { await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(0, A.mem.n)).toString("base64")}); SYNCED.set(gpu, this); }   // the card starts with everything this brain has lived
     const t0 = performance.now(), R = await ask(exs), t1 = performance.now(); A.absorb(R, exs);
     const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;
-    this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null};
+    this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, phaseMs: R.phaseMs ?? null, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null};
     return this.textGpu; }
   live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
