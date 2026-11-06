@@ -24,6 +24,8 @@ jobs:
       - name: Original V17 frozen-before-answer route, no oracle and checkpoint tests
         run: |
           node --test v17/tests/torus-text-hyperpaths.test.mjs
+      - name: Plain TXT file actually contains learned action/state routes, not just character sequences
+        run: node --test v17/tests/torus-text-hyperpaths-ingest.test.mjs
       - name: Preserve old real-world organism functionality
         run: |
           node --test v17/tests/torus-organism.test.mjs
