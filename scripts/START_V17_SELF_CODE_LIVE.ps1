@@ -50,7 +50,8 @@ $tests = @(
     "v17/transcend/torus-aether/devour/brain.native-gear.test.mjs",
     "v17/transcend/torus-aether/devour/brain.text5d.test.mjs",
     "v17/transcend/torus-aether/devour/trace.text5d.test.mjs",
-    "v17/transcend/torus-aether/ui/text-journey5d.test.mjs"
+    "v17/transcend/torus-aether/ui/text-journey5d.test.mjs",
+    "v17/transcend/torus-aether/ui/text-maze-viewer.test.mjs"
 )
 & node --test @($tests | ForEach-Object { Join-Path $root $_ })
 if ($LASTEXITCODE -ne 0) { throw "Regression tests failed, training will not start." }
