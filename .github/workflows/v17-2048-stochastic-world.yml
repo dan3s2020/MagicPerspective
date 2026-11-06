@@ -1,0 +1,23 @@
+name: MagicPerspective 2048 directions and stochastic environment research
+on:
+  push:
+    branches:
+      - experiment/V17-2048-HIERARCHICAL-MERGE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stochastic-directions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Exact 2048 deterministic action + chance node semantics and 64 seeded games
+        run: node --test v17/tests/2048-stochastic-world.test.mjs
+      - name: Previous V17 geometric and xD regression tests remain green
+        run: |
+          node --test v17/tests/observed-text-paths.test.mjs
+          node --test v17/tests/xd-gauge-collapse.test.mjs
