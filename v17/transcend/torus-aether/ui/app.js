@@ -263,7 +263,7 @@ let nvKey = "", nvAt = -1;
 function drawNest(W, H) {
   const lived = LIVE ? data : t !== nvAt && (frame % 60 === 0 || !nv.data.length) ? data.slice(0, Math.min(t, data.length)) : nv.data;
   if (!lived || lived.length < 50 || !geo.U.size) { g.fillStyle = "#4a6075"; g.font = "15px system-ui"; g.textAlign = "center"; g.fillText("aștept primele momente trăite…", W / 2, H / 2); return; }
-  if (lived !== nv.data || frame % 30 === 0) { nvAt = t;
+  if (lived !== nv.data || frame % 48 === 0) { nvAt = t;
     const prev = view.path; view.path = ""; const items = scene(); view.path = prev;
     const top = items.map(it => ({id: it.id, kind: it.n.type === "sym" ? "sym" : it.n.type, sym: it.n.type === "sym" ? +it.id.slice(2) : undefined, p: it.p, born: it.n.bt, node: it.n}));
     nv.setWorld({data: lived, U: geo.U, top, edges: [...edges.values()], now: t}); nvKey = ""; }
@@ -296,7 +296,7 @@ function drawNest(W, H) {
 }
 
 function draw() {
-  const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  const dpr = Math.min(devicePixelRatio || 1,1.5), W = cv.clientWidth, H = cv.clientHeight;
   if (cv.width !== W * dpr) { cv.width = W * dpr; cv.height = H * dpr; view.dirty = true; }
   g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
   if (!nodes.size) { g.fillStyle = "#4a6075"; g.font = "15px system-ui"; g.textAlign = "center";
@@ -380,7 +380,15 @@ function stats() {
   $("strip").innerHTML = strip.map(s => `<span class="${s.fixed ? "fix" : s.broke ? "brk" : s.ok ? "ok" : "no"}">${ch(s.y).replace("<", "&lt;")}</span>`).join("");
 }
 let frame = 0;
-function loop() {
+// The native NestView explores a genuinely dense graph. Cap expensive raster work
+// to ~24 FPS instead of rebuilding a full 3500-disc 5D scene at 60+ FPS.
+// This never throttles training in its independent Node worker or drops backend data.
+let lastRenderAt=0;
+function loop(now=performance.now()) {
+  requestAnimationFrame(loop);
+  if(document.hidden)return;
+  if(now-lastRenderAt<40)return;
+  lastRenderAt=now;
   if (LIVE && frame % 90 === 0) evaluate();
   if (LIVE) { drawMaze(); drawTrans(); }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
@@ -394,7 +402,6 @@ function loop() {
   ["tx", "ty", "tz", "tw", "tv"].forEach((id, i) => { const v = val(id); if (v) { cam[i] = wrap1(cam[i] + v * .004); view.dirty = true; } });
   draw(); frame++;
   if (frame % 6 === 0) stats(); if (frame % 60 === 0 && running) findConcepts();
-  requestAnimationFrame(loop);
 }
 
 // ---------- controls ----------
@@ -554,13 +561,13 @@ function bootLive() {
   D = 5; rand = rng(7); nodes = new Map(); edges = new Map(); recent = {C: [], F: []}; strip = []; groups = []; geo = {U: new Map(), V: new Map(), B: new Map()}; data = [];
   chain = {A: [{wires: [], form: () => liveSnap?.form || ""}]}; running = false;
   $("livePanel").hidden = false; document.body.classList.add("live");
-  livePull(); setInterval(livePull, 1500); loop();
+  livePull(); setInterval(livePull, 1500); requestAnimationFrame(loop);
 }
 if (LIVE) bootLive(); else
 fetch("/corpus").then(r => r.json()).then(c => {
   corpus = c; $("corpus").textContent = `${c.name} · ${c.train.length} rânduri din care învață · ${c.held.length} rânduri ținute nevăzute`;
   const all = (c.train.join("\n") + "\n" + c.held.join("\n")); real5 = new Set(); for (let i = 0; i + 5 <= all.length; i++) real5.add(all.slice(i, i + 5));
-  reset(); loop();
+  reset(); requestAnimationFrame(loop);
 }).catch(err => { $("corpus").textContent = "Nu pot încărca /corpus: " + err; });
 
 // ---- talking to the graph: the conversation goes to the selected graph (POST /chat), which writes the answer itself ----
