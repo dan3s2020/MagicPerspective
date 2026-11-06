@@ -66,9 +66,9 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
    <option value="auto">Resume current source (or V17 docs)</option>
    <option value="docs">V17 docs</option>
    <option value="pasted">Pasted text</option>
-   <option value="parquet">New Parquet Q/A dataset</option>
+   <option value="parquet" selected>New Parquet Q/A dataset</option>
   </select></label>
-  <label>Parquet folder (on this PC) <input id="datasetRoot" style="width:270px" placeholder="D:\training\OpenThoughts3-1.2M"></label>
+  <label>Parquet folder (on this PC) <input id="datasetRoot" style="width:270px" value="D:\training\OpenThoughts3-1.2M" placeholder="D:\training\OpenThoughts3-1.2M"></label>
  </div>
  <div id="corpusWarning" class="help">The bundled V17 documentation is finite. Infinite training repeats it after reaching the end. Use a real Parquet dataset for fresh exercises.</div>
  <details><summary>Optional real text source — paste a corpus to learn</summary><textarea id="custom" placeholder="Paste training text. Empty = V17 technical documentation. Non-ASCII is mapped to '?' by the original V17 tokenizer."></textarea><p>Text is split into 80% training and 20% frozen evaluation. The geometric lane separately withholds every fifth episode. These are distinct measurements.</p></details>
