@@ -157,6 +157,16 @@ test("hypertext-only world absorbs the entire real corpus without V19 atlas or t
   const plan=await fetch(host+"/hypermaze-plan",{method:"POST",
     headers:{"content-type":"application/json"},body});
   assert.equal((await plan.json()).math.optimal,true);
+  const frozen=await fetch(host+"/hypermaze-eval",{method:"POST",
+    headers:{"content-type":"application/json"},body:JSON.stringify({w:0,count:4})});
+  assert.equal(frozen.status,200);
+  const evalResult=await frozen.json();
+  assert.ok(!evalResult.error,JSON.stringify(evalResult));
+  assert.equal(evalResult.frozen,true);
+  assert.equal(evalResult.source,"original-held-out");
+  assert.ok(evalResult.documents>0 && evalResult.predictionsCovered>0);
+  assert.ok(evalResult.coverage>=0&&evalResult.coverage<=1);
+  assert.ok(evalResult.accuracy>=0&&evalResult.accuracy<=1);
   const gpu=await fetch(host+"/gpu?device=cuda:0",{method:"POST"});
   assert.equal(gpu.status,409,"Never claim CUDA for CPU native symbolic graph");
   const saved=path.join(out,"brains","brain-0-stable+many.v8");
