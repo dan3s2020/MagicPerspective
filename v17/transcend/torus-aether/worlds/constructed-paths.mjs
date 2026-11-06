@@ -80,6 +80,9 @@ export class ConstructedPathLearner {
     this.seed=seed;
     this.links=new ConstructedTransitionGraph({maxStates:maxTextStates});
     this.weights=[0,0,0,0,0,0];  // bias, toward-goal, known open, unknown, known blocked, novelty
+    // Shared learner, reused without retraining separate fixed rules for every
+    // world: predicted progress, causal support, uncertainty and novelty.
+    this.pathPolicy=[0,0,0,0,0,0];this.pathPolicyUpdates=0;
     this.examples=0;this.paired=0;this.open=1;this.blocked=1;
     this.textRows=0;this.textChars=0;this.textEOS=0;
     this.byScale=[1,2,4,8,16,32];
@@ -95,6 +98,21 @@ export class ConstructedPathLearner {
       v===1?-1:0,visited&&j>=0?1/(1+(visited[j]||0)):1];
   }
   score(feature){return feature.reduce((s,v,i)=>s+v*this.weights[i],0);}
+  transferableFeatures({progress=0,support=0,uncertainty=0,novelty=1,terminal=0}={}){
+    return [1,clip(progress,-1,1),clip(support,0,1),clip(-uncertainty,-1,0),
+      clip(novelty,0,1),clip(terminal,0,1)];
+  }
+  transferableScore(feature) {
+    return feature.reduce((v,x,i)=>v+x*this.pathPolicy[i],0);
+  }
+  learnTransferable(feature,successful,rate=.04) {
+    const logit=clip(this.transferableScore(feature),-25,25);
+    const predicted=1/(1+Math.exp(-logit));
+    const delta=clip((successful?1:0)-predicted,-1,1)*rate;
+    for(let k=0;k<this.pathPolicy.length;k++)this.pathPolicy[k]+=delta*feature[k];
+    this.pathPolicyUpdates++;
+    return predicted;
+  }
   // A generic route constructor works on the currently *BELIEVED* world.
   // Unknown cells remain traversable at a learned extra cost. A failed guess
   // revises the map; success reveals new edges. NO true wall is read in plan.
@@ -114,8 +132,11 @@ export class ConstructedPathLearner {
         if(j<0||map[j]===1)continue;
         const f=this.features(map,n,p,a,goal,visited);
         const learned=this.examples?clip(this.score(f),-4,4):0;
+        const transfer=this.transferableScore(this.transferableFeatures({
+          progress:f[1],support:f[2],uncertainty:f[3],novelty:f[5],
+          terminal:Number(j===goal&&map[j]===0)}));
         const cost=1+(map[j]===-1?uncertaintyCost:0)+
-          clip(-learned*.20,-.5,.5)+(visited?.[j]||0)*.03;
+          clip(-learned*.16-transfer*.06,-.65,.65)+(visited?.[j]||0)*.03;
         if(dist[p]+cost<dist[j]){
           dist[j]=dist[p]+cost;prev[j]=p;prevAction[j]=a;
         }
@@ -162,6 +183,9 @@ export class ConstructedPathLearner {
         const x=this.features(partial,n,p,a,world.goal);
         const expected=1/(1+Math.exp(-clip(this.score(x),-30,30)));
         for(let k=0;k<this.weights.length;k++)this.weights[k]+=.045*(y-expected)*x[k];
+        this.learnTransferable(this.transferableFeatures({
+          progress:x[1],support:x[2],uncertainty:x[3],novelty:x[5],
+          terminal:Number(j===world.goal)}),y,.015);
         this.examples++;compared++;
         if(y){positive=true;if(blindFirst!==a)missed++;}
         if(j>=0){this.open+=!world.wall[j]?1:0;this.blocked+=world.wall[j]?1:0;}
@@ -224,7 +248,16 @@ export class ConstructedPathLearner {
       if(j>=0&&train){this.open+=moved?1:0;this.blocked+=moved?0:1;}
       if(j>=0)belief[j]=moved?0:1;
       if(moved)ConstructedPathLearner.reveal(world,belief,pos,2);
-      if(train)this.links.observe(state,action,'maze:'+world.seed+':'+n+':'+pos);
+      if(train){
+        this.links.observe(state,action,'maze:'+world.seed+':'+n+':'+pos);
+        const seen=beforeBelief[j] ?? -1;
+        this.learnTransferable(this.transferableFeatures({
+          progress:clip((Math.abs(before%n-world.goal%n)+
+            Math.abs(Math.floor(before/n)-Math.floor(world.goal/n)))-
+            (Math.abs(pos%n-world.goal%n)+Math.abs(Math.floor(pos/n)-Math.floor(world.goal/n))),-1,1),
+          support:Number(seen===0),uncertainty:Number(seen===-1),
+          novelty:1/(1+(visits[pos]||0)),terminal:Number(pos===world.goal)}),moved,.007);
+      }
       if(live)live(moved?30:31);
       if(onTransition)onTransition({domain:'maze',before:beforeBelief,after:Array.from(belief),
         action:'move:'+a,context:'mask:'+n,worldSeed:world.seed});
@@ -303,8 +336,16 @@ export class ConstructedPathLearner {
       if(starters){const n=[...starters.values()].reduce((a,b)=>a+b,0);
         for(const [c,k] of starters)values.set(c,(values.get(c)||0)+k/n*1.4);}
     }
-    return [...values].sort((a,b)=>b[1]-a[1]).slice(0,limit)
-      .map(([character,weight])=>({character,weight}));
+    const sum=[...values.values()].reduce((n,x)=>n+x,0)+EPS;
+    return [...values].map(([character,weight])=>{
+      const support=clip(weight/sum,0,1);
+      const tf=this.transferableFeatures({progress:character===END?1:0,
+        support,uncertainty:1-support,novelty:history.endsWith(String.fromCharCode(character))?0:1,
+        terminal:Number(character===END)});
+      const policyAdjustment=clip(this.transferableScore(tf),-5,5);
+      return {character,weight:weight*Math.exp(policyAdjustment*.12),
+        transferableScore:policyAdjustment};
+    }).sort((a,b)=>b.weight-a.weight).slice(0,limit);
   }
   imagineText(question,{maxChars=512,beamWidth=3,fanOut=4}={}){
     if(!question?.trim())throw Error('Question required before constructing a text route');
@@ -349,6 +390,8 @@ export class ConstructedPathLearner {
   }
   summary(){return {pairedWorlds:this.paired,pairedObservations:this.examples,
     learnedUnknownOpenPrior:this.open/(this.open+this.blocked),learnedPathCoefficients:this.weights.slice(),
+    transferablePolicy:{weights:this.pathPolicy.slice(),updates:this.pathPolicyUpdates,
+      usedBy:['maze','text']},
     textQARows:this.textRows,textPathActions:this.textChars,textCompletedPaths:this.textEOS,
     scaleGraphStates:this.scales.map((g,i)=>({scale:this.byScale[i],...g.status()})),
     sharedRelations:this.links.status(),lastMaze:this.lastMaze,lastText:this.lastText,lastPair:this.lastPair};}
