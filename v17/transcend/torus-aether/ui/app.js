@@ -1022,7 +1022,10 @@ fetch("/corpus").then(r => r.json()).then(c => {
           "Nu există încă o cale învățată; sunt afișate doar ramurile căutate.")+
         " Stări: "+(r.search?.nodes?.length||0)+", muchii: "+
         (r.search?.edges?.length||0)+
-        (r.found?" · forma: "+r.predicted:" · "+(r.reason||""));
+        (r.found?" · forma: "+r.predicted:" · "+(r.reason||""))+
+        (r.sharedWorldUsed?" · core comun a evaluat "+
+          (r.sharedRanking?.candidateEdgesScored||0)+" muchii, "+
+          (r.sharedRanking?.candidateOrderChanges||0)+" ordini de acțiuni modificate.":" · original V17 fără core comun.");
     }catch(err){$("languageMazeStatus").textContent=
       "Căutarea nativă a eșuat: "+err.message+
       ". Nu afișez o cale simulată."; }
