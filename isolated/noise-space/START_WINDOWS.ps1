@@ -15,6 +15,9 @@ try {
   if(Test-Path -LiteralPath $gpuPy){
     $env:OCTOPUS_PY=$gpuPy
     Write-Host "Isolated GPU Python selected: $gpuPy" -ForegroundColor Green
+  } elseif($env:OCTOPUS_PY -and (Test-Path -LiteralPath $env:OCTOPUS_PY)){
+    $gpuPy=$env:OCTOPUS_PY
+    Write-Host "Reusing installed GPU Python: $gpuPy" -ForegroundColor Green
   } else {
     Write-Host 'CUDA not installed here. GPU mode must be set up explicitly using SETUP_CUDA_WINDOWS.ps1.' -ForegroundColor Yellow
   }
