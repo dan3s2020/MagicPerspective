@@ -129,6 +129,35 @@ el("textMazePlan").addEventListener("click",async()=>{
  }catch(err){el("textMazePlanOut").textContent="Eroare: "+err.message;}
  finally{btn.disabled=false;}
 });
+el("textMazeUnseen").addEventListener("click",async()=>{
+ const button=el("textMazeUnseen");button.disabled=true;
+ el("textMazeUnseenOut").textContent="Evaluez documentele originale ținute deoparte; fără modificarea checkpoint-ului...";
+ try{
+  const count=Math.max(1,Math.min(20,Math.trunc(Number(el("textMazeUnseenCount").value)||8)));
+  const r=await fetch("/hypermaze-eval",{method:"POST",
+   headers:{"content-type":"application/json"},
+   body:JSON.stringify({w:choose(),count})});
+  const v=await r.json();if(v.error)throw Error(v.error);
+  const fmtPct=x=>x==null?"—":(100*x).toFixed(2)+"%";
+  el("textMazeUnseenOut").textContent=[
+   "EVALUARE FROZEN: "+v.frozen+" | sursa: "+v.source+
+    " | documente: "+v.documents,
+   "Tranziții în test: "+v.observedTransitions+
+    " | unde modelul avea o predicție: "+v.predictionsCovered,
+   "ACURATEȚE NEXT-TOKEN în zona acoperită: "+fmtPct(v.accuracy),
+   "ACOPERIRE pe toate tranzițiile nevăzute: "+fmtPct(v.coverage),
+   "UNIGRAM bază independentă: "+fmtPct(v.baselineUnigramAccuracy),
+   "Trasee spre țintă vizibilă: "+v.routeReachable+
+    " accesibile / "+v.routeSamples+" testate",
+   ...(v.samples||[]).map((x,i)=>
+    "MOSTRĂ #"+(i+1)+": "+x.start+" → "+x.goal+
+    " | găsit: "+x.found+" | optim: "+x.optimal+
+    " | reziduu: "+x.residual),
+   "Interpretare: reachability pe muchii observate ≠ înțelegere semantică."
+  ].join("\n");
+ }catch(err){el("textMazeUnseenOut").textContent="Eroare: "+err.message;}
+ finally{button.disabled=false;}
+});
 function tick(t){
  if(playing&&graph?.last?.actual?.length){
   const delta=t-lastTick,delay=Number(el("textMazeSpeed").value)||320;
