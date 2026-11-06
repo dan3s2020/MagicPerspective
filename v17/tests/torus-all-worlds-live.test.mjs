@@ -37,11 +37,14 @@ test('one ORIGINAL live V17 brain trains text, maze, transform, self-code and ow
     assert.match(page,/id="selfcodeBox"/);
     assert.match(page,/id="agentNoiseBox"/);
     assert.match(page,/id="languageBox"/);
+    assert.match(page,/id="constructedBox"/);
     let view=null;
     for(let i=0;i<400;i++){
       try{const r=await fetch(url+'/graph?w=0');if(r.ok){
         const g=await r.json();
-        if(g.perspective?.episodes>0&&g.selfcode?.ticks>0&&g.endogenousNoise?.decisions>0&&g.language?.observedTokens>0&&g.chars>0){
+        if(g.perspective?.episodes>0&&g.selfcode?.ticks>0&&g.endogenousNoise?.decisions>0&&
+          g.language?.observedTokens>0&&g.constructedPaths?.pairedWorlds>0&&
+          g.constructedPaths?.textQARows>0&&g.chars>0){
           view=g;break;
         }
       }}catch{}
@@ -56,6 +59,16 @@ test('one ORIGINAL live V17 brain trains text, maze, transform, self-code and ow
     assert.deepEqual(graph.worlds,['text','maze','transform','selfcode']);
     assert.ok(graph.perspective?.episodes>0);
     assert.ok(graph.selfcode?.ticks>0);
+    assert.ok(graph.constructedPaths?.pairedWorlds>0);
+    assert.ok(graph.constructedPaths?.textQARows>0);
+    const blindResp=await fetch(url+'/constructed-paths-eval?w=0&count=3&seed=102',{method:'POST'});
+    assert.ok(blindResp.ok);
+    const blindReport=await blindResp.json();
+    assert.ok(!blindReport.error,'Frozen incomplete-world path construction: '+JSON.stringify(blindReport));
+    assert.equal(blindReport.count,3);
+    assert.equal(blindReport.results.length,3);
+    assert.ok(blindReport.results.every(x=>x.blindAtDecision&&x.initialUnknowns>0));
+    assert.equal(blindReport.frozen,true);
     const resp=await fetch(url+'/perspective-eval?w=0&count=4&seed=101',{method:'POST'});
     assert.ok(resp.ok);
     const evalReport=await resp.json();
@@ -76,7 +89,9 @@ test('one ORIGINAL live V17 brain trains text, maze, transform, self-code and ow
     for(let i=0;i<100;i++){if(fs.existsSync(brainFile)&&fs.statSync(brainFile).size>0){saved=true;break;}await sleep(100);}
     assert.ok(saved,'Original Brain checkpoint not created');
     console.log('V17_REAL_ALL_WORLDS '+JSON.stringify({lived:view.lived,chars:view.chars,
-      perspectiveEpisodes:view.perspective.episodes,languageTokens:view.language.observedTokens,codeTicks:view.selfcode.ticks,
+      perspectiveEpisodes:view.perspective.episodes,languageTokens:view.language.observedTokens,
+      maskPairs:view.constructedPaths.pairedWorlds,learnedCharPaths:view.constructedPaths.textQARows,
+      codeTicks:view.selfcode.ticks,
       noiseDecisions:view.endogenousNoise.decisions,lock:view.selfcode.lock.locked}));
   }finally{
     try{process.kill(-proc.pid,'SIGTERM');}catch{try{proc.kill('SIGTERM');}catch{}}
