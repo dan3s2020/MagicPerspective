@@ -56,9 +56,14 @@ test('Original native V17 live panel has correctly synchronized CPU/CUDA counter
   const observable=await obsJs.text();
   assert.match(observable,/class Observatory/);
   assert.match(observable,/spectrum/);
-  const initial=await read(host+'/graphs');
+  let initial=null;
+  for(let i=0;i<120;i++){
+    const v=await read(host+'/graphs');
+    if(v.graphs[0]?.snapshotAt>0){initial=v;break;}
+    await sleep(90);
+  }
+  assert.ok(initial,'Original paused worker never published its FIRST real snapshot: '+logs);
   assert.equal(initial.graphs[0].w,0);
-  assert.ok(initial.graphs[0].snapshotAt>0,'No live worker snapshot timestamp');
   let graph=await read(host+'/graph?w=0');
   assert.ok(Array.isArray(graph.nodes));
   assert.equal(initial.graphs[0].chars,graph.chars);
