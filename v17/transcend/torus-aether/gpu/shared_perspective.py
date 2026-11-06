@@ -18,7 +18,7 @@ FEATURES = 128
 ACTIONS = 32
 LATENT = 32
 VERSION = 1
-DOMAINS = ('maze', 'transform', 'text')
+DOMAINS = ('maze', 'transform', 'text', 'code')
 
 
 def _hash(value: str) -> int:
