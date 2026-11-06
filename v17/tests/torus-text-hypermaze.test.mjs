@@ -92,6 +92,15 @@ test("real native V17 process exposes live observed text and frozen HTTP paths",
     body:JSON.stringify({w:0,start,goal,maxSteps:120})});
    return r.json();
   };
+  // Also prove that the pre-existing V19 cognitive planner still replies
+  // while V20 observations are attached to the same original worker.
+  const oldRoute=await fetch(host+"/cognitive-eval",{method:"POST",
+   headers:{"content-type":"application/json"},
+   signal:AbortSignal.timeout(8000),
+   body:JSON.stringify({w:0,initial:"He is calm.",goal:{slots:{0:"She",2:"calm"}}})});
+  assert.equal(oldRoute.status,200);
+  const previous=await oldRoute.json();
+  assert.ok(previous.found,"Original V19 regression: "+JSON.stringify(previous)+"; logs "+log);
   const plan=await call("She","calm");
   assert.ok(!plan.error,JSON.stringify(plan));
   assert.equal(plan.found,true);assert.equal(plan.frozen,true);
