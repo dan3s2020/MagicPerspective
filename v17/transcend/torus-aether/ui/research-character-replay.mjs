@@ -37,7 +37,11 @@ export function setupCharacterReplay(){
   $('rCharStep').oninput=()=>{manual=true;cursor=+$('rCharStep').value;draw();};
   return {
     update(data,gpu){
-      const current=data?.recent||[],last=current.at(-1)?.at??null;
+      const gpuActive=gpu?.requested&&gpu.requested!=='off';
+      const frozen=gpuActive&&data?.frozenRecent?.length;
+      const current=frozen?data.frozenRecent:(data?.recent||[]);
+      const last=current.at(-1)?.at??null;
+      const sampleKey=(frozen?'frozen:':'live:')+(data?.frozenRow??'')+':'+last;
       if(!current.length){
         const why=gpu?.requested&&gpu.requested!=='off'?
           'CUDA agregată: evenimente per caracter indisponibile pe această rută; nu simulăm traiectorii.':
@@ -46,11 +50,15 @@ export function setupCharacterReplay(){
         if(!records.length)draw();
         return;
       }
-      $('rCharStatus').textContent='Original AligningGraph.live · '+data.seen+
-        ' caractere monitorizate · '+data.hits+' corecte · '+(100*(data.accuracy||0)).toFixed(2)+
-        '% în această rulare · ultimele '+current.length+' observabile';
-      if(last===previousLast)return;
-      previousLast=last;
+      $('rCharStatus').textContent=frozen?
+        'Original AligningGraph.readFrozen pe rândul real #'+data.frozenRow+
+          ' ÎNAINTE de învățare: '+current.length+' predicții · '+(100*(data.frozenAccuracy||0)).toFixed(2)+
+          '% · evaluare fără actualizare de greutăți (NU este traseul intern CUDA)':
+        'Original AligningGraph.live · '+data.seen+
+          ' caractere efectiv monitorizate la CPU · '+data.hits+' corecte · '+
+          (100*(data.accuracy||0)).toFixed(2)+'% · ultimele '+current.length+' observabile';
+      if(sampleKey===previousLast)return;
+      previousLast=sampleKey;
       records=current;
       if(!manual)cursor=records.length-1;
       else cursor=Math.min(cursor,records.length-1);
