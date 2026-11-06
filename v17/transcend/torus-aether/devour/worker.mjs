@@ -35,15 +35,18 @@ if (workerData.controls) brain.setControls(workerData.controls);         // the 
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
 const traceFile = workerData.traceTransformations && saveFile ? saveFile + ".transitions.jsonl" : null;
 let traced = 0;
+let traceBytes = traceFile && fs.existsSync(traceFile) ? fs.statSync(traceFile).size : 0;
 // Explicit opt-in: record only real TRAINING observations, no oracle or held-out
 // reference, with a bounded file size and a group ID for episode-disjoint tests.
 brain.setSharedObserver(sample => {
   const item = shared.observe(sample);
-  if (traceFile && traced < 50000) {
+  if (traceFile && traced < 50000 && traceBytes < 64 * 1024 * 1024) {
     const i = item.domain === "maze" ? brain.mazes.index : item.domain === "transform" ? brain.trans?.index : brain.exercises;
     const episode = item.domain + ":" + String(i ?? 0);
     fs.mkdirSync(path.dirname(traceFile), {recursive: true});
-    fs.appendFileSync(traceFile, JSON.stringify({...item, episode}) + "\n");
+    const line = JSON.stringify({...item, episode}) + "\n";
+    fs.appendFileSync(traceFile, line);
+    traceBytes += Buffer.byteLength(line);
     traced++;
   }
 });
