@@ -57,15 +57,37 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
-const slots = [], last = new Map(), history = new Map(), graphs = new Map(); let started = new Date().toISOString(), stopping = false;
+const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
 const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} : ARMS[name] ? {name, rules: ARMS[name]} : null;
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
+function recordTelemetry(m) {
+  let samples=telemetry.get(m.w);if(!samples){samples=[];telemetry.set(m.w,samples);}
+  const sample={at:Date.now(),chars:m.chars||0,lived:m.lived||0,
+    exercises:m.exercises||0,nodes:m.nodes?.length||0,edges:m.edges?.length||0,
+    aligned:m.accAlign??null,sharedStep:m.shared?.training?.step||0,
+    sharedLoss:m.shared?.training?.preUpdatePredictionLoss??null,
+    updates:m.observedTransformations?.learnedOperators||0,
+    comparisons:m.observedTransformations?.oneChangePairs||0,
+    textStates:m.constructedPaths?.scaleGraphStates?.reduce((n,x)=>n+(x.distinctStates||0),0)||0,
+    pairedWorlds:m.constructedPaths?.pairedWorlds||0,
+    noiseDecisions:m.endogenousNoise?.decisions||0,
+    gpuPhase:m.gpu?.batch?.phase||null,gpuDone:m.gpu?.batch?.done??null,
+    gpuTotal:m.gpu?.batch?.total??null,gpuTextAccuracy:m.gpu?.text?.acc??null,
+    vramGB:m.gpu?.maze?.vramUsedGB??m.gpu?.text?.vramUsedGB??null};
+  const last=samples.at(-1);
+  if(!last||sample.at-last.at>=800||sample.chars!==last.chars||
+    sample.updates!==last.updates||sample.gpuPhase!==last.gpuPhase){
+    samples.push(sample);if(samples.length>360)samples.splice(0,samples.length-360);
+  }
+}
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
+    nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
+    snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
@@ -91,7 +113,9 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (gen !== sl.gen) return;
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
-    if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; graphs.set(sl.w, m); return; }   // its living graph
+    if (m.type === "graph") { const old=graphs.get(sl.w);
+      if(!m.text&&old?.text)m.text=old.text;
+      m.snapshotAt=Date.now();graphs.set(sl.w,m);recordTelemetry(m);return; }   // its living graph
     if (m.type === "chat") { const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
     if (m.type === "saved") { sl.savedMB = m.MB; for (const f of sl.onSaved?.splice(0) || []) f(); return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
@@ -235,13 +259,35 @@ http.createServer((req, res) => {
       try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; } return json(res, {...sl.talker.examMazes(sizes, per), fromSave: true}); } catch (err) { return json(res, {error: err.message}); } }
     const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 300 s"}); }, 300000);
     chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({exam: {id, sizes, per}}); return; }
+  if(req.method==="GET"&&url==="/shared-eval-status"){
+    const id=+(q.get("id")||0),job=sharedJobs.get(id);
+    if(!job)return json(res,{error:"Evaluation job not found or expired"});
+    return json(res,{id,status:job.status,elapsedMs:Date.now()-job.created,
+      result:job.result||null,error:job.error||null,w:job.w});
+  }
   if (req.method === "POST" && url === "/shared-eval") {
     const sl = slots.find(x => x.w === +(q.get("w") || 0));
     if (!sl || !sl.wk) return json(res, {error: "The selected V17 graph is not running"});
-    const id = ++chatId, timer = setTimeout(() => { chats.delete(id); json(res, {error: "Shared PyTorch evaluation timeout"}); }, 180000);
-    chats.set(id, result => { clearTimeout(timer); json(res, result); });
-    sl.wk.postMessage({sharedEval: {id, seed: +(q.get("seed") || 74129)}});
-    return;
+    const busy=[...sharedJobs.values()].find(j=>j.w===sl.w&&j.status==="running");
+    if(busy)return json(res,{id:busy.id,status:"running",w:sl.w,reused:true});
+    const id=++chatId,job={id,w:sl.w,status:"running",created:Date.now(),
+      result:null,error:null};sharedJobs.set(id,job);
+    const timer=setTimeout(()=>{
+      chats.delete(id);
+      if(job.status==="running"){job.status="failed";
+        job.error="Evaluarea a depășit 180 s; verifică jurnalele CUDA."; }
+    },180000);
+    chats.set(id,result=>{
+      clearTimeout(timer);job.result=result;
+      job.status=result.error?"failed":"done";job.error=result.error||null;
+    });
+    try{sl.wk.postMessage({sharedEval:{id,seed:+(q.get("seed")||74129)}});
+    }catch(err){clearTimeout(timer);chats.delete(id);job.status="failed";job.error=err.message;}
+    if(sharedJobs.size>25)for(const [key,item] of sharedJobs){
+      if(sharedJobs.size<=20)break;
+      if(item.status!=="running")sharedJobs.delete(key);
+    }
+    return json(res,{id,status:job.status,error:job.error,w:sl.w});
   }
   if (req.method === "POST" && url === "/chat") {                        // body {w, history: [["you"|"him", text]…], opts: {T, max, stopBlank, learn}}
     let body = ""; req.on("data", d => body += d); req.on("end", () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
@@ -257,6 +303,17 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  if(url==="/telemetry"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl)return json(res,{error:"Graph not found",w});
+    const after=+(q.get("after")||0),all=telemetry.get(w)||[];
+    return json(res,{w,status:sl.status,points:all.filter(x=>x.at>after),
+      newestAt:all.at(-1)?.at||null,snapshotAt:graphs.get(w)?.snapshotAt||null,
+      observedTransformations:graphs.get(w)?.observedTransformations||null,
+      shared:graphs.get(w)?.shared||null,
+      endogenousNoise:graphs.get(w)?.endogenousNoise||null,
+      constructedPaths:graphs.get(w)?.constructedPaths||null});
+  }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
