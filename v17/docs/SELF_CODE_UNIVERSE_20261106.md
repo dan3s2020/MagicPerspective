@@ -51,8 +51,8 @@ source-patch generator and multiworld unbiased transfer benchmark remain unimple
   persistence of plain state, bounded experience).
 - A separate 500-step test of the exact published module progressed from a locked learner
   (0% accuracy prior to training) to 100% on an 80-case held-out test from the same four
-  instruction families, versus 38.75% no-change accuracy. The restricted portal-offset genome
-  was edited from parameter 1 to 3, with held-out routing fitness increasing from 64.29%
+  instruction families, versus 37.50% no-change accuracy. The restricted portal-offset genome
+  was edited from parameter 1 to 3, with held-out routing fitness increasing from 37.50%
   to 100%. These deterministic synthetic results ARE NOT proof of learning JavaScript.
 - New native V17 integration tests are checked into v17/tests/torus-self-code.test.mjs,
   but a complete Node process with the original entire dependency graph, live UI and user CUDA
