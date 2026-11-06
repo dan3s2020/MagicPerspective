@@ -172,7 +172,7 @@ export class LanguageMazeMemory {
     provenance:"Observed training paths and composition from >=2 independently experienced character-position transformations. No unseen target oracle."};
   return world;
  }
- plan(prompt,{maxReplay=256,mode="hybrid"}={}){
+ plan(prompt,{maxReplay=256,mode="hybrid",observeReplans=false}={}){
   if(mode!=="hybrid"&&mode!=="original")throw Error("Unknown language planning mode");
   if(typeof prompt!=="string"||prompt.length>20000)throw Error("Prompt is missing or exceeds safe request size");
   // A long observed answer is a hierarchy of successive submazes, not a
@@ -183,7 +183,7 @@ export class LanguageMazeMemory {
   if(evidence.length===1&&evidence[0].record.characters>512){
    const picked=evidence[0].record;
    return {...travelHierarchicalLanguage(cp(picked.answer),{
-      conduct:k=>this.conduct(k),attract:k=>this.attract(k),maxReplay,
+      conduct:k=>this.conduct(k),attract:k=>this.attract(k),maxReplay,observeReplans,
       source:picked.source||"priorly_observed_training_answer"
     }),input:prompt,successor:{enabled:false,mode,
       training:this.onlineSuccessor.stats(),
@@ -215,10 +215,39 @@ export class LanguageMazeMemory {
   // character from result.path. It only perceives neighbors of its CURRENT
   // node and the goal-attraction values remembered after its global glance.
   let bodyPosition=0,localAgreement=0,blocked=0,localSuccessorTies=0;
-  const bodyNodes=[0],seen=new Set([0]),trace=[],emitted=[];
+  const bodyNodes=[0],seen=new Set([0]),trace=[],emitted=[],replans=[];
+  let revisedGlobalShapes=0;
   if(result){
    for(let i=0;i<world.kinds.length;i++){
     const local=world.neighbors[bodyPosition]||[];
+    // The original local policy remains untouched. When observing routes,
+    // recalculate an ORIGINAL V17 global attraction shape from the ACTUAL
+    // current body position BEFORE each next local action, as in the maze UI.
+    // The new shape is observational and is never smuggled into the policy.
+    if(observeReplans&&replans.length<maxReplay){
+      const fresh=shapeOnLearnedTopology({
+        kinds:world.kinds,neighbors:world.neighbors,start:bodyPosition,
+        conduct:k=>this.conduct(k),attract:k=>this.attract(k),
+        tieBreakValues:successorValues
+      });
+      const initialIndex=field.nodes.indexOf(bodyPosition),
+       originalRemaining=initialIndex>=0?field.nodes.slice(initialIndex):null;
+      const changed=originalRemaining!==null&&
+        (originalRemaining.length!==fresh.nodes.length||
+         originalRemaining.some((v,j)=>v!==fresh.nodes[j]));
+      if(changed)revisedGlobalShapes++;
+      replans.push({
+       atStep:i+1,from:bodyPosition,stepBeforeAction:true,
+       recomputedWith:"UNCHANGED_V17_ATTRACTION_LAW_FROM_NEW_ACTUAL_POSITION",
+       nodes:fresh.nodes.slice(0,256),
+       fullNodes:fresh.nodes.length,
+       previewTruncated:fresh.nodes.length>256,
+       changedFromInitialContinuation:changed,
+       firstPredictedCharacter:fresh.path?.[0]?.character??null,
+       usedForActualAction:false,
+       evidenceChangedSinceLastStep:false
+      });
+    }
     let best=null,bv=field.values[bodyPosition];
     // The body's local view uses the SAME globally computed attraction field
     // and the SAME exact-tie rule; it never receives reference.path as policy.
@@ -272,6 +301,9 @@ export class LanguageMazeMemory {
       interpretation:"Observed online reverse TD at four temporal scales; fallback is empirical terminal occupancy. Neither equals answer correctness."}:
       {enabled:false,mode,training:this.onlineSuccessor.stats(),
        reason:mode==="original"?"original V17 only":"No competing observed complete paths"},
+   replans,revisionStats:{repropagations:replans.length,
+    revisedGlobalShapes,actuallyControlsAction:false,
+    newWorldObservationsDuringReplay:false},
    initialShape:result?.map(e=>e.character)||[],
    // These two sequences are FROM DIFFERENT STAGES of the real V17 law:
    // predicted BEFORE action vs actually visited by the local body policy.
@@ -280,9 +312,12 @@ export class LanguageMazeMemory {
    pathNodes:paths,trace,field:field.values,
    viewpointEvidence:{
     globalBeforeFirstAction:true,localActionsFromObservedNeighbors:true,
-    topology:"OBSERVED_PREFIX_GRAPH",actualRepropagationAfterEachMove:false,
+    topology:"OBSERVED_PREFIX_GRAPH",actualRepropagationAfterEachMove:observeReplans,
+    observationalReplanOnly:true,
     learned4DGeometry:false,
-    note:"V18 reuses the original global field during local movement; this is not the continuously rewritten V17 2D maze predictor."
+    note:observeReplans?
+      "After each actual movement, ORIGINAL V17 attraction is recalculated from the current body position for observability; local actions remain governed by the preserved original field. No new world evidence is learned in this frozen evaluation.":
+      "V18 uses the original memorized field during local movement; recalculation is disabled in ordinary planning."
    },
    graph:{
     nodes:world.labels.map((v,i)=>({id:i,kind:world.kinds[i],state:v.state,
