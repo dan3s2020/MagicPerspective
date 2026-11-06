@@ -5,6 +5,7 @@ on:
       - experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105
       - experiment/V17-REAL-TEXT-NAVIGATION-20261106
       - experiment/V17-CAUSAL-LANGUAGE-ACTIONS-20261106
+      - experiment/CUDA-TRAINING-CORE-20261106
   workflow_dispatch:
 jobs:
   real-v17:
@@ -23,11 +24,16 @@ jobs:
           node --check isolated/noise-space/learning_geometry.mjs
           node --check isolated/noise-space/interpret.mjs
           node --check isolated/noise-space/gpu_runner.mjs
+          node --check isolated/noise-space/cuda_full_client.mjs
           node --check isolated/noise-space/text_schedule.mjs
           node --check isolated/noise-space/text_action_paths.mjs
           node --check isolated/noise-space/causal_text_world.mjs
-      - name: Install NumPy for CPU verification of the original GPU protocol
-        run: python -m pip install --quiet numpy
+      - name: Install Torch CPU for verified numerical CUDA-kernel parity tests
+        run: |
+          python -m pip install --quiet numpy
+          python -m pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          python -m py_compile isolated/noise-space/cuda_aux_models.py isolated/noise-space/cuda_unified.py
+          python -m unittest discover -s isolated/noise-space -p 'test_cuda_aux_models.py' -v
       - name: Synthetic regression and true V17 integration acceptance
         run: node --test isolated/noise-space/test.mjs isolated/noise-space/v17_smoke.test.mjs isolated/noise-space/observatory.test.mjs isolated/noise-space/http_observatory.test.mjs isolated/noise-space/gpu_runner.test.mjs isolated/noise-space/text_action_paths.test.mjs isolated/noise-space/causal_text_world.test.mjs
   powershell:
