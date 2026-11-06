@@ -129,10 +129,18 @@ const processGpuText = async (exs, meta) => {
   });
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
-  if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+  if (exs.length) {
+    // Keep the exact original one-exercise replay; yield between chunks so graph
+    // snapshots, pause/save, and the UI still progress during very long exercises.
+    const replay = exs[0], chunk = 384;
+    for (let i = 0; i < replay.length; i += chunk) {
+      for (const y of replay.slice(i, i + chunk)) brain.live(y, brain.lived % 50 === 0, {old: true});
+      await tick("text: integrare în graful V17", Math.min(i + chunk, replay.length), replay.length);
+    }
+  }
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
-  batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
-  await flushShared();
+  batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length}; shot(true);
+  await flushShared(); shot();
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   batchNow = null;
   // Report the first committed batch immediately, not only after 60,000 bytes.
