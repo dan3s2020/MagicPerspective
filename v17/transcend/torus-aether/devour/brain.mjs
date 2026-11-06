@@ -203,7 +203,9 @@ export class Brain {
       r=P.navigateBlind(w,{train:true,record,noiseAgent:this.noiseAgent||null,
         live:y=>this.live(y,this.lived%50===0),
         onTransition:t=>this.observeShared({domain:'maze',before:t.before,after:t.after,
-          action:t.action,context:t.context})});
+          action:t.action,context:t.context,actualMoved:t.actualMoved,
+          actualProgress:t.actualProgress,actualTerminal:t.actualTerminal,
+          sensedUncertainty:t.sensedUncertainty})});
     } finally {this.liveWorld=old;}
     return r;
   }
@@ -213,6 +215,9 @@ export class Brain {
     const frozen=Object.assign(Object.create(ConstructedPathLearner.prototype),structuredClone(P));
     frozen.links=Object.assign(Object.create(ConstructedTransitionGraph.prototype),frozen.links);
     frozen.scales=frozen.scales.map(x=>Object.assign(Object.create(ConstructedTransitionGraph.prototype),x));
+    // structuredClone makes class prototypes plain. This shared model is
+    // consulted READ-ONLY in frozen unseen tests, never learned upon there.
+    frozen.worldCore=this.unifiedEnabled?this.worldCore:null;
     const rows=[],full=[];
     for(let i=0;i<count;i++){
       const w=makeMaze(seedOf(SEEDS.test,400000+seed*211+i*103),[7,9,11,13][i%4]);
