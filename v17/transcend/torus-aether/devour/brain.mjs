@@ -110,8 +110,13 @@ export class Brain {
         if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
       this.chain.rand = keep; }
     if (learn) for (const y of [...ans, 10, 10]) this.live(y);
-    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived,
-      gear: gear?.used ? {used:true,source:gear.source,goal:gear.goal,route:gear.route,characters:gear.chars,expanded:gear.expanded}
+    const space5=[...(this.trace?.geo?.U||new Map()).entries()]
+      .filter(([id,v])=>Number.isInteger(+id)&&Array.isArray(v)&&v.length>=5)
+      .map(([id,v])=>[+id,v.slice(0,5)]);
+    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived, space5,
+      gear: gear?.used ? {used:true,source:gear.source,goal:gear.goal,route:gear.route,
+          from:gear.from||null,steps:gear.steps||[],alternative:gear.alternative||null,
+          characters:gear.chars,expanded:gear.expanded}
         : {used:false,reason:gear?.reason||'native operator route not available; original V17 writer used'}};
   }
   // what the brain expects next, after everything it has lived (the graph's own distribution over the next symbol)
@@ -225,10 +230,37 @@ export class Brain {
       // the shape of the solution, before it is seen: from the question alone it writes the whole answer
       const shape = a0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
+      // Up to three HONEST re-predictions after observing a true prefix.
+      // These are independent frozen evaluations, not a claim that the agent
+      // autonomously moved through the hidden target. Held-out suffix is NEVER
+      // supplied to align.write() for any of these forecasts.
+      const replans=[],len=Math.max(0,ex.length-a0),selected=[];
+      if(len>2){
+        const probes=[0,Math.floor(len*.32),Math.floor(len*.68)].filter(i=>i>=0&&i<len);
+        for(const candidate of probes) {
+          let at=candidate;
+          if(candidate>0){const nextErr=rows.findIndex((r,i)=>i>=a0+candidate && r[0]!==r[1]);
+            if(nextErr>=0&&nextErr<a0+Math.min(len,candidate+80))at=nextErr-a0;}
+          if(selected.includes(at))continue;
+          selected.push(at);
+          const prefix=ex.slice(0,a0+at);
+          const imagined=this.align.write(prefix,{max:64,T,rand:rngFrom((seed^((at+1)*7919))>>>0),
+            stop:(y,o)=>y===10&&o.at(-1)===10});
+          replans.push({at,source:'AligningGraph.write / frozen true-prefix observation',
+            preview:String.fromCharCode(...imagined),predicted:imagined.length?String.fromCharCode(imagined[0]):''});
+        }
+      }
       out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
-        shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null}); }
+        shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null, replans}); }
     const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
-    return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer")};
+    // REAL 5D coordinates learned for symbols by this frozen Brain's geometry.
+    // The client will show a derived toroidal context trajectory; not an invented
+    // N-D language maze or an oracle over the future.
+    const space5=[...(this.trace?.geo?.U||new Map()).entries()]
+      .filter(([id,v])=>Number.isInteger(+id)&&Array.isArray(v)&&v.length>=5)
+      .map(([id,v])=>[+id,v.slice(0,5)]);
+    return {T, noise, seed, exercises: out, space5,
+      answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer")};
   }
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
