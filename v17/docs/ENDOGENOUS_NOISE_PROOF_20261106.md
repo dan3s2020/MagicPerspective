@@ -44,7 +44,17 @@ node v17/scripts/audit-endogenous-noise.mjs --train-mazes 12 --train-transforms 
 cat noise-evidence.json
 ```
 
-Inspect `summary.mazeSuccessDifference`, `mazeFirstShapeDifference`, `transformSuccessDifference`, and `paired[*].endogenousNoise.bySite`. A positive score would be preliminary evidence that noise helped **that** test. A zero/negative score is a legitimate failure or null result. Repeat with larger numbers and held-out conditions before inferring generalization.
+Inspect `summary.mazeSuccessDifference`, `mazeFirstShapeDifference`, `transformSuccessDifference`, `paired[*].endogenousNoise.bySite`, and now the separate `brainWithAgencyAtInference` arm. The latter executes a **copy** of the organism's own noise policy during unseen task inference with its policy frozen (no reward updates). A positive score would be preliminary evidence that noise helped **that** test. A zero/negative score is a legitimate failure or null result. Repeat with larger numbers and held-out conditions before inferring generalization.
+
+### Actual initial eight-seed outcome (GitHub Actions run 42162732579)
+
+The training-noise comparison (agency noise enabled during training, then frozen inference without added noise) scored:
+- 96 held-out maze tasks: no-noise **95/96** solved; fixed random **96/96**; organism-controlled **96/96**. All three reached very high performance; no advantage over fixed random was demonstrated.
+- The frozen first-path-shape metric reached **100%** for the agency and no-noise arms. This cannot distinguish improved planning here.
+- 64 held-out causal-transformation tasks: no-noise **31/64**, fixed random **31/64**, organism-controlled **32/64**. One task difference across 64 examples is not reliable evidence of superiority.
+- The policy's realized noise frequency varied by seed from **34.8% to 87.5%**, proving the choice is not simply one global fixed probability.
+
+The new `brainWithAgencyAtInference` arm was added after that initial run; its separate effect must be judged from the new run's output, not inferred from the training-only numbers.
 
 The automated tests additionally prove: choices vary with observed feedback; zero is an actual selectable mode; real actions and perceptions change; the actual V17 maze/transform/text loops update the *same* noise policy; checkpoints restore its exact RNG and counts; and frozen evaluation does not alter the policy. PyTorch tests compare explicit zero-noise selection against unperturbed gradients and verify that perception/action/imagined-latent choices alter gradients.
 
