@@ -10,7 +10,6 @@ import {LiveResearch} from './live-research.mjs';
 const args=process.argv.slice(2);
 const option=name=>{const i=args.indexOf('--'+name);if(i<0||!args[i+1])throw Error('Missing --'+name);return path.resolve(args[i+1]);};
 const src=option('source'),dst=option('destination');
-const branch=option('branch-name'); // passed as a path-safe literal, not used to execute code
 const oldBrain=path.join(src,'brain.v8'),oldAtlas=path.join(src,'atlas.json'),
   oldProgress=path.join(src,'progress.json');
 const target=path.join(dst,'brains','brain-0-stable+many.v8'),
