@@ -439,6 +439,7 @@ function applySnap(gs) {
   renderAgentNoise(gs.endogenousNoise || null);
   renderPerspective(gs.perspective || null);
   renderSelfcode(gs.selfcode || null);
+  renderLanguage(gs.language || null);
 }
 // Original Brain global->local observations, not a separate demo animation.
 let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
@@ -458,6 +459,31 @@ function renderPerspective(P) {
   const key=P.episodes+':'+(P.last?.seed??'');
   if(key!==perspectiveEpisodeKey){perspectiveEpisodeKey=key;perspectiveT0=performance.now();}
   perspectiveLast=P.last||null;
+}
+function renderLanguage(S) {
+  const box=$('languageBox');if(!box)return;box.hidden=!S;if(!S)return;
+  const lanes=(S.trust||[]).map(t=>'context '+t.scale+' tokeni: '+(t.seen||0)+
+    ' decizii · precizie '+percentage(t.accuracy)).join(' | ');
+  $('languageOut').textContent='Tokeni reali observați '+S.observedTokens+
+    ' · perspective învățate '+S.states+' · legături '+S.edges+
+    ' · obiective text '+S.terminalKinds+' · '+lanes;
+}
+$('languageEval').onclick=async()=>{
+  if(!LIVE)return;
+  const out=$('languageEvalOut'),shape=$('languageShape'),button=$('languageEval');
+  button.disabled=true;out.textContent='Evaluare înghețată pe text nevăzut...';
+  try{
+    const r=await(await fetch('/language-eval?w='+liveW+'&limit=1800',{method:'POST'})).json();
+    if(r.error)throw Error(r.error);
+    out.textContent='FROZEN '+(r.frozen?'da':'nu')+
+      ' · perspective multiscale '+percentage(r.tokenPrediction.accuracy)+
+      ' · referință un token '+percentage(r.tokenPrediction.oneTokenBaseline)+
+      ' · ghidare prin câmpul învățat '+percentage(r.fieldPrediction.accuracy)+
+      ' · tokeni testați '+r.tokenPrediction.tokens;
+    shape.textContent='FORMA PREZISĂ FĂRĂ A CITI CONTINUAREA: '+r.preActionShape.continuation+
+      ' · scări selectate '+r.preActionShape.path.map(x=>x.perspective).join(',');
+  }catch(err){out.textContent='Evaluare eșuată: '+err.message;}
+  finally{button.disabled=false;}
 }
 function renderSelfcode(S) {
   const box=$('selfcodeBox');if(!box)return;box.hidden=!S;if(!S)return;
@@ -632,6 +658,7 @@ async function livePull() {
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>perspectivă corp→hartă</span><span>episoade reale <b>${gr.perspective?.episodes??0}</b> · orientare învățată ${pc(gr.perspective?.mappingAccuracy)} · poziție locală ${pc(gr.perspective?.poseAccuracy)}</span>` : ""}
+        ${gr.worlds.includes("text") ? `<span>perspective text</span><span>observate ${gr.language?.observedTokens??0} tokeni · ${gr.language?.states??0} perspective contextuale · ${gr.language?.edges??0} legături</span>` : ""}
         ${gr.worlds.includes("selfcode") ? `<span>propriul cod</span><span>pași ${gr.selfcode?.ticks??0} · probe independente ${gr.selfcode?.probes??0} · lacăt ${gr.selfcode?.lock?.locked===false?'deblocat numai în sandbox':'blocat'} · original neatins ${gr.selfcode?.originalUnchanged===false?'NU':'da'}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
