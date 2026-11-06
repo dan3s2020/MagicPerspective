@@ -13,7 +13,7 @@ const server=path.join(root,"transcend/torus-aether/devour/devour.mjs");
 const ui=fs.readFileSync(path.join(root,"transcend/torus-aether/ui/index.html"),"utf8");
 test("all original native graph/train/eval/CUDA tabs remain with real new language-world controls",()=>{
  for(const id of ["g","liveTelemetry","tabTrain","tabEval","tabPS","tabMetrics","tabTransfer",
-  "tabLang","langPane","langPrompt","langGraph","langGlobal","langLocal","langPlan",
+  "tabLang","langPane","langPrompt","langGraph","langMode","langCompare","langCompareReport","langGlobal","langLocal","langPlan",
   "langPlay","langStep","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
   assert.match(ui,new RegExp('id="'+id+'"'),"Missing original or new V18 control: "+id);
  }
@@ -67,6 +67,14 @@ test("original V17 server serves real V18 prompt-only language-maze without unse
   assert.ok(Array.isArray(response.graph.nodes));
   assert.equal(response.graph.nodes[0].kind,3);
   assert.equal(response.trainingMemory.noLatentModel,true);
+  const baseMode=await fetch(base+"/language-maze/plan",{method:"POST",
+   headers:{"content-type":"application/json"},
+   body:JSON.stringify({w:0,prompt:"unknown question with no observed path",mode:"original"})});
+  assert.equal((await baseMode.json()).successor.mode,"original");
+  const comparison=await fetch(base+"/language-maze/compare?w=0&count=8",{method:"POST"});
+  const frozen=await comparison.json();
+  assert.match(frozen.error,/requires held-out Parquet/);
+  assert.ok(!Object.hasOwn(frozen,"hybrid"),"TXT without Q/A must not invent held-out accuracy");
  }finally{
   child.kill("SIGTERM");await new Promise(resolve=>setTimeout(resolve,200));
   if(child.exitCode===null)child.kill("SIGKILL");
