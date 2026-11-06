@@ -72,7 +72,14 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
     {step:2,source:1,target:3,character:"z",predictedCharacter:"z",
     agreesWithGlobal:true,localChoices:1,transformation:"observed_character_transition",
     potentialBefore:.8,potentialAfter:1,successorBefore:.8,successorAfter:1,prefix:"az"}],
-   solvedKnownGoal:true,viewpointEvidence:{actualRepropagationAfterEachMove:false}
+   solvedKnownGoal:true,
+   replans:[
+    {atStep:1,from:0,stepBeforeAction:true,nodes:[0,1,3],fullNodes:3,
+     changedFromInitialContinuation:false,usedForActualAction:false},
+    {atStep:2,from:1,stepBeforeAction:true,nodes:[1,3],fullNodes:2,
+     changedFromInitialContinuation:false,usedForActualAction:false}],
+   revisionStats:{repropagations:2,revisedGlobalShapes:0,actuallyControlsAction:false},
+   viewpointEvidence:{actualRepropagationAfterEachMove:true,observationalReplanOnly:true}
   }
  };
  const frozen={source:"unseen_open_thoughts",lived:12345,exercises:[
@@ -112,7 +119,8 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  await $("hmNext").fire("click");
  assert.match($("hmStepDetails").textContent,/Caracter\/acțiune: "a"/);
  assert.equal($("hmScrub").value,"1");
- assert.equal($("hmRevisions").textContent,"NEIMPLEMENTAT");
+ assert.equal($("hmRevisions").textContent,"2 reprop. / 0 revizii");
+ assert.match($("hmStepDetails").textContent,/Forma RECALCULATĂ acum/);
  await $("hmUnseen").fire("click");
  assert.match($("hmMeaning").textContent,/Trei secvențe, NU trei drumuri/);
  assert.equal($("hmExercise").children.length,2);
