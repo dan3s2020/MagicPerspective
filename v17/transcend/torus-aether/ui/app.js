@@ -11,6 +11,7 @@
 // is the world of what followed it in the lived stream, again an infinite torus, one character deeper each time.
 import {TextExperiment} from "../../epistemic-text/engine.mjs";
 import {Observatory} from "./observatory.js";
+import {LanguageMazeViewer} from "./language-maze-view.js";
 import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
@@ -434,6 +435,7 @@ const LIVE = new URLSearchParams(location.search).has("live");
 let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null, liveSummary = null;
 let livePulling=false;
 const observatory = LIVE ? new Observatory({getGraph:()=>liveW}) : null;
+const languageMazeViewer = LIVE ? new LanguageMazeViewer() : null;
 if(observatory)observatory.select(liveW);
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
@@ -454,6 +456,7 @@ function applySnap(gs) {
   renderLanguage(gs.language || null);
   renderConstructed(gs.constructedPaths || null);
   renderObservedTransformations(gs.observedTransformations || null);
+  languageMazeViewer?.setGraph(gs);
 }
 // Original Brain global->local observations, not a separate demo animation.
 let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
@@ -864,6 +867,7 @@ async function livePull() {
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
       c.querySelector(".t").onclick = () => { liveW = +c.dataset.w;
+        languageMazeViewer?.reset();
         nodes.clear();edges.clear();liveSnap=null;liveSummary=null;data=[];
         view.path="";view.mode="inside";
         nv.cam={k:0,w:"",x:0,y:0,S:300};nv.placed=false;
@@ -942,11 +946,66 @@ fetch("/corpus").then(r => r.json()).then(c => {
 // ---- the Evaluare tab: a copy from the save, on the CPU, on unseen labyrinths / text / desired configurations; first attempt ----
 { let R = null, kind = "maze", cur = 0, t0 = 0, evAgainNow = false;
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(1) + "%", side = document.querySelector("aside.side");
-  $("tabTrain").onclick = () => { side.classList.remove("evalOn","obsOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); $("tabObserve").classList.remove("on"); };
-  $("tabEval").onclick = () => { side.classList.remove("obsOn");side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("tabObserve").classList.remove("on"); $("evW").textContent = "#" + liveW; };
-  $("tabObserve").onclick = () => { side.classList.remove("evalOn");side.classList.add("obsOn");
+  const appRoot=document.querySelector(".app");
+  const hideLanguageMaze=()=>{
+    side.classList.remove("languageOn");
+    appRoot.classList.remove("languageWorld");
+    languageMazeViewer?.setActive(false);
+    $("tabLanguageMaze").classList.remove("on");
+  };
+  $("tabTrain").onclick = () => { hideLanguageMaze();
+    side.classList.remove("evalOn","obsOn"); $("tabTrain").classList.add("on");
+    $("tabEval").classList.remove("on"); $("tabObserve").classList.remove("on"); };
+  $("tabEval").onclick = () => { hideLanguageMaze();
+    side.classList.remove("obsOn");side.classList.add("evalOn");
+    $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on");
+    $("tabObserve").classList.remove("on"); $("evW").textContent = "#" + liveW; };
+  $("tabObserve").onclick = () => { hideLanguageMaze();
+    side.classList.remove("evalOn");side.classList.add("obsOn");
     $("tabObserve").classList.add("on");$("tabTrain").classList.remove("on");
     $("tabEval").classList.remove("on");observatory?.render(); };
+  $("tabLanguageMaze").onclick=()=>{
+    side.classList.remove("evalOn","obsOn");side.classList.add("languageOn");
+    appRoot.classList.add("languageWorld");
+    $("tabTrain").classList.remove("on");$("tabEval").classList.remove("on");
+    $("tabObserve").classList.remove("on");$("tabLanguageMaze").classList.add("on");
+    languageMazeViewer?.setActive(true);
+    languageMazeViewer?.renderInfo();
+  };
+  async function runLanguageMaze(localPolicy=true) {
+    const button=localPolicy?$("languageMazePlan"):$("languageMazeFollow");
+    const start=$("languageMazeStart").value.trim();
+    const required=$("languageMazeGoal").value.trim();
+    if(!required){$("languageMazeStatus").textContent=
+      "Introdu condițiile obiectivului, separate prin virgule. Nu oferim răspunsul complet.";return;}
+    button.disabled=true;
+    $("languageMazeStatus").textContent=
+      "Originalul V17 caută prin transformările învățate. Îngheț forma ÎNAINTE să execute orice acțiune...";
+    const selected=liveW;
+    try{
+      const url="/language-maze?w="+selected+
+        "&required="+encodeURIComponent(required)+
+        "&start="+encodeURIComponent(start)+
+        "&local="+(localPolicy?"on":"off");
+      const response=await fetch(url,{method:"POST",cache:"no-store"});
+      if(!response.ok)throw Error("HTTP "+response.status);
+      const r=await response.json();
+      if(r.error)throw Error(r.error);
+      if(selected!==liveW)return; // stale result from another brain is ignored
+      languageMazeViewer?.setEpisode(r);
+      $("languageMazeStatus").textContent=
+        (r.found?"FORMA REALĂ ÎNGHEȚATĂ înainte de primul pas. Apasă Replay sau Pas ▶.":
+          "Nu există încă o cale învățată; sunt afișate doar ramurile căutate.")+
+        " Stări: "+(r.search?.nodes?.length||0)+", muchii: "+
+        (r.search?.edges?.length||0)+
+        (r.found?" · forma: "+r.predicted:" · "+(r.reason||""));
+    }catch(err){$("languageMazeStatus").textContent=
+      "Căutarea nativă a eșuat: "+err.message+
+      ". Nu afișez o cale simulată."; }
+    finally{button.disabled=false;}
+  }
+  $("languageMazePlan").onclick=()=>runLanguageMaze(true);
+  $("languageMazeFollow").onclick=()=>runLanguageMaze(false);
   $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
   const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
