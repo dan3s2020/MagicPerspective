@@ -1,0 +1,30 @@
+name: V19 Cognitive Map - Native V17 Regression
+on:
+  push:
+    branches:
+      - experiment/V19-LEARNED-COGNITIVE-WORLD-SHAPE-20261106
+  workflow_dispatch:
+jobs:
+  cognitive-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact isolated branch
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original maze, whole-map, world-source and cognitive-map regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
+          node --test v17/tests/torus-whole-map-text.test.mjs
+          node --test v17/tests/torus-whole-map-audit.test.mjs
+          node --test v17/tests/torus-world-source-regression.test.mjs
+      - name: Native V17 cognitive world end-to-end
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
