@@ -65,7 +65,7 @@ export function playLocalPerspective(world,discoverer,bodyMemory=new BodyPerspec
   const firstPath=selfKind>=0?planCells(n,initial.indexOf(selfKind),firstShape):[];
   if(selfKind<0)return {solved:false,reason:'SELF_UNDISCOVERED',steps:0,optimal:world.dist[world.start],n,
     wall:Array.from(world.wall),initial,initialShape:[],initialPath:[],path:[world.start],trace:[],
-    locality:{globalObservations:1,localObservations:0,patchSide:2*localRadius+1},poseAccuracy:null,
+    locality:{globalObservations:1,localObservations:0,patchSide:2*localRadius+1,afterFirstFullMapRead:false},poseAccuracy:null,
     extraSteps:null,skippedForUnknownBody:true};
   let pos=world.start,estimate=initial.indexOf(selfKind),steps=0,poseHits=0,visible=0,
     followed=0,explored=0,relocalized=0,ambiguous=0,blocked=0;
