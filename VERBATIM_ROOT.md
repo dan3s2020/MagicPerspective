@@ -23,3 +23,7 @@
 The original 56-message historical segment is indexed, but not certified complete. The later recoverable USER sequence is being archived; assistant turns and some original media remain missing. The full Verbatim `--gate` **must fail** until an actual complete source export and atomic requirement-by-requirement validation are available.
 
 **This document sets the audit procedure. It does NOT claim that every requirement is already implemented.**
+
+## 2026-11-06: USER-only exact maze→language world / recursive character submaze continuation
+
+[Exact visible USER messages about the global-local 2D maze mechanism, no-substitution regression, hierarchical hyperdimensional character mazes and implementation request](./verbatim/2026-11-06-MAZE-LANGUAGE-MYSTIC-PERSPECTIVE-USER-TURNS-VERBATIM-PARTIAL.md) are preserved **literally** as a partial USER-only ordered sequence. This is not the full native conversation; intermediate assistant/tool turns and source media are not present. The full Verbatim completion release gate remains **BLOCKED**. For implementation scope and limitations, see [blocking regression #25](https://github.com/dan3s2020/MagicPerspective/issues/25) and the independent V18 experimental branch, not an implied approval to add substitute architectures.
