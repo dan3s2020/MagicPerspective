@@ -169,8 +169,8 @@ http.createServer((req, res) => {
       try{m=JSON.parse(body);}catch{return json(res,{error:"invalid JSON"});}
       if(Object.hasOwn(m,"answer")||Object.hasOwn(m,"reference"))
         return json(res,{error:"heldout answer/reference forbidden in language-maze planning API"});
-      const w=Number(m.w??0),prompt=m.prompt;
-      if(!Number.isInteger(w)||typeof prompt!=="string"||prompt.length>20000||!prompt.trim())
+      const w=Number(m.w??0),prompt=m.prompt,mode=m.mode??"hybrid";
+      if(!Number.isInteger(w)||typeof prompt!=="string"||prompt.length>20000||!prompt.trim()||!["original","hybrid"].includes(mode))
         return json(res,{error:"invalid graph or input prompt"});
       const sl=slots.find(x=>x.w===w);
       if(!sl)return json(res,{error:"graph not found"});
@@ -179,12 +179,12 @@ http.createServer((req, res) => {
         if(!fs.existsSync(file))return json(res,{error:"no experienced language-world saved yet"});
         try{
           const memory=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(file,"utf8")));
-          return json(res,{...memory.plan(prompt),trainingMemory:memory.stats(),fromSavedWorld:true});
+          return json(res,{...memory.plan(prompt,{mode}),trainingMemory:memory.stats(),fromSavedWorld:true});
         }catch(e){return json(res,{error:"language-world save error: "+e.message});}
       }
       const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"language-world evaluation timeout"});},120000);
       chats.set(id,result=>{clearTimeout(timer);json(res,result);});
-      sl.wk.postMessage({languageMazeExam:{id,prompt}});
+      sl.wk.postMessage({languageMazeExam:{id,prompt,mode}});
     });
     return;
   }
