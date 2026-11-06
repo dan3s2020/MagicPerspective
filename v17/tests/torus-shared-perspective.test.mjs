@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Brain} from '../transcend/torus-aether/devour/brain.mjs';
 import {SharedExperience} from '../transcend/torus-aether/shared/experience.mjs';
-import {CausalTextAgent} from '../../../isolated/noise-space/causal_text_world.mjs';
-import {TextActionPaths} from '../../../isolated/noise-space/text_action_paths.mjs';
+import {CausalTextAgent} from '../../isolated/noise-space/causal_text_world.mjs';
+import {TextActionPaths} from '../../isolated/noise-space/text_action_paths.mjs';
 
 const rules = {depth:1, off:['R2','R4'], budEvery:100, empty:true, maxWires:32, fold:false};
 test('real V17 maze and transform learning use the SAME shared sink', () => {
