@@ -261,6 +261,17 @@ def exercise_learn_batch(B, worlds, K, seed):
     tp = K["trust"]["plan"][0] / K["trust"]["plan"][1]; te = K["trust"]["explore"][0] / K["trust"]["explore"][1]
     use_plan = self_known and max(K["attract"]) > .2 and tp >= te * .9
     noise = float(K.get("noise") or 0)
+    organism_policy = K.get("noisePolicy")
+    if organism_policy:
+        if organism_policy.get("version") != 1 or len(organism_policy.get("contexts", [])) != 4:
+            raise ValueError("Organism noise policy has invalid shape")
+        learned_probs = t(organism_policy["contexts"], "f")
+        learned_strengths = t([x["strength"] for x in organism_policy["arms"]], "f")
+        if tuple(learned_probs.shape) != (4, 7) or tuple(learned_strengths.shape) != (7,):
+            raise ValueError("Each real GPU choice must have 7 organism-owned alternatives")
+        noise = 0.0  # the external manual rate NEVER overrides the internal policy
+        choice_count = B.zeros((4, 7), "i")
+        choice_reward = B.zeros((4, 7), "f")
     gen = B.gen(seed); ar = T.arange(N, device=B.device) if B.torch else np.arange(N)
     tries = t([K["tries"]] * N); visits = B.zeros((N, P, P), "i"); visits[ar, py, px] = 1
     active = B.zeros(N, "b") | True if B.torch else np.ones(N, dtype=bool); steps = B.zeros(N, "i")
@@ -304,6 +315,34 @@ def exercise_learn_batch(B, worlds, K, seed):
         pick_ex = argm(val, 1)
         ex = B.where(any_un, pick_un, pick_ex)
         o = B.where(free, ex, o); n_expl[idx] += free.long() if B.torch else free.astype(np.int64)
+        if organism_policy:
+            # Each ACTIVE world independently chooses where and how much noise
+            # using the SAME learned policy as the original serialized Brain.
+            # Context 0/1 = unknown body, 2/3 = known body, with plan flag.
+            context_id = B.zeros(o.shape, "i") + (2 if self_known else 0)
+            context_id = context_id + (~free).long() if B.torch else context_id + (~free).astype(np.int64)
+            cdf = learned_probs[context_id].cumsum(1) if B.torch else np.cumsum(learned_probs[context_id], axis=1)
+            u = rnd[:, 10:11]
+            arm = (u >= cdf).sum(1) if B.torch else (u >= cdf).sum(axis=1)
+            arm = clip(arm, 0, 6)
+            strength = learned_strengths[arm]
+            # PERCEPTION: perturb the interpretation of observed local
+            # action values; the actual maze's walls and state never change.
+            perceive = (arm == 1) | (arm == 2)
+            perceived_scores = val + (rnd[:, :8] - .5) * strength[:, None] * 1.6
+            perceived_output = argm(perceived_scores, 1)
+            o = B.where(perceive, perceived_output, o)
+            # IMAGINATION: explore a non-leading action in the same learned
+            # global-to-local route, never read simulator optimal paths.
+            if use_plan:
+                offset = clip((rnd[:, 9] * 3).long() if B.torch else (rnd[:, 9] * 3).astype(np.int64), 0, 2) + 1
+                other_plan = dir2o[(best + offset) % 4]
+                imagine = ((arm == 3) | (arm == 4)) & (~free) & (rnd[:, 11] < strength) & (other_plan >= 0)
+                o = B.where(imagine, other_plan, o)
+            # ACTION: organism deliberately tests another physical output.
+            act_noise = (arm == 5) | (arm == 6)
+            random_out = clip((rnd[:, 9] * 8).long() if B.torch else (rnd[:, 9] * 8).astype(np.int64), 0, 7)
+            o = B.where(act_noise & (rnd[:, 11] < strength), random_out, o)
         if noise:                                                  # the person's noise: sometimes it acts at random
             nz = rnd[:, 8] < noise; ro = clip((rnd[:, 9] * 8).long() if B.torch else (rnd[:, 9] * 8).astype(np.int64), 0, 7); o = B.where(nz, ro, o)
         if int(idx[0]) == 0: rec.append(int(o[0]))
@@ -327,6 +366,20 @@ def exercise_learn_batch(B, worlds, K, seed):
         tries[idx, o] += 1
         py[idx] = B.where(moved, nyc, cy); px[idx] = B.where(moved, nxc, cx); visits[idx, py[idx], px[idx]] += 1; steps[idx] += 1
         reached = (py[idx] == gy[idx]) & (px[idx] == gx[idx]); solved[idx] = reached
+        if organism_policy:
+            # Credit the REAL outcomes of these GPU actions to the chosen arm.
+            # Novelty is measured before mutating the visit counter below;
+            # movement and goal termination are empirical, not BFS teachers.
+            was_unvisited = moved & (visits[idx, nyc, nxc] <= 1)
+            r = B.where(moved, B.zeros(o.shape, "f") + .18, B.zeros(o.shape, "f") - .16)
+            r = r + B.where(was_unvisited, B.zeros(o.shape, "f") + .06, B.zeros(o.shape, "f"))
+            r = r + B.where(reached, B.zeros(o.shape, "f") + 2.0, B.zeros(o.shape, "f"))
+            r = r - B.where(arm > 0, B.zeros(o.shape, "f") + .035, B.zeros(o.shape, "f"))
+            flat_index = context_id * 7 + arm
+            counts_flat = choice_count.view(-1) if B.torch else choice_count.reshape(-1)
+            rewards_flat = choice_reward.view(-1) if B.torch else choice_reward.reshape(-1)
+            add_at(counts_flat, flat_index, B.zeros(o.shape, "i") + 1)
+            add_at(rewards_flat, flat_index, r)
         active[idx] = ~reached & (steps[idx] < lim[idx])
     # the end of every exercise (Discoverer.endEpisode): what it entered last attracts; the trust in the shape
     L_endIn = B.zeros(4, "i"); ok = solved & (last_in >= 0); add_at(L_endIn, last_in[ok], B.zeros(int(ok.sum()), "i") + 1)
@@ -335,7 +388,8 @@ def exercise_learn_batch(B, worlds, K, seed):
     tl = lambda x: B.tolist(x)
     return {"n": N, "solved": int(solved.sum()), "steps": int(steps.sum()), "optimal": sum(optimal),
             "learn": {"tries": tl(L_tries), "move": tl(L_move), "still": tl(L_still), "pass": tl(L_pass), "block": tl(L_block), "enter": tl(L_enter), "endIn": tl(L_endIn), "trust": trust},
-            "record": {"seed": worlds[0]["seed"], "n": worlds[0]["n"], "outputs": rec}}
+            "record": {"seed": worlds[0]["seed"], "n": worlds[0]["n"], "outputs": rec},
+            "noiseEvidence": {"version": 1, "counts": tl(choice_count), "rewards": tl(choice_reward)} if organism_policy else None}
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
