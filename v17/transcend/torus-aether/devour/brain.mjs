@@ -240,7 +240,9 @@ export class Brain {
       // supplied to align.write() for any of these forecasts.
       const replans=[],len=Math.max(0,ex.length-a0),selected=[];
       if(len>2){
-        const probes=[0,Math.floor(len*.32),Math.floor(len*.68)].filter(i=>i>=0&&i<len);
+        const firstWrong=rows.findIndex((r,i)=>i>=a0&&r[0]!==r[1]);
+        const firstReplan=firstWrong>=0 ? firstWrong-a0+1 : 1;
+        const probes=[firstReplan,Math.floor(len*.32),Math.floor(len*.68)].filter(i=>i>0&&i<len);
         for(const candidate of probes) {
           let at=candidate;
           if(candidate>0){const nextErr=rows.findIndex((r,i)=>i>=a0+candidate && r[0]!==r[1]);
