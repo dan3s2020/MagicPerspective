@@ -35,6 +35,7 @@ export class LearnedCognitiveMap {
     this.limits={maxExamples,maxRules,maxNodes,maxDepth};
     this.examples=new Map();this.skeletons=new Map();this.rules=new Map();this.shorterIndex=new Map();
     this.interventions=new Map();this.externalEdges=new Map();this.externalObservations=0;
+    this.sentenceObservations=0;this.compactedExamples=0;this.compactedRules=0;
     this.documents=0;this.evaluations=0;
     this.last=null;this.version=1;
   }
@@ -55,7 +56,8 @@ export class LearnedCognitiveMap {
     const t=Array.isArray(input)?input.slice():tokenizeWorld(input);
     if(!t.length||t.length>96||t.some(s=>typeof s!=='string'))return false;
     const id=key(t);if(this.examples.has(id))return false;
-    if(this.examples.size>=this.limits.maxExamples)throw Error('Cognitive world capacity exceeded; increase configured limit, do not silently discard observations');
+    if(this.examples.size>=this.limits.maxExamples)this.compactObservedExamples();
+    this.sentenceObservations++;
     // All positions are indexed simultaneously. No grammar labels or "correct next character" are supplied.
     for(let at=0;at<t.length;at++){
       const shape=t.length+':'+at+':'+key(t.map((word,j)=>j===at?'∅':word));
@@ -89,10 +91,42 @@ export class LearnedCognitiveMap {
     }
     this.examples.set(id,{tokens:t,source});return true;
   }
+  // All raw observations remain in the original dataset. The active map
+  // retains a bounded recent index plus cumulative learned rules. Compaction
+  // is reported; it never pretends that old raw sentences remain in RAM.
+  compactObservedExamples(){
+    const drop=Math.max(1,Math.ceil(this.limits.maxExamples*.10));
+    for(let n=0;n<drop&&this.examples.size;n++){
+      const [id,entry]=this.examples.entries().next().value,t=entry.tokens;
+      this.examples.delete(id);this.compactedExamples++;
+      for(let at=0;at<t.length;at++){
+        const skeleton=t.length+':'+at+':'+key(t.map((x,j)=>j===at?'∅':x));
+        const row=this.skeletons.get(skeleton);
+        if(row?.get(t[at])===id){row.delete(t[at]);if(!row.size)this.skeletons.delete(skeleton);}
+        const shortKey=key(t.slice(0,at).concat(t.slice(at+1)));
+        const shorter=this.shorterIndex.get(shortKey);
+        if(shorter){const newer=shorter.filter(x=>x.longer!==id);
+          if(newer.length)this.shorterIndex.set(shortKey,newer);
+          else this.shorterIndex.delete(shortKey);
+        }
+      }
+    }
+  }
+  reserveRule(){
+    if(this.rules.size<this.limits.maxRules)return;
+    let weakest=null;
+    for(const r of this.rules.values()){
+      if(r.accepted>0)continue;
+      if(!weakest||r.observations<weakest.observations)weakest=r;
+      if(r.observations<=1)break;
+    }
+    if(!weakest)throw Error('All learned rules are verified; RAM rule budget exceeded');
+    this.rules.delete(weakest.id);this.compactedRules++;
+  }
   #evidence(at,from,to,before,after){
     const name=ruleId(at,from,to);let r=this.rules.get(name);
     if(!r){
-      if(this.rules.size>=this.limits.maxRules)throw Error('Learned rule capacity exceeded');
+      this.reserveRule();
       r={id:name,at,from,to,observations:0,accepted:0,rejected:0,
         sources:[],kind:'observed-contrast-hypothesis'};
       this.rules.set(name,r);
@@ -106,7 +140,7 @@ export class LearnedCognitiveMap {
   #editEvidence(operation,at,from,to,before,after){
     const name=JSON.stringify([operation,at,from,to]);let r=this.rules.get(name);
     if(!r){
-      if(this.rules.size>=this.limits.maxRules)throw Error('Learned rule capacity exceeded');
+      this.reserveRule();
       r={id:name,operation,at,from,to,observations:0,accepted:0,rejected:0,
         sources:[],kind:'observed-complete-state-edit-hypothesis'};
       this.rules.set(name,r);
@@ -136,7 +170,7 @@ export class LearnedCognitiveMap {
     if(from.length>16||to.length>16)throw Error('Observation exceeds bounded local transformation span');
     let r=this.rules.get(action);
     if(!r){
-      if(this.rules.size>=this.limits.maxRules)throw Error('Learned rule capacity exceeded');
+      this.reserveRule();
       r={id:action,operation:'span',at:prefix,from,to,
         observations:0,accepted:0,rejected:0,
         sources:[],kind:'causally-observed-action'};
@@ -356,13 +390,17 @@ export class LearnedCognitiveMap {
     });
   }
   report(){return {version:1,documents:this.documents,observedSentences:this.examples.size,
-    inducedActionRules:this.rules.size,externalTransitionObservations:this.externalObservations,
+    inducedActionRules:this.rules.size,sentenceObservations:this.sentenceObservations,
+    compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
+    activeSentenceMemory:this.examples.size,externalTransitionObservations:this.externalObservations,
     observedDomainEdges:this.externalEdges.size,
     realObservedActions:[...this.interventions.values()].reduce((s,e)=>s+e.accepted+e.blocked,0),
     confirmedActions:[...this.rules.values()].filter(r=>r.accepted>0).length,
     rejectedActions:[...this.rules.values()].reduce((s,r)=>s+r.rejected,0),last:this.last,
     interpretation:'Rules learned from contrasts are hypotheses until actions are observed. No next-token trainer.'};}
   export(){return {version:1,limits:this.limits,documents:this.documents,
+    sentenceObservations:this.sentenceObservations,compactedExamples:this.compactedExamples,
+    compactedRules:this.compactedRules,
     examples:[...this.examples],skeletons:[...this.skeletons].map(([k,m])=>[k,[...m]]),
     shorterIndex:[...this.shorterIndex],
     rules:[...this.rules],interventions:[...this.interventions],
@@ -370,6 +408,8 @@ export class LearnedCognitiveMap {
   static restore(data){
     if(data?.version!==1)throw Error('Incompatible cognitive map checkpoint version');
     const m=new LearnedCognitiveMap(data.limits);m.documents=data.documents;
+    m.sentenceObservations=data.sentenceObservations||0;
+    m.compactedExamples=data.compactedExamples||0;m.compactedRules=data.compactedRules||0;
     m.examples=new Map(data.examples);m.skeletons=new Map(data.skeletons.map(([k,a])=>[k,new Map(a)]));
     m.shorterIndex=new Map(data.shorterIndex||[]);
     m.rules=new Map(data.rules);m.interventions=new Map(data.interventions);
