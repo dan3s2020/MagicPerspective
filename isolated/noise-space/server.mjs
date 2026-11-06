@@ -15,6 +15,7 @@ const next=()=>{if(!running||paused){return;}if(busy){setTimeout(next,150);retur
 const respond=async(req,res)=>{const u=new URL(req.url,'http://127.0.0.1');try{
  if(req.method==='GET'&&u.pathname==='/api/v17')return json(res,200,realState());
  if(req.method==='POST'&&u.pathname==='/api/v17'){const data=await parse(req);realCommand(data);return json(res,202,{accepted:true,action:data.action});}
+ if(req.method==='GET'&&u.pathname==='/language-actions.html'){const b=fs.readFileSync(path.join(ROOT,'language-actions.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
  if(req.method==='GET'&&u.pathname==='/v17.html'){const b=fs.readFileSync(path.join(ROOT,'v17.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Content-Length':b.length,'Cache-Control':'no-store'});return res.end(b);}
  if(req.method==='GET'&&u.pathname==='/api/health')return json(res,200,{status:'ok',isolated:true,source,knownV17:realState().available,realTraining:realState().running,realError:realState().error});
  if(req.method==='GET'&&u.pathname==='/api/state')return json(res,200,summary());
