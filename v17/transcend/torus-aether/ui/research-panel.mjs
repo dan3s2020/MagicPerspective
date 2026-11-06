@@ -41,6 +41,11 @@ export function setupResearchTab({getSelectedBrain,isLive}){
     put('rHeld',r.heldout?.mean?'V17 '+pct(r.heldout.mean.native)+
       ' · SR '+pct(r.heldout.mean.sr)+' · lexical '+pct(r.heldout.mean.lexical):
       'Așteaptă evaluarea înghețată.');
+    const G=r.gpu||{};
+    put('rGpu',G.error?'EROARE '+G.error:G.requested==='off'?
+      'CPU (CUDA nu a fost cerută)':G.ready?
+      G.requested+' · '+(G.batch?.phase||'lot inactiv')+' · VRAM '+(G.text?.vramUsedGB??'—')+' GB':
+      (G.requested||'—')+' (inițializare / așteptare)');
     trend('researchAccuracy',hist,[
       {key:'native',title:'V17',color:'#f5b301'},
       {key:'sr',title:'SR',color:'#3ddc84'},
