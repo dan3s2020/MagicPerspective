@@ -68,7 +68,14 @@ test('REAL original worker emits research through HTTP and original UI displays 
         assert.ok(t.edges.some(e=>e.from===fr.from&&e.to===fr.actual&&e.action===fr.action),
           'No invented actor movement');
       assert.equal(t.factualLimits.inventedEdges,false);
+      assert.equal(t.frames.length,t.executed.length);
+      assert.ok(t.frames.every(fr=>
+        fr.fieldWave?.length>=1&&fr.fieldWave.at(-1)?.values.length===t.nodes.length));
     }
+    const redirect=await fetch('http://127.0.0.1:'+port+'/',{redirect:'manual'});
+    assert.equal(redirect.status,302);
+    assert.ok(redirect.headers.get('location').includes('research=1'),
+      'Real research launch should auto-open new V17 tab');
     const rootUrl='http://127.0.0.1:'+port+'/transcend/torus-aether/ui/';
     for(const [file,required] of [
       ['index.html?live=1','id="researchShapeMap"'],
