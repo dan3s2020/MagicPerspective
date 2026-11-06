@@ -30,7 +30,10 @@ foreach ($file in @(
     "v17/transcend/torus-aether/ui/app.js",
     "v17/transcend/torus-aether/devour/selfcode-native.mjs",
     "isolated/noise-space/nested_text_gears.mjs",
-    "isolated/noise-space/native_gear_drive.mjs"
+    "isolated/noise-space/native_gear_drive.mjs",
+    "v17/transcend/torus-aether/ui/text-journey5d.mjs",
+    "v17/transcend/torus-aether/ui/text-maze-viewer.mjs",
+    "v17/transcend/torus-aether/devour/trace.mjs"
 )) {
     & node --check (Join-Path $root $file)
     if ($LASTEXITCODE -ne 0) { throw "Syntax check failed: $file" }
@@ -44,7 +47,10 @@ $tests = @(
     "isolated/noise-space/nested_text_gears.test.mjs",
     "isolated/noise-space/native_gear_drive.test.mjs",
     "isolated/noise-space/streaming_gear.test.mjs",
-    "v17/transcend/torus-aether/devour/brain.native-gear.test.mjs"
+    "v17/transcend/torus-aether/devour/brain.native-gear.test.mjs",
+    "v17/transcend/torus-aether/devour/brain.text5d.test.mjs",
+    "v17/transcend/torus-aether/devour/trace.text5d.test.mjs",
+    "v17/transcend/torus-aether/ui/text-journey5d.test.mjs"
 )
 & node --test @($tests | ForEach-Object { Join-Path $root $_ })
 if ($LASTEXITCODE -ne 0) { throw "Regression tests failed, training will not start." }
@@ -52,7 +58,7 @@ if ($LASTEXITCODE -ne 0) { throw "Regression tests failed, training will not sta
 Write-Host "=== V17 NATIVE SELF-CODE TRAINING (CUDA, real trainer) ===" -ForegroundColor Green
 Write-Host "Browser: http://127.0.0.1:$Port/"
 Write-Host "Checkpoints (resume, not reset): $runtime"
-Write-Host "Worlds: text,maze,transform,selfcode + native text gears IN Brain.chat()"
+Write-Host "Worlds: text,maze,transform,selfcode + native text gears IN Brain.chat() + actual 5D text trajectories"
 Write-Host "GPU: $Gpu, VRAM budget: $Vram GB, parallel worlds: $GpuWorlds, text batch: $GpuTextBatch"
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "v17\START_V17.ps1") `
     -Workers $Workers -Arms "stable+many" -Mem $Mem `
