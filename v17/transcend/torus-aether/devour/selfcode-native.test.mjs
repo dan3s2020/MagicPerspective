@@ -42,3 +42,12 @@ test('portal policy chooses locally and learns from feedback',()=>{
  assert.equal(p.choose({random:()=>0.5,remaining:2}),'portal');
  assert.deepEqual(p.serialize().n,{walk:30,portal:30});
 });
+
+test('pause buffers evaluator feedback until resume and keeps its causal provenance',()=>{
+ const brain=fakeBrain(),a=new NativeSelfCodeWorld({brain,saveFile:root(),enableEvaluator:false});
+ a.pause();const before=brain.events.length;
+ a.onEvaluation({kind:'probe',slot:'promotion-margin',value:.004,delta:.05,index:1});
+ assert.equal(brain.events.length,before);assert.equal(a.status().probes,0);
+ a.resume();assert.equal(a.status().probes,1);assert.ok(brain.events.length>before);
+ assert.equal(a.status().lastProbe.slot,'promotion-margin');
+});
