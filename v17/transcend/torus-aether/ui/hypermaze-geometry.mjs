@@ -26,25 +26,34 @@ export function observedLayout(graph){
   }
  }
  const maxDepth=Math.max(1,...depth);
- // Allocate each terminal a distinct deterministic lane, then place each
- // branch ancestor at its descendants' barycenter. No decorative torus.
+ // Forward prefix DAGs are processed in reverse creation order.
+ // This avoids JavaScript call-stack overflow for 12,000+ character paths.
+ // For cyclic/unordered inputs use a deterministic per-depth lane fallback;
+ // do NOT invent graph edges or imply an unlearned world embedding.
+ const y=Array(n).fill(null);
  let nextLeaf=0;
- const y=Array(n).fill(null),visiting=new Set();
- function lane(i){
-  if(y[i]!==null)return y[i];
-  if(visiting.has(i))return nextLeaf++; // protects unexpected graph cycles
-  visiting.add(i);
-  const v=outgoing[i].filter(j=>j!==i);
-  if(!v.length)y[i]=nextLeaf++;
-  else{
-   const ys=v.map(j=>lane(j));
-   y[i]=ys.reduce((a,b)=>a+b,0)/ys.length;
+ const forward=outgoing.every((row,i)=>row.every(to=>to>i));
+ if(forward){
+  for(let i=n-1;i>=0;i--){
+   const row=outgoing[i];
+   if(!row.length)y[i]=nextLeaf++;
+   else y[i]=row.reduce((sum,to)=>sum+y[to],0)/row.length;
   }
-  visiting.delete(i);
-  return y[i];
+ }else{
+  const byDepth=new Map();
+  for(let i=0;i<n;i++){
+   const d=depth[i];
+   const group=byDepth.get(d)||[];
+   group.push(i);byDepth.set(d,group);
+  }
+  const bands=[...byDepth.keys()].sort((a,b)=>a-b);
+  const maxWidth=Math.max(1,...[...byDepth.values()].map(a=>a.length));
+  for(const d of bands){
+   const group=byDepth.get(d);
+   for(let i=0;i<group.length;i++)y[group[i]]=(i+.5)/maxWidth;
+  }
+  nextLeaf=2;
  }
- lane(0);
- for(let i=0;i<n;i++)if(y[i]===null)lane(i);
  const denom=Math.max(1,nextLeaf-1);
  const coords=graph.nodes.map((node,i)=>[
   lim(2*Math.max(0,depth[i])/maxDepth-1),
