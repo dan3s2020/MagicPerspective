@@ -1,45 +1,123 @@
 param(
-  [string]$Cuda = "cu126",
-  [string]$PythonExe = ""
+    [ValidateSet("cu126","cu130")]
+    [string]$Cuda = "cu126",
+    [string]$PythonExe = "",
+    [switch]$ForceRepair
 )
 $ErrorActionPreference = "Stop"
+
 $base = Split-Path -Parent $MyInvocation.MyCommand.Path
 $venv = Join-Path $base ".venv"
 $py = Join-Path $venv "Scripts\python.exe"
+$probe = Join-Path $base "CHECK_CUDA_ENV.py"
 $gpuScript = Join-Path $base "..\..\v17\transcend\torus-aether\gpu\worlds_gpu.py"
-Write-Host "=== MAGIC PERSPECTIVE: ISOLATED CUDA SETUP ===" -ForegroundColor Cyan
-Write-Host "Only changes: $venv"
-if (@("cu124","cu126","cu128") -notcontains $Cuda) { throw "Unsupported CUDA wheel channel: $Cuda" }
-if (-not (Test-Path $py)) {
-  if (-not $PythonExe) {
-    if (Get-Command py -ErrorAction SilentlyContinue) {
-      $found = & py -3.12 -c 'import sys; print(sys.executable)' 2>$null
-      if ($LASTEXITCODE -eq 0 -and $found) { $PythonExe = $found.Trim() }
-    }
-    if (-not $PythonExe -and (Get-Command python -ErrorAction SilentlyContinue)) {
-      $PythonExe = (Get-Command python).Source
-    }
-  }
-  if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
-    throw "Python 3.12 x64 is required. Install it or pass -PythonExe C:\...\python.exe"
-  }
-  $version = & $PythonExe --version 2>&1
-  if ($LASTEXITCODE -ne 0 -or ([string]$version).Trim() -notmatch '^Python 3\.(10|11|12)\.') {
-    throw "Use Python 3.10-3.12 x64 (found: $version)."
-  }
-  & $PythonExe -m venv $venv
-  if ($LASTEXITCODE -ne 0) { throw "Failed to create isolated GPU virtual environment." }
+
+if (-not (Test-Path -LiteralPath $probe -PathType Leaf)) {
+    throw "Missing CUDA probe: $probe"
 }
-if (-not (Test-Path $py)) { throw "Isolated Python not found after setup: $py" }
-& $py -m pip install --upgrade pip
-if ($LASTEXITCODE -ne 0) { throw "pip upgrade failed." }
-& $py -m pip install numpy
-if ($LASTEXITCODE -ne 0) { throw "NumPy installation failed; environment remains isolated." }
-& $py -m pip install torch --index-url "https://download.pytorch.org/whl/$Cuda"
-if ($LASTEXITCODE -ne 0) { throw "PyTorch CUDA installation failed; environment remains isolated." }
-& $py -c 'import torch; assert torch.cuda.is_available(); print(torch.__version__,torch.version.cuda,torch.cuda.get_device_name(0))'
-if ($LASTEXITCODE -ne 0) { throw "PyTorch did not confirm a real CUDA GPU. No silent CPU fallback." }
+if (-not (Test-Path -LiteralPath $gpuScript -PathType Leaf)) {
+    throw "Missing original V17 GPU self-test: $gpuScript"
+}
+
+Write-Host "=== MAGIC PERSPECTIVE / ISOLATED CUDA REPAIR ===" -ForegroundColor Cyan
+Write-Host "Isolated dependency directory: $venv"
+Write-Host "Training data and checkpoints are outside .venv and will not be changed."
+
+$healthy = $false
+if ((Test-Path -LiteralPath $py -PathType Leaf) -and -not $ForceRepair) {
+    Write-Host "Checking EXISTING PyTorch installation (import + real CUDA computation)..." -ForegroundColor Cyan
+    try {
+        & $py $probe
+        if ($LASTEXITCODE -eq 0) { $healthy = $true }
+    } catch {
+        Write-Host "Existing PyTorch installation is unhealthy: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
+if (-not $healthy) {
+    Write-Host "Rebuilding incomplete isolated Python environment. Brain/checkpoints stay untouched." -ForegroundColor Yellow
+
+    # Locate and validate a clean base Python interpreter BEFORE removing anything.
+    $runner = $null
+    $runnerArgs = @()
+
+    if ($PythonExe) {
+        if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
+            throw "Python executable not found: $PythonExe"
+        }
+        $runner = $PythonExe
+    } else {
+        if (Get-Command py -ErrorAction SilentlyContinue) {
+            foreach ($minor in @("3.12","3.11","3.10")) {
+                try {
+                    $result = & py "-$minor" --version 2>&1
+                    if ($LASTEXITCODE -eq 0 -and ([string]$result).Trim() -match "^Python 3\.(10|11|12)\.") {
+                        $runner = (Get-Command py).Source
+                        $runnerArgs = @("-$minor")
+                        break
+                    }
+                } catch { }
+            }
+        }
+        if (-not $runner -and (Get-Command python -ErrorAction SilentlyContinue)) {
+            $runner = (Get-Command python).Source
+        }
+    }
+
+    if (-not $runner) {
+        throw "No Python 3.10-3.12 interpreter found. Install Python 3.12 x64."
+    }
+    $version = & $runner @runnerArgs --version 2>&1
+    if ($LASTEXITCODE -ne 0 -or ([string]$version).Trim() -notmatch "^Python 3\.(10|11|12)\.") {
+        throw "Need Python 3.10-3.12 x64. Selected interpreter: $runner; reported $version"
+    }
+    Write-Host "Base Python: $runner $($runnerArgs -join ' ') / $version"
+
+    # Only the repository's own .venv can be removed. Never delete a checkpoint.
+    $expected = [IO.Path]::GetFullPath((Join-Path $base ".venv"))
+    if ([IO.Path]::GetFullPath($venv) -ne $expected) {
+        throw "Refusing unexpected environment path: $venv"
+    }
+    if (Test-Path -LiteralPath $venv) {
+        $item = Get-Item -LiteralPath $venv -Force
+        if (-not $item.PSIsContainer) { throw "Expected a directory at $venv" }
+        if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Refusing to delete a linked virtual environment directory: $venv"
+        }
+        Write-Host "Removing ONLY the damaged .venv folder..." -ForegroundColor Yellow
+        Remove-Item -LiteralPath $venv -Recurse -Force -ErrorAction Stop
+    }
+
+    & $runner @runnerArgs -m venv $venv
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $py -PathType Leaf)) {
+        throw "Could not create the isolated virtual environment. Check permissions and disk space."
+    }
+    Write-Host "Installing NumPy and a fresh CUDA PyTorch wheel with cache disabled..." -ForegroundColor Cyan
+    & $py -m pip install --no-cache-dir --upgrade pip
+    if ($LASTEXITCODE -ne 0) { throw "pip upgrade failed in isolated environment" }
+
+    & $py -m pip install --no-cache-dir numpy
+    if ($LASTEXITCODE -ne 0) { throw "NumPy installation failed in isolated environment" }
+
+    & $py -m pip install --no-cache-dir --only-binary=:all: torch --index-url "https://download.pytorch.org/whl/$Cuda"
+    if ($LASTEXITCODE -ne 0) {
+        throw "PyTorch CUDA $Cuda installation failed. Check network, disk space and Python compatibility."
+    }
+
+    Write-Host "Running real CUDA import/tensor check..." -ForegroundColor Cyan
+    & $py $probe
+    if ($LASTEXITCODE -ne 0) {
+        throw "PyTorch installation finished but CUDA computation failed; see CUDA_PROBE_FAILED above."
+    }
+} else {
+    Write-Host "Existing PyTorch CUDA installation is healthy; no reinstall needed." -ForegroundColor Green
+}
+
+Write-Host "Running original V17 512-labyrinth GPU self-test..." -ForegroundColor Cyan
 & $py $gpuScript --selftest cuda:0
-if ($LASTEXITCODE -ne 0) { throw "The original V17 CUDA world self-test failed. Do not mark GPU ready." }
-Write-Host "CUDA READY: $py" -ForegroundColor Green
-Write-Host "Restart START_NOISE_SPACE.ps1 and enable CUDA in the dashboard."
+if ($LASTEXITCODE -ne 0) {
+    throw "Original V17 GPU self-test failed. CUDA readiness cannot be certified."
+}
+
+Write-Host "CUDA READY: complete PyTorch installation and V17 world physics validated." -ForegroundColor Green
+Write-Host "Start: D:\MagicPerspective-NoiseSpace-Isolated\START_NOISE_SPACE.ps1"
