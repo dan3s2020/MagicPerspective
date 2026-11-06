@@ -236,12 +236,25 @@ export class Brain {
     return {played: this.trans.played, seed, tasks: out};
   }
   // frozen test on exercises it never saw (V16's test seeds, sizes 7, 9, 11): a copy of what it discovered plays them
-  testMazes(count = 30) {
+  // A frozen *copy* of the learned policy can act on unseen worlds. It never
+  // learns during evaluation and never alters the original policy or its RNG.
+  frozenNoiseAgency() {
+    if (!this.noiseAgent) return null;
+    const N = Object.assign(Object.create(NoiseAgency.prototype), structuredClone(this.noiseAgent));
+    N.frozenChoices = {none: 0, perception: 0, imagination: 0, action: 0};
+    const choose = N.decide.bind(N);
+    N.decide = context => { const d = choose(context); N.frozenChoices[d.site]++; return d; };
+    return N;
+  }
+  testMazes(count = 30, {autonomousNoise = false} = {}) {
     if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}});
+    const frozenNoise = autonomousNoise ? this.frozenNoiseAgency() : null;
     const rows = []; for (let i = 0; i < count; i++) { const c = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); c.r = Object.assign(Object.create(RNG.prototype), c.r);
-      rows.push(playExercise(makeMaze(seedOf(SEEDS.test, i), [7, 9, 11][i % 3]), c)); }
+      rows.push(playExercise(makeMaze(seedOf(SEEDS.test, i), [7, 9, 11][i % 3]), c,
+        undefined, {noiseAgency: frozenNoise, noiseFeedback: false})); }
     const ok = rows.filter(r => r.solved), av = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
-    return this.mazes.test = {n: count, solved: av(rows.map(r => r.solved ? 1 : 0)), ratio: av(ok.map(r => r.steps / r.optimal)), shape: av(rows.map(r => r.first))};
+    return this.mazes.test = {n: count, solved: av(rows.map(r => r.solved ? 1 : 0)), ratio: av(ok.map(r => r.steps / r.optimal)), shape: av(rows.map(r => r.first)),
+      frozenNoiseChoices: frozenNoise?.frozenChoices || null};
   }
   // the transformation world (worlds/transform.mjs, worlds/causal.mjs): objects, switches, doors, desired configurations;
   // the same brain lives every intervention as symbols; the causal loop learns P(S'|S, do(a)) and imagines its way
@@ -260,13 +273,17 @@ export class Brain {
       return r;
     } finally { this.liveWorld = priorWorld; }
   }
-  testTransforms(count = 24) {                                                // new arrangements, desired configurations of kinds never encountered, and impossible ones
+  testTransforms(count = 24, {autonomousNoise = false} = {}) {                                                // new arrangements, desired configurations of kinds never encountered, and impossible ones
+    const frozenNoise = autonomousNoise ? this.frozenNoiseAgency() : null;
     this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], rows = [], imp = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = Object.assign(Object.create(RNG.prototype), c.r); return c; };
-    for (let i = 0; rows.length < count; i++) { const L = makeLevel(TSEEDS.test + i * 7919, {goals: kinds[i % 3]}); if (L) rows.push(liveTask(L, new TWorld(L, this.tMoves), copy())); }
-    for (let i = 0; imp.length < 8; i++) { const L = makeLevel(TSEEDS.test + 500000 + i * 7919, {goals: [["object"], ["self"]][i % 2], impossible: true}); if (L) imp.push(liveTask(L, new TWorld(L, this.tMoves), copy())); }
+    for (let i = 0; rows.length < count; i++) { const L = makeLevel(TSEEDS.test + i * 7919, {goals: kinds[i % 3]}); if (L) rows.push(liveTask(L, new TWorld(L, this.tMoves), copy(),
+      {noiseAgency: frozenNoise, noiseFeedback: false})); }
+    for (let i = 0; imp.length < 8; i++) { const L = makeLevel(TSEEDS.test + 500000 + i * 7919, {goals: [["object"], ["self"]][i % 2], impossible: true}); if (L) imp.push(liveTask(L, new TWorld(L, this.tMoves), copy(),
+      {noiseAgency: frozenNoise, noiseFeedback: false})); }
     const av = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null, ok = rows.filter(r => r.solved), pred = rows.reduce((s, r) => s + r.predicted, 0);
     return this.trans.test = {n: count, solved: av(rows.map(r => r.solved ? 1 : 0)), ratio: av(ok.map(r => r.steps / r.optimal)), failedRate: pred ? rows.reduce((s, r) => s + r.failed, 0) / pred : null,
-      impossible: imp.length, saidLimitation: imp.filter(r => r.said).length, knows: {self: this.causal.selfKinds.size, moves: this.causal.moves().length, rules: this.causal.rules.size}};
+      impossible: imp.length, saidLimitation: imp.filter(r => r.said).length,
+      frozenNoiseChoices: frozenNoise?.frozenChoices || null, knows: {self: this.causal.selfKinds.size, moves: this.causal.moves().length, rules: this.causal.rules.size}};
   }
   test(textBytes) {                                                          // frozen, on text it never lived
     const {e, chain} = this, H = textBytes; let c = 0, live = 0, masked = 0, bits = 0, N = 0, fld = 0, tog = 0, tbits = 0; const F = this.field.read(H, this.place);
