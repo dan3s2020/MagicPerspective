@@ -31,6 +31,20 @@ jobs:
           node --test v17/tests/observed-transformations-live.test.mjs
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/torus-all-worlds-live.test.mjs
+  real-firefox-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Firefox automation and browser binaries
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps firefox
+      - name: Click each real V17 observability tab in Firefox, start training, check live progress and nonblocking CUDA-eval error handling
+        run: node --test v17/tests/torus-observatory-browser.test.mjs
   windows-ps:
     runs-on: windows-latest
     timeout-minutes: 8
