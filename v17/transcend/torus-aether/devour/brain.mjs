@@ -210,9 +210,23 @@ export class Brain {
     while (lives.some(x => !x.done)) {
       const outs = levels.map((L, k) => { const x = lives[k]; if (x.done) return still;
         if (match(boards[k], L.goal) || x.steps.length >= x.lim) { x.done = true; return still; }
-        frozen.tries = x.tries; const c = frozen.choose(boards[k], L.n, L.goal); if (c.how === "limitation") { x.done = true; x.said = "limitation"; return still; }
+        frozen.tries = x.tries;
+        // Each real CUDA-physics transform step gets an independent choice from
+        // the SAME organism-owned policy, not a fixed human noise slider.
+        const portal = this.noiseAgent?.decide({domain:'transform',
+          known:frozen.findSelf(boards[k])>=0,
+          planned:frozen.moves().length>=4}) || null;
+        const sensed=portal?.site==='perception' ?
+          this.noiseAgent.perceive(boards[k],portal) : boards[k];
+        const c=frozen.choose(sensed,L.n,L.goal);
+        if(c.how==='limitation'){x.done=true;x.said='limitation';return still;}
+        if(portal && (portal.site==='action'||portal.site==='imagination')){
+          const alt=portal.site==='imagination'?frozen.moves():null;
+          const output=this.noiseAgent.output(c.o,8,portal,alt);
+          if(output!==c.o){c.o=output;c.how='noise';}
+        }
         x.tries[c.o]++;                                                    // each world keeps its own count of what it has tried
-        x.steps.push({b: boards[k], at: c.at, o: c.o}); return c.o; });
+        x.steps.push({b: boards[k], at: c.at, o: c.o,portal}); return c.o; });
       if (lives.every(x => x.done)) break;
       const acted = levels.map((L, k) => !lives[k].done);
       const r = await gpu.call({cmd: "t_step", outputs: outs}); busy += r.busy; vram = r.vramUsedGB ?? vram;
@@ -221,12 +235,20 @@ export class Brain {
     }
     for (let k = 0; k < levels.length; k++) { const L = levels[k], x = lives[k], live = y => this.live(TSYM[y], this.lived % 50 === 0);   // the same brain lives every world's experience
       for (const v of x.steps[0]?.b || []) live(v); for (const v of L.goal) live(v);
-      for (const s of x.steps) { if (!s.a) continue; this.causal.learn(s.b, s.a, L.n, this.causal.findSelf(s.b), s.o); this.observeShared({domain: 'transform', before: s.b, after: s.a, action: 'output:' + s.o, context: 'grid:' + L.n}); live(18 + s.o); for (let i = 0; i < s.a.length; i++) if (s.a[i] !== s.b[i]) live(s.a[i]); }
+      for (const s of x.steps) { if (!s.a) continue;
+        if(s.portal)this.noiseAgent.learn(s.portal,{before:s.b,after:s.a,
+          solved:match(s.a,L.goal)});
+        this.causal.learn(s.b, s.a, L.n, this.causal.findSelf(s.b), s.o);
+        this.observeShared({domain: 'transform', before: s.b, after: s.a, action: 'output:' + s.o, context: 'grid:' + L.n});
+        live(18 + s.o); for (let i = 0; i < s.a.length; i++) if (s.a[i] !== s.b[i]) live(s.a[i]); }
       const solved = match(boards[k], L.goal); T.played++; T.won += solved;
       if (k === levels.length - 1) T.last = {solved, steps: x.steps.length, optimal: L.optimal, said: x.said, n: L.n, terr: L.terr, goal: L.goal, goals: L.goals, i: T.index - 1,
-        frames: [...x.steps.map(s => ({b: s.b})), {b: boards[k]}]};
+        frames: [...x.steps.map(s => ({b: s.b, how: s.portal?.site || 'original',
+          noiseStrength: s.portal?.strength ?? 0})), {b: boards[k]}]};
       if (k % 16 === 15) await tick("transformări: trăite de creier", k + 1, N); }
-    T.gpu = {batch: N, busy, vramUsedGB: vram}; return T.gpu;
+    T.gpu = {batch: N, busy, vramUsedGB: vram,
+      organismNoise: this.noiseAgent ? {choices: this.noiseAgent.total,
+        sites: {...this.noiseAgent.bySite}} : null}; return T.gpu;
   }
   // the exam to watch: after training, a frozen copy of what it discovered plays unseen labyrinths from small to large;
   // every exercise is recorded with the whole trajectory it predicted BEFORE its first move (shapes[0]) and as it went
