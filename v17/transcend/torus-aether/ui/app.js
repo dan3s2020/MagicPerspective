@@ -373,10 +373,10 @@ function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
   $("steps").textContent = t.toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
-  $("edges").textContent = LIVE && liveSnap ? edges.size.toLocaleString() + " afișate / " + (liveSnap.edges?.length || 0).toLocaleString() + " raportate" : edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; const mapOnly = LIVE && Array.isArray(liveSnap?.worlds) && liveSnap.worlds.length === 1 && liveSnap.worlds[0] === "maptext";
+  $("edges").textContent = LIVE && liveSnap ? edges.size.toLocaleString() + " afișate / " + (liveSnap.edges?.length || 0).toLocaleString() + " raportate" : edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; const mapOnly = LIVE && Array.isArray(liveSnap?.worlds) && liveSnap.worlds.length > 0 && liveSnap.worlds.every(x => x === "maptext" || x === "cognitivemap");
   if (mapOnly) {
     $("accC").textContent = "N/A"; $("accF").textContent = "N/A"; $("accAl").textContent = "N/A";
-    $("selfModel").textContent = "Acest graf primește predominant mișcări binare, nu răspunsuri în limbaj. Scorurile de caractere și încredere nu indică învățarea navigării. Traseul curent este calculat de un algoritm prestabilit.";
+    $("selfModel").textContent = "Acest graf învață sau navighează hărți, nu caractere dintr-un corpus-LLM. Scorurile C de caractere nu demonstrează învățarea transformărilor. Verifică separately regulile deduse, efectele observate și evaluarea pe ținte noi.";
   } else if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
       `<br>cum citește acum: urmează alinierile de încredere cu ascuțimea <b>${M.g}</b>, forma cântărește <b>${M.form}</b>` +
@@ -426,6 +426,9 @@ for (const id of ["speed", "wtemp", "ttemp", "ltemp", "pnoise", "gnoise", "glr",
 $("run").onclick = () => { running = !running; $("run").textContent = running ? "Pauză" : "Start"; };
 $("reset").onclick = () => reset();
 $("eval").onclick = () => { if (!LIVE) return evaluate();                   // live: unseen exercises drawn at random, at the test temperature, in the Evaluare tab
+  if(liveSnap?.worlds?.includes("cognitivemap") && !liveSnap?.worlds?.includes("text")){
+    $("cognitiveBox").scrollIntoView({behavior:"smooth",block:"start"});return;
+  }
   $("tabEval").click(); $("evKind").value = liveSnap?.worlds?.length === 1 && liveSnap.worlds[0] === "maptext" ? "maptext" : "text"; $("evKind").onchange(); $("evT").value = val("ttemp"); $("evTOut").textContent = val("ttemp"); $("evGo").click(); };
 $("write").onclick = () => write();
 $("wtemp").addEventListener("change", () => { if (t) write(); });
@@ -533,6 +536,22 @@ async function pullSelectedGraph() {
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
     applySnap(gs);
+    const L = gs.cognitive, lbox = $("cognitiveBox");
+    if(lbox){
+      lbox.hidden = !L;
+      if(L){
+        const graphRules=gs.nodes.filter(x=>String(x[0]).startsWith("cognitive:rule:")).length;
+        $("cognitiveStats").textContent =
+          "Documente absorbite: " + L.documents +
+          "\nPropoziții observate: " + L.observedSentences +
+          "\nTransformări deduse: " + L.inducedActionRules +
+          "\nAcțiuni verificate în lume: " + L.realObservedActions +
+          "\nTransformări confirmate: " + L.confirmedActions +
+          "\nEșecuri confirmate: " + L.rejectedActions +
+          "\nNoduri-regulă vizibile: " + graphRules +
+          "\nIMPORTANT: un contrast între propoziții este o ipoteză, nu un zid sau o acțiune demonstrată.";
+      }
+    }
     const M = gs.wholeMap, mbox = $("wholeMapBox");
     if (mbox) {
       mbox.hidden = !M;
@@ -624,8 +643,38 @@ $("gpuApply").onclick = async () => {
   } catch (err) { alert("Nu pot aplica setările GPU: " + err.message); }
   livePull();
 };
+$("cognitiveEvaluate").onclick = async () => {
+  const output=$("cognitiveResult"),button=$("cognitiveEvaluate");
+  let slots;
+  try{
+    slots=JSON.parse($("cognitiveGoal").value);
+    if(!slots||typeof slots!=="object"||Array.isArray(slots)||!Object.keys(slots).length)throw Error("Goal slots must be a nonempty JSON object");
+  }catch(err){output.textContent="Condiții invalide: "+err.message;return;}
+  button.disabled=true;output.textContent="Evaluare înghețată: construiesc forma înainte de orice acțiune...";
+  try{
+    const response=await fetch("/cognitive-eval",{method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({w:liveW,initial:$("cognitiveInitial").value,
+        goal:{slots},maxNodes:384,maxDepth:8})});
+    const result=await response.json();
+    if(result.error){output.textContent="EROARE: "+result.error;return;}
+    output.textContent="ORGANISM: "+(result.found?"CALE CANDIDATĂ DESCOPERITĂ":"NU A GĂSIT O CALE")+
+      "\nReguli deduse: "+result.rules+
+      " | Propoziții observate: "+result.observedSentences+
+      " | Stări generate de reguli: "+result.generatedStates+
+      " | Țintă nouă: "+result.novelGoal+
+      "\nLegea de propagare: "+result.law+
+      "\nStarea inițială: "+result.start+
+      "\nTRASEUL INTERN (niciun pas executat încă):\n"+
+      (result.plannedPath||[]).map((p,i)=>(i+1)+". "+p.action+" → "+p.after).join("\n")+
+      "\nSuccessor Representation: "+JSON.stringify(result.successor||[])+
+      "\nATENȚIE: traseul este prezis din transformări deduse, nu verificat de un evaluator semantic extern."+
+      (result.truncated?"\nHARTA LIMITATĂ: rezultatul poate fi incomplet.":"");
+  }catch(err){output.textContent="EROARE: "+err.message;}
+  finally{button.disabled=false;}
+};
 let gpuShown = false;
-$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext"].filter(Boolean); if (!worlds.length) return;
+$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext", $("addCognitive").checked && "cognitivemap"].filter(Boolean); if (!worlds.length) return;
   try {
     const response = await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${encodeURIComponent(worlds.join(","))}`, {method: "POST"});
     const result = await response.json();
