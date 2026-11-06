@@ -2,7 +2,7 @@
 // Not a grammar oracle: operators arise ONLY from pairs of observed sentences
 // that differ in exactly one position. No held-out target sentence enters inference.
 // Reuses the original brain via V17 worker; never changes V17's trained weights.
-const MAX_EXAMPLES=6000, MAX_OPS=10000, MAX_TOKENS=9, MAX_BUCKET=10;
+const MAX_EXAMPLES=6000, MAX_OPS=10000, MAX_TOKENS=9, MAX_BUCKET=10, MAX_SIGNATURES=18000;
 export const gearTokens = s => (String(s).normalize('NFKC').match(/[\p{L}\p{M}\p{N}]+(?:['’][\p{L}]+)?/gu)||[]);
 const clean = s => gearTokens(s).join(' ');
 const key = a => JSON.stringify(a);
@@ -21,20 +21,21 @@ export class NestedTextGears {
   constructor(){this.examples=[];this.signatures=new Map();this.operators=new Map();this.sentences=new Set();this.observed=0;this.lastRoute=null;}
   _op(n,i,before,after,context){
     const k=key([n,i,before,after]);let op=this.operators.get(k);
-    if(!op){if(this.operators.size>=MAX_OPS)return;op={id:k,length:n,slot:i,before,after,support:0,contexts:[]};this.operators.set(k,op);}
+    if(!op){if(this.operators.size>=MAX_OPS)this.operators.delete(this.operators.keys().next().value);op={id:k,length:n,slot:i,before,after,support:0,contexts:[]};this.operators.set(k,op);}
     if(!op.contexts.includes(context)){
       op.support++;if(op.contexts.length<8)op.contexts.push(context);
     }
   }
   observeSentence(sentence,onEvidence=null){
     const a=gearTokens(sentence),n=a.length;
-    if(n<2||n>MAX_TOKENS||this.examples.length>=MAX_EXAMPLES)return false;
+    if(n<2||n>MAX_TOKENS)return false;
     const full=key(a);if(this.sentences.has(full))return false;
+    if(this.examples.length>=MAX_EXAMPLES){const gone=this.examples.shift();this.sentences.delete(key(gone));}
     this.sentences.add(full);
     for(let i=0;i<n;i++){
       const mask=key([n,i,...a.filter((_,j)=>j!==i)]);
       let seen=this.signatures.get(mask);
-      if(!seen){seen=[];this.signatures.set(mask,seen);}
+      if(!seen){seen=[];if(this.signatures.size>=MAX_SIGNATURES)this.signatures.delete(this.signatures.keys().next().value);this.signatures.set(mask,seen);}
       for(const old of seen){if(old[i]===a[i])continue;
         this._op(n,i,old[i],a[i],mask);this._op(n,i,a[i],old[i],mask);
         onEvidence?.({before:old.join(' '),after:a.join(' '),slot:i,from:old[i],to:a[i]});
@@ -49,7 +50,23 @@ export class NestedTextGears {
     if(typeof answer!=='string')return 0;
     let learned=0;
     for(const sentence of answer.split(/(?:[.!?]+|\n+)/u).slice(0,Math.min(32,Math.max(1,limit)))){
-      if(this.observeSentence(sentence.trim(),onEvidence)) learned++;
+      const tokens=gearTokens(sentence);
+      if(tokens.length>=2 && tokens.length<=MAX_TOKENS){
+        if(this.observeSentence(sentence.trim(),onEvidence))learned++;
+      } else if(tokens.length>MAX_TOKENS){
+        // Bounded observed n-gram windows from long real training answers.
+        // No target or grammar is injected; each window occurred in the input.
+        let consumed=0;
+        for(const n of [3,5,7,9]){
+          if(consumed>=12)break;
+          const end=tokens.length-n;
+          const offsets=[0,Math.floor(end/3),Math.floor(2*end/3),end];
+          for(const j of new Set(offsets)){
+            if(consumed++>=12)break;
+            if(this.observeSentence(tokens.slice(j,j+n).join(' '),onEvidence))learned++;
+          }
+        }
+      }
     }
     return learned;
   }
@@ -109,6 +126,23 @@ export class NestedTextGears {
     return {...global,output,cursor,verified:true};
   }
   summary(){return {observedSentences:this.observed,learnedOperators:this.operators.size,templateLengths:[...new Set(this.examples.map(x=>x.length))].sort((a,b)=>a-b),lastRoute:this.lastRoute};}
-  export(){return {version:1,examples:this.examples.map(x=>x.join(' '))};}
-  static restore(s){if(s?.version!==1||!Array.isArray(s.examples)||s.examples.length>MAX_EXAMPLES)throw Error('Invalid nested gear state');const g=new NestedTextGears();for(const e of s.examples){if(typeof e!=='string')throw Error('Invalid example');g.observeSentence(e);}return g;}
+  export(){return {version:2,examples:this.examples.map(x=>x.join(' ')),observed:this.observed,
+    operators:[...this.operators.values()]};}
+  static restore(s){
+    if(![1,2].includes(s?.version)||!Array.isArray(s.examples)||s.examples.length>MAX_EXAMPLES)throw Error('Invalid nested gear state');
+    const g=new NestedTextGears();
+    for(const e of s.examples){if(typeof e!=='string')throw Error('Invalid example');g.observeSentence(e);}
+    if(s.version===2){
+      if(!Array.isArray(s.operators)||s.operators.length>MAX_OPS)throw Error('Invalid operator checkpoint');
+      const ops=new Map();
+      for(const o of s.operators){
+        if(!o||typeof o.id!=='string'||!Number.isInteger(o.slot)||!Number.isInteger(o.length)||
+           typeof o.before!=='string'||typeof o.after!=='string'||!Number.isFinite(o.support)||o.support<0)
+          throw Error('Invalid observed operator');
+        ops.set(o.id,o);
+      }
+      g.operators=ops;g.observed=Math.max(g.observed,Number(s.observed)||0);
+    }
+    return g;
+  }
 }
