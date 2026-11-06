@@ -436,7 +436,7 @@ let liveW = +(initialLiveParams.get("w") || 0), liveSnap = null;
 let liveSelectionLocked = initialLiveParams.has("w");
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
-  for (const [id, type, label, act, born, err] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); if (err) n.err = performance.now(); keep.add(id); }
+  for (const [id, type, label, act, born, err] of gs.nodes) { const n = node(id, type, label); if (gs.wholeMap && id.startsWith("whole:text:")) n.type = type; n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); if (err) n.err = performance.now(); keep.add(id); }
   for (const id of [...nodes.keys()]) if (!keep.has(id)) nodes.delete(id);
   edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (gs.wholeMap ? ">" + kind : (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : "")), {a: a2, b: b2, kind, w, label, hot: 1}]));
   if (typeof gs.text === "string" && (gs.text !== (liveSnap?.text || "") || !data.length)) { data = Array.from(gs.text, c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
