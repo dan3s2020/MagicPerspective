@@ -207,7 +207,7 @@ export class CausalTextAgent {
     }
     return examples;
   }
-  train(prompt,answer,pathHead,{maxActions=48,exploration=.25,seed=101,emit=null}={}){
+  train(prompt,answer,pathHead,{maxActions=48,exploration=.25,seed=101,emit=null,skipLatentUpdate=false}={}){
     if(typeof prompt!=='string'||typeof answer!=='string'||!prompt.trim()||!answer.trim())return {trained:false,reason:'empty question/answer'};
     // The language world's action laws stay fixed for this brain. The episode seed affects only exploration.
     const world=new LanguageWorld({prompt,reference:answer,seed:this.seed}),r=rng((seed^this.seed^this.episodes)>>>0),events=[];
@@ -227,7 +227,7 @@ export class CausalTextAgent {
       emit?.(event);best=Math.max(best,out.feedback?.after||0);
       if(out.feedback?.solved)break;
     }
-    this.learnGoalLength(prompt,answer);this.latent.fit(prompt,answer);
+    this.learnGoalLength(prompt,answer);if(!skipLatentUpdate)this.latent.fit(prompt,answer);
     this.episodes++;const result={trained:true,seed,steps:events.length,solved:world.reward()===1,
       final:text(world.tokens),reward:world.reward(),bestReward:best,events};
     result.goalLatent=this.latent.goal(prompt);
