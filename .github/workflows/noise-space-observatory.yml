@@ -22,6 +22,8 @@ jobs:
           node --check isolated/noise-space/interpret.mjs
           node --check isolated/noise-space/gpu_runner.mjs
           node --check isolated/noise-space/text_schedule.mjs
+      - name: Compile CUDA environment probe (does not require NVIDIA GPU)
+        run: python -m py_compile isolated/noise-space/CHECK_CUDA_ENV.py
       - name: Install NumPy for CPU verification of the original GPU protocol
         run: python -m pip install --quiet numpy
       - name: Synthetic regression and true V17 integration acceptance
@@ -41,3 +43,8 @@ jobs:
             if ($errors.Count -gt 0) { throw "PowerShell parse failed: $p" }
           }
           Write-Host 'POWERSHELL_PARSE_OK'
+      - name: Compile Python CUDA probe on Windows without loading Torch
+        shell: powershell
+        run: |
+          python -m py_compile isolated/noise-space/CHECK_CUDA_ENV.py
+          if ($LASTEXITCODE -ne 0) { throw "CUDA probe Python syntax failed" }
