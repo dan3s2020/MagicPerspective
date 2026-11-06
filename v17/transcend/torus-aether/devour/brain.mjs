@@ -226,14 +226,20 @@ export class Brain {
   }
   // A frozen evaluation sees only GOAL CONSTRAINTS (tokens that must occur)
   // and an optional observed start; NEVER the complete correct answer.
-  planObservedTransformation(goal,{execute=true}={}) {
+  planObservedTransformation(goal,{execute=true,trace=false,embodied=false,localPolicy=true}={}) {
     const M=this.observedTransformations ||= new ObservedTransformations();
     const before=M.report();
-    const route=M.plan(goal);
+    const route=M.plan({...goal,recordSearch:trace,maxRecordedStates:240});
+    // GOLD line computed before the local cursor moves. Body sees only the
+    // learned action model + goal constraints; its own noise agency runs on a
+    // FROZEN independent copy to protect ongoing CUDA training.
+    const body=embodied&&route.found?M.embody(route,{
+      noiseAgent:this.noiseAgent,localPolicy,maxSteps:40}):null;
     const execution=execute&&route.found?M.execute(route,{record:false}):null;
     if(JSON.stringify(M.report())!==JSON.stringify(before))
       throw Error("Frozen transformation evaluation unexpectedly modified learned brain");
-    return {...route,execution,training:before,frozen:true,
+    return {...route,execution,body,training:before,frozen:true,
+      goalProvidedAsTokens:true,referenceProvided:false,
       verifiedByObservedEffect:!!execution?.verified};
   }
   // The same saved organism moves from one overhead view to local body vision.
