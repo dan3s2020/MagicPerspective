@@ -175,3 +175,17 @@ class SharedPerspective:
         self.seen = int(payload['seen'])
         self.counts = dict(payload['counts'])
         return {'loaded': True, 'steps': self.steps, 'seen': self.seen}
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) != 3 or sys.argv[1] != '--selftest':
+        raise SystemExit('Usage: python shared_perspective.py --selftest cpu|cuda:0')
+    requested = sys.argv[2]
+    model = SharedPerspective(requested, seed=23)
+    row = {'domain': 'maze', 'before': [1, 2, 3, 4], 'after': [1, 3, 2, 4], 'action': 'output:2', 'context': 'grid:2'}
+    result = model.train([row])
+    if requested.startswith('cuda'):
+        torch.cuda.synchronize(model.device)
+        assert str(next(model.model.parameters()).device).startswith('cuda')
+    assert result['step'] == 1 and result['device'] == str(model.device)
+    print(json.dumps({'selftest': 'PASS', 'requested': requested, 'computed': result['device'], 'loss': result['trainingObjective']}))
