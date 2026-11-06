@@ -38,7 +38,7 @@ test("opt-in route navigator samples only supported characters and is determinis
   assert.deepEqual(x, y);
   assert.equal(x.bytes.length, 230); assert.equal(x.route.generated, 230);
   assert.equal(graph.mem.n, n); assert.equal(graph.trust.size, trust);
-  assert.equal(graph.imagining, false);
+  assert.equal(graph.imagining, undefined, "the navigator restores the original uninitialized imagination state");
   assert.ok(x.route.path.every(p => p.candidates >= 1 && p.sources.length >= 1));
   assert.ok(x.route.path.every(p => typeof p.state === "string" && typeof p.character === "string"));
 });
