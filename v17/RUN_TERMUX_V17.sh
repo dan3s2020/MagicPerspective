@@ -31,7 +31,7 @@ Options:
   --trace            Record opt-in actual training transitions
   --help             Print usage
 
-GPU shared PyTorch head and CUDA audit are not run by this CPU launcher.
+NO CUDA on Android: GPU shared PyTorch head and CUDA audit are not run by this CPU launcher.
 To use native V17 from a browser on the same phone:
   http://127.0.0.1:8866/transcend/torus-aether/ui/index.html?live=1
 Stop using Ctrl+C: native V17 saves its brain as it stops.
