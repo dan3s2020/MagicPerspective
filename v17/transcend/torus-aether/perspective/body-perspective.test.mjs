@@ -25,6 +25,8 @@ function experienced(seed=11){
 test('the native body-memory updates ONLY from observed transitions and survives serialization',()=>{
  const {memory,D}=experienced();
  assert.equal(memory.summary().known,4);
+ assert.ok(memory.summary().localizer.samples>0,'Global/local evidence must train on real before/after observation pairs');
+ assert.equal(memory.export().version,2);
  assert.deepEqual(memory.effect(D.world.moves[0]),ACTIONS[0]);
  assert.equal(memory.observe({domain:'text'},3),false);
  const restored=BodyPerspectiveMemory.restore(JSON.parse(JSON.stringify(memory.export())));
@@ -64,6 +66,8 @@ test('honest matched-original baseline versus body navigation on frozen unseen w
  assert.equal(r.cases.length,n*per);
  assert.equal(r.summary.native.count,n*per);
  assert.equal(r.summary.body.count,n*per);
+ assert.equal(r.summary.fixedLocalizer.count,n*per);
+ assert.ok(r.cases.every(x=>x.fixedLocalizer&&typeof x.fixedLocalizer.steps==='number'));
  assert.equal(r.summary.totalGlobalReads,n*per);
  assert.ok(r.summary.totalLocalReads>=0);
  assert.equal(JSON.stringify(memory.export()),snapshot,'evaluation does not train or overwrite motor memory');
