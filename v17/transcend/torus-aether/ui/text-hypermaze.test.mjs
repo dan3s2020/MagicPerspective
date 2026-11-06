@@ -9,7 +9,7 @@ import {observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDive
 const here=path.dirname(fileURLToPath(import.meta.url));
 const html=fs.readFileSync(path.join(here,"index.html"),"utf8");
 const source=fs.readFileSync(path.join(here,"text-hypermaze.js"),"utf8")
- .replace(/^import \{observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence\} from "\.\/hypermaze-geometry\.mjs";\n/,"");
+ .replace(/^import \{observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence\} from "\.\/hypermaze-geometry\.mjs";\n/m,"");
 
 function graphic(){
  const calls=[];
