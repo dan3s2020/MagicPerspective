@@ -22,7 +22,7 @@ export class TextPathObserver {
     const T = this.temperature;
     let normalizer = 0;
     const weighted = candidates.map(([c,w]) => {
-      const weight = T === 0 ? (w === peak ? 1 : 0) : Math.pow(w / peak, 1 / T);
+      const weight = T === 0 ? (c === selected ? 1 : 0) : Math.pow(w / peak, 1 / T);
       normalizer += weight;
       return {byte:c, weight, raw:w};
     });
