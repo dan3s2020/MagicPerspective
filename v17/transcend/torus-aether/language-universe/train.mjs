@@ -12,6 +12,7 @@ const argv=process.argv.slice(2), option=(name,def)=>{const i=argv.indexOf('--'+
 const flag=name=>argv.includes('--'+name);
 const positive=(name,def)=>{const x=Number(option(name,def));if(!Number.isFinite(x)||x<0)throw Error('--'+name+' must be a non-negative number');return Math.floor(x);};
 const opts={text:path.resolve(option('text',path.resolve('docs','TORUS_AETHER_ABC_20261104.md'))),
+ parquet:option('parquet',null),examples:positive('examples',2000),
  out:path.resolve(option('out',path.join(os.homedir(),'magic-language-universe'))),
  chars:positive('chars',12000),eval:positive('eval',1800),mazeEvery:positive('maze-every',5000),
  transformEvery:positive('transform-every',0),resume:flag('resume'),seed:positive('seed',11),
@@ -22,13 +23,26 @@ const atomic=(p,s)=>{const t=p+'.tmp';fs.writeFileSync(t,s);fs.renameSync(t,p);}
 const digest=s=>crypto.createHash('sha256').update(s).digest('hex');
 const asUnits=raw=>{const pieces=raw.split(/\n\s*\n/u).filter(s=>s.trim().length);
   const units=[];for(const s of pieces)for(let i=0;i<s.length;i+=1024)units.push(s.slice(i,i+1024)+'\n');return units;};
-function acquire() {
+async function acquire() {
+  if(opts.parquet){
+    const root=path.resolve(opts.parquet),{openTextDataset}=await import('../data/text-dataset.mjs');
+    const ds=await openTextDataset(root),n=Math.min(opts.examples,ds.trainRows);
+    if(n<1||ds.held<1)throw Error('Parquet dataset needs training and held-out examples');
+    const identity=ds.files.map(f=>{const st=fs.statSync(f.path);return [f.path,f.rows,st.size,st.mtimeMs];});
+    const held=[];for(let i=0;i<Math.min(4,ds.held);i++){
+      const e=await ds.heldOut(i);held.push('Q: '+e.prompt+'\nA: '+e.answer+'\n\n');
+    }
+    return {hash:digest(JSON.stringify(identity)),source:root,bytes:null,trainUnits:n,
+      getUnit:async i=>{const e=await ds.exercise(i);return 'Q: '+e.prompt+'\nA: '+e.answer+'\n\n';},held:held.join('\n')};
+  }
   if(!fs.existsSync(opts.text)||!fs.statSync(opts.text).isFile())throw Error('Text file missing: '+opts.text);
   const text=fs.readFileSync(opts.text,'utf8'),units=asUnits(text);
   if(units.length<2)throw Error('Need at least 2 text chunks (input too short for a held-out test)');
   let cut=Math.max(1,Math.floor(units.length*.85));cut=Math.min(cut,units.length-1);
-  return {hash:digest(text),train:units.slice(0,cut),held:units.slice(cut).join('\n'),bytes:Buffer.byteLength(text),totalUnits:units.length};
+  return {hash:digest(text),source:opts.text,trainUnits:cut,getUnit:async i=>units[i],
+    held:units.slice(cut).join('\n'),bytes:Buffer.byteLength(text),totalUnits:units.length};
 }
+
 const rules={depth:1,off:['R2','R4'],budEvery:100,empty:true,maxWires:32,fold:false};
 const C={margin:.05,window:400,many:12};
 function attachLanguageView(brain,language) {
@@ -39,7 +53,7 @@ function attachLanguageView(brain,language) {
     brain.trace.setEdge('lang:world',id,'observed',1+2*(t.accuracy||0),'accuracy='+(t.accuracy?.toFixed(3)??'unknown'));}
 }
 async function run() {
-  const input=acquire();fs.mkdirSync(opts.out,{recursive:true});const pointer=path.join(opts.out,'latest.json');
+  const input=await acquire();fs.mkdirSync(opts.out,{recursive:true});const pointer=path.join(opts.out,'latest.json');
   let brain,lang,progress={cursor:0,chars:0,maze:0,transform:0,replaced:0};
   if(opts.resume){
     if(!fs.existsSync(pointer))throw Error('No checkpoint found: '+pointer);
@@ -53,8 +67,8 @@ async function run() {
   }
   let changed=0;
   const started=Date.now();
-  while(progress.cursor<input.train.length && changed<opts.chars){
-    const u=input.train[progress.cursor],bytes=asciify(u);
+  while(progress.cursor<input.trainUnits && changed<opts.chars){
+    const u=await input.getUnit(progress.cursor),bytes=asciify(u);
     brain.beginExercise();for(const y of bytes.out)brain.live(y);
     // Same real lived text is also perceived as word/phrase/sentence scales.
     lang.observe(u);brain.chars=(brain.chars||0)+bytes.out.length;
@@ -69,7 +83,7 @@ async function run() {
     }
     if(progress.cursor%8===0){
       const st=lang.report(),ms=Math.max(1,Date.now()-started);
-      console.log(JSON.stringify({event:'TRAINING',unit:progress.cursor,of:input.train.length,chars:progress.chars,
+      console.log(JSON.stringify({event:'TRAINING',unit:progress.cursor,of:input.trainUnits,chars:progress.chars,
         charsPerSecond:+(changed/(ms/1000)).toFixed(1),perspectiveStates:st.states,laneTrust:st.trust.map(t=>({n:t.scale,accuracy:t.accuracy}))}));
     }
   }
@@ -86,9 +100,9 @@ async function run() {
   attachLanguageView(brain,lang);
   const name='checkpoint-'+String(progress.cursor).padStart(7,'0'),br=name+'.v8',pe=name+'.json';
   const brainBytes=brain.save(path.join(opts.out,br));atomic(path.join(opts.out,pe),JSON.stringify(lang.serialize()));
-  const meta={version:1,hash:input.hash,source:opts.text,brain:br,perspectives:pe,progress,savedAt:new Date().toISOString()};
+  const meta={version:1,hash:input.hash,source:input.source,brain:br,perspectives:pe,progress,savedAt:new Date().toISOString()};
   atomic(pointer,JSON.stringify(meta,null,2));
-  const report={event:'DONE',source:opts.text,sourceBytes:input.bytes,trainUnits:input.train.length,
+  const report={event:'DONE',source:input.source,sourceBytes:input.bytes,trainUnits:input.trainUnits,
     processedUnits:progress.cursor,charactersLivedInOriginalBrain:progress.chars,nonAsciiMappedToQuestionMark:progress.replaced,
     mazeEpisodesShared:progress.maze,causalEpisodesShared:progress.transform,
     frozenHeldout:{originalBrain:original,multiScale:langFlat,fieldGuided:langField},
