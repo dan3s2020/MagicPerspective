@@ -1,0 +1,21 @@
+name: V17 experimental scale-consistent xD geometry learning
+on:
+  push:
+    branches:
+      - experiment/V17-XD-SCALE-INVARIANT-TRANSFORMS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  xd-normalized:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Actual native geometric gate saturation, controlled normalized alternative
+        run: node --test v17/tests/xd-scale-normalization.test.mjs
+      - name: Verify prior 2D→1024D reducibility and exact coordinate-gauge invariance remains true
+        run: node --test v17/tests/xd-gauge-collapse.test.mjs
