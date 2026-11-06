@@ -107,6 +107,13 @@ export class NativeSelfCodeWorld {
     const old=seen.get(target.id)?.n||0;
     const p=typeof this.brain.predict==='function'?this.brain.predict():null;
     const inspected=this.world.perceive(target.id);
+    // One actual observed code-state transition enters the existing V17 shared
+    // PyTorch queue too (when enabled). No source-edit oracle/held-out answer.
+    if(typeof this.brain.observeShared==='function'){
+      const before=this.world.atlas.inspect(from.id).code.slice(0,320);
+      this.brain.observeShared({domain:'selfcode',before,after:inspected.code.slice(0,320),
+        action:action==='portal'?'portal-jump':'source-walk',context:from.name+'->'+target.name});
+    }
     const first=(inspected.code||' ')[0].charCodeAt(0);
     const prob=Array.isArray(p)||ArrayBuffer.isView(p)?finite(p[first],0):0;
     const surprise=clip(-Math.log(Math.max(1/100000,prob))/Math.log(128),0,1);
