@@ -10,6 +10,7 @@ import {IsolatedGpuRunner} from './gpu_runner.mjs';
 import {openTextDataset} from '../../v17/transcend/torus-aether/data/text-dataset.mjs';
 import {nextTrainingSlice,rotatingHeldout,byteEvidence} from './text_schedule.mjs';
 import {TextActionPaths,matchScore} from './text_action_paths.mjs';
+import {CausalTextAgent} from './causal_text_world.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 // Isolate parallel regression runs; default user's existing checkpoint path is unchanged.
@@ -19,9 +20,10 @@ const dir=path.join(here,'runs',session);
 fs.mkdirSync(dir,{recursive:true});
 const checkpoint=path.join(dir,'brain.v8'),geoFile=path.join(dir,'geometry.json'),obsFile=path.join(dir,'observatory.json');
 const pathFile=path.join(dir,'text_action_paths.json');
+const causalFile=path.join(dir,'causal_text_world.json');
 const docs=path.resolve(here,'../../v17/docs/TORUS_AETHER_ABC_20261104.md');
 const modesAllowed=['text','maze','transform'];
-let brain=null,geo=null,pathHead=null,run=false,paused=false,remaining=0,modes=modesAllowed.slice();
+let brain=null,geo=null,pathHead=null,causalAgent=null,causalTraining=true,run=false,paused=false,remaining=0,modes=modesAllowed.slice();
 let episode=0,idx=0,cursor=0,sourceText='',userText=false,seenTexts=0;
 let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=null,evaluation={};
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
@@ -40,6 +42,7 @@ function ensureBrain(resume=true){
  if(resume&&fs.existsSync(geoFile)){geo=GeometricLearningLab.restore(JSON.parse(fs.readFileSync(geoFile,'utf8')));}
  else geo=new GeometricLearningLab(brain.seed||11);
  pathHead=resume&&fs.existsSync(pathFile)?TextActionPaths.restore(JSON.parse(fs.readFileSync(pathFile,'utf8'))):new TextActionPaths();
+ causalAgent=resume&&fs.existsSync(causalFile)?CausalTextAgent.restore(JSON.parse(fs.readFileSync(causalFile,'utf8'))):new CausalTextAgent({seed:11});
  if(resume&&fs.existsSync(obsFile)){
   const m=JSON.parse(fs.readFileSync(obsFile,'utf8'));
   if(m.version!==2&&fs.existsSync(checkpoint))backupLegacy=true;
@@ -87,6 +90,8 @@ function state(withTrace=true){
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
   last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
   textPaths:pathHead?.summary()||null,navigationQuery,
+   causalMode:{enabled:causalTraining,world:'training Q/A intervention environment',actionValueDevice:'CPU/JavaScript',v17BrainReceivesActions:true},
+   causalText:causalAgent?.summary()||null,causalCheckpoint:path.relative(here,causalFile),
   lastSave,error,lastDurationMs,checkpoint:path.relative(here,checkpoint),
   trace:withTrace&&brain?copyTrace():null,
   crossWorld:{status:'UNVERIFIED',why:'Training the same Brain in several worlds does not by itself prove that their observations share a single hidden trajectory. Pair identifiers or independent transfer tests are needed.'}};
@@ -103,6 +108,7 @@ function save(){
  const bytes=brain.save(checkpoint);
  writeJSON(geoFile,geo.export());
  writeJSON(pathFile,pathHead.export());
+ writeJSON(causalFile,causalAgent.export());
  lastSave={at:new Date().toISOString(),bytes};
  writeJSON(obsFile,{version:2,episode,idx,cursor,sourceText,userText,seenTexts,history,evaluation,last,lastSave,
   sourceRoot,datasetIndex,datasetTestIndex,corpusCycles,heldWindowIndex,sourceSamples,gpuWorldsProcessed});
@@ -112,6 +118,17 @@ function geoSample(world,x,y,prev,action,heldout){
  if(!geo)return;
  try{geo.consume({world,x,y,prev,action,heldout});}
  catch(e){error='Geometry sample rejected ('+world+'): '+e.message;}
+}
+// Training-only experience stream to the original, shared V17 Brain graph.
+function liveCausalExperience(events){
+ const samples=events.slice(0,6);if(!samples.length)return;
+ brain.beginExercise();
+ for(const e of samples){
+  const before=e.before.join(' ').slice(-56),after=e.after.join(' ').slice(-56);
+  const reward=Math.round(100*(e.feedback?.delta||0));
+  const line='ACTION '+e.action.tool+' '+e.action.token+' BEFORE '+before+' AFTER '+after+' REWARD '+reward+'\n';
+  for(const ch of line.slice(0,135))brain.live(ch.charCodeAt(0),false);
+ }
 }
 function geometryForText(bytes,heldout){
  let h=[32,32,32,32,32];
@@ -174,13 +191,15 @@ async function evaluateText(){
   H=r.bytes;meta={heldoutSource:'Frozen 20% corpus',heldoutIndex:r.offset,heldoutWindow:r.window,totalWindows:r.totalWindows};
  }
  if(H.length<80){evaluation.text={frozen:true,n:H.length,aligned:null,chain:null,persistence:null,
-  assessment:labelEvent('text',{n:H.length}),navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},...meta};return;}
+  assessment:labelEvent('text',{n:H.length}),navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},
+  causalNavigation:navHoldout&&causalAgent.value.updates?causalAgent.evaluate(String(navHoldout.prompt),String(navHoldout.answer),pathHead,{steps:24}):{status:'NOT_TRAINED'},...meta};return;}
  const r=brain.evalText(H,H.length);
  const baseline=H.reduce((sum,y,i)=>sum+(i>0&&y===H[i-1]),0)/H.length;
  evaluation.text={frozen:true,n:H.length,aligned:r.aligned,chain:r.live,persistence:baseline,
   sampledPredictions:r.rows.slice(0,100).map((z,i)=>({step:i,actual:z[0],predicted:z[1],old:z[3]})),
   assessment:labelEvent('text',{n:H.length,heldoutAccuracy:r.aligned,heldoutPersistence:baseline}),
   navigation:navHoldout?assessNavigation(navHoldout):{status:'NO_QA_DATA'},
+  causalNavigation:navHoldout&&causalAgent.value.updates?causalAgent.evaluate(String(navHoldout.prompt),String(navHoldout.answer),pathHead,{steps:24}):{status:'NOT_TRAINED'},
   ...meta,checkedAtEpisode:episode};
 }
 async function textEpisode(){
@@ -214,8 +233,15 @@ async function textEpisode(){
  }
  // Real Parquet Q/A trains an independent goal-conditioned action head alongside ORIGINAL V17.
  // The source row enters learning ONLY here; heldout rows are never passed to learn().
- let pathRows=0;
+ let pathRows=0,causalRows=0,causalActions=0;
  for(const row of batch)if(row.prompt?.trim()&&row.answer?.trim()){
+  // Try interventions using only previously observed corpus evidence.
+  // The CURRENT answer remains inside the training environment reward.
+  if(causalTraining){
+   if(!causalAgent.dynamics.observations)causalAgent.probe(causalAgent.seed);
+   const trial=causalAgent.train(row.prompt,row.answer,pathHead,{maxActions:14,seed:causalAgent.episodes*7919+11});
+   if(trial.trained){causalRows++;causalActions+=trial.steps;liveCausalExperience(trial.events);}
+  }
   if(pathHead.learn(row.prompt,row.answer).trained)pathRows++;
  }
  seenTexts++;
@@ -227,12 +253,14 @@ async function textEpisode(){
   exercisesInBatch:batch.length,onlineAccuracy:acc,observations,heldout:evaluation.text||null,
   measuredNonAscii:batch.reduce((s,x)=>s+x.nonAscii,0),geometryHeldout:heldoutGeo,
   corpusCycles,sourceNewExamples:corpusCycles===0,trainingPath:gpuMeta?'Original V17 GPU alignment + one CPU replay sample':'Original V17 CPU Brain.live',
-  gpuBatch:gpuMeta,pathRows,goalNavigation:evaluation.text?.navigation||null,assessment};
+  gpuBatch:gpuMeta,pathRows,causalRows,causalActions,causalNavigation:evaluation.text?.causalNavigation||null,
+  goalNavigation:evaluation.text?.navigation||null,assessment};
  last.text=item;
  return {world:'text',episode,trainSymbols:item.totalBatchCharacters,source:item.source,corpusCycles,worldsInBatch:batch.length,
    gpuBatch:gpuMeta,heldoutAccuracy:evaluation.text?.aligned??null,heldoutPersistence:evaluation.text?.persistence??null,
    heldoutCheckedAt:evaluation.text?.checkedAtEpisode??null,heldoutWindow:evaluation.text?.heldoutWindow??null,
-   pathRows,goalNavigationF1:evaluation.text?.navigation?.metrics?.f1??null,
+   pathRows,causalRows,causalActions,causalHeldoutF1:evaluation.text?.causalNavigation?.metrics?.f1??null,
+   goalNavigationF1:evaluation.text?.navigation?.metrics?.f1??null,
    v17GenerationBaselineF1:evaluation.text?.navigation?.baseline?.f1??null,assessment};
 }
 function mazeEpisode(){
@@ -404,6 +432,7 @@ parentPort.on('message',async m=>{
    const selected=Array.isArray(m.worlds)?m.worlds.filter(x=>modesAllowed.includes(x)):[];
    if(!selected.length)throw Error('Select at least one real world');
    modes=[...new Set(selected)];
+   causalTraining=m.causalTextEnabled!==false;
    const previousRoot=sourceRoot;
    if(m.sourceKind==='docs'){
     sourceRoot='';userText=false;if(previousRoot)cursor=0;
@@ -436,6 +465,15 @@ parentPort.on('message',async m=>{
    remaining=m.infinite?0:Math.max(1,Math.min(100,Math.trunc(Number(m.episodes)||3)));
    learningStart=performance.now();throughputBase=gpuWorldsProcessed;run=true;paused=false;error=null;
    stage=gpuRunner.active?'CUDA GPU verified: training':'CPU training';publish();setImmediate(tick);
+  }else if(action==='causalNavigate'){
+   ensureBrain(true);
+   const prompt=String(m.prompt||'').trim().slice(0,1600);
+   if(!prompt)throw Error('Enter a nonempty causal-language question');
+   if(!causalAgent.value.updates)throw Error('Train on actual Q/A examples before causal navigation');
+   const route=causalAgent.navigate(prompt,pathHead,{steps:24});
+   navigationQuery={status:'CAUSAL_QUERY',prompt,causalRoute:route,at:new Date().toISOString(),
+    note:'No reference answer or training reward supplied for this query.'};
+   publish();
   }else if(action==='navigate'){
    ensureBrain(true);
    const prompt=String(m.prompt||'').trim().slice(0,1600);
@@ -471,13 +509,13 @@ parentPort.on('message',async m=>{
    else save();
   }else if(action==='load'){
    if(run||activeStep||preparing)throw Error('Stop training before loading');
-   gpuRunner.close();brain=null;geo=null;pathHead=null;dataset=null;navigationQuery=null;ensureBrain(true);publish();
+   gpuRunner.close();brain=null;geo=null;pathHead=null;causalAgent=null;dataset=null;navigationQuery=null;ensureBrain(true);publish();
   }else if(action==='reset'){
    if(run||activeStep||preparing)throw Error('Stop before resetting the isolated brain');
    gpuRunner.close();
    const stamp=new Date().toISOString().replace(/[^0-9]/g,'');
-   for(const file of [checkpoint,geoFile,obsFile,pathFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
-   brain=null;geo=null;pathHead=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
+   for(const file of [checkpoint,geoFile,obsFile,pathFile,causalFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
+   brain=null;geo=null;pathHead=null;causalAgent=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
    datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=throughputBase=0;
    backupLegacy=false;
    last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;navigationQuery=null;
@@ -487,4 +525,4 @@ parentPort.on('message',async m=>{
  }catch(e){preparing=false;run=false;error=String(e.stack||e);stage='error';publish();}
 });
 try{if(fs.existsSync(checkpoint))ensureBrain(true);else ensureBrain(false);publish();}
-catch(e){error=String(e.stack||e);stage='error';brain=null;geo=null;pathHead=null;publish();}
+catch(e){error=String(e.stack||e);stage='error';brain=null;geo=null;pathHead=null;causalAgent=null;publish();}
