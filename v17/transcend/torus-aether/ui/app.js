@@ -743,18 +743,45 @@ function renderShared(S) {
 }
 $("sharedEvalGo").onclick = async () => {
   if (!LIVE) return;
-  const out = $("sharedEvalOut"), button = $("sharedEvalGo");
-  button.disabled = true; out.textContent = "Evaluare înghețată pe experiențe reale nevăzute...";
+  const out=$("sharedEvalOut"),button=$("sharedEvalGo"),target=liveW;
+  button.disabled=true;
+  out.textContent="Cer evaluarea înghețată. Antrenamentul continuă separat.";
   try {
-    const resp = await fetch("/shared-eval?w=" + liveW, {method: "POST", cache: "no-store"});
-    const r = await resp.json();
-    if (r.error) throw Error(r.error);
-    out.textContent = "FROZEN " + (r.frozen ? "da" : "nu") + " · exemple " + r.examples +
-      " · eroare " + r.loss + " · identitate " + r.identityBaselineLoss +
-      " · domenii " + JSON.stringify(r.perDomain || {}) +
-      " · observații " + JSON.stringify(r.counts || {});
-  } catch (err) { out.textContent = "Evaluare nereușită: " + err.message; }
-  finally { button.disabled = false; }
+    const initial=await fetch("/shared-eval?w="+target,
+      {method:"POST",cache:"no-store"});
+    if(!initial.ok)throw Error("HTTP "+initial.status+" la pornirea evaluării");
+    let job=await initial.json();
+    if(job.error)throw Error(job.error);
+    if(!Number.isInteger(job.id))throw Error("Trainerul nu a returnat ID-ul evaluării");
+    // The server immediately acknowledges a real evaluation job. A slow
+    // GPU/CPU worker can no longer leave a browser request open for minutes.
+    const start=performance.now();
+    for(;;){
+      if(performance.now()-start>195000)throw Error(
+        "Evaluarea nu a terminat în 195 s; verifică GPU și jurnalul serverului.");
+      await new Promise(resolve=>setTimeout(resolve,1100));
+      const r=await fetch("/shared-eval-status?id="+job.id,{cache:"no-store"});
+      if(!r.ok)throw Error("HTTP "+r.status+" în interogarea rezultatului");
+      job=await r.json();
+      if(job.status==="failed"||job.error)throw Error(job.error||"Evaluarea CUDA a eșuat");
+      out.textContent="Job real #"+job.id+" · "+job.status+
+        " · "+(job.elapsedMs/1000).toFixed(1)+"s. Învățarea și graficele continuă.";
+      if(job.status!=="done")continue;
+      const result=job.result||{};
+      if(result.error)throw Error(result.error);
+      out.textContent="EVALUARE ÎNGHEȚATĂ #"+target+
+        " · exemple "+(result.examples??"—")+
+        " · eroare "+(result.loss??"—")+
+        " · bază identitate "+(result.identityBaselineLoss??"—")+
+        " · domenii "+JSON.stringify(result.perDomain||{})+
+        " · observații "+JSON.stringify(result.counts||{})+
+        " · modificări în checkpoint: niciuna în această evaluare.";
+      break;
+    }
+  }catch(err){
+    out.textContent="Evaluare nereușită: "+err.message+
+      " · verifică /shared-eval-status și consola CUDA; nu presupun rezultate inexistente.";
+  }finally{button.disabled=false;}
 };
 // the map the same brain is living: walls, checkpoint band, and the path of its two cubes in the last episode
 let mazeShown = null, mazeT0 = 0;
