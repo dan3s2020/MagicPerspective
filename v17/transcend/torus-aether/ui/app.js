@@ -261,6 +261,34 @@ function drawOutside(W, H) {
 const nv = new NestView();
 const NEST = () => !$("torusView").checked;
 let nvKey = "", nvAt = -1, nvNeedsWorld = true, lastConceptScan = 0;
+
+function drawObservedTopology(W, H, note) {
+  // Emergency 2D projection of REAL trace nodes/links. No invented training events:
+  // when the learned 5D geometry has no visible intersection, the graph remains inspectable.
+  const sample = [...nodes.values()].slice(0, 1300), points = new Map();
+  for (const n of sample) {
+    const raw = n.type === "sym" ? geo.U.get(Number(n.id.slice(2))) : null;
+    const p = raw?.length >= 2 ? raw : n.jit;
+    if (!p?.length) continue;
+    points.set(n.id, {x: 30 + p[0] * Math.max(1, W - 60), y: 58 + p[1] * Math.max(1, H - 100)});
+  }
+  g.globalAlpha = 0.28; g.lineWidth = 0.7; let count = 0;
+  for (const e of edges.values()) {
+    if (count >= 2600) break;
+    const a = points.get(e.a), b = points.get(e.b);
+    if (!a || !b) continue;
+    g.strokeStyle = COL[e.kind] || "#7cc9ff"; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); count++;
+  }
+  for (const n of sample) {
+    const p = points.get(n.id); if (!p) continue;
+    g.globalAlpha = 0.8; g.fillStyle = COL[n.type] || "#7cc9ff";
+    g.beginPath(); g.arc(p.x, p.y, n.type === "sym" ? 2.7 : 4.2, 0, Math.PI * 2); g.fill();
+  }
+  g.globalAlpha = 1; g.fillStyle = "#a9cbe0"; g.font = "12px system-ui"; g.textAlign = "left";
+  g.fillText(note, 12, 22);
+  g.fillText(points.size + " noduri observate, " + count + " legături (vedere de recuperare 2D)", 12, 38);
+}
+
 function drawNest(W, H) {
   const lived = LIVE ? data : t !== nvAt && (frame % 60 === 0 || !nv.data.length) ? data.slice(0, Math.min(t, data.length)) : nv.data;
   if (!lived || lived.length < 50 || !geo.U.size) { drawObservedTopology(W, H, "Proiecția geometrică se formează din momentele trăite"); return; }
@@ -382,21 +410,41 @@ function stats() {
   $("strip").innerHTML = strip.map(s => `<span class="${s.fixed ? "fix" : s.broke ? "brk" : s.ok ? "ok" : "no"}">${ch(s.y).replace("<", "&lt;")}</span>`).join("");
 }
 let frame = 0;
+let lastLiveDraw = 0, lastDrawError = "";
 function loop() {
-  if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); }
-  if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
-  for (const n of nodes.values()) n.act *= .93;
-  for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
-  if ($("spin").checked) { const sp = val("spinSpeed") * .01; PLANES6.forEach((_, k) => { if ($("auto" + k).checked) { ang[k] = (ang[k] + sp) % 6.2832; $("rot" + k).value = ang[k]; $("rot" + k + "Out").textContent = ang[k].toFixed(2); view.dirty = true; } }); }
-  const fly = val("fly");
-  if (NEST()) { if (fly) nv.zoom(Math.exp(fly * .03), cv.clientWidth / 2, cv.clientHeight / 2, cv.clientWidth, cv.clientHeight);
-    const tx = val("tx"), ty = val("ty"); if (tx || ty) nv.pan(-tx * 4, -ty * 4); }
-  else if (fly) { view.zlog += fly * .02; view.dirty = true; }
-  ["tx", "ty", "tz", "tw", "tv"].forEach((id, i) => { const v = val(id); if (v) { cam[i] = wrap1(cam[i] + v * .004); view.dirty = true; } });
-  draw(); frame++;
-  if (frame % 6 === 0) stats(); if (frame % 60 === 0 && running) findConcepts();
-  requestAnimationFrame(loop);
+  // Limit ONLY live viewport rendering, not training or the real graph's data.
+  // Heavy recursive 5D render must not monopolize the browser UI.
+  const now = performance.now();
+  if (LIVE && now - lastLiveDraw < 55) { requestAnimationFrame(loop); return; }
+  lastLiveDraw = now;
+  try {
+    if (LIVE && frame % 90 === 0) evaluate();
+    if (LIVE) { drawMaze(); drawTrans(); }
+    if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
+    for (const n of nodes.values()) n.act *= .93;
+    for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
+    if ($("spin").checked) { const sp = val("spinSpeed") * .01; PLANES6.forEach((_, k) => { if ($("auto" + k).checked) { ang[k] = (ang[k] + sp) % 6.2832; $("rot" + k).value = ang[k]; $("rot" + k + "Out").textContent = ang[k].toFixed(2); view.dirty = true; } }); }
+    const fly = val("fly");
+    if (NEST()) { if (fly) nv.zoom(Math.exp(fly * .03), cv.clientWidth / 2, cv.clientHeight / 2, cv.clientWidth, cv.clientHeight);
+      const tx = val("tx"), ty = val("ty"); if (tx || ty) nv.pan(-tx * 4, -ty * 4); }
+    else if (fly) { view.zlog += fly * .02; view.dirty = true; }
+    ["tx", "ty", "tz", "tw", "tv"].forEach((id, i) => { const v = val(id); if (v) { cam[i] = wrap1(cam[i] + v * .004); view.dirty = true; } });
+    try { draw(); lastDrawError = ""; }
+    catch (err) {
+      const message = String(err?.message || err);
+      if (lastDrawError !== message) console.error("NestView render:", err);
+      lastDrawError = message;
+      const indicator = $("viewerStatus");
+      if (indicator) indicator.textContent = "Proiecția 5D a întâmpinat o eroare: " + message + " · afișez topologia reală";
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, cv.width, cv.height);
+      const dpr = window.devicePixelRatio || 1;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawObservedTopology(cv.clientWidth, cv.clientHeight, "Proiecția principală a întâmpinat o eroare");
+    }
+    frame++;
+    if (frame % 6 === 0) stats(); if (frame % 60 === 0 && running) findConcepts();
+  } finally { requestAnimationFrame(loop); }
 }
 
 // ---------- controls ----------
@@ -558,16 +606,17 @@ async function livePull() {
     $("liveList").innerHTML = L.graphs.map(gr => `<div class="lgc${gr.w === liveW ? " on" : ""}" data-w="${gr.w}">
       <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span>${gr.error ? ` · <span style="color:#ff4d6d">${String(gr.error).replace(/</g,"&lt;")}</span>` : ""} · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
       <div class="sc">${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
-        ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
+        ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
+        ${gr.worlds.includes("selfcode") ? `<span>Codul propriu</span><span>${gr.selfcode ? `pași ${gr.selfcode.ticks} · noduri ${gr.selfcode.graphNodes} · portaluri ${gr.selfcode.portals} · experimente ${gr.selfcode.probes} · lacăt ${gr.selfcode.lock?.status || "închis"}` : "așteaptă primele observații"}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
-      <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
+      </div><div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
       c.querySelector(".t").onclick = () => {
         liveW = +c.dataset.w; liveSelectionLocked = true;
         const url = new URL(location.href); url.searchParams.set("w", String(liveW));
         history.replaceState(null, "", url);
-        nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull();
+        clearLive(); view.path = ""; view.mode = "inside"; livePull();
       };
       for (const b of c.querySelectorAll("button")) b.onclick = async ev => { ev.stopPropagation(); const act = b.dataset.do;
         if ((act === "reset" || act === "remove") && !armedNow(c.dataset.w + act)) { armed.set(c.dataset.w + act, performance.now() + 4000); b.textContent = "sigur?"; return; }
