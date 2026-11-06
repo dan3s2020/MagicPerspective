@@ -58,7 +58,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
-const slots = [], last = new Map(), history = new Map(), graphs = new Map(); let started = new Date().toISOString(), stopping = false;
+const slots = [], last = new Map(), history = new Map(), graphs = new Map(), graphVersions = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
@@ -76,7 +76,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
   }
-  if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
+  if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); graphVersions.delete(sl.w); }
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
@@ -86,7 +86,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (gen !== sl.gen) return;
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
-    if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; graphs.set(sl.w, m); return; }   // its living graph
+    if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; m.version = (graphVersions.get(sl.w) || 0) + 1; graphVersions.set(sl.w, m.version); graphs.set(sl.w, m); return; }   // its living graph
     if (m.type === "chat") { const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
     if (m.type === "saved") { sl.savedMB = m.MB; for (const f of sl.onSaved?.splice(0) || []) f(); return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
@@ -106,7 +106,7 @@ function control(sl, act) {
   else if (act === "pause") { sl.wk?.postMessage("pause"); if (sl.wk) sl.status = "pauză"; }
   else if (act === "reset") launch(sl, {fresh: true, paused: sl.status !== "antrenează"});
   else if (act === "save") sl.wk?.postMessage("save");
-  else if (act === "remove") { sl.gen++; sl.wk?.terminate(); slots.splice(slots.indexOf(sl), 1); last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
+  else if (act === "remove") { sl.gen++; sl.wk?.terminate(); slots.splice(slots.indexOf(sl), 1); last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); graphVersions.delete(sl.w); }
 }
 // a new run without --resume keeps the old saves aside and starts from nothing
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
@@ -178,6 +178,8 @@ http.createServer((req, res) => {
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
+    // A snapshot is immutable until the worker sends another graph; skip re-parsing large unchanged graphs.
+    if (g && q.has("since") && Number(q.get("since")) === g.version) { res.writeHead(204, {"cache-control":"no-store"}); return res.end(); }
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
     return res.end(g ? JSON.stringify({...g, test: last.get(w)?.test || null, world}) : "{}"); }
   const types = {".html": "text/html; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".js": "text/javascript; charset=utf-8"};
