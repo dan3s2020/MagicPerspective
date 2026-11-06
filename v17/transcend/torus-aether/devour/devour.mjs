@@ -111,7 +111,19 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
       sl.lastMapRate = {at: now, episodes: wm.episodes};
     }
     const progress = wm ? ` | HARTĂ N-D: ${wm.episodes} lumi, ${wm.solved} rezolvate (${(100 * wm.solveRate).toFixed(1)}%), ${wm.last?.steps ?? "—"}/${wm.last?.optimal ?? "—"} pași, ${wm.meanWavePasses.toFixed(1)} propagări, ${mapSpeed} lumi/s (ultimul interval; algoritm prestabilit)` : "";
-    console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` + progress +
+    const cg=m.cognitive;
+    let cognitiveProgress="";
+    if(cg){
+      const at=Date.now(),prev=sl.lastCognitiveRate;
+      const rate=prev&&at>prev.at&&cg.documents>=prev.documents?
+        ((cg.documents-prev.documents)/((at-prev.at)/1000)).toFixed(2):"—";
+      sl.lastCognitiveRate={at,documents:cg.documents};
+      cognitiveProgress=" | HARTĂ ÎNVĂȚATĂ: "+cg.documents+" documente ("+rate+
+        "/s), "+cg.observedSentences+" propoziții, "+cg.inducedActionRules+
+        " reguli ipotetice, "+cg.confirmedActions+" acțiuni confirmate, "+
+        cg.rejectedActions+" respinse";
+    }
+    console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` + progress + cognitiveProgress +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
       (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => { if (gen !== sl.gen) return; sl.lastError = err.message; sl.status = "eroare"; console.error(`#${sl.w} error:`, err.message); });
