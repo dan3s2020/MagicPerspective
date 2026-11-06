@@ -15,12 +15,14 @@ import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
 import {NestView, PLANES6, rotation6} from "./nestview.mjs";
 import {chooseVisibleGraph} from "./live-follow.mjs";
+import {mountTextMaze5D} from "./text-maze-viewer.mjs";
 const mazeLabel = c => { const i = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15].indexOf(c); return i < 0 ? null : i < 4 ? "◆" + "αβγδ"[i] : "▶" + (i - 4); };   // the exercise's raw symbols: no meaning given
 
 const ctxAt = (d, i) => Array.from({length: 4}, (_, j) => d[(i - j - 1 + d.length) % d.length]);
 const histAt = (d, i) => Array.from({length: 12}, (_, j) => (i - j - 1 >= 0 ? d[i - j - 1] : 32));
 const ch = c => c === 32 ? "␣" : c === 10 ? "⏎" : c < 32 || c === 127 ? mazeLabel(c) || "·" : String.fromCharCode(c);
 const $ = id => document.getElementById(id);
+let hyperEval = null, hyperChat = null, hyperTrain = null, lastTrainStepId = "";
 const val = id => +$(id).value;
 const cLabel = id => { const [k, m] = id.split(":"); let pos = ""; for (let i = 0; i < 4; i++) if (+m & (1 << i)) pos += i + 1; return "C·" + k[0].replace("c", "k") + pos; };
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -586,6 +588,16 @@ async function pullSelectedGraph() {
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
     applySnap(gs); lastGraphVersion = Number.isFinite(gs.version) ? gs.version : -1;
+    // Only observed text actions from the selected original V17 training worker.
+    if (gs.textSteps?.length && $("trainHyperMazePanel")) {
+      const last = gs.textSteps.at(-1), stamp = liveW+":"+last[0]+":"+gs.textSteps.length;
+      if (stamp !== lastTrainStepId) {
+        const panel=$("trainHyperMazePanel");panel.hidden=false;
+        if (!hyperTrain) hyperTrain=mountTextMaze5D(panel,{title:"TRAINING LIVE · pașii reali ai textului în geometria V17 5D"});
+        hyperTrain.loadTraining(gs.textSteps,gs.U||[],{follow:true});
+        lastTrainStepId=stamp;
+      }
+    }
     if(gs.gears && $("gearStats")) {
       const ng=gs.gears.native||{};
       $("gearStats").textContent =
@@ -646,7 +658,7 @@ async function livePull() {
   } finally { livePullBusy = false; }
 }
 const armed = new Map(), armedNow = k => (armed.get(String(k)) || 0) > performance.now();   // a reset or removal asks once more before it happens
-const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; lastGraphVersion = -1; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; nvNeedsWorld = true; nv.last = null; };
+const clearLive = () => { nodes.clear(); edges.clear(); liveSnap = null; lastGraphVersion = -1; lastTrainStepId = ""; data = []; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; nvNeedsWorld = true; nv.last = null; if ($("trainHyperMazePanel")) $("trainHyperMazePanel").hidden = true; };
 $("graphHome").onclick = () => {
   // Reset only the observer's camera. No brain weights, checkpoints, or graph nodes are reset.
   nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; nv.last = null;
@@ -761,6 +773,13 @@ fetch("/corpus").then(r => r.json()).then(c => {
           (r.gear.route||[]).map((s,i)=>(i+1)+". "+s.before+" → "+s.after+
             " (poziția "+s.slot+", dovezi "+s.evidence+")").join("\n")+
           "\nCURSOR: "+r.gear.characters+" caractere emise · "+r.gear.expanded+" stări explorate.";
+        // The live chat outcome, including all legacy fallbacks, is visualized
+        // from its ACTUAL returned bytes and the brain's learned 5D coordinates.
+        if ($("nativeHyperMazePanel") && typeof r.text === "string") {
+          const panel=$("nativeHyperMazePanel");panel.hidden=false;
+          if (!hyperChat) hyperChat=mountTextMaze5D(panel,{title:"CHAT V17 · traseul realmente emis, pașii cursorului și transformările observate"});
+          hyperChat.loadChat(r,r.space5||[],text);
+        }
       } }
     catch (err) { wait.className = "msg err"; wait.textContent = "nu am putut ajunge la trainer: " + err.message; talk.pop(); }
     $("chatSend").disabled = false; };
@@ -771,10 +790,21 @@ fetch("/corpus").then(r => r.json()).then(c => {
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(1) + "%", side = document.querySelector("aside.side");
   $("tabTrain").onclick = () => { side.classList.remove("evalOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); };
   $("tabEval").onclick = () => { side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("evW").textContent = "#" + liveW; };
-  $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
+  $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; if ($("evKind").value !== "text" && $("textHyperMazePanel")) $("textHyperMazePanel").hidden = true; };
   const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
-  const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; textPage = 0; t0 = performance.now(); table(); if (kind === "text") textView(); };
+  const show = i => { const L = items(); if (!L.length) return;
+    cur = (i + L.length) % L.length; textPage = 0; t0 = performance.now();
+    table();
+    if (kind === "text") {
+      textView();
+      const panel=$("textHyperMazePanel");if (panel) {
+        panel.hidden=false;
+        if (!hyperEval) hyperEval=mountTextMaze5D(panel,{title:"TEXT NEVĂZUT · formă dinainte, traseu observat, eroare, recalculări"});
+        hyperEval.loadEvaluation(L[cur],R?.space5||[]);
+      }
+    } else if ($("textHyperMazePanel")) $("textHyperMazePanel").hidden=true;
+  };
   const table = () => { const L = items(); if (!L.length) { $("evalTab").innerHTML = ""; return; }
     if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>forma scrisă înainte</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td></tr>`).join("") + "</table>";
       for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); return; }
@@ -806,7 +836,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
     const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value; const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
       : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value)} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
-    $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
+    $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = ""; if ($("textHyperMazePanel")) $("textHyperMazePanel").hidden = true;
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
       if (r.error) $("evOut").textContent = r.error;
       else { R = r; const head = `graful #${r.w}, după ${(r.lived || 0).toLocaleString()} pași trăiți: `;
