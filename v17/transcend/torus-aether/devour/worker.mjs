@@ -199,8 +199,20 @@ const processGpuText = async (exs, meta) => {
     shot();
   });
   changePhase("text: integrare în graful V17",0,exs[0]?.length||0); shot(true);
-  // The original V17 trace sees the first actual exercise, exactly once.
-  if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+  // CPU receives the same REAL observed symbols in their original order.
+  // Yield every 256 characters so pause/telemetry/UI can run while the old organs
+  // integrate the GPU-trained sample. No character is dropped or fabricated.
+  if(exs.length){
+    const sample=exs[0];
+    for(let i=0;i<sample.length;i++){
+      brain.live(sample[i],brain.lived%50===0,{old:true});
+      if((i+1)%256===0){
+        changePhase("text: integrare în graful V17",i+1,sample.length);
+        await new Promise(r=>setImmediate(r));
+      }
+    }
+    changePhase("text: integrare în graful V17",sample.length,sample.length);
+  }
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
   changePhase("CUDA: model comun de transformări",0,shared.queue.length);
   await flushShared();
@@ -330,22 +342,33 @@ for await (const ex of stream()) {
   }
   // Explicitly switching to CPU drains any pending exercises rather than dropping them.
   if (TEXT && textBatch.length) {
-    for (let j = 0; j < textBatch.length; j++) {
-      brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
-      brain.exercises = (brain.exercises || 0) + 1; absorbText(textMeta[j]);
+    for(let j=0;j<textBatch.length;j++){
+      brain.beginExercise();
+      for(const y of textBatch[j]){brain.live(y,brain.chars%50===0);brain.chars++;}
+      brain.sourceRows++;brain.exercises=brain.sourceRows;absorbText(textMeta[j]);
     }
     textBatch = []; textMeta = []; shot(true);
   }
-  brain.exercises = (brain.exercises || 0) + (TEXT ? 1 : 0); if (TEXT) brain.beginExercise();
-  for (const y of ex.bytes) {
-    brain.live(y, brain.chars % 50 === 0); brain.chars++;
-    if (brain.chars % 2000 === 0) shot();
+  if(TEXT)brain.beginExercise();
+  // Switching CUDA off during a partially committed long row must resume at the
+  // exact original byte offset, not re-train its completed windows.
+  const cpuStart=TEXT?(brain.sourceOffset||0):0;
+  for(let j=cpuStart;j<ex.bytes.length;j++){
+    const y=ex.bytes[j];
+    brain.live(y,brain.chars%50===0);brain.chars++;
+    if(TEXT)brain.sourceOffset=j+1;
+    if(brain.chars%2000===0)shot();
     if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); shot(); }
     if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } changePhase("CPU: frozen V17 evaluation + checkpoint"); emitTelemetry(); report(); changePhase("CPU: evaluation complete"); }
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
-  if (TEXT && !stop && brain.chars < maxChars) { absorbText(ex); await flushShared(); }
+  if(TEXT&&brain.sourceOffset===ex.bytes.length){
+    brain.sourceRows++;brain.sourceOffset=0;brain.exercises=brain.sourceRows;
+    brain.sourceRowFingerprint=null;brain.sourceRowLength=0;
+  }
+  if(TEXT&&!stop&&brain.chars<maxChars&&brain.sourceOffset===0){absorbText(ex);await flushShared();}
+
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
