@@ -181,15 +181,23 @@ export class SelfCodeWorld{
  }
  tryEdit(){
   const s=this.state,g=s.genes.find(g=>g.id==='portal-offset');
-  const unseen=[2,3,5,7,9,11,13];
-  const fitness=p=>avg(unseen.map(x=>1-
-   Math.min(8,Math.abs(OPS[g.op](x,p)-((x+3)&15)))/8));
-  const old=fitness(g.param);
-  const best=[1,2,3].map(p=>({p,fitness:fitness(p)}))
-   .sort((a,b)=>b.fitness-a.fitness)[0];
-  if(best.fitness>old+.03&&this.model.predict(g.id,5,best.p)!==null){
+  // The learner proposes the edit from its OWN empirical model on practice inputs.
+  // The evaluator alone holds the independent scoring inputs and real interpreter.
+  const practice=[1,4,6,8,10,12,14],hidden=[2,3,5,7,9,11,13];
+  const reward=(out,x)=>1-Math.min(8,Math.abs(out-((x+3)&15)))/8;
+  const estimate=p=>avg(practice.map(x=>{
+   const out=this.model.predict(g.id,x,p);
+   return out===null?-1:reward(out,x);
+  }));
+  const predictedOld=estimate(g.param);
+  const best=[1,2,3].map(p=>({p,prediction:estimate(p)}))
+   .sort((a,b)=>b.prediction-a.prediction)[0];
+  const actualFitness=p=>avg(hidden.map(x=>reward(OPS[g.op](x,p),x)));
+  const old=actualFitness(g.param),newFitness=actualFitness(best.p);
+  if(best.p!==g.param&&best.prediction>predictedOld+.03&&newFitness>old+.03){
    const edit={episode:s.episodes,code:g.id,from:g.param,to:best.p,
-    beforeFitness:old,afterFitness:best.fitness};
+    predictedBefore:predictedOld,predictedAfter:best.prediction,
+    beforeFitness:old,afterFitness:newFitness};
    g.param=best.p;s.edits.push(edit);
    this.brain.trace.setEdge('code:lock','code:gene:'+g.id,'unlocked-edit',5);
    return edit;
