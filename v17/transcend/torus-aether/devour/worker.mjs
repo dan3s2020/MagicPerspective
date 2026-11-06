@@ -224,11 +224,20 @@ const processGpuText = async (exs, meta) => {
 };
 parentPort.on("message", m => {
   if(m && m.languageMaze){
-    const {id,required,start,maxDepth=4,localPolicy=true}=m.languageMaze;
+    const {id,required,start,maxDepth=4,localPolicy=true,auto=false}=m.languageMaze;
     try{
-      const result=brain.planObservedTransformation({required,start,maxDepth},
+      const selfGoal=auto?brain.observedTransformations?.selfSelectedChallenge():null;
+      if(auto&&!selfGoal){
+        parentPort.postMessage({type:"chat",id,languageMaze:true,
+          found:false,reason:"no-reachable-novel-self-probe-from-observed-operators",
+          selfProbe:true,referenceProvided:false});return;
+      }
+      const actualGoal=selfGoal?{required:selfGoal.required,start:selfGoal.start,maxDepth}:
+        {required,start,maxDepth};
+      const result=brain.planObservedTransformation(actualGoal,
         {trace:true,embodied:true,localPolicy});
       parentPort.postMessage({type:"chat",id,languageMaze:true,...result,
+        selfProbe:!!selfGoal,selfGoal:selfGoal||null,
         perspectivePair:{global:"initial frozen plan + alternative search",
           local:"actually selected learned text actions + fresh plan when diverging"}});
     }catch(err){parentPort.postMessage({type:"chat",id,languageMaze:true,error:err.message});}
