@@ -1,0 +1,31 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "REPLACE_WITH_UNIQUE_CONTRACT_ID",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/REPLACE_WITH_REAL_USER_SOURCE.md",
+    "exact_user_quote": "PASTE AN EXACT, NON-INVENTED USER SENTENCE FROM SOURCE"
+  },
+  "original_baseline": {
+    "source_path": "REPLACE_WITH_ACTUAL_INSPECTED_CODE_PATH",
+    "algorithm": "REPLACE_WITH_ACTUAL_ORIGINAL_ALGORITHM_NAME",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "REPLACE_WITH_EXACT_CHANGED_SOURCE_PATH"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "REPLACE_WITH_EXISTING_EXECUTABLE_TEST_PATH"
+  ],
+  "actual_observed_results": "NOT_VERIFIED — provide actual results and hardware provenance",
+  "limitations": [
+    "Full historical Verbatim is incomplete"
+  ],
+  "verification_status": "NOT_VERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
