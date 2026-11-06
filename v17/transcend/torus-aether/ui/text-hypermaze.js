@@ -3,10 +3,10 @@
 // V17: frozen untouched text test, preanswer imagination vs teacher-forced
 // next-character guesses vs hidden reference. The latter is NOT a traversable
 // language maze or autonomous body movement.
-import {observedLayout,frozenTextLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
+import {observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
 const $=id=>document.getElementById(id);
 const overlay=$("hmOverlay"),cv=$("hmCanvas"),g=cv.getContext("2d");
-let model=null,step=0,playing=null,busy=false,layout=null;
+let model=null,step=0,playing=null,busy=false,layout=null,torusLoading=false;
 let camera={yaw:.45,pitch:.21,xw:.65,yw:-.27,zw:.25,zoom:1,panX:0,panY:0};
 let pointer=null,lastPaint=0,raf=null;
 const fmt=n=>Number.isFinite(n)?Number(n).toLocaleString("ro-RO"):"—";
@@ -83,6 +83,9 @@ for(const [id,key] of [["hmXW","xw"],["hmYW","yw"],["hmZW","zw"],["hmZoom","zoom
 $("hmSlice").addEventListener("input",draw);
 $("hmSliceEnabled").addEventListener("change",draw);
 $("hmPerspective").addEventListener("change",draw);
+$("hmSpace").addEventListener("change",()=>{
+ if($("hmSpace").value==="learned5")loadNativeGeometry();else{describeGeometry();draw();}
+});
 $("hmResetCamera").addEventListener("click",()=>{
  camera={yaw:.45,pitch:.21,xw:.65,yw:-.27,zw:.25,zoom:1,panX:0,panY:0};
  for(const [id,key] of [["hmXW","xw"],["hmYW","yw"],["hmZW","zw"],["hmZoom","zoom"]])
@@ -112,6 +115,57 @@ async function request(url,opts={}){
 }
 function w(){return Math.max(0,Math.trunc(num("hmBrain")));}
 
+function currentGeometry(){
+ if(!model)return null;
+ return $("hmSpace").value==="learned5"?model.native:model.layout;
+}
+function describeGeometry(){
+ if(!model){
+  text("hmSpaceStatus","Alege o evaluare reală sau un traseu real înainte de proiecție.");
+  return;
+ }
+ if($("hmSpace").value!=="learned5"){
+  text("hmSpaceStatus","4D DIAGNOSTIC: coordonate derivate din topologia de căi / scorurile observate. "+
+   "Nu sunt pozițiile învățate ale simbolurilor V17.");
+  return;
+ }
+ if(!model.native){
+  text("hmSpaceStatus",torusLoading?"Citesc coordonatele reale U[0..4] din graful V17…":
+   "Coordonate V17 5D indisponibile. Nu fabric poziții. Selectează 4D diagnostic sau pornește originalul V17.");
+  return;
+ }
+ const N=model.native;
+ text("hmSpaceStatus","5D V17 ÎNVĂȚAT: "+fmt(N.known)+" poziții observate din "+fmt(N.possible)+
+  " simboluri; "+fmt(N.missing)+" fără coordonate native. "+
+  "Proiectăm U[0..3], secționăm U[4]. Aceeași literă poate reveni în exact aceeași poziție. "+
+  "Discontinuitățile din proiecție pot fi tăieturi de torus, NU transport 4D.");
+}
+async function loadNativeGeometry(){
+ if(!model||torusLoading)return;
+ const current=model;
+ torusLoading=true;describeGeometry();
+ try{
+  const snap=await request("/graph?w="+w());
+  if(current!==model)return;
+  if(!Array.isArray(snap.U))throw Error("Graful original nu include Geometry.U");
+  const source=model.kind==="observed"?model.pair.hybrid.graph:model.layout;
+  model.native=native5DSymbolLayout(source,snap.U);
+  model.nativeSnapshot={chars:snap.chars,at:Date.now()};
+ }catch(err){
+  if(current!==model)return;
+  model.native=null;
+  model.nativeError=err.message;
+ }finally{
+  torusLoading=false;
+  describeGeometry();
+  draw();
+ }
+}
+function projectCoord(coord){
+ // The fifth learned coordinate participates ONLY in the real slice; it
+ // cannot be silently projected as a fabricated sixth/fourth coordinate.
+ return project4D(coord?.length===5?coord.slice(0,4):coord,camera,cv.width,cv.height);
+}
 async function busyFetch(fn){
  if(busy)return;
  busy=true;for(const id of ["hmLoadObserved","hmLoadPrompt","hmUnseen"])$(id).disabled=true;
@@ -156,7 +210,7 @@ async function observedFromPrompt(prompt,{isTrainingExample=false}={}){
   "\nCoordonate 4D diagnostice:\n"+layout.dimensions.join("\n")+
   "\nNU este o topologie 4D învățată de organism. Fiecare răspuns memorat este în prezent o ramură de prefix (nu două drumuri către același terminal)."+
   (h.graph.partialPreview?"\nAtenție: rețeaua e trunchiată pentru replay.":""));
- syncStep(0);
+ syncStep(0);loadNativeGeometry();
 }
 $("hmLoadPrompt").addEventListener("click",()=>busyFetch(async()=>{
  $("hmMode").value="observed";
@@ -204,7 +258,7 @@ function showFrozenExercise(result,index=0,opts={}){
   "\nForma înainte de acțiune vs referință: "+pc(ex.shapeSame)+
   "\nCoordonate 4D diagnostice:\n"+layout.dimensions.join("\n")+
   "\nNu reprezintă geometrie latentă reală, mecanism cuantic sau drum de planificare.");
- syncStep(0);
+ syncStep(0);loadNativeGeometry();
 }
 function showCachedFrozen(){
  if(!lastFrozen?.result?.exercises?.length){
@@ -296,7 +350,7 @@ function explainStep(){
 }
 function visibleInSlice(coord){
  if(!$("hmSliceEnabled").checked)return true;
- const w=(coord?.[3]??0);
+ const w=(coord?.length===5?coord[4]:coord?.[3])??0;
  const slice=num("hmSlice")*2-1;
  return Math.abs(w-slice)<.33;
 }
@@ -309,7 +363,7 @@ function paintPath(path,coords,{color,width=2,upto=null,dashed=false,opacity=1,s
   if(k%sample&&k!==stop-1)continue;
   const id=path[k],coord=coords[id];
   if(!coord||!visibleInSlice(coord)){began=false;continue;}
-  const p=project4D(coord,camera,cv.width,cv.height);
+  const p=projectCoord(coord);
   const x=p.x+shift.x,y=p.y+shift.y;
   if(!began){g.moveTo(x,y);began=true;}else g.lineTo(x,y);
  }
@@ -317,7 +371,7 @@ function paintPath(path,coords,{color,width=2,upto=null,dashed=false,opacity=1,s
 }
 function drawPoint(coord,color,radius=7,shift={x:0,y:0},label=""){
  if(!coord||!visibleInSlice(coord))return;
- const p=project4D(coord,camera,cv.width,cv.height);
+ const p=projectCoord(coord);
  g.beginPath();g.arc(p.x+shift.x,p.y+shift.y,radius,0,Math.PI*2);
  g.fillStyle=color;g.fill();g.strokeStyle="#031017";g.lineWidth=2;g.stroke();
  if(label){
@@ -328,11 +382,11 @@ function drawPoint(coord,color,radius=7,shift={x:0,y:0},label=""){
 function focus(coords,current){
  if($("hmPerspective").value!=="local")return {x:0,y:0};
  if(!current)return {x:0,y:0};
- const c=project4D(current,camera,cv.width,cv.height);
+ const c=projectCoord(current);
  return {x:cv.width*.5-c.x,y:cv.height*.5-c.y};
 }
 function drawObserved(){
- const h=model.pair.hybrid,graph=h.graph,coords=model.layout.coords,
+ const h=model.pair.hybrid,graph=h.graph,coords=currentGeometry().coords,
   actual=h.pathNodes||[],pre=h.globalPlanNodes||[],old=model.pair.original.globalPlanNodes||[],
   pos=actual[Math.min(step,actual.length-1)]??0,shift=focus(coords,coords[pos]);
  const out=graph.edges||[],routeEdges=new Set();
@@ -343,8 +397,8 @@ function drawObserved(){
  for(const e of out){
   if(routeEdges.has(e.from+":"+e.to))continue;
   if(!visibleInSlice(coords[e.from])||!visibleInSlice(coords[e.to]))continue;
-  const a=project4D(coords[e.from],camera,cv.width,cv.height),
-   b=project4D(coords[e.to],camera,cv.width,cv.height);
+  const a=projectCoord(coords[e.from]),
+   b=projectCoord(coords[e.to]);
   g.moveTo(a.x+shift.x,a.y+shift.y);g.lineTo(b.x+shift.x,b.y+shift.y);
   if(++shown>=13000)break;
  }
@@ -357,12 +411,12 @@ function drawObserved(){
  // drawn as if they had already occurred.
  paintPath(actual,coords,{color:"#3de7d0",width:4,upto:step,
   sample:step>4500?Math.ceil(step/4500):1},shift);
- for(const goal of graph.goals||[])drawPoint(coords[goal.node],"#c181ea",4.5,shift);
+ if(!graph.partialPreview)for(const goal of graph.goals||[])drawPoint(coords[goal.node],"#c181ea",4.5,shift);
  drawPoint(coords[pre[0]??0],"#94b8cd",5,shift,"START");
  drawPoint(coords[pos],"#f5a568",8,shift,"EU · "+step);
 }
 function drawUnseen(){
- const tracks=model.layout.tracks;
+ const tracks=currentGeometry().tracks;
  for(const tr of tracks){
   const col=tr.key==="preanswer"?"#f5c45c":tr.key==="teacherForced"?"#3de7d0":"#b479db";
   // Rows/guesses themselves determine the path; no invented graph edges.
@@ -394,6 +448,13 @@ function draw(){
   const x=W*k/8,y=H*k/8;
   g.moveTo(x,0);g.lineTo(x,H);g.moveTo(0,y);g.lineTo(W,y);
  }g.stroke();
+ if(model&&$("hmSpace").value==="learned5"&&!model.native){
+  g.fillStyle="#c4dde8";g.textAlign="center";g.font="15px system-ui";
+  g.fillText(torusLoading?"Citesc Geometry.U din creierul original V17…":
+    "Coordonatele 5D V17 lipsesc; nu inventez un torus.",W/2,H/2);
+  g.fillText("Selectează 4D diagnostic pentru a vedea imediat căile observate.",W/2,H/2+28);
+  g.textAlign="left";return;
+ }
  if(!model){
   g.fillStyle="#b0cfdd";g.textAlign="center";g.font="16px system-ui";
   g.fillText("Selectează un traseu real sau un test pe text nevăzut.",W/2,H/2);
@@ -402,7 +463,9 @@ function draw(){
  }
  if(model.kind==="observed")drawObserved();else drawUnseen();
  g.fillStyle="#8aacc1";g.textAlign="left";g.font="11px ui-monospace,monospace";
- g.fillText("X,Y,Z,W = variabile reale derivate · nu geometrii 4D învățate de model",14,H-16);
+ g.fillText($("hmSpace").value==="learned5"?
+  "Geometria REALĂ a simbolurilor V17 · Geometry.U[0..4] · torus 5D, secțiune 4D":
+  "X,Y,Z,W = variabile reale derivate · nu geometrii 4D învățate de model",14,H-16);
 }
 window.addEventListener("resize",()=>{if(open())draw();});
 const params=new URLSearchParams(location.search);
