@@ -8,8 +8,15 @@ test('one experience queue accepts real observations from three domains', () => 
   x.observeText({before: ['a'], after: ['a', 'b'], action: {tool: 3, token: 'b'}}, 'question');
   const a = x.take(5);
   assert.equal(a.length, 3); assert.deepEqual(a.map(s => s.domain), ['maze', 'transform', 'text']);
-  assert.deepEqual(x.status().domains, {maze: 1, transform: 1, text: 1});
+  assert.deepEqual(x.status().domains, {maze: 1, transform: 1, text: 1, selfcode: 0});
   assert.equal(x.status().queued, 0);
+});
+test('the same queue accepts a real code-world observation with no privileged source rules', () => {
+  const x=new SharedExperience({capacity:8});
+  const before='function f(){return 1}',after='function f(){return 2}';
+  x.observe({domain:'selfcode',before,after,action:'portal-jump',context:'source:one'});
+  assert.deepEqual(x.status().domains,{maze:0,transform:0,text:0,selfcode:1});
+  assert.deepEqual(x.take(1)[0],{domain:'selfcode',before,after,action:'portal-jump',context:'source:one'});
 });
 test('isolated queue bounds; input arrays are copied; errors visible', () => {
   const q = new SharedExperience({capacity: 8}); const src = [2, 3];
