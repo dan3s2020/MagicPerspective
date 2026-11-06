@@ -49,6 +49,7 @@ jobs:
           node --check v17/transcend/torus-aether/ui/research-charts.mjs
           node --check v17/transcend/torus-aether/ui/research-replay.mjs
           node --check v17/transcend/torus-aether/ui/research-replay-draw.mjs
+          node --check v17/transcend/torus-aether/ui/research-character-replay.mjs
 
   powershell5-launcher:
     runs-on: windows-latest
