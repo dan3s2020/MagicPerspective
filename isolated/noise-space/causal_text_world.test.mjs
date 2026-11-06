@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {LanguageWorld,ActionDynamics,CausalTextAgent} from './causal_text_world.mjs';
+import {LanguageWorld,ActionDynamics,CausalTextAgent,LatentGoalField} from './causal_text_world.mjs';
 import {TextActionPaths} from './text_action_paths.mjs';
 
 function trainedHead(){const p=new TextActionPaths();
@@ -60,4 +60,23 @@ test('alternate action physics fails predicted transition and is observable',()=
  if(other.observerLawForTestOnly()[0]!==new LanguageWorld({prompt:'gamma alpha beta',seed:11}).observerLawForTestOnly()[0]){
   assert.notDeepEqual(prediction.tokens,out.observation.tokens);
  }
+});
+
+test('32D trainable goal field reduces Q/A prediction error without fixed solution paths',()=>{
+ const l=new LatentGoalField(33),p='Why do clouds produce rain?',a='Rain falls from clouds as water.';
+ const initial=l.distance(l.target(a),l.goal(p));
+ for(let i=0;i<300;i++)l.fit(p,a);
+ const after=l.distance(l.target(a),l.goal(p));
+ assert.ok(after<initial*.05,`expected learned latent target error to fall; before=${initial}, after=${after}`);
+ const saved=LatentGoalField.restore(JSON.parse(JSON.stringify(l.export())));
+ assert.deepEqual(saved.goal(p),l.goal(p));
+});
+test('heldout navigation reports observed 32D state coordinates without training on reference',()=>{
+ const path=trainedHead(),agent=new CausalTextAgent({seed:7});agent.probe();
+ for(let i=0;i<8;i++){agent.train('What is rain?','water falling from clouds.',path,{seed:i,maxActions:9});path.learn('What is rain?','water falling from clouds.');}
+ const before=JSON.stringify(agent.export());
+ const route=agent.navigate('Where does rain fall?',path,{steps:16});
+ assert.ok(route.events.length>0);
+ assert.equal(route.events[0].latentBefore.length,32);assert.equal(route.events[0].latentAfter.length,32);
+ assert.equal(JSON.stringify(agent.export()),before);
 });
