@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {AligningGraph} from "../transcend/torus-aether/align.mjs";
+import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 import {navigateWrittenText} from "../transcend/torus-aether/text-route-navigation.mjs";
 
 const examples = [
@@ -68,4 +69,18 @@ test("high temperature retains freedom; forced transitions cannot be fabricated"
   assert.equal(r.route.generated,30);
   assert.equal(r.route.singleChoice,30);
   assert.ok(r.bytes.every(c=>c===32), "no invented connection when no proposal exists");
+});
+
+test("the original Brain uses experimental routing only when requested, and the same checkpoint still writes normally", () => {
+  const brain = new Brain({rules:"winner",seed:17});
+  brain.align = trained();
+  const n = brain.align.mem.n;
+  const r = brain.chat([], {T:.6,max:160,seed:19,navigation:true,stopBlank:false});
+  assert.equal(r.text.length,160);
+  assert.equal(r.route.generated,160);
+  assert.ok(r.route.visitedStates>0);
+  const plain = brain.chat([], {T:.6,max:160,seed:19,stopBlank:false});
+  assert.equal(plain.route,undefined);
+  assert.equal(plain.text.length,160);
+  assert.equal(brain.align.mem.n,n, "routing generates; it does not silently retrain the original Brain");
 });
