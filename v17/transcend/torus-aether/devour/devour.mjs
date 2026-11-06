@@ -67,6 +67,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
+    constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
@@ -159,6 +160,25 @@ http.createServer((req, res) => {
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
     sl.wk.postMessage({languageExam:{id,limit:Math.max(100,Math.min(10000,
       Math.trunc(+(q.get('limit')||1800)))),seed:+(q.get('seed')||11)}});
+    return;
+  }
+  // Frozen original V17 comparison: same learned operator against unseen
+  // complete and incomplete mazes, with no teacher route in the blind arm.
+  if(req.method==="POST"&&url==="/constructed-paths-eval"){
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("maze"))return json(res,{error:"Select a maze-training graph"});
+    const count=Math.max(1,Math.min(80,Math.trunc(+(q.get("count")||12))));
+    const seed=Math.max(0,Math.min(1000000,Math.trunc(+(q.get("seed")||73))));
+    if(!sl.wk) {
+      const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No brain checkpoint"});
+      try{return json(res,{...Brain.load(save).testConstructedMaze(count,seed),fromSave:true});}
+      catch(err){return json(res,{error:err.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Blind-map evaluation timed out"});
+    },180000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({constructedPathExam:{id,count,seed}});
     return;
   }
   // The selected ORIGINAL Brain predicts and executes unseen global->local
