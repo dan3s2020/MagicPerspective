@@ -5,7 +5,7 @@
 // The body->world rotation is not taught by hidden frame labels. It is estimated
 // from successive local observations matched against the remembered map.
 import {makeMaze,seedOf,SEEDS,RNG,ACTIONS,nextCell,bfs} from './labyrinth.mjs';
-import {KIND,bodyEffect} from './exercise.mjs';
+import {KIND,bodyEffect,Discoverer} from './exercise.mjs';
 
 const wrap=x=>(x%4+4)%4;
 const step=(n,p,d)=>{const x=p%n+ACTIONS[wrap(d)][0],y=Math.floor(p/n)+ACTIONS[wrap(d)][1];return x<0||y<0||x>=n||y>=n?-1:y*n+x;};
@@ -97,8 +97,8 @@ function chooseKnownOutput(D,dir){
   return null;
 }
 class EgocentricAgent {
-  constructor(memory,initialPlan,model){
-    this.map=memory;this.plan=initialPlan.positions;this.model=model;
+  constructor(memory,initialPlan,model,learning=false){
+    this.map=memory;this.plan=initialPlan.positions;this.model=model;this.learning=learning;
     this.candidates=[];this.lastActionDir=null;this.lastMoved=null;
     this.prev=null;this.best=null;this.confident=false;this.relocalizations=0;
     this.routeUses=0;this.fallbackUses=0;
@@ -136,7 +136,7 @@ class EgocentricAgent {
     this.prev=prior;this.best=best;this.candidates=candidates;
     // Learn the mapping from inferred pose change and the action we emitted,
     // NEVER from simulator.truePosition or simulator.hiddenHeading.
-    if(this.lastMoved&&prior&&this.lastActionDir!==null&&this.confident){
+    if(this.learning&&this.lastMoved&&prior&&this.lastActionDir!==null&&this.confident){
       const dx=(best.pos%map.n)-(prior.pos%map.n);
       const dy=Math.floor(best.pos/map.n)-Math.floor(prior.pos/map.n);
       const observedDir=dirOf(dx,dy);
@@ -191,7 +191,7 @@ export function perspectiveEpisode(world,discoverer,model,{train=false,record=fa
   const overhead=Array.from(world.wall,v=>v?KIND.wall:KIND.floor);
   overhead[world.goal]=KIND.target;overhead[world.start]=KIND.self;
   const plan=sensedPlan(discoverer,world,overhead),mem=memoryFrom(world);
-  const nav=new EgocentricAgent(mem,plan,model);
+  const nav=new EgocentricAgent(mem,plan,model,train);
   const rnd=new RNG(seedOf(SEEDS.train,world.start*119+world.goal+seed)),hiddenHeading=rnd.int(4);
   let actual=world.start,steps=0,bumps=0,correctPose=0,correctFrame=0,tracked=0;
   const stepLimit=3*world.dist[world.start]+15;
@@ -241,8 +241,13 @@ export function evaluatePerspective(discoverer,model,{count=20,seed=73}={}){
     // Original test partition. Never use these test states to update the learner.
     const w=makeMaze(seedOf(SEEDS.test,900000+seed*101+i*13),[7,9,11,13][i%4]);
     const s=seed+i*211;
-    rows.push(perspectiveEpisode(w,discoverer,learned,{train:false,record:i<2,seed:s}));
-    base.push(perspectiveEpisode(w,discoverer,identity,{train:false,record:i<2,seed:s}));
+    // Clone the original V17 Discoverer/RNG for EACH paired trial.
+    // Otherwise unknown-action exploration would advance the original Brain's RNG
+    // and contaminate this supposedly frozen comparison.
+    const cloneD=()=>{const copy=Object.assign(Object.create(Discoverer.prototype),structuredClone(discoverer));
+      copy.r=Object.assign(Object.create(RNG.prototype),copy.r);return copy;};
+    rows.push(perspectiveEpisode(w,cloneD(),learned,{train:false,record:i<2,seed:s}));
+    base.push(perspectiveEpisode(w,cloneD(),identity,{train:false,record:i<2,seed:s}));
   }
   const a=stats(rows),b=stats(base);
   return {seed,count,learned:a,control:b,improvementPoints:100*(a.successRate-b.successRate),
