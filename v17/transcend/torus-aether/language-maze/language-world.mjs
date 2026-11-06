@@ -203,7 +203,7 @@ export class LanguageMazeMemory {
   return {
    protocol:"ONE_MAZE_LAW_OVER_OBSERVED_TEXT_TRANSITIONS",
    frozen:true,trainingMutated:false,
-   input:prompt,output,solvedKnownGoal:!!result&&localReachedGoal,
+   input:prompt,output,propagation:field.propagation,solvedKnownGoal:!!result&&localReachedGoal,
    abstained:!result,reason:result&&!localReachedGoal?"LOCAL_PATH_BLOCKED":field.reason,steps:result?.length||0,
    locallyExecutedSteps:emitted.length,localAgreementRate:result?.length?localAgreement/result.length:null,
    localBlockedSteps:blocked,bodyPolicy:"local_neighbor_hillclimb_of_remembered_global_field",
