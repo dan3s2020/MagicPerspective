@@ -67,6 +67,10 @@
   #shapeResearch .srAlt{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
   #shapeResearch .srAlt button{max-width:100%;white-space:normal;text-align:left;font-size:11px}
   #shapeResearch .srAlt button.on{border-color:var(--gold);color:var(--gold)}
+  #rCharacterStream span{display:inline-block;min-width:7px;padding:1px 1px;cursor:pointer;border-bottom:2px solid transparent}
+  #rCharacterStream span.ok{color:#79ebb5}
+  #rCharacterStream span.err{color:#ff8da1;background:#341320}
+  #rCharacterStream span.selected{border-bottom-color:#f5b301;background:#334150}
 </style>
 </head>
 <body>
@@ -155,6 +159,12 @@
           <strong id="rStepCount">Pas 0 / 0</strong></div>
         <h2>3. Fiecare pas — observație, predicție, acțiune, rezultat, replanificare</h2>
         <div id="rStepFacts" class="srOut">Nicio mișcare înregistrată încă.</div>
+        <h2>3b. Cursorul REAL al caracterelor — predicție → observație → eroare</h2>
+        <p class="note">Separate de traseul atlasului: acestea sunt predicțiile originale ale lui AligningGraph.live, capturate înainte de învățare în modul CPU. În ruta CUDA agregată, traseul caracter-cu-caracter nu este instrumentat și nu este simulat.</p>
+        <div id="rCharStatus" class="note">Aștept caractere observate în creierul original.</div>
+        <input id="rCharStep" class="srTimeline" type="range" min="0" max="0" step="1" value="0">
+        <div id="rCharInspection" class="srOut">Nicio predicție de caracter.</div>
+        <div id="rCharacterStream" class="srOut" style="max-height:160px;white-space:normal;line-height:2;font-size:13px"></div>
         <h2>4. Căi alternative observate și numărul drumurilor minime</h2>
         <div class="srAlt" id="rAlternativeList"></div>
         <div id="rTraceEvents" class="srOut">Fără evenimente.</div>
