@@ -33,7 +33,20 @@ if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
-brain.setSharedObserver(sample => shared.observe(sample));
+const traceFile = workerData.traceTransformations && saveFile ? saveFile + ".transitions.jsonl" : null;
+let traced = 0;
+// Explicit opt-in: record only real TRAINING observations, no oracle or held-out
+// reference, with a bounded file size and a group ID for episode-disjoint tests.
+brain.setSharedObserver(sample => {
+  const item = shared.observe(sample);
+  if (traceFile && traced < 50000) {
+    const i = item.domain === "maze" ? brain.mazes.index : item.domain === "transform" ? brain.trans?.index : brain.exercises;
+    const episode = item.domain + ":" + String(i ?? 0);
+    fs.mkdirSync(path.dirname(traceFile), {recursive: true});
+    fs.appendFileSync(traceFile, JSON.stringify({...item, episode}) + "\n");
+    traced++;
+  }
+});
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
