@@ -4,7 +4,7 @@
 // No language semantics oracle; an unsupported prompt falls back to V17's original writer.
 import {gearTokens} from './nested_text_gears.mjs';
 
-const MAX_CUES = 48, MAX_ROWS = 6000, MAX_WORDS = 9, MAX_STATES = 1200;
+const MAX_CUES = 48, MAX_ROWS = 6000, MAX_WORDS = 9, MAX_STATES = 1200, MAX_CUE_BUCKETS=12000, MAX_LABELS_PER_CUE=80, MAX_GLOBAL_LABELS=12000;
 const key = (n,i,w) => JSON.stringify([n,i,w]);
 const normalize = s => String(s||'').normalize('NFKC').toLowerCase();
 const promptFeatures = s => [...new Set(gearTokens(s).slice(0,64).map(normalize))].slice(0,MAX_CUES);
@@ -47,16 +47,25 @@ export class NativeGearDrive {
     // All observed training sentences feed the existing learned-operator world,
     // even where the answer is too long for prompt-conditioned char execution.
     const observed=this.gears.observeAnswer(answer,{limit:8,onEvidence});
-    if(!candidate || this.rows>=MAX_ROWS)return {trained:true,observed,conditional:false};
+    if(!candidate)return {trained:true,observed,conditional:false};
     const n=candidate.length,q=promptFeatures(prompt),id=this.rows;
-    for(let i=0;i<n;i++)add(this.glob,key(n,i,candidate[i]));
+    for(let i=0;i<n;i++){const label=key(n,i,candidate[i]);
+      if(!this.glob.has(label)&&this.glob.size>=MAX_GLOBAL_LABELS)this.glob.delete(this.glob.keys().next().value);
+      add(this.glob,label);}
     for(const cue of q){
+      if(!this.cueCounts.has(cue)&&this.cueCounts.size>=MAX_CUE_BUCKETS){
+        const stale=this.cueCounts.keys().next().value;this.cueCounts.delete(stale);this.cueTotals.delete(stale);
+      }
       const counts=this.cueCounts.get(cue)||new Map();
-      for(let i=0;i<n;i++)add(counts,key(n,i,candidate[i]));
+      for(let i=0;i<n;i++){const label=key(n,i,candidate[i]);
+        if(!counts.has(label)&&counts.size>=MAX_LABELS_PER_CUE)counts.delete(counts.keys().next().value);
+        add(counts,label);}
       this.cueCounts.set(cue,counts);add(this.cueTotals,cue);
     }
     add(this.lengths,String(n));
-    this.examples.push({q,n,words:candidate});this.rows++;this.revision++;
+    if(this.examples.length<MAX_ROWS)this.examples.push({q,n,words:candidate});
+    else this.examples[this.rows%MAX_ROWS]={q,n,words:candidate};
+    this.rows++;this.revision++;
     return {trained:true,observed,conditional:true};
   }
   // Infer a goal from PROMPT-ONLY statistical evidence, never from an answer.
