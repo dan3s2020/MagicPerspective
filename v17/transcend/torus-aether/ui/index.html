@@ -31,7 +31,7 @@
   .grp{display:inline-block;margin:3px 4px 0 0;padding:2px 6px;border-radius:6px;font:12px ui-monospace,monospace;color:#000;background:hsl(var(--h),85%,65%)}
   .matrix{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:6px;font:11px ui-monospace,monospace;color:var(--gold)}.matrix span{background:#0a121c;border:1px solid #2a3a4a;border-radius:4px;text-align:center;padding:2px 0}
   .where{font-size:12.5px;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 9px;margin:6px 0}.where .ctx{color:var(--gold);font-family:ui-monospace,monospace}
-  .liveList{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px}.lgc{border:1px solid #23384c;border-radius:8px;padding:6px 8px;font-size:12px}.lgc.on{border-color:var(--gold)}.lgc .t{cursor:pointer}.lgc .sc{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:4px 0}.lgc .sc b{font-weight:600}.lgc .bt{display:flex;gap:4px;flex-wrap:wrap}.lgc .bt button{padding:2px 7px;font-size:12px}.st{font-size:11px;padding:1px 6px;border-radius:6px;background:#1d2b3a}.st.run{background:#174a2c;color:#7ee0a1}.lg{text-align:left;font-size:12px;padding:6px 8px}.lg small{color:var(--dim);font-size:11px}.lg.on{border-color:var(--gold);color:var(--gold)}
+  .liveList{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.lgc{min-width:0;border:1px solid #23384c;border-radius:8px;padding:9px 10px;font-size:12px;overflow-wrap:anywhere}.lgc.on{border-color:var(--gold)}.lgc .t{cursor:pointer}.lgc .sc{display:grid;grid-template-columns:minmax(82px,.65fr) minmax(0,1.35fr);gap:5px 10px;margin:6px 0;line-height:1.4}.lgc .sc>span{min-width:0;overflow-wrap:anywhere}.lgc .sc b{font-weight:600}.lgc .bt{display:flex;gap:4px;flex-wrap:wrap}.lgc .bt button{padding:2px 7px;font-size:12px}.st{font-size:11px;padding:1px 6px;border-radius:6px;background:#1d2b3a}.st.run{background:#174a2c;color:#7ee0a1}.lg{text-align:left;font-size:12px;padding:6px 8px}.lg small{color:var(--dim);font-size:11px}.lg.on{border-color:var(--gold);color:var(--gold)}
   body.live #run,body.live #reset,body.live .sl:has(#speed),body.live .sl:has(#ltemp),body.live .sl:has(#pnoise),body.live .sl:has(#dims),body.live .sl:has(#bud),body.live .sl:has(#wires),body.live .sl:has(#gnoise),body.live .sl:has(#glr),body.live .sl:has(#repel){display:none}
   .gen{margin-top:6px;font:12px/1.5 ui-monospace,monospace;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 8px;word-break:break-all}
   #chatTab{position:fixed;right:16px;bottom:16px;z-index:30;background:var(--gold);color:#000;border:0;font-weight:600;box-shadow:0 4px 18px #0008}
@@ -42,7 +42,24 @@
   .msg{max-width:88%;padding:7px 10px;border-radius:10px;white-space:pre-wrap;word-break:break-word;font-size:13px}.msg.you{align-self:flex-end;background:#13314d}.msg.him{align-self:flex-start;background:#0d1824;font-family:ui-monospace,monospace}.msg.err{align-self:center;color:var(--red);font-size:12px}.msg small{display:block;color:var(--dim);font-size:10.5px;margin-top:3px;font-family:system-ui}
   #chatForm{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}#chatIn{flex:1;resize:none;height:42px;background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:8px;padding:7px 9px;font:inherit}
   .tabs{display:flex;gap:6px;margin-bottom:12px;position:sticky;top:0;z-index:5;background:#000;padding:6px 0}.tabs button.on{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600}
-  aside.side.evalOn > :not(.tabs):not(#evalPane){display:none}#evalPane{display:none}aside.side.evalOn #evalPane{display:block}
+  aside.side.evalOn > :not(.tabs):not(#evalPane){display:none}
+  aside.side.obsOn > :not(.tabs):not(#observePane){display:none}
+  #evalPane,#observePane{display:none}
+  aside.side.evalOn #evalPane,aside.side.obsOn #observePane{display:block}
+  .tabs{flex-wrap:wrap}
+  #obsNav{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0}
+  #obsNav button{padding:6px 8px;font-size:12px}
+  #obsNav button.on{background:#243b51;border-color:#79beec;color:#fff}
+  #observePane{min-width:0}
+  #observePane canvas{width:100%;height:auto;display:block;background:#07111b;border:1px solid #24374a;border-radius:9px;margin:8px 0}
+  #obsStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .obsmetric{padding:9px;border:1px solid #23384c;border-radius:8px;background:#0a1520;min-width:0}
+  .obsmetric small{display:block;color:var(--dim);font-size:11px}
+  .obsmetric b{display:block;font:600 16px/1.5 ui-monospace,monospace;overflow-wrap:anywhere}
+  #obsDetails{font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto}
+  #obsMeta,#obsHealth{font-size:12px;overflow-wrap:anywhere}
+  #obsHealth{color:#8ed1ef}
+  #obsCaveat{font-size:11.5px;color:var(--dim);line-height:1.6}
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
@@ -73,7 +90,7 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabObserve">Observator LIVE · grafice</button></div>
     <div id="evalPane">
       <h2>Evaluare pe ce n-a trăit niciodată — din prima încercare</h2>
       <p class="note">O copie a grafului <b id="evW">#0</b>, încărcată din save-ul lui (îl salvează chiar atunci), rulează pe procesor. Antrenarea merge mai departe neatinsă; copia nu învață între lumi.</p>
@@ -89,6 +106,27 @@
       <canvas id="evCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
       <div id="evalText" hidden></div>
       <div id="evalTab" class="dim"></div>
+    </div>
+    <div id="observePane">
+      <h2>Instrumente reale · același organism, fără animații fabricate</h2>
+      <p id="obsHealth">Așteaptă conexiunea la worker și primul snapshot real...</p>
+      <p id="obsMeta" class="note">Selectează un graf de antrenament. Fiecare curbă reprezintă date măsurate, nu o predicție inventată.</p>
+      <div id="obsNav">
+        <button data-obs="activity" class="on">Activitate și CUDA</button>
+        <button data-obs="transforms">Transformări învățate</button>
+        <button data-obs="paths">Căi / hipergraf</button>
+        <button data-obs="latent">Vectorii reali 32D</button>
+        <button data-obs="noise">Zgomot ales</button>
+        <button data-obs="spectrum">Faze și frecvențe</button>
+        <button data-obs="selfcode">Propriul cod</button>
+      </div>
+      <div id="obsStats"></div>
+      <h2 id="obsTitle">Evoluție măsurată</h2>
+      <canvas id="obsCanvas" width="580" height="270"></canvas>
+      <canvas id="obsCanvasAux" width="580" height="160"></canvas>
+      <p id="obsCaveat">Graficele folosesc exclusiv contoare, tranziții, poziții și activări reale ale backendului.</p>
+      <div class="row"><button id="obsExport">Exportă instantaneele reale (JSON)</button></div>
+      <pre id="obsDetails"></pre>
     </div>
     <div id="livePanel" hidden>
       <h2>Grafurile care devorează acum (alege unul ca să intri în spațiul lui)</h2>
