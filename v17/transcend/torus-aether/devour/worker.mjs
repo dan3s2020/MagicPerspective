@@ -11,6 +11,7 @@ import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
+import {NestedTextGears} from "../../../../isolated/noise-space/nested_text_gears.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
@@ -40,12 +41,13 @@ const shared = new SharedExperience({capacity: 384, seed: brain.seed});
 brain.setSharedObserver(sample => shared.observe(sample));
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
-let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
+let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed}), nestedGears = new NestedTextGears();
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
     const t = JSON.parse(fs.readFileSync(textFile, "utf8"));
     if (t.version !== 1) throw Error("unknown language sidecar");
     textPaths = TextActionPaths.restore(t.paths); causalText = CausalTextAgent.restore(t.causal);
+    if(t.gears) nestedGears = NestedTextGears.restore(t.gears);
   } catch (err) {
     parentPort.postMessage({type: "note", w: workerData.gw, text: "language sidecar not loaded: " + err.message});
   }
@@ -53,12 +55,19 @@ if (resume && textFile && fs.existsSync(textFile)) {
 const saveText = () => {
   if (!textFile) return;
   fs.mkdirSync(path.dirname(textFile), {recursive: true});
-  fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
+  fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export(), gears: nestedGears.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
 };
 const absorbText = row => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
   textPaths.learn(row.prompt, row.answer);
+  // Real observed corpus sentences become reusable single-slot transformations.
+  // A paired observation, never a held-out answer, also enters the common V17 transition learner.
+  let emitted = 0;
+  nestedGears.observeAnswer(row.answer, {limit:8, onEvidence:e=>{
+    if(emitted++<12) brain.observeShared({domain:'text',before:e.before,after:e.after,
+      action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:String(row.prompt).slice(0,256)});
+  }});
   causalText.train(row.prompt, row.answer, textPaths,
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
 };
@@ -70,7 +79,7 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), selfcode: selfcode?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shared: shared.status(), selfcode: selfcode?.status() || null, gears: nestedGears.summary(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
@@ -80,7 +89,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const currentTextLength = brain.trace.text.length;
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfcode: selfcode?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfcode: selfcode?.status() || null, gears: nestedGears.summary(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -179,6 +188,42 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     return;
   }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
+  if(m && m.gear){
+    const req=m.gear;let result;
+    try {
+      if(!TEXT)throw Error('The selected V17 organism was not started with the text world');
+      if(req.mode==='observe'){
+        if(!Array.isArray(req.examples)||req.examples.length<1||req.examples.length>64)throw Error('Provide 1-64 observed training sentences');
+        let accepted=0, observations=0;
+        for(const sentence of req.examples) {
+          if(typeof sentence!=='string'||sentence.length>600)throw Error('Invalid training observation');
+          if(nestedGears.observeSentence(sentence,e=>{
+            if(observations++<128)brain.observeShared({domain:'text',before:e.before,after:e.after,
+              action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:'user observed sentence'});
+          }))accepted++;
+        }
+        saveText();result={ok:true,accepted,summary:nestedGears.summary(),mode:'observations'};
+      } else if(req.mode==='plan'){
+        const route=nestedGears.cursor(req.start,req.goal,{maxChars:200,maxStates:1800,
+          noise:Math.max(0,Math.min(1,Number(req.noise)||0)),seed:Number(req.seed)||7});
+        if(route.ok) {
+          const T=brain.trace;
+          // The ORIGINAL graph receives evidence-linked route nodes, NOT invented trained weights.
+          for(const step of route.route.slice(0,24)){
+            const before='gear:state:'+step.before,after='gear:state:'+step.after;
+            T.node(before,'world',step.before.slice(0,48));T.node(after,'world',step.after.slice(0,48));
+            T.setEdge(before,after,'gear-transform',Math.min(5,1+step.evidence),
+              'slot '+step.slot+': '+step.from+' → '+step.to);
+          }
+          T.node('gear:cursor','self','cursor');
+          if(route.route.length)T.setEdge('gear:cursor','gear:state:'+route.route[0].before,'gear-plan',2,'plan before first character');
+        }
+        result={...route,summary:nestedGears.summary(),mode:'plan'};
+      } else throw Error('Unknown gear mode');
+      shot(true);
+    } catch(err){result={ok:false,error:err.message,summary:nestedGears.summary()};}
+    parentPort.postMessage({type:'chat',kind:'gear',id:req.id,...result});return;
+  }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
   if (m === "stop") stop = true; else if (m === "pause") { paused = true; selfcode?.pause(); } else if (m === "resume") { paused = false; selfcode?.resume(); } else if (m === "save") saveNow = true; });
