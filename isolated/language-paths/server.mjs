@@ -4,15 +4,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {runBenchmark} from './benchmark.mjs';
+import {evaluateTransfer} from './cross_world_transfer.mjs';
 const dir=path.dirname(fileURLToPath(import.meta.url));
 const port=Number(process.env.PORT||8898),host='127.0.0.1';
 let report=null;
+let transferReport=null;
 function getReport(){if(report)return report;const file=path.join(dir,'run-result.json');
  report=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):runBenchmark();return report;}
 const server=http.createServer((req,res)=>{
  let body,contentType,status=200;
  try{if(req.method!=='GET')throw Object.assign(Error('GET only'),{status:405});
    if(req.url==='/'||req.url==='/index.html'){body=fs.readFileSync(path.join(dir,'index.html'));contentType='text/html; charset=utf-8';}
+   else if(req.url==='/transfer'){body=fs.readFileSync(path.join(dir,'transfer.html'));contentType='text/html; charset=utf-8';}
+   else if(req.url==='/api/transfer'){body=JSON.stringify(transferReport ||= evaluateTransfer());contentType='application/json; charset=utf-8';}
    else if(req.url==='/api/report'){body=JSON.stringify(getReport());contentType='application/json; charset=utf-8';}
    else if(req.url==='/health'){body='ok';contentType='text/plain; charset=utf-8';}
    else throw Object.assign(Error('Not found'),{status:404});
