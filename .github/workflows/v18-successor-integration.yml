@@ -24,6 +24,7 @@ jobs:
           node --check v17/transcend/torus-aether/ui/successor-observatory.js
           node --check v17/transcend/torus-aether/ui/hypermaze-geometry.mjs
           node --check v17/transcend/torus-aether/ui/text-hypermaze.js
+          node --check v17/transcend/torus-aether/ui/app.js
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
       - name: Original maze parity, live learned text, successor exact ties and hierarchical 112531-character path
@@ -32,7 +33,7 @@ jobs:
       - name: Dedicated browser-tab interaction and original tab isolation
         run: node --test v17/transcend/torus-aether/ui/successor-observatory.test.mjs
       - name: Real 4D text navigation geometry, 15000-node and unseen-text provenance
-        run: node --test v17/transcend/torus-aether/ui/hypermaze-geometry.test.mjs
+        run: node --test v17/transcend/torus-aether/ui/hypermaze-geometry.test.mjs v17/transcend/torus-aether/ui/text-hypermaze.test.mjs
       - name: Native server trained on actual input text and frozen HTTP test
         run: node --test v17/transcend/torus-aether/language-maze/language-http.test.mjs
       - name: Unmodified body perspective and shared experience tests
