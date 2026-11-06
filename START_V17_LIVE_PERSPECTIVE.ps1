@@ -6,6 +6,7 @@ param(
   [int]$Workers = 1,
   [string]$Data = "D:\training\OpenThoughts3-1.2M",
   [string]$Text = "",
+  [string]$ImportBrains = "",
   [string]$Out = "",
   [string]$Gpu = "cuda:0",
   [int]$GpuWorlds = 32,
@@ -75,6 +76,31 @@ if ($Text) {
 }
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $brainDir=Join-Path $Out "brains"
+if ($ImportBrains) {
+  if (-not (Test-Path -LiteralPath $ImportBrains -PathType Container)) {
+    throw "Source Brain folder missing: $ImportBrains"
+  }
+  $sourceBrainDir=[IO.Path]::GetFullPath($ImportBrains)
+  if ($sourceBrainDir -eq [IO.Path]::GetFullPath($brainDir)) {
+    throw "Source and destination Brain folder are identical."
+  }
+  $sourceBrains=@(Get-ChildItem -LiteralPath $sourceBrainDir -Filter "brain-*.v8" -File)
+  if ($sourceBrains.Count -eq 0) { throw "No original V17 brain-*.v8 files found in $sourceBrainDir" }
+  $existing=@()
+  if (Test-Path -LiteralPath $brainDir -PathType Container) {
+    $existing=@(Get-ChildItem -LiteralPath $brainDir -Filter "brain-*.v8" -File)
+  }
+  if ($existing.Count -gt 0) {
+    throw "Isolated Brain already exists. Import refused to avoid overwriting training. Existing files remain unchanged."
+  }
+  New-Item -ItemType Directory -Force -Path $brainDir | Out-Null
+  foreach ($source in $sourceBrains) {
+    $target=Join-Path $brainDir $source.Name
+    Copy-Item -LiteralPath $source.FullName -Destination $target -ErrorAction Stop
+  }
+  Write-Host "Copied $($sourceBrains.Count) ORIGINAL V17 saved Brain files read-only into isolated training destination." -ForegroundColor Green
+  Write-Host "Original source Brain folder was not modified: $sourceBrainDir"
+}
 $resume = (Test-Path -LiteralPath $brainDir -PathType Container) -and (@(Get-ChildItem -LiteralPath $brainDir -Filter 'brain-*.v8' -ErrorAction SilentlyContinue).Count -gt 0)
 $opts=@(
   "--workers",[string]$Workers,"--arms","winner",
