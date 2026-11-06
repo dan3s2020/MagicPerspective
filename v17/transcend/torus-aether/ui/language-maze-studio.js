@@ -175,6 +175,40 @@ $("langPlan").addEventListener("click",async()=>{
  }catch(e){$("langStatus").textContent="Eroare REALĂ: "+e.message;}
  finally{busy=false;$("langPlan").disabled=false;}
 });
+$("langCompare").addEventListener("click",async()=>{
+ const button=$("langCompare");button.disabled=true;
+ $("langCompareReport").textContent="Evaluez checkpoint-ul salvat pe întrebări Q/A nevăzute, fără antrenare...";
+ try{
+  const response=await fetch("/language-maze/compare?w="+selectedGraph()+"&count=8",{
+   method:"POST",cache:"no-store"
+  });
+  const r=await response.json();
+  if(r.error)throw Error(r.error);
+  const percent=v=>v===null||v===undefined?"—":(100*v).toFixed(2)+"%";
+  const lines=[
+   "FROZEN / OpenThoughts held-out: "+r.heldoutRows+" Q/A · "+r.trainingRowsSeen+" observații antrenare",
+   "Răspuns exact V17 original: "+percent(r.original.exactRate),
+   "Răspuns exact + successor: "+percent(r.hybrid.exactRate),
+   "Delta răspuns exact: "+percent(r.exactDelta),
+   "Caractere V17 original: "+percent(r.original.accuracy),
+   "Caractere + successor: "+percent(r.hybrid.accuracy),
+   "Delta caractere: "+percent(r.characterDelta),
+   "Referința intră în planificator: NU · Model actualizat: NU",
+   "",
+   ...r.hybrid.cases.map((h,i)=>{
+    const b=r.original.cases[i];
+    return "#"+(i+1)+" "+(h.equal?"CORECT":"GREȘIT")+
+      " (original "+(b.equal?"CORECT":"GREȘIT")+") · "+
+      String(h.prompt).slice(0,110)+"\n"+
+      "Așteptat: "+String(h.expected).slice(0,130)+"\n"+
+      "V17: "+String(b.actual).slice(0,130)+"\n"+
+      "Hibrid: "+String(h.actual).slice(0,130);
+   })
+  ];
+  $("langCompareReport").textContent=lines.join("\n");
+ }catch(e){$("langCompareReport").textContent="Evaluarea reală a eșuat: "+e.message;}
+ finally{button.disabled=false;}
+});
 let lastPoll=0,activePoll=false;
 async function poll(){
  if(activePoll||document.hidden||!sidebar.classList.contains("langOn"))return;
