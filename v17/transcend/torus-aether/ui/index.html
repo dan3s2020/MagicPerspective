@@ -135,6 +135,16 @@
       <canvas id="perspectiveCv" width="420" height="300" style="width:100%;background:#061524;border-radius:8px"></canvas>
       <p class="note" id="perspectiveFrame">Imaginea globală se vede o singură dată; după aceea, organismul primește numai fragmente locale.</p>
     </div>
+    <div id="observedTransformBox" hidden style="margin:12px 0;border:1px solid #4d7657;border-radius:10px;padding:12px">
+      <h2>Transformări descoperite din diferențe · același creier V17</h2>
+      <p class="note">Fără etichete gramaticale. Compară propozițiile trăite, învață operațiile și caută o cale către condițiile date, ÎNAINTE să primească răspunsul întreg.</p>
+      <p id="observedTransformStats" class="note">Nu există încă suficiente observații pentru învățarea unei transformări.</p>
+      <div class="row"><label for="observedTransformStart">Starea de pornire observată (opțional)</label><input id="observedTransformStart" type="text" placeholder="Propoziție existentă în corpus" style="min-width:220px;flex:1"/></div>
+      <div class="row"><label for="observedTransformGoal">Condiții ale obiectivului (separate prin virgulă)</label><input id="observedTransformGoal" type="text" placeholder="Două sau mai multe simboluri cerute" style="min-width:220px;flex:1"/></div>
+      <div class="row"><button id="observedTransformPlan">Construiește forma soluției înainte de acțiune</button></div>
+      <p id="observedTransformPrediction" class="note">Așteaptă un obiectiv; nu există răspuns precompletat.</p>
+      <pre id="observedTransformPath" class="dim" style="white-space:pre-wrap;font-size:12px;max-height:260px;overflow:auto"></pre>
+    </div>
     <div id="constructedBox" hidden style="margin:12px 0;border:1px solid #4b5e32;border-radius:10px;padding:12px">
       <h2>Organismul își construiește căile · labirint incomplet ↔ complet ↔ text</h2>
       <p id="constructedStatus" class="note">Așteaptă experiențe reale.</p>
