@@ -116,12 +116,24 @@ for await (const ex of stream()) {
   }
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
-  if (TEXT && gpuSet && !gpuError && (await gpuOn())) { textBatch.push(ex.bytes);
+  if (TEXT && gpuSet && !gpuError && (await gpuOn())) {
+    if(research&&research.progress) {
+      research.progress.phase="queued for real CUDA text batch (not yet learned)";
+      research.progress.bytesProcessed=0;
+      research.progress.queuedRows=(textBatch.length+1);
+      researchPulse(true);
+    }
+    textBatch.push(ex.bytes);
     if (textBatch.length >= (gpuSet.textBatch || gpu?.info?.autoText || 512)) {
       const exs = textBatch; textBatch = []; batchNow = {phase: "text pe placă", done: 0, total: exs.length}; shot();
       try { const before = brain.chars; await brain.learnTextGPU(gpu, exs); batchNow = null;
         for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
         if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+        if(research&&research.progress) {
+          research.progress.phase="CUDA batch committed to original V17 Brain";
+          research.progress.bytesProcessed=research.progress.bytesTotal;
+          research.progress.queuedRows=0;researchPulse(true);
+        }
         if (Math.floor(brain.chars / every) > Math.floor(before / every)) report(); shot(); }
       catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR (text): " + err.message}); } }
     if (brain.chars >= maxChars || stop) break; await new Promise(r => setImmediate(r)); continue; }
