@@ -8,7 +8,7 @@ test('one experience queue accepts real observations from three domains', () => 
   x.observeText({before: ['a'], after: ['a', 'b'], action: {tool: 3, token: 'b'}}, 'question');
   const a = x.take(5);
   assert.equal(a.length, 3); assert.deepEqual(a.map(s => s.domain), ['maze', 'transform', 'text']);
-  assert.deepEqual(x.status().domains, {maze: 1, transform: 1, text: 1});
+  assert.deepEqual(x.status().domains, {maze: 1, transform: 1, text: 1, code: 0});
   assert.equal(x.status().queued, 0);
 });
 test('isolated queue bounds; input arrays are copied; errors visible', () => {
