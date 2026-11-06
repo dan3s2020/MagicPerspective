@@ -48,3 +48,24 @@ jobs:
         run: |
           python -m py_compile isolated/noise-space/CHECK_CUDA_ENV.py
           if ($LASTEXITCODE -ne 0) { throw "CUDA probe Python syntax failed" }
+      - name: Refuse duplicate listener on occupied port without touching training
+        shell: powershell
+        run: |
+          $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+          $listener.Start()
+          try {
+            $busyPort = [int]$listener.LocalEndpoint.Port
+            $oldPreference = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+              $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File isolated/noise-space/START_WINDOWS.ps1 -Port $busyPort -NoBrowser 2>&1 | Out-String
+              $exitCode = $LASTEXITCODE
+            } finally {
+              $ErrorActionPreference = $oldPreference
+            }
+            if ($exitCode -eq 0) { throw "An occupied port was wrongly accepted" }
+            if ($output -notmatch 'PORT_IN_USE') { throw "Missing clear occupied-port diagnosis: $output" }
+            Write-Host "PORT_IN_USE_GUARD_OK"
+          } finally {
+            $listener.Stop()
+          }
