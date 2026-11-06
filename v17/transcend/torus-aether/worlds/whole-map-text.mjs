@@ -52,6 +52,39 @@ export function makeTextHypercube({dimensions=6,seed=1,start=null,goal=null,wall
    name:'Binary text-state hypercube (NOT natural-language meaning)',generatedAttempts:attempts+1}};
 }
 
+// A concrete input->target world: the organism is a cursor in a space
+// of COMPLETE strings. A movement edits exactly one character coordinate.
+// The "next character" is the symbol at the cursor's new position.
+export function makeTextEditMaze({input,target,forbidden=[],seed=1,wallRate=0}={}){
+ if(typeof input!=='string'||typeof target!=='string'||input.length!==target.length)
+  throw Error('Input and target must be strings of equal length');
+ const changed=[];
+ for(let i=0;i<input.length;i++)if(input[i]!==target[i])changed.push(i);
+ if(changed.length<1||changed.length>10||input.length>256)
+  throw Error('Explicit string-edit atlas supports 1..10 changed positions');
+ const wordOf=bits=>{
+  const chars=[...input];
+  for(let j=0;j<bits.length;j++)if(bits[j]==='1')chars[changed[j]]=target[changed[j]];
+  return chars.join('');
+ };
+ const options=new Map();
+ for(let mask=0;mask<2**changed.length;mask++){
+  const bits=mask.toString(2).padStart(changed.length,'0');
+  options.set(wordOf(bits),bits);
+ }
+ const fixed=[];
+ for(const word of forbidden){
+  if(!options.has(word))throw Error('Forbidden text state is not reachable through the defined single-character edits');
+  fixed.push(options.get(word));
+ }
+ const base=makeTextHypercube({dimensions:changed.length,seed,wallRate,
+  forbidden:fixed,start:'0'.repeat(changed.length),goal:'1'.repeat(changed.length)});
+ return {...base,domain:'text',nodes:base.nodes.map(n=>({...n,label:wordOf(n.label)})),
+  edges:base.edges.map(e=>({...e,axis:changed[e.axis],action:'edit-character-'+changed[e.axis]})),
+  metadata:{...base.metadata,input,target,changedCharacterPositions:changed,
+   name:'Complete input-to-target text-state atlas; not an LM'}}; 
+}
+
 // Convert exactly the existing V17 2D maze to the SAME graph representation.
 export function mapFrom2DMaze(maze){
  const {n,wall,start,goal}=maze;
