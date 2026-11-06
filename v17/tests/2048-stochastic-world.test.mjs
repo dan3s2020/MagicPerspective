@@ -117,3 +117,45 @@ test("the RANDOM NEW TILE is a necessary source of mass and growth, not merely d
   interpretation:"random world spawning adds resources; it is not a mere rotation or a changed text temperature"
  }));
 });
+
+test("action-dependent noise changes its ACTUAL active axes in 16D board-state space",()=>{
+ const board=[2,2,0,0, 4,0,0,0, 8,16,16,8, 0,0,0,0];
+ const results=[];
+ for(const d of ["left","right","up","down"]){
+  const after=slide(board,d).board,options=successors(after);
+  const free=Array.from({length:16},(_,i)=>i).filter(i=>after[i]===0),n=free.length;
+  const means=Array(16).fill(0);
+  const covariance=Array.from({length:16},()=>Array(16).fill(0));
+  // Residual noise X is the new piece only; deterministic slide subtracted.
+  for(const o of options){
+   means[o.index]+=o.p*o.value;
+   covariance[o.index][o.index]+=o.p*o.value*o.value;
+  }
+  for(let i=0;i<16;i++)for(let j=0;j<16;j++)covariance[i][j]-=means[i]*means[j];
+  const other=5.2/n,common=.36/n;
+  let maxError=0;
+  for(let i=0;i<16;i++)for(let j=0;j<16;j++){
+   const expected=free.includes(i)&&free.includes(j)?
+    (i===j?5.2/n:0)-4.84/(n*n):0;
+   maxError=Math.max(maxError,Math.abs(covariance[i][j]-expected));
+  }
+  // Exact eigen-directions: all-ones free-space and any difference of two free axes.
+  const ones=Array(16).fill(0),contrast=Array(16).fill(0);
+  for(const i of free)ones[i]=1/Math.sqrt(n);
+  contrast[free[0]]=1/Math.SQRT2;contrast[free[1]]=-1/Math.SQRT2;
+  for(const [direction,eigenvalue] of [[ones,common],[contrast,other]]){
+   for(let i=0;i<16;i++){
+    const observed=covariance[i].reduce((t,c,j)=>t+c*direction[j],0);
+    maxError=Math.max(maxError,Math.abs(observed-eigenvalue*direction[i]));
+   }
+  }
+  assert.ok(maxError<1e-12,JSON.stringify({d,n,maxError}));
+  results.push({direction:d,activeNoiseAxes:n,possibleWorlds:options.length,
+   freeCells:free,commonModeEigenvalue:common,
+   differentialModeEigenvalue:other,differentialModeMultiplicity:n-1,maxError});
+ }
+ assert.deepEqual(results.map(r=>r.activeNoiseAxes),[11,11,9,9]);
+ assert.notDeepEqual(results[0].freeCells,results[1].freeCells);
+ assert.notDeepEqual(results[0].freeCells,results[2].freeCells);
+ console.log("REAL_DIRECTION_DEPENDENT_NOISE_AXES",JSON.stringify(results));
+});
