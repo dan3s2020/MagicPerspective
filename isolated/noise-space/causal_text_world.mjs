@@ -106,6 +106,38 @@ export class ActionDynamics {
     x.counts=s.counts.map(c=>new Map(c));x.observations=s.observations||0;x.matches=s.matches||0;return x;}
 }
 
+// Trainable 32D prompt->goal field, with reproducible hashed input/target encodings.
+// This is an empirical text embedding, NOT a discovered semantic manifold.
+const D=32,F=128;
+const fnv=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
+function hashes(s,n,makeBigrams=false){
+ const toks=words(s).slice(0,160),f=new Float64Array(n);
+ for(let i=0;i<toks.length;i++){
+  const h=fnv('t:'+toks[i]);f[h%n]+=h&1?1:-1;
+  if(makeBigrams&&i>0){const q=fnv('b:'+toks[i-1]+':'+toks[i]);f[q%n]+=(q&1?.6:-.6);}
+ }
+ const norm=Math.hypot(...f);if(norm)for(let j=0;j<n;j++)f[j]/=norm;
+ return Array.from(f);
+}
+export class LatentGoalField {
+ constructor(seed=7){this.seed=seed;const random=rng(seed);this.W=Array.from({length:D},()=>Array.from({length:F},()=>.025*(random()-.5)));
+  this.updates=0;this.lastLoss=null;this.averageLoss=0;this.lr=.11;}
+ features(prompt){return hashes(prompt,F,true);}
+ target(answer){return hashes(answer,D,true);}
+ goal(prompt){const f=this.features(prompt);return this.W.map(row=>row.reduce((s,w,i)=>s+w*f[i],0));}
+ distance(v,g){const x=Array.isArray(v)&&v.length===D&&v.every(Number.isFinite)?v:typeof v==='string'?this.target(v):this.target(text(v));return mean(x.map((y,i)=>(y-g[i])**2));}
+ fit(prompt,answer){const x=this.features(prompt),g=this.goal(prompt),y=this.target(answer);
+  const error=g.map((v,i)=>v-y[i]);const loss=mean(error.map(v=>v*v));
+  for(let i=0;i<D;i++)for(let j=0;j<F;j++)this.W[i][j]-=this.lr*error[i]*x[j];
+  this.lastLoss=loss;this.averageLoss+=(loss-this.averageLoss)/(++this.updates);return loss;
+ }
+ summary(){return {dimensions:D,features:F,updates:this.updates,lastLoss:this.lastLoss,meanTrainingLoss:this.averageLoss,
+  description:'32D trainable goal projection from hashed Unicode word/bi-gram features; NOT semantic equivalence'};}
+ export(){return {version:1,seed:this.seed,W:this.W,updates:this.updates,lastLoss:this.lastLoss,averageLoss:this.averageLoss,lr:this.lr};}
+ static restore(s){if(s?.version!==1||!Array.isArray(s.W)||s.W.length!==D||s.W.some(r=>!Array.isArray(r)||r.length!==F))throw Error('Invalid latent goal checkpoint');
+  const m=new LatentGoalField(s.seed);Object.assign(m,s);return m;}
+}
+
 // A learned value field on goal-conditioned text states. The goal is predicted from prior
 // corpus episodes (not read from the held-out answer). Updates use *observed reward only*.
 export class TextValueField {
@@ -127,7 +159,7 @@ export class TextValueField {
 }
 
 export class CausalTextAgent {
-  constructor({seed=17}={}){this.seed=seed;this.rand=rng(seed);this.dynamics=new ActionDynamics();this.value=new TextValueField();
+  constructor({seed=17}={}){this.seed=seed;this.rand=rng(seed);this.dynamics=new ActionDynamics();this.value=new TextValueField();this.latent=new LatentGoalField(seed+31);
     this.episodes=0;this.interventions=0;this.solved=0;this.last=null;this.lastHeldout=null;
     this.lengths=new Map();this.globalLength={mean:0,n:0};}
   learnGoalLength(prompt,answer){
@@ -151,16 +183,18 @@ export class CausalTextAgent {
   rank(observation,pathHead,{top=10}={}){
     const candidates=this.choices(observation,pathHead,{limit:6}),prefix=observation.tokens;
     const observedProposals=new Map((pathHead?.propose(observation.prompt,prefix,8)||[]).map(x=>[x.token,x]));
-    const draft=text(prefix);
+    const draft=text(prefix),goal=this.latent.goal(observation.prompt),beforeField=this.latent.distance(prefix,goal);
     return candidates.map(a=>{
       const p=this.dynamics.predict(observation,a),delta=this.value.predict(observation.prompt,a,draft);
       const evidence=observedProposals.get(a.token);
       const matched=p.available&&!exactSame(p.tokens,prefix);
+      const projectedField=p.available?this.latent.distance(p.tokens,goal):beforeField;
+      const fieldGain=this.latent.updates>=3?(beforeField-projectedField)*.9:0;
       const generic=(evidence?.score??-6)*.025;
       const penalty=(prefix.length/MAX_DRAFT)*.025;
-      const score=delta+.04*(matched?p.confidence:0)+generic-penalty;
+      const score=delta+.04*(matched?p.confidence:0)+generic+fieldGain-penalty;
       return {...a,score,expected:p.available?p.tokens:null,confidence:p.confidence,
-        evidence:evidence?.observedTransitions||0,modelEffect:p.kind||null};
+        evidence:evidence?.observedTransitions||0,modelEffect:p.kind||null,fieldGain};
     }).sort((a,b)=>b.score-a.score||a.tool-b.tool||a.token.localeCompare(b.token)).slice(0,top);
   }
   probe(seed=this.seed){
@@ -185,11 +219,15 @@ export class CausalTextAgent {
       const pre=this.dynamics.predict(before,choice),out=world.act(choice),d=out.feedback?.delta||0;
       const model=this.dynamics.observe(before,choice,out.observation);
       this.value.observe(prompt,choice,text(before.tokens),d);
-      const event={...out.event,model,confidence:pre.confidence};events.push(event);this.interventions++;
+      const goal=this.latent.goal(prompt);
+      const event={...out.event,model,confidence:pre.confidence,
+       latentBefore:this.latent.target(text(before.tokens)),latentAfter:this.latent.target(text(out.observation.tokens)),
+       fieldDelta:this.latent.distance(before.tokens,goal)-this.latent.distance(out.observation.tokens,goal)};
+      events.push(event);this.interventions++;
       emit?.(event);best=Math.max(best,out.feedback?.after||0);
       if(out.feedback?.solved)break;
     }
-    this.learnGoalLength(prompt,answer);
+    this.learnGoalLength(prompt,answer);this.latent.fit(prompt,answer);
     this.episodes++;const result={trained:true,seed,steps:events.length,solved:world.reward()===1,
       final:text(world.tokens),reward:world.reward(),bestReward:best,events};
     if(result.solved)this.solved++;this.last=result;return result;
@@ -205,7 +243,10 @@ export class CausalTextAgent {
       let chosen=ranked.find(x=>x.expected&&!exactSame(x.expected,before.tokens));
       if(!chosen)break;
       const out=world.act(chosen),model=this.dynamics.predict(before,chosen);
+      const goal=this.latent.goal(prompt);
       events.push({...out.event,predicted:chosen.expected,confidence:chosen.confidence,
+        latentBefore:this.latent.target(text(before.tokens)),latentAfter:this.latent.target(text(out.observation.tokens)),
+        fieldDelta:this.latent.distance(before.tokens,goal)-this.latent.distance(out.observation.tokens,goal),
         effect:chosen.modelEffect,alternatives:ranked.slice(0,4).map(x=>({tool:x.tool,token:x.token,score:x.score,expected:x.expected}))});
       if(!model.available||!exactSame(model.tokens,out.observation.tokens))break;
       // Stop when the model does not believe another action gives positive expected progress.
@@ -217,21 +258,22 @@ export class CausalTextAgent {
   }
   evaluate(prompt,reference,pathHead,{steps=64}={}){
     // O(1) freeze guard; complete checkpoint snapshots grow large during sustained training.
-    const prior=[this.episodes,this.interventions,this.dynamics.observations,this.value.updates,this.globalLength.n];
+    const prior=[this.episodes,this.interventions,this.dynamics.observations,this.value.updates,this.globalLength.n,this.latent.updates];
     const route=this.navigate(prompt,pathHead,{steps}),metric=matchScore(route.generated,reference);
-    const after=[this.episodes,this.interventions,this.dynamics.observations,this.value.updates,this.globalLength.n];
+    const after=[this.episodes,this.interventions,this.dynamics.observations,this.value.updates,this.globalLength.n,this.latent.updates];
     if(!exactSame(prior,after))throw Error('Held-out evaluation mutated trainable state');
     this.lastHeldout={...route,metrics:metric,reference,referenceReadAfterPlanning:true};return this.lastHeldout;
   }
   summary(){return {episodes:this.episodes,interventions:this.interventions,solvedTrain:this.solved,
-    dynamics:this.dynamics.summary(),value:this.value.summary(),goalLengthExamples:this.globalLength.n,last:this.last?{...this.last,events:this.last.events.slice(-30)}:null,
+    dynamics:this.dynamics.summary(),value:this.value.summary(),latent:this.latent.summary(),goalLengthExamples:this.globalLength.n,last:this.last?{...this.last,events:this.last.events.slice(-30)}:null,
     heldout:this.lastHeldout?{...this.lastHeldout,events:this.lastHeldout.events.slice(0,30)}:null,
     implemented:'observed physical word-edit actions + learned action effects + learned reward field + goal-free heldout navigation',
     notImplemented:'learned natural-language semantics, grounded external world facts, shared CUDA tensor policy gradients'};}
   export(){return {version:1,seed:this.seed,episodes:this.episodes,interventions:this.interventions,solved:this.solved,
-    dynamics:this.dynamics.export(),value:this.value.export(),lengths:[...this.lengths],globalLength:this.globalLength};}
+    dynamics:this.dynamics.export(),value:this.value.export(),latent:this.latent.export(),lengths:[...this.lengths],globalLength:this.globalLength};}
   static restore(s){if(s?.version!==1)throw Error('Invalid causal text checkpoint');const a=new CausalTextAgent({seed:s.seed});
     a.episodes=s.episodes||0;a.interventions=s.interventions||0;a.solved=s.solved||0;
     a.dynamics=ActionDynamics.restore(s.dynamics);a.value=TextValueField.restore(s.value);
+    if(s.latent)a.latent=LatentGoalField.restore(s.latent);
     a.lengths=new Map(s.lengths||[]);a.globalLength=s.globalLength||{mean:0,n:0};return a;}
 }
