@@ -75,36 +75,56 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
-let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null;
-const gpuOn = async () => { if (!gpuSet) return null; if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); batchNow = {phase: "GPU: pornește " + gpu.py, done: 0, total: 0}; shot(true);
+let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false;
+const gpuOn = async () => { if (!gpuSet) return null; if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); sharedLoaded = false; batchNow = {phase: "GPU: pornește " + gpu.py, done: 0, total: 0}; shot(true);
     try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
     catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
+const flushShared = async (force = false) => {
+  if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
+  if (!gpuSet) { shared.error = "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
+  const G = await gpuOn();
+  if (!G) { shared.error = gpuError || "PyTorch process not ready"; return; }
+  const samples = shared.take(96);
+  try {
+    if (!sharedLoaded) {
+      if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed});
+      sharedLoaded = true;
+    }
+    const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed});
+    shared.training = result; shared.error = null;
+  } catch (err) {
+    shared.requeue(samples); shared.error = "Shared model: " + err.message;
+    parentPort.postMessage({type: "note", w: workerData.gw, text: shared.error});
+  }
+};
 const tick = async (phase, done, total) => { batchNow = {phase, done, total}; shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
 const worldsOnce = async (record) => {                                     // one round of the worlds: one each on the CPU, or a batch of N on the GPU
   const G = await gpuOn();
-  if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
+  if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); await flushShared(); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
   if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
-  if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } };
+  if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
-  if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } return; }
+  if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; if (gpu) { gpu.close(); gpu = null; } sharedLoaded = false; return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
-const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: brain.save(saveFile) / 1e6}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
-let k = 0, textBatch = [];
+const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
+let k = 0, textBatch = [], textMeta = [];
 shot(true); await hold();
 for await (const ex of stream()) {
   await hold();
   if (TEXT && k++ < skip) continue;                                         // a resumed brain does not live the same exercises twice
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
-  if (TEXT && gpuSet && !gpuError && (await gpuOn())) { textBatch.push(ex.bytes);
+  if (TEXT && gpuSet && !gpuError && (await gpuOn())) { textBatch.push(ex.bytes); textMeta.push(ex);
     if (textBatch.length >= (gpuSet.textBatch || gpu?.info?.autoText || 512)) {
-      const exs = textBatch; textBatch = []; batchNow = {phase: "text pe placă", done: 0, total: exs.length}; shot();
+      const exs = textBatch, meta = textMeta; textBatch = []; textMeta = []; batchNow = {phase: "text pe placă", done: 0, total: exs.length}; shot();
       try { const before = brain.chars; await brain.learnTextGPU(gpu, exs); batchNow = null;
         for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+        for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+        await flushShared();
         if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
         if (Math.floor(brain.chars / every) > Math.floor(before / every)) report(); shot(); }
       catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR (text): " + err.message}); } }
@@ -118,6 +138,7 @@ for await (const ex of stream()) {
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
   }
+  if (TEXT && !stop && brain.chars < maxChars) { absorbText(ex); await flushShared(); }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
