@@ -1,5 +1,23 @@
 # MagicPerspective — Shape Prediction Laboratory
 
+> [!CAUTION]
+> **BLOCKING REGRESSION — USER REQUIREMENTS HAVE PRIORITY.** All coding agents MUST read
+> [AGENTS.md](./AGENTS.md), [the exact user correction](./verbatim/2026-11-06-USER-REGRESSION-NO-REDEFINITION.md)
+> and [regression MP-REG-2026-11-06-001](./REGRESSION_USER_DIRECTIVE_2026-11-06.md)
+> ([public Issue #25](https://github.com/dan3s2020/MagicPerspective/issues/25)).
+> **PROHIBITED:** imposing model/agent definitions and substitute methods (32D latent, encoders,
+> token predictors, auxiliary SGD, etc.) as replacements for the user's specified
+> ORIGINAL 2D maze solution-shape propagation mechanism in the language world.
+> Do exactly what was requested; no unapproved architectural substitutions.
+> This regression is **OPEN / BLOCKING**. A passing CI suite does not resolve it.
+
+
+> **Canonical project requirements:** [VERBATIM_ROOT.md](./VERBATIM_ROOT.md) and the original ordered conversation. This README documents V1 only; it does not replace Verbatim or certify compliance of V1–V9. See [the version mirror](./verbatim/implementation-mirror.json) and [archival gaps](./verbatim/continuation-index.json).
+
+**Version 1.0.0 — independent, fully runnable prototype.** This is not a complete general intelligence system and does not prove P=NP. It is an experimental implementation of a neural **solution-shape predictor** trained from partial observations and evaluated on unseen mazes.
+
+
+
 > **Canonical project requirements:** [VERBATIM_ROOT.md](./VERBATIM_ROOT.md) and the original ordered conversation. This README documents V1 only; it does not replace Verbatim or certify compliance of V1–V9. See [the version mirror](./verbatim/implementation-mirror.json) and [archival gaps](./verbatim/continuation-index.json).
 
 **Version 1.0.0 — independent, fully runnable prototype.** This is not a complete general intelligence system and does not prove P=NP. It is an experimental implementation of a neural **solution-shape predictor** trained from partial observations and evaluated on unseen mazes.
