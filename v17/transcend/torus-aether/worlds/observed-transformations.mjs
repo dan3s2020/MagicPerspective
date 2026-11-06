@@ -297,7 +297,7 @@ export class ObservedTransformations {
     return {found:false,reason:"no-learned-path-satisfies-goal",goal:{required:req},
       expanded,observed:this.records.size,operators:this.operators.size};
   }
-  execute(plan) {
+  execute(plan,{record=true}={}) {
     if(!plan?.found) return {verified:false,reason:"no-plan"};
     let tokens=tokenizeObservation(plan.start);
     const experience=[];
@@ -306,15 +306,15 @@ export class ObservedTransformations {
       if(!op) return {verified:false,reason:"operator-not-observed",experience};
       const before=renderObservation(tokens);
       const after=runAction(tokens,op,step.index);
-      if(!after){this.failedEffects++;return {verified:false,reason:"causal-effect-failed",experience};}
-      this.executed++;this.correctEffects++;
+      if(!after){if(record)this.failedEffects++;return {verified:false,reason:"causal-effect-failed",experience};}
+      if(record){this.executed++;this.correctEffects++;}
       tokens=after;
       experience.push({before,action:step.kind+" "+(step.from||"")+" → "+(step.to||""),
         after:renderObservation(after),effectVerified:true,learnedFrom:step.learnedFrom});
     }
     const result=renderObservation(tokens);
     const success=result===plan.predicted&&this._goal(tokens,plan.goal.required);
-    if(!success)this.failedEffects++;
+    if(!success&&record)this.failedEffects++;
     return {verified:success,result,actionCount:experience.length,experience,
       predictionMatchedExecution:result===plan.predicted};
   }
