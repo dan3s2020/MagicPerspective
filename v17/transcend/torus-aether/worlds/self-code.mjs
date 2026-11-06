@@ -131,7 +131,7 @@ export class SelfCodeWorld{
  }
  step(){
   const s=this.state,t=this.brain.trace,g=this.choose();
-  const x=1+Math.floor(this.rand()*14),p=1+Math.floor(this.rand()*3);
+  const x=1+Math.floor(this.rand()*10),p=1+Math.floor(this.rand()*3); // training only: 1..10
   const old=OPS[g.op](x,g.param);
   const prediction=this.model.predict(g.id,x,p);
   const actual=OPS[g.op](x,p);
@@ -162,7 +162,7 @@ export class SelfCodeWorld{
   const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   // The hidden outcomes are never passed to the training stream.
   for(const g of s.genes)for(let i=0;i<20;i++){
-   const x=1+Math.floor(random()*14),p=1+Math.floor(random()*3);
+   const x=11+Math.floor(random()*4),p=1+Math.floor(random()*3); // held-out: 11..14, no input overlap
    const actual=OPS[g.op](x,p),prediction=this.model.predict(g.id,x,p);
    results.push([Number(prediction!==null&&prediction===actual),
     Number(OPS[g.op](x,g.param)===actual)]);
@@ -183,7 +183,7 @@ export class SelfCodeWorld{
   const s=this.state,g=s.genes.find(g=>g.id==='portal-offset');
   // The learner proposes the edit from its OWN empirical model on practice inputs.
   // The evaluator alone holds the independent scoring inputs and real interpreter.
-  const practice=[1,4,6,8,10,12,14],hidden=[2,3,5,7,9,11,13];
+  const practice=[1,4,6,8,10],hidden=[11,12,13,14]; // independent unseen program inputs
   const reward=(out,x)=>1-Math.min(8,Math.abs(out-((x+3)&15)))/8;
   const estimate=p=>avg(practice.map(x=>{
    const out=this.model.predict(g.id,x,p);
