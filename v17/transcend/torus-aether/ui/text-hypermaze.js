@@ -4,11 +4,15 @@
 // next-character guesses vs hidden reference. The latter is NOT a traversable
 // language maze or autonomous body movement.
 import {observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
+import {committedTrainingMaze} from "./hypermaze-live-training.mjs";
+import {livingV17Trace} from "./hypermaze-native-live.mjs";
 const $=id=>document.getElementById(id);
 const overlay=$("hmOverlay"),cv=$("hmCanvas"),g=cv.getContext("2d");
 let model=null,step=0,playing=null,busy=false,layout=null,torusLoading=false;
 let camera={yaw:.45,pitch:.21,xw:.65,yw:-.27,zw:.25,zoom:1,panX:0,panY:0};
 let pointer=null,lastPaint=0,raf=null;
+let liveEnabled=true,liveInFlight=false,liveSequence=0,liveLastGraphAt=0,
+  nativeStream=null,liveEpoch=0,liveAnimation=null,livePollTimer=null,livePaintTimer=null;
 const fmt=n=>Number.isFinite(n)?Number(n).toLocaleString("ro-RO"):"—";
 const pc=n=>Number.isFinite(n)?(100*n).toFixed(1)+"%":"—";
 const cut=(s,max=120)=>String(s??"").length>max?String(s).slice(0,max)+"…":String(s??"");
@@ -40,14 +44,16 @@ function clearView(){
 function showOverlay(){
  if(!overlay.hidden)return;
  overlay.hidden=false;document.body.style.overflow="hidden";
- halt();draw();
+ halt();draw();startLive();
  if(!model&&lastFrozen?.result?.exercises?.length){
   try{showFrozenExercise(lastFrozen.result,0);}catch(err){updateHud("Evaluare V17: "+err.message);}
  }
  // Original tabs remain exactly as they were; no native handlers changed.
 }
 function hideOverlay(){
- halt();overlay.hidden=true;document.body.style.overflow="";
+ halt();stopLiveAnimation();overlay.hidden=true;document.body.style.overflow="";
+ if(livePollTimer!==null){clearInterval(livePollTimer);livePollTimer=null;}
+ if(livePaintTimer!==null){clearInterval(livePaintTimer);livePaintTimer=null;}
  if(raf){cancelAnimationFrame(raf);raf=null;}
 }
 $("tabHypermaze").addEventListener("click",showOverlay);
@@ -59,10 +65,13 @@ window.addEventListener("keydown",e=>{
  else if(e.key==="ArrowLeft"&&!e.target.matches("input,textarea,select")){e.preventDefault();halt();syncStep(step-1);}
  else if(e.key===" "&&!e.target.matches("input,textarea,select,button")){e.preventDefault();$("hmPlay").click();}
 });
-$("hmMode").addEventListener("change",()=>{clearView();text("hmMeaning",$("hmMode").value==="observed"?
+$("hmMode").addEventListener("change",()=>{
+ if($("hmMode").value==="live"){enableLive(true);return;}
+ enableLive(false);
+ clearView();text("hmMeaning",$("hmMode").value==="observed"?
  "V18: navigare prin tranzițiile text învățate; preplan și cursor local reale.":
  "V17: forma din întrebare și predicțiile pe prefixe corecte; nu sunt acțiuni într-un labirint navigabil.");});
-$("hmBrain").addEventListener("change",clearView);
+$("hmBrain").addEventListener("change",()=>{liveSequence=0;nativeStream=null;clearView();if(liveEnabled)pollLive();});
 $("hmPrev").addEventListener("click",()=>{halt();syncStep(step-1);});
 $("hmNext").addEventListener("click",()=>{halt();syncStep(step+1);});
 $("hmRestart").addEventListener("click",()=>{halt();syncStep(0);});
@@ -216,10 +225,12 @@ async function observedFromPrompt(prompt,{isTrainingExample=false}={}){
  syncStep(0);loadNativeGeometry();
 }
 $("hmLoadPrompt").addEventListener("click",()=>busyFetch(async()=>{
+ enableLive(false);
  $("hmMode").value="observed";
  await observedFromPrompt($("hmPrompt").value,{isTrainingExample:false});
 }));
 $("hmLoadObserved").addEventListener("click",()=>busyFetch(async()=>{
+ enableLive(false);
  $("hmMode").value="observed";
  const r=await request("/language-maze/observatory?w="+w());
  if(r.protocol!=="OBSERVED_TRAINING_TEXT_WORLD"||!r.observedPrompt)
@@ -270,7 +281,7 @@ function showCachedFrozen(){
  }
  showFrozenExercise(lastFrozen.result,Number($("hmExercise").value)||0);
 }
-$("hmUseCurrent").addEventListener("click",showCachedFrozen);
+$("hmUseCurrent").addEventListener("click",()=>{enableLive(false);showCachedFrozen();});
 $("hmExercise").addEventListener("change",showCachedFrozen);
 window.addEventListener("magicperspective:text-frozen-evaluation",event=>{
  const value=event.detail;
@@ -281,6 +292,7 @@ window.addEventListener("magicperspective:text-frozen-evaluation",event=>{
  }
 });
 $("hmUnseen").addEventListener("click",()=>busyFetch(async()=>{
+ enableLive(false);
  $("hmMode").value="unseen";
  const opts={count:1,max:Math.max(50,Math.min(20000,num("hmMax")||2000)),
   T:Math.max(0,Math.min(1.5,num("hmTemp"))),noise:0};
@@ -451,6 +463,186 @@ function drawUnseen(){
     step>0&&tr.key==="teacherForced"?"CITESC":(step===0?tr.label.slice(0,11):""));
  }
 }
+function stopLiveAnimation(){
+ if(liveAnimation!==null){clearInterval(liveAnimation);liveAnimation=null;}
+}
+function enableLive(on){
+ liveEnabled=!!on;
+ $("hmLiveSwitch").setAttribute?.("aria-pressed",liveEnabled?"true":"false");
+ text("hmLiveSwitch",liveEnabled?"● LIVE ON · urmărește antrenarea":"○ LIVE OFF · activează");
+ if(liveEnabled){$("hmMode").value="live";startLive();}
+ else{stopLiveAnimation();text("hmLiveBadge","○ LIVE · oprit pentru inspecție");}
+}
+$("hmLiveSwitch").addEventListener("click",()=>enableLive(!liveEnabled));
+function startLive(){
+ if(!open()||!liveEnabled)return;
+ $("hmMode").value="live";
+ text("hmLiveBadge","● LIVE · conectare la workerul de antrenare");
+ if(livePollTimer===null)livePollTimer=setInterval(()=>{void pollLive();},460);
+ if(livePaintTimer===null)livePaintTimer=setInterval(()=>{
+   if(open()&&liveEnabled&&model?.kind==="native-stream")draw();
+ },130);
+ void pollLive();
+}
+function showLiveTrainingEvent(event){
+ const m=committedTrainingMaze(event),prior=m.preNodes,visited=m.observedNodes,
+  post=m.postNodes;
+ const h={graph:m.graph,globalPlanNodes:prior,pathNodes:visited,
+   postCommitNodes:post,trace:m.trace,steps:visited.length-1,
+   replans:[],solvedKnownGoal:false,
+   viewpointEvidence:{actualRepropagationAfterEachMove:false,
+     trainingObservation:true,agentActions:false},
+   output:event.observedAnswer};
+ model={kind:"observed",trainingLive:true,liveInfo:m,liveEvent:event,
+  pair:{hybrid:h,original:{globalPlanNodes:prior}},
+  layout:observedLayout(m.graph),source:m.provenance};
+ layout=model.layout;step=0;
+ text("hmInitial",m.metrics.beforeHadPrediction?fmt(m.metrics.preAnswerCharacters):"ABȚINERE");
+ text("hmExecuted",fmt(m.metrics.observedCharacters)+" / "+fmt(event.fullAnswerChars));
+ text("hmAlternative",fmt(m.metrics.observedBranches)+" ramuri");
+ text("hmDeviation",m.metrics.beforePredictionCharacterRate===null?"nemăsurat":
+    pc(m.metrics.beforePredictionCharacterRate)+" corect");
+ text("hmRevisions","1 actualizare după exemplu");
+ text("hmGoal","răspuns observat");
+ text("hmTrainingRows",fmt(m.metrics.trainedRows));
+ text("hmTrainingTD",fmt(m.metrics.successorUpdates));
+ text("hmTrainingMatch",pc(m.metrics.beforePredictionCharacterRate));
+ text("hmTrainingBranches",fmt(m.metrics.observedBranches));
+ text("hmMeaning",
+   "LIVE: exercițiul a fost procesat REAL de antrenare, prin "+event.where+"."+
+   "\nAURIU = răspunsul disponibil din memoria V18 ÎNAINTE de actualizarea cu acest rând."+
+   "\nTURCOAZ = caracterele acestui răspuns REAL citite în antrenare, pe ramurile efectiv observate."+
+   "\nVIOLET = traseul calculat DUPĂ învățarea acestui exemplu, nu o revizuire autonomă la fiecare caracter."+
+   "\nGRI = alte tranziții existente în lumea textului învățată."+
+   "\nCaracterele observate sunt ținte de antrenare, NU acțiuni alese autonom de agent."+
+   (event.answerPreviewTruncated?"\nPreview limitat la 1.024 caractere; total real: "+fmt(event.fullAnswerChars):""));
+ text("hmProvenance",
+   "SURSĂ LIVE: worker → eveniment după commit Q/A → /hypermaze/live."+
+   "\nPredicția inițială a fost extrasă din memoria anterioară a lumii text."+
+   "\nAntrenare originală V17/CUDA: păstrată; harta V18: actualizată."+
+   "\nPoziții: "+model.layout.dimensions.join("; ")+
+   "\nÎNVĂȚARE reală, nu test pe text nevăzut. Scorul de antrenare nu este acuratețe pe held-out.");
+ updateHud("● LIVE · "+new Date(event.at).toLocaleTimeString("ro-RO")+
+  " · Q/A #"+fmt(m.metrics.trainedRows)+" · simboluri "+fmt(event.brainChars)+
+  "\nÎntrebare: "+cut(event.prompt,150)+
+  "\nFormă ÎNAINTE: "+(event.before?.before?cut(event.before.before,120):"nicio cale cunoscută")+
+  "\nRăspuns observat: "+cut(event.observedAnswer,150));
+ syncStep(0);
+ stopLiveAnimation();
+ // One complete animation within roughly 1 second; this does NOT make the
+ // trained model run at a fabricated rate. Event timestamps stay explicit.
+ const stride=Math.max(1,Math.ceil(Math.max(1,endStep())/28));
+ liveAnimation=setInterval(()=>{
+  if(!open()||!liveEnabled){stopLiveAnimation();return;}
+  syncStep(step+stride);
+  if(step>=endStep())stopLiveAnimation();
+ },42);
+}
+function drawNativeStream(){
+ const n=nativeStream;if(!n)return;
+ const W=cv.width,H=cv.height;
+ const valid=n.nodes.filter(x=>Array.isArray(x.coord));
+ const limited=n.links.slice(0,3600);
+ g.lineWidth=1;
+ const time=Date.now()*.005;
+ for(const e of limited){
+  const a=n.nodes[e.fromIndex]?.coord,b=n.nodes[e.toIndex]?.coord;
+  if(!a||!b||!visibleInSlice(a)||!visibleInSlice(b))continue;
+  const p=projectCoord(a),q=projectCoord(b);
+  g.globalAlpha=Math.max(.08,Math.min(.75,Math.abs(e.weight||0)/10));
+  g.strokeStyle=e.kind==="world"?"#3edbbd":e.kind==="miss"?"#ef6a83":
+    e.kind==="bud"?"#b189e5":"#6a9bc0";
+  g.beginPath();g.moveTo(p.x,p.y);g.lineTo(q.x,q.y);g.stroke();
+  // Pulse moves over REAL graph edge; it is a display of current activation,
+  // not a claim that an unrecorded packet physically traversed that link.
+  if(Math.abs(e.weight||0)>.2&&e.fromIndex%9===0){
+   const t=(time+e.fromIndex*.17)%1;
+   g.globalAlpha=.8;g.fillStyle=g.strokeStyle;g.beginPath();
+   g.arc(p.x*(1-t)+q.x*t,p.y*(1-t)+q.y*t,2.2,0,Math.PI*2);g.fill();
+  }
+ }
+ g.globalAlpha=1;
+ const chosen=valid.slice(0,Math.min(850,valid.length));
+ for(const node of chosen){
+  const p=projectCoord(node.coord);
+  const active=Math.max(0,Math.min(1,Number(node.activation)||0));
+  g.fillStyle=node.error?"#ff687a":node.type==="sym"?"#35dbc0":
+   node.type==="A"?"#f0bd5d":"#b48ce9";
+  g.globalAlpha=.25+active*.75;g.beginPath();
+  g.arc(p.x,p.y,node.error?6:node.type==="sym"?3.4:2.5,0,Math.PI*2);g.fill();
+ }
+ g.globalAlpha=1;
+ // Real word/symbol labels: source is GraphTrace's original label.
+ const labels=chosen.filter(x=>x.type==="sym"&&x.activation>.15)
+  .slice(0,36);
+ g.font="11px ui-monospace,monospace";
+ for(const n of labels){
+  const p=projectCoord(n.coord);g.fillStyle="#e0f6ed";
+  g.fillText(String(n.label),p.x+6,p.y-6);
+ }
+ g.fillStyle="#b4d3db";g.font="12px ui-monospace,monospace";
+ g.fillText("V17 ORIGINAL · LIVE: "+fmt(n.nodes.length)+" noduri · "+
+   fmt(n.links.length)+" muchii · "+fmt(n.countNative)+" simboluri U(5D)",14,H-16);
+}
+async function pollLive(){
+ if(!open()||!liveEnabled||liveInFlight)return;
+ liveInFlight=true;
+ try{
+  const id=w();
+  const res=await request("/hypermaze/live?w="+id+"&since="+liveSequence);
+  if(!open()||!liveEnabled||id!==w())return;
+  if(res.protocol!=="LIVE_TRAINING_COMMITTED_QA_STREAM")
+   throw Error("Serverul nu are protocolul de antrenare LIVE");
+  text("hmLiveBadge",res.liveWorker?"● LIVE · worker conectat ("+res.status+")":
+    "● LIVE · worker oprit / pauză");
+  const stat=res.training||{},td=stat.successorTraining||{};
+  text("hmLiveMetrics","LIVE TRAINING · CREIER #"+id+
+   "\nCaractere model: "+fmt(res.chars)+
+   "\nQ/A antrenate: "+fmt(stat.rowsObserved)+
+   "\nActualizări TD: "+fmt(td.updates)+
+   "\nStări successor: "+fmt(td.states)+
+   "\nEtapa GPU/CPU: "+String(res.gpuPhase||res.status||"—")+
+   "\nUltimul eveniment: "+fmt(res.latestSeq));
+  if(Number.isFinite(stat.rowsObserved))text("hmTrainingRows",fmt(stat.rowsObserved));
+  if(Number.isFinite(td.updates))text("hmTrainingTD",fmt(td.updates));
+  const newEvents=(res.events||[]).filter(e=>e.seq>liveSequence);
+  for(const event of newEvents){
+   liveSequence=Math.max(liveSequence,event.seq);
+   if(event.kind==="TRAINING_QA_COMMITTED")showLiveTrainingEvent(event);
+   else if(event.error)updateHud("LIVE: eroare la înregistrarea unui Q/A: "+event.error);
+  }
+  if(Date.now()-liveLastGraphAt>1100){
+   liveLastGraphAt=Date.now();
+   try{
+    const graph=await request("/graph?w="+id);
+    if(!open()||id!==w()||!liveEnabled)return;
+    nativeStream=livingV17Trace(graph);
+    if(!model||model.kind==="native-stream"){
+      model={kind:"native-stream",source:"LIVE_V17_GRAPHTRACE",layout:null};
+      text("hmInitial","formă V17 în curs");
+      text("hmExecuted",fmt(nativeStream.stream.length)+" observații recente");
+      text("hmAlternative",fmt(nativeStream.links.length)+" legături");
+      text("hmGoal","antrenează");
+      text("hmMeaning","V17 LIVE: fiecare nod și legătură apar din GraphTrace.record() "+
+       "în timpul antrenării; activările, erorile și legăturile cresc real. "+
+       "Simbolurile au coordonate U[0..4] învățate; A/C sunt proiectate lângă vecinii conectați.");
+      text("hmProvenance",nativeStream.provenance);
+      updateHud("● LIVE: graful V17 este activ.\n"+
+       fmt(nativeStream.nodes.length)+" noduri · "+fmt(nativeStream.links.length)+
+       " muchii reale · "+fmt(nativeStream.countNative)+" simboluri pe torus 5D.\n"+
+       "Aștept o observație Q/A completă pentru forma globală și traseul textului.");
+    }
+    if(model?.kind==="native-stream")draw();
+   }catch(err){
+    if(!model)updateHud("LIVE: aștept prima captură reală de graf: "+err.message);
+   }
+  }
+ }catch(err){
+  text("hmLiveBadge","● LIVE · conexiune indisponibilă");
+  updateHud("Nu pot citi fluxul real de antrenare: "+err.message+
+   "\nAsigură-te că serverul nou rulează; nu afișez demo.");
+ }finally{liveInFlight=false;}
+}
 function draw(){
  if(!open())return;
  const rect=cv.getBoundingClientRect();
@@ -478,7 +670,9 @@ function draw(){
   g.fillText("Globala → corp → fiecare pas · proiecție rotativă a 4 componente",W/2,H/2+30);
   g.textAlign="left";return;
  }
- if(model.kind==="observed")drawObserved();else drawUnseen();
+ if(model.kind==="observed")drawObserved();
+ else if(model.kind==="native-stream")drawNativeStream();
+ else drawUnseen();
  g.fillStyle="#8aacc1";g.textAlign="left";g.font="11px ui-monospace,monospace";
  g.fillText($("hmSpace").value==="learned5"?
   "Geometria REALĂ a simbolurilor V17 · Geometry.U[0..4] · torus 5D, secțiune 4D":
