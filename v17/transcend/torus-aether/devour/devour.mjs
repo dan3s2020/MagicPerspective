@@ -37,7 +37,9 @@ const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {n
   if (!ARMS[a]) throw Error("unknown arm " + a + " (" + [...Object.keys(ARMS), ...Object.keys(CLAWS)] + ")"); return {name: a, rules: ARMS[a]}; });
 
 let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
-if (arg("text")) {
+if (!worldsArg.includes("text")) {
+  source = {kind: "none"}; // code and simulations require no external text dataset
+} else if (arg("text")) {
   const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = [], heldParas = []; let k = 0;
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (para.trim().length < 20) continue; k++;
     if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
@@ -60,7 +62,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
-const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
+const world = source.kind === "parquet" ? source.root : source.kind === "text" ? source.files.map(f => path.basename(f)).join(", ") : "local code and simulation worlds";
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
 const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} : ARMS[name] ? {name, rules: ARMS[name]} : null;
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
