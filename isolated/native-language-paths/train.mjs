@@ -47,6 +47,7 @@ if(resume){
   progress=JSON.parse(fs.readFileSync(progressFile,'utf8'));
   if(JSON.stringify(progress.source)!==JSON.stringify(source))throw Error('Dataset fingerprint changed. Refusing resume.');
   brain=Brain.load(brainFile);atlas=ObservedQAAtlas.restore(JSON.parse(fs.readFileSync(atlasFile,'utf8')));
+  atlas.maxEntries=Math.max(atlas.maxEntries,rows);
   if(atlas.examples.length!==progress.examples)throw Error('Checkpoint inconsistency.');
 }else{
   if([brainFile,atlasFile,progressFile].some(f=>fs.existsSync(f)))
