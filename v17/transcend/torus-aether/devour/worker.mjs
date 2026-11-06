@@ -41,12 +41,17 @@ if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
-brain.setSharedObserver(sample => shared.observe(sample));
+// Observer is installed after the cognitive model is initialized, so that
+// real events from ALL original V17 worlds reach the SAME brain and atlas.
 const codeWorld = CODE ? new SelfCodeWorld(brain) : null; // shares the original V17 brain checkpoint
 const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : null;
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
+brain.setSharedObserver(sample => {
+  shared.observe(sample);
+  if(cognitive)cognitive.observeExternalTransition(sample);
+});
 const saveCognitive = () => {if(cognitive)brain.cognitiveMap = cognitive.export();};
 const absorbCognitive = row => {
   if(!cognitive)return null;
