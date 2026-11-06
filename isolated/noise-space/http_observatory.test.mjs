@@ -40,3 +40,33 @@ test('HTTP root is real observatory; real V17 worker receives a training command
  }
  assert.equal(done,true);
 });
+
+
+test('server returns clear PORT_IN_USE without unhandled event or second listener', {timeout:15000}, async()=>{
+ const {createServer}=await import('node:net');
+ const socket=createServer();
+ await new Promise((resolve,reject)=>socket.once('error',reject).listen(0,'127.0.0.1',resolve));
+ const port=socket.address().port;
+ let child=null;
+ try{
+  child=spawn(process.execPath,['server.mjs'],{
+   cwd:new URL('.',import.meta.url),
+   env:{...process.env,PORT:String(port),HOST:'127.0.0.1',MP_SESSION:'port-guard-test-'+process.pid},
+   stdio:['ignore','pipe','pipe']
+  });
+  let output='';
+  child.stderr.on('data',d=>{output+=d.toString();});
+  child.stdout.on('data',d=>{output+=d.toString();});
+  const result=await Promise.race([
+   new Promise(resolve=>child.once('exit',(code,signal)=>resolve({code,signal}))),
+   sleep(9000).then(()=>({timeout:true}))
+  ]);
+  assert.ok(!result.timeout,'Occupied-port child did not exit');
+  assert.notEqual(result.code,0,'Server must fail on an occupied port');
+  assert.match(output,/PORT_IN_USE/);
+  assert.doesNotMatch(output,/Unhandled 'error' event/);
+ }finally{
+  if(child&&child.exitCode===null)child.kill();
+  await new Promise(resolve=>socket.close(resolve));
+ }
+});
