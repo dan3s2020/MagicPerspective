@@ -61,7 +61,7 @@ jobs:
       - name: Parse original PowerShell 5.1 launcher
         shell: powershell
         run: |
-          foreach ($file in @('START_NATIVE_LANGUAGE_PATHS.ps1','START_LIVE_MULTIPATH_V17.ps1','v17/START_V17.ps1')) {
+          foreach ($file in @('START_NATIVE_LANGUAGE_PATHS.ps1','START_LIVE_MULTIPATH_V17.ps1','START_TEXT_SHAPE_REPLAY.ps1','v17/START_V17.ps1')) {
             $errors = @()
             $scriptText = Get-Content -LiteralPath $file -Raw
             [System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$errors) | Out-Null
