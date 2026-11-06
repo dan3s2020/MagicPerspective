@@ -25,6 +25,7 @@ param(
   [string]$Cuda = "cu126",
   [string]$PythonExe = "",
   [switch]$Research,
+  [switch]$AutoStart,
   [int]$ResearchEvery = 5,
   [int]$ResearchEntries = 3000,
   [int]$ResearchEval = 4
@@ -74,4 +75,4 @@ if ($Gpu -ne "off") {
   $ErrorActionPreference = "Stop"
 }
 $heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
-node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Research) { "--research" }) --research-every $ResearchEvery --research-entries $ResearchEntries --research-eval $ResearchEval
+node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Research) { "--research" }) $(if ($AutoStart) { "--start" }) --research-every $ResearchEvery --research-entries $ResearchEntries --research-eval $ResearchEval
