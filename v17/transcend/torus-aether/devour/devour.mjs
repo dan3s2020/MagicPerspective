@@ -236,6 +236,26 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  if (req.method === "POST" && url === "/cognitive-observe") {
+    let body="";req.on("data",d=>{body+=d;if(body.length>32768)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid observed action JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap")||!sl.wk)
+        return json(res,{error:"A running cognitive world is required; existing checkpoints unchanged"});
+      if(typeof m.action!=="string"||m.action.length>256||
+        typeof m.accepted!=="boolean"||
+        (!Array.isArray(m.before)&&typeof m.before!=="string")||
+        (!Array.isArray(m.after)&&typeof m.after!=="string"))
+        return json(res,{error:"Provide real before/action/after and a boolean accepted result"});
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);json(res,{error:"Cognitive observation timed out; inspect worker logs"});
+      },60000);
+      chats.set(id,x=>{clearTimeout(timer);json(res,x)});
+      sl.wk.postMessage({cognitiveObserve:{id,before:m.before,action:m.action,
+        after:m.after,accepted:m.accepted}});
+    });return;
+  }
   if (req.method === "POST" && url === "/cognitive-eval") {
     let body="";req.on("data", d => {body+=d;if(body.length>32768)req.destroy();});
     req.on("end", ()=>{
