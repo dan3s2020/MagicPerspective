@@ -255,6 +255,7 @@ for await (const ex of stream()) {
   if (COGNITIVE && !TEXT && k++ < cognitionStart) continue;
   if (COGNITIVE && !TEXT) {
     absorbCognitive(ex); // COMPLETE document before any action; no Brain.live next-character training.
+    if(brain.cognitiveDocuments%50===0 && (MAZE || TRANS || MAPTEXT || CODE)) await worldsOnce(false);
     if(brain.cognitiveDocuments%25===0){
       shot(true);report();
     }
