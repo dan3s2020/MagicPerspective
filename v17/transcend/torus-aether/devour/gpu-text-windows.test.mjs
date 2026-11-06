@@ -33,6 +33,7 @@ test("resume partway through a 112531-symbol ORIGINAL row without duplicates and
  assert.equal(brain.sourceRows,17);
  assert.equal(brain.sourceOffset,7*4096);
  assert.deepEqual(resumeSourceState(brain),{rows:17,offset:7*4096});
+ assert.throws(()=>applyCompletedWindow(brain,{rowChars:raw.length,from:0,to:4096}),/Noncontiguous/);
  const rest=gpuTextWindows(raw,{maxChars:4096,offset:brain.sourceOffset});
  assert.equal(rest[0].from,7*4096);
  assert.deepEqual(Buffer.concat([...first,...rest].map(x=>Buffer.from(x.bytes))),Buffer.from(raw));
@@ -40,7 +41,7 @@ test("resume partway through a 112531-symbol ORIGINAL row without duplicates and
  assert.equal(brain.sourceRows,18);
  assert.equal(brain.exercises,18);
  assert.equal(brain.sourceOffset,0);
- assert.throws(()=>applyCompletedWindow(brain,{rowChars:raw.length,from:0,to:10}),/Noncontiguous|./); // no re-consumption of an already completed row without starting next logically
+ // The new NEXT original dataset row is allowed to begin from offset zero.
 });
 test("resume cursor survives original real V17 Brain.save/load and old checkpoints use exercises count",()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"mp-window-cursor-")),file=path.join(dir,"brain.v8");
