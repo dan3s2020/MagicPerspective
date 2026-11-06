@@ -617,6 +617,10 @@
  <div class="hm-body">
   <div class="hm-stage">
    <canvas id="hmCanvas" width="1200" height="760" aria-label="Proiecție 4D rotativă a stărilor text și a traseelor reale"></canvas>
+   <div id="hmNativeInsetWrap" style="position:absolute;bottom:42px;right:12px;width:min(260px,32%);background:#031422ee;border:1px solid #246b75;border-radius:9px;padding:5px;pointer-events:none">
+    <div style="color:#91f5e1;font:10px ui-monospace,monospace;margin:2px 5px">● V17 GRAPH · ORIGINAL LIVE</div>
+    <canvas id="hmNativeInset" width="260" height="176" style="width:100%;height:auto;display:block" aria-label="Miniatură live simultană a grafului V17, cu noduri și conexiuni reale"></canvas>
+   </div>
    <div class="hm-float" id="hmHud" role="status">Conectare automată la workerul care antrenează. Nu trebuie să apeși pe Evaluare.</div>
    <div id="hmLiveMetrics" style="position:absolute;right:12px;top:10px;background:#031522de;border:1px solid #226054;color:#b9efea;border-radius:8px;padding:10px;max-width:260px;pointer-events:none;font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap">LIVE TRAINING
 Conectare la worker…</div>
