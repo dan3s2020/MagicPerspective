@@ -163,24 +163,50 @@ export class LanguageMazeMemory {
   const field=shapeOnLearnedTopology({kinds:world.kinds,neighbors:world.neighbors,
    start:0,conduct:k=>this.conduct(k),attract:k=>this.attract(k)});
   const result=field.path;
-  const output=summaryPath(result);
-  const trace=[],paths=field.nodes;
-  for(let i=0;result&&i<result.length&&i<maxReplay;i++){
-   const e=result[i];trace.push({
-    step:i+1,source:e.from,target:e.to,character:e.character,
-    prefix:output.slice(0,[...output].slice(0,i+1).join("").length), // genuine observed path prefix
-    potentialBefore:field.values[e.from],potentialAfter:field.values[e.to],
-    observed:world.labels[e.to]?.state??"unknown",
-    transformation:e.transformation,
-    // Same solution shape seen globally then locally after changing viewpoint.
-    globalShapeLength:result.length,localRemaining:result.length-i-1
-   });
+  // A real LOCAL body policy. It does not read the globally selected next
+  // character from result.path. It only perceives neighbors of its CURRENT
+  // node and the goal-attraction values remembered after its global glance.
+  let bodyPosition=0,localAgreement=0,blocked=0;
+  const bodyNodes=[0],seen=new Set([0]),trace=[],emitted=[];
+  if(result){
+   for(let i=0;i<world.kinds.length;i++){
+    const local=world.neighbors[bodyPosition]||[];
+    let best=null,bv=field.values[bodyPosition];
+    for(const edge of local){
+     const v=field.values[edge.to];
+     if(!seen.has(edge.to)&&v>bv){bv=v;best=edge;}
+    }
+    if(!best){blocked++;break;}
+    // The decision below was generated locally, NOT copied from the global
+    // reference path; compare against the initial shape only for evaluation.
+    const predicted=result[i]?.character??null;
+    const before=bodyPosition;
+    bodyPosition=best.to;seen.add(bodyPosition);bodyNodes.push(bodyPosition);
+    emitted.push(best.character);
+    const same=best.character===predicted;
+    localAgreement+=Number(same);
+    if(trace.length<maxReplay)trace.push({
+     step:i+1,source:before,target:bodyPosition,character:best.character,
+     prefix:emitted.join(""),potentialBefore:field.values[before],
+     potentialAfter:field.values[bodyPosition],observed:world.labels[bodyPosition]?.state??"unknown",
+     transformation:best.transformation,localChoices:local.length,
+     predictedCharacter:predicted,agreesWithGlobal:same,
+     globalShapeLength:result.length,localRemaining:Math.max(0,result.length-i-1),
+     policy:"local_neighbor_hillclimb_of_remembered_global_field"
+    });
+    if(this.attract(world.kinds[bodyPosition])>.2)break;
+   }
   }
+  const output=emitted.join("");
+  const paths=bodyNodes;
+  const localReachedGoal=world.goals.some(g=>g.node===bodyPosition);
   return {
    protocol:"ONE_MAZE_LAW_OVER_OBSERVED_TEXT_TRANSITIONS",
    frozen:true,trainingMutated:false,
-   input:prompt,output,solvedKnownGoal:!!result&&world.goals.some(g=>g.node===paths.at(-1)),
-   abstained:!result,reason:field.reason,steps:result?.length||0,
+   input:prompt,output,solvedKnownGoal:!!result&&localReachedGoal,
+   abstained:!result,reason:result&&!localReachedGoal?"LOCAL_PATH_BLOCKED":field.reason,steps:result?.length||0,
+   locallyExecutedSteps:emitted.length,localAgreementRate:result?.length?localAgreement/result.length:null,
+   localBlockedSteps:blocked,bodyPolicy:"local_neighbor_hillclimb_of_remembered_global_field",
    initialShape:result?.map(e=>e.character)||[],
    pathNodes:paths,trace,field:field.values,
    graph:{
