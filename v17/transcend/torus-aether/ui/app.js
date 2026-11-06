@@ -539,6 +539,7 @@ async function pullSelectedGraph() {
          (l ? "Ultima lume: " + l.dimensions + "D, " + l.states + " stări, " + l.walls + " ziduri; " +
             l.steps + " pași / optim " + l.optimal + "; cursorul a emis: " + l.movementCharacters +
             "; traseu cunoscut înainte de primul caracter: " + l.plannedBeforeFirstCharacter +
+            "\nMecanism: " + (M.plannerMode || "planificator pe harta completa") +
             (l.finalState ? "\nStarea finală a personajului: " + l.finalState : "") +
             "\nCALEA INTERNĂ (calculată înainte de mișcare):\n" + (l.internalPlannedStates || []).join(" → ") +
             "\nMIȘCĂRILE CURSORULUI:\n" + (l.movementTrace || []).map(v => v.step + ". " + v.from + " → " + v.to +
