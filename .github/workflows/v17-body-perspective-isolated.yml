@@ -21,9 +21,13 @@ jobs:
           node --check v17/transcend/torus-aether/ui/perspective-studio.js
           node --check v17/transcend/torus-aether/perspective/global-local.mjs
           node --check v17/transcend/torus-aether/perspective/body-memory.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/perspective/live-telemetry.test.mjs
       - name: Frozen global-local actual maze, non-leakage, checkpoints, original V17 regression
         run: |
           node --test v17/transcend/torus-aether/perspective/body-perspective.test.mjs v17/transcend/torus-aether/perspective/body-studio.test.mjs v17/tests/torus-shared-perspective.test.mjs v17/transcend/torus-aether/shared/experience.test.mjs
+      - name: Spawn original V17 live server and verify real telemetry streaming without GPU
+        run: node --test v17/transcend/torus-aether/perspective/live-telemetry.test.mjs
   launcher-windows:
     runs-on: windows-latest
     timeout-minutes: 6
