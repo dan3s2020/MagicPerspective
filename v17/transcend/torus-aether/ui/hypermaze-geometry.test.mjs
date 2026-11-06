@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
-import {observedLayout,frozenTextLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
+import {observedLayout,frozenTextLayout,native5DSymbolLayout,project4D,routeDivergence} from "./hypermaze-geometry.mjs";
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const html=fs.readFileSync(path.join(here,"index.html"),"utf8");
@@ -95,4 +95,33 @@ test("corrupt actual topology is rejected rather than hidden as a fake visualiza
  assert.throws(()=>observedLayout({nodes:[{id:0}],edges:[{from:0,to:55}]}),/Corrupt observed topology/);
  assert.throws(()=>frozenTextLayout({rows:null}),/Frozen native text test rows required/);
  assert.throws(()=>project4D([1,2,3],{},900,600),/Invalid real four-feature vector/);
+});
+
+test("original V17 learned five-torus U is used verbatim, without manufacturing unknown character coordinates",()=>{
+ const originalU=[
+  [97,[.15,.20,.25,.30,.35]],
+  [122,[.8,.7,.6,.5,.4]],
+  [66,[.12,.32,.52,.72,.92]]
+ ];
+ const g={nodes:[
+  {id:0,lastCharacter:null},
+  {id:1,lastCharacter:"a"},
+  {id:2,lastCharacter:"z"},
+  {id:3,lastCharacter:"?"}
+ ]};
+ const a=native5DSymbolLayout(g,originalU);
+ assert.equal(a.representation,"ORIGINAL_V17_LEARNED_5_TORUS_SYMBOL_COORDINATES");
+ assert.deepEqual(a.coords[0],null);
+ assert.deepEqual(a.coords[1],[-.7,-.6,-.5,-.4,-.30000000000000004]);
+ assert.equal(a.coords[2][4],-.19999999999999996);
+ assert.equal(a.coords[3],null);
+ assert.equal(a.known,2);
+ assert.equal(a.missing,2);
+ assert.equal(a.dimensions.length,5);
+ const f=native5DSymbolLayout({
+  tracks:[{key:"preanswer",chars:["a","z","?"]}]
+ },originalU);
+ assert.equal(f.known,2);
+ assert.equal(f.tracks[0].coords[2],null);
+ assert.throws(()=>native5DSymbolLayout(g,null),/unavailable/);
 });
