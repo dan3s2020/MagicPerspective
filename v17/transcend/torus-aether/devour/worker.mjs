@@ -12,6 +12,8 @@ import {SharedExperience} from "../shared/experience.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 import {BodyPerspectiveMemory} from "../perspective/body-memory.mjs";
+import {gpuTextWindows,resumeSourceState,applyCompletedWindow,DEFAULT_GPU_WINDOW_CHARS} from "./gpu-text-windows.mjs";
+import {createHash} from "node:crypto";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -29,8 +31,16 @@ async function* stream() {                                                 // th
 }
 
 let brain = null, skip = 0;
-if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
+if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = resumeSourceState(brain).rows; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
+const sourceStart=resumeSourceState(brain);
+brain.sourceRows=sourceStart.rows;
+brain.sourceOffset=sourceStart.offset;
+skip=sourceStart.rows;
+// Original dataset ROWS count, not GPU windows, is the durable resume cursor.
+if (TEXT)brain.exercises=brain.sourceRows;
+const GPU_MAX_WINDOW=Math.max(256,Math.min(32768,Math.trunc(Number(workerData.gpuMaxChars)||DEFAULT_GPU_WINDOW_CHARS)));
+let activeSourceWindow=null;
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
@@ -145,7 +155,10 @@ const emitTelemetry=()=>{
     heapMB:Math.round(process.memoryUsage().heapUsed/1048576),
     textCharsPerSecond:+((brain.chars-c0)/Math.max(1,(now-t0)/1000)).toFixed(2),
     gpuDevice:gpuInfo?.device||gpuSet?.device||'off',gpuError:gpuError||null,
-    phase:phaseStats(),paused,stop,savePending:saveNow});
+    phase:phaseStats(),paused,stop,savePending:saveNow,
+    sourceRows:brain.sourceRows||0,sourceOffset:brain.sourceOffset||0,
+    sourceWindow:activeSourceWindow?{...activeSourceWindow,completed:brain.sourceOffset||0}:null,
+    gpuTextWindowLimit:GPU_MAX_WINDOW});
 };
 const heartbeat=setInterval(emitTelemetry,1000);
 heartbeat.unref();
@@ -178,7 +191,7 @@ const worldsOnce = async (record) => {                                     // on
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
-const processGpuText = async (exs, meta) => {
+const processGpuText = async (exs, meta,{allowHeavyReport=true}={}) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   changePhase("text CUDA: aliniere",0,total); shot(true);
   const startChars = brain.chars;
@@ -196,7 +209,7 @@ const processGpuText = async (exs, meta) => {
   changePhase("GPU batch finished"); batchNow = null;
   emitTelemetry();
   // Report the first committed batch immediately, not only after 60,000 bytes.
-  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
+  if (allowHeavyReport && (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every))) {
     changePhase("CPU: frozen V17 evaluation + checkpoint"); emitTelemetry(); report(); changePhase("CPU: evaluation complete");
   }
   shot(true);
