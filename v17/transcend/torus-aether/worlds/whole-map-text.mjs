@@ -206,12 +206,20 @@ export class NativeWholeTextWorld{
   t.node('whole:text:goal','goal','Target');
   const nodeid=x=>'whole:'+x;
   for(const n of w.nodes){
-   t.node(nodeid(n.id),n.wall?'wall':'text-state',n.label);
+   const node=t.node(nodeid(n.id),n.wall?'wall':'text-state',n.label);
+   node.type=n.wall?'wall':'text-state'; // same spatial position may be blocked in the new world
   }
   t.setEdge('whole:text:universe',nodeid(w.start),'start',2);
   t.setEdge(nodeid(w.goal),'whole:text:goal','target',3);
-  for(const e of w.edges)t.setEdge(nodeid(e.from),nodeid(e.to),
-    e.blocked?'wall':'possible-action',e.blocked?.08:.7,String(e.axis));
+  for(const edge of t.edges.values()){
+   if(edge.kind==='traversed'&&edge.a?.startsWith('whole:text:'))edge.w*=.03;
+  }
+  for(const e of w.edges){
+   const a=nodeid(e.from),b=nodeid(e.to);
+   // Prevent an old wall or passage from showing as an active edge in a NEW world.
+   t.setEdge(a,b,'wall',e.blocked?.08:0,String(e.axis));
+   t.setEdge(a,b,'possible-action',e.blocked?0:.7,String(e.axis));
+  }
   // Structured world-sensing stream. ALL observations arrive before any action.
   // The original Brain may also learn this sensory stream, but decisions below
   // are made by topology, NOT a next-token LM or teacher-forcing.
