@@ -278,7 +278,8 @@ export class ObservedTransformations {
   _goal(tokens,required) {
     return required.every(t=>tokens.includes(t));
   }
-  plan({required,start=null,maxDepth=4,maxExpanded=6000}={}) {
+  plan({required,start=null,maxDepth=4,maxExpanded=6000,
+    recordSearch=false,maxRecordedStates=240,allowUnseenStart=false}={}) {
     if(!Array.isArray(required)||!required.length||
       required.some(x=>typeof x!=="string"||!x.trim()))throw Error("Goal must list required observed tokens");
     const req=unique(required.map(x=>x.trim()));
@@ -289,7 +290,7 @@ export class ObservedTransformations {
     let sources;
     if(start!==null) {
       const t=tokenizeObservation(start);
-      if(!this.containsSentence(start))
+      if(!allowUnseenStart&&!this.containsSentence(start))
         return {found:false,reason:"starting-state-not-observed",goal:{required:req},expanded:0};
       sources=[t];
     } else {
@@ -302,21 +303,40 @@ export class ObservedTransformations {
     }
     if(!sources.length)return {found:false,reason:"no-observed-states",expanded:0,goal:{required:req}};
     const visited=new Set(),q=[];
+    // Every drawn node and edge comes from a state that THIS search really
+    // generated. No oracle response, graph layout or target string is inserted.
+    const search=recordSearch?{nodes:[],edges:[],expanded:0,
+      limit:maxRecordedStates,truncated:false}:null;
+    const drawn=new Set();
+    const mark=(text,depth,observed,role="explored")=>{
+      if(!search||drawn.has(text))return;
+      if(search.nodes.length>=maxRecordedStates){search.truncated=true;return;}
+      drawn.add(text);search.nodes.push({id:text,label:text,depth,
+        observed:!!observed,role});
+    };
     for(const tokens of sources){
       const key=freezeKey(tokens);if(visited.has(key))continue;
-      visited.add(key);q.push({tokens,start:tokens,steps:[]});
+      visited.add(key);
+      const text=renderObservation(tokens);
+      q.push({tokens,start:tokens,steps:[],states:[text]});
+      mark(text,0,true,"origin");
     }
     let expanded=0;
     while(q.length&&expanded<budget) {
       const current=q.shift();expanded++;
+      const currentText=renderObservation(current.tokens);
       if(this._goal(current.tokens,req)){
         const support=this.structuralSupport(current.tokens);
         if(support.consistent) {
           const answer=renderObservation(current.tokens);
           const startText=renderObservation(current.start);
+          if(search){search.expanded=expanded;
+            mark(answer,current.steps.length,this.containsSentence(answer),"goal");
+            for(const n of search.nodes)if(current.states.includes(n.id))n.onInitialShape=true;}
           return {found:true,start:startText,predicted:answer,
             unseen:this.containsSentence(answer)===false,
             goal:{required:req},steps:current.steps,expanded,
+            initialShape:current.states,search,
             structure:support,
             plannedBeforeAnswer:true,referenceProvided:false,
             predictedStateBeforeExecution:answer};
@@ -324,16 +344,29 @@ export class ObservedTransformations {
       }
       if(current.steps.length>=depth)continue;
       for(const next of this.neighbors(current.tokens)){
-        const key=freezeKey(next.tokens);if(visited.has(key))continue;
+        const key=freezeKey(next.tokens),name=renderObservation(next.tokens);
+        const prior=visited.has(key);
         const support=this.structuralSupport(next.tokens);
-        if(support.verified&&!support.consistent)continue;
+        const valid=!support.verified||support.consistent;
+        if(search&&search.edges.length<maxRecordedStates*3&&drawn.has(currentText)){
+          mark(name,current.steps.length+1,this.containsSentence(name),
+            prior?"visited":valid?"explored":"blocked");
+          if(drawn.has(name))search.edges.push({
+            from:currentText,to:name,kind:next.action.kind,
+            action:next.action,observedSupport:next.action.observedSupport,
+            previouslyVisited:prior,allowed:valid});
+        } else if(search)search.truncated=true;
+        if(prior||!valid)continue;
         visited.add(key);
-        q.push({tokens:next.tokens,start:current.start,steps:current.steps.concat(next.action)});
+        q.push({tokens:next.tokens,start:current.start,
+          steps:current.steps.concat(next.action),
+          states:current.states.concat(name)});
         if(visited.size>=budget)break;
       }
     }
+    if(search)search.expanded=expanded;
     return {found:false,reason:"no-learned-path-satisfies-goal",goal:{required:req},
-      expanded,observed:this.records.size,operators:this.operators.size};
+      expanded,search,observed:this.records.size,operators:this.operators.size};
   }
   execute(plan,{record=true}={}) {
     if(!plan?.found) return {verified:false,reason:"no-plan"};
