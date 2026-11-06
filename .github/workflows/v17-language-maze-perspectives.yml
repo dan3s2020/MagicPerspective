@@ -1,0 +1,67 @@
+name: V17 real language maze global/body multi-perspective acceptance
+on:
+  push:
+    branches:
+      - experiment/V17-LANGUAGE-MAZE-PERSPECTIVE-REPLAY-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse the REAL original V17 Brain and both GUI modules
+        run: |
+          node --check v17/transcend/torus-aether/worlds/observed-transformations.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/language-maze-view.js
+      - name: The original learner MUST expose true frozen first-plan, alternative edges, local cursor actions, and correct replan without training on answers
+        run: node --test v17/tests/language-maze-perspectives.test.mjs
+      - name: Original V17 HTTP server actually trains four real sentences and sends non-fake global and local traces
+        run: node --test v17/tests/language-maze-native-http.test.mjs
+      - name: Preserve the real V17 training mechanism and all old UI/modes
+        run: |
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/torus-live-observability.test.mjs
+          node --test v17/tests/torus-all-worlds-live.test.mjs
+          node --test v17/tests/torus-observatory-ui.test.mjs
+  firefox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install REAL Firefox to test actual original Torus Aether UI
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps firefox
+      - name: Rotate and navigate actual 5D language labyrinth, replay every original Brain state and restore Torus graph
+        run: node --test v17/tests/language-maze-firefox.test.mjs
+      - name: Existing real observability tabs must continue working
+        run: node --test v17/tests/torus-observatory-browser.test.mjs
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Keep both original Windows PowerShell launchers parseable
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('v17/START_V17.ps1','v17/START_V17_TRANSFER.ps1')){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($p+': '+($errors -join '; '))}
+          }
