@@ -277,10 +277,10 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
     return;
   }
   if(m&&m.languageMazeExam){
-    const {id,prompt}=m.languageMazeExam;
+    const {id,prompt,mode="hybrid"}=m.languageMazeExam;
     try{
       // The unseen reference is never accepted by this protocol.
-      const r=languageMaze.plan(prompt,{maxReplay:256});
+      const r=languageMaze.plan(prompt,{maxReplay:256,mode});
       parentPort.postMessage({type:"chat",id,kind:"language-maze",...r,
         trainingMemory:languageMaze.stats(),backend:"original V17 worker, experienced Q/A only"});
     }catch(err){parentPort.postMessage({type:"chat",id,kind:"language-maze",error:err.message});}
