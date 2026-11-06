@@ -337,6 +337,9 @@ for await (const ex of stream()) {
     if (paused || saveNow) { shot(true); await hold(); }
   }
   const livedChars=brain.chars-startedAtChars;
+  observedPipeline.lastLoop={TEXT,stop,gpuSet:!!gpuSet,startedAtChars,
+    now:brain.chars,livedChars,rowBytes:ex.bytes?.length,
+    type:typeof ex.bytes,isArray:Array.isArray(ex.bytes),exercises:brain.exercises};
   if(TEXT&&livedChars>0){
     // The structural learner must receive EVERY actually lived symbol, not
     // depend on a training budget that can end at the same moment as a row.
