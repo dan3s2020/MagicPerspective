@@ -27,6 +27,17 @@ export function setupResearchTab({getSelectedBrain,isLive}){
       !r.enabled?'Instrumentarea nu este pornită (-Research).':
       !r.attempts?'Creier V17 #'+w+' · aștept primul exemplu real.':
       'Creier V17 #'+w+' · '+num(r.attempts)+' predicții înainte de răspuns';
+    const heldNow=r.heldout?.mean;
+    if(heldNow&&Number.isFinite(heldNow.sr)&&Number.isFinite(heldNow.native)&&Number.isFinite(heldNow.lexical)){
+      const comparator=Math.max(heldNow.native,heldNow.lexical,heldNow.char||0);
+      const delta=heldNow.sr-comparator;
+      put('researchVerdict',delta>0?
+        'SR a depășit comparatorii pe doar '+r.heldout.samples+' rânduri nevăzute (Δ '+(100*delta).toFixed(2)+' pp); NU este încă dovadă de generalizare.':
+        'NICIUN CÂȘTIG DEMONSTRAT: SR F1 '+pct(heldNow.sr)+' ≤ cel mai bun comparator '+pct(comparator)+
+        ' · decizii schimbate '+num(use.changedDecisions)+'.');
+    }else put('researchVerdict',r.attempts?
+      'Progres prequential observat; testul înghețat nu a fost încă completat.':
+      'Niciun câștig nu poate fi afirmat înainte de date reale.');
     const step=r.progress;
     put('researchStatus',status+(step?.bytesTotal?
       ' · rând '+num(step.index)+' '+num(step.bytesProcessed)+' / '+num(step.bytesTotal)+' caractere · '+step.phase:''));
