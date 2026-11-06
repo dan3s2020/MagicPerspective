@@ -113,10 +113,43 @@ const gpuOn = async () => {
   // Never kill a Python process while a CUDA batch is in flight. Apply changes at the next batch boundary.
   if (gpuResetPending) { gpu?.close(); gpu = null; sharedLoaded = false; gpuResetPending = false; }
   if (!gpuSet) return null;
-  if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); sharedLoaded = false; batchNow = {phase: "GPU: pornește " + gpu.py, done: 0, total: 0}; shot(true);
+  if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); sharedLoaded = false; changePhase("GPU: pornește "+gpu.py); shot(true);
     try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
-    catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
-let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
+    catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } changePhase("GPU: ready"); } return gpu; };
+let batchNow = null;                                                       // current real GPU phase
+// Lightweight observability while awaiting a long GPU call. No graph reconstruction,
+// no checkpoint write, no fabricated progress. It also keeps running while PyTorch
+// performs work and the Node worker awaits its response.
+const stageTimes = {phase:'initializing',started:performance.now(),totalsMs:{},changes:0};
+const changePhase=(phase,done=0,total=0)=>{
+  const name=String(phase||'idle'),now=performance.now();
+  if(name!==stageTimes.phase){
+    const prior=stageTimes.phase;
+    stageTimes.totalsMs[prior]=(stageTimes.totalsMs[prior]||0)+(now-stageTimes.started);
+    stageTimes.phase=name;stageTimes.started=now;stageTimes.changes++;
+  }
+  batchNow={phase:name,done:Number.isFinite(done)?done:0,total:Number.isFinite(total)?total:0};
+};
+const phaseStats=()=>{
+  const now=performance.now(),totals={...stageTimes.totalsMs};
+  totals[stageTimes.phase]=(totals[stageTimes.phase]||0)+(now-stageTimes.started);
+  return {phase:batchNow?.phase||stageTimes.phase,done:batchNow?.done||0,total:batchNow?.total||0,
+    phaseElapsedMs:Math.round(now-stageTimes.started),totalsMs:totals,changes:stageTimes.changes};
+};
+const emitTelemetry=()=>{
+  const now=performance.now();
+  parentPort.postMessage({type:'telemetry',w:workerData.gw,observedAt:Date.now(),
+    chars:brain.chars,exercises:brain.exercises||0,lived:brain.lived,mazePlayed:brain.mazes.played,
+    transformPlayed:brain.trans?.played||0,bodyTransitions:bodyPerspective.observed,
+    sharedObserved:shared.total,sharedUpdates:shared.training?.step||0,sharedError:shared.error||null,
+    heapMB:Math.round(process.memoryUsage().heapUsed/1048576),
+    textCharsPerSecond:+((brain.chars-c0)/Math.max(1,(now-t0)/1000)).toFixed(2),
+    gpuDevice:gpuInfo?.device||gpuSet?.device||'off',gpuError:gpuError||null,
+    phase:phaseStats(),paused,stop,savePending:saveNow});
+};
+const heartbeat=setInterval(emitTelemetry,1000);
+heartbeat.unref();
+emitTelemetry();
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
   if (!gpuSet) { shared.error = "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
@@ -128,37 +161,40 @@ const flushShared = async (force = false) => {
       if (sharedFile) await G.call({cmd: "shared_load", checkpoint: sharedFile, seed: brain.seed});
       sharedLoaded = true;
     }
+    changePhase("CUDA: shared_train",0,samples.length);
     const result = await G.call({cmd: "shared_train", samples, checkpoint: sharedFile, seed: brain.seed, adaptiveNoise: true});
+    changePhase("CUDA: shared_train done",samples.length,samples.length);
     shared.training = result; shared.error = null;
   } catch (err) {
     shared.requeue(samples); shared.error = "Shared model: " + err.message;
     parentPort.postMessage({type: "note", w: workerData.gw, text: shared.error});
   }
 };
-const tick = async (phase, done, total) => { batchNow = {phase, done, total}; shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
+const tick = async (phase, done, total) => { changePhase(phase,done,total); shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
 const worldsOnce = async (record) => {                                     // one round of the worlds: one each on the CPU, or a batch of N on the GPU
   const G = await gpuOn();
-  if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); await flushShared(); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
+  if (G) { try { if (MAZE) {changePhase("CUDA: maze worlds",0,gpuSet.worlds); await brain.learnMazesGPU(G, gpuSet.worlds, tick);} if (TRANS) {changePhase("CUDA: transform worlds",0,gpuSet.worlds); await brain.playTransformsGPU(G, gpuSet.worlds, tick);} await flushShared(); changePhase("CUDA: world batch complete"); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
   if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
-  batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
+  changePhase("text CUDA: aliniere",0,total); shot(true);
   const startChars = brain.chars;
   await brain.learnTextGPU(gpu, exs, progress => {
-    batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
+    changePhase("text CUDA: "+progress.phase,progress.done,progress.total);
     shot();
   });
-  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
+  changePhase("text: integrare în graful V17",0,exs[0]?.length||0); shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
-  batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
+  changePhase("CUDA: model comun de transformări",0,shared.queue.length);
   await flushShared();
   if ((MAZE || TRANS) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
-  batchNow = null;
+  changePhase("GPU batch finished"); batchNow = null;
+  emitTelemetry();
   // Report the first committed batch immediately, not only after 60,000 bytes.
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
   shot(true);
@@ -251,6 +287,8 @@ if (TEXT && gpuSet && !stop && textBatch.length) {
   catch (err) { gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
     parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
 }
+changePhase(stop?"stopped":"completed"); emitTelemetry();
+clearInterval(heartbeat);
 report(stop ? false : true);
 if (gpu) gpu.close();
 parentPort.close();
