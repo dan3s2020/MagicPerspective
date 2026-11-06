@@ -143,14 +143,19 @@ export class ConstructedPathLearner {
   trainPair(world,{samples=0}={}) {
     // Complete view and mask are temporary TRAINING observations; no world
     // walls, distance field or target-specific route survives in the model.
-    const n=world.n,full=Int8Array.from(world.wall),partial=new Int8Array(n*n).fill(-1);
-    ConstructedPathLearner.reveal(world,partial,world.start,2);
-    const trueDistances=bfs(n,world.wall,world.goal); // only supervision for this training comparison
+    const n=world.n;
+    const trueDistances=bfs(n,world.wall,world.goal); // train-only supervisory comparison
     let compared=0,missed=0;
-    for(let p=0;p<n*n;p++) {
-      if(world.wall[p]||!Number.isFinite(trueDistances[p])||trueDistances[p]>=1e9)continue;
-      // Pair a FULL and a partially observed version of EXACTLY the same
-      // state; learn a transferable direction-scoring transformation.
+    const cap=samples>0?clip(Math.trunc(samples),1,n*n):n*n;
+    const candidates=[];
+    for(let p=0;p<n*n;p++)if(!world.wall[p]&&trueDistances[p]<1e9)candidates.push(p);
+    // Deterministic, unbiased across episodes. No test data ever enters.
+    const stride=Math.max(1,Math.floor(candidates.length/cap));
+    for(let i=0;i<candidates.length;i+=stride){
+      const p=candidates[i],partial=new Int8Array(n*n).fill(-1);
+      ConstructedPathLearner.reveal(world,partial,p,2);
+      const blindFirst=this.construct(partial,n,p,world.goal)[0]?.action;
+      let positive=false;
       for(let a=0;a<4;a++){
         const j=nextCell(world,p,a);
         const y=j>=0&&!world.wall[j]&&trueDistances[j]<trueDistances[p]?1:0;
@@ -158,11 +163,8 @@ export class ConstructedPathLearner {
         const expected=1/(1+Math.exp(-clip(this.score(x),-30,30)));
         for(let k=0;k<this.weights.length;k++)this.weights[k]+=.045*(y-expected)*x[k];
         this.examples++;compared++;
-        const pred=this.construct(partial,n,p,world.goal)[0]?.action;
-        if(pred!==a&&y)missed++;
+        if(y){positive=true;if(blindFirst!==a)missed++;}
         if(j>=0){this.open+=!world.wall[j]?1:0;this.blocked+=world.wall[j]?1:0;}
-        // Map topology is observed in training, but NEVER copied into the
-        // learner as a memorized world-specific route.
       }
     }
     this.paired++;
@@ -175,7 +177,6 @@ export class ConstructedPathLearner {
   // from observed movement/no-movement. Teacher BFS is metric-only.
   navigateBlind(world,{maxSteps=world.n*world.n*6,record=false,train=false,noiseAgent=null}={}) {
     const n=world.n,belief=new Int8Array(n*n).fill(-1),visits=new Uint16Array(n*n);
-    const initialSeen=world.n*world.n,initialUnknowns=initialSeen;
     let pos=world.start,steps=0,bumps=0,routeRepairs=0,madePredictions=0;
     ConstructedPathLearner.reveal(world,belief,pos,2);
     visits[pos]++;
@@ -193,7 +194,7 @@ export class ConstructedPathLearner {
       }
       if(!chosen.length)break;
       const proposed=chosen[at];
-      const state='maze:'+n+':'+pos,action='move:'+proposed.action;
+      const state='maze:'+world.seed+':'+n+':'+pos,action='move:'+proposed.action;
       const modelPrediction=this.links.predict(state,action);
       let a=proposed.action;
       // The organism's OWN noise agency may explore alternatives; this is
@@ -210,7 +211,7 @@ export class ConstructedPathLearner {
       if(j>=0&&train){this.open+=moved?1:0;this.blocked+=moved?0:1;}
       if(j>=0)belief[j]=moved?0:1;
       if(moved)ConstructedPathLearner.reveal(world,belief,pos,2);
-      if(train)this.links.observe(state,action,'maze:'+n+':'+pos);
+      if(train)this.links.observe(state,action,'maze:'+world.seed+':'+n+':'+pos);
       if(portal&&train)noiseAgent.learn(portal,{before:[before],after:[pos],solved:pos===world.goal});
       if(record)trace.push({step:steps,from:before,to:pos,proposed,action:a,moved,
         sensedCells:belief.filter(x=>x!==-1).length,portal:portal?.site||'none',
