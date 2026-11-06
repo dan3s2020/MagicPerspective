@@ -11,6 +11,7 @@
  * demonstrated open-domain understanding. Missing routes => abstain honestly.
  */
 import {shapeOnLearnedTopology} from "./shape-topology.mjs";
+import {successorGoalField,selectUphillEdge} from "./successor-field.mjs";
 import {travelHierarchicalLanguage} from "./hierarchical-shape.mjs";
 import {KIND} from "../worlds/exercise.mjs";
 
@@ -142,8 +143,12 @@ export class LanguageMazeMemory {
      kinds.push(KIND.floor);neighbors.push([]);
      labels.push({prefix:nextPrefix,state:"character",character});
     }
-    if(!neighbors[at].some(e=>e.to===to&&e.character===character))
-      neighbors[at].push({to,action:character,character,
+    // Keep genuine OBSERVED completed-example counts on each shared edge.
+    // No held-out answer, simulated action or correctness oracle is introduced.
+    const oldEdge=neighbors[at].find(e=>e.to===to&&e.character===character);
+    const observedSupport=Math.max(1,candidate.record.support);
+    if(oldEdge)oldEdge.support+=observedSupport;
+    else neighbors[at].push({to,action:character,character,support:observedSupport,
         transformation:candidate.composed?"learned_positional_transformation":"observed_character_transition"});
     at=to;prefix=nextPrefix;
    }
@@ -158,7 +163,8 @@ export class LanguageMazeMemory {
     provenance:"Observed training paths and composition from >=2 independently experienced character-position transformations. No unseen target oracle."};
   return world;
  }
- plan(prompt,{maxReplay=256}={}){
+ plan(prompt,{maxReplay=256,mode="hybrid"}={}){
+  if(mode!=="hybrid"&&mode!=="original")throw Error("Unknown language planning mode");
   if(typeof prompt!=="string"||prompt.length>20000)throw Error("Prompt is missing or exceeds safe request size");
   // A long observed answer is a hierarchy of successive submazes, not a
   // 112k-node flat field whose 0.97^112k attraction becomes numerically zero.
@@ -170,24 +176,41 @@ export class LanguageMazeMemory {
    return {...travelHierarchicalLanguage(cp(picked.answer),{
       conduct:k=>this.conduct(k),attract:k=>this.attract(k),maxReplay,
       source:picked.source||"priorly_observed_training_answer"
-    }),input:prompt,candidateEvidence:{
+    }),input:prompt,successor:{enabled:false,mode,reason:"Only one previously observed answer path; original recursive V17 law remains authoritative"},candidateEvidence:{
      score:evidence[0].score,support:picked.support,
      provenance:picked.source||"priorly_observed_training_answer"}};
   }
   const world=this.worldFor(prompt);
+  // An optional secondary successor channel operates on ONLY completed
+  // training Q/A paths. No new answer is inferred by this field itself.
+  const goalRewards=Array(world.kinds.length).fill(0);
+  for(const goal of world.goals){
+    const evidence=Math.max(.01,Math.min(1,goal.score*goal.support/(goal.support+1)));
+    goalRewards[goal.node]=Math.max(goalRewards[goal.node],evidence);
+  }
+  const successor=mode==="hybrid"&&world.candidates>1?
+    successorGoalField({kinds:world.kinds,neighbors:world.neighbors,start:0,
+     conduct:k=>this.conduct(k),attract:k=>this.attract(k),goalRewards,gamma:.9}):null;
   const field=shapeOnLearnedTopology({kinds:world.kinds,neighbors:world.neighbors,
-   start:0,conduct:k=>this.conduct(k),attract:k=>this.attract(k)});
+   start:0,conduct:k=>this.conduct(k),attract:k=>this.attract(k),
+   tieBreakValues:successor?.values??null});
   const result=field.path;
   // A real LOCAL body policy. It does not read the globally selected next
   // character from result.path. It only perceives neighbors of its CURRENT
   // node and the goal-attraction values remembered after its global glance.
-  let bodyPosition=0,localAgreement=0,blocked=0;
+  let bodyPosition=0,localAgreement=0,blocked=0,localSuccessorTies=0;
   const bodyNodes=[0],seen=new Set([0]),trace=[],emitted=[];
   if(result){
    for(let i=0;i<world.kinds.length;i++){
     const local=world.neighbors[bodyPosition]||[];
     let best=null,bv=field.values[bodyPosition];
-    for(const edge of local){
+    // The body's local view uses the SAME globally computed attraction field
+    // and the SAME exact-tie rule; it never receives reference.path as policy.
+    if(successor){
+     const choice=selectUphillEdge(local,bodyPosition,field.values,seen,successor.values);
+     if(choice.index>=0)best=local[choice.index];
+     if(choice.usedSuccessor)localSuccessorTies++;
+    }else for(const edge of local){
      const v=field.values[edge.to];
      if(!seen.has(edge.to)&&v>bv){bv=v;best=edge;}
     }
@@ -207,7 +230,10 @@ export class LanguageMazeMemory {
      transformation:best.transformation,localChoices:local.length,
      predictedCharacter:predicted,agreesWithGlobal:same,
      globalShapeLength:result.length,localRemaining:Math.max(0,result.length-i-1),
-     policy:"local_neighbor_hillclimb_of_remembered_global_field"
+     policy:successor?"local_neighbor_hillclimb_with_successor_exact_ties":
+       "local_neighbor_hillclimb_of_remembered_global_field",
+     successorBefore:successor?.values[before]??null,
+     successorAfter:successor?.values[bodyPosition]??null
     });
     if(this.attract(world.kinds[bodyPosition])>.2)break;
    }
@@ -221,13 +247,21 @@ export class LanguageMazeMemory {
    input:prompt,output,propagation:field.propagation,solvedKnownGoal:!!result&&localReachedGoal,
    abstained:!result,reason:result&&!localReachedGoal?"LOCAL_PATH_BLOCKED":field.reason,steps:result?.length||0,
    locallyExecutedSteps:emitted.length,localAgreementRate:result?.length?localAgreement/result.length:null,
-   localBlockedSteps:blocked,bodyPolicy:"local_neighbor_hillclimb_of_remembered_global_field",
+   localBlockedSteps:blocked,bodyPolicy:successor?
+      "local_neighbor_hillclimb_with_successor_exact_ties":"local_neighbor_hillclimb_of_remembered_global_field",
+   successor:successor?{enabled:true,mode,gamma:successor.gamma,converged:successor.converged,
+      iterations:successor.iterations,rootOccupancy:successor.values[0],
+      globalTieBreaks:field.successorTieBreaks,localTieBreaks:localSuccessorTies,
+      interpretation:successor.interpretation}:
+      {enabled:false,mode,reason:mode==="original"?"original V17 only":"No competing observed complete paths"},
    initialShape:result?.map(e=>e.character)||[],
    pathNodes:paths,trace,field:field.values,
    graph:{
     nodes:world.labels.map((v,i)=>({id:i,kind:world.kinds[i],state:v.state,
-      lastCharacter:v.character??null,potential:field.values[i]})),
-    edges:world.neighbors.flatMap((row,i)=>row.map(e=>({from:i,to:e.to,character:e.character}))),
+      lastCharacter:v.character??null,potential:field.values[i],
+      successorOccupancy:successor?.values[i]??null})),
+    edges:world.neighbors.flatMap((row,i)=>row.map(e=>({from:i,to:e.to,character:e.character,
+      observedSupport:e.support??1}))),
     goals:world.goals,hitLimit:world.hitLimit
    },
    candidates:world.candidates,validity:"Reached a TRAINING-learned terminal. Correctness on this input is NOT proven.",
@@ -235,7 +269,8 @@ export class LanguageMazeMemory {
     "Shared exact maze propagation equation; its 2D layout is replaced by experienced directed graph neighbors.",
     "Only observed answer paths and shared prefixes are traversable. Unknown valid routes may exist.",
     "A known terminal is NOT necessarily the correct answer to an unseen question.",
-    "This does NOT demonstrate general semantic understanding or arbitrary 4D/5D cognition."
+    "This does NOT demonstrate general semantic understanding or arbitrary 4D/5D cognition.",
+    "Successor occupancy ranks only exact original-field ties using completed training example evidence; it is not a correctness probability."
    ]
   };
  }
