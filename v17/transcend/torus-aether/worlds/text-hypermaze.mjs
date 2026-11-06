@@ -10,7 +10,7 @@ export class TextHypermaze {
   if(!Number.isInteger(maxNodes)||maxNodes<8||!Number.isInteger(maxEdges)||maxEdges<8)throw Error("Bad graph budget");
   Object.assign(this,{version:1,maxNodes,maxEdges,frameLimit,documents:0,
    observedTokens:0,observedTransitions:0,skippedNewTokens:0,skippedNewEdges:0,
-   onlineCorrect:0,onlineTested:0,onlineBaselineCorrect:0,onlineTransitions:0,last:null});
+   onlineCorrect:0,onlineTested:0,onlineBaselineCorrect:0,onlineTransitions:0,last:null,frequentId:-1});
   this.index=new Map();this.nodes=[];this.edges=new Map();
  }
  intern(token){
@@ -43,12 +43,14 @@ export class TextHypermaze {
  // are a visible start/goal; unseen intermediate text is withheld from planner.
  observeWorld(document,{id=null}={}){
   if(typeof document!=="string")throw Error("Expected complete original text");
-  const words=textTokens(document),window=words.slice(0,this.frameLimit+1);
+  const words=textTokens(document);
+  const record=this.documents<4||this.documents%20===0;
+  const window=record?words.slice(0,this.frameLimit+1):[];
   const oldN=this.nodes.length,oldE=this.edges.size;
-  const global=window.length>=2?this.plan(window[0],window.at(-1)):null;
+  const global=record&&window.length>=2?this.plan(window[0],window.at(-1)):null;
   const predicted=global?.found?global.path:[],frames=[];
   let correct=0,known=0,matched=0,baseline=0;
-  let frequent=null;for(const n of this.nodes)if(!frequent||n.count>frequent.count)frequent=n;
+  const frequent=this.frequentId>=0?this.nodes[this.frequentId]:null;
   for(let i=1;i<words.length;i++){
    const guess=this.predict(words[i-1]),observed=words[i];
    if(guess!==null){known++;correct+=Number(guess===observed);}
@@ -56,19 +58,22 @@ export class TextHypermaze {
    const a=this.index.get(words[i-1]),b=this.index.get(observed);
    const seen=a!==undefined&&b!==undefined&&this.edges.has(a+":"+b);
    matched+=Number(seen);
-   if(i<=this.frameLimit)frames.push({step:i,from:words[i-1],predictedNext:guess,
+   if(record&&i<=this.frameLimit)frames.push({step:i,from:words[i-1],predictedNext:guess,
     observedNext:observed,correct:guess!==null&&guess===observed,knownEdge:seen,
     originalShapeNext:predicted[i]??null});
   }
   this.onlineCorrect+=correct;this.onlineTested+=known;
   this.onlineBaselineCorrect+=baseline;this.onlineTransitions+=Math.max(0,words.length-1);
-  for(const word of words){const k=this.intern(word);if(k>=0)this.nodes[k].count++;}
+  for(const word of words){const k=this.intern(word);if(k>=0){
+   const node=this.nodes[k];node.count++;
+   if(this.frequentId<0||node.count>this.nodes[this.frequentId].count)this.frequentId=k;
+  }}
   for(let i=1;i<words.length;i++){
    const a=this.index.get(words[i-1]),b=this.index.get(words[i]);
    if(a!==undefined&&b!==undefined)this.transition(a,b);
   }
   this.documents++;this.observedTokens+=words.length;
-  this.last={id,start:window[0]??null,goal:window.at(-1)??null,
+  if(record)this.last={id,start:window[0]??null,goal:window.at(-1)??null,
    initialShape:predicted,actual:window,frames,goalProvidedBeforePlanning:true,
    plannedBeforeMovement:true,goalReachableBeforeLearning:!!global?.found,
    originalDistance:global?.distance??null,originalResidual:global?.math?.maxResidual??null,
@@ -76,7 +81,7 @@ export class TextHypermaze {
    onlineAccuracy:known?correct/known:null,coverage:words.length>1?known/(words.length-1):null,
    baseline:words.length>1?baseline/(words.length-1):null,
    newNodes:this.nodes.length-oldN,newEdges:this.edges.size-oldE,
-   source:"real complete corpus; global goal supplied; predictions recorded BEFORE this document"};
+   source:"real corpus, captured every 20 documents; global goal supplied; predictions BEFORE this document"};
   return this.last;
  }
  // Exact V17 max-attraction Bellman equation on an observed directed graph,
@@ -149,7 +154,8 @@ export class TextHypermaze {
    documents:this.documents,observedTokens:this.observedTokens,observedTransitions:this.observedTransitions,
    skippedNewTokens:this.skippedNewTokens,skippedNewEdges:this.skippedNewEdges,
    onlineCorrect:this.onlineCorrect,onlineTested:this.onlineTested,
-   onlineBaselineCorrect:this.onlineBaselineCorrect,onlineTransitions:this.onlineTransitions,last:this.last};
+   onlineBaselineCorrect:this.onlineBaselineCorrect,onlineTransitions:this.onlineTransitions,
+   frequentId:this.frequentId,last:this.last};
  }
  static restore(data){
   if(data?.version!==1||!Array.isArray(data.nodes)||!Array.isArray(data.edges))
@@ -160,6 +166,7 @@ export class TextHypermaze {
   for(const k of ["documents","observedTokens","observedTransitions","skippedNewTokens",
    "skippedNewEdges","onlineCorrect","onlineTested","onlineBaselineCorrect","onlineTransitions"])
    m[k]=data[k]||0;
+  m.frequentId=Number.isInteger(data.frequentId)?data.frequentId:-1;
   m.last=data.last||null;return m;
  }
 }
