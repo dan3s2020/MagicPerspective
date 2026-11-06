@@ -16,6 +16,7 @@ jobs:
         run: |
           node --test isolated/native-language-paths/native.test.mjs
           node --test isolated/native-language-paths/multipath.test.mjs
+          node --test isolated/native-language-paths/repetition.test.mjs
       - name: Parse original engine and all isolated components
         run: |
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
@@ -23,3 +24,4 @@ jobs:
           node --check isolated/native-language-paths/train.mjs
           node --check isolated/native-language-paths/multipath.mjs
           node --check isolated/native-language-paths/atlas.mjs
+          node --check isolated/native-language-paths/repetition.mjs
