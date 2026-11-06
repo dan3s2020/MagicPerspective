@@ -235,7 +235,7 @@ http.createServer((req, res) => {
   res.writeHead(404); res.end();
 }).listen(port, "127.0.0.1", () => {
   const u = `http://127.0.0.1:${port}/`; console.log(`living graph: ${u}   (charts: ${u}dashboard)` + (autostart ? "" : " · press Start on the page (or run with --start)"));
-  exec(process.platform === "win32" ? `start "" "${u}"` : process.platform === "darwin" ? `open "${u}"` : process.env.PREFIX?.includes("com.termux") ? `termux-open-url "${u}"` : `xdg-open "${u}"`, () => {});
+  if (process.env.MP_NO_BROWSER !== "1") exec(process.platform === "win32" ? `start "" "${u}"` : process.platform === "darwin" ? `open "${u}"` : process.env.PREFIX?.includes("com.termux") ? `termux-open-url "${u}"` : `xdg-open "${u}"`, () => {});
 }).on("error", e => console.log(`dashboard not started (${e.message}); use --port <other>`));
 const summary = () => {
   console.log("\n=== summary (latest test of every graph) ===");
