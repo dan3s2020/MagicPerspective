@@ -54,12 +54,18 @@ catch [System.Net.Sockets.SocketException] {
 if($Gpu -ne "off"){
   if($Gpu -notmatch "^cuda:\d+$"){throw "Use -Gpu cuda:0 or -Gpu off. CPU PyTorch mode requires deliberate separate setup."}
   if(-not $PythonExe){
+    # Include the active Python installation without assuming an unknown path.
+    # CUDA is still checked with a REAL torch matrix operation below; this
+    # does not silently switch the learning process to CPU.
+    $pythonOnPath = Get-Command python -ErrorAction SilentlyContinue
+    $candidateFromPath = if($pythonOnPath){$pythonOnPath.Source}else{$null}
     $candidates = @(
       $env:OCTOPUS_PY,
       "D:\MagicPerspective-Causal-Language\v17\transcend\torus-aether\gpu\.venv\Scripts\python.exe",
       "D:\MagicPerspective-5D\v17\transcend\torus-aether\gpu\.venv\Scripts\python.exe",
       "D:\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space\.venv\Scripts\python.exe",
-      (Join-Path $root "transcend\torus-aether\gpu\.venv\Scripts\python.exe")
+      (Join-Path $root "transcend\torus-aether\gpu\.venv\Scripts\python.exe"),
+      $candidateFromPath
     )
     $PythonExe = @($candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1)[0]
   }
