@@ -19,7 +19,7 @@
 ## Independently measured results, not claims of universal transfer
 
 - GitHub run `42269570588` passed original Brain checkpoint, live four-world original HTTP server, preserved native UI, frozen blind exam, control noise and original V17 regression.
-- In 24 novel masked mazes after **16 paired training mazes**: trained agent solved **24/24** in **331 total actions**; matched untrained controller solved **24/24** in **349 actions**. That is a difference of **18 actions**, not a statistically established improvement. Both always solved these chosen mazes.
+- In 24 novel masked mazes after **16 paired training mazes**: trained agent solved **24/24** in **331 total actions**; matched untrained controller solved **24/24** in **349 actions**. Its initial blind route predicted before taking any action scored **44.02%** correct progress steps, versus **39.85%** for untrained control. That is **18 fewer actions** and a **4.17 percentage-point** first-route improvement, but is not a statistically established advantage. Both always solved these chosen mazes. Neither received complete walls in the blind arm.
 - Separate test repeated one observed Q/A completion seven times; it reconstructed that same 21-character response before the reference was consulted. **This is a checkpoint/mechanism test, NOT unseen language generalization.**
 - A test with equal text experience and additional paired-maze experience confirmed that maze-learned path-selection weights alter text candidate scores. **It does not show improved unseen answers.**
 
