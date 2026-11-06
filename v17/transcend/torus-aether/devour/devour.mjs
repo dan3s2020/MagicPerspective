@@ -237,6 +237,35 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  // Held-out rows are sampled from the ORIGINAL source split, not generated
+  // by this world and never inserted into the training graph.
+  if(req.method==="POST"&&url==="/hypermaze-eval"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
+    req.on("end",()=>{
+      void (async()=>{
+        let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid frozen text evaluation request"});}
+        const sl=slots.find(x=>x.w===+m.w);
+        if(!sl?.worlds.some(w=>w==="cognitivemap"||w==="hypertext"))
+          return json(res,{error:"Selected graph does not learn a text hypermaze"});
+        const count=Math.max(1,Math.min(20,Math.trunc(Number(m.count)||8)));
+        const texts=(await heldPick(count)).filter(x=>typeof x==="string"&&x.length);
+        if(!texts.length)return json(res,{error:"No original held-out documents available for this corpus"});
+        if(!sl.wk){
+          const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No saved hypermaze"});
+          const brain=Brain.load(save);
+          if(!brain.hypermaze)return json(res,{error:"No learned hypermaze in checkpoint"});
+          const answer=TextHypermaze.restore(brain.hypermaze).evaluateDocuments(texts);
+          return json(res,{...answer,source:"original-held-out",fromSave:true});
+        }
+        const id=++chatId,timer=setTimeout(()=>{
+          chats.delete(id);json(res,{error:"Frozen hypertext evaluation timeout"});
+        },60000);
+        chats.set(id,result=>{clearTimeout(timer);json(res,{...result,source:"original-held-out"})});
+        sl.wk.postMessage({hypermazeEval:{id,texts}});
+      })().catch(err=>json(res,{error:err.message}));
+    });
+    return;
+  }
   // Direct read-only navigation through this worker's REAL corpus-learned graph.
   if (req.method === "POST" && url === "/hypermaze-plan") {
     let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
