@@ -210,8 +210,8 @@ http.createServer((req, res) => {
         try{
           const memory=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(file,"utf8")));
           return json(res,{protocol:"FROZEN_SAME_EXPERIENCED_TEXT_WORLD",
-            original:memory.plan(prompt,{mode:"original"}),
-            hybrid:memory.plan(prompt,{mode:"hybrid"}),
+            original:memory.plan(prompt,{mode:"original",maxReplay:4096}),
+            hybrid:memory.plan(prompt,{mode:"hybrid",maxReplay:4096,observeReplans:true}),
             trainingMemory:memory.stats(),sameWorkerSnapshot:true,
             referenceEnteredPlanner:false,fromSavedWorld:true});
         }catch(err){return json(res,{error:"language-world snapshot: "+err.message});}
