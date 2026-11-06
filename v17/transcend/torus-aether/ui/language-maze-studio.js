@@ -57,6 +57,7 @@ function drawGraph(){
  ctx.fillStyle="#050e18";ctx.fillRect(0,0,w,h);
  if(!result?.graph)return;
  const G=result.graph,coords=projection(result,w,h),current=result.pathNodes[Math.min(step,result.pathNodes.length-1)];
+ const onRoute=new Map(result.pathNodes.map((id,i)=>[id,i]));
  const route=new Set(result.pathNodes.slice(0,step+1));
  const wanted=new Set(result.pathNodes);
  // Sample only DRAW operations when worlds are very dense. Actual JSON remains unchanged.
@@ -116,6 +117,8 @@ function render(){
   "Pas "+tr.step+" · corp #"+tr.source+" → #"+tr.target+"\nCaracter traversat: "+
    JSON.stringify(tr.character)+"\nCâmp atracție: "+tr.potentialBefore.toFixed(5)+" → "+tr.potentialAfter.toFixed(5)+
    "\nLungime cale rămasă: "+tr.localRemaining+
+   (tr.successorAfter===null||tr.successorAfter===undefined?"":"\nOcupare viitoare (dovezi corpus): "+
+     Number(tr.successorBefore).toFixed(5)+" → "+Number(tr.successorAfter).toFixed(5))+
    "\nTransformare executată: "+tr.transformation+
    "\nPolitica corpului: "+tr.policy+
    "\nOpțiuni locale observate: "+tr.localChoices+
@@ -140,7 +143,7 @@ $("langPlan").addEventListener("click",async()=>{
  busy=true;stop();$("langPlan").disabled=true;
  $("langStatus").textContent="Construiesc lumea numai din căile deja observate ale creierului selectat...";
  try{
-  const request={w:selectedGraph(),prompt:$("langPrompt").value};
+  const request={w:selectedGraph(),prompt:$("langPrompt").value,mode:$("langMode").value};
   if(!request.prompt.trim())throw Error("Introdu inputul înainte de propagare.");
   const res=await fetch("/language-maze/plan",{method:"POST",headers:{"content-type":"application/json"},
    body:JSON.stringify(request),cache:"no-store"});
@@ -154,7 +157,9 @@ $("langPlan").addEventListener("click",async()=>{
   $("langStatus").textContent=r.abstained?
    "NECUNOSCUT: lumea absorbită încă nu conține o cale susținută de experiențe pentru acest input.":
    "Forma propagată ÎNAINTE de acțiune: "+count(r.steps)+" portaluri-caractere, "+
-   count(r.candidates)+" soluții învățate candidate. Corectitudinea la inputul nou rămâne de verificat.";
+   count(r.candidates)+" soluții învățate candidate. Departajări successor (global/local): "+
+   count(r.successor?.globalTieBreaks??0)+"/"+count(r.successor?.localTieBreaks??0)+
+   ". Corectitudinea la inputul nou rămâne de verificat.";
   $("langEvidence").textContent=JSON.stringify({
    protocol:r.protocol,source:r.backend||"V18 saved world",goalStatus:r.validity,
    noAnswerOracle:true,priorObservedExamples:r.trainingMemory,
@@ -162,7 +167,7 @@ $("langPlan").addEventListener("click",async()=>{
    actualGoals:r.graph.goals.length,learnedPaths:r.candidates,
    firstAttraction:r.field[0],graphTruncated:r.graph.hitLimit,
    bodyPolicy:r.bodyPolicy,localAgreementRate:r.localAgreementRate,
-   propagation:r.propagation,
+   propagation:r.propagation,successor:r.successor,
    localSteps:r.locallyExecutedSteps,bodyBlocked:r.localBlockedSteps,
    caveats:r.limitations
   },null,2);
