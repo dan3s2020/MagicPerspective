@@ -86,3 +86,34 @@ test("paired 64 independent seeded 140-move games: explicit chance branching vs 
   got2048Chance:results.filter(x=>x.chance.highest>=2048).length
  }));
 });
+
+test("the RANDOM NEW TILE is a necessary source of mass and growth, not merely decision noise",()=>{
+ // Sliding and merging are conservative, no matter what directions are selected.
+ const b=[2,2,0,0,...Array(12).fill(0)],initialMass=mass(b);
+ let current=b;
+ for(let i=0;i<80;i++){
+  const actions=legal(current);
+  if(!actions.length)break;
+  current=slide(current,actions[i%actions.length]).board;
+  assert.equal(mass(current),initialMass);
+  assert.ok(Math.max(...current)<=initialMass);
+ }
+ // Now the world injects one genuinely random piece after each legal move.
+ const rng=randomSeed(1337);
+ let world=start(rng),initial=mass(world),injected=0,actions=0;
+ for(let i=0;i<120;i++){
+  const direction=greedy(world);
+  if(!direction)break;
+  const outcome=step(world,direction,rng);
+  injected+=outcome.spawn.value;world=outcome.board;actions++;
+  assert.equal(mass(world),initial+injected);
+ }
+ assert.ok(actions>=90);
+ assert.ok(mass(world)>initialMass);
+ console.log("NOISE_AS_NEW_RESOURCES",JSON.stringify({
+  noSpawnInitialMass:initialMass,noSpawnFinalMass:mass(current),
+  stochasticInitialMass:initial,stochasticAfter:mass(world),
+  injectedMass:injected,validActions:actions,
+  interpretation:"random world spawning adds resources; it is not a mere rotation or a changed text temperature"
+ }));
+});
