@@ -70,15 +70,19 @@ export class SharedTransformationCore {
     // The prediction is computed BEFORE the current observation updates the
     // shared action-effect weights. Text gives structural confirmation, not a
     // semantic reward. Maze uses only an actually observed move/no-move.
+    // The monitored prediction uses ONLY previous learned weights and an
+    // action-class prior, NOT the current action's observed result/progress.
+    // The separate supervised UPDATE may use the observed effect afterwards.
+    const guessed=this._estimate(this._features({
+      progress:0,support:0,uncertainty:0,novelty:1,terminal:0}));
     const features=this._features({progress:numericProgress,support,
       uncertainty,novelty,terminal:Number(terminal)});
-    const guessed=this._estimate(features);
     const target=blocked?0:Number(changed);
     const delta=clip(target-guessed,-1,1)*.03;
     for(let i=0;i<this.weights.length;i++)this.weights[i]=clip(this.weights[i]+delta*features[i],-7,7);
     this.updates++;this.predictions++;this.hits+=Number((guessed>=.5)===Boolean(target));
     this.last={world,kind:type,outcome:result,changed,terminal,blocked,
-      predictedEffectBeforeObservation:Number(guessed.toFixed(5)),
+      priorEffectPrediction:Number(guessed.toFixed(5)),
       progressMeasuredAfterAction:Number(numericProgress.toFixed(5)),
       source};
     return {learned:true,...this.last};
@@ -150,7 +154,7 @@ export class SharedTransformationCore {
     return {version:this.version,observed:{...this.byWorld},updates:this.updates,
       policy:this.weights.map(x=>Number(x.toFixed(6))),rules,nodes:data,edges,
       structuralNodes:this.nodes.size,structuralEdges:this.edges.size,
-      predictedOutcomeAccuracy:this.predictions?this.hits/this.predictions:null,
+      priorOutcomeAgreement:this.predictions?this.hits/this.predictions:null,
       last:this.last,rawPhraseNodes:0,semanticReasoningVerified:false,
       languageCausalGeneralizationVerified:false};
   }
