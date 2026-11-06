@@ -19,6 +19,7 @@ import {Brain} from "./brain.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
 const workers = +arg("workers", Math.max(1, os.cpus().length - 1)), every = +arg("every", 200000), maxChars = +arg("chars", 0) || Infinity;
+const gpuMaxChars = Math.max(256,Math.min(32768,Math.trunc(Number(arg("gpu-max-chars",4096))||4096)));
 const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), evalChars = +arg("eval", 4000);
 // worlds the same brains live: text (the corpus) and/or maze (the 2D maps); brains are saved in <out>/brains and
 // --resume continues every brain from its save; /reset (the page's button) starts every brain again from nothing
@@ -53,6 +54,7 @@ evalText = evalText.slice(0, evalChars);
 fs.mkdirSync(out, {recursive: true}); const log = fs.createWriteStream(path.join(out, "log.jsonl"), {flags: "a"});
 console.log(`worlds: ${worldsArg.join(" + ")} in the same brains${worldsArg.includes("maze") ? ` (a labyrinth every ${mazeEvery.toLocaleString()} chars)` : ""} · saves in ${path.join(out, "brains")}${resume ? " · resuming" : ""}`);
 console.log(`GPU worlds: ${gpuSettings.device === "off" ? "off (worlds one at a time on the CPU)" : `${gpuSettings.device} · ${gpuSettings.worlds} worlds at once · VRAM ${gpuSettings.vram || "all"} GB · ${gpuSettings.util}% of the GPU`}`);
+console.log(`Text CUDA: lossless maximum ${gpuMaxChars} symbols per confirmed training window; original dataset-row cursor survives Save/Resume.`);
 console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name).join(", ")} · test every ${every.toLocaleString()} chars on ${evalText.length} unseen chars · memory budget ${memGB} GB each`);
 
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
@@ -79,7 +81,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
+    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), gpuMaxChars, controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
