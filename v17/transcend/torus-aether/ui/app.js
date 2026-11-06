@@ -373,7 +373,7 @@ function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
   $("steps").textContent = t.toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
-  $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; const mapOnly = LIVE && Array.isArray(liveSnap?.worlds) && liveSnap.worlds.length === 1 && liveSnap.worlds[0] === "maptext";
+  $("edges").textContent = LIVE && liveSnap ? edges.size.toLocaleString() + " afișate / " + (liveSnap.edges?.length || 0).toLocaleString() + " raportate" : edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; const mapOnly = LIVE && Array.isArray(liveSnap?.worlds) && liveSnap.worlds.length === 1 && liveSnap.worlds[0] === "maptext";
   if (mapOnly) {
     $("accC").textContent = "N/A"; $("accF").textContent = "N/A"; $("accAl").textContent = "N/A";
     $("selfModel").textContent = "Acest graf primește predominant mișcări binare, nu răspunsuri în limbaj. Scorurile de caractere și încredere nu indică învățarea navigării. Traseul curent este calculat de un algoritm prestabilit.";
@@ -538,7 +538,9 @@ async function pullSelectedGraph() {
       mbox.hidden = !M;
       if (M) {
         const l = M.last;
-        $("wholeMapOut").textContent = "Lumi absorbite: " + M.episodes + " | Rezolvate: " + M.solved +
+        const mapNodes = gs.nodes.filter(n => n[0]?.startsWith("whole:text:")).length;
+        const mapEdges = gs.edges.filter(e => e[0]?.startsWith("whole:text:") && e[1]?.startsWith("whole:text:")).length;
+        $("wholeMapOut").textContent = "Noduri harta transmise: " + mapNodes + " | Legături transmise: " + mapEdges + "\n" + "Lumi absorbite: " + M.episodes + " | Rezolvate: " + M.solved +
          " | Succes: " + (100 * M.solveRate).toFixed(1) + "% | Ondă medie: " + M.meanWavePasses.toFixed(1) + "\n" +
          (l ? "Ultima lume: " + l.dimensions + "D, " + l.states + " stări, " + l.walls + " ziduri; " +
             l.steps + " pași / optim " + l.optimal + "; cursorul a emis: " + l.movementCharacters +
