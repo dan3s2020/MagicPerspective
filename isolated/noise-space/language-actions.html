@@ -7,7 +7,11 @@
 <section class="panel" style="margin-top:13px"><strong>Interpretation boundary</strong><p class="sub">This is a real state-transition graph for word-edit actions learned from Q/A examples. The horizontal direction is time, not a measured hyperdimensional coordinate. An action path is not proof of semantic comprehension or cross-world generalization. Only training exercises supply feedback from the reference answer. Held-out paths have no reference or reward during execution.</p></section>
 <section class="panel"><h2>Ask the acting organism</h2><p class="sub">First train using real Parquet Q/A from the V17 observatory. This command runs an ungraded text-world trajectory; it never exposes an answer or trains from your question.</p><input id="query" style="width:min(680px,75vw)" placeholder="Enter a new question"><button id="ask">Explore action paths</button><pre id="queryResult">No query yet.</pre></section>
 <div class="metrics"><div class="metric"><small>Training episodes</small><b id="eps">–</b></div><div class="metric"><small>Observed interventions</small><b id="acts">–</b></div><div class="metric"><small>Dynamics observations</small><b id="dyn">–</b></div><div class="metric"><small>Value updates</small><b id="value">–</b></div></div>
-<main><div><section class="panel"><h2>Actual action trajectories</h2><div class="tags"><label>Sequence <select id="which"><option value="last">Recent training</option><option value="heldout">Frozen held-out</option></select></label><span id="meta" class="tag"></span></div><canvas id="graph"></canvas><p class="sub">Nodes = observed text states. Edges = organism actions. Green = positive measured training reward; red = negative; blue = held-out without feedback. Predictions are shown only when available.</p><label>Replay step <input type="range" id="step" min="0" max="0" value="0"></label><button id="prev">◀</button><button id="next">▶</button><button id="play">Play</button><pre id="frame">No observed text-world actions yet.</pre></section><section class="panel"><h2>Goal-conditioned experience</h2><pre id="reward"></pre></section></div><div><section class="panel"><h2>What the organism has discovered</h2><p class="sub">The original action IDs are opaque to the learner. Effects below were induced from observed interventions, not read from world physics.</p><table><thead><tr><th>Action ID</th><th>Observed effects</th><th>Most supported</th></tr></thead><tbody id="effectRows"></tbody></table></section><section class="panel"><h2>Frozen held-out evaluation</h2><pre id="eval"></pre></section><section class="panel"><h2>Back-end integrity</h2><pre id="info"></pre></section></div></main>
+<main><div><section class="panel"><h2>Actual action trajectories</h2><div class="tags"><label>Sequence <select id="which"><option value="last">Recent training</option><option value="heldout">Frozen held-out</option></select></label><span id="meta" class="tag"></span></div><canvas id="graph"></canvas>
+  <h3>Observed state path in a 32-dimensional representation</h3>
+  <p class="sub">This projects the measured hashed state vectors onto two selected coordinates. The prompt-conditioned target vector is trainable; these coordinates are not claimed to be intrinsic semantic dimensions.</p>
+  <label>X dimension <select id="axisX"></select></label> <label>Y dimension <select id="axisY"></select></label>
+  <canvas id="latentGraph"></canvas><p class="sub">Nodes = observed text states. Edges = organism actions. Green = positive measured training reward; red = negative; blue = held-out without feedback. Predictions are shown only when available.</p><label>Replay step <input type="range" id="step" min="0" max="0" value="0"></label><button id="prev">◀</button><button id="next">▶</button><button id="play">Play</button><pre id="frame">No observed text-world actions yet.</pre></section><section class="panel"><h2>Goal-conditioned experience</h2><pre id="reward"></pre></section></div><div><section class="panel"><h2>What the organism has discovered</h2><p class="sub">The original action IDs are opaque to the learner. Effects below were induced from observed interventions, not read from world physics.</p><table><thead><tr><th>Action ID</th><th>Observed effects</th><th>Most supported</th></tr></thead><tbody id="effectRows"></tbody></table></section><section class="panel"><h2>Frozen held-out evaluation</h2><pre id="eval"></pre></section><section class="panel"><h2>Back-end integrity</h2><pre id="info"></pre></section></div></main>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);let state=null,current=0,play=null,lastSignature='';
@@ -30,6 +34,27 @@ function details(){const a=route(),events=a?.events||[];const step=Math.min(curr
   if(i===step||count<14){g.fillStyle='#d8e8fb';g.font='11px sans-serif';g.fillText('a'+ev.action.tool,x-7,y-20);}
  }
  g.fillStyle='#9dcbff';g.font='12px sans-serif';g.fillText('start',8,28);g.fillText('end',w-35,28);
+ drawLatent(events,step,a?.goalLatent);
+}
+function drawLatent(events,selected,goal){
+ const canvas=$('latentGraph'),rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),
+  w=Math.max(200,Math.floor(rect.width*dpr)),h=Math.max(160,Math.floor(rect.height*dpr));
+ if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+ const g=canvas.getContext('2d');g.clearRect(0,0,w,h);g.fillStyle='#09111e';g.fillRect(0,0,w,h);
+ if(!events.length||!Array.isArray(events[0].latentBefore)){g.fillStyle='#b6c7e7';g.fillText('No observed 32D transition coordinates yet',18,45);return;}
+ const ax=Number($('axisX').value)||0,ay=Number($('axisY').value)||1;
+ const points=[events[0].latentBefore,...events.map(e=>e.latentAfter)].filter(v=>Array.isArray(v)&&v.length===32);
+ if(!points.length)return;
+ const all=Array.isArray(goal)&&goal.length===32?[...points,goal]:points;
+ const xvals=all.map(v=>v[ax]),yvals=all.map(v=>v[ay]),minx=Math.min(...xvals),maxx=Math.max(...xvals),miny=Math.min(...yvals),maxy=Math.max(...yvals);
+ const xs=(x)=>30+(x-minx)/Math.max(1e-5,maxx-minx)*(w-60),ys=(y)=>h-30-(y-miny)/Math.max(1e-5,maxy-miny)*(h-60);
+ for(let i=0;i<points.length-1;i++){
+  const e=events[i],a=points[i],b=points[i+1];g.strokeStyle=e.feedback==null?'#84aeff':e.feedback.delta>0?'#65dbaa':e.feedback.delta<0?'#ff9caa':'#bcab79';
+  g.lineWidth=i===selected?4:2;g.beginPath();g.moveTo(xs(a[ax]),ys(a[ay]));g.lineTo(xs(b[ax]),ys(b[ay]));g.stroke();
+ }
+ points.forEach((p,i)=>{g.beginPath();g.arc(xs(p[ax]),ys(p[ay]),i===selected?7:3,0,Math.PI*2);g.fillStyle=i===selected?'#fff':'#86b6ff';g.fill();});
+ if(Array.isArray(goal)&&goal.length===32){g.strokeStyle='#fbd18b';g.lineWidth=2;g.beginPath();g.arc(xs(goal[ax]),ys(goal[ay]),10,0,Math.PI*2);g.stroke();}
+ g.fillStyle='#b6c7e7';g.font='12px sans-serif';g.fillText('D'+(ax+1)+' × D'+(ay+1)+' (measured hashed states)',14,19);
 }
 function measureCanvas(){const canvas=$('graph'),rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),w=Math.max(200,Math.floor(rect.width*dpr)),h=Math.max(150,Math.floor(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}const g=canvas.getContext('2d');return{canvas,g,w,h};}
 function render(){if(!state)return;const s=state.causalText;
@@ -54,5 +79,9 @@ $('ask').onclick=async()=>{const prompt=$('query').value.trim();if(!prompt)retur
  };
 $('which').onchange=()=>{current=0;lastSignature='';render();};$('step').oninput=()=>{current=Number($('step').value);details();};$('prev').onclick=()=>{current=Math.max(0,current-1);details();};$('next').onclick=()=>{current=Math.min((route()?.events?.length||1)-1,current+1);details();};
 $('play').onclick=()=>{if(play){clearInterval(play);play=null;$('play').textContent='Play';return;}$('play').textContent='Pause';play=setInterval(()=>{const n=route()?.events?.length||0;if(current>=n-1){$('play').click();return;}current++;details();},500);};
+for(let i=0;i<32;i++){
+ for(const id of ['axisX','axisY']){const o=document.createElement('option');o.value=String(i);o.textContent='D'+(i+1);$(id).appendChild(o);}
+}
+$('axisX').value='0';$('axisY').value='1';$('axisX').onchange=details;$('axisY').onchange=details;
 window.addEventListener('resize',()=>details());refresh();setInterval(refresh,1100);
 </script></body></html>
