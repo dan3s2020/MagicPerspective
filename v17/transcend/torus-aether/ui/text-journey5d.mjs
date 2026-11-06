@@ -30,14 +30,16 @@ export function rollingState(bytes,map,depth=12){
   }
   return {u:out,known,total:h.length,valid:out.every(x=>x!==null)};
 }
-export function tracePath(prefix,continuation,map,kind,cap=30000){
+export function tracePath(prefix,continuation,map,kind,cap=Infinity){
   const all=prefix.slice(-12),points=[];
+  const length=Math.min(continuation.length,cap),stride=Math.max(1,Math.ceil(length/6000));
   const start=rollingState(all,map);
   points.push({i:-1,code:null,kind, ...start});
   for(let i=0;i<continuation.length&&i<cap;i++){
     all.push(continuation[i]);if(all.length>12)all.shift();
-    const state=rollingState(all,map);
-    points.push({i,code:continuation[i],kind,...state});
+    // Retain EVERY original step in the source data; only sample rendered polyline points.
+    if(i%stride===0 || i===length-1){const state=rollingState(all,map);
+      points.push({i,code:continuation[i],kind,...state});}
   }
   return points;
 }
@@ -55,14 +57,17 @@ export function fromFrozenEvaluation(ex,space=[]){
   const shape=asciiBytes(ex.shape||'');
   const plan=tracePath(prefix,shape,map,'open-loop');
   const actual=tracePath(prefix,observed,map,'observed');
-  const online=guessed.map((code,i)=>onlineCandidate(prefix,observed,code,map,i));
+  const onStride=Math.max(1,Math.ceil(observed.length/1300)),online=[];
+  for(let i=0;i<guessed.length;i++)if(i%onStride===0||i===guessed.length-1)
+    online.push(onlineCandidate(prefix,observed,guessed[i],map,i));
   const replans=(ex.replans||[]).filter(x=>Number.isInteger(x.at)&&x.at>=0&&x.at<observed.length).map(x=>({
     at:x.at,source:x.source,code:x.predicted?.charCodeAt(0)||null,
     predicted:x.preview||'',points:tracePath(prefix.concat(observed.slice(0,x.at)),asciiBytes(x.preview||''),map,'replan',120)
   }));
   const errorIndices=[];for(let i=0;i<observed.length;i++)if(guessed[i]!==observed[i])errorIndices.push(i);
   let firstDeparture=-1;for(let i=0;i<Math.max(observed.length,shape.length);i++)if(shape[i]!==observed[i]){firstDeparture=i;break;}
-  return {mode:'frozen-evaluation',a0,answerLength:observed.length,prefix,observed,guessed,shape,
+  const stateAt=k=>rollingState(prefix.concat(observed.slice(Math.max(0,k-12),k)),map);
+  return {mode:'frozen-evaluation',a0,answerLength:observed.length,prefix,observed,guessed,shape,stateAt,
     plan,actual,online,replans,errorIndices,firstDeparture,knownGeometry:map.size,
     provenTransformations:[],targetFrom:'held-out reference revealed only in evaluation',
     note:'Gold: frozen open-loop prediction BEFORE answer. Blue: held-out reference observed by teacher forcing. Orange: each online prediction using TRUE prefix. Cyan: frozen recomputation AFTER seeing a true prefix. This is not an autonomous cursor reaching the target.'};
@@ -76,7 +81,8 @@ export function fromNativeChat(reply,space=[],prompt=''){
     start:rollingState(asciiBytes(x.before),map),end:rollingState(asciiBytes(x.after),map),slot:x.slot}));
   const alternatives=(gear.alternative?.route||[]).map((x,i)=>({i,from:x.before,to:x.after,
     start:rollingState(asciiBytes(x.before),map),end:rollingState(asciiBytes(x.after),map),slot:x.slot,evidence:x.evidence}));
-  return {mode:gear.used?'native-chat':'legacy-chat',answerLength:bytes.length,observed:bytes,guessed:[],shape:[],
+  const stateAt=k=>rollingState(seed.concat(bytes.slice(Math.max(0,k-12),k)),map);
+  return {mode:gear.used?'native-chat':'legacy-chat',answerLength:bytes.length,observed:bytes,guessed:[],shape:[],stateAt,
     plan:[],actual:executed,online:[],replans:[],errorIndices:[],firstDeparture:-1,knownGeometry:map.size,
     macro,alternatives,steps:gear.steps||[],goal:gear.goal||null,driver:gear.used?'NativeGearDrive':'AligningGraph original',
     note:gear.used?'Plan of observed operators (purple) drove ACTUAL character output (blue). Without external feedback, its predicted and executed characters coincide; no false replan is shown.':'V17 original generator emitted the blue character path. No verified operator plan was available; do not label this a solved N-D maze.'};
@@ -87,10 +93,13 @@ export function fromLiveTraining(steps,space=[]) {
   const map=geometryMap(space),arr=steps.filter(x=>Array.isArray(x)&&x.length>=4);
   const observed=arr.map(x=>x[1]),guessed=arr.map(x=>x[2]);
   const actual=tracePath([],observed,map,'training-observed');
-  const online=guessed.map((code,i)=>onlineCandidate([],observed,code,map,i));
+  const stride=Math.max(1,Math.ceil(guessed.length/1300)),online=[];
+  for(let i=0;i<guessed.length;i++)if(i%stride===0||i===guessed.length-1)
+    online.push(onlineCandidate([],observed,guessed[i],map,i));
   const errorIndices=[];for(let i=0;i<observed.length;i++)if(guessed[i]>=0&&observed[i]!==guessed[i])errorIndices.push(i);
   const aligned=arr.filter(x=>x[4]==='align-online').length,replay=arr.filter(x=>x[4]==='chain-gpu-replay').length;
-  return {mode:'live-training',answerLength:observed.length,observed,guessed,shape:[],plan:[],actual,online,replans:[],
+  const stateAt=k=>rollingState(observed.slice(Math.max(0,k-12),k),map);
+  return {mode:'live-training',answerLength:observed.length,observed,guessed,shape:[],plan:[],actual,online,replans:[],stateAt,
     errorIndices,firstDeparture:-1,knownGeometry:map.size,aligned,replay,firstTick:arr[0]?.[0]||0,lastTick:arr.at(-1)?.[0]||0,
     note:'LIVE — actual V17 training symbols and predictions. For CPU text: AligningGraph online guesses; for CUDA replay: old C/A graph guesses, because CUDA alignment totals are batched. No global before-answer plan is measured here. This trace never replaces the separate frozen unseen-text evaluation.'};
 }
