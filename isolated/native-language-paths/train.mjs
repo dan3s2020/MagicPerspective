@@ -9,6 +9,8 @@ import {openTextDataset,DEFAULT_TEXT_ROOT} from '../../v17/transcend/torus-aethe
 import {Brain} from '../../v17/transcend/torus-aether/devour/brain.mjs';
 import {ObservedQAAtlas,wordF1} from './atlas.mjs';
 import {KIND} from '../../v17/transcend/torus-aether/worlds/exercise.mjs';
+import {inspectNativeVsSuccessor} from './multipath.mjs';
+import {repeatedWindowFraction} from './repetition.mjs';
 
 const args=process.argv.slice(2);
 const val=(name,fallback)=>{const i=args.indexOf('--'+name);return i>=0?args[i+1]:fallback;};
@@ -25,6 +27,9 @@ const maze=number('maze',160,1,100000);
 const evalN=number('eval',8,1,16);
 const candidates=number('candidates',8,1,24);
 const answerCap=number('answer-cap',320,20,2000);
+const loopWindow=number('loop-window',24,4,96),loopPenalty=number('loop-penalty',4,0,50);
+const gamma=Number(val('gamma',.9));
+if(!(gamma>0&&gamma<1))throw Error('--gamma must be strictly between 0 and 1');
 const resume=args.includes('--resume'),strict=args.includes('--strict');
 const enc=s=>Array.from(String(s),ch=>{
   const code=ch.charCodeAt(0);
@@ -101,51 +106,121 @@ if(interrupted){console.log('Checkpoint saved. Resume with --resume');process.ex
 if(!atlas.examples.length)throw Error('No valid real Q/A records learned.');
 
 const evaluations=[],n=Math.min(evalN,ds.held);
-let fieldF1=0,lexicalF1=0,charF1=0,fieldExact=0,lexicalExact=0,charExact=0;
+let fieldF1=0,hybridF1=0,lexicalF1=0,charF1=0,guardF1=0;
+let fieldExact=0,hybridExact=0,lexicalExact=0,charExact=0,guardExact=0;
+let charRepeats=0,guardRepeats=0,hybridReached=0,tieSteps=0,changedSteps=0;
 let routes=0,unseen=0,valid=0,referenceLeak=0;
 for(let i=0;i<n;i++){
   const e=await ds.heldOut(i),q=String(e.prompt),truth=String(e.answer).slice(0,answerCap);
-  // The frozen held-out answer is read only HERE; it never enters Brain.live or the observed atlas.
+  // Read the held-out reference ONLY for scoring. Never feed it to any learner.
   const g=atlas.plan(q,brain.disc,{candidates});
+  const observedGraph=atlas.build(q,{candidates});
+  const alternatives=inspectNativeVsSuccessor(observedGraph,brain.disc,{gamma});
+  const endNode=observedGraph.nodes[alternatives.successorTie.path.at(-1)];
+  const hybrid=String(alternatives.successorTie.reached?endNode?.completeAnswer||'':'').slice(0,answerCap);
   const lexical=atlas.similarities(q,1)[0]?.answer?.slice(0,answerCap)||'';
   const char=brain.chat([['you',q]],{T:0,max:answerCap,learn:false,seed:11+i}).text.slice(0,answerCap);
   const field=String(g.answer||'').slice(0,answerCap);
-  const scores={nativeField:wordF1(truth,field),lexicalRetrieval:wordF1(truth,lexical),
-    nextCharacter:wordF1(truth,char)};
-  fieldF1+=scores.nativeField;lexicalF1+=scores.lexicalRetrieval;charF1+=scores.nextCharacter;
-  fieldExact+=Number(field.trim()===truth.trim());lexicalExact+=Number(lexical.trim()===truth.trim());
-  charExact+=Number(char.trim()===truth.trim());
+  const promptBytes=enc('Q: '+q+'\nA: ');
+  const guardedBytes=brain.align?.write(promptBytes,{
+    max:answerCap,T:0,loopPenalty,loopWindow,
+    stop:(y,o)=>y===10&&o.at(-1)===10
+  })||[];
+  if(guardedBytes.length&&guardedBytes.at(-1)===10)guardedBytes.pop();
+  const guarded=String.fromCharCode(...guardedBytes).slice(0,answerCap);
+  const scores={
+    nativeField:wordF1(truth,field),successorTie:wordF1(truth,hybrid),
+    lexicalRetrieval:wordF1(truth,lexical),nextCharacter:wordF1(truth,char),
+    loopResistantCharacter:wordF1(truth,guarded)
+  };
+  fieldF1+=scores.nativeField;hybridF1+=scores.successorTie;
+  lexicalF1+=scores.lexicalRetrieval;charF1+=scores.nextCharacter;guardF1+=scores.loopResistantCharacter;
+  fieldExact+=Number(field.trim()===truth.trim());hybridExact+=Number(hybrid.trim()===truth.trim());
+  lexicalExact+=Number(lexical.trim()===truth.trim());charExact+=Number(char.trim()===truth.trim());
+  guardExact+=Number(guarded.trim()===truth.trim());
+  const oldRepeats=repeatedWindowFraction(char,loopWindow);
+  const newRepeats=repeatedWindowFraction(guarded,loopWindow);
+  charRepeats+=oldRepeats;guardRepeats+=newRepeats;
+  hybridReached+=Number(alternatives.successorTie.reached);
+  tieSteps+=alternatives.successorTie.actualTieSteps;
+  changedSteps+=alternatives.successorTie.changedSteps;
   routes+=Number(g.ok);valid+=Number(g.ok&&g.steps.length>1);
   unseen+=Number(!atlas.examples.some(x=>x.sourceIndex===e.index));
   referenceLeak+=Number(atlas.examples.some(x=>x.sourceIndex===e.index));
-  evaluations.push({heldOutIndex:e.index,questionSha256:sha(q),referenceSha256:sha(truth),
-    route:g.steps,graph:{matched:g.matched||0,nodes:g.graphNodes||0,edges:g.graphEdges||0,goalReached:!!g.ok,
-      evidenceIndex:g.evidenceIndex??null,evidenceQuestion:g.evidenceQuestion||'',reason:g.reason},
-    scores,predicted:{nativeField:field,lexicalRetrieval:lexical,nextCharacter:char},
-    reference:truth});
-  console.log('Held-out',i+1+'/'+n,'shape',scores.nativeField.toFixed(3),
-    'lexical',scores.lexicalRetrieval.toFixed(3),'next-character',scores.nextCharacter.toFixed(3),
-    'route',g.ok?'reached':'blocked');
+  evaluations.push({
+    heldOutIndex:e.index,questionSha256:sha(q),referenceSha256:sha(truth),
+    route:g.steps,
+    graph:{matched:g.matched||0,nodes:g.graphNodes||0,edges:g.graphEdges||0,
+      goalReached:!!g.ok,evidenceIndex:g.evidenceIndex??null,
+      evidenceQuestion:g.evidenceQuestion||'',reason:g.reason},
+    alternatives:{
+      originalRoute:alternatives.native.path,
+      successorTieRoute:alternatives.successorTie.path,
+      shortestPathCount:alternatives.shortest.count,
+      shortestDistance:alternatives.shortest.length,
+      shortestChoices:alternatives.shortest.choices,
+      successorOccupancyStart:alternatives.successor.start,
+      fieldValueStart:alternatives.field.start,
+      actualTies:alternatives.successorTie.actualTieSteps,
+      tieBreakChanges:alternatives.successorTie.changedSteps,
+      nativeReached:alternatives.native.reached,
+      successorTieReached:alternatives.successorTie.reached,
+      graphSize:alternatives.graph
+    },
+    repetition:{window:loopWindow,original:oldRepeats,loopResistant:newRepeats},
+    scores,
+    predicted:{nativeField:field,successorTie:hybrid,lexicalRetrieval:lexical,
+      nextCharacter:char,loopResistantCharacter:guarded},
+    reference:truth
+  });
+  console.log('Held-out',i+1+'/'+n,
+    'V17-shape',scores.nativeField.toFixed(3),
+    'SR-tie',scores.successorTie.toFixed(3),
+    'lexical',scores.lexicalRetrieval.toFixed(3),
+    'character',scores.nextCharacter.toFixed(3),
+    'loop-resist',scores.loopResistantCharacter.toFixed(3),
+    'shortest-paths',alternatives.shortest.count,
+    'actual-ties',alternatives.successorTie.actualTieSteps);
 }
 const mean=v=>Math.round(10000*v/n)/10000;
-const report={timestamp:new Date().toISOString(),branch:'experiment/V17-NATIVE-LANGUAGE-PATHS-ISOLATED-20261106',
-  source,training:{...progress,graphVocabulary:atlas.df.size,seconds:(performance.now()-t0)/1000},
-  method:'original Discoverer.shape on observed Q/A + lexical cue graph; ORIGINAL V17 Brain.live next-character baseline; no held-out answers in training',
-  goalDefinition:'Reach an answer from TRAINING examples via a learned observed Q/A path. The unseen reference is for evaluation only.',
-  metrics:{heldOutEvaluated:n,unseenIndexChecksPassed:unseen,referenceIndexLeak:referenceLeak,
+const report={
+  timestamp:new Date().toISOString(),
+  branch:'experiment/V17-MULTIPATH-SUCCESSOR-ISOLATED-20261106',
+  source,
+  training:{...progress,graphVocabulary:atlas.df.size,seconds:(performance.now()-t0)/1000},
+  method:'Original V17 Discoverer.shape + observed Q/A text graph; shortest-path multiplicity; SR only for scalar-field ties; optional real V17 aligned output loop resistance; three original/lexical controls.',
+  goalDefinition:'A marked node represents a STORED TRAINING answer, never a held-out answer; success at reaching it is not answer correctness.',
+  settings:{gamma,loopWindow,loopPenalty,candidates,answerCap},
+  metrics:{
+    heldOutEvaluated:n,unseenIndexChecksPassed:unseen,referenceIndexLeak:referenceLeak,
     goalFieldReachRate:mean(routes),pathValidityRate:mean(valid),
-    wordF1:{nativeShape:mean(fieldF1),lexicalOnly:mean(lexicalF1),nextCharacter:mean(charF1)},
-    exactAnswer:{nativeShape:mean(fieldExact),lexicalOnly:mean(lexicalExact),nextCharacter:mean(charExact)}},
-  limitations:['This is a genuine corpus-trained QA retrieval/action graph, not learned natural-language causal dynamics.',
-    'The connection from an unseen question into observed examples uses explicitly implemented lexical similarity.',
-    'A high goal-reach rate proves reachability of stored answers, NOT correctness on held-out questions.',
-    'Semantic transfer from the original maze remains UNVERIFIED; report these independent baseline metrics.',
-    'The added graph evaluator is CPU JavaScript; original V17 CUDA code is preserved, not invoked by this command.',
-    'Original V17 byte learner replaces non-ASCII characters with question marks.'],
-  evaluations};
+    successorTieGoalReachRate:mean(hybridReached),actualFieldTies:tieSteps,
+    actualTieChanges:changedSteps,
+    repeatFraction:{window:loopWindow,original:mean(charRepeats),loopResistant:mean(guardRepeats)},
+    wordF1:{nativeShape:mean(fieldF1),successorTie:mean(hybridF1),
+      lexicalOnly:mean(lexicalF1),nextCharacter:mean(charF1),
+      loopResistantCharacter:mean(guardF1)},
+    exactAnswer:{nativeShape:mean(fieldExact),successorTie:mean(hybridExact),
+      lexicalOnly:mean(lexicalExact),nextCharacter:mean(charExact),
+      loopResistantCharacter:mean(guardExact)}
+  },
+  limitations:[
+    'Observed Q/A lexical graph is NOT a learned natural-language causal world.',
+    'Shortest path counts are exact only on this observed graph; they do not count unknown semantic solutions.',
+    'Successor occupancy is discounted expected goal reaching under a uniform edge policy, NOT an exact count.',
+    'A high goal-reach rate is NOT proof of a correct held-out answer.',
+    'Loop-resistance alters generation-time selection; it does NOT establish learned language semantics.',
+    'No quantum phase, unitary interference, quantum hardware, or quantum advantage is claimed.',
+    'Semantic transfer from the original V17 maze remains UNVERIFIED.',
+    'New graph evaluator is CPU JavaScript, not a CUDA training claim.',
+    'Original V17 non-ASCII characters still become question marks in its byte learner.'
+  ],
+  evaluations
+};
 atomicJson(reportFile,report);
-console.log('\nMETRICS (actual unseen rows):');
+console.log('\nMETRICS (actual held-out Parquet rows):');
 console.log(JSON.stringify(report.metrics,null,2));
-console.log('Evidence, paths, predictions, checkpoints:',out);
+console.log('Real evidence, routes, models, checkpoints:',out);
 if(referenceLeak||unseen!==n)throw Error('Held-out training isolation audit failed.');
-if(strict&&mean(fieldF1)<=Math.max(mean(charF1),mean(lexicalF1)))throw Error('No measured improvement over BOTH baselines; experiment falsified under --strict.');
+if(strict&&mean(hybridF1)<=Math.max(mean(fieldF1),mean(charF1),mean(lexicalF1),mean(guardF1)))
+  throw Error('No measured hybrid advantage over all original and lexical baselines; experiment NOT accepted under --strict.');
