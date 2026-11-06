@@ -359,9 +359,15 @@ class Server:
         # Physical free-memory-aware budget. Text exercises can be tens of thousands
         # of characters, so old "autoText=585 exercises" was a misleading estimate.
         budget = info.get("vramGB", 0) * 1e9 if dev.startswith("cuda") else 1e9
-        self.text_limit = int(max(8192, min(65536, budget / 60000)))
+        self.text_limit = int(max(8192, min(65536, budget / 60000))) if dev.startswith("cuda") else 65536
         self.text_chunk = int(max(32, min(192, budget / 12000000)))
-        info["autoWorlds"] = int(max(256, min(65536, budget * .8 / (11 * 11 * 14 * 8)))) if self.B.torch else 2048
+        # The old GPU auto setting selected 65,536 worlds even on a 4 GB card.
+        # Keep the default modest; explicit world counts remain user-selectable.
+        if dev.startswith("cuda"):
+            auto_cap = 256 if budget <= 4e9 else 4096
+            info["autoWorlds"] = int(max(16, min(auto_cap, budget * .4 / (11 * 11 * 14 * 8))))
+        else:
+            info["autoWorlds"] = 2048
         info["autoText"] = 2
         info["textMemoryWindow"] = self.text_limit
         info["textChunk"] = self.text_chunk
