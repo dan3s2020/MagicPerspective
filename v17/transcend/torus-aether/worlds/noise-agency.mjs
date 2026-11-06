@@ -57,6 +57,49 @@ export class NoiseAgency {
     const arm = choices[this.int(choices.length)], selected = ARMS[arm];
     return {domain, key, arm, site: selected.site, strength: selected.strength};
   }
+  // The identical saved policy can select a noise portal for EACH parallel
+  // GPU world step. Send compact learned probabilities instead of forcing a
+  // global noise rate or issuing a CPU roundtrip for every CUDA action.
+  gpuPolicy(domain='maze') {
+    const contexts=[];
+    for(const known of [false,true])for(const planned of [false,true]){
+      const key=domain+':'+(known?'known':'unknown')+':'+(planned?'plan':'search');
+      const arms=this.table(key),N=arms.reduce((n,a)=>n+a.n,0);
+      const scores=arms.map(a=>(a.n?a.total/a.n:0)+
+        .45*Math.sqrt(Math.log(N+2)/(a.n+1))+(a.n===0?.15:0));
+      const top=Math.max(...scores),temp=.16;
+      const weights=scores.map(x=>Math.exp((x-top)/temp)),sum=weights.reduce((x,y)=>x+y,0);
+      contexts.push(weights.map(w=>.975*w/sum+.025/weights.length));
+    }
+    return {version:1,domain,contexts,
+      arms:ARMS.map(a=>({site:a.site,strength:a.strength}))};
+  }
+  absorbGpu(portalEvents,domain='maze'){
+    if(!portalEvents)return;
+    if(portalEvents.version!==1||!Array.isArray(portalEvents.counts)||
+       !Array.isArray(portalEvents.rewards)||portalEvents.counts.length!==4||
+       portalEvents.rewards.length!==4)throw Error('Malformed GPU noise evidence');
+    for(let row=0;row<4;row++){
+      const key=domain+':'+(row>=2?'known':'unknown')+':'+(row%2?'plan':'search');
+      const arms=this.table(key),counts=portalEvents.counts[row],rewards=portalEvents.rewards[row];
+      if(!Array.isArray(counts)||!Array.isArray(rewards)||counts.length!==ARMS.length||rewards.length!==ARMS.length)
+        throw Error('GPU policy evidence shape mismatch');
+      for(let i=0;i<ARMS.length;i++){
+        const n=counts[i],reward=rewards[i];
+        if(!Number.isSafeInteger(n)||n<0||!Number.isFinite(reward))
+          throw Error('GPU policy evidence must contain real finite counts and rewards');
+        if(!n)continue;
+        arms[i].n+=n;arms[i].total+=reward;
+        this.total+=n;this.earned+=reward;
+        const site=ARMS[i].site;
+        if(site!=='none')this.noisy+=n;
+        this.bySite[site]+=n;
+        this.last={domain,site,strength:ARMS[i].strength,context:key,reward:reward/n,
+          trials:n,source:'gpu-actual-actions'};
+      }
+    }
+    if(this.last){this.recent.push(this.last);if(this.recent.length>36)this.recent.shift();}
+  }
   // Disturb an INTERNAL COPIED perception only; actual physics is unchanged.
   perceive(values, decision) {
     if (decision?.site !== 'perception') return values;
