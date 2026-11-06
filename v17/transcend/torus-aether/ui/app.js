@@ -883,8 +883,9 @@ async function livePull() {
       if(selectedTelemetry.error)throw Error(selectedTelemetry.error);
     }catch(err){pullError=(pullError?pullError+" · ":"")+
       "telemetrie: "+err.message;}
-    observatory.ingest({w:requestedW,summary:selectedSummary,
-      graph:selectedSnap,telemetry:selectedTelemetry,error:pullError});
+    try{observatory.ingest({w:requestedW,summary:selectedSummary,
+      graph:selectedSnap,telemetry:selectedTelemetry,error:pullError});}
+    catch(err){console.error('Observator: date inconsistente',err);}
   }
   livePulling=false;
 }
