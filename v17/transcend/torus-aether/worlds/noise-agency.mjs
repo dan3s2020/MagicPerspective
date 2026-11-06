@@ -37,7 +37,7 @@ export class NoiseAgency {
   // Input contains only the organism's own state of knowledge, never a teacher
   // route, map distance, privileged simulator mechanics or a correct answer.
   decide({domain, known = false, planned = false} = {}) {
-    if (!['maze', 'transform', 'text'].includes(domain)) throw Error('Unknown noise domain');
+    if (!['maze', 'transform', 'text', 'shared'].includes(domain)) throw Error('Unknown noise domain');
     const key = domain + ':' + (known ? 'known' : 'unknown') + ':' + (planned ? 'plan' : 'search');
     const table = this.table(key), N = table.reduce((n, arm) => n + arm.n, 0);
     // Contextual bandit: every mode is genuinely available, including ZERO.
@@ -82,10 +82,13 @@ export class NoiseAgency {
   // and the world actually ending in success is useful.
   // For text the only signal is whether the chosen predicted symbol was
   // subsequently observed; this is not a linguistic-understanding reward.
-  learn(decision, {before = null, after = null, solved = false, correct = null} = {}) {
+  learn(decision, {before = null, after = null, solved = false, correct = null, gain = null} = {}) {
     if (!decision) return null;
     let reward = 0, changed = false, novel = false;
-    if (correct !== null) reward = correct ? 0.65 : -0.25;
+    if (gain !== null) {
+      if (!Number.isFinite(gain)) throw Error('Measured training improvement required');
+      reward = clamp(5 * gain, -1, 1);
+    } else if (correct !== null) reward = correct ? 0.65 : -0.25;
     else {
       if (!Array.isArray(before) || !Array.isArray(after)) throw Error('Real before/after required');
       changed = before.length !== after.length || before.some((v, i) => v !== after[i]);
@@ -103,7 +106,8 @@ export class NoiseAgency {
     this.bySite[decision.site]++;
     this.last = {domain: decision.domain, site: decision.site, strength: decision.strength,
       context: decision.key, reward: Math.round(reward * 1000) / 1000,
-      changed, novel, solved: !!solved, correct};
+      changed, novel, solved: !!solved, correct,
+      trainingGain: gain === null ? null : Math.round(gain * 1e6) / 1e6};
     this.recent.push(this.last);
     if (this.recent.length > 36) this.recent.shift();
     return this.last;
