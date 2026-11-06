@@ -54,7 +54,7 @@ The training-noise comparison (agency noise enabled during training, then frozen
 - 64 held-out causal-transformation tasks: no-noise **31/64**, fixed random **31/64**, organism-controlled **32/64**. One task difference across 64 examples is not reliable evidence of superiority.
 - The policy's realized noise frequency varied by seed from **34.8% to 87.5%**, proving the choice is not simply one global fixed probability.
 
-The new `brainWithAgencyAtInference` arm was added after that initial run; its separate effect must be judged from the new run's output, not inferred from the training-only numbers.
+A further run **42163227964** also tested the **frozen organism policy actively choosing noise during evaluation**: maze solved **96/96**; causal transformation solved **29/64**. That is **worse** than the same trained agency brain tested with policy actions disabled (**32/64**). Its policy undeniably executes at inference, but this is evidence that the current local rewards/credit assignment are *not yet sufficient* for goal-optimal use of noise. Nothing about these outcomes establishes improved generalization or universal transfer.
 
 The automated tests additionally prove: choices vary with observed feedback; zero is an actual selectable mode; real actions and perceptions change; the actual V17 maze/transform/text loops update the *same* noise policy; checkpoints restore its exact RNG and counts; and frozen evaluation does not alter the policy. PyTorch tests compare explicit zero-noise selection against unperturbed gradients and verify that perception/action/imagined-latent choices alter gradients.
 
