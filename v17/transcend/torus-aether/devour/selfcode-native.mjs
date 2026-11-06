@@ -57,7 +57,7 @@ export class NativeSelfCodeWorld {
     this.brain=brain;this.seed=seed;this.saveFile=resultFile(saveFile);
     this.policy=new CodeActionPolicy();
     this.nodes=this.world.atlas.nodes.filter(n=>n.kind!=='locked'&&n.kind!=='portal');
-    this.cursor=0;this.ticks=0;this.inflight=false;this.probeNumber=0;
+    this.cursor=0;this.ticks=0;this.inflight=false;this.probeNumber=0;this.probeAction=null;
     this.lockAttempts=0;this.lockStatus={locked:true,reason:'Not independently qualified'};
     this.lastProbe=null;this.lastError=null;this.reported=0;this.worker=null;this.suspended=false;this.pending=[];
     this.sourceHash=this.world.editor.sha256;
@@ -144,7 +144,8 @@ export class NativeSelfCodeWorld {
     }
     ranked.sort((a,b)=>b.score-a.score);
     const selected=r()<.20?ranked[Math.floor(r()*ranked.length)]:ranked[0];
-    this.inflight=true;this.worker.postMessage({kind:'probe',index:++this.probeNumber,slot:selected.slot,value:selected.value});
+    this.inflight=true;this.probeAction=this.policy.last?.action||'walk';
+    this.worker.postMessage({kind:'probe',index:++this.probeNumber,slot:selected.slot,value:selected.value});
     this.world.experience({kind:'code-experiment-requested',slot:selected.slot,value:selected.value});
   }
   pause(){this.suspended=true;}
@@ -157,7 +158,7 @@ export class NativeSelfCodeWorld {
       this.world.effectModel.observe({slot:msg.slot,value:msg.value,delta:msg.delta,corpusId:'practice-'+msg.index});
       this.lastProbe={index:msg.index,slot:msg.slot,value:msg.value,delta:msg.delta};
       this.world.experience({kind:'measured-source-change',slot:msg.slot,value:msg.value,delta:msg.delta});
-      this.policy.learn(this.policy.last?.action||'walk',clip(msg.delta*8,-1,1));
+      this.policy.learn(this.probeAction||'walk',clip(msg.delta*8,-1,1));this.probeAction=null;
       this.brain.trace.node('code:effect:'+msg.slot,'self',msg.slot);
       this.brain.trace.setEdge('code:effect:'+msg.slot,'code:unknown','counterfactual',Math.max(.1,Math.abs(msg.delta)));
       if(this.probeNumber>=24&&this.probeNumber%24===0&&this.lockAttempts<this.probeNumber/24)this.launchLock();
@@ -188,13 +189,14 @@ export class NativeSelfCodeWorld {
       this.world.effectModel.probes=(s.probes||[]).filter(x=>typeof x.slot==='string'&&Number.isFinite(x.delta)&&Number.isFinite(x.value)).slice(-1000);
       for(const [id,n,value] of (s.visits||[]))if(typeof id==='string'&&Number.isSafeInteger(n)&&n>0&&Number.isFinite(value))this.world.portal.visits.set(id,{n,value});
       this.world.portal.used=Math.max(0,s.used|0);this.world.portal.budget=clip(s.budget|0,0,40);
+      if(Number.isSafeInteger(s.rng))this.world.portal.seed=s.rng>>>0;
     }catch(err){this.lastError='Self-code checkpoint recovery refused: '+err.message;}
   }
   save(){
     if(!this.saveFile)return;
     const obj={version:1,sourceHash:this.sourceHash,cursor:this.cursor,ticks:this.ticks,policy:this.policy.serialize(),
       probeNumber:this.probeNumber,lockAttempts:this.lockAttempts,probes:this.world.effectModel.probes.slice(-1000),
-      visits:[...this.world.portal.visits].map(([id,v])=>[id,v.n,v.value]),used:this.world.portal.used,budget:this.world.portal.budget};
+      visits:[...this.world.portal.visits].map(([id,v])=>[id,v.n,v.value]),used:this.world.portal.used,budget:this.world.portal.budget,rng:this.world.portal.seed>>>0};
     const tmp=this.saveFile+'.tmp';fs.mkdirSync(path.dirname(this.saveFile),{recursive:true});
     fs.writeFileSync(tmp,JSON.stringify(obj));fs.renameSync(tmp,this.saveFile);
   }
