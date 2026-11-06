@@ -48,6 +48,7 @@ export function setupResearchTab({getSelectedBrain,isLive}){
     put('rBaseline',pct(rate.lexical)+' / '+pct(rate.char));
     put('rUsed',num(use.nativeCalls)+' / '+num(use.srCalls));
     put('rChanged',num(use.changedDecisions)+' / '+num(use.actualTies));
+    put('rTrainingEffects',num(r.trainingUpdatesFromSR??0)+' (doar evaluare, fără update de greutăți)');
     put('rRepeat',pct(rate.repeatOriginal)+' → '+pct(rate.repeatGuarded));
     put('rHeld',r.heldout?.mean?'V17 '+pct(r.heldout.mean.native)+
       ' · SR '+pct(r.heldout.mean.sr)+' · lexical '+pct(r.heldout.mean.lexical):
