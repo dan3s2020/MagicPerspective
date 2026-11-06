@@ -137,6 +137,12 @@ else
 fi
 
 SAVE="$OUT/brains/brain-0-stable+many.v8"
+# Disabling the launcher flag cannot remove a policy already serialized inside a
+# resumed Brain. For an honest ablation, require an untouched/fresh checkpoint.
+if [ "$AGENT_NOISE" -eq 0 ] && [ "$FRESH" -eq 0 ] && [ -f "$SAVE" ]; then
+  echo "Cannot disable an organism-owned policy in a resumed brain. Use --fresh or --out NEW_DIR for a controlled ablation." >&2
+  exit 2
+fi
 if [ "$FRESH" -eq 0 ] && [ -f "$SAVE" ]; then
   set -- "$@" --resume
   echo "Resuming independent Termux brain: $SAVE"
