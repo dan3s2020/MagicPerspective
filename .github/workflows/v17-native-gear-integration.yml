@@ -23,6 +23,8 @@ jobs:
           node --check v17/transcend/torus-aether/ui/app.js
           node --check isolated/noise-space/nested_text_gears.mjs
           node --check isolated/noise-space/native_gear_drive.mjs
+          node --check v17/transcend/torus-aether/ui/text-journey5d.mjs
+          node --check v17/transcend/torus-aether/ui/text-maze-viewer.mjs
       - name: Regression and observed-operator integration
         run: |
           node --test \
@@ -33,4 +35,8 @@ jobs:
             isolated/noise-space/nested_text_gears.test.mjs \
             isolated/noise-space/native_gear_drive.test.mjs \
             isolated/noise-space/streaming_gear.test.mjs \
-            v17/transcend/torus-aether/devour/brain.native-gear.test.mjs
+            v17/transcend/torus-aether/devour/brain.native-gear.test.mjs \
+            v17/transcend/torus-aether/devour/brain.text5d.test.mjs \
+            v17/transcend/torus-aether/devour/trace.text5d.test.mjs \
+            v17/transcend/torus-aether/ui/text-journey5d.test.mjs \
+            v17/transcend/torus-aether/ui/text-maze-viewer.test.mjs
