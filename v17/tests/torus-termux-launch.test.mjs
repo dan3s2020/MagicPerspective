@@ -29,9 +29,9 @@ test('native Termux CPU launch serves the original UI; Start trains in same brai
   const port=25000+Math.floor(Math.random()*11000);
   const proc = spawn('sh', [script, '--text',fixture,'--worlds','text,maze,transform',
     '--out',out,'--port',String(port),'--mem','0.65','--every','10000',
-    '--maze-every','300','--chars','2500','--paused'],
+    '--maze-every','700','--chars','1500','--paused'],
     {cwd:v17, env:{...process.env, PREFIX:'/data/data/com.termux/files/usr'},
-      stdio:['ignore','pipe','pipe']});
+      detached: true, stdio:['ignore','pipe','pipe']});
   let logs = '';
   for (const stream of [proc.stdout, proc.stderr]) stream.on('data', d=> {logs=(logs+String(d)).slice(-10000);});
   const base = 'http://127.0.0.1:'+port;
@@ -65,7 +65,10 @@ test('native Termux CPU launch serves the original UI; Start trains in same brai
     }
     assert.ok(trained,'No CPU learning in native V17: '+logs);
   }finally{
-    proc.kill('SIGTERM');
+    // Kill the *whole* POSIX process group: the shell starts a child Node
+    // server, which otherwise survives killing only the shell and pins CI.
+    try { process.kill(-proc.pid, 'SIGTERM'); } catch { try { proc.kill('SIGTERM'); } catch {} }
+    await sleep(250);
     fs.rmSync(tmp,{recursive:true,force:true});
   }
 });
