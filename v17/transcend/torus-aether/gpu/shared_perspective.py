@@ -18,7 +18,7 @@ FEATURES = 128
 ACTIONS = 32
 LATENT = 32
 VERSION = 1
-DOMAINS = ('maze', 'transform', 'text')
+DOMAINS = ('maze', 'transform', 'text', 'selfcode')
 
 
 def _hash(value: str) -> int:
@@ -228,7 +228,7 @@ class SharedPerspective:
         self.optimizer.load_state_dict(payload['optimizer'])
         self.steps = int(payload['steps'])
         self.seen = int(payload['seen'])
-        self.counts = dict(payload['counts'])
+        self.counts = {d: int(dict(payload['counts']).get(d, 0)) for d in DOMAINS}
         adapt = payload.get('adaptive') or {}
         self.noise = max(.002, min(.08, float(adapt.get('noise', self.noise))))
         self.noise_stall = int(adapt.get('stall', 0))
