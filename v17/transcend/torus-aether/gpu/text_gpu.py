@@ -96,15 +96,24 @@ class Index:                                     # suffix array of the REVERSED 
 def form_of(X, a): return X.where((a >= 48) & (a <= 57), X.zeros(a.shape, np.int64) + DIG, a)
 
 class TextCard:
-    def __init__(self, device, depth=6, form_depth=4, maxK=64, S=64):
+    def __init__(self, device, depth=6, form_depth=4, maxK=64, S=64, max_memory=65536):
         self.X = X(device); self.depth, self.form_depth, self.maxK, self.S = depth, form_depth, maxK, S
+        self.max_memory = max(256, int(max_memory))
+        self.total_seen = 0
         self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0
     def append(self, exs):
-        X = self.X; flat = X.arr(np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]) if exs else np.zeros(0, np.int64))
-        self.mem = X.cat([self.mem, flat]); self.fmem = X.cat([self.fmem, form_of(X, flat)])
-        n = len(self.mem)
-        if n > self.indexed:                                            # rebuilt after every batch: everything lived is aligned
-            self.big = Index(X, self.mem); self.fbig = Index(X, self.fmem); self.indexed = n
+        X = self.X; raw = np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]) if exs else np.zeros(0, np.int64)
+        if not len(raw): return
+        # The complete AligningGraph memory and learned trust remain on the Node side.
+        # Only the recent bounded working set is indexed on CUDA; report both counts.
+        flat = X.arr(raw[-self.max_memory:])
+        recent = X.cat([self.mem[-max(0, self.max_memory - len(flat)):] if len(flat) < self.max_memory else X.zeros(0, np.int64), flat])
+        recent = recent[-self.max_memory:]
+        f_recent = form_of(X, recent)
+        # Transactional: if suffix-index construction OOMs, keep the previous model.
+        big = Index(X, recent); fbig = Index(X, f_recent)
+        self.mem, self.fmem, self.big, self.fbig = recent, f_recent, big, fbig
+        self.indexed = len(recent); self.total_seen += len(raw)
     def _proposals(self, ctxs, fctxs):
         X = self.X; out = []
         for ix, cx, src, D in ((self.big, ctxs, 0, self.depth), (self.fbig, fctxs, 2, self.form_depth)):
@@ -170,12 +179,12 @@ class TextCard:
         if progress is not None: progress(c0 + Q, total, 'alignment')
         # imagining: from every 31st moment it writes 48 symbols ahead from its own expectations (all at once); as the real
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
-        W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress)
+        W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress, batch=max(32, min(256, chunk)))
         if progress is not None: progress(0, 1, 'indexing')
         self.X.sync(); self.append(exs); self._self = {}
         if progress is not None: progress(1, 1, 'completed')
-        return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem))}
-    def _imagine(self, exs, trust, g, formW, every=31, K=48, progress=None):
+        return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem)), "textWindowChars": self.max_memory, "totalCardChars": self.total_seen}
+    def _imagine(self, exs, trust, g, formW, every=31, K=48, progress=None, batch=128):
         X = self.X; starts = [(o, i) for o, e in enumerate(exs) for i in range(every, len(e) - 1, every)]
         W_right, W_tried = {}, {}
         if not starts or self.big is None: return W_right, W_tried
@@ -186,8 +195,8 @@ class TextCard:
         for nm, v in wl.items():
             if nm.split(":")[0] in SRC: lut[name_id(nm)] = v                 # while imagining: what it learned to trust then, else what it trusts reading
         LUT = X.arr(lut, np.float32)
-        for c0 in range(0, len(starts), 2048):
-            St = starts[c0:c0 + 2048]; Rn = len(St); ctx = np.full((Rn, self.maxK), -2, dtype=np.int64)
+        for c0 in range(0, len(starts), batch):
+            St = starts[c0:c0 + batch]; Rn = len(St); ctx = np.full((Rn, self.maxK), -2, dtype=np.int64)
             for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - 1::-1][:L]
             CX = X.arr(ctx); ok = np.ones(Rn, dtype=bool)
             for step in range(K):
