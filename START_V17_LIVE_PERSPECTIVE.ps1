@@ -87,7 +87,7 @@ $opts=@(
 $opts += $dataArgs
 if($resume){$opts += "--resume"}
 if(-not $NoAutoStart){$opts += "--start"}
-Write-Host "=== ORIGINAL V17 LIVE TRAINING WITH GLOBAL ↔ BODY LEARNING ===" -ForegroundColor Cyan
+Write-Host "=== ORIGINAL V17 LIVE TRAINING WITH GLOBAL <-> BODY LEARNING ===" -ForegroundColor Cyan
 Write-Host "UI: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "Worlds: text + maze + transformations; perspective trains inside SAME Brain after each maze / GPU batch"
 Write-Host "Output/checkpoints: $Out"
