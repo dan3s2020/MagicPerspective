@@ -72,11 +72,11 @@ export class NestedTextGears {
     }
     return learned;
   }
-  plan(start,goal,{maxStates=2000,maxDepth=12,noise=0,seed=7}={}){
+  plan(start,goal,{maxStates=2000,maxDepth=12,noise=0,seed=7,excludeOperator=null}={}){
     const original=Array.isArray(start)?start.slice():gearTokens(start);
     const n=original.length;if(n<2||n>MAX_TOKENS)return {ok:false,reason:'invalid start',route:[],expanded:0};
     const required=constraints(goal,n), matches=a=>[...required].every(([j,v])=>a[j]===v);
-    const ops=[...this.operators.values()].filter(x=>x.length===n);
+    const ops=[...this.operators.values()].filter(x=>x.length===n&&x.id!==excludeOperator);
     if(!ops.length&&!matches(original))return {ok:false,reason:'no learned transformations at this length',route:[],expanded:0};
     const bySlot=Array.from({length:n},()=>new Map());
     for(const op of ops){let a=bySlot[op.slot].get(op.before);if(!a){a=[];bySlot[op.slot].set(op.before,a);}a.push(op);}
