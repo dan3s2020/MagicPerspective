@@ -20,6 +20,8 @@ test('paired complete/incomplete labyrinths teach reusable operation, never copy
   for(let i=0;i<8;i++)learner.trainPair(makeMaze(seedOf(SEEDS.train,i),[7,9,11][i%3]),{samples:20});
   assert.equal(learner.paired,8);
   assert.ok(learner.examples>100);
+  assert.ok(learner.pathPolicyUpdates>100,'Training comparison must teach a shared reusable decision operator');
+  assert.ok(learner.pathPolicy.some(w=>Math.abs(w)>1e-6));
   const trained=learner.examples,open=learner.open;
   const worlds=Array.from({length:6},(_,i)=>makeMaze(seedOf(SEEDS.test,5000+i*119),[7,9,11][i%3]));
   const baseline=new ConstructedPathLearner({seed:17});
@@ -39,6 +41,8 @@ test('paired complete/incomplete labyrinths teach reusable operation, never copy
       initialBlindPath:result.firstShapeLength,firstUncertain:result.firstUncertain});
   }
   assert.equal(learner.examples,trained,'No unseen supervision in evaluation');
+  assert.equal(learner.pathPolicyUpdates,trained+learner.links.observations,
+    'Frozen evaluation must not update shared path-selection weights');
   assert.equal(learner.open,open,'No environment wall statistics copied into learner during frozen eval');
   assert.ok(pairs.some(x=>x.initialBlindPath>0));
   console.log('BLIND_PATH_PAIRED_FROZEN '+JSON.stringify(pairs));
@@ -63,6 +67,25 @@ test('text character is an action, answer is a composed prefix path; no referenc
   assert.equal(other.predicted,prediction.predicted);
   console.log('TEXT_ABSTRACT_CHAR_PATH '+JSON.stringify({actual:a,predicted:prediction.predicted,
     pathLength:prediction.path.length,macroBoundaries:prediction.wordOrSentenceBoundaries}));
+});
+test('a path-selection operation actually transfers from paired maze training into text candidate ranking',()=>{
+  const paired=new ConstructedPathLearner({seed:11});
+  const baseline=new ConstructedPathLearner({seed:11});
+  const q='Which passage leads onward?';
+  for(let k=0;k<6;k++){
+    for(const m of [paired,baseline]){
+      m.trainText(q,k%2?'A north gate.':'A south door.');
+    }
+  }
+  for(let k=0;k<10;k++)paired.trainPair(makeMaze(seedOf(SEEDS.train,740+k),7),{samples:12});
+  const a=paired.nextCharacters(q,'A ',8),b=baseline.nextCharacters(q,'A ',8);
+  assert.ok(a.length>=2&&b.length>=2);
+  assert.ok(paired.pathPolicyUpdates>0);
+  assert.equal(baseline.pathPolicyUpdates,0);
+  assert.notDeepEqual(a.map(x=>x.weight),b.map(x=>x.weight),
+    'The learned maze path operator must genuinely influence text successor scores');
+  assert.equal(paired.textRows,baseline.textRows,
+    'Both text worlds must receive exactly identical text supervision');
 });
 test('the ORIGINAL V17 Brain retains the learned path constructor across save/resume; a frozen test does not train it',{timeout:90000},()=>{
   const brain=new Brain({rules:'winner',seed:19});
