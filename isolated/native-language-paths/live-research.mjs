@@ -121,7 +121,10 @@ export class LiveResearch {
       repetition:{original:repOrig,guarded:repGuard}
     };
     this.last=sample;
-    this.observed+=Number(this.atlas.observe(question,answer,index));
+    // The ORIGINAL V17 brain continues to ingest the FULL text. Limit only
+    // compact graph evidence, so a 60 KB answer cannot fill the atlas alone.
+    this.observed+=Number(this.atlas.observe(String(question).slice(0,1500),
+      String(answer).slice(0,2400),index));
     this.trainingChars+=Number(characters)||0;
     const rate=this.rate();
     this.history.push({sample:this.attempts,rows:this.observed,
