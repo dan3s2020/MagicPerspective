@@ -73,8 +73,11 @@ class SharedPerspective:
         if str(device).startswith('cuda') and not torch.cuda.is_available():
             raise RuntimeError('CUDA was requested but PyTorch CUDA is unavailable; no silent CPU fallback')
         self.device = torch.device(device)
-        torch.manual_seed(seed)
-        self.model = SharedModel().to(self.device)
+        # Do not reseed the original V17 TextCard/GPU world RNG when creating this add-on.
+        devices = list(range(torch.cuda.device_count())) if self.device.type == 'cuda' else []
+        with torch.random.fork_rng(devices=devices):
+            torch.manual_seed(seed)
+            self.model = SharedModel().to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=.0009)
         self.steps = 0
         self.seen = 0
