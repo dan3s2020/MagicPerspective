@@ -16,6 +16,8 @@ import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {requestedExerciseLength, limitExerciseBytes} from "./eval-text-length.mjs";
 import {Brain} from "./brain.mjs";
+import {NestedTextGears} from "../../../../isolated/noise-space/nested_text_gears.mjs";
+import {NativeGearDrive} from "../../../../isolated/noise-space/native_gear_drive.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -66,7 +68,7 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null, gears: g?.gears || t?.gears || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
@@ -182,7 +184,21 @@ http.createServer((req, res) => {
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
       if (!sl.wk) {                                                        // stopped or finished: it answers from its last save
         const f = saveOf(sl); if (!fs.existsSync(f)) return json(res, {error: "graful #" + m.w + " nu rulează și nu are încă un save (apasă ▶)"});
-        try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; }
+        try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; sl.talkerGearAt = null; }
+          // A stopped brain must use its LAST SAVED learned gear as well,
+          // not silently switch to the legacy writer when the worker is absent.
+          const side=f+".causal.json";
+          if(fs.existsSync(side)){
+            const gmt=fs.statSync(side).mtimeMs;
+            if(sl.talkerGearAt!==gmt){
+              const data=JSON.parse(fs.readFileSync(side,'utf8'));
+              if(data.gears && data.nativeGears){
+                const world=NestedTextGears.restore(data.gears);
+                sl.talker.setGearDriver(NativeGearDrive.restore(data.nativeGears,{gears:world}));
+              }
+              sl.talkerGearAt=gmt;
+            }
+          }
           return json(res, {...sl.talker.chat(m.history || [], {...(m.opts || {}), learn: false}), fromSave: true}); } catch (err) { return json(res, {error: "save-ul nu s-a putut citi: " + err.message}); } }
       const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 120 s"}); }, 120000);
       chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({chat: {id, history: m.history || [], opts: m.opts || {}}}); }); return; }
