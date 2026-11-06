@@ -99,3 +99,39 @@ A passing test in this chat cannot replace a test on your specific laptop/phone.
 The original V17 Brain class, maze, transform, original core training source, older
 checkpoints, original graph algorithm, and existing evaluator were not rewritten.
 Integration is opt-in via the new world "code" in the worker.
+
+
+## Termux measurement — actual running brain (read-only)
+
+Open a SECOND Termux session while the original trainer is running, then:
+
+    cd ~/MagicPerspective-SelfCode
+    git pull --ff-only origin experiment/V17-SELF-CODE-NOISE-LOCK-20261106
+    node --test v17/tests/torus-self-code-measure.test.mjs
+    node v17/measure-self-code.mjs --port 8867
+
+The script reads the live /graph?w=0 on localhost, makes ZERO changes to the running brain or saved
+checkpoints, and writes timestamped comparable reports in v17/selfcode-measurements. Rerunning
+the same command reports the extra code experiences and measured throughput since the previous
+report. To monitor every 15 seconds until Ctrl+C:
+
+    node v17/measure-self-code.mjs --port 8867 --watch 15
+
+The current already-running Node process will still use the OLD in-memory module even after
+git pull. The basic live code counters continue to work. The new strictly frozen extended
+evaluation (48 unseen-input cases, 64 novel-parameter cases, 48 permuted-gene control cases)
+appears only after a safe save/stop and launcher restart of this isolated branch:
+
+    bash v17/START_V17_SELFCODE_TERMUX.sh
+
+The launcher resumes its own dedicated checkpoint. Run the measurement command from the second
+session; do NOT run a second trainer on the same port. The code evaluation does not call learn(),
+does not alter the source graph, and is cached over 48 code experiences to limit phone CPU load.
+
+Readouts mean:
+- V17's main alignment % concerns recent perceived symbols, not learned programming.
+- Code "unseen inputs" tests the SAME 4-bit operator families on different inputs.
+- "New parameters" probes values not used while teaching those operators.
+- "Shuffled labels" is an ablation: gene identities are deliberately mismatched.
+- Unlock and code edits refer ONLY to a restricted numeric portal-routing genome.
+- No result proves general-purpose JavaScript understanding or universal causal intelligence.
