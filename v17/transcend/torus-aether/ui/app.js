@@ -434,7 +434,35 @@ function applySnap(gs) {
   edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : ""), {a: a2, b: b2, kind, w, label, hot: 1}]));
   if (gs.text && gs.text.length !== (liveSnap?.text?.length || -1) || !data.length) { data = Array.from(gs.text || "", c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
-  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();   // t: every step lived (text characters and every world's symbols)
+  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
+  if (gs.shared) renderShared(gs.shared);   // t: every step lived (text characters and every world's symbols)
+}
+// Draw measured PyTorch training vectors, NOT fabricated graph nodes or arbitrary 5D geometry.
+function renderShared(S) {
+  const box = $("sharedBox"), info = $("sharedOut"), canvas = $("sharedCv");
+  if (!box || !info || !canvas) return;
+  box.hidden = false;
+  const R = S.training, domains = S.domains || {};
+  const n = `observate maze ${domains.maze || 0} · transform ${domains.transform || 0} · text ${domains.text || 0} · în coadă ${S.queued || 0}`;
+  info.textContent = R?.step ?
+    `${n} | model ${R.device} · actualizări ${R.step} · eroare înainte de update ${R.preUpdatePredictionLoss} · identitate ${R.identityBaselineLoss}` :
+    n + (S.error ? " | " + S.error : " | fără update PyTorch încă");
+  const g2 = canvas.getContext("2d"), W = canvas.width, H = canvas.height;
+  g2.clearRect(0, 0, W, H); g2.fillStyle = "#061524"; g2.fillRect(0, 0, W, H);
+  g2.strokeStyle = "#20334c"; g2.lineWidth = 1;
+  g2.beginPath(); g2.moveTo(0, H/2); g2.lineTo(W,H/2); g2.moveTo(W/2,0); g2.lineTo(W/2,H); g2.stroke();
+  const t = R?.trace;
+  if (!t || ![t.before,t.predicted,t.observed].every(v=>Array.isArray(v)&&v.length>=2&&v.every(Number.isFinite))) {
+    g2.fillStyle = "#8baecf"; g2.font = "13px sans-serif"; g2.fillText("Date neuronale măsurate vor apărea după un batch real.", 16, H/2-12); return;
+  }
+  const v = [t.before,t.predicted,t.observed];
+  const magn = Math.max(.0001,...v.flatMap(z=>[Math.abs(z[0]),Math.abs(z[1])]));
+  const px = z => [W/2+z[0]*(W*.38/magn),H/2-z[1]*(H*.38/magn)];
+  const pts = v.map(px);
+  g2.strokeStyle="#ffaa56";g2.lineWidth=2;g2.beginPath();g2.moveTo(...pts[0]);g2.lineTo(...pts[1]);g2.stroke();
+  g2.strokeStyle="#52d6a5";g2.beginPath();g2.moveTo(...pts[0]);g2.lineTo(...pts[2]);g2.stroke();
+  const colors=["#f6c660","#f46faa","#5ee0b0"],names=["Înainte","Prezis","Observat"];
+  pts.forEach(([x,y],i)=>{g2.beginPath();g2.arc(x,y,5,0,Math.PI*2);g2.fillStyle=colors[i];g2.fill();g2.font="12px sans-serif";g2.fillText(names[i],Math.min(W-70,x+7),Math.max(12,y-7));});
 }
 // the map the same brain is living: walls, checkpoint band, and the path of its two cubes in the last episode
 let mazeShown = null, mazeT0 = 0;
