@@ -13,6 +13,7 @@ import {TextActionPaths} from "../../../../isolated/noise-space/text_action_path
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 import {BodyPerspectiveMemory} from "../perspective/body-memory.mjs";
 import {LanguageMazeMemory} from "../language-maze/language-world.mjs";
+import {observeCompletedTrainingRows} from "../language-maze/observe-committed.mjs";
 import {gpuTextWindows,resumeSourceState,applyCompletedWindow,DEFAULT_GPU_WINDOW_CHARS} from "./gpu-text-windows.mjs";
 import {createHash} from "node:crypto";
 
@@ -114,7 +115,7 @@ const absorbText = (row,{languageAlreadyObserved=false}={}) => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
   // Complete original Q/A row committed to the training stream. In CUDA
   // batches, the new learner has already observed EVERY completed row below.
-  if(!languageAlreadyObserved)languageMaze.learn(row.prompt,row.answer);
+  if(!languageAlreadyObserved)observeCompletedTrainingRows([row],languageMaze);
   textPaths.learn(row.prompt, row.answer);
   causalText.train(row.prompt, row.answer, textPaths,
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
@@ -237,11 +238,7 @@ const processGpuText = async (exs, meta) => {
   // not inherit that subsampling: every real, completed Q/A observation is
   // consumed exactly once in its original order, without altering the
   // existing causal tool's behavior or the original V17 CUDA alignment.
-  for(const row of meta){
-    if(typeof row?.prompt==="string"&&typeof row?.answer==="string"&&
-       row.prompt.trim()&&row.answer.trim())
-      languageMaze.learn(row.prompt,row.answer);
-  }
+  observeCompletedTrainingRows(meta,languageMaze);
   for(let j=0;j<meta.length;j+=Math.max(1,Math.floor(meta.length/8)))
     absorbText(meta[j],{languageAlreadyObserved:true});
   changePhase("CUDA: model comun de transformări",0,shared.queue.length);
