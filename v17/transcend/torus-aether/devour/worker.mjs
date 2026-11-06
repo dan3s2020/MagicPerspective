@@ -106,11 +106,18 @@ const absorbLanguage = row => {
   if(!TEXT || !Array.isArray(row?.bytes) || !row.bytes.length)return;
   brain.liveLanguage(Buffer.from(row.bytes).toString('latin1'));
 };
+const observedPipeline={called:0,accepted:0,unreadable:0,last: null};
 const absorbObservedDifferences = row => {
-  if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length)return;
+  observedPipeline.called++;
+  if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length){
+    observedPipeline.unreadable++;
+    return;
+  }
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
-  brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
+  const learned=brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
+  observedPipeline.accepted+=learned.newSentences;
+  observedPipeline.last=learned;
 };
 const absorbConstructed = row => {
   if (typeof row?.prompt !== 'string' || typeof row?.answer !== 'string' ||
@@ -136,6 +143,7 @@ const report = (final = false) => {
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
     shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
+    observedPipeline: {...observedPipeline},
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
@@ -144,6 +152,7 @@ const report = (final = false) => {
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
+    observedPipeline: {...observedPipeline},
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
