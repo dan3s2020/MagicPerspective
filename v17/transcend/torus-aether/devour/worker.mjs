@@ -13,6 +13,7 @@ import {SelfCodeWorld} from "../worlds/self-code.mjs";
 import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
@@ -48,16 +49,23 @@ const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : n
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
+const hypermaze = COGNITIVE ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 brain.setSharedObserver(sample => {
   shared.observe(sample);
   if(cognitive)cognitive.observeExternalTransition(sample);
 });
-const saveCognitive = () => {if(cognitive)brain.cognitiveMap = cognitive.export();};
+const saveCognitive = () => {
+  if(cognitive)brain.cognitiveMap = cognitive.export();
+  if(hypermaze)brain.hypermaze = hypermaze.export();
+};
 const absorbCognitive = row => {
   if(!cognitive)return null;
   if(typeof row?.worldText !== "string")throw Error("Cognitive world requires complete original text, not ASCII token predictions");
   const before=cognitive.rules.size;
   const result=cognitive.observeWorld(row.worldText,{id:row.k});
+  // Freeze predictions, plan against PREVIOUS graph, then absorb the actual document.
+  // No answer or future transitions are supplied to the planner.
+  if(hypermaze)hypermaze.observeWorld(row.worldText,{id:row.k});
   brain.cognitiveDocuments=(brain.cognitiveDocuments||0)+1;
   brain.cognitiveCharacters=(brain.cognitiveCharacters||0)+row.worldText.length;
   if(cognitive.rules.size>before){
@@ -103,7 +111,7 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), cognitive: cognitive?.report() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { saveCognitive(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
@@ -113,7 +121,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const currentTextLength = brain.trace.text.length;
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), cognitive: cognitive?.report() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze?.snapshot() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -196,6 +204,18 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m?.hypermazePlan){
+    const {id,start,goal,maxSteps=160}=m.hypermazePlan;
+    try {
+      if(!hypermaze)throw Error("Text hypermaze world not enabled");
+      const old=JSON.stringify([hypermaze.documents,hypermaze.nodes.length,hypermaze.edges.size,hypermaze.onlineTested]);
+      const plan=hypermaze.plan(start,goal,{maxSteps});
+      if(old!==JSON.stringify([hypermaze.documents,hypermaze.nodes.length,hypermaze.edges.size,hypermaze.onlineTested]))
+        throw Error("Frozen plan mutated training state");
+      parentPort.postMessage({type:"chat",kind:"hypermaze",id,...plan,frozen:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"hypermaze",id,error:err.message});}
+    return;
+  }
   if(m?.cognitiveObserve){
     const {id,before,action,after,accepted}=m.cognitiveObserve;
     try{
