@@ -340,7 +340,7 @@ function draw() {
 // ---------- proof and free writing ----------
 function evaluate() {
   if (LIVE) { const T2 = liveSnap?.test, p2 = v => (100 * v).toFixed(1) + "%";
-    $("evalOut").innerHTML = T2 ? `${T2.n} caractere nevăzute, testate de trainer cu parametrii înghețați<br>graful LIVE <b style="color:var(--green)">${p2(T2.live)}</b> · graful MASKED <b>${p2(T2.masked)}</b> · C singur <b>${p2(T2.C)}</b> · ${T2.bits.toFixed(2)} biți` +
+    $("evalOut").innerHTML = T2 ? `${T2.n} caractere nevăzute, testate de trainer cu parametrii înghețați<br>graful LIVE <b style="color:var(--green)">${p2(T2.live)}</b> · graful MASKED <b>${p2(T2.masked)}</b> · C singur <b>${p2(T2.C)}</b> · ${typeof T2.bits==='number'?T2.bits.toFixed(2):'—'} biți` +
       (T2.field != null ? `<br>câmpul momentelor trăite <b>${p2(T2.field)}</b> · graful + câmpul împreună <b style="color:var(--green)">${p2(T2.together)}</b>` : "") : "aștept primul test al trainerului"; return; }
   const T = val("ttemp"), H = e.holdout, hit = {C: 0, det: 0, live: 0, masked: 0}, keep = chain.rand; let n = 0;
   chain.rand = rng((Math.random() * 2 ** 32) >>> 0);                         // a new draw every test
