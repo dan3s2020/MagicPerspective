@@ -205,6 +205,17 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m?.hypermazeEval){
+    const {id,texts}=m.hypermazeEval;
+    try{
+      if(!hypermaze)throw Error("Hypertext graph not enabled");
+      const answer=hypermaze.evaluateDocuments(texts,{maxRouteSamples:3});
+      parentPort.postMessage({type:"chat",kind:"hypermaze-eval",id,...answer});
+    }catch(err){
+      parentPort.postMessage({type:"chat",kind:"hypermaze-eval",id,error:err.message});
+    }
+    return;
+  }
   if(m?.hypermazePlan){
     const {id,start,goal,maxSteps=160}=m.hypermazePlan;
     try {
