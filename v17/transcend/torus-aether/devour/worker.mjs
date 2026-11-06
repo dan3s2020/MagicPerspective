@@ -11,6 +11,7 @@ import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
+import {BodyPerspectiveMemory} from "../perspective/body-memory.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -33,6 +34,21 @@ if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
+// An independent, versioned memory of the original V17 body's ACTUAL observed action effects.
+// A new research sidecar; existing .v8 Brain saves and other agents are not rewritten.
+const bodyMapFile=saveFile?saveFile+".body-perspective.json":null;
+let bodyPerspective=new BodyPerspectiveMemory();
+if(resume&&bodyMapFile&&fs.existsSync(bodyMapFile)){
+  try{bodyPerspective=BodyPerspectiveMemory.restore(JSON.parse(fs.readFileSync(bodyMapFile,"utf8")));}
+  catch(err){parentPort.postMessage({type:"note",w:workerData.gw,text:"body perspective sidecar not restored: "+err.message});}
+}
+const saveBodyPerspective=()=>{
+  if(!bodyMapFile)return;
+  fs.mkdirSync(path.dirname(bodyMapFile),{recursive:true});
+  const tmp=bodyMapFile+".tmp";
+  fs.writeFileSync(tmp,JSON.stringify(bodyPerspective.export()));
+  fs.renameSync(tmp,bodyMapFile);
+};
 const traceFile = workerData.traceTransformations && saveFile ? saveFile + ".transitions.jsonl" : null;
 let traced = 0;
 let traceBytes = traceFile && fs.existsSync(traceFile) ? fs.statSync(traceFile).size : 0;
@@ -40,6 +56,7 @@ let traceBytes = traceFile && fs.existsSync(traceFile) ? fs.statSync(traceFile).
 // reference, with a bounded file size and a group ID for episode-disjoint tests.
 brain.setSharedObserver(sample => {
   const item = shared.observe(sample);
+  if(item.domain==="maze")bodyPerspective.observe(item,brain.disc?.self?.()??-1);
   if (traceFile && traced < 50000 && traceBytes < 64 * 1024 * 1024) {
     const i = item.domain === "maze" ? brain.mazes.index : item.domain === "transform" ? brain.trans?.index : brain.exercises;
     const episode = item.domain + ":" + String(i ?? 0);
@@ -82,12 +99,12 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
-  if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
+    shared: shared.status(), bodyPerspective: bodyPerspective.summary(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+  if (saveFile) { try { msg.savedMB = brain.save(saveFile) / 1e6; saveText(); saveBodyPerspective(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 3000) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), bodyPerspective: bodyPerspective.summary(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -178,7 +195,7 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
-const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
+const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), saveBodyPerspective(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
 let k = 0, textBatch = [], textMeta = [];
 shot(true); await hold();
 for await (const ex of stream()) {
