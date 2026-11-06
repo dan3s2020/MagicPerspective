@@ -255,12 +255,17 @@ function updateTelemetry(t,status,error){
  const progress=total>0?' · '+completed+'/'+total+' unități raportate':' · progres numeric indisponibil';
  const duration=Object.entries(p.totalsMs||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
  const headline='V17 '+(stale?'DATE BLOCATE':status||'active')+' · '+phase+' · '+formatDuration(current)+progress+lag;
- const second='Text '+count(t.chars)+' chars · '+value(t.textCharsPerSecond,1)+' chars/s · Maze '+count(t.mazePlayed)+
+ const second='Text '+count(t.chars)+' chars CONFIRMATE · '+value(t.textCharsPerSecond,1)+' chars/s · Maze '+count(t.mazePlayed)+
   ' · Transform '+count(t.transformPlayed)+' · GPU '+(t.gpuDevice||'—');
+ const window=t.sourceWindow;
+ const sourceLine=window?('Rând original '+window.datasetRow+' · fereastra CUDA '+window.index+'/'+window.windows+
+  ' · '+count(window.completed)+' / '+count(window.originalLength)+' caractere confirmate din ACEST rând; nicio trunchiere'):'',
+ sourceRowsLine='Rânduri originale complet antrenate: '+count(t.sourceRows||0)+
+  ' · limită de lucru CUDA: '+count(t.gpuTextWindowLimit||0)+' caractere/fereastră';
  const failures=t.gpuError||t.sharedError||error||null;
- hud.textContent=headline+'\n'+second+(failures?'\nEROARE: '+failures:'');
+ hud.textContent=headline+'\n'+second+(sourceLine?'\n'+sourceLine:'')+(failures?'\nEROARE: '+failures:'');
  hud.style.borderColor=failures?'#bd5460':stale?'#edb774':'#426378';
- pane.textContent=headline+'\n'+second+
+ pane.textContent=headline+'\n'+second+'\n'+sourceRowsLine+(sourceLine?'\n'+sourceLine:'')+
   '\nHeap V17 '+count(t.heapMB)+' MB · exerciții text '+count(t.exercises)+' · observații corp '+count(t.bodyTransitions)+
   '\nDurata cumulată după fază:\n'+duration.map(([name,ms])=>'  '+name+': '+formatDuration(ms)).join('\n')+
   (stale?'\nALERTĂ: nu există heartbeat nou de '+(age/1000).toFixed(1)+'s. Posibil pas sincron CPU blocant sau worker oprit.':'\nHeartbeat periodic: backendul răspunde; durata fazei crește cât lucrează.')+
