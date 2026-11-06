@@ -129,6 +129,12 @@ function currentGeometry(){
  return $("hmSpace").value==="learned5"?model.native:model.layout;
 }
 function describeGeometry(){
+ if(model?.kind==="native-stream"){
+   text("hmSpaceStatus","V17 LIVE: simbolurile folosesc coordonatele 5D U[0..4] învățate real; nodurile A/C fără U au poziții vizuale calculate NUMAI din vecinii conectați. "+
+    fmt(nativeStream?.countNative)+" simboluri native, "+
+    fmt(nativeStream?.countProjected)+" noduri A/C proiectate.");
+   return;
+ }
  if(!model){
   text("hmSpaceStatus","Alege o evaluare reală sau un traseu real înainte de proiecție.");
   return;
@@ -551,6 +557,7 @@ function showLiveTrainingEvent(event){
    viewpointEvidence:{actualRepropagationAfterEachMove:false,
      trainingObservation:true,agentActions:false},
    output:event.observedAnswer};
+ $("hmSpace").value="diagnostic4";
  model={kind:"observed",trainingLive:true,liveInfo:m,liveEvent:event,
   pair:{hybrid:h,original:{globalPlanNodes:prior}},
   layout:observedLayout(m.graph),source:m.provenance};
@@ -574,6 +581,7 @@ function showLiveTrainingEvent(event){
    "\nGRI = alte tranziții existente în lumea textului învățată."+
    "\nCaracterele observate sunt ținte de antrenare, NU acțiuni alese autonom de agent."+
    (event.answerPreviewTruncated?"\nPreview limitat la 1.024 caractere; total real: "+fmt(event.fullAnswerChars):""));
+ describeGeometry();
  text("hmProvenance",
    "SURSĂ LIVE: worker → eveniment după commit Q/A → /hypermaze/live."+
    "\nPredicția inițială a fost extrasă din memoria anterioară a lumii text."+
@@ -684,6 +692,7 @@ async function pollLive(){
     }
     if(!model||model.kind==="native-stream"){
       model={kind:"native-stream",source:"LIVE_V17_GRAPHTRACE",layout:null};
+      $("hmSpace").value="learned5";describeGeometry();
       text("hmInitial","formă V17 în curs");
       text("hmExecuted",fmt(nativeStream.stream.length)+" observații recente");
       text("hmAlternative",fmt(nativeStream.links.length)+" legături");
