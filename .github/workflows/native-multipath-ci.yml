@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - experiment/V17-MULTIPATH-SUCCESSOR-ISOLATED-20261106
+      - experiment/V17-LIVE-MULTIPATH-OBSERVATORY-20261106
   workflow_dispatch:
 jobs:
   source-parity-and-research:
@@ -17,6 +18,7 @@ jobs:
           node --test isolated/native-language-paths/native.test.mjs
           node --test isolated/native-language-paths/multipath.test.mjs
           node --test isolated/native-language-paths/repetition.test.mjs
+          node --test isolated/native-language-paths/live-research.test.mjs
       - name: Parse original engine and all isolated components
         run: |
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
@@ -25,6 +27,12 @@ jobs:
           node --check isolated/native-language-paths/multipath.mjs
           node --check isolated/native-language-paths/atlas.mjs
           node --check isolated/native-language-paths/repetition.mjs
+          node --check isolated/native-language-paths/live-research.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/research-panel.mjs
+          node --check v17/transcend/torus-aether/ui/research-charts.mjs
 
   powershell5-launcher:
     runs-on: windows-latest
@@ -38,6 +46,8 @@ jobs:
         run: |
           $errors = $null
           $scriptText = Get-Content -LiteralPath 'START_NATIVE_LANGUAGE_PATHS.ps1' -Raw
+          $scriptText += "`n" + (Get-Content -LiteralPath 'START_LIVE_MULTIPATH_V17.ps1' -Raw)
+          $scriptText += "`n" + (Get-Content -LiteralPath 'v17/START_V17.ps1' -Raw)
           [System.Management.Automation.PSParser]::Tokenize($scriptText, [ref]$errors) | Out-Null
           if ($errors.Count -gt 0) {
             $errors | Format-List | Out-String | Write-Host
@@ -46,5 +56,5 @@ jobs:
       - name: Run V17 2D, graph and generator unit tests on Windows Node.js
         shell: powershell
         run: |
-          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs
+          node --test isolated/native-language-paths/native.test.mjs isolated/native-language-paths/multipath.test.mjs isolated/native-language-paths/repetition.test.mjs isolated/native-language-paths/live-research.test.mjs
           if ($LASTEXITCODE -ne 0) { throw 'Real-source regression tests failed on Windows' }
