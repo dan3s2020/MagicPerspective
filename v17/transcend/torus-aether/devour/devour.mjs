@@ -88,6 +88,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
+    if (m.type === "hypermaze-live") { hypermazeRemember(m);return; }
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "telemetry") { telemetries.set(sl.w,m); return; } // 1 Hz: no graph rebuild, no disk I/O
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
@@ -117,10 +118,40 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;
-const successorCompareCache=new Map(); // comparison results, separate from all original V17 saves and brains                                     // talking to a graph: page → worker → page
+const successorCompareCache=new Map();
+const hypermazeLiveEvents=new Map(),hypermazeSubscriptions=new Map();
+let hypermazeSeq=0;
+const hypermazeRemember=m=>{
+  const queue=hypermazeLiveEvents.get(m.w)||[];
+  queue.push({...m,seq:++hypermazeSeq});
+  if(queue.length>8)queue.splice(0,queue.length-8);
+  hypermazeLiveEvents.set(m.w,queue);
+}; // comparison results, separate from all original V17 saves and brains                                     // talking to a graph: page → worker → page
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
+  // Real committed training rows. No frozen evaluation or saved replay.
+  if(req.method==="GET"&&url==="/hypermaze/live"){
+    const w=Number(q.get("w")??0),since=Math.max(0,Number(q.get("since")??0));
+    const sl=slots.find(x=>x.w===w);
+    if(!Number.isInteger(w)||!sl||!Number.isFinite(since))return json(res,{error:"graph not found"});
+    const now=Date.now(),last=hypermazeSubscriptions.get(w)||0;
+    hypermazeSubscriptions.set(w,now);
+    if(sl.wk&&now-last>2700)sl.wk.postMessage({hypermazeLive:true});
+    const buffer=hypermazeLiveEvents.get(w)||[];
+    const telemetry=telemetries.get(w)||null;
+    return json(res,{
+      protocol:"LIVE_TRAINING_COMMITTED_QA_STREAM",
+      w,serverAt:now,status:sl.status,
+      liveWorker:!!sl.wk,subscriberActive:true,
+      events:buffer.filter(m=>m.seq>since),
+      latestSeq:buffer.at(-1)?.seq??0,
+      source:"real committed corpus rows; no frozen evaluator",
+      training:telemetry?.languageMaze??null,
+      gpuPhase:telemetry?.stage?.phase??telemetry?.phase??null,
+      chars:telemetry?.chars??graphs.get(w)?.chars??null
+    });
+  }
   if (url === "/state") return json(res, {world, worlds: worldsArg, workers: slots.length, arms: arms.map(a => a.name), every, memGB, started, stopping,
     graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent})), last: h.at(-1)}))});
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
