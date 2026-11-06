@@ -20,7 +20,7 @@ export async function measureEdit(world,slot,value,{seed=33,steps=2100,limit=300
   const b=await evaluateV17Text({modulePath:draft.path,corpus:corp,steps,limit});
   return {slot,value,seed,steps,before:a,after:b,delta:b-a,draft};
 }
-export function configureSealedLock(world,{steps=2100}={}){
+export function configureSealedLock(world,{steps=2100,seed=9087}={}){
   // Distinct seeds, never used in training probes. The learner cannot read their corpus from the gate.
   const choices=[
     ['observation-period',56],['observation-period',224],
@@ -28,7 +28,7 @@ export function configureSealedLock(world,{steps=2100}={}){
     ['promotion-margin',0.004],['promotion-margin',0.08],
     ['complexity-cost',0],['complexity-cost',0.02],
   ];
-  const sealed=choices.map(([slot,value],i)=>({id:'blind-'+(i+1),slot,value,secretSeed:9087+i*101,steps}));
+  const sealed=choices.map(([slot,value],i)=>({id:'blind-'+(i+1),slot,value,secretSeed:seed+i*101,steps}));
   world.lock=new CodeLock({sealed,required:sealed.length,accuracy:.75,margin:.1,
     oracle:async c=>(await measureEdit(world,c.slot,c.value,{seed:c.secretSeed,steps:c.steps})).delta});
   return world.lock.status();
