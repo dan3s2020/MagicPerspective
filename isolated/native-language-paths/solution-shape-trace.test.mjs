@@ -80,3 +80,33 @@ test('real OnlineResearch captures 2 independent grounded policy traces before o
   assert.equal(frozen.samples,1);
   assert.ok(research.atlas.examples.every(n=>n.sourceIndex!==99));
 });
+
+test('read-only original V17 character observer emits actual pre-learning predictions and preserves learning parity',()=>{
+  const a=new Brain({rules,c:{margin:.05,window:400},seed:11});
+  const b=new Brain({rules,c:{margin:.05,window:400},seed:11});
+  const events=[],research=new LiveResearch({maxEntries:32});
+  const input='Q: Where does this line go?\nA: Into the archive.\n';
+  a.beginExercise();b.beginExercise();
+  for(const ch of input){
+    const y=ch.charCodeAt(0);
+    a.live(y,false,{onPrediction:event=>{
+      events.push(event);
+      research.recordCharacter(event);
+    }});
+    b.live(y,false);
+    a.chars++;b.chars++;
+  }
+  assert.equal(events.length,input.length);
+  assert.ok(events.every(e=>Number.isInteger(e.guess)&&Number.isInteger(e.actual)));
+  assert.equal(research.characterSeen,input.length);
+  assert.equal(research.characterHits,events.filter(e=>e.correct).length);
+  assert.equal(a.align.seen,b.align.seen);
+  assert.equal(a.align.hits,b.align.hits);
+  assert.equal(a.align.predict(),b.align.predict());
+  assert.equal(a.lived,b.lived);
+  assert.equal(a.chars,b.chars);
+  assert.deepEqual(a.align.selfModel(),b.align.selfModel());
+  const old=research.save(),restored=LiveResearch.restore(old);
+  assert.deepEqual(restored.characterTrace,research.characterTrace);
+  assert.equal(restored.characterSeen,input.length);
+});
