@@ -85,6 +85,19 @@ test("Firefox sees real 5D language maze, frozen gold line before first action, 
   await page.locator("#languageMazePerspective").selectOption("body");
   assert.match(await page.locator("#languageMazeGeometry").textContent(),
     /5D|PCA/);
+  // This is generated FROM observed operators in the original Brain.
+  // We provide NO reference answer and NO manual target for the new probe.
+  await page.locator("#languageMazeAuto").click();
+  await page.waitForFunction(()=>{
+   const status=document.querySelector("#languageMazeStatus")?.textContent||"";
+   return status.includes("FORMA REALĂ ÎNGHEȚATĂ")||status.includes("eșuat")||
+     status.includes("Nu există încă");
+  },null,{timeout:45000});
+  const selfText=await page.locator("#languageMazeStatus").textContent();
+  assert.match(selfText,/FORMA REALĂ ÎNGHEȚATĂ/,
+    "Real learned self-probe did not produce a predicted route: "+selfText);
+  assert.ok((await page.locator("#languageMazeGoal").inputValue()).split(",").length>=2,
+    "Brain self-probe didn't choose real token goal constraints");
   await page.locator("#tabTrain").click();
   assert.equal(await page.locator("#g").isVisible(),true,
    "Original Torus must be restored after visualizing language");
