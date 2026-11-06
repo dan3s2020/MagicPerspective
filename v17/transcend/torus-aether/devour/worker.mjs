@@ -230,7 +230,7 @@ const processGpuText = async (exs, meta) => {
 };
 parentPort.on("message", m => {
   if(m && m.languageMaze){
-    const {id,required,start,maxDepth=4,localPolicy=true,auto=false,useUnified=true}=m.languageMaze;
+    const {id,required,start,maxDepth=4,localPolicy=true,auto=false,useUnified=true,compare=false}=m.languageMaze;
     try{
       const selfGoal=auto?brain.observedTransformations?.selfSelectedChallenge():null;
       if(auto&&!selfGoal){
@@ -242,7 +242,23 @@ parentPort.on("message", m => {
         {required,start,maxDepth};
       const result=brain.planObservedTransformation(actualGoal,
         {trace:true,embodied:true,localPolicy,useUnified});
-      parentPort.postMessage({type:"chat",id,languageMaze:true,...result,
+      const control=compare&&brain.unifiedEnabled?
+        brain.planObservedTransformation(actualGoal,{trace:false,embodied:true,
+          localPolicy,useUnified:false}):null;
+      const comparison=control?{
+        actuallyCompared:true,sameStartAndGoal:true,
+        withoutShared:{found:control.found,steps:control.steps?.length??0,
+          predicted:control.predicted??null,bodySteps:control.body?.executed??0,
+          bodySuccess:control.body?.success??false},
+        withShared:{found:result.found,steps:result.steps?.length??0,
+          predicted:result.predicted??null,bodySteps:result.body?.executed??0,
+          bodySuccess:result.body?.success??false},
+        changedInitialRoute:JSON.stringify(control.initialShape)!==JSON.stringify(result.initialShape),
+        changedLocalExecution:JSON.stringify(control.body?.frames?.map(x=>x.chosen))!==
+          JSON.stringify(result.body?.frames?.map(x=>x.chosen)),
+        caution:"Structural internal goal, not independently verified natural-language semantics"
+      }:null;
+      parentPort.postMessage({type:"chat",id,languageMaze:true,...result,comparison,
         selfProbe:!!selfGoal,selfGoal:selfGoal||null,
         perspectivePair:{global:"initial frozen plan + alternative search",
           local:"actually selected learned text actions + fresh plan when diverging"}});
