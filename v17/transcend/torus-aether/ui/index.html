@@ -45,6 +45,15 @@
   aside.side.evalOn > :not(.tabs):not(#evalPane){display:none}#evalPane{display:none}aside.side.evalOn #evalPane{display:block}
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
+  .perspGrid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(100px,1fr);gap:8px}
+  .perspGrid canvas{width:100%;aspect-ratio:1;background:#05080c;border:1px solid #29425a;border-radius:8px}
+  #perspectiveBox{border:1px solid #34546c;border-radius:10px;margin:10px 0;padding:8px;background:#091624}
+  #perspectiveBox [hidden]{display:none!important}
+  #perspLearning{width:100%;height:110px;border:1px solid #29425a;border-radius:8px}
+  #perspFrame{flex:1;min-width:90px}
+  #perspDetails{white-space:pre-wrap;word-break:break-word;font:11px/1.5 ui-monospace,monospace;color:var(--dim);background:#050b15;padding:8px;border-radius:7px}
+  #perspResult{font-size:12px;color:var(--ice)}
+
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
 </style>
 </head>
@@ -104,6 +113,44 @@
         <h2>Labirintul pe care îl trăiește același creier</h2>
         <canvas id="mazeCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
         <p class="note" id="mazeOut">—</p>
+      </div>
+      <div id="perspectiveBox" hidden>
+        <h2>Același Brain V17 · hartă globală ↔ perspectiva corpului</h2>
+        <p class="note">Această abilitate se antrenează în workerul REAL, din observații locale după o singură vedere a hărții. Planul inițial este cel produs de <code>Discoverer.shape()</code>. Poziția reală apare numai în instrumentul de evaluare.</p>
+        <div class="grid">
+          <div class="m"><small>episoade trăite / reușite</small><b id="perspEpisodes">—</b></div>
+          <div class="m"><small>asocieri învățate din mișcare</small><b id="perspSamples">—</b></div>
+          <div class="m"><small>orientare estimată corect</small><b id="perspHeading">—</b></div>
+          <div class="m"><small>poziție estimată corect</small><b id="perspPose">—</b></div>
+        </div>
+        <p class="note" id="perspInterpret">Aștept exerciții reale de labirint. Modelul nu primește orientarea adevărată în antrenare.</p>
+        <canvas id="perspLearning" width="520" height="120"></canvas>
+        <div class="row">
+          <label class="dim">Teste noi <input id="perspCount" type="number" value="20" min="4" max="80" style="width:62px"></label>
+          <label class="dim">seed <input id="perspSeed" type="number" value="73" min="0" style="width:76px"></label>
+          <button id="perspEvaluate">Evaluează FROZEN pe lumi nevăzute</button>
+        </div>
+        <p id="perspResult" class="note">Neantrenat vs învățat: aștept evaluarea.</p>
+        <div class="row">
+          <label class="dim">Replay
+            <select id="perspReplay"><option value="train">episod real de antrenare</option><option value="learned">test: învățat</option><option value="control">test: control identic</option></select>
+          </label>
+          <button id="perspPrev">◀</button><button id="perspPlay">▶</button><button id="perspNext">▶ pas</button>
+          <input id="perspFrame" type="range" min="0" max="0" value="0">
+          <span id="perspFrameOut" class="dim">—</span>
+        </div>
+        <div class="perspGrid"><div><small class="dim">Harta globală MEMORATĂ + forma inițială + traseul efectiv</small>
+          <canvas id="perspMap" width="430" height="430"></canvas></div>
+          <div><small class="dim">Senzorul LOCAL al corpului (5 × 5)</small>
+          <canvas id="perspLocal" width="250" height="250"></canvas></div></div>
+        <div class="row dim" style="font-size:11px">
+          <span style="color:#f5b301">● forma inițială V17</span>
+          <span style="color:#7cc9ff">● traseu real</span>
+          <span style="color:#3ddc84">● locul estimat</span>
+          <span style="color:#ff4d6d">● locul adevărat (evaluator)</span>
+        </div>
+        <pre id="perspDetails">Niciun episod încă.</pre>
+        <p class="note">GPU continuă să antreneze labirinturile originale în loturi; transformarea perspectivei este învățată pe CPU după lot, în același Brain salvat. Nu reprezintă un demo sau un optimizer DUST complet.</p>
       </div>
       <div id="transBox" hidden>
         <h2>Lumea transformărilor (obiecte, comutatoare, uși — fără nume)</h2>
