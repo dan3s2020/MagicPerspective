@@ -58,16 +58,19 @@ const saveText = () => {
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export(), gears: nestedGears.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
 };
+const absorbGears = row => {
+  if(typeof row?.answer!=='string'||!row.answer.trim())return;
+  // All observed training answers, not only the 8 sampled for the old causal head.
+  let emitted=0;
+  nestedGears.observeAnswer(row.answer.slice(0,4096), {limit:8, onEvidence:e=>{
+    if(emitted++<12)brain.observeShared({domain:'text',before:e.before,after:e.after,
+      action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:String(row.prompt||'').slice(0,256)});
+  }});
+};
 const absorbText = row => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
   textPaths.learn(row.prompt, row.answer);
-  // Real observed corpus sentences become reusable single-slot transformations.
-  // A paired observation, never a held-out answer, also enters the common V17 transition learner.
-  let emitted = 0;
-  nestedGears.observeAnswer(row.answer, {limit:8, onEvidence:e=>{
-    if(emitted++<12) brain.observeShared({domain:'text',before:e.before,after:e.after,
-      action:'observed-slot:'+e.slot+':'+e.from+'>'+e.to,context:String(row.prompt).slice(0,256)});
-  }});
+  absorbGears(row);
   causalText.train(row.prompt, row.answer, textPaths,
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
 };
@@ -151,7 +154,11 @@ const processGpuText = async (exs, meta) => {
       await tick("text: integrare în graful V17", Math.min(i + chunk, replay.length), replay.length);
     }
   }
-  for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  const oldHeadStride=Math.max(1,Math.floor(meta.length/8));
+  for(let j=0;j<meta.length;j++){
+    if(j%oldHeadStride===0)absorbText(meta[j]); // keep previous causal-agent sampling and cost
+    else absorbGears(meta[j]);                 // the gear learner sees ALL observed CUDA training answers
+  }
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length}; shot(true);
   await flushShared(); shot();
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
