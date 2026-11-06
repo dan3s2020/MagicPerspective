@@ -122,7 +122,7 @@ const worldsOnce = async (record) => {                                     // on
   if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
-const selectedTextBatch = () => Math.max(1, Math.min(8, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
+const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
