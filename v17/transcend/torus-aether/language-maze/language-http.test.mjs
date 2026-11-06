@@ -14,7 +14,7 @@ const ui=fs.readFileSync(path.join(root,"transcend/torus-aether/ui/index.html"),
 test("all original native graph/train/eval/CUDA tabs remain with real new language-world controls",()=>{
  for(const id of ["g","liveTelemetry","tabTrain","tabEval","tabPS","tabMetrics","tabTransfer",
   "tabLang","langPane","langPrompt","langGraph","langMode","langCompare","langCompareReport","langGlobal","langLocal","langPlan",
-  "langPlay","langStep","tabSuccessor","successorPane","scAnalyze","scEvaluate","scPathCanvas","scFieldCanvas","scEdges","scExactDelta","scServerStatus","scStep","scObserved","scSampleStatus","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
+  "langPlay","langStep","tabSuccessor","tabHypermaze","hmOverlay","hmCanvas","hmLiveSwitch","hmLiveMetrics","successorPane","scAnalyze","scEvaluate","scPathCanvas","scFieldCanvas","scEdges","scExactDelta","scServerStatus","scStep","scObserved","scSampleStatus","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
   assert.match(ui,new RegExp('id="'+id+'"'),"Missing original or new V18 control: "+id);
  }
  assert.match(ui,/src="app\.js"/);
@@ -83,6 +83,20 @@ test("original V17 server serves real V18 prompt-only language-maze without unse
   const doc=await fetch(base+"/transcend/torus-aether/ui/successor-observatory.js");
   assert.equal(doc.status,200);
   assert.match(await doc.text(),/FROZEN_SAME_EXPERIENCED_TEXT_WORLD/);
+  const live=await fetch(base+"/hypermaze/live?w=0&since=0");
+  const liveResult=await live.json();
+  assert.equal(liveResult.protocol,"LIVE_TRAINING_COMMITTED_QA_STREAM");
+  assert.ok(Array.isArray(liveResult.events));
+  assert.equal(liveResult.events.length,0,
+   "Plain TXT without Q/A must not fabricate completed Q/A training episodes");
+  assert.equal(liveResult.source,"real committed corpus rows; no frozen evaluator");
+  const living=await fetch(base+"/graph?w=0");
+  if(living.status===200){
+    const native=await living.json();
+    assert.ok(Array.isArray(native.nodes),"Native live GraphTrace nodes are real");
+    assert.ok(Array.isArray(native.edges),"Native live GraphTrace edges are real");
+    assert.ok(Array.isArray(native.U),"Native learned five-dimensional geometry exists");
+  }
   const beforeLast=await fetch(base+"/language-maze/compare-last?w=0");
   assert.equal((await beforeLast.json()).available,false);
   const observed=await fetch(base+"/language-maze/observatory?w=0");
