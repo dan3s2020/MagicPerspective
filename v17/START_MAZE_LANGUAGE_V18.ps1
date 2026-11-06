@@ -115,7 +115,8 @@ Write-Host "Checkpoint root: $runtime"
 Write-Host "CUDA text: batch=$GpuTextBatch, chunk=$GpuTextChunk, max original-row window=$GpuMaxChars chars; GPU worlds/batch=$GpuWorlds; VRAM requested=$Vram GB"
 Write-Host "Startup: quick REAL CUDA tensor check; pass -FullGpuSelfTest for the original 512-world and PyTorch self-tests."
 Write-Host "Native V17 graph + training + new tabs: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
-Write-Host "V18: use new Language maze tab; original V17 GPU/graphs/checkpoints are preserved and separate."`nWrite-Host "To exit safely: Save in UI, Stop, then Ctrl+C once. Original processes and files are untouched."
+Write-Host "V18: use new Language maze tab; original V17 GPU/graphs/checkpoints are preserved and separate."
+Write-Host "To exit safely: Save in UI, Stop, then Ctrl+C once. Original processes and files are untouched."
 Push-Location $root
 try {
   & node "--max-old-space-size=$heap" $server @cmd
