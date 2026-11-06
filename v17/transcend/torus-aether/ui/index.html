@@ -53,7 +53,8 @@
   aside.side.psOn > :not(.tabs):not(#psPane){display:none}
   aside.side.metricsOn > :not(.tabs):not(#metricsPane){display:none}
   aside.side.transferOn > :not(.tabs):not(#transferPane){display:none}
-  aside.side.psOn #psPane,aside.side.metricsOn #metricsPane,aside.side.transferOn #transferPane{display:block}
+  aside.side.langOn > :not(.tabs):not(#langPane){display:none}
+  aside.side.psOn #psPane,aside.side.metricsOn #metricsPane,aside.side.transferOn #transferPane,aside.side.langOn #langPane{display:block}
   .studio-panel{border:1px solid #29425a;background:#08111a;border-radius:10px;padding:12px;margin:10px 0}
   .studio-panel h3{font-size:14px;margin:0 0 8px;color:#e6f3ff}
   .studio-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
@@ -99,7 +100,57 @@
     </div>
   </div>
   <aside class="side">
-    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button></div>
+    <div class="tabs"><button id="tabTrain" class="on">Antrenare</button><button id="tabEval">Evaluare (lumi noi, pe CPU)</button><button id="tabPS">Perspectivă corp ↔ hartă</button><button id="tabMetrics">Metrici & grafice</button><button id="tabTransfer">Transfer & CUDA</button><button id="tabLang">Limbaj · labirintul caracterelor</button></div>
+    <section id="langPane" class="studio-pane">
+      <h2>V18 · O singură lege a labirintului, lumea textului</h2>
+      <p class="note">Fiecare caracter reprezintă traversarea unei muchii realmente observate în antrenare. Forma răspunsului întreg este propagată ÎNAINTE de prima acțiune prin același câmp de atracție V17. Niciun latent 32D nu controlează acest plan. Nu este un demo și nu afirmă înțelegere lingvistică generală.</p>
+      <div class="studio-panel">
+        <h3>Întreabă lumea pe care organismul a absorbit-o</h3>
+        <div class="studio-row">
+          <label>Creier V17 #<input id="langGraph" type="number" min="0" value="0" style="width:80px"></label>
+          <label>Input nou (fără răspuns / oracle)</label>
+        </div>
+        <textarea id="langPrompt" rows="3" placeholder="Scrie o întrebare sau un input care trebuie transformat..." style="width:100%;background:#071522;color:#e7f5ff;border:1px solid #29425a;border-radius:7px;padding:9px"></textarea>
+        <div class="studio-row">
+          <button id="langPlan">Propagă forma SOLUȚIEI înainte de primul caracter</button>
+          <button id="langPlay">▶ Replay caractere</button>
+          <button id="langResetView">⟲ Perspectivă globală</button>
+        </div>
+        <p class="studio-caption" id="langStatus">Se folosesc numai experiențele reale ale acestui creier. Dacă lumea nu conține o cale către o țintă învățată, organismul spune NECUNOSCUT.</p>
+        <div class="studio-kpis">
+          <div class="m"><small>Rânduri Q/A observate</small><b id="langRows">—</b></div>
+          <div class="m"><small>Transformări/caractere observate</small><b id="langObserved">—</b></div>
+          <div class="m"><small>Căi candidate activate</small><b id="langCandidates">—</b></div>
+          <div class="m"><small>Lungime formă anticipată</small><b id="langShapeLength">—</b></div>
+          <div class="m"><small>Țintă din experiență</small><b id="langTarget">—</b></div>
+          <div class="m"><small>Caractere executate</small><b id="langDone">—</b></div>
+        </div>
+      </div>
+      <div class="studio-panel">
+        <h3>Global → local · transformări între sublabirinturi</h3>
+        <div class="studio-row">
+          <label>Pas <input id="langStep" type="range" min="0" value="0" max="0" style="min-width:180px"></label>
+          <span id="langStepInfo" class="dim">0 / 0</span>
+        </div>
+        <canvas class="studio-canvas" id="langGlobal" width="800" height="420"></canvas>
+        <p class="studio-caption">Hartă 2D PROIECTATĂ a nodurilor/tranzițiilor reale învățate; nu pretinde proiecție fizică 4D/5D. Turcoaz: forma globală; auriu: corpul la pasul curent; roz: țintele finale memorate.</p>
+        <h3>Corpul în caracterul curent</h3>
+        <div class="studio-split">
+          <canvas class="studio-canvas" id="langLocal" width="350" height="245"></canvas>
+          <div>
+            <small class="dim">Text executat prin pași reali:</small>
+            <pre id="langOutput" class="studio-log" style="min-height:90px"></pre>
+            <small class="dim">Tranziția locală și diferența față de forma globală:</small>
+            <pre id="langAction" class="studio-log"></pre>
+          </div>
+        </div>
+      </div>
+      <div class="studio-panel">
+        <h3>Proveniență, lipsuri și dovada mecanismului</h3>
+        <pre id="langEvidence" class="studio-log">Aștept o propagare REALĂ prin lumea textului absorbită de V17.</pre>
+        <p class="note">Atingerea unei ținte observate anterior în antrenare NU certifică răspuns corect la o întrebare complet nouă. Testele de generalizare pe răspunsuri nevăzute trebuie să verifice această diferență.</p>
+      </div>
+    </section>
     <section id="psPane" class="studio-pane">
       <h2>Perspectiva globală → perspectiva locală a corpului</h2>
       <p class="note">Un singur instantaneu al hărții globale, urmat de observații reale 3×3 în jurul corpului. Organismul nu primește coordonata adevărată după primul pas. Poziția reală este desenată separat de evaluator.</p>
@@ -315,5 +366,6 @@
 </div>
 <script type="module" src="app.js"></script>
 <script type="module" src="perspective-studio.js"></script>
+<script type="module" src="language-maze-studio.js"></script>
 </body>
 </html>
