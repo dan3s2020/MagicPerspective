@@ -17,7 +17,12 @@ jobs:
         run: |
           node --check v17/transcend/torus-aether/language-maze/shape-topology.mjs
           node --check v17/transcend/torus-aether/language-maze/language-world.mjs
+          node --check v17/transcend/torus-aether/ui/language-maze-studio.js
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
           node --test v17/transcend/torus-aether/language-maze/language-world.test.mjs
+      - name: Live native V17 HTTP train-server and strict language no-answer-oracle test
+        run: node --test v17/transcend/torus-aether/language-maze/language-http.test.mjs
       - name: Native V17 original maze, body, CUDA bridge, UI preservation and checkpoint regressions
         run: |
           node --test v17/transcend/torus-aether/perspective/body-perspective.test.mjs v17/transcend/torus-aether/perspective/body-studio.test.mjs v17/tests/torus-shared-perspective.test.mjs v17/transcend/torus-aether/shared/experience.test.mjs
