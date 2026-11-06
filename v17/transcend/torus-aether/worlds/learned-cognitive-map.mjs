@@ -35,6 +35,7 @@ export class LearnedCognitiveMap {
     this.limits={maxExamples,maxRules,maxNodes,maxDepth};
     this.examples=new Map();this.skeletons=new Map();this.rules=new Map();this.shorterIndex=new Map();
     this.interventions=new Map();this.externalEdges=new Map();this.externalObservations=0;
+    this.compactedExternalEdges=0;
     this.sentenceObservations=0;this.compactedExamples=0;this.compactedRules=0;
     this.documents=0;this.evaluations=0;
     this.last=null;this.version=1;
@@ -234,7 +235,17 @@ export class LearnedCognitiveMap {
     let transition=this.externalEdges.get(index);
     if(transition&&transition.to!==end){transition.ambiguous=true;}
     if(!transition){
-      if(this.externalEdges.size>=50000)throw Error('Cross-world observed-state atlas reached its configured memory limit');
+      if(this.externalEdges.size>=50000){
+        // An unbounded sequence of unique maze states must never crash all
+        // training workers. Preserve cumulative evidence counters and keep
+        // the freshest active transitions in a bounded atlas.
+        const discard=Math.max(1,Math.ceil(this.externalEdges.size*.10));
+        for(let i=0;i<discard;i++){
+          const oldest=this.externalEdges.keys().next().value;
+          if(oldest===undefined)break;
+          this.externalEdges.delete(oldest);this.compactedExternalEdges++;
+        }
+      }
       transition={domain,from:start,to:end,before:a,after:b,action:String(action),
         count:0,ambiguous:false,context:String(context).slice(0,128)};
       this.externalEdges.set(index,transition);
@@ -393,7 +404,7 @@ export class LearnedCognitiveMap {
     inducedActionRules:this.rules.size,sentenceObservations:this.sentenceObservations,
     compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
     activeSentenceMemory:this.examples.size,externalTransitionObservations:this.externalObservations,
-    observedDomainEdges:this.externalEdges.size,
+    observedDomainEdges:this.externalEdges.size,compactedExternalEdges:this.compactedExternalEdges,
     realObservedActions:[...this.interventions.values()].reduce((s,e)=>s+e.accepted+e.blocked,0),
     confirmedActions:[...this.rules.values()].filter(r=>r.accepted>0).length,
     rejectedActions:[...this.rules.values()].reduce((s,r)=>s+r.rejected,0),last:this.last,
@@ -404,7 +415,8 @@ export class LearnedCognitiveMap {
     examples:[...this.examples],skeletons:[...this.skeletons].map(([k,m])=>[k,[...m]]),
     shorterIndex:[...this.shorterIndex],
     rules:[...this.rules],interventions:[...this.interventions],
-    externalEdges:[...this.externalEdges],externalObservations:this.externalObservations,last:this.last};}
+    externalEdges:[...this.externalEdges],externalObservations:this.externalObservations,
+    compactedExternalEdges:this.compactedExternalEdges,last:this.last};}
   static restore(data){
     if(data?.version!==1)throw Error('Incompatible cognitive map checkpoint version');
     const m=new LearnedCognitiveMap(data.limits);m.documents=data.documents;
@@ -414,6 +426,7 @@ export class LearnedCognitiveMap {
     m.shorterIndex=new Map(data.shorterIndex||[]);
     m.rules=new Map(data.rules);m.interventions=new Map(data.interventions);
     m.externalEdges=new Map(data.externalEdges||[]);m.externalObservations=data.externalObservations||0;
+    m.compactedExternalEdges=data.compactedExternalEdges||0;
     m.last=data.last||null;
     return m;
   }
