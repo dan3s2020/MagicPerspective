@@ -4,7 +4,7 @@
 // Not a natural-language semantics oracle: actions operate on drafts and observed words.
 import {tokenize,words,matchScore} from './text_action_paths.mjs';
 
-const MAX_DRAFT=48, ACTIONS=5;
+const MAX_DRAFT=256, ACTIONS=5, MAX_CONTEXT_VALUES=60000, MAX_GLOBAL_VALUES=50000, MAX_LENGTH_VALUES=50000;
 const keyOf=(a)=>JSON.stringify(a);
 const clip=(x,a,b)=>Math.max(a,Math.min(b,x));
 const mean=a=>a.reduce((s,x)=>s+x,0)/Math.max(1,a.length);
@@ -117,6 +117,8 @@ export class TextValueField {
   observe(prompt,action,draft,delta){
     for(const [map,key] of [[this.values,this.key(prompt,action,draft)],[this.global,action.tool+':'+safeToken(action.token)]]){
       const s=map.get(key)||{mean:0,n:0};s.n++;s.mean+=(clip(delta,-1,1)-s.mean)/Math.min(30,s.n);map.set(key,s);
+      const cap=map===this.values?MAX_CONTEXT_VALUES:MAX_GLOBAL_VALUES;
+      if(map.size>cap)map.delete(map.keys().next().value);
     }this.updates++;
   }
   summary(){return {updates:this.updates,contextStates:this.values.size,globalActions:this.global.size};}
@@ -131,7 +133,7 @@ export class CausalTextAgent {
   learnGoalLength(prompt,answer){
     const k=words(prompt).slice(0,4).join('_'),n=tokenize(answer).slice(0,MAX_DRAFT).length;
     if(!k||!n)return;
-    for(const [map,key] of [[this.lengths,k]]){const r=map.get(key)||{mean:0,n:0};r.n++;r.mean+=(n-r.mean)/r.n;map.set(key,r);}
+    for(const [map,key] of [[this.lengths,k]]){const r=map.get(key)||{mean:0,n:0};r.n++;r.mean+=(n-r.mean)/r.n;map.set(key,r);if(map.size>MAX_LENGTH_VALUES)map.delete(map.keys().next().value);}
     const g=this.globalLength;g.n++;g.mean+=(n-g.mean)/g.n;
   }
   goalLength(prompt){const k=words(prompt).slice(0,4).join('_');
@@ -148,9 +150,11 @@ export class CausalTextAgent {
   // No target answer, environment law, or oracle path is read by this routine.
   rank(observation,pathHead,{top=10}={}){
     const candidates=this.choices(observation,pathHead,{limit:6}),prefix=observation.tokens;
+    const observedProposals=new Map((pathHead?.propose(observation.prompt,prefix,8)||[]).map(x=>[x.token,x]));
+    const draft=text(prefix);
     return candidates.map(a=>{
-      const p=this.dynamics.predict(observation,a),delta=this.value.predict(observation.prompt,a,text(prefix));
-      const evidence=pathHead?.propose(observation.prompt,prefix,8).find(x=>x.token===a.token);
+      const p=this.dynamics.predict(observation,a),delta=this.value.predict(observation.prompt,a,draft);
+      const evidence=observedProposals.get(a.token);
       const matched=p.available&&!exactSame(p.tokens,prefix);
       const generic=(evidence?.score??-6)*.025;
       const penalty=(prefix.length/MAX_DRAFT)*.025;
@@ -169,12 +173,12 @@ export class CausalTextAgent {
     }
     return examples;
   }
-  train(prompt,answer,pathHead,{maxActions=20,exploration=.25,seed=101,emit=null}={}){
+  train(prompt,answer,pathHead,{maxActions=48,exploration=.25,seed=101,emit=null}={}){
     if(typeof prompt!=='string'||typeof answer!=='string'||!prompt.trim()||!answer.trim())return {trained:false,reason:'empty question/answer'};
     // The language world's action laws stay fixed for this brain. The episode seed affects only exploration.
     const world=new LanguageWorld({prompt,reference:answer,seed:this.seed}),r=rng((seed^this.seed^this.episodes)>>>0),events=[];
     let best=-Infinity;
-    for(let t=0;t<clip(maxActions,1,96);t++){
+    for(let t=0;t<clip(maxActions,1,256);t++){
       const before=world.observe(),opts=this.rank(before,pathHead,{top:12}),random=this.choices(before,pathHead);
       const choice=r()<exploration?random[Math.floor(r()*random.length)]:opts[0];
       if(!choice)break;
@@ -191,10 +195,10 @@ export class CausalTextAgent {
     if(result.solved)this.solved++;this.last=result;return result;
   }
   // A frozen test: held-out reference is NOT provided until after .navigate returns.
-  navigate(prompt,pathHead,{steps=24,seed=11}={}){
+  navigate(prompt,pathHead,{steps=64,seed=11}={}){
     const world=new LanguageWorld({prompt,seed:this.seed}),events=[];
     const intendedLength=this.goalLength(prompt);
-    for(let i=0;i<clip(steps,1,96);i++){
+    for(let i=0;i<clip(steps,1,256);i++){
       if(world.tokens.length>=intendedLength)break;
       const before=world.observe(),ranked=this.rank(before,pathHead,{top:7});
       // No reward call or parameter update on frozen evaluation.
@@ -211,9 +215,12 @@ export class CausalTextAgent {
       origin:'original V17 corpus-derived TextActionPaths candidates + observed action dynamics + learned value field',
       caveat:'The field is learned from observed lexical reward; semantic correctness not guaranteed.'};
   }
-  evaluate(prompt,reference,pathHead,{steps=24}={}){
-    const before=JSON.stringify(this.export()),route=this.navigate(prompt,pathHead,{steps}),metric=matchScore(route.generated,reference);
-    if(JSON.stringify(this.export())!==before)throw Error('Held-out evaluation mutated trainable state');
+  evaluate(prompt,reference,pathHead,{steps=64}={}){
+    // O(1) freeze guard; complete checkpoint snapshots grow large during sustained training.
+    const prior=[this.episodes,this.interventions,this.dynamics.observations,this.value.updates,this.globalLength.n];
+    const route=this.navigate(prompt,pathHead,{steps}),metric=matchScore(route.generated,reference);
+    const after=[this.episodes,this.interventions,this.dynamics.observations,this.value.updates,this.globalLength.n];
+    if(!exactSame(prior,after))throw Error('Held-out evaluation mutated trainable state');
     this.lastHeldout={...route,metrics:metric,reference,referenceReadAfterPlanning:true};return this.lastHeldout;
   }
   summary(){return {episodes:this.episodes,interventions:this.interventions,solvedTrain:this.solved,
