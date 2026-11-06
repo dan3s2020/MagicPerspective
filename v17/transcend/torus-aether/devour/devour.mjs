@@ -69,6 +69,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: g?.observedTransformations || t?.observedTransformations || null,
+    observedPipeline: g?.observedPipeline || t?.observedPipeline || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
