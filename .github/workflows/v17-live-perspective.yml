@@ -1,0 +1,44 @@
+name: V17 Original Live Perspective Integration
+on:
+  push:
+    branches:
+      - experiment/V17-LIVE-BODY-PERSPECTIVE-20261106
+    paths:
+      - 'v17/transcend/torus-aether/**'
+      - 'START_V17_LIVE_PERSPECTIVE.ps1'
+      - '.github/workflows/v17-live-perspective.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V17 source, live worker and browser syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/perspective.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+      - name: Real V17 perspective training, heldout evaluation and checkpoint tests
+        run: node --test v17/transcend/torus-aether/devour/perspective.test.mjs
+      - name: PowerShell launcher parsing (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path START_V17_LIVE_PERSPECTIVE.ps1).Path,
+            [ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { throw (($errors | ForEach-Object { $_.Message }) -join '; ') }
+          Write-Host 'ORIGINAL_LIVE_UI_LAUNCHER_SYNTAX_OK'
