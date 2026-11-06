@@ -22,6 +22,8 @@ jobs:
           node --check v17/tests/constructed-paths-v17.test.mjs
       - name: Construct paths from incomplete unseen mazes and own character transitions
         run: node --test v17/tests/constructed-paths-v17.test.mjs
+      - name: Real native all-worlds server, learned paths, historical UI, frozen blinded navigation and actual checkpoint
+        run: node --test v17/tests/torus-all-worlds-live.test.mjs
       - name: Existing Brain, UI and prior noise remain working
         run: |
           node --test v17/tests/torus-organism.test.mjs
