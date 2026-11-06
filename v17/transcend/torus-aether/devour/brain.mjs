@@ -10,6 +10,7 @@ import {Geometry} from "../concepts.mjs";
 import {LivedField, MomentSpace} from "../fractal.mjs";
 import {GraphTrace} from "./trace.mjs";
 import {AligningGraph, AlignMemory, AlignIndex, SelfMem} from "../align.mjs";
+import {TextPathObserver} from "../text-path-observer.mjs";
 import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
 import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
@@ -93,18 +94,40 @@ export class Brain {
   // talking to it: the conversation in the shape of what it devoured ("Q: …\nA: …"), and it writes the answer symbol by
   // symbol from its own graph (chain.play → chain.pick at temperature T: the same way "Scrie liber" writes on the page).
   // learn = it also lives the words it is told (and its own answer), like any other world; otherwise it only answers.
-  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
+  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, observePath = false, scanTemperatures = null, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
     const asc = s => { const o = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; o.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return o; };
     const prompt = asc(history.map(([who, text]) => (who === "you" ? "Q: " : "A: ") + text + "\n" + (who === "you" ? "" : "\n")).join("") + "A: ");
     if (learn) for (const y of prompt) this.live(y);
-    let ans;
-    if (this.align) { const r = rngFrom(seed); ans = this.align.write(prompt, {max, T, rand: r, stop: stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null}); if (stopBlank && ans.at(-1) === 10) ans.pop(); }   // the aligning graph writes
+    let ans, pathTrace = null, scanPaths = null;
+    if (this.align) {
+      const r = rngFrom(seed), stop = stopBlank ? (y, o) => y === 10 && o.at(-1) === 10 : null;
+      // Observer is purely read-only: the ORIGINAL AligningGraph.write chooses every byte.
+      const observer = observePath ? new TextPathObserver(this.trace.geo, {temperature:T,seed,lived:this.lived,geoSteps:this.trace.geo.n}) : null;
+      const onStep = observer ? s => observer.capture({...s,trust:p=>this.align.tr(this.align.key(p))}) : null;
+      ans = this.align.write(prompt, {max, T, rand:r, stop, ...(onStep ? {onStep} : {})});
+      if (observer) pathTrace = observer.result();
+      if (observer && Array.isArray(scanTemperatures) && scanTemperatures.length) {
+        scanPaths = [];
+        // Each temperature sees the identical frozen weights, prompt and RNG sequence.
+        // This loop does not call live(), learn() or Geometry.learn().
+        const ts = [...new Set(scanTemperatures.filter(x=>Number.isFinite(x) && x>=0 && x<=2).slice(0,7))];
+        if (!ts.some(x=>Math.abs(x-T)<1e-7)) ts.push(T);
+        for (const probeT of ts) {
+          const scanObs = new TextPathObserver(this.trace.geo,{temperature:probeT,seed,lived:this.lived,geoSteps:this.trace.geo.n});
+          const sequence = this.align.write(prompt, {max:Math.min(max,350),T:probeT,rand:rngFrom(seed),stop,
+            onStep:s=>scanObs.capture({...s,trust:p=>this.align.tr(this.align.key(p))})});
+          scanPaths.push({T:probeT,text:String.fromCharCode(...sequence),trace:scanObs.result()});
+        }
+      }
+      if (stopBlank && ans.at(-1) === 10) ans.pop();
+    }   // original graph writes; optional observer only measures
+  
     else { const out = prompt.slice(), keep = this.chain.rand; ans = []; this.chain.rand = rngFrom(seed);
       for (let k = 0; k < max; k++) { const i = out.length, y = this.chain.pick(this.chain.play(this.e, this.ctxOf(out, i), this.histOf(out, i)).out, T);
         if (stopBlank && y === 10 && ans.at(-1) === 10) { ans.pop(); break; } out.push(y); ans.push(y); }
       this.chain.rand = keep; }
     if (learn) for (const y of [...ans, 10, 10]) this.live(y);
-    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived};
+    return {text: String.fromCharCode(...ans), T, seed, lived: this.lived, ...(pathTrace ? {pathTrace} : {}), ...(scanPaths ? {scanPaths} : {})};
   }
   // A learned token/phrase perspective drawn from the SAME native text the Brain
   // lives, not a substituted language demo. Multiple context scales compete on
