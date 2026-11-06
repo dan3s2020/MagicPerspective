@@ -159,7 +159,7 @@ const processGpuText = async (exs, meta) => {
     // snapshots, pause/save, and the UI still progress during very long exercises.
     const replay = exs[0], chunk = 384;
     for (let i = 0; i < replay.length; i += chunk) {
-      for (const y of replay.slice(i, i + chunk)) brain.live(y, brain.lived % 50 === 0, {old: true});
+      for (const y of replay.slice(i, i + chunk)) brain.live(y, brain.lived % 50 === 0, {old: true, domain:"text"});
       // A real self-code action interleaved with original V17 symbols, not a separate replay.
       if (selfcode && (Math.floor(i / chunk) % 2 === 0)) selfcode.step();
       await tick("text: integrare în graful V17", Math.min(i + chunk, replay.length), replay.length);
@@ -284,14 +284,14 @@ for await (const ex of stream()) {
   // Explicitly switching to CPU drains any pending exercises rather than dropping them.
   if (TEXT && textBatch.length) {
     for (let j = 0; j < textBatch.length; j++) {
-      brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
+      brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0, {domain:"text"}); brain.chars++; }
       brain.exercises = (brain.exercises || 0) + 1; absorbText(textMeta[j]);
     }
     textBatch = []; textMeta = []; shot(true);
   }
   brain.exercises = (brain.exercises || 0) + (TEXT ? 1 : 0); if (TEXT) brain.beginExercise();
   for (const y of ex.bytes) {
-    brain.live(y, brain.chars % 50 === 0); brain.chars++;
+    brain.live(y, brain.chars % 50 === 0, {domain:"text"}); brain.chars++;
     if (brain.chars % 2000 === 0) shot();
     if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); shot(); }
     if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } report(); }
