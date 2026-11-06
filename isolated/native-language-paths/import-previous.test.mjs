@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {Brain} from '../../v17/transcend/torus-aether/devour/brain.mjs';
 import {ObservedQAAtlas} from './atlas.mjs';
 import {LiveResearch} from './live-research.mjs';
@@ -28,7 +29,7 @@ test('non-destructive migration preserves existing V17 Brain and source original
   }));
   const previous=fs.readFileSync(path.join(old,'brain.v8'));
   try{
-    const program=new URL('./import-previous.mjs',import.meta.url).pathname;
+    const program=fileURLToPath(new URL('./import-previous.mjs',import.meta.url));
     const p=spawnSync(process.execPath,[program,'--source',old,'--destination',dst],{encoding:'utf8'});
     assert.equal(p.status,0,p.stdout+'\n'+p.stderr);
     assert.deepEqual(fs.readFileSync(path.join(old,'brain.v8')),previous,'source original is unchanged');
