@@ -34,6 +34,10 @@ test("actual observations create nested character-submaze world and a complete p
  assert.equal(result.initialShape.length,[..."Under the oak."].length);
  assert.equal(result.trace.length,[..."Under the oak."].length);
  assert.equal(result.trace.at(-1).localRemaining,0);
+ assert.equal(result.bodyPolicy,"local_neighbor_hillclimb_of_remembered_global_field");
+ assert.equal(result.localAgreementRate,1);
+ assert.equal(result.locallyExecutedSteps,result.steps);
+ assert.ok(result.trace.every(t=>t.policy===result.bodyPolicy&&t.localChoices>=1&&t.agreesWithGlobal));
  assert.ok(result.field[0]>0,"goal field must reach input position BEFORE output");
  assert.ok(result.graph.nodes.some(x=>x.kind===KIND.target));
  assert.ok(result.graph.edges.length>=result.output.length);
