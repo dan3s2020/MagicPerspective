@@ -12,14 +12,27 @@ try {
   Write-Host "Location: $base"
   Write-Host 'No V17 source files are modified.'
   $gpuPy=Join-Path $base '.venv\Scripts\python.exe'
-  if(Test-Path -LiteralPath $gpuPy){
+  $gpuProbe=Join-Path $base 'CHECK_CUDA_ENV.py'
+  $gpuHealthy=$false
+  if((Test-Path -LiteralPath $gpuPy -PathType Leaf) -and
+     (Test-Path -LiteralPath $gpuProbe -PathType Leaf)){
+    Write-Host 'Validating CUDA Python before enabling GPU backend...' -ForegroundColor Cyan
+    try {
+      & $gpuPy $gpuProbe
+      if($LASTEXITCODE -eq 0){$gpuHealthy=$true}
+    } catch {
+      Write-Host "GPU environment check failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+  }
+  if($gpuHealthy){
     $env:OCTOPUS_PY=$gpuPy
-    Write-Host "Isolated GPU Python selected: $gpuPy" -ForegroundColor Green
+    Write-Host "Verified CUDA Python selected: $gpuPy" -ForegroundColor Green
   } else {
-    Write-Host 'CUDA not installed here. GPU mode must be set up explicitly using SETUP_CUDA_WINDOWS.ps1.' -ForegroundColor Yellow
+    Remove-Item Env:OCTOPUS_PY -ErrorAction SilentlyContinue
+    Write-Host 'CUDA unavailable or incomplete. CPU mode still works. To repair run SETUP_CUDA_WINDOWS.ps1.' -ForegroundColor Yellow
   }
   $testFiles = @("$base\test.mjs","$base\v17_smoke.test.mjs","$base\observatory.test.mjs","$base\http_observatory.test.mjs")
-  if(Test-Path -LiteralPath $gpuPy){$testFiles += "$base\gpu_runner.test.mjs"}
+  if($gpuHealthy){$testFiles += "$base\gpu_runner.test.mjs"}
   & node --test @testFiles
   if($LASTEXITCODE -ne 0){throw 'Acceptance tests failed; refusing to launch.'}
   $env:PORT = "$Port"
