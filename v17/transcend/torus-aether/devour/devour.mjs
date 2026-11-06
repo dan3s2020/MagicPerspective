@@ -18,6 +18,7 @@ import {requestedExerciseLength, limitExerciseBytes} from "./eval-text-length.mj
 import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
+import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -29,7 +30,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
-for (const x of worldsArg) if (!WORLD_TYPES.includes(x)) throw Error("unknown world " + x + " (text, maze, transform, code, maptext)");
+for (const x of worldsArg) if (!WORLD_TYPES.includes(x)) throw Error("unknown world " + x + " (text, maze, transform, code, maptext, cognitivemap)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
 // C's laws (laws/cexp.mjs): "stable" — C needs more evidence to change perspective; "grow" — C's attention may grow to 6
@@ -39,7 +40,7 @@ const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {n
   if (!ARMS[a]) throw Error("unknown arm " + a + " (" + [...Object.keys(ARMS), ...Object.keys(CLAWS)] + ")"); return {name: a, rules: ARMS[a]}; });
 
 let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
-if (!worldsArg.includes("text")) {
+if (!worldsArg.includes("text") && !worldsArg.includes("cognitivemap")) {
   source = {kind: "none"}; // code and simulations require no external text dataset
 } else if (arg("text")) {
   const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = [], heldParas = []; let k = 0;
@@ -72,7 +73,7 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, code: g?.selfCode || t?.selfCode || null, wholeMap: g?.wholeMap || t?.wholeMap || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, cognitive: g?.cognitive || t?.cognitive || null, code: g?.selfCode || t?.selfCode || null, wholeMap: g?.wholeMap || t?.wholeMap || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
@@ -117,10 +118,12 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
 const mapOnly = worlds => worlds.length === 1 && worlds[0] === "maptext";
+const cognitiveOnly = worlds => worlds.length > 0 && worlds.every(x => x === "maptext" || x === "cognitivemap");
+const cpuGraphOnly = worlds => mapOnly(worlds) || cognitiveOnly(worlds);
 function gpuFor(worlds = worldsArg) {
   // The N-D world uses the exact graph navigator on CPU, NOT a PyTorch GPU kernel.
   // Never start an unrelated Python process for a maptext-only brain.
-  if (mapOnly(worlds) || gpuSettings.device === "off") return null;
+  if (cpuGraphOnly(worlds) || gpuSettings.device === "off") return null;
   const share = Math.max(1, slots.filter(x => !mapOnly(x.worlds) && x.worlds.some(w => w !== "text")).length);
   return {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0};
 }
@@ -137,6 +140,11 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
+const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||null,
+  rules:r.learnedRules,observedSentences:r.world?.fromObservedExamples,generatedStates:r.world?.states.length,
+  candidateGoals:r.world?.targets.length,novelGoal:r.novelGoal||false,
+  start:r.world?.states[0]?.join(" "),plannedPath:r.path?.map(e=>({action:e.action,after:r.world.states[e.to]?.join(" ")})),
+  shapeField:r.field?.values?.slice(0,128),law:r.planningLaw||null,truncated:r.world?.truncated||false});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
@@ -152,12 +160,12 @@ http.createServer((req, res) => {
     return json(res, {ok: true, w: sl.w, worlds: sl.worlds});
   } catch (err) { res.writeHead(400, {"content-type": "application/json", "cache-control": "no-store"}); return res.end(JSON.stringify({ok: false, error: err.message})); } }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every eligible brain
-    if (slots.length && slots.every(sl => mapOnly(sl.worlds))) {
+    if (slots.length && slots.every(sl => cpuGraphOnly(sl.worlds))) {
       // A UI request may arrive even when launcher started with --gpu off.
       // Reject, preserve the running CPU map and its checkpoint.
       res.writeHead(409, {"content-type": "application/json", "cache-control": "no-store"});
       return res.end(JSON.stringify({ok: false, gpu: {device: "off"},
-        reason: "maptext is a whole-map CPU navigator; CUDA would only start an unrelated PyTorch process. Nothing changed."}));
+        reason: "Maptext/cognitivemap-only uses the native CPU graph; a CUDA request would launch an unrelated PyTorch process. Nothing changed."}));
     }
     for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor(sl.worlds) || {device: "off"}});
@@ -169,7 +177,7 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/eval") {                        // the Evaluare tab: body {w, kind: maze|text|transform, opts}; a copy from the save, on the CPU
     let body = ""; req.on("data", d => body += d); req.on("end", async () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
-      if (mapOnly(sl.worlds) && m.kind === "text") return json(res, {error: "Acest graf are doar lumea maptext: NU există exerciții textuale nevăzute. Selectează evaluarea hărților N-D (algoritm prestabilit)."});
+      if (cpuGraphOnly(sl.worlds) && m.kind === "text") return json(res, {error: "Acest graf are doar lumea maptext: NU există exerciții textuale nevăzute. Selectează evaluarea hărților N-D (algoritm prestabilit)."});
       const f = saveOf(sl);
       if (sl.wk) await new Promise(ok => { (sl.onSaved ||= []).push(ok); sl.wk.postMessage("save"); setTimeout(ok, 30000); });   // if it cannot save within 30 s, the last save is used   // the newest brain: it saves itself first
       if (!fs.existsSync(f)) return json(res, {error: "graful nu are încă un save"});
@@ -204,7 +212,7 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/chat") {                        // body {w, history: [["you"|"him", text]…], opts: {T, max, stopBlank, learn}}
     let body = ""; req.on("data", d => body += d); req.on("end", () => { let m; try { m = JSON.parse(body); } catch { return json(res, {error: "bad json"}); }
       const sl = slots.find(x => x.w === +m.w); if (!sl) return json(res, {error: "nu există graful #" + m.w});
-      if (mapOnly(sl.worlds)) return json(res, {error: "Acest creier a perceput doar mișcări dintr-un hipercub binar. Nu a învățat limba naturală; chatul vechi de caractere nu poate răspunde relevant. Acest mesaj NU este un răspuns al organismului."});
+      if (cpuGraphOnly(sl.worlds)) return json(res, {error: "Acest graf învață hărți și transformări, nu a fost antrenat pentru generare conversațională. Folosește evaluarea cognitivă pe condiții de țintă; nu generatorul vechi de caractere."});
       if (!sl.wk) {                                                        // stopped or finished: it answers from its last save
         const f = saveOf(sl); if (!fs.existsSync(f)) return json(res, {error: "graful #" + m.w + " nu rulează și nu are încă un save (apasă ▶)"});
         try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; }
@@ -216,6 +224,30 @@ http.createServer((req, res) => {
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
+  if (req.method === "POST" && url === "/cognitive-eval") {
+    let body="";req.on("data", d => {body+=d;if(body.length>32768)req.destroy();});
+    req.on("end", ()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"invalid cognitive evaluation JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl||!sl.worlds.includes("cognitivemap"))return json(res,{error:"Selected graph has no trained cognitive map"});
+      if(typeof m.initial!=="string"||m.initial.length>1024||
+        !m.goal||typeof m.goal!=="object"||!m.goal.slots||Object.keys(m.goal.slots).length>32)
+        return json(res,{error:"Provide initial text and goal.slots constraints; no hidden target answer"});
+      if(!sl.wk){
+        try{
+          const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No cognitive checkpoint"});
+          const brain=Brain.load(save),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Cognitive evaluation timeout"});},60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.wk.postMessage({cognitiveEval:{id,initial:m.initial,goal:m.goal,
+        maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),
+        maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))}});
+    });return;
+  }
   if (url === "/maptext-audit") {
     const sl = slots.find(x => x.w === +(q.get("w") || 0));
     if (!sl || !sl.worlds.includes("maptext")) return json(res, {error: "Workerul selectat nu are lumea maptext"});
