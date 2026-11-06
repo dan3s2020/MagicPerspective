@@ -32,7 +32,9 @@ jobs:
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/torus-all-worlds-live.test.mjs
   real-firefox-ui:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 Firefox binaries target Ubuntu 24.04; ubuntu-latest
+    # currently resolves to 26.04 and cannot install Firefox for this version.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
