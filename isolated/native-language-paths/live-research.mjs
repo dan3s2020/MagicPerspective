@@ -5,6 +5,7 @@
 import {ObservedQAAtlas,wordF1} from './atlas.mjs';
 import {inspectNativeVsSuccessor} from './multipath.mjs';
 import {repeatedWindowFraction} from './repetition.mjs';
+import {captureSolutionShape} from './solution-shape-trace.mjs';
 
 export class LiveResearch {
   constructor({maxEntries=3000,candidates=8,reportEvery=5,loopWindow=24,loopPenalty=4,
@@ -73,7 +74,11 @@ export class LiveResearch {
       char=String.fromCharCode(...original);
       guarded=String.fromCharCode(...resistant);
     }
-    return {native,sr,lexical,char,guarded,
+    const navigation=trace?{
+      native:captureSolutionShape(g,brain.disc,{gamma:this.config.gamma,actorPolicy:'native'}),
+      successor:captureSolutionShape(g,brain.disc,{gamma:this.config.gamma,actorPolicy:'successor'})
+    }:null;
+    return {native,sr,lexical,char,guarded,navigation,
       graph:trace?g:null,
       nativePath:path,srPath,
       multi:multi?{
@@ -118,7 +123,8 @@ export class LiveResearch {
         nodes:predicted.graph.nodes.slice(0,140).map((v,i)=>({id:i,kind:v.kind,label:String(v.label).slice(0,100)})),
         edges:predicted.graph.adj.slice(0,140).flatMap((xs,i)=>xs.filter(to=>to<140).map(to=>[i,to]))
       },
-      repetition:{original:repOrig,guarded:repGuard}
+      repetition:{original:repOrig,guarded:repGuard},
+      navigation:predicted.navigation
     };
     this.last=sample;
     // The ORIGINAL V17 brain continues to ingest the FULL text. Limit only
@@ -170,6 +176,7 @@ export class LiveResearch {
       source:'real OpenThoughts3 Parquet, current V17 worker Brain',
       workerModel:'Original V17 Brain plus an isolated Q/A evidence atlas in the SAME worker; the SR planner is an evaluated extension, not the next-character learning engine',
       goalIsTrainingAnswer:true,semanticsProven:false,trainingUpdatesFromSR:0,
+      worldGraphActionsAreTokenEmissions:false,navigationTraceOnRealObservedEdges:true,
       rates:this.rate(),totals:{...this.usages},
       history:this.history.slice(-120),last:this.last,heldout:this.heldout,
       error:this.error,progress:this.progress,config:this.config,...extra
