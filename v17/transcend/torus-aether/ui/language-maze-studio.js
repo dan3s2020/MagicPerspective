@@ -116,7 +116,11 @@ function render(){
   "Pas "+tr.step+" · corp #"+tr.source+" → #"+tr.target+"\nCaracter traversat: "+
    JSON.stringify(tr.character)+"\nCâmp atracție: "+tr.potentialBefore.toFixed(5)+" → "+tr.potentialAfter.toFixed(5)+
    "\nLungime cale rămasă: "+tr.localRemaining+
-   "\nTransformare observată: "+tr.transformation:
+   "\nTransformare executată: "+tr.transformation+
+   "\nPolitica corpului: "+tr.policy+
+   "\nOpțiuni locale observate: "+tr.localChoices+
+   "\nCaracterul anticipat global: "+JSON.stringify(tr.predictedCharacter)+
+   "\nDecizia locală coincide cu forma globală: "+(tr.agreesWithGlobal?"DA":"NU"):
   "Forma globală de "+result.steps+" tranziții există înaintea primei acțiuni.\nFără răspuns-țintă ascuns oferit evaluatorului.";
  drawGraph();drawLocal();
 }
@@ -157,6 +161,8 @@ $("langPlan").addEventListener("click",async()=>{
    actualNodes:r.graph.nodes.length,actualEdges:r.graph.edges.length,
    actualGoals:r.graph.goals.length,learnedPaths:r.candidates,
    firstAttraction:r.field[0],graphTruncated:r.graph.hitLimit,
+   bodyPolicy:r.bodyPolicy,localAgreementRate:r.localAgreementRate,
+   localSteps:r.locallyExecutedSteps,bodyBlocked:r.localBlockedSteps,
    caveats:r.limitations
   },null,2);
   render();
