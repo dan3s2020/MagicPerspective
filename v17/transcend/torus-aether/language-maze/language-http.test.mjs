@@ -14,7 +14,7 @@ const ui=fs.readFileSync(path.join(root,"transcend/torus-aether/ui/index.html"),
 test("all original native graph/train/eval/CUDA tabs remain with real new language-world controls",()=>{
  for(const id of ["g","liveTelemetry","tabTrain","tabEval","tabPS","tabMetrics","tabTransfer",
   "tabLang","langPane","langPrompt","langGraph","langMode","langCompare","langCompareReport","langGlobal","langLocal","langPlan",
-  "langPlay","langStep","tabSuccessor","successorPane","scAnalyze","scEvaluate","scPathCanvas","scFieldCanvas","scEdges","scExactDelta","scServerStatus","scStep","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
+  "langPlay","langStep","tabSuccessor","successorPane","scAnalyze","scEvaluate","scPathCanvas","scFieldCanvas","scEdges","scExactDelta","scServerStatus","scStep","scObserved","scSampleStatus","allSave","allStart","allPause","gpuDev","liveReset","sharedEvalGo","evGo"]){
   assert.match(ui,new RegExp('id="'+id+'"'),"Missing original or new V18 control: "+id);
  }
  assert.match(ui,/src="app\.js"/);
@@ -83,6 +83,12 @@ test("original V17 server serves real V18 prompt-only language-maze without unse
   assert.match(await doc.text(),/FROZEN_SAME_EXPERIENCED_TEXT_WORLD/);
   const beforeLast=await fetch(base+"/language-maze/compare-last?w=0");
   assert.equal((await beforeLast.json()).available,false);
+  const observed=await fetch(base+"/language-maze/observatory?w=0");
+  const learning=await observed.json();
+  assert.equal(learning.protocol,"OBSERVED_TRAINING_TEXT_WORLD");
+  assert.equal(learning.available,false);
+  assert.equal(learning.observedPrompt,null);
+  assert.ok(!Object.hasOwn(learning,"answer"),"No answer oracle in observation endpoint");
   const invalidPair=await fetch(base+"/language-maze/analyze",{method:"POST",
    headers:{"content-type":"application/json"},
    body:JSON.stringify({w:0,prompt:"unknown query",reference:"DO_NOT_LEAK"})});
