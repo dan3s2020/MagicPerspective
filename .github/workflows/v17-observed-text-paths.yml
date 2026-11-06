@@ -26,3 +26,17 @@ jobs:
         run: node --test v17/tests/observed-text-paths.test.mjs
       - name: Original V17 graph and learned-state regression
         run: node --test v17/tests/torus-observatory.test.mjs
+  firefox-real-v17:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Firefox browser for native original V17
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps firefox
+      - name: Real native worker, original UI and actual five-dimensional text path scan
+        run: node --test v17/tests/observed-text-paths-firefox.test.mjs
