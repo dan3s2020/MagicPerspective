@@ -137,6 +137,10 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  assert.ok($("hmCanvas").canvas.calls.some(c=>c.n==="fillText"));
  await $("hmLoadObserved").fire("click");
  await new Promise(resolve=>setImmediate(resolve));
+ assert.match($("hmSpaceStatus").textContent,/4D DIAGNOSTIC/);
+ $("hmSpace").value="learned5";
+ await $("hmSpace").fire("change");
+ await new Promise(resolve=>setImmediate(resolve));
  assert.match($("hmSpaceStatus").textContent,/5D V17 ÎNVĂȚAT/);
  assert.equal($("hmInitial").textContent,"2");
  assert.equal($("hmExecuted").textContent,"2");
