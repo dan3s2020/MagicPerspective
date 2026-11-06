@@ -1,0 +1,51 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {LanguageMazeMemory} from "./language-world.mjs";
+import {travelHierarchicalLanguage} from "./hierarchical-shape.mjs";
+import {KIND} from "../worlds/exercise.mjs";
+
+test("original V17 law is genuinely recalculated at every local text action without controlling or mutating policy",()=>{
+ const memory=new LanguageMazeMemory();
+ memory.learn("Where is the gate?","East");
+ memory.learn("Where is the gate?","West");
+ memory.learn("Where is the gate?","East");
+ const before=JSON.stringify(memory.export());
+ const baseline=memory.plan("Where is the gate?",{mode:"hybrid",observeReplans:false});
+ const inspected=memory.plan("Where is the gate?",{mode:"hybrid",observeReplans:true,maxReplay:200});
+ assert.deepEqual(inspected.field,baseline.field);
+ assert.deepEqual(inspected.pathNodes,baseline.pathNodes);
+ assert.equal(inspected.output,baseline.output);
+ assert.equal(inspected.replans.length,inspected.locallyExecutedSteps);
+ assert.equal(inspected.revisionStats.repropagations,inspected.locallyExecutedSteps);
+ assert.equal(inspected.revisionStats.actuallyControlsAction,false);
+ assert.equal(inspected.revisionStats.newWorldObservationsDuringReplay,false);
+ assert.equal(inspected.viewpointEvidence.actualRepropagationAfterEachMove,true);
+ assert.equal(inspected.viewpointEvidence.observationalReplanOnly,true);
+ assert.equal(inspected.replans[0].stepBeforeAction,true);
+ assert.equal(inspected.replans[0].from,0);
+ assert.equal(inspected.replans[0].usedForActualAction,false);
+ assert.ok(inspected.replans.every(x=>x.recomputedWith.includes("UNCHANGED_V17")));
+ assert.ok(inspected.replans.every(x=>x.fullNodes>=1));
+ assert.deepEqual(inspected.globalPlanNodes[0],0);
+ assert.equal(JSON.stringify(memory.export()),before,
+   "frozen replanning must not feed correct answer/teacher into online training");
+});
+test("known long answer really recalculates its original law inside each recursively learned character submaze",()=>{
+ const chars=[..."x".repeat(1024)];
+ const f=k=>k===KIND.floor?1:1;
+ const att=k=>k===KIND.target?1:0;
+ const original=travelHierarchicalLanguage(chars,{conduct:f,attract:att,maxReplay:1500});
+ const observed=travelHierarchicalLanguage(chars,{conduct:f,attract:att,maxReplay:1500,observeReplans:true});
+ assert.equal(observed.solvedKnownGoal,true);
+ assert.equal(observed.output,original.output);
+ assert.deepEqual(observed.pathNodes,original.pathNodes);
+ assert.equal(observed.replans.length,1024);
+ assert.equal(observed.revisionStats.repropagations,1024);
+ assert.equal(observed.revisionStats.actuallyControlsAction,false);
+ assert.ok(observed.replans.every(p=>p.stepBeforeAction&&p.usedForActualAction===false));
+ assert.equal(observed.replans[0].fullNodes,257);
+ assert.equal(observed.replans.at(-1).fullNodes,2);
+ assert.equal(observed.hierarchy.plannedBeforeFirstAction,true);
+ assert.equal(observed.viewpointEvidence.actualRepropagationAfterEachMove,true);
+ assert.equal(observed.viewpointEvidence.learned4DGeometry,false);
+});
