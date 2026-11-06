@@ -16,11 +16,12 @@ import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
 import {PerspectiveLearner, perspectiveEpisode, evaluatePerspective} from "../worlds/perspective.mjs";
 import {TextPerspectives} from "../language-universe/perspectives.mjs";
 import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/constructed-paths.mjs";
+import {ObservedTransformations} from "../worlds/observed-transformations.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -38,7 +39,7 @@ export class Brain {
   observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -58,6 +59,7 @@ export class Brain {
     this.perspective ||= new PerspectiveLearner(); // older checkpoint compatibility
     this.language ||= new TextPerspectives({maxStates:85000});
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
+    this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
@@ -200,6 +202,39 @@ export class Brain {
   learnConstructedText(question,answer) {
     return (this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}))
       .trainText(question,answer);
+  }
+  // Lived corpus is compared on multiple perspectives: whole sentence states,
+  // unchanged contextual anchors, and learned editable positions. The
+  // resulting actions belong to THIS original serializable Brain, not a demo.
+  learnObservedTransformations(text) {
+    const M=this.observedTransformations ||= new ObservedTransformations();
+    const before=M.operators.size;
+    const result=M.observeText(text);
+    if(M.operators.size>before){
+      this.trace.node("o:diff-world","A","diferențe observate");
+      this.trace.setEdge("o:self","o:diff-world","learned",
+        Math.min(8,1+Math.log1p(M.matchingComparisons)));
+      const recent=[...M.operators.values()].slice(-4);
+      for(const op of recent){
+        const id="o:diff:"+[...op.key].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261);
+        this.trace.node(id,"A",(op.from??"∅")+"→"+(op.to??"∅"));
+        this.trace.setEdge("o:diff-world",id,"transforms",
+          Math.min(8,1+Math.log1p(op.sourceObservations)));
+      }
+    }
+    return result;
+  }
+  // A frozen evaluation sees only GOAL CONSTRAINTS (tokens that must occur)
+  // and an optional observed start; NEVER the complete correct answer.
+  planObservedTransformation(goal,{execute=true}={}) {
+    const M=this.observedTransformations ||= new ObservedTransformations();
+    const before=M.report();
+    const route=M.plan(goal);
+    const execution=execute&&route.found?M.execute(route,{record:false}):null;
+    if(JSON.stringify(M.report())!==JSON.stringify(before))
+      throw Error("Frozen transformation evaluation unexpectedly modified learned brain");
+    return {...route,execution,training:before,frozen:true,
+      verifiedByObservedEffect:!!execution?.verified};
   }
   // The same saved organism moves from one overhead view to local body vision.
   // Initial global map is remembered once; later updates use only sensed patches,
