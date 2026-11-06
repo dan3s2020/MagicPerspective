@@ -54,6 +54,7 @@ table{width:100%;border-collapse:collapse;font:12px/1.45 Consolas,monospace}td,t
  <div class="toolbar" style="margin-top:12px">
   <label class="check"><input id="gpuOn" type="checkbox"> Enable original V17 CUDA batches (not simulated)</label>
   <label class="check"><input id="causalOn" type="checkbox" checked> Train observed causal text-world actions (CPU learning alongside V17)</label>
+  <label>Actions / Q/A <input id="causalActions" type="number" value="48" min="1" max="256"></label>
   <label>Parallel worlds/batch <input id="gpuWorlds" type="number" value="32" min="1" max="256"></label>
   <label>Text exercises/batch <input id="gpuTextBatch" type="number" value="4" min="1" max="32"></label>
   <label>GPU VRAM limit (GB) <input id="gpuVram" type="number" value="2.6" min="0.5" max="3.8" step="0.1"></label>
@@ -205,7 +206,7 @@ function start(infinite){
  const gpu={enabled:$('gpuOn').checked,device:'cuda:0',worlds:Number($('gpuWorlds').value),
   textBatch:Number($('gpuTextBatch').value),vram:Number($('gpuVram').value),util:Number($('gpuUtil').value)};
  call('start',{worlds,infinite,episodes:Number($('episodes').value),sourceKind,
-  datasetRoot:$('datasetRoot').value.trim(),text:$('custom').value,gpu,causalTextEnabled:$('causalOn').checked,resume:true});
+  datasetRoot:$('datasetRoot').value.trim(),text:$('custom').value,gpu,causalTextEnabled:$('causalOn').checked,causalMaxActions:Number($('causalActions').value),resume:true});
 }
 $('train').onclick=()=>start(false);$('infinite').onclick=()=>start(true);
 for(const a of ['pause','resume','stop','save','load'])$(a).onclick=()=>call(a);
