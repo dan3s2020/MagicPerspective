@@ -143,7 +143,7 @@ export function calibrate(model,{samples=320,seed=19,onProgress}={}){
  const r=new RNG(seed),record=[];
  for(let i=0;i<samples;i++){
   const world=makeMaze(seedOf(SEEDS.train,i),[7,9,11][i%3]);
-  const hiddenFrame=i%4,bodyAction=Math.floor(i/4)%4;
+  const hiddenFrame=r.int(4),bodyAction=r.int(4);
   const globalDir=mod4(hiddenFrame+bodyAction);
   const available=[];
   for(let k=0;k<world.wall.length;k++){
@@ -225,6 +225,17 @@ export function runExperiment({train=320,test=64,seed=29,size=11,noise=0,onProgr
  const calibrated=new BodyFrameLearner();
  const training=calibrate(calibrated,{samples:train,seed,onProgress});
  const after=calibrated.freeze();
+ // Independent validation seeds measure the learning curve; final test seeds remain untouched.
+ const checkpoints=distinct([0,8,16,32,64,128,256,train].filter(x=>x<=train)).sort((a,b)=>a-b);
+ const learningCurve=checkpoints.map(samples=>{
+  const snapshot=new BodyFrameLearner();
+  if(samples>0)calibrate(snapshot,{samples,seed});
+  const validations=Array.from({length:12},(_,j)=>episode(snapshot,seedOf(SEEDS.test,700000+seed*19+j*13),{size,noise}));
+  const stats=aggregate(validations);
+  return {samples,examples:snapshot.examples,mappingAccuracy:snapshot.accuracy(),
+    validationSuccessRate:stats.successRate,validationExtraSteps:stats.meanExtraStepsSolved,
+    orientationAccuracy:stats.orientationAccuracy,localizationAccuracy:stats.localizationAccuracy};
+ });
  const tested=[],base=[],trained=[];
  for(let i=0;i<test;i++){
   const worldSeed=seedOf(SEEDS.test,50000+i*7+seed*31);
@@ -244,7 +255,7 @@ export function runExperiment({train=320,test=64,seed=29,size=11,noise=0,onProgr
    trainSeedBase:SEEDS.train,testSeedBase:SEEDS.test,
    checkpointNote:'Dedicated perspective table; unchanged original V17 model',
    disclosedTeacher:'Training calibration receives true frame ID and global displacement; unseen test does not'},
-  learned:training,counts:after.counts,baseline,trained:evidence,improvement:{
+  learned:training,learningCurve,counts:after.counts,baseline,trained:evidence,improvement:{
    successRatePoints:diff*100,
    successRateGain:diff,
    meanExtraStepsChange:evidence.meanExtraStepsSolved!==null&&baseline.meanExtraStepsSolved!==null
