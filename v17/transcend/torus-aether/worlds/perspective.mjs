@@ -187,7 +187,7 @@ function stats(rows){
     bumps:average(rows.map(x=>x.bumps)),originalPlanFollowed:average(rows.map(x=>x.originalPlanFollowed)),
     memoryRepairs:average(rows.map(x=>x.memoryRepairs))};
 }
-export function perspectiveEpisode(world,discoverer,model,{train=false,record=false,live=()=>{},seed=1}={}){
+export function perspectiveEpisode(world,discoverer,model,{train=false,record=false,live=()=>{},seed=1,noiseAgency=null,noiseFeedback=true}={}){
   const overhead=Array.from(world.wall,v=>v?KIND.wall:KIND.floor);
   overhead[world.goal]=KIND.target;overhead[world.start]=KIND.self;
   const plan=sensedPlan(discoverer,world,overhead),mem=memoryFrom(world);
@@ -200,9 +200,20 @@ export function perspectiveEpisode(world,discoverer,model,{train=false,record=fa
   while(actual!==world.goal&&steps<stepLimit){
     const before=actual,sensed=localPatch(world,actual,hiddenHeading);
     if(train)for(const y of sensed)live(y?2:1); // after overhead: LOCAL vision only
-    const estimated=nav.observe(sensed);
+    // No exact pose, oracle shortest path or hidden heading is supplied to
+    // the organism's noise selector. World physics is never randomized.
+    const portal=noiseAgency?.decide({domain:'maze',known:model.samples>0,
+      planned:nav.plan.length>1})||null;
+    const internal=portal?.site==='perception' ?
+      noiseAgency.perceive(sensed,portal) : sensed;
+    const estimated=nav.observe(internal);
     tracked++;correctPose+=+(estimated.pos===actual);correctFrame+=+(estimated.heading===hiddenHeading);
     const c=nav.choose(discoverer);
+    if(portal && ['action','imagination'].includes(portal.site)){
+      const choice=noiseAgency.output(c.output,8,portal,
+        portal.site==='imagination' ? [0,1,2,3,4,5,6,7].filter(o=>discoverer.effect(o)) : null);
+      if(choice!==c.output){c.output=choice;c.source='organism-'+portal.site+'-portal';}
+    }
     if(train)live([5,6,7,8,11,12,14,15][c.output]);
     const dir=discoverer.world.moves.indexOf(c.output);
     const global=dir>=0?wrap(dir+hiddenHeading):-1;
@@ -210,7 +221,9 @@ export function perspectiveEpisode(world,discoverer,model,{train=false,record=fa
     const moved=j>=0&&!world.wall[j];
     if(moved){actual=j;physicalPath.push(actual);}else bumps++;
     nav.feedback(moved);steps++;
-    if(record)trace.push({step:steps,patch:sensed,estimatedPos:estimated.pos,actualBefore:before,
+    if(portal&&train&&noiseFeedback)noiseAgency.learn(portal,{before:[before],after:[actual],solved:actual===world.goal});
+    if(record)trace.push({step:steps,patch:sensed,noise:portal?.site||'none',
+      noiseStrength:portal?.strength||0,estimatedPos:estimated.pos,actualBefore:before,
       actualAfter:actual,estimatedHeading:estimated.heading,hiddenHeading,
       unique:estimated.unique,errors:estimated.errors,confidenceGap:estimated.confidenceGap,
       chosenOutput:c.output,wantedDir:c.wanted,desiredBodyDir:c.desiredBodyDir,
