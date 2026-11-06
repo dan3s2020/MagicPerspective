@@ -34,6 +34,19 @@ node transcend/torus-aether/language-universe/train.mjs \
   --out "$HOME/magic-language-universe-v17" --resume
 \`\`\`
 
+### Direct OpenThoughts Parquet training (existing V17 reader)
+
+You can feed the original V17 Brain actual question/answer exercises instead of artificial rewrite demonstrations. This uses the repository's unchanged \`data/text-dataset.mjs\` and bundled Parquet decoder:
+
+\`\`\`sh
+node transcend/torus-aether/language-universe/train.mjs \
+  --parquet "$HOME/training/OpenThoughts3-1.2M" \
+  --examples 2000 --chars 12000 --eval 500 --maze-every 5000 \
+  --out "$HOME/magic-language-open-thoughts"
+\`\`\`
+
+Then run the same command with \`--resume\`; it continues from the saved Q/A exercise index. The \`--chars\` budget applies to each launch, whereas \`--examples\` bounds the total number of Q/A examples in the run. You need the **actual dataset files** under the specified folder; the runner does not download them. The Parquet path is a local example, not an assertion about your phone's storage. The last held-out dataset rows remain outside training. Check \`last-report.json\` for actual accuracy and errors.
+
 For a larger authentic corpus, provide a local \`.txt\` file in \`--text\`, and **a distinct output directory** so an earlier checkpoint cannot accidentally be reused on a different dataset. The runner currently loads text files into memory, so start with a corpus sized for your device; for massive Parquet collections, use the existing V17 \`devour.mjs\` trainer and its built-in \`openTextDataset\`.
 
 To train with additional existing causal transformations:
