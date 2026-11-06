@@ -1,0 +1,23 @@
+name: Native V17 text paths - regression and isolate checks
+on:
+  push:
+    branches:
+      - experiment/V17-NATIVE-LANGUAGE-PATHS-ISOLATED-20261106
+  workflow_dispatch:
+
+jobs:
+  native-shape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate native V17 2D/graph parity and corpus adapter unit contracts
+        run: node --test isolated/native-language-paths/native.test.mjs
+      - name: Validate full native trainer parses
+        run: node --check isolated/native-language-paths/train.mjs
+      - name: Validate original V17 shape and backend parsers
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
