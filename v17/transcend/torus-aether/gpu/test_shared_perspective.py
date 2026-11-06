@@ -7,6 +7,7 @@ SAMPLES = [
     {'domain':'maze','before':[1,2,3,4], 'after':[1,3,2,4], 'action':'output:3','context':'grid:2'},
     {'domain':'transform','before':[7,4,3,1], 'after':[7,3,4,1], 'action':'output:2','context':'grid:2'},
     {'domain':'text','before':['turn','door'], 'after':['turn','door','open'], 'action':'speech-tool:1:open','context':'question'},
+    {'domain':'selfcode','before':'function f(){return 1}','after':'function f(){return 2}','action':'portal-jump','context':'selfsource'},
 ]
 class SharedTests(unittest.TestCase):
     def test_hash_determinism(self):
@@ -22,7 +23,7 @@ class SharedTests(unittest.TestCase):
         final=m.evaluate(SAMPLES)
         self.assertEqual(m.steps,8)
         self.assertLess(final['loss'], initial['loss'])
-        self.assertEqual(m.counts, {'maze':8,'transform':8,'text':8})
+        self.assertEqual(m.counts, {'maze':8,'transform':8,'text':8,'selfcode':8})
         self.assertEqual(len(ret['trace']['predicted']),32)
     def test_checkpoint_and_oracle_guard(self):
         m=SharedPerspective('cpu',seed=4);m.train(SAMPLES)
