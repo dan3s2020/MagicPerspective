@@ -34,6 +34,7 @@ const freezeKey = t => JSON.stringify(t);
 const unique = a => [...new Set(a)];
 const normalized = t => String(t).normalize("NFC");
 const maxSafe = (v,a,b) => Math.max(a,Math.min(b,v));
+const clampSelf = (v,a,b) => Math.max(a,Math.min(b,Math.trunc(v)||a));
 
 function oneEdit(a,b) {
   if(Math.abs(a.length-b.length)>1)return null;
@@ -367,6 +368,52 @@ export class ObservedTransformations {
     if(search)search.expanded=expanded;
     return {found:false,reason:"no-learned-path-satisfies-goal",goal:{required:req},
       expanded,search,observed:this.records.size,operators:this.operators.size};
+  }
+  // A bounded SELF-PROBE chooses goal CONSTRAINTS from actual operations
+  // that the original organism learned. This is NOT an independent language
+  // teacher or a model-invented human desire: it is a structural self-test
+  // automatically derived from its current observed world.
+  selfSelectedChallenge({maxSeeds=16}={}){
+    if(this.records.size<3||this.operators.size<2)return null;
+    const candidates=this.order.slice(-clampSelf(maxSeeds,1,24)).reverse();
+    const attempts={count:0,max:180};
+    const evaluate=(start,dst,minPath)=>{
+      if(attempts.count++>=attempts.max||this.containsSentence(renderObservation(dst)))return null;
+      const introduced=unique(dst.filter(t=>!start.includes(t)&&/^[\p{L}\p{N}]+$/u.test(t)));
+      const retained=unique(dst.filter(t=>start.includes(t)&&/^[\p{L}\p{N}]+$/u.test(t)));
+      for(const a of introduced.slice(0,2))for(const b of retained.slice(0,3)){
+        if(a===b)continue;
+        const required=[a,b],source=renderObservation(start);
+        const P=this.plan({required,start:source,maxDepth:5,maxExpanded:1500});
+        if(P.found&&P.unseen&&P.steps.length>=minPath){
+          return {required,start:source,source:"learned-operator-self-probe",
+            requiredEdits:P.steps.length,observedStates:this.records.size,
+            operatorEvidence:this.operators.size,
+            noReferenceAnswerProvided:true,
+            note:"Goal constraints selected from reachable learned effects. This is a structural self-test, not semantic autonomous motivation."};
+        }
+      }
+      return null;
+    };
+    // Prefer hierarchical two-step compositions over one-step copycat tests.
+    for(const wanted of [2,1])for(const id of candidates){
+      const item=this.records.get(id);if(!item)continue;
+      const first=this.neighbors(item.tokens).slice(0,12);
+      for(const x of first){
+        if(wanted===1){
+          const found=evaluate(item.tokens,x.tokens,1);
+          if(found)return found;
+        }else{
+          for(const y of this.neighbors(x.tokens).slice(0,10)){
+            const found=evaluate(item.tokens,y.tokens,2);
+            if(found)return found;
+          }
+        }
+        if(attempts.count>=attempts.max)break;
+      }
+      if(attempts.count>=attempts.max)break;
+    }
+    return null;
   }
   // A second, LOCAL perspective using the SAME actual learned edit graph.
   // The global line is frozen FIRST. Each subsequent step is an action
