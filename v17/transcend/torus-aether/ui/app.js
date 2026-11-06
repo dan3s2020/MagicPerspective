@@ -441,6 +441,7 @@ function applySnap(gs) {
   renderSelfcode(gs.selfcode || null);
   renderLanguage(gs.language || null);
   renderConstructed(gs.constructedPaths || null);
+  renderObservedTransformations(gs.observedTransformations || null);
 }
 // Original Brain global->local observations, not a separate demo animation.
 let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
@@ -461,6 +462,54 @@ function renderPerspective(P) {
   if(key!==perspectiveEpisodeKey){perspectiveEpisodeKey=key;perspectiveT0=performance.now();}
   perspectiveLast=P.last||null;
 }
+// These are exact observed transition operators saved inside the ORIGINAL Brain.
+function renderObservedTransformations(S){
+  const box=$("observedTransformBox");if(!box)return;
+  box.hidden=!S;
+  if(!S)return;
+  $("observedTransformStats").textContent=
+    "Propoziții diferite trăite "+S.observed+
+    " · perechi comparate "+S.comparedPairs+
+    " · diferențe de o singură operație "+S.oneChangePairs+
+    " · acțiuni abstracte învățate "+S.learnedOperators+
+    " · clase de invarianti "+S.learnedInvariantGroups+
+    (S.skippedLong?" · propoziții lungi neindexate "+S.skippedLong:"")+
+    (S.evicted?" · memorie recentă înlocuită "+S.evicted:"");
+}
+$("observedTransformPlan").onclick=async()=>{
+  if(!LIVE)return;
+  const goal=$("observedTransformGoal").value.trim();
+  const start=$("observedTransformStart").value.trim();
+  const out=$("observedTransformPrediction"),path=$("observedTransformPath");
+  const button=$("observedTransformPlan");button.disabled=true;
+  out.textContent="Organismul construiește calea din transformări învățate. Răspunsul complet nu este oferit.";
+  path.textContent="";
+  try{
+    const u="/composition-plan?w="+liveW+
+      "&required="+encodeURIComponent(goal)+
+      "&start="+encodeURIComponent(start);
+    const res=await fetch(u,{method:"POST"}),r=await res.json();
+    if(r.error)throw Error(r.error);
+    if(!r.found){
+      out.textContent="Nu există încă o cale învățată: "+(r.reason||"necunoscut")+
+        " · stări extinse "+(r.expanded||0);
+      return;
+    }
+    out.textContent="FORMA PREZISĂ ÎNAINTE DE RĂSPUNS: "+r.predicted+
+      " · NU A FOST ÎN CORPUS: "+(r.unseen?"DA":"NU")+
+      " · operații necesare: "+r.steps.length+
+      " · efect verificat după execuție: "+(r.execution?.verified?"DA":"NU")+
+      " · model înghețat: "+(r.frozen?"DA":"NU");
+    path.textContent="PERSPECTIVA INIȚIALĂ: "+r.start+"\n"+
+      r.steps.map((step,i)=>(i+1)+". "+step.kind+
+        " [poziția "+step.index+"] "+(step.from??"∅")+" → "+(step.to??"∅")+
+        "\n   Învățată din: "+(step.learnedFrom?.from??"—")+" ↔ "+
+        (step.learnedFrom?.to??"—")+
+        "\n   Efect executat: "+(r.execution?.experience?.[i]?.after??"—")).join("\n")+
+      "\n\nREZULTAT EXECUTAT: "+(r.execution?.result??"—");
+  }catch(err){out.textContent="Evaluarea a eșuat: "+err.message;}
+  finally{button.disabled=false;}
+};
 let constructedReplay=null,constructedReplayStart=0;
 function constructedDraw(){
   if(!constructedReplay)return;
@@ -747,6 +796,7 @@ async function livePull() {
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>perspectivă corp→hartă</span><span>episoade reale <b>${gr.perspective?.episodes??0}</b> · orientare învățată ${pc(gr.perspective?.mappingAccuracy)} · poziție locală ${pc(gr.perspective?.poseAccuracy)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>construirea căilor</span><span>perechi ${gr.constructedPaths?.pairedWorlds??0} · încercări partial-vizibile ${gr.constructedPaths?.lastMaze?.steps??0} · modele text ${gr.constructedPaths?.textQARows??0}</span>` : ""}
+        ${gr.worlds.includes("text") ? `<span>transformări deduse din observații</span><span>propoziții ${gr.observedTransformations?.observed??0} · comparații ${gr.observedTransformations?.comparedPairs??0} · operații reutilizabile ${gr.observedTransformations?.learnedOperators??0}</span>` : ""}
         ${gr.worlds.includes("text") ? `<span>perspective text</span><span>observate ${gr.language?.observedTokens??0} tokeni · ${gr.language?.states??0} perspective contextuale · ${gr.language?.edges??0} legături</span>` : ""}
         ${gr.worlds.includes("selfcode") ? `<span>propriul cod</span><span>pași ${gr.selfcode?.ticks??0} · probe independente ${gr.selfcode?.probes??0} · lacăt ${gr.selfcode?.lock?.locked===false?'deblocat numai în sandbox':'blocat'} · original neatins ${gr.selfcode?.originalUnchanged===false?'NU':'da'}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
