@@ -6,7 +6,7 @@ const heldActors=['farmer','captain','archer','queen','merchant'];
 const heldObjects=['cart','shield','barrel','chestnut','boulder'];
 const before=(who,what)=>who+' pushes '+what;
 const passive=(who,what)=>what+' is pushed by '+who;
-const effect=(who,what)=>'if '+who+' pushes then '+what+' moves;
+const effect=(who,what)=>'if '+who+' pushes then '+what+' moves';
 const rule1=induceTransformation(train.map(([who,what])=>({before:before(who,what),after:passive(who,what)})));
 const rule2=induceTransformation(train.map(([who,what])=>({before:passive(who,what),after:effect(who,what)})));
 const rules=[rule1,rule2];
