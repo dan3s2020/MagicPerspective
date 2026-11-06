@@ -41,7 +41,7 @@ export class BodyPerspectiveMemory {
     const x=new BodyPerspectiveMemory();
     for(const field of ['observed','moves','blocked','skipped'])x[field]=Number.isSafeInteger(s[field])&&s[field]>=0?s[field]:0;
     x.actions=s.actions.map(row=>{const m=new Map();if(!Array.isArray(row))throw Error('Invalid action row');
-      for(const [key,n]of row){if(!/^[-01],[-01]$/.test(key)||!Number.isSafeInteger(n)||n<1)throw Error('Invalid displacement evidence');m.set(key,n);}
+      for(const [key,n]of row){if(!/^(?:-1|0|1),(?:-1|0|1)$/.test(key)||!Number.isSafeInteger(n)||n<1)throw Error('Invalid displacement evidence');m.set(key,n);}
       return m;});
     return x;
   }
