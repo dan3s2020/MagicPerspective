@@ -36,11 +36,12 @@ test('one ORIGINAL live V17 brain trains text, maze, transform, self-code and ow
     assert.match(page,/id="perspectiveBox"/);
     assert.match(page,/id="selfcodeBox"/);
     assert.match(page,/id="agentNoiseBox"/);
+    assert.match(page,/id="languageBox"/);
     let view=null;
     for(let i=0;i<400;i++){
       try{const r=await fetch(url+'/graph?w=0');if(r.ok){
         const g=await r.json();
-        if(g.perspective?.episodes>0&&g.selfcode?.ticks>0&&g.endogenousNoise?.decisions>0&&g.chars>0){
+        if(g.perspective?.episodes>0&&g.selfcode?.ticks>0&&g.endogenousNoise?.decisions>0&&g.language?.observedTokens>0&&g.chars>0){
           view=g;break;
         }
       }}catch{}
@@ -60,6 +61,13 @@ test('one ORIGINAL live V17 brain trains text, maze, transform, self-code and ow
     const evalReport=await resp.json();
     assert.ok(!evalReport.error,'Perspective frozen eval: '+JSON.stringify(evalReport));
     assert.equal(evalReport.learned.count,4);
+    const languageResp=await fetch(url+'/language-eval?w=0&limit=150',{method:'POST'});
+    assert.ok(languageResp.ok);
+    const languageReport=await languageResp.json();
+    assert.ok(!languageReport.error,'Frozen original language learning eval: '+JSON.stringify(languageReport));
+    assert.ok(languageReport.frozen);
+    assert.ok(languageReport.tokenPrediction.tokens>0);
+    assert.equal(typeof languageReport.preActionShape.continuation,'string');
     // The real host owns the save action and does not need a reset.
     const save=(await fetch(url+'/control?do=save&w=0',{method:'POST'}));
     assert.ok(save.ok);
@@ -68,7 +76,7 @@ test('one ORIGINAL live V17 brain trains text, maze, transform, self-code and ow
     for(let i=0;i<100;i++){if(fs.existsSync(brainFile)&&fs.statSync(brainFile).size>0){saved=true;break;}await sleep(100);}
     assert.ok(saved,'Original Brain checkpoint not created');
     console.log('V17_REAL_ALL_WORLDS '+JSON.stringify({lived:view.lived,chars:view.chars,
-      perspectiveEpisodes:view.perspective.episodes,codeTicks:view.selfcode.ticks,
+      perspectiveEpisodes:view.perspective.episodes,languageTokens:view.language.observedTokens,codeTicks:view.selfcode.ticks,
       noiseDecisions:view.endogenousNoise.decisions,lock:view.selfcode.lock.locked}));
   }finally{
     try{process.kill(-proc.pid,'SIGTERM');}catch{try{proc.kill('SIGTERM');}catch{}}
