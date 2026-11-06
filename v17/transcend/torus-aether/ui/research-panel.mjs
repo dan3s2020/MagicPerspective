@@ -1,5 +1,6 @@
 import {trend,pathGraph,empty} from './research-charts.mjs';
 import {setupShapeReplay} from './research-replay.mjs';
+import {setupCharacterReplay} from './research-character-replay.mjs';
 const e=id=>document.getElementById(id);
 const put=(id,v)=>{const x=e(id);if(x)x.textContent=v;};
 const pct=x=>typeof x==='number'&&Number.isFinite(x)?(100*x).toFixed(2)+'%':'—';
@@ -8,6 +9,7 @@ export function setupResearchTab({getSelectedBrain,isLive}){
   const side=document.querySelector('aside.side');
   if(!e('tabResearch')||!e('researchPane')||!side)return;
   const shapeReplay=setupShapeReplay();
+  const characterReplay=setupCharacterReplay();
   e('tabResearch').onclick=()=>{
     side.classList.remove('evalOn');side.classList.add('researchOn');
     e('tabTrain').classList.remove('on');e('tabEval').classList.remove('on');
@@ -72,6 +74,7 @@ export function setupResearchTab({getSelectedBrain,isLive}){
       {key:'changedDecisions',title:'decizii SR',color:'#3ddc84'}],false);
     pathGraph(r.last);
     shapeReplay.update(r.last,w,r.attempts);
+    characterReplay.update(r.characterTelemetry,r.gpu);
     if(!r.last)return put('researchEvidence','Nu există încă o predicție făcută pe un exercițiu real.');
     const x=r.last,p=x.path||{},scores=x.scores||{},answers=x.answers||{};
     put('researchEvidence',[
