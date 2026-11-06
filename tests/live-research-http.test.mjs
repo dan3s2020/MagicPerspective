@@ -49,12 +49,28 @@ test('REAL original worker emits research through HTTP and original UI displays 
     assert.ok(telemetry.totals.nativeCalls>=1);
     assert.ok(Array.isArray(telemetry.history));
     assert.ok(telemetry.last.graph.nodes.length>=1);
+    assert.ok(telemetry.last.navigation?.native?.frames.length>=1,
+      'Actual native shape replay frames missing');
+    assert.ok(telemetry.last.navigation?.successor?.frames.length>=1,
+      'SR actor trace missing');
+    for (const policy of ['native','successor']) {
+      const t=telemetry.last.navigation[policy];
+      assert.equal(t.summary.steps,t.frames.length-1);
+      assert.equal(t.summary.recomputations,t.frames.length);
+      assert.equal(t.frames[0].actual,null);
+      for(const fr of t.frames.slice(1))
+        assert.ok(t.edges.some(e=>e.from===fr.from&&e.to===fr.actual&&e.action===fr.action),
+          'No invented actor movement');
+      assert.equal(t.factualLimits.inventedEdges,false);
+    }
     const rootUrl='http://127.0.0.1:'+port+'/transcend/torus-aether/ui/';
     for(const [file,required] of [
-      ['index.html?live=1','id="tabResearch"'],
+      ['index.html?live=1','id="researchShapeMap"'],
       ['app.js','setupResearchTab'],
       ['research-panel.mjs',"'/research?w='"],
-      ['research-charts.mjs','function canvas']
+      ['research-charts.mjs','function canvas'],
+      ['research-replay.mjs','setupShapeReplay'],
+      ['research-replay-draw.mjs','drawGlobalShape']
     ]){
       const res=await fetch(rootUrl+file);
       assert.equal(res.status,200,file+' not served from original V17');
