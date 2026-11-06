@@ -32,7 +32,7 @@ test('auto-start trains the first bounded text batch and populates the original 
         if(a.ok&&b.ok){
           const info=await a.json(),snap=await b.json();
           assert.equal(info.gpu.textBatch,2,'explicit text batch must be independent of GPU maze worlds');
-          if(snap.chars>0&&snap.nodes?.length&&snap.gpu?.text?.batch===2){graph=snap;break;}
+          if(snap.chars>0&&snap.lived>0&&snap.nodes?.length&&snap.gpu?.text?.batch===2){graph=snap;break;}
         }
       }catch(e){if(e?.code==='ERR_ASSERTION')throw e;}
       await sleep(450);
