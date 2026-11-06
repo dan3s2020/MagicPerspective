@@ -301,6 +301,8 @@ export class NativeWholeTextWorld{
   solveRate:s.solved/Math.max(1,s.episodes),
   meanSteps:s.totalSteps/Math.max(1,s.episodes),
   meanWavePasses:s.wavePasses/Math.max(1,s.episodes),
+  plannerMode:'fixed whole-map wavefront (not a learned planner)',
+  progressUnit:'complete maps and cursor movements; not dataset text characters',
   last:s.last,recent:s.recent.slice(-8),
   note:'Exact finite hypercube graph with explicit goals/walls. No demonstrated free-language understanding.'};}
 }
