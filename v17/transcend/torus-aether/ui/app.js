@@ -695,7 +695,7 @@ $("cognitiveRecord").onclick = async () => {
   finally{button.disabled=false;}
 };
 let gpuShown = false;
-$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext", $("addCognitive").checked && "cognitivemap"].filter(Boolean); if (!worlds.length) return;
+$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addCode").checked && "code", $("addMapText").checked && "maptext", $("addCognitive").checked && "cognitivemap", $("addHyperText").checked && "hypertext"].filter(Boolean); if (!worlds.length) return;
   try {
     const response = await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${encodeURIComponent(worlds.join(","))}`, {method: "POST"});
     const result = await response.json();
