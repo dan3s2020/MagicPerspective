@@ -250,7 +250,7 @@ http.createServer((req, res) => {
         const count=Math.max(1,Math.min(20,Math.trunc(Number(m.count)||8)));
         const texts=(await heldPick(count)).filter(x=>typeof x==="string"&&x.length);
         if(!texts.length)return json(res,{error:"No original held-out documents available for this corpus"});
-        if(!sl.wk){
+        if(!sl.wk || sl.status === "gata"){
           const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No saved hypermaze"});
           const brain=Brain.load(save);
           if(!brain.hypermaze)return json(res,{error:"No learned hypermaze in checkpoint"});
@@ -277,7 +277,7 @@ http.createServer((req, res) => {
          typeof m.goal!=="string"||!m.goal||m.goal.length>256)
         return json(res,{error:"Provide a single observed start and goal token"});
       const maxSteps=Math.max(1,Math.min(10000,Math.trunc(+m.maxSteps||160)));
-      if(!sl.wk){
+      if(!sl.wk || sl.status === "gata"){
         try{
           const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No saved hypermaze"});
           const brain=Brain.load(save);
@@ -323,7 +323,7 @@ http.createServer((req, res) => {
       if(typeof m.initial!=="string"||m.initial.length>1024||
         !m.goal||typeof m.goal!=="object"||!m.goal.slots||Object.keys(m.goal.slots).length>32)
         return json(res,{error:"Provide initial text and goal.slots constraints; no hidden target answer"});
-      if(!sl.wk){
+      if(!sl.wk || sl.status === "gata"){
         try{
           const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No cognitive checkpoint"});
           const brain=Brain.load(save),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
