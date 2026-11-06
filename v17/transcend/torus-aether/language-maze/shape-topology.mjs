@@ -10,6 +10,7 @@
  * dimensionality constant is introduced. Graph degree is unbounded by 2D.
  */
 import {ACTIONS} from "../worlds/labyrinth.mjs";
+import {selectUphillEdge} from "./successor-field.mjs";
 
 const validate=({kinds,neighbors,start})=>{
  if(!Array.isArray(kinds)||!Array.isArray(neighbors)||kinds.length!==neighbors.length||kinds.length<1||
@@ -19,9 +20,12 @@ const validate=({kinds,neighbors,start})=>{
   throw Error("Invalid observed transition");
 };
 /** Exact V17 attraction field semantics over learned arbitrary adjacency. */
-export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,temp=0,rand=Math.random}){
+export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,temp=0,rand=Math.random,tieBreakValues=null}){
  validate({kinds,neighbors,start});
  if(typeof conduct!=="function"||typeof attract!=="function")throw Error("Provide original Discoverer conduct/attract laws");
+ if(tieBreakValues!==null&&(!Array.isArray(tieBreakValues)||tieBreakValues.length!==kinds.length||
+   tieBreakValues.some(v=>!Number.isFinite(v)||v<0||v>1)))
+   throw Error("Invalid successor occupancy field");
  const count=kinds.length,att=[0,1,2,3].map(attract),cond=[0,1,2,3].map(conduct),
   V=new Float64Array(count);
  let any=false;
@@ -50,7 +54,7 @@ export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,te
    if(!changed)break;
   }
  }
- const path=[],nodes=[start],seen=new Set([start]);let pos=start;
+ const path=[],nodes=[start],seen=new Set([start]);let pos=start,tieBreaks=0;
  for(let k=0;k<count;k++){
   let best=-1,bv=V[pos];const uphill=[];
   for(let index=0;index<neighbors[pos].length;index++){
@@ -63,6 +67,12 @@ export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,te
    const draws=uphill.map(([i,v])=>{const p=Math.exp((v-bv)/(temp*.03*bv+1e-12));total+=p;return [i,p];});
    let r=rand()*total;for(const [i,p]of draws){r-=p;if(r<=0){best=i;break;}}
   }
+  // The exact original V17 max-attraction route always wins. ONLY equal
+  // attraction can use the independently measured successor occupancy.
+  if(best>=0&&tieBreakValues!==null&&!temp){
+   const secondary=selectUphillEdge(neighbors[pos],pos,V,seen,tieBreakValues);
+   if(secondary.index>=0){best=secondary.index;if(secondary.usedSuccessor)tieBreaks++;}
+  }
   if(best<0)break;
   const edge=neighbors[pos][best];
   path.push({from:pos,to:edge.to,action:edge.action??best,character:edge.character??null,
@@ -70,7 +80,7 @@ export function shapeOnLearnedTopology({kinds,neighbors,start,conduct,attract,te
   pos=edge.to;nodes.push(pos);seen.add(pos);
   if(att[kinds[pos]]>.2)break;
  }
- return {path:path.length?path:null,nodes,values:Array.from(V),
+ return {path:path.length?path:null,nodes,values:Array.from(V),successorTieBreaks:tieBreaks,
   reason:path.length?"SHAPE_PROPAGATED":"NO_ASCENDING_PATH",
   propagation:isForwardDAG?"SAME_V17_LAW_EXACT_REVERSE_DAG":"SAME_V17_ORIGINAL_RELAXATION"};
 }
