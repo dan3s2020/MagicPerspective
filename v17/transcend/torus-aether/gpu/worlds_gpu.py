@@ -421,7 +421,8 @@ class Server:
                 self.shared = SharedPerspective(str(self.B.device), seed=int(m.get("seed", 11)))
             if c == "shared_load": r = self.shared.load(m["checkpoint"])
             elif c == "shared_train":
-                r = self.shared.train(m["samples"], adaptive_noise=bool(m.get("adaptiveNoise", False)))
+                r = self.shared.train(m["samples"], adaptive_noise=bool(m.get("adaptiveNoise", False)),
+                                      noise_selection=m.get("noiseSelection"))
                 if m.get("checkpoint"): r["checkpoint"] = self.shared.save(m["checkpoint"])
             elif c == "shared_eval": r = self.shared.evaluate(m["samples"])
             else: r = self.shared.save(m["checkpoint"])
