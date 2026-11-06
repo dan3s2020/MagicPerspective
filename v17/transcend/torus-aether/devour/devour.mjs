@@ -68,6 +68,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
+    observedTransformations: g?.observedTransformations || t?.observedTransformations || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
@@ -148,6 +149,34 @@ http.createServer((req, res) => {
         const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
         opts.list = list.map(t => toB(t).slice(0, Math.max(50, +opts.max || 20000))); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
+  // Native V17: the original Brain constructs a NEW sentence by composing
+  // effects learned from actual observed differences, with a partial GOAL.
+  // The correct complete answer is deliberately NOT part of the request.
+  if(req.method==="POST"&&url==="/composition-plan"){
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("text"))
+      return json(res,{error:"Choose a graph currently training the text world"});
+    const required=(q.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(!required.length||required.length>8||required.some(x=>x.length>80))
+      return json(res,{error:"Specify 1–8 goal tokens, not a full reference answer"});
+    const start=q.get("start")?.trim()||null;
+    if(start&&start.length>500)
+      return json(res,{error:"Observed starting sentence is too long"});
+    const goal={required,start,maxDepth:Math.max(0,Math.min(7,
+      Math.trunc(+(q.get("maxDepth")||4))))};
+    if(!sl.wk){
+      const file=saveOf(sl);
+      if(!fs.existsSync(file))return json(res,{error:"Original Brain has not been saved"});
+      try {return json(res,{...Brain.load(file).planObservedTransformation(goal),fromSave:true});}
+      catch(err){return json(res,{error:err.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Goal-conditioned transformation timed out"});
+    },120000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({compositionGoal:{id,...goal}});
+    return;
+  }
   // Frozen multilingual/token-scale continuation from the SAME lived source.
   // The model gets no held-out training updates during this endpoint.
   if (req.method === "POST" && url === "/language-eval") {
