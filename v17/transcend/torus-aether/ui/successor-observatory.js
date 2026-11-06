@@ -6,7 +6,7 @@ const el=id=>document.getElementById(id);
 const side=document.querySelector("aside.side");
 let selectedGraph=0,paired=null,evaluation=null,step=0,playTimer=null;
 let pairBusy=false,evalBusy=false,pollBusy=false,positions=null;
-let pollAt=null;
+let pollAt=null,observedRequest=false,lastObservedAt=0,observedReady=false;
 const number=x=>Number.isFinite(x)?Number(x).toLocaleString("ro-RO"):"—";
 const fixed=(x,d=5)=>Number.isFinite(x)?Number(x).toFixed(d):"—";
 const percent=x=>Number.isFinite(x)?(100*x).toFixed(2)+"%":"—";
@@ -50,7 +50,7 @@ function graphId(){
 function selectGraph(w){
  if(!Number.isSafeInteger(w)||w<0)return;
  selectedGraph=w;el("scGraphId").value=String(w);
- resetPlans();clearEvaluation();refreshLive();
+ resetPlans();clearEvaluation();observedReady=false;lastObservedAt=0;refreshLive();
  if(active())inspectEvaluation();
 }
 function openTab(){
@@ -61,7 +61,7 @@ function openTab(){
  selectedGraph=graphId();
  // Hash links can land directly on this actual tab.
  if(location.hash!=="#successor")history.replaceState(null,"",location.pathname+location.search+"#successor");
- refreshLive();inspectEvaluation();
+ refreshLive();inspectEvaluation();loadObserved(true);
 }
 el("tabSuccessor").addEventListener("click",openTab);
 // Every other tab regains complete control; no original UI handler is replaced.
@@ -84,6 +84,7 @@ document.addEventListener("click",e=>{
 el("scGraphId").addEventListener("change",()=>selectGraph(graphId()));
 el("scRefresh").addEventListener("click",()=>{refreshLive();inspectEvaluation();});
 el("scUsePrompt").addEventListener("click",()=>{
+ message("scSampleStatus","Input preluat din tabul Limbaj; nu conține referința de evaluare.");
  const input=el("langPrompt");if(input?.value)el("scPrompt").value=input.value;
 });
 async function getJson(url,options={}){
@@ -127,12 +128,50 @@ async function refreshLive(){
   ].filter(Boolean);
   message("scLive",lines.join("\n"));
   pollAt=Date.now();
+  if(!observedReady&&(!paired)&&!el("scPrompt").value.trim()&&
+    Date.now()-lastObservedAt>11000)loadObserved(true);
  }catch(err){
   message("scServerStatus","BACKEND INDISPONIBIL");
   message("scLive","Nu pot citi datele reale: "+err.message+
    ". Verifică procesul PowerShell, portul și ramura instalată; nu afișez valori simulate.");
  }finally{pollBusy=false;}
 }
+// Optional real example, never a generated "demo": pick a completed
+// observation actually stored by the original language-world learner.
+async function loadObserved(auto=false){
+ if(observedRequest||(!auto&&pairBusy))return;
+ observedRequest=true;lastObservedAt=Date.now();
+ if(!auto)el("scObserved").disabled=true;
+ try{
+  const w=selectedGraph;
+  const data=await getJson("/language-maze/observatory?w="+w);
+  if(w!==selectedGraph)return;
+  if(data.protocol!=="OBSERVED_TRAINING_TEXT_WORLD")throw Error("Unknown training-world provenance");
+  const stat=data.trainingMemory||{};
+  for(const [id,key] of [
+    ["scRows","rowsObserved"],["scTransitions","characterTransitionsObserved"],
+    ["scGoals","knownGoalObservationCount"],["scRulesCount","observedPositionalRules"]
+  ])if(Number.isFinite(stat[key]))message(id,number(stat[key]));
+  if(!data.observedPrompt){
+   message("scSampleStatus","Momentan nu există un prompt real de antrenare cu traseu vizualizabil pe creierul #"+w+
+    ". După observarea unor Q/A, devine disponibil automat.");
+   return;
+  }
+  if(auto&&(paired||el("scPrompt").value.trim()))return;
+  observedReady=true;
+  el("scPrompt").value=data.observedPrompt;
+  message("scSampleStatus","Sursa inputului: întrebare reală din ANTrENARE (răspuns de "+
+    number(data.observedAnswerLength)+" caractere văzut anterior). "+
+    "Vizualizare a căii memorate, NU evaluare pe întrebări noi.");
+  await analyze();
+ }catch(err){
+  message("scSampleStatus","Nu pot obține încă o experiență reală din corpus: "+err.message);
+ }finally{observedRequest=false;el("scObserved").disabled=false;}
+}
+el("scObserved").addEventListener("click",()=>loadObserved(false));
+el("scPrompt").addEventListener("input",()=>{
+ if(!observedRequest)message("scSampleStatus","Input introdus manual. Corectitudinea se verifică doar cu o referință nevăzută, în evaluarea separată.");
+});
 function computeLayout(g){
  const N=g.nodes.length,W=el("scPathCanvas").width,H=el("scPathCanvas").height;
  const neighbors=Array.from({length:N},()=>[]);
