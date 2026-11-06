@@ -21,5 +21,5 @@ jobs:
           node --check v17/transcend/torus-aether/devour/brain.mjs
           node --check v17/transcend/torus-aether/ui/app.js
           node --test v17/tests/text-route-navigation.test.mjs
-      - name: Existing V17 unchanged graph and checkpoint regression
-        run: node --test v17/tests/torus-brain.test.mjs
+      - name: Existing V17 graph observability regression (independent of root-doc fixture length)
+        run: node --test v17/tests/torus-observatory.test.mjs
