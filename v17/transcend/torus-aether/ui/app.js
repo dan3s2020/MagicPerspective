@@ -382,7 +382,7 @@ function stats() {
 let frame = 0;
 function loop() {
   if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); }
+  if (LIVE) { drawMaze(); drawTrans(); if(frame%3===0)drawPerspective(); }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
   for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
@@ -437,7 +437,83 @@ function applySnap(gs) {
   strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
   if (gs.shared) renderShared(gs.shared);   // t: every step lived (text characters and every world's symbols)
   renderAgentNoise(gs.endogenousNoise || null);
+  renderPerspective(gs.perspective || null);
+  renderSelfcode(gs.selfcode || null);
 }
+// Original Brain global->local observations, not a separate demo animation.
+let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
+const percentage = v => v == null ? '—' : (100*v).toFixed(1)+'%';
+function renderPerspective(P) {
+  const box=$('perspectiveBox');
+  if(!box)return;
+  box.hidden=!P;
+  if(!P)return;
+  $('perspectiveOut').textContent='Episoade reale '+P.episodes+' · orientări observate '+P.samples+
+    ' · poziție estimată '+percentage(P.poseAccuracy)+
+    ' · direcție estimată '+percentage(P.headingAccuracy)+
+    ' · orientare corp→hartă '+percentage(P.mappingAccuracy)+
+    ' · rezolvate '+P.solved;
+  if(P.test?.learned)$('perspectiveEvalOut').textContent='ÎNGHEȚAT: rezolvate '+percentage(P.test.learned.successRate)+
+    ' vs control '+percentage(P.test.control.successRate)+' · diferență '+(P.test.improvementPoints??0).toFixed(1)+' puncte';
+  const key=P.episodes+':'+(P.last?.seed??'');
+  if(key!==perspectiveEpisodeKey){perspectiveEpisodeKey=key;perspectiveT0=performance.now();}
+  perspectiveLast=P.last||null;
+}
+function renderSelfcode(S) {
+  const box=$('selfcodeBox');if(!box)return;box.hidden=!S;if(!S)return;
+  const portal=S.policy?.n||{};
+  $('selfcodeOut').textContent='Experiențe în propriul cod '+S.ticks+
+    ' · noduri sursă '+S.graphNodes+' · portaluri folosite '+S.portals+
+    ' · probe executabile '+S.probes+' · alegeri mers '+(portal.walk||0)+
+    ' / portal '+(portal.portal||0)+
+    ' · sursa originală neatinsă '+(S.originalUnchanged?'da':'NU');
+  $('selfcodeLock').textContent=S.lock?.locked ?
+    'Cod BLOCAT · acuratețe '+percentage(S.lock.accuracy)+
+      ' vs bază '+percentage(S.lock.baseline)+' · '+(S.lock.reason||'încă necalificat'):
+    'Cod deblocat numai pentru experiențe aprobate în SANDBOX · '+JSON.stringify(S.lock?.promotion||{});
+  $('selfcodeProbe').textContent=S.error?'Eroare evaluator: '+S.error:
+    S.inflight?'Evaluatorul verifică o modificare izolată':
+    S.lastProbe?'Ultima intervenție reală: '+S.lastProbe.slot+' → '+S.lastProbe.value+
+      ' · diferență măsurată '+S.lastProbe.delta:'Fără rezultate independente încă.';
+}
+function drawPerspective() {
+  const P=perspectiveLast,box=$('perspectiveBox');if(!P?.world||!P.physicalPath?.length||box.hidden)return;
+  const C=$('perspectiveCv'),ctx=C.getContext('2d'),W=C.width,H=C.height;
+  const n=P.world.n,cell=Math.min(W,H)/n,ox=(W-n*cell)/2,cy=i=>((i/n)|0)*cell+cell/2;
+  const cx=i=>ox+(i%n+.5)*cell;
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<n*n;i++){ctx.fillStyle=P.world.wall[i]?'#243649':'#07131c';
+    ctx.fillRect(ox+i%n*cell,((i/n)|0)*cell,Math.max(1,cell-1),Math.max(1,cell-1));}
+  const G=P.world.goal;ctx.fillStyle='#4ce19d';ctx.beginPath();ctx.arc(cx(G),cy(G),cell*.28,0,7);ctx.fill();
+  const drawLine=(points,color,dashed=false)=>{if(!points?.length)return;ctx.strokeStyle=color;
+    ctx.lineWidth=Math.max(1.5,cell*.14);ctx.setLineDash(dashed?[5,4]:[]);
+    ctx.beginPath();points.forEach((at,i)=>i?ctx.lineTo(cx(at),cy(at)):ctx.moveTo(cx(at),cy(at)));ctx.stroke();ctx.setLineDash([]);};
+  drawLine(P.initialShapePositions,'#e9ba55',true);
+  const k=Math.min(P.physicalPath.length-1,Math.floor((performance.now()-perspectiveT0)/240));
+  drawLine(P.physicalPath.slice(0,k+1),'#57acf0');
+  const at=P.physicalPath[k];ctx.fillStyle='#f46faa';ctx.beginPath();ctx.arc(cx(at),cy(at),cell*.3,0,7);ctx.fill();
+  const tr=P.trace?.[Math.min(k,P.trace.length-1)];
+  $('perspectiveFrame').textContent='Vedere de sus: 1 singură observație · local: '+P.bodyObservations+
+    ' · cadru '+k+'/'+(P.physicalPath.length-1)+
+    ' · poziție estimată '+(tr?.estimatedPos??'—')+
+    ' · poziție reală (numai evaluator) '+(tr?.actualAfter??at)+
+    ' · sursă decizie '+(tr?.source??'—')+
+    ' · zgomot ales '+(tr?.noise??'none');
+}
+$('perspectiveReplay').onclick=()=>{perspectiveT0=performance.now();};
+$('perspectiveEval').onclick=async()=>{
+  if(!LIVE)return;
+  const out=$('perspectiveEvalOut'),btn=$('perspectiveEval');btn.disabled=true;
+  out.textContent='Evaluarea organismului înghețat pe hărți nevăzute...';
+  try{const r=await(await fetch('/perspective-eval?w='+liveW+'&count=20&seed=73',{method:'POST'})).json();
+    if(r.error)throw Error(r.error);
+    out.textContent='Lumi nevăzute '+r.count+' · cu perspectivă învățată '+percentage(r.learned.successRate)+
+      ' · fără transformarea învățată '+percentage(r.control.successRate)+
+      ' · pași/optim '+(r.learned.ratioSolved?.toFixed(3)??'—')+
+      ' · suprapunere poziție '+percentage(r.learned.poseAccuracy);
+  }catch(e){out.textContent='Evaluare eșuată: '+e.message;}
+  finally{btn.disabled=false;}
+};
 // These values are saved by the organism's own policy, not invented by rendering.
 // A missing agency stays visibly distinct from an enabled policy with zero noise.
 function renderAgentNoise(S) {
@@ -575,7 +651,7 @@ $("allStart").onclick = () => control("start"); $("allPause").onclick = () => co
 $("gpuUtil").oninput = () => $("gpuUtilOut").textContent = $("gpuUtil").value;
 $("gpuApply").onclick = async () => { await fetch(`/gpu?device=${$("gpuDev").value}&worlds=${Math.max(0, +$("gpuWorlds").value | 0)}&textBatch=${Math.max(1, Math.min(128, +$("gpuTextBatch").value | 0))}&vram=${+$("gpuVram").value}&util=${+$("gpuUtil").value}`, {method: "POST"}).catch(() => {}); livePull(); };
 let gpuShown = false;
-$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform"].filter(Boolean); if (!worlds.length) return;
+$("addGraph").onclick = async () => { const worlds = [$("addText").checked && "text", $("addMaze").checked && "maze", $("addTrans").checked && "transform", $("addSelfcode").checked && "selfcode"].filter(Boolean); if (!worlds.length) return;
   await fetch(`/add?arm=${encodeURIComponent($("addArm").value)}&worlds=${worlds.join(",")}`, {method: "POST"}).catch(() => {}); livePull(); };
 function confirmReset() { const b = $("liveReset"); if (b.dataset.armed) { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; return true; }
   b.dataset.armed = 1; b.textContent = "Sigur? apasă încă o dată"; setTimeout(() => { delete b.dataset.armed; b.textContent = "⟲ Reset toate la 0"; }, 4000); return false; }
