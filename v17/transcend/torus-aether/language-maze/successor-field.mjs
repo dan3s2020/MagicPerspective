@@ -64,7 +64,7 @@ export function successorGoalField({
  * The optional channel cannot create a route absent from the original field.
  */
 export function selectUphillEdge(edges,from,field,seen,successorValues=null){
-  if(!Array.isArray(edges)||!Array.isArray(field)||!seen?.has)
+  if(!Array.isArray(edges)||!(Array.isArray(field)||ArrayBuffer.isView(field))||!seen?.has)
     throw Error("Invalid uphill search input");
   let best=-1,bv=field[from],ties=0,used=false;
   for(let i=0;i<edges.length;i++){
