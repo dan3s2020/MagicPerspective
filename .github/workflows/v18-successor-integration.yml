@@ -29,7 +29,7 @@ jobs:
           node --check v17/transcend/torus-aether/devour/devour.mjs
       - name: Original maze parity, live learned text, successor exact ties and hierarchical 112531-character path
         run: |
-          node --test v17/transcend/torus-aether/language-maze/successor-online.test.mjs v17/transcend/torus-aether/language-maze/successor-field.test.mjs v17/transcend/torus-aether/language-maze/language-world.test.mjs v17/transcend/torus-aether/language-maze/hierarchical-shape.test.mjs
+          node --test v17/transcend/torus-aether/language-maze/perspective-replan.test.mjs v17/transcend/torus-aether/language-maze/successor-online.test.mjs v17/transcend/torus-aether/language-maze/successor-field.test.mjs v17/transcend/torus-aether/language-maze/language-world.test.mjs v17/transcend/torus-aether/language-maze/hierarchical-shape.test.mjs
       - name: Dedicated browser-tab interaction and original tab isolation
         run: node --test v17/transcend/torus-aether/ui/successor-observatory.test.mjs
       - name: Real 4D text navigation geometry, 15000-node and unseen-text provenance
