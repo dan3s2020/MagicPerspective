@@ -33,3 +33,20 @@ test('V17 training text world emits real actions to the SAME sink', () => {
   agent.navigate(prompt, head, {steps:5});
   assert.deepEqual(agent.export(), prior, 'inference must not learn');
 });
+
+test('frozen V17 maze and transform eval emit separate samples without training the original brain', () => {
+  const brain = new Brain({rules, c:{margin:.05, window:400, many:12}, seed:52});
+  const shared = new SharedExperience();
+  brain.setSharedObserver(e => shared.observe(e));
+  brain.playMaze(true); brain.playTransform(false);
+  const before = {lived:brain.lived, maze:brain.mazes.played, trans:brain.trans.played, count:shared.total};
+  const evidence = [];
+  brain.examMazes([7], 1, 9021, {onTransition: e => evidence.push(e)});
+  brain.evalTransforms(1, 0, 9021, {onTransition: e => evidence.push(e)});
+  assert.ok(evidence.some(e => e.domain === 'maze'));
+  assert.ok(evidence.some(e => e.domain === 'transform'));
+  assert.equal(brain.lived, before.lived);
+  assert.equal(brain.mazes.played, before.maze);
+  assert.equal(brain.trans.played, before.trans);
+  assert.equal(shared.total, before.count, 'frozen evaluation did not enter training queue');
+});

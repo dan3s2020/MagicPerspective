@@ -464,6 +464,21 @@ function renderShared(S) {
   const colors=["#f6c660","#f46faa","#5ee0b0"],names=["Înainte","Prezis","Observat"];
   pts.forEach(([x,y],i)=>{g2.beginPath();g2.arc(x,y,5,0,Math.PI*2);g2.fillStyle=colors[i];g2.fill();g2.font="12px sans-serif";g2.fillText(names[i],Math.min(W-70,x+7),Math.max(12,y-7));});
 }
+$("sharedEvalGo").onclick = async () => {
+  if (!LIVE) return;
+  const out = $("sharedEvalOut"), button = $("sharedEvalGo");
+  button.disabled = true; out.textContent = "Evaluare înghețată pe experiențe reale nevăzute...";
+  try {
+    const resp = await fetch("/shared-eval?w=" + liveW, {method: "POST", cache: "no-store"});
+    const r = await resp.json();
+    if (r.error) throw Error(r.error);
+    out.textContent = "FROZEN " + (r.frozen ? "da" : "nu") + " · exemple " + r.examples +
+      " · eroare " + r.loss + " · identitate " + r.identityBaselineLoss +
+      " · domenii " + JSON.stringify(r.perDomain || {}) +
+      " · observații " + JSON.stringify(r.counts || {});
+  } catch (err) { out.textContent = "Evaluare nereușită: " + err.message; }
+  finally { button.disabled = false; }
+};
 // the map the same brain is living: walls, checkpoint band, and the path of its two cubes in the last episode
 let mazeShown = null, mazeT0 = 0;
 function drawMaze() {
