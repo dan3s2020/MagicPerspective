@@ -6,6 +6,44 @@ $nodeVersion=(& node --version).Trim()
 if($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v([0-9]+)\.'){throw "Could not read Node.js version: $nodeVersion"}
 $major=[int]$Matches[1]
 if($major -lt 20){throw 'Node.js 20+ is required.'}
+# Check port ownership BEFORE launching a second worker, running acceptance tests,
+# or opening a browser against potentially unrelated services.
+# A previous live server may still be training; never terminate it automatically.
+$portOwner = @()
+if(Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue){
+  $portOwner = @(Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue |
+    Where-Object { $_.LocalAddress -in @('127.0.0.1','0.0.0.0','::','::1') })
+}
+if($portOwner.Count -eq 0){
+  # Socket check covers Windows builds without Get-NetTCPConnection or a wildcard listener.
+  $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback,$Port)
+  try {
+    $listener.Start()
+  } catch [System.Net.Sockets.SocketException] {
+    if($_.Exception.SocketErrorCode -eq [System.Net.Sockets.SocketError]::AddressAlreadyInUse){
+      throw "PORT_IN_USE 127.0.0.1:$Port. An existing server may still be training. Stop its own PowerShell window with Ctrl+C after saving, then rerun. No process was killed."
+    }
+    throw
+  } finally {
+    $listener.Stop()
+  }
+}
+if($portOwner.Count -gt 0){
+  $descriptions = @()
+  foreach($ownerId in @($portOwner | Select-Object -ExpandProperty OwningProcess -Unique)){
+    $owner = Get-CimInstance Win32_Process -Filter "ProcessId=$ownerId" -ErrorAction SilentlyContinue
+    $command = if($owner){[string]$owner.CommandLine}else{'(command line unavailable)'}
+    $sameProject = ($command -match '(?i)server\.mjs') -and
+      ($command -replace '/','\' -like "*\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space*")
+    $description = "PID=$ownerId"
+    if($sameProject){$description += " (existing MagicPerspective Noise Space server)"}
+    $description += " Command=$command"
+    $descriptions += $description
+  }
+  $who = $descriptions -join " | "
+  throw "PORT_IN_USE 127.0.0.1:$Port. $who. An old server is already running. Save/stop training first and press Ctrl+C in its original terminal. This launcher refuses to start a second process against the same checkpoint."
+}
+
 Push-Location $base
 try {
   Write-Host '=== MAGIC PERSPECTIVE · ISOLATED NOISE SPACE ===' -ForegroundColor Cyan
