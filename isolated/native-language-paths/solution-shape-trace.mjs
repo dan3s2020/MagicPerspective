@@ -21,6 +21,9 @@ const roundPath=(graph,from,actions)=>{
 };
 function nativePlan(graph,brain,from){
   const acts=brain.shape(graph.nodes.map(x=>x.kind),0,from,graph.adj);
+  // Once the stored answer target is reached, native shape may return null:
+  // display the CURRENT terminal state without inventing a further action.
+  if(graph.nodes[from].kind===KIND.target)return [from];
   return roundPath(graph,from,acts);
 }
 function optionsFor(graph,at,field,sr,exact,visited){
