@@ -46,18 +46,23 @@ export class Discoverer {
   conduct(kind) { return this.pass[kind] / (this.pass[kind] + this.block[kind]); }
   attract(kind) { return this.endIn[kind] / this.enter[kind]; }
   // ---- the shape of the solution: attraction spread over the exercise, climbed from itself ----
-  shape(ret, n, me) {
-    const att = [0, 1, 2, 3].map(k => this.attract(k)), cond = [0, 1, 2, 3].map(k => this.conduct(k)), V = new Float64Array(n * n);
-    let any = false; for (let i = 0; i < n * n; i++) if (att[ret[i]] > .2 && i !== me) { V[i] = att[ret[i]]; any = true; }
+  shape(ret, n, me, graphNeighbors = null) {
+    // Optional graph adjacency for REAL learned language-state topology. Without it, this is byte-for-byte the original 2D algorithm.
+    if (graphNeighbors !== null && (!Array.isArray(graphNeighbors) || graphNeighbors.length !== ret.length || !graphNeighbors.every(a => Array.isArray(a) && a.every(j => Number.isInteger(j) && j >= 0 && j < ret.length)))) throw Error('Invalid observed graph adjacency');
+    const size = graphNeighbors ? ret.length : n * n;
+    const directions = graphNeighbors ? Math.max(0, ...graphNeighbors.map(a => a.length)) : 4;
+    const next = graphNeighbors ? (i, a) => graphNeighbors[i][a] ?? -1 : (i, a) => nextStep(n, i, a);
+    const att = [0, 1, 2, 3].map(k => this.attract(k)), cond = [0, 1, 2, 3].map(k => this.conduct(k)), V = new Float64Array(size);
+    let any = false; for (let i = 0; i < size; i++) if (att[ret[i]] > .2 && i !== me) { V[i] = att[ret[i]]; any = true; }
     if (!any) return null;
-    for (let it = 0; it < 2 * n * n; it++) { let ch = false;
-      for (let i = 0; i < n * n; i++) { const k = ret[i]; if (att[k] > .2 && i !== me) continue; const c = i === me ? 1 : cond[k]; if (c < .5) continue;
-        let b = 0; for (let a = 0; a < 4; a++) { const j = nextStep(n, i, a); if (j >= 0 && V[j] > b) b = V[j]; } const v = .97 * c * b; if (v > V[i] + 1e-12) { V[i] = v; ch = true; } }
+    for (let it = 0; it < 2 * size; it++) { let ch = false;
+      for (let i = 0; i < size; i++) { const k = ret[i]; if (att[k] > .2 && i !== me) continue; const c = i === me ? 1 : cond[k]; if (c < .5) continue;
+        let b = 0; for (let a = 0; a < directions; a++) { const j = next(i, a); if (j >= 0 && V[j] > b) b = V[j]; } const v = .97 * c * b; if (v > V[i] + 1e-12) { V[i] = v; ch = true; } }
       if (!ch) break; }
     const path = []; let p = me; const seen = new Set([p]);
-    for (let k = 0; k < n * n; k++) { let best = -1, bv = V[p]; const up = []; for (let a = 0; a < 4; a++) { const j = nextStep(n, p, a); if (j >= 0 && !seen.has(j) && V[j] > V[p]) up.push([a, V[j]]); if (j >= 0 && !seen.has(j) && V[j] > bv) { bv = V[j]; best = a; } }
+    for (let k = 0; k < size; k++) { let best = -1, bv = V[p]; const up = []; for (let a = 0; a < directions; a++) { const j = next(p, a); if (j >= 0 && !seen.has(j) && V[j] > V[p]) up.push([a, V[j]]); if (j >= 0 && !seen.has(j) && V[j] > bv) { bv = V[j]; best = a; } }
       if (this.temp && up.length > 1) { let z = 0; const w = up.map(([a, v]) => { const q = Math.exp((v - bv) / (this.temp * .03 * bv + 1e-12)); z += q; return [a, q]; }); let r = this.r.next() * z; for (const [a, q] of w) { r -= q; if (r <= 0) { best = a; break; } } }   // alive: among ways that climb almost as well, it does not always take the same one
-      if (best < 0) break; path.push(best); p = nextStep(n, p, best); seen.add(p); if (att[ret[p]] > .2) break; }
+      if (best < 0) break; path.push(best); p = next(p, best); seen.add(p); if (att[ret[p]] > .2) break; }
     return path.length ? path : null;
   }
   // ---- choosing what to emit ----
