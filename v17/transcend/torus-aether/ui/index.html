@@ -577,7 +577,7 @@
 <div id="hmOverlay" hidden role="dialog" aria-modal="true" aria-label="Hiperlabirintul textului — trasee din backend">
  <div class="hm-head">
   <div class="hm-actions">
-   <h2 style="flex:1 1 210px">HIPERLABIRINT 4D · TEXT / CORP / FORMĂ</h2>
+   <h2 style="flex:1 1 210px">HIPERLABIRINT 4D · TEXT / CORP / FORMĂ <span id="hmLiveBadge" style="font-size:12px;color:#48e4c0">● LIVE · aștept datele antrenării</span></h2>
    <label>Modul real
      <select id="hmMode">
       <option value="observed">V18 · graf text învățat (navigare)</option>
@@ -585,6 +585,7 @@
      </select>
    </label>
    <label>Creier # <input id="hmBrain" type="number" min="0" value="0"></label>
+   <button id="hmLiveSwitch" type="button" aria-pressed="true" style="border-color:#2edbb0;color:#67ffd9">● LIVE ON · urmărește antrenarea</button>
    <button id="hmClose" type="button">✕ Închide · revino la V17</button>
   </div>
   <div class="hm-actions">
@@ -615,7 +616,9 @@
  <div class="hm-body">
   <div class="hm-stage">
    <canvas id="hmCanvas" width="1200" height="760" aria-label="Proiecție 4D rotativă a stărilor text și a traseelor reale"></canvas>
-   <div class="hm-float" id="hmHud" role="status">Nu există date de traseu încă. Alege un mod și încarcă din backend.</div>
+   <div class="hm-float" id="hmHud" role="status">Conectare automată la workerul care antrenează. Nu trebuie să apeși pe Evaluare.</div>
+   <div id="hmLiveMetrics" style="position:absolute;right:12px;top:10px;background:#031522de;border:1px solid #226054;color:#b9efea;border-radius:8px;padding:10px;max-width:260px;pointer-events:none;font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap">LIVE TRAINING
+Conectare la worker…</div>
    <div class="hm-legend">
      <span><i style="background:#f5c45c"></i>forma globală ÎNAINTE</span>
      <span><i style="background:#4ae5cf"></i>calea efectivă / predicții în lectură</span>
@@ -630,7 +633,7 @@
    <label>Sursa REALĂ a coordonatelor
     <select id="hmSpace">
      <option value="learned5">V17 · torus 5D învățat Geometry.U (4D + secțiune)</option>
-     <option value="diagnostic4">V18 · 4D diagnostic (adâncime / ramură / V / S)</option>
+     <option value="diagnostic4" selected>V18 · 4D diagnostic (adâncime / ramură / V / S)</option>
     </select>
    </label>
    <div class="hm-note" id="hmSpaceStatus">În modul 5D, pozițiile vin exclusiv din Geometry.U al grafului V17 curent. Dacă un caracter nu are poziție învățată, nu inventăm una.</div>
@@ -655,6 +658,10 @@
     <div class="hm-metric"><small>Prima abatere de la forma inițială</small><b id="hmDeviation">—</b></div>
     <div class="hm-metric"><small>Revizuiri de plan observate</small><b id="hmRevisions">—</b></div>
     <div class="hm-metric"><small>Țintă cunoscută atinsă</small><b id="hmGoal">—</b></div>
+    <div class="hm-metric"><small>Rânduri Q/A antrenate</small><b id="hmTrainingRows">—</b></div>
+    <div class="hm-metric"><small>Corecții TD învățate</small><b id="hmTrainingTD">—</b></div>
+    <div class="hm-metric"><small>Potrivire predicție înainte / răspuns observat</small><b id="hmTrainingMatch">—</b></div>
+    <div class="hm-metric"><small>Ramuri și căi observate</small><b id="hmTrainingBranches">—</b></div>
    </div>
    <div class="hm-note" id="hmMeaning">În V18: graf al tranzițiilor efectiv învățate. În V17: forma generată înainte și predicțiile făcute cu adevărat în evaluare. Acestea sunt mecanisme diferite.</div>
    <h3>Perspectivă locală · pasul curent</h3>
