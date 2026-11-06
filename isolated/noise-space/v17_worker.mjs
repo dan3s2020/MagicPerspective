@@ -10,7 +10,7 @@ import {IsolatedGpuRunner} from './gpu_runner.mjs';
 import {openTextDataset} from '../../v17/transcend/torus-aether/data/text-dataset.mjs';
 import {nextTrainingSlice,rotatingHeldout,byteEvidence} from './text_schedule.mjs';
 import {TextActionPaths,matchScore} from './text_action_paths.mjs';
-import {CausalTextAgent} from './causal_text_world.mjs';
+import {CausalTextAgent,LatentGoalField} from './causal_text_world.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 // Isolate parallel regression runs; default user's existing checkpoint path is unchanged.
@@ -29,6 +29,9 @@ let last={text:null,maze:null,transform:null},history=[],error=null,lastSave=nul
 let stage='idle',lastDurationMs=null,progress={world:null,step:0,expected:null,observed:null};
 let navigationQuery=null;
 let gpuRunner=new IsolatedGpuRunner(),gpuRequested=false,gpuError=null,sourceRoot='',dataset=null,datasetIndex=0,datasetTestIndex=0;
+// Observed transitions are queued for the SAME verified V17 CUDA process; CPU only serializes results.
+const bufferedGeometry=[];
+let cudaAuxLast=null;
 let corpusCycles=0,heldWindowIndex=0,sourceSamples=0,gpuWorldsProcessed=0,learningStart=performance.now(),throughputBase=0,backupLegacy=false;
 const bounded=(a,k=300)=>a.length>k?a.slice(-k):a;
 const finite=v=>Number.isFinite(v)?v:null;
@@ -88,9 +91,11 @@ function state(withTrace=true){
   trainingRate:{worlds:Math.max(0,gpuWorldsProcessed-throughputBase),elapsedSec:Math.round((performance.now()-learningStart)/1000),worldsPerSec:Math.max(0,gpuWorldsProcessed-throughputBase)/Math.max(1,(performance.now()-learningStart)/1000)},
   sourceTextLabel:userText?'User-supplied text':'V17 repository technical documentation',
   conversionWarning:'The original V17 text learner maps non-ASCII characters to ASCII question marks.',
-  last,evaluation,history:bounded(history,120),geometry:geo?.summary()||null,
+  last,evaluation,history:bounded(history,120),
+  geometry:geo?{...geo.summary(),device:gpu.active?'PyTorch CUDA (batched geometry SGD)':'CPU / JavaScript'}:null,
+  cudaAux:cudaAuxLast,
   textPaths:pathHead?.summary()||null,navigationQuery,
-   causalMode:{enabled:causalTraining,maxActions:causalMaxActions,world:'training Q/A intervention environment',actionValueDevice:'CPU/JavaScript',v17BrainReceivesActions:true},
+   causalMode:{enabled:causalTraining,maxActions:causalMaxActions,world:'training Q/A intervention environment',actionValueDevice:'CPU/JavaScript',goalFieldDevice:gpu.active?'PyTorch CUDA':'CPU/JavaScript',v17BrainReceivesActions:true},
    causalText:causalAgent?.summary()||null,causalCheckpoint:path.relative(here,causalFile),
   lastSave,error,lastDurationMs,checkpoint:path.relative(here,checkpoint),
   trace:withTrace&&brain?copyTrace():null,
@@ -116,7 +121,9 @@ function save(){
 }
 function geoSample(world,x,y,prev,action,heldout){
  if(!geo)return;
- try{geo.consume({world,x,y,prev,action,heldout});}
+ const sample={world,x,y,prev,action,heldout};
+ if(gpuRunner.active){bufferedGeometry.push(sample);return;}
+ try{geo.consume(sample);}
  catch(e){error='Geometry sample rejected ('+world+'): '+e.message;}
 }
 // Training-only experience stream to the original, shared V17 Brain graph.
@@ -234,13 +241,16 @@ async function textEpisode(){
  // Real Parquet Q/A trains an independent goal-conditioned action head alongside ORIGINAL V17.
  // The source row enters learning ONLY here; heldout rows are never passed to learn().
  let pathRows=0,causalRows=0,causalActions=0;
+ const latentBatch=[];
  for(const row of batch)if(row.prompt?.trim()&&row.answer?.trim()){
   // Try interventions using only previously observed corpus evidence.
   // The CURRENT answer remains inside the training environment reward.
   if(causalTraining){
    if(!causalAgent.dynamics.observations)causalAgent.probe(causalAgent.seed);
-   const trial=causalAgent.train(row.prompt,row.answer,pathHead,{maxActions:causalMaxActions,seed:causalAgent.episodes*7919+11});
+   const trial=causalAgent.train(row.prompt,row.answer,pathHead,{maxActions:causalMaxActions,seed:causalAgent.episodes*7919+11,
+    skipLatentUpdate:gpuRunner.active});
    if(trial.trained){
+    if(gpuRunner.active)latentBatch.push({features:causalAgent.latent.features(row.prompt),target:causalAgent.latent.target(row.answer)});
     causalRows++;causalActions+=trial.steps;
     // The existing shared geometric learner sees genuine observed action steps;
     // it still does NOT establish aligned semantics with maze/game coordinates.
@@ -253,6 +263,11 @@ async function textEpisode(){
    }
   }
   if(pathHead.learn(row.prompt,row.answer).trained)pathRows++;
+ }
+ if(gpuRunner.active&&latentBatch.length){
+  const trained=await gpuRunner.latent(causalAgent,latentBatch);
+  causalAgent.latent=LatentGoalField.restore(trained.state);
+  cudaAuxLast={...(cudaAuxLast||{}),goalField:{device:trained.device,trained:trained.trained,elapsedMs:trained.elapsedMs,peakVramGB:trained.peakVramGB}};
  }
  seenTexts++;
  geometryForText(bytes,heldoutGeo);
@@ -418,6 +433,12 @@ async function tick(){
   const mode=modes[idx++%modes.length];episode++;progress={world:mode,step:0,expected:null,observed:null};
   emitProgress(progress);
   const outcome=await (mode==='text'?textEpisode():mode==='maze'?gpuRunner.active?gpuMazeEpisode():mazeEpisode():gpuRunner.active?gpuTransformEpisode():transformEpisode());
+  if(gpuRunner.active&&bufferedGeometry.length){
+   const trained=await gpuRunner.geometry(geo,bufferedGeometry.splice(0));
+   geo=GeometricLearningLab.restore(trained.state);
+   cudaAuxLast={...(cudaAuxLast||{}),geometry:{device:trained.device,trained:trained.trained,evaluated:trained.evaluated,
+    elapsedMs:trained.elapsedMs,peakVramGB:trained.peakVramGB,kernelGroups:trained.kernelGroups}};
+  }
   if(!gpuRunner.active&&mode!=='text')gpuWorldsProcessed++;
   // CPU mode counts one world per episode; CUDA mode counts verified batch worlds.
   lastDurationMs=Math.round(performance.now()-now);
@@ -459,6 +480,7 @@ parentPort.on('message',async m=>{
     if(sourceText!==m.text){cursor=0;corpusCycles=0;heldWindowIndex=0;}
     sourceRoot='';sourceText=m.text.slice(0,250000);userText=true;
    }
+   bufferedGeometry.length=0;cudaAuxLast=null;
    preparing=true;gpuError=null;error=null;paused=false;stage='preparing training';publish();
    try{
     if(modes.includes('text'))await ensureDataset();
@@ -528,7 +550,7 @@ parentPort.on('message',async m=>{
    for(const file of [checkpoint,geoFile,obsFile,pathFile,causalFile])if(fs.existsSync(file))fs.renameSync(file,file+'.backup-'+stamp);
    brain=null;geo=null;pathHead=null;causalAgent=null;dataset=null;episode=idx=cursor=seenTexts=0;sourceText='';userText=false;sourceRoot='';
    datasetIndex=datasetTestIndex=corpusCycles=heldWindowIndex=sourceSamples=gpuWorldsProcessed=throughputBase=0;
-   backupLegacy=false;
+   backupLegacy=false;bufferedGeometry.length=0;cudaAuxLast=null;
    last={text:null,maze:null,transform:null};evaluation={};history=[];error=null;gpuError=null;gpuRequested=false;navigationQuery=null;
    ensureBrain(false);stage='new isolated brain';save();
   }else if(action==='state')publish();
