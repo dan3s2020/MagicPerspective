@@ -114,6 +114,26 @@
         <p class="note" id="transOut">—</p>
       </div>
     </div>
+    <section id="textMazeBox" style="margin:12px 0;border:1px solid #527b91;border-radius:10px;padding:12px">
+      <h2>TEXT HYPERMAZE V20 · Hartă reală, forma soluției, corpul local</h2>
+      <p class="note">Un singur nod pentru fiecare cuvânt sau simbol distinct. Muchiile sunt transformări de succesiune observate în corpus, NU noduri repetate pentru fiecare apariție. Auriu = traseu calculat ÎNAINTE de observația curentă; albastru = traseul efectiv din document. Proiecția folosește cinci caracteristici măsurate, nu pretinde că dovedește o varietate hiperdimensională învățată.</p>
+      <div class="row"><label class="dim">Worker # <input id="textMazeWorker" type="number" min="0" step="1" value="0" style="width:56px"></label>
+        <span id="textMazeStatus" class="dim" aria-live="polite">Aștept graful live...</span></div>
+      <canvas id="textMazeCanvas" width="820" height="460" style="display:block;width:100%;background:#05101a;border:1px solid #28465a;border-radius:8px" aria-label="Traseele prezise și reale din graful învățat al corpusului"></canvas>
+      <div class="row"><button id="textMazePrev" type="button">◀ Pas</button>
+        <button id="textMazePlay" type="button">⏸ Pauză replay</button>
+        <button id="textMazeNext" type="button">Pas ▶</button>
+        <span id="textMazeFrame" class="dim">0 / 0</span></div>
+      <label class="dim">Cursor global/local și animația reală <input id="textMazeScrub" type="range" min="0" max="0" value="0" style="width:100%"></label>
+      <label class="dim">Viteză replay (ms/pas) <input id="textMazeSpeed" type="range" min="60" max="1600" step="20" value="320"></label>
+      <pre id="textMazeStats" style="white-space:pre-wrap;overflow:auto;max-height:260px;color:#b5deee;font:12px ui-monospace,monospace">Aștept datele originale ale workerului.</pre>
+      <h3>Traseu nou pe graful învățat (evaluare înghețată)</h3>
+      <div class="row"><label>Start: <input id="textMazeStart" type="text" size="16" placeholder="simbol din corpus"></label>
+      <label>Țintă: <input id="textMazeGoal" type="text" size="16" placeholder="simbol din corpus"></label>
+      <button id="textMazePlan" type="button">Prezice forma înainte de mișcare</button></div>
+      <pre id="textMazePlanOut" style="white-space:pre-wrap;overflow:auto;max-height:220px;color:#f4d998;font:12px ui-monospace,monospace">Nu s-a cerut un traseu încă.</pre>
+      <p class="note">Dovadă matematică verificabilă: V(țintă)=1, V(s)=0.97·max V(succesor). Residualul trebuie să fie aproape de 0. Un traseu optim și ascendent este o proprietate a grafului observat. Scorul pe documente noi este calculat ÎNAINTE să fie învățate. Aceste măsurători nu certifică înțelegerea semantică a limbajului.</p>
+    </section>
     <div id="cognitiveBox" hidden style="margin:12px 0;border:1px solid #25887e;border-radius:10px;padding:12px">
       <h2>Harta cognitivă a limbajului · ORIGINAL Discoverer.shape()</h2>
       <p class="note">Absoarbe observații complete, deduce transformări din contraste și propagă forma soluției înainte de acțiune. Regulile deduse sunt ipoteze până la verificarea efectelor într-o lume reală. Propoziția-țintă NU este transmisă creierului.</p>
@@ -241,5 +261,6 @@
   <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
+<script type="module" src="text-hypermaze-live.js"></script>
 </body>
 </html>
