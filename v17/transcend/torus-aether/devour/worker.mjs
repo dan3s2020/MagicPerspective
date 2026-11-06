@@ -113,10 +113,12 @@ const flushShared = async (force = false) => {
 };
 const tick = async (phase, done, total) => { batchNow = {phase, done, total}; shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
 const worldsOnce = async (record) => {                                     // one round of the worlds: one each on the CPU, or a batch of N on the GPU
+  // Self-code is a Node world: keep it learning even when a GPU world is awaiting its batch.
+  if (selfcode) selfcode.step();
   const G = await gpuOn();
-  if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); if (selfcode) selfcode.step(); await flushShared(); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
+  if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); await flushShared(); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
   if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
-  if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } if (selfcode) selfcode.step(); await flushShared(); };
+  if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 8)));
 const processGpuText = async (exs, meta) => {
@@ -135,6 +137,8 @@ const processGpuText = async (exs, meta) => {
     const replay = exs[0], chunk = 384;
     for (let i = 0; i < replay.length; i += chunk) {
       for (const y of replay.slice(i, i + chunk)) brain.live(y, brain.lived % 50 === 0, {old: true});
+      // A real self-code action interleaved with original V17 symbols, not a separate replay.
+      if (selfcode && (Math.floor(i / chunk) % 2 === 0)) selfcode.step();
       await tick("text: integrare în graful V17", Math.min(i + chunk, replay.length), replay.length);
     }
   }
