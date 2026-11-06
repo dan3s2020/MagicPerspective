@@ -20,11 +20,12 @@ import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_worl
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), CODE = worlds.includes("code"), MAPTEXT = worlds.includes("maptext"), COGNITIVE = worlds.includes("cognitivemap");
-const MAP_ONLY = !TEXT && !MAZE && !TRANS && !CODE && (MAPTEXT || COGNITIVE);
+const HYPER = worlds.includes("hypertext");
+const MAP_ONLY = !TEXT && !MAZE && !TRANS && !CODE && (MAPTEXT || COGNITIVE || HYPER);
 validateWorldSource(worlds, source); // fail closed BEFORE loading or changing any brain checkpoint
 
 async function* stream() {                                                 // this brain's share of the world, once
-  if (!TEXT && !COGNITIVE) { for (;;) yield {k: -1, bytes: []}; }
+  if (!TEXT && !COGNITIVE && !HYPER) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
     for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer, worldText: "Q: " + x.prompt + "\nA: " + x.answer}; }
@@ -49,7 +50,7 @@ const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : n
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
-const hypermaze = COGNITIVE ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
+const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 brain.setSharedObserver(sample => {
   shared.observe(sample);
   if(cognitive)cognitive.observeExternalTransition(sample);
@@ -59,16 +60,16 @@ const saveCognitive = () => {
   if(hypermaze)brain.hypermaze = hypermaze.export();
 };
 const absorbCognitive = row => {
-  if(!cognitive)return null;
+  if(!cognitive && !hypermaze)return null;
   if(typeof row?.worldText !== "string")throw Error("Cognitive world requires complete original text, not ASCII token predictions");
-  const before=cognitive.rules.size;
-  const result=cognitive.observeWorld(row.worldText,{id:row.k});
+  const before=cognitive?.rules.size||0;
+  const result=cognitive?.observeWorld(row.worldText,{id:row.k})||null;
   // Freeze predictions, plan against PREVIOUS graph, then absorb the actual document.
   // No answer or future transitions are supplied to the planner.
   if(hypermaze)hypermaze.observeWorld(row.worldText,{id:row.k});
   brain.cognitiveDocuments=(brain.cognitiveDocuments||0)+1;
   brain.cognitiveCharacters=(brain.cognitiveCharacters||0)+row.worldText.length;
-  if(cognitive.rules.size>before){
+  if(cognitive && cognitive.rules.size>before){
     brain.trace.node("cognitive:world","world","Learned language transformation atlas");
     const rules=[...cognitive.rules.values()].slice(-Math.min(5,cognitive.rules.size-before));
     for(const rule of rules){
@@ -178,7 +179,7 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
-  if (COGNITIVE) for(const row of meta) absorbCognitive(row);
+  if (COGNITIVE || HYPER) for(const row of meta) absorbCognitive(row);
   const profTraceEnd = profileText ? performance.now() : 0;
   if (CODE) for (let i = 0; i < 4; i++) codeWorld.step();
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
@@ -294,8 +295,8 @@ shot(true); await hold();
 for await (const ex of stream()) {
   await hold();
   if (TEXT && k++ < skip) continue;
-  if (COGNITIVE && !TEXT && k++ < cognitionStart) continue;
-  if (COGNITIVE && !TEXT) {
+  if ((COGNITIVE || HYPER) && !TEXT && k++ < cognitionStart) continue;
+  if ((COGNITIVE || HYPER) && !TEXT) {
     absorbCognitive(ex); // COMPLETE document before any action; no Brain.live next-character training.
     if(brain.cognitiveDocuments%50===0 && (MAZE || TRANS || MAPTEXT || CODE)) await worldsOnce(false);
     if(brain.cognitiveDocuments%25===0) shot(true); // live UI without expensive disk writes
