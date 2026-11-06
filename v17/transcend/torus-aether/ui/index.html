@@ -90,11 +90,13 @@
       <p class="note" id="evOut">—</p>
       <canvas id="evCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
       <div id="evalText" hidden></div>
+      <div id="textHyperMazePanel" hidden></div>
       <div id="evalTab" class="dim"></div>
     </div>
     <div id="livePanel" hidden>
       <h2>Grafurile care devorează acum (alege unul ca să intri în spațiul lui)</h2>
       <div id="liveList" class="liveList"></div>
+      <div id="trainHyperMazePanel" hidden></div>
       <div class="row"><button id="allStart">▶ Start toate</button><button id="allPause">⏸ Pauză toate</button><button id="allSave">💾 Salvează toate</button><button id="liveReset" title="toate creierele pornesc din nou, goale (salvările vechi sunt puse deoparte)">⟲ Reset toate la 0</button></div>
       <div class="row gpuRow"><b class="dim">Lumi pe GPU:</b> <select id="gpuDev"><option value="off">oprit (CPU)</option><option>cuda:0</option><option>cuda:1</option><option>cpu</option></select>
         <label class="dim" title="0 = câte umplu memoria video dată">lumi odată (0 = umple VRAM) <input id="gpuWorlds" type="number" min="0" step="1" value="0" style="width:90px"></label>
@@ -136,6 +138,7 @@
       <div class="row"><label class="dim" for="gearNoise">Noise portals (0–1)</label><input id="gearNoise" type="range" min="0" max="1" step=".05" value="0"><span id="gearNoiseOut" class="dim">0</span></div>
       <div class="row"><button type="button" id="gearPlan">Rezolvă global → subprobleme → cursor</button></div>
       <pre id="gearOut" style="white-space:pre-wrap;overflow:auto;max-height:360px;font:12px/1.55 ui-monospace,monospace;background:#05080c;border:1px solid #1b2a39;border-radius:8px;padding:9px">Nu există încă un traseu executat.</pre>
+      <div id="nativeHyperMazePanel" hidden></div>
     </div>
     <h2>Mediu</h2>
     <p class="note" id="corpus">se încarcă…</p>
