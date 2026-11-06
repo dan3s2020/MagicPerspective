@@ -1,0 +1,41 @@
+name: Original V17 text hyperpaths before answer (no demo)
+on:
+  push:
+    branches:
+      - experiment/V17-TEXT-HYPERPATH-PREANSWER-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-qa-route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse original Brain, route learner, native eval worker and extended UI
+        run: |
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/devour/eval-worker.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/text-hyperpaths-eval.mjs
+      - name: Original V17 frozen-before-answer route, no oracle and checkpoint tests
+        run: |
+          node --test v17/tests/torus-text-hyperpaths.test.mjs
+      - name: Preserve old real-world organism functionality
+        run: |
+          node --test v17/tests/torus-organism.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Do not break V17 Windows PowerShell entrypoint
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'v17/START_V17_TRANSFER.ps1'),[ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){throw ($errors -join '; ')}
