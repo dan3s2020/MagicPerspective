@@ -8,6 +8,8 @@ param(
   [int]$GpuWorlds = 16,
   [int]$GpuTextBatch = 2,
   [int]$GpuTextChunk = 128,
+  [ValidateRange(256,32768)]
+  [int]$GpuMaxChars = 4096,
   [double]$Vram = 1.8,
   [int]$Workers = 1,
   [string]$PythonExe = "",
@@ -98,6 +100,7 @@ $cmd = @(
   "--gpu-worlds","$GpuWorlds",
   "--gpu-text-batch","$GpuTextBatch",
   "--gpu-text-chunk","$GpuTextChunk",
+  "--gpu-max-chars","$GpuMaxChars",
   "--vram","$Vram",
   "--gpu-util","100",
   "--resume",
@@ -109,7 +112,7 @@ Write-Host "=== MAGIC PERSPECTIVE / BODY PERSPECTIVE ISOLATED ===" -ForegroundCo
 Write-Host "Branch: $branch"
 Write-Host "Source: $gitRoot"
 Write-Host "Checkpoint root: $runtime"
-Write-Host "CUDA text: batch=$GpuTextBatch, chunk=$GpuTextChunk; GPU worlds/batch=$GpuWorlds; VRAM requested=$Vram GB"
+Write-Host "CUDA text: batch=$GpuTextBatch, chunk=$GpuTextChunk, max original-row window=$GpuMaxChars chars; GPU worlds/batch=$GpuWorlds; VRAM requested=$Vram GB"
 Write-Host "Startup: quick REAL CUDA tensor check; pass -FullGpuSelfTest for the original 512-world and PyTorch self-tests."
 Write-Host "Native V17 graph + training + new tabs: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "To exit safely: Save in UI, Stop, then Ctrl+C once. Original processes and files are untouched."
