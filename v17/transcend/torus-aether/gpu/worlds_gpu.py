@@ -339,7 +339,7 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None
+    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
@@ -374,6 +374,17 @@ class Server:
             r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0), m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])])
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
+        elif c in ("shared_load", "shared_train", "shared_eval", "shared_save"):
+            from shared_perspective import SharedPerspective
+            if self.shared is None:
+                if not self.B.torch: raise RuntimeError("Shared learning requires a real PyTorch backend")
+                self.shared = SharedPerspective(str(self.B.device), seed=int(m.get("seed", 11)))
+            if c == "shared_load": r = self.shared.load(m["checkpoint"])
+            elif c == "shared_train":
+                r = self.shared.train(m["samples"])
+                if m.get("checkpoint"): r["checkpoint"] = self.shared.save(m["checkpoint"])
+            elif c == "shared_eval": r = self.shared.evaluate(m["samples"])
+            else: r = self.shared.save(m["checkpoint"])
         elif c == "maze_check": r = {"mazes": [make_maze(s, n) for s, n in m["items"]]}
         else: r = {"error": "unknown command " + c}
         self.B.sync(); busy = time.time() - t0; self.throttle(busy)

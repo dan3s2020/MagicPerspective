@@ -19,7 +19,13 @@ import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
+const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
 export class Brain {
+  setSharedObserver(callback) {
+    if (callback !== null && typeof callback !== "function") throw Error("shared observer must be a function or null");
+    if (callback) SHARED_HOOKS.set(this, callback); else SHARED_HOOKS.delete(this);
+  }
+  observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
     this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
@@ -90,7 +96,7 @@ export class Brain {
   playMaze(record = true) {
     if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}});
     const M = this.mazes, i = M.index++, w = makeMaze(seedOf(SEEDS.train, i), [7, 9, 11][i % 3]);
-    const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {record});
+    const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {record, onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})});
     M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows;
     if (record) M.last = {...r, kind: w.n + "×" + w.n, i};
     return r;
@@ -115,7 +121,7 @@ export class Brain {
     const t0 = performance.now(); this.disc.absorb(res.learn);
     M.played += res.n; M.won += res.solved; const rate = res.solved / res.n; M.recent.push(rate); if (M.recent.length > 100) M.recent.shift();
     const R = res.record, w = makeMaze(R.seed, R.n), copy = Object.assign(Object.create(Discoverer.prototype), structuredClone(this.disc)); copy.r = Object.assign(Object.create(RNG.prototype), copy.r);
-    const r = playExercise(w, copy, y => this.live(y, this.lived % 50 === 0), {outputs: R.outputs, record: true}); M.knows = r.knows; M.last = {...r, kind: w.n + "×" + w.n, i: M.index};
+    const r = playExercise(w, copy, y => this.live(y, this.lived % 50 === 0), {outputs: R.outputs, record: true, onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})}); M.knows = r.knows; M.last = {...r, kind: w.n + "×" + w.n, i: M.index};
     M.gpu = {batch: res.n, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, solved: res.solved, mergeMs: +(performance.now() - t0).toFixed(1), cardMs: +(1000 * (res.busy || 0)).toFixed(1)};
     return M.gpu;
   }
@@ -126,7 +132,7 @@ export class Brain {
     const res = await gpu.call({cmd: "exercise", worlds: items.map(x => ({seed: x.seed, n: x.n})), knows: this.knowsForGpu(), seed: this.seed * 1000 + M.index});
     let differ = 0;
     for (let k = 0; k < items.length; k++) { const x = items[k], w = makeMaze(x.seed, x.n), rec = k === items.length - 1;
-      const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {outputs: res.worlds[k].outputs, record: rec});
+      const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {outputs: res.worlds[k].outputs, record: rec, onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})});
       if (r.solved !== res.worlds[k].solved) differ++;
       M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows; if (rec) M.last = {...r, kind: w.n + "×" + w.n, i: x.i};
       if (k % 16 === 15) await tick("labirinturi: trăite de creier", k + 1, N); }
@@ -154,7 +160,7 @@ export class Brain {
     }
     for (let k = 0; k < levels.length; k++) { const L = levels[k], x = lives[k], live = y => this.live(TSYM[y], this.lived % 50 === 0);   // the same brain lives every world's experience
       for (const v of x.steps[0]?.b || []) live(v); for (const v of L.goal) live(v);
-      for (const s of x.steps) { if (!s.a) continue; this.causal.learn(s.b, s.a, L.n, this.causal.findSelf(s.b), s.o); live(18 + s.o); for (let i = 0; i < s.a.length; i++) if (s.a[i] !== s.b[i]) live(s.a[i]); }
+      for (const s of x.steps) { if (!s.a) continue; this.causal.learn(s.b, s.a, L.n, this.causal.findSelf(s.b), s.o); this.observeShared({domain: 'transform', before: s.b, after: s.a, action: 'output:' + s.o, context: 'grid:' + L.n}); live(18 + s.o); for (let i = 0; i < s.a.length; i++) if (s.a[i] !== s.b[i]) live(s.a[i]); }
       const solved = match(boards[k], L.goal); T.played++; T.won += solved;
       if (k === levels.length - 1) T.last = {solved, steps: x.steps.length, optimal: L.optimal, said: x.said, n: L.n, terr: L.terr, goal: L.goal, goals: L.goals, i: T.index - 1,
         frames: [...x.steps.map(s => ({b: s.b})), {b: boards[k]}]};
@@ -223,7 +229,7 @@ export class Brain {
     while (!L) { L = makeLevel(TSEEDS.train + T.index * 7919, {goals: kinds[T.index % 3]}); T.index++; }
     const w = new TWorld(L, this.tMoves), live = y => this.live(TSYM[y], this.lived % 50 === 0);
     for (const v of w.board()) live(v); for (const v of L.goal) live(v);                // the board and the desired configuration, as symbols
-    const agent = {org: this.causal, choose: (b, n, g) => this.causal.choose(b, n, g), learn: (b, a, n, at, o) => { this.causal.learn(b, a, n, at, o); live(18 + o); for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) live(a[i]); }};
+    const agent = {org: this.causal, choose: (b, n, g) => this.causal.choose(b, n, g), learn: (b, a, n, at, o) => { this.causal.learn(b, a, n, at, o); this.observeShared({domain: 'transform', before: b, after: a, action: 'output:' + o, context: 'grid:' + n}); live(18 + o); for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) live(a[i]); }};
     const r = liveTask(L, w, agent, {record}); T.played++; T.won += r.solved;
     if (record) T.last = {...r, terr: L.terr, goal: L.goal, goals: L.goals, i: T.index - 1, frames: r.frames.map(f => ({b: f.b, how: f.how, plan: f.plan}))};
     return r;
