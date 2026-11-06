@@ -382,7 +382,7 @@ function stats() {
 let frame = 0;
 function loop() {
   if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); }
+  if (LIVE) { drawMaze(); drawTrans(); if (frame % 6 === 0) perspectiveDraw(); }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
   for (const [k, x] of edges) { x.w *= .9995; x.hot *= .9; if (x.w < .05) edges.delete(k); }
@@ -457,6 +457,110 @@ function drawMaze() {
     for (const a of plan) { const d = [[0, -1], [1, 0], [0, 1], [-1, 0]][a], x = p % n + d[0], y = (p / n | 0) + d[1]; if (x < 0 || y < 0 || x >= n || y >= n) break; p = y * n + x; g2.lineTo(cx(p), cy(p)); } g2.stroke(); g2.setLineDash([]); }
   g2.fillStyle = "#ff4d6d"; g2.beginPath(); g2.arc(cx(at), cy(at), s2 * .3, 0, 7); g2.fill();
 }
+// LIVE V17 PERSPECTIVE: these are traces emitted by the ORIGINAL training worker.
+// Nothing on these canvases trains; the viewer only replays measured decisions.
+let perspReport = null, perspShownEpisode = -1, perspStep = 0, perspTimer = null;
+const perspPct = n => n == null ? '—' : (n * 100).toFixed(1) + '%';
+const perspNum = n => n == null ? '—' : (+n).toFixed(2);
+function perspectiveCase() {
+  const mode = $("perspReplay").value, P = liveSnap?.perspective;
+  return mode === 'train' ? P?.last : mode === 'learned' ? perspReport?.replay?.[0] : perspReport?.controlReplay?.[0];
+}
+function perspectiveDraw() {
+  const P = liveSnap?.perspective, box = $("perspectiveBox");
+  if (!LIVE || !P) {box.hidden = true;return;} box.hidden = false;
+  $("perspEpisodes").textContent = P.episodes + ' / ' + P.solved;
+  $("perspSamples").textContent = P.samples;
+  $("perspHeading").textContent = perspPct(P.headingAccuracy);
+  $("perspPose").textContent = perspPct(P.poseAccuracy);
+  const T = perspReport || P.test, live=P.last;
+  $("perspInterpret").textContent = "Același Brain continuă să primească exerciții reale. "+
+    "Ruta inițială vine din Discoverer.shape; după start, doar observații locale și mișcarea simțită. "+
+    (P.samples ? "A învățat "+P.samples+" corespondențe între mișcări și direcții, inferate din senzori." :
+      "Încă nu a validat nicio corespondență de deplasare.");
+  if(T?.learned&&T?.control) {
+    const gain=T.improvementPoints;
+    $("perspResult").textContent="EVALUARE FROZEN "+T.count+" labirinturi nevăzute: "+
+      "învățat "+perspPct(T.learned.successRate)+" vs fără transformare "+perspPct(T.control.successRate)+
+      " (Δ "+perspNum(gain)+" pp). Pași suplimentari, numai reușite: "+
+      perspNum(T.learned.extraStepsSolved)+" vs "+perspNum(T.control.extraStepsSolved)+
+      ". Localizare "+perspPct(T.learned.poseAccuracy)+" vs "+perspPct(T.control.poseAccuracy)+
+      ". Rezultatul testului NU se adaugă în memorie.";
+    $("perspResult").style.color=gain>0?"var(--green)":gain<0?"var(--red)":"var(--dim)";
+  }
+  // Actual training episode scores, never synthetic curves.
+  const canvas=$("perspLearning"),g=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
+  g.clearRect(0,0,W,H);g.fillStyle="#040c14";g.fillRect(0,0,W,H);
+  const rows=P.recent||[];
+  g.strokeStyle="#1b3349";g.lineWidth=1;
+  for(let y=0;y<=4;y++){g.beginPath();g.moveTo(18,10+y*(H-26)/4);g.lineTo(W-10,10+y*(H-26)/4);g.stroke();}
+  const lines=[["solved","#7cc9ff",x=>+x.solved],["headingAccuracy","#f5b301",x=>x.headingAccuracy],["poseAccuracy","#3ddc84",x=>x.poseAccuracy]];
+  for(const [label,color,get] of lines){
+    if(rows.length===0)continue;
+    g.beginPath();g.strokeStyle=color;g.lineWidth=2;
+    rows.forEach((r,i)=>{const x=18+(W-28)*(i/Math.max(1,rows.length-1)),y=H-16-(H-28)*(get(r)||0);
+      if(!i)g.moveTo(x,y);else g.lineTo(x,y);});g.stroke();
+  }
+  g.fillStyle="#adbdcf";g.font="11px system-ui";g.fillText("Ultimele "+rows.length+" episoade LIVE: albastru reușită, galben orientare, verde localizare",16,H-4);
+  if(perspShownEpisode!==P.episodes){perspShownEpisode=P.episodes;if($("perspReplay").value==="train")perspStep=0;}
+  const L=perspectiveCase();
+  if(!L?.world||!L?.trace?.length) {$("perspDetails").textContent="Aștept primul replay real înregistrat (la fiecare câteva episoade).";return;}
+  const trace=L.trace,k=Math.min(perspStep,trace.length-1),r=trace[k],M=L.world,n=M.n;
+  perspStep=k;$("perspFrame").max=Math.max(0,trace.length-1);$("perspFrame").value=k;
+  $("perspFrameOut").textContent=(k+1)+"/"+trace.length;
+  const canvasMap=$("perspMap"),gm=canvasMap.getContext("2d"),Wm=canvasMap.width,Hm=canvasMap.height;
+  gm.clearRect(0,0,Wm,Hm);const cell=Math.min(Wm,Hm)*.96/n,ox=(Wm-n*cell)/2,oy=(Hm-n*cell)/2;
+  const cx=p=>ox+(p%n+.5)*cell,cy=p=>oy+(Math.floor(p/n)+.5)*cell;
+  for(let i=0;i<M.wall.length;i++){gm.fillStyle=M.wall[i]?"#233749":"#070e18";
+    gm.fillRect(ox+(i%n)*cell+1,oy+Math.floor(i/n)*cell+1,cell-2,cell-2);}
+  const shape=L.initialShapePositions||[];
+  if(shape.length>1){gm.beginPath();gm.strokeStyle="rgba(245,179,1,.85)";gm.lineWidth=Math.max(2,cell*.16);gm.setLineDash([5,4]);
+    shape.forEach((p,i)=>{if(!i)gm.moveTo(cx(p),cy(p));else gm.lineTo(cx(p),cy(p));});gm.stroke();gm.setLineDash([]);}
+  gm.beginPath();gm.strokeStyle="#7cc9ff";gm.lineWidth=Math.max(2,cell*.13);
+  const shown=[M.start,...trace.slice(0,k+1).filter(x=>x.moved).map(x=>x.actualAfter)];
+  shown.forEach((p,i)=>{if(!i)gm.moveTo(cx(p),cy(p));else gm.lineTo(cx(p),cy(p));});gm.stroke();
+  function dot(p,color,s=.25){if(!Number.isInteger(p)||p<0||p>=n*n)return;gm.beginPath();gm.arc(cx(p),cy(p),cell*s,0,7);gm.fillStyle=color;gm.fill();}
+  dot(M.goal,"#f5b301");dot(r.estimatedPos,"#3ddc84");dot(r.actualBefore,"#ff4d6d",.18);
+  const canvasLocal=$("perspLocal"),gl=canvasLocal.getContext("2d"),Wl=canvasLocal.width,Hl=canvasLocal.height;
+  gl.clearRect(0,0,Wl,Hl);const tile=Math.min(Wl,Hl)/5;
+  for(let i=0;i<25;i++){gl.fillStyle=r.patch?.[i]?"#243950":"#09111b";
+    gl.fillRect((i%5)*tile+1,Math.floor(i/5)*tile+1,tile-2,tile-2);}
+  gl.beginPath();gl.arc(Wl/2,Hl/2,tile*.27,0,7);gl.fillStyle="#7cc9ff";gl.fill();
+  $("perspDetails").textContent="V17 REAL / episod "+P.episodes+" / pas "+r.step+
+    "\nForma inițială: "+L.initialShape.length+" direcții; potrivire cu drumul optim "+perspPct(L.firstShapeAccuracy)+
+    "\nAlegerea: "+r.source+" · comandă emisă: "+r.chosenOutput+
+    "\nPredicție direcție pe hartă: "+r.wantedDir+" · direcție reală: "+r.actualDir+
+    "\nPOZIȚIE estimată "+r.estimatedPos+" / reală "+r.actualBefore+
+    "\nORIENTARE estimată "+r.estimatedHeading+" / reală "+r.hiddenHeading+" (ascunsă organismului)"+
+    "\nEroare potrivire senzor: "+r.errors+" · unică: "+r.unique+" · mișcare: "+(r.moved?"DA":"BLOCAT")+
+    "\nHarta globală citită din nou după start: "+L.globalObservationsAfterStart+
+    "\nRezultat: "+(L.solved?"REZOLVAT":"NEREZOLVAT")+" în "+L.steps+" pași; optim "+L.optimal+
+    "; corecții bazate pe memoria hărții: "+L.memoryRepairs+".";
+}
+function perspectiveMove(delta){const L=perspectiveCase();if(!L?.trace?.length)return;
+  perspStep=Math.min(L.trace.length-1,Math.max(0,perspStep+delta));perspectiveDraw();}
+$("perspFrame").oninput=e=>{perspStep=+e.target.value;perspectiveDraw();};
+$("perspPrev").onclick=()=>perspectiveMove(-1);
+$("perspNext").onclick=()=>perspectiveMove(1);
+$("perspReplay").onchange=()=>{perspStep=0;perspectiveDraw();};
+$("perspPlay").onclick=()=>{
+  if(perspTimer){clearInterval(perspTimer);perspTimer=null;$("perspPlay").textContent="▶";return;}
+  perspTimer=setInterval(()=>{const L=perspectiveCase();
+    if(!L?.trace||perspStep>=L.trace.length-1){clearInterval(perspTimer);perspTimer=null;$("perspPlay").textContent="▶";return;}
+    perspectiveMove(1);},270);$("perspPlay").textContent="⏸";
+};
+$("perspEvaluate").onclick=async()=>{
+  if(!LIVE)return;
+  const b=$("perspEvaluate");b.disabled=true;$("perspResult").textContent="Testare înghețată în workerul V17. Aștept rezultate reale…";
+  try{
+    const qs=new URLSearchParams({w:String(liveW),count:String(+$("perspCount").value),seed:String(+$("perspSeed").value)});
+    const res=await fetch("/perspective-eval?"+qs,{method:"POST"});
+    if(!res.ok)throw Error("HTTP "+res.status);
+    const payload=await res.json();
+    if(payload.error)throw Error(payload.error);
+    perspReport=payload;perspStep=0;$("perspReplay").value="learned";perspectiveDraw();
+  }catch(e){$("perspResult").textContent="EVALUARE EȘUATĂ: "+e.message;}finally{b.disabled=false;}
+};
 // the transformation world: the board as raw symbols (a colour each, no names), the desired configuration outlined
 let transShown = null, transT0 = 0;
 function drawTrans() {
@@ -486,7 +590,7 @@ async function livePull() {
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
-      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w; nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull(); };
+      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w; nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; perspReport = null; perspShownEpisode = -1; perspStep = 0; $("perspReplay").value = "train"; livePull(); };
       for (const b of c.querySelectorAll("button")) b.onclick = async ev => { ev.stopPropagation(); const act = b.dataset.do;
         if ((act === "reset" || act === "remove") && !armedNow(c.dataset.w + act)) { armed.set(c.dataset.w + act, performance.now() + 4000); b.textContent = "sigur?"; return; }
         armed.delete(c.dataset.w + act);
