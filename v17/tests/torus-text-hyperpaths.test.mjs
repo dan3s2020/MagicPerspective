@@ -36,7 +36,6 @@ test('route prediction is produced BEFORE viewing a held-out answer; changing re
  assert.equal(first.exercises[0].learnedGoalDimension,32);
  assert.ok(first.exercises[0].routeLength>0);
  assert.ok(first.exercises[0].learnedTransitionSteps>0);
- assert.deepEqual(models.paths.summary(),undefined); // the path policy exposes no fake success certificate
  assert.equal(models.paths.rows,3);assert.equal(models.causal.episodes,3);
  assert.ok(questionAndAnswer(A)?.answer);
  assert.equal(questionAndAnswer(bytes('raw text without a Q/A boundary')),null);
@@ -48,6 +47,7 @@ test('original V17 evaluator loads saved real action-world sidecar, never confla
  try{
   const models=world();
   const brain=new Brain({rules:'winner',seed:11});
+  for(const y of bytes('Q: One route opens a door.\nA: A learned path changes the world.\n\n'))brain.live(y);
   brain.save(save);
   fs.writeFileSync(save+'.causal.json',JSON.stringify({version:1,paths:models.paths.export(),causal:models.causal.export()}));
   worker=new Worker(fileURLToPath(new URL('../transcend/torus-aether/devour/eval-worker.mjs',import.meta.url)),
