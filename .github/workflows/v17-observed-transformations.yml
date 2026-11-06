@@ -24,6 +24,8 @@ jobs:
           node --check v17/transcend/torus-aether/ui/app.js
       - name: Four sentences, unseen composition, negative ablations and counterfactual replay
         run: node --test v17/tests/observed-transformations-v17.test.mjs
+      - name: REAL original V17 TXT corpus and live HTTP, unseen She is calm, preserved native UI and frozen checkpoint
+        run: node --test v17/tests/observed-transformations-live.test.mjs
       - name: Preserve real original Brain, end-to-end HTTP and living path worlds
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
