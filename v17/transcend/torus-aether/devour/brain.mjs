@@ -49,8 +49,8 @@ export class Brain {
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   // text lived on the card: a whole batch of exercises, the aligning graph adds the totals and keeps every exercise
-  async learnTextGPU(gpu, exs) {
-    const A = (this.align ||= new AligningGraph()), ask = list => { const p = gpu.call({cmd: "text_learn", exercises: list, trust: A.trustForCard(), g: A.g, formW: A.formW, variants: A.variants()}); p.catch(() => {}); return p; };
+  async learnTextGPU(gpu, exs, onProgress = null) {
+    const A = (this.align ||= new AligningGraph()), ask = list => { const p = gpu.call({cmd: "text_learn", exercises: list, trust: A.trustForCard(), g: A.g, formW: A.formW, variants: A.variants()}, {onProgress}); p.catch(() => {}); return p; };
     if (SYNCED.get(gpu) !== this) { await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(0, A.mem.n)).toString("base64")}); SYNCED.set(gpu, this); }   // the card starts with everything this brain has lived
     const t0 = performance.now(), R = await ask(exs), t1 = performance.now(); A.absorb(R, exs);
     const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;

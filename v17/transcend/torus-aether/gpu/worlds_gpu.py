@@ -371,7 +371,14 @@ class Server:
             if self.text is None:
                 from text_gpu import TextCard
                 self.text = TextCard(self.B.device if self.B.torch else "numpy")
-            r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0), m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])])
+            def text_progress(done, total, phase):
+                if "id" in m:
+                    sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
+                                                 "done": int(done), "total": int(total)}) + "\n")
+                    sys.stdout.flush()
+            r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),
+                               m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])],
+                               progress=text_progress)
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c in ("shared_load", "shared_train", "shared_eval", "shared_save"):

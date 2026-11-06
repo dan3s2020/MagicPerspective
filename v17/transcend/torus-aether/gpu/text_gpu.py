@@ -115,7 +115,7 @@ class TextCard:
                 lo = LO[r, kc]; hi = HI[r, kc]; ys = ix.sample_next(X, lo, hi, self.S)
                 out.append((src, d, ok, hi - lo, ys))
         return out
-    def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096):
+    def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None):
         """exs: exercises (lists of symbols) lived now. trust: {key_id: [right, tried]}. Returns the totals."""
         X = self.X; flat = []; owner = []; posin = []; self._self = {}
         for e_i, e in enumerate(exs):
@@ -167,12 +167,15 @@ class TextCard:
                 if len(kn): u, inv = np.unique(kn, return_inverse=True); rr = np.bincount(inv, weights=rn).astype(np.int64); tt = np.bincount(inv).astype(np.int64)
                 else: u, rr, tt = [], [], []
                 for k_, r_, t_ in zip(u, rr, tt): T_right[int(k_)] = T_right.get(int(k_), 0) + int(r_); T_tried[int(k_)] = T_tried.get(int(k_), 0) + int(t_)
+            if progress is not None: progress(c0 + Q, total, 'alignment')
         # imagining: from every 31st moment it writes 48 symbols ahead from its own expectations (all at once); as the real
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
-        W_right, W_tried = self._imagine(exs, names, g, formW)
+        W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress)
+        if progress is not None: progress(0, 1, 'indexing')
         self.X.sync(); self.append(exs); self._self = {}
+        if progress is not None: progress(1, 1, 'completed')
         return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem))}
-    def _imagine(self, exs, trust, g, formW, every=31, K=48):
+    def _imagine(self, exs, trust, g, formW, every=31, K=48, progress=None):
         X = self.X; starts = [(o, i) for o, e in enumerate(exs) for i in range(every, len(e) - 1, every)]
         W_right, W_tried = {}, {}
         if not starts or self.big is None: return W_right, W_tried
@@ -188,6 +191,7 @@ class TextCard:
             for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - 1::-1][:L]
             CX = X.arr(ctx); ok = np.ones(Rn, dtype=bool)
             for step in range(K):
+                if progress is not None and step % 8 == 0: progress(c0 * K + step * Rn, len(starts) * K, 'imagination')
                 real = np.array([exs[o][i + step] if i + step < len(exs[o]) else -1 for (o, i) in St], dtype=np.int64)
                 act = ok & (real >= 0)
                 if not act.any(): break
@@ -210,6 +214,7 @@ class TextCard:
                 guess = X.tonp(X.argmax1(Sx[:, :128]))
                 ok = ok & ~((guess != real) & (step >= 2))                      # once its imagination left reality (after the first 3), the rest says nothing
                 cn = X.tonp(CX); cn = np.concatenate([guess[:, None], cn[:, :-1]], axis=1); CX = X.arr(cn)
+        if progress is not None: progress(len(starts) * K, len(starts) * K, 'imagination')
         return W_right, W_tried
     def _top(self, ys):                          # the most frequent symbol among what followed (the proposal's guess)
         X = self.X; Q, S = ys.shape

@@ -16,13 +16,16 @@ export class GpuWorlds {
     this.p.on("error", err => fail("could not start " + py + ": " + err.message));
     this.p.stdin.on("error", err => fail("GPU process (" + py + ") is not reading: " + err.message + " " + (this.error || "")));
     this.p.stdout.on("data", d => { this.buf += d; let k; while ((k = this.buf.indexOf("\n")) >= 0) { const line = this.buf.slice(0, k); this.buf = this.buf.slice(k + 1);
-      let m; try { m = JSON.parse(line); } catch { continue; } const w = this.wait.get(m.id); if (w) { this.wait.delete(m.id); m.error ? w.reject(new Error(m.error)) : w.resolve(m); } } });
+      let m; try { m = JSON.parse(line); } catch { continue; } const w = this.wait.get(m.id); if (w) {
+        if (m.type === "progress") { try { w.onProgress?.(m); } catch {} continue; }
+        this.wait.delete(m.id); m.error ? w.reject(new Error(m.error)) : w.resolve(m);
+      } } });
     this.p.stderr.on("data", d => { this.error = String(d).slice(-400); });
     this.p.on("exit", code => fail("GPU process " + py + " ended (" + code + "): " + (this.error || "")));
     let timer; const limit = new Promise((_, reject) => { timer = setTimeout(() => { reject(new Error("GPU process " + py + " did not answer in 180 s: " + (this.error || ""))); this.close(); }, 180000); });
     this.ready = Promise.race([this.call({cmd: "init", ...this.settings}), limit]).then(info => (this.info = info), err => { this.close(); this.dead = true; throw err; }).finally(() => clearTimeout(timer));
   }
-  call(m) { return new Promise((resolve, reject) => { if (this.dead) return reject(new Error("GPU process is not running: " + (this.error || ""))); const id = ++this.id; this.wait.set(id, {resolve, reject}); this.p.stdin.write(JSON.stringify({...m, id}) + "\n"); }); }
+  call(m, {onProgress} = {}) { return new Promise((resolve, reject) => { if (this.dead) return reject(new Error("GPU process is not running: " + (this.error || ""))); const id = ++this.id; this.wait.set(id, {resolve, reject, onProgress}); this.p.stdin.write(JSON.stringify({...m, id}) + "\n"); }); }
   async configure(settings) { this.settings = {...this.settings, ...settings}; await this.ready; this.info = await this.call({cmd: "init", ...this.settings}); return this.info; }
   close() { try { this.p.stdin.end(); this.p.kill(); } catch {} }
 }
