@@ -95,3 +95,39 @@ test("same original propagation respects learned wall resistance and missing rou
  const missing=shapeOnLearnedTopology({kinds:[KIND.self,KIND.floor],neighbors:[[],[]],start:0,...law});
  assert.equal(missing.path,null);
 });
+
+
+test("organism discovers a character-position transformation from examples; unseen input gets a pre-action path",()=>{
+ const world=new LanguageMazeMemory();
+ world.learn("Portal: abc","cba");
+ assert.equal(world.stats().observedPositionalRules,1);
+ // One observation is insufficient to claim a reusable world law.
+ assert.equal(world.plan("Portal: ghi").abstained,true);
+ world.learn("Portal: def","fed");
+ const before=JSON.stringify(world.export());
+ const unseen=world.plan("Portal: ghi");
+ assert.equal(unseen.output,"ihg");
+ assert.equal(unseen.solvedKnownGoal,true);
+ assert.equal(unseen.initialShape.join(""),"ihg");
+ assert.equal(unseen.graph.goals[0].source,"composed_from_observed_position_transformations");
+ assert.ok(unseen.trace.every(step=>step.transformation==="learned_positional_transformation"));
+ assert.ok(unseen.field[0]>0);
+ assert.equal(JSON.stringify(world.export()),before,"unseen problem cannot update learned transformation");
+ const reference=world.frozenCompare([{prompt:"Portal: jkl",answer:"lkj"}]);
+ assert.equal(reference.exactRate,1);
+ assert.equal(reference.cases[0].equal,true);
+ const bad=world.frozenCompare([{prompt:"Portal: mno",answer:"wrong"}]);
+ assert.equal(bad.exactRate,0,"known learned pathway is NOT an oracle proving arbitrary language answer");
+ const roundtrip=LanguageMazeMemory.restore(JSON.parse(JSON.stringify(world.export())));
+ assert.equal(roundtrip.plan("Portal: qrs").output,"srq");
+});
+test("two conflicting positional transformations are separate branches, not forced into one definition",()=>{
+ const world=new LanguageMazeMemory();
+ for(const [prompt,answer]of [
+  ["Path A: abc","cab"],["Path A: def","fde"],
+  ["Path B: abc","bca"],["Path B: def","efd"]
+ ])world.learn(prompt,answer);
+ assert.equal(world.plan("Path A: ghi").output,"igh");
+ assert.equal(world.plan("Path B: ghi").output,"hig");
+ assert.equal(world.stats().observedPositionalRules,2);
+});
