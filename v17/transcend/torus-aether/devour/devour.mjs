@@ -15,6 +15,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
+import {LanguageMazeMemory} from "../language-maze/language-world.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -72,7 +73,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".body-perspective.json"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".body-perspective.json", ".language-maze.v18.json"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
@@ -155,6 +156,38 @@ http.createServer((req, res) => {
       try { const mt = fs.statSync(f).mtimeMs; if (!sl.talker || sl.talkerAt !== mt) { sl.talker = Brain.load(f); sl.talkerAt = mt; } return json(res, {...sl.talker.examMazes(sizes, per), fromSave: true}); } catch (err) { return json(res, {error: err.message}); } }
     const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 300 s"}); }, 300000);
     chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({exam: {id, sizes, per}}); return; }
+  // V18: one full global shape BEFORE the first character, then each local
+  // character transition. No reference-answer field is accepted at inference.
+  if(req.method==="POST"&&url==="/language-maze/plan"){
+    let body="";
+    req.on("data",d=>{
+      body+=d;
+      if(body.length>24000){req.destroy();} // bounded local-only HTTP request
+    });
+    req.on("end",()=>{
+      let m;
+      try{m=JSON.parse(body);}catch{return json(res,{error:"invalid JSON"});}
+      if(Object.hasOwn(m,"answer")||Object.hasOwn(m,"reference"))
+        return json(res,{error:"heldout answer/reference forbidden in language-maze planning API"});
+      const w=Number(m.w??0),prompt=m.prompt;
+      if(!Number.isInteger(w)||typeof prompt!=="string"||prompt.length>20000||!prompt.trim())
+        return json(res,{error:"invalid graph or input prompt"});
+      const sl=slots.find(x=>x.w===w);
+      if(!sl)return json(res,{error:"graph not found"});
+      if(!sl.wk){
+        const file=saveOf(sl)+".language-maze.v18.json";
+        if(!fs.existsSync(file))return json(res,{error:"no experienced language-world saved yet"});
+        try{
+          const memory=LanguageMazeMemory.restore(JSON.parse(fs.readFileSync(file,"utf8")));
+          return json(res,{...memory.plan(prompt),trainingMemory:memory.stats(),fromSavedWorld:true});
+        }catch(e){return json(res,{error:"language-world save error: "+e.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"language-world evaluation timeout"});},120000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result);});
+      sl.wk.postMessage({languageMazeExam:{id,prompt}});
+    });
+    return;
+  }
   if (req.method === "POST" && url === "/shared-eval") {
     const sl = slots.find(x => x.w === +(q.get("w") || 0));
     if (!sl || !sl.wk) return json(res, {error: "The selected V17 graph is not running"});
