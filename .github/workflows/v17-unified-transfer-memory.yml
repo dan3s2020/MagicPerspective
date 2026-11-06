@@ -41,6 +41,10 @@ jobs:
           node --test v17/tests/torus-unified-gpu-text-boot.test.mjs
           node --test v17/tests/torus-unified-http.test.mjs
           node --test v17/tests/torus-organism.test.mjs
+      - name: POSIX Termux launcher syntax and native V17 text+maze+transform CPU smoke
+        run: |
+          sh -n v17/RUN_TERMUX_V17.sh
+          node --test v17/tests/torus-termux-launch.test.mjs
       - name: Syntax-check modified Node integration
         run: |
           node --check v17/transcend/torus-aether/devour/worker.mjs
