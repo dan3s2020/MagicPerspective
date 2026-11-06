@@ -33,8 +33,9 @@ if($portOwner.Count -gt 0){
   foreach($ownerId in @($portOwner | Select-Object -ExpandProperty OwningProcess -Unique)){
     $owner = Get-CimInstance Win32_Process -Filter "ProcessId=$ownerId" -ErrorAction SilentlyContinue
     $command = if($owner){[string]$owner.CommandLine}else{'(command line unavailable)'}
-    $sameProject = ($command -match '(?i)server\.mjs') -and
-      ($command -replace '/','\' -like "*\MagicPerspective-NoiseSpace-Isolated\isolated\noise-space*")
+    $normalizedCommand = $command.Replace('/','\')
+    $sameProject = ($normalizedCommand -match '(?i)server\.mjs') -and
+      ($normalizedCommand -like '*MagicPerspective-NoiseSpace-Isolated*')
     $description = "PID=$ownerId"
     if($sameProject){$description += " (existing MagicPerspective Noise Space server)"}
     $description += " Command=$command"
