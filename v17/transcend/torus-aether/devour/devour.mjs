@@ -90,12 +90,14 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(sl.worlds), controls: sl.controls || null}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
+  // Frozen HTTP evaluations stay answerable even when a finite corpus worker exits.
+  const pendingFrozen = new Map(); sl.pendingFrozen = pendingFrozen;
   wk.on("message", m => {
     if (gen !== sl.gen) return;
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old = graphs.get(sl.w); if (!m.text && old?.text) m.text = old.text; graphs.set(sl.w, m); return; }   // its living graph
-    if (m.type === "chat") { const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
+    if (m.type === "chat") { pendingFrozen.delete(m.id); const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
     if (m.type === "saved") { sl.savedMB = m.MB; for (const f of sl.onSaved?.splice(0) || []) f(); return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
     if (m.final) sl.status = "gata";
@@ -128,7 +130,18 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
       (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => { if (gen !== sl.gen) return; sl.lastError = err.message; sl.status = "eroare"; console.error(`#${sl.w} error:`, err.message); });
-  wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
+  wk.on("exit", () => {
+    if(gen === sl.gen){
+      // The worker can finish between a live HTTP request and postMessage delivery.
+      // Finish that read-only request from the saved immutable checkpoint instead.
+      for(const [id,fallback] of pendingFrozen){
+        if(chats.has(id)){chats.delete(id);fallback();}
+      }
+      pendingFrozen.clear();
+    }
+    for (const f of sl.onSaved?.splice(0) || []) f();
+    if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; }
+  });
 }
 const mapOnly = worlds => worlds.length === 1 && worlds[0] === "maptext";
 const cognitiveOnly = worlds => worlds.length > 0 && worlds.every(x => x === "maptext" || x === "cognitivemap" || x === "hypertext");
