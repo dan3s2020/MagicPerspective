@@ -95,6 +95,7 @@ test("all four temporal resolutions learn from a genuine long complete response 
  assert.equal(m.stats().rows,1);
  assert.equal(m.stats().characters,262145);
  assert.ok(m.stats().levelUpdates.every(x=>x>1),"every scale must be trained");
+ assert.ok(m.stats().hierarchicalBridges>=0,"multiscale bridge count must be tracked");
  assert.equal(m.stats().levels.at(-1),262144);
  assert.ok(m.stats().states<=m.maxStates,"memory cap enforced");
  assert.equal(m.stats().lastEpisodeLength,262145);
