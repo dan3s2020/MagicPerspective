@@ -14,13 +14,20 @@ import {Precedent, playMaze, MAZE_SYMBOLS} from "../worlds/maze.mjs";
 import {playLabyrinth, LSYM, makeMaze, seedOf, SEEDS, RNG} from "../worlds/labyrinth.mjs";
 import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
+import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
 export class Brain {
+  // Opt-in experiment: the same saved organism owns and trains its noise policy.
+  // No external noise-strength slider instructs this policy where to intervene.
+  enableEndogenousNoise() {
+    if (!this.noiseAgent) this.noiseAgent = new NoiseAgency(this.seed);
+    return this.noiseAgent;
+  }
   setSharedObserver(callback) {
     if (callback !== null && typeof callback !== "function") throw Error("shared observer must be a function or null");
     if (callback) SHARED_HOOKS.set(this, callback); else SHARED_HOOKS.delete(this);
@@ -41,6 +48,7 @@ export class Brain {
     if (this.disc) { this.disc.noise = C.pnoise; this.disc.temp = C.ltemp; } if (this.causal) { this.causal.noise = C.pnoise; }
     return C; }
   revive() {                                                                 // what cannot be saved (the random streams) is reborn
+    this.liveWorld = "text";
     this.place = y => this.trace.geo.U.get(y) || [.5, .5, .5, .5, .5]; this.rand = rngFrom(this.seed * 7919 + this.lived);
     this.chain.rand = rngFrom(this.seed + this.lived); this.trace.geo.r = rngFrom(this.seed * 31 + this.lived); this.setControls();
     this.body ||= {}; if (this.disc) this.disc.body = this.body; if (this.causal) this.causal.body = this.body;   // one body for every world
@@ -63,7 +71,13 @@ export class Brain {
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
     const prev = this.past.length ? this.past[this.past.length - 1] : null, al = old ? {guess: -1, src: null} : (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
     if (prev !== null && !old) this.trace.aligned(prev, y, al.guess, al.src);        // in the drawn graph: the alignment it followed, or an impulse where it expected something else
-    const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), C = this.controls || this.setControls(), h0 = this.histOf(past, i), h = C.pnoise ? h0.map(x => (this.rand() < C.pnoise && past.length ? past[Math.floor(this.rand() * past.length)] : x)) : h0, m = chain.play(e, ctx, h, false, {temp: C.ltemp});
+    const {e, chain, trace, past} = this, i = past.length, ctx = this.ctxOf(past, i), C = this.controls || this.setControls(), h0 = this.histOf(past, i);
+    const portal = !old && this.liveWorld === "text" && this.noiseAgent ? this.noiseAgent.decide({domain: "text", known: past.length >= 8, planned: !!this.align}) : null;
+    let h = C.pnoise ? h0.map(x => (this.rand() < C.pnoise && past.length ? past[Math.floor(this.rand() * past.length)] : x)) : h0;
+    if (portal?.site === "perception") h = this.noiseAgent.perceive(h, portal);
+    const temperature = portal?.site === "imagination" ? Math.max(C.ltemp, portal.strength) : C.ltemp;
+    const m = chain.play(e, ctx, h, false, {temp: temperature});
+    if (portal) this.noiseAgent.learn(portal, {correct: argmax(m.out) === y});
     if (!this.full) { chain.learn(h, y, m); e.c.observe(ctx, y); }   // over the memory budget the old graph stops growing; nothing is deleted
     this.field.live(y, this.place);
     trace.record(e, chain, ctx, h, y, m, "c:" + e.c.active, detailed); past.push(y); if (past.length > 64) past.splice(0, 32); this.lived++;
@@ -99,7 +113,12 @@ export class Brain {
   playMaze(record = true) {
     if (!this.disc) this.disc = Object.assign(new Discoverer(this.seed), {body: this.body ||= {}});
     const M = this.mazes, i = M.index++, w = makeMaze(seedOf(SEEDS.train, i), [7, 9, 11][i % 3]);
-    const r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0), {record, onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})});
+    const priorWorld = this.liveWorld; this.liveWorld = 'maze';
+    let r;
+    try { r = playExercise(w, this.disc, y => this.live(y, this.lived % 50 === 0),
+      {record, noiseAgency: this.noiseAgent || null,
+        onTransition: t => this.observeShared({domain: 'maze', before: t.before, after: t.after, action: 'output:' + t.action, context: 'grid:' + t.n})}); }
+    finally { this.liveWorld = priorWorld; }
     M.played++; M.won += r.solved; M.recent.push(r.solved ? 1 : 0); if (M.recent.length > 100) M.recent.shift(); M.knows = r.knows;
     if (record) M.last = {...r, kind: w.n + "×" + w.n, i};
     return r;
@@ -232,11 +251,14 @@ export class Brain {
     this.tWorld(); const T = this.trans, kinds = [["object"], ["self"], ["door"]]; let L = null;
     while (!L) { L = makeLevel(TSEEDS.train + T.index * 7919, {goals: kinds[T.index % 3]}); T.index++; }
     const w = new TWorld(L, this.tMoves), live = y => this.live(TSYM[y], this.lived % 50 === 0);
-    for (const v of w.board()) live(v); for (const v of L.goal) live(v);                // the board and the desired configuration, as symbols
+    const priorWorld = this.liveWorld; this.liveWorld = 'transform';
+    try {
+      for (const v of w.board()) live(v); for (const v of L.goal) live(v);                // the board and the desired configuration, as symbols
     const agent = {org: this.causal, choose: (b, n, g) => this.causal.choose(b, n, g), learn: (b, a, n, at, o) => { this.causal.learn(b, a, n, at, o); this.observeShared({domain: 'transform', before: b, after: a, action: 'output:' + o, context: 'grid:' + n}); live(18 + o); for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) live(a[i]); }};
-    const r = liveTask(L, w, agent, {record}); T.played++; T.won += r.solved;
-    if (record) T.last = {...r, terr: L.terr, goal: L.goal, goals: L.goals, i: T.index - 1, frames: r.frames.map(f => ({b: f.b, how: f.how, plan: f.plan}))};
-    return r;
+      const r = liveTask(L, w, agent, {record, noiseAgency: this.noiseAgent || null}); T.played++; T.won += r.solved;
+      if (record) T.last = {...r, terr: L.terr, goal: L.goal, goals: L.goals, i: T.index - 1, frames: r.frames.map(f => ({b: f.b, how: f.how, plan: f.plan}))};
+      return r;
+    } finally { this.liveWorld = priorWorld; }
   }
   testTransforms(count = 24) {                                                // new arrangements, desired configurations of kinds never encountered, and impossible ones
     this.tWorld(); const kinds = [["object", "self"], ["self", "door"], ["object", "door"]], rows = [], imp = [], copy = () => { const c = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); c.r = Object.assign(Object.create(RNG.prototype), c.r); return c; };
