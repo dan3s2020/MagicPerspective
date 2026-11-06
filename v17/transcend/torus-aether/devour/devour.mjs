@@ -31,7 +31,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 0), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
-for (const x of worldsArg) if (!WORLD_TYPES.includes(x)) throw Error("unknown world " + x + " (text, maze, transform, code, maptext, cognitivemap)");
+for (const x of worldsArg) if (!WORLD_TYPES.includes(x)) throw Error("unknown world " + x + " (text, maze, transform, code, maptext, cognitivemap, hypertext)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
 // C's laws (laws/cexp.mjs): "stable" — C needs more evidence to change perspective; "grow" — C's attention may grow to 6
@@ -41,7 +41,7 @@ const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {n
   if (!ARMS[a]) throw Error("unknown arm " + a + " (" + [...Object.keys(ARMS), ...Object.keys(CLAWS)] + ")"); return {name: a, rules: ARMS[a]}; });
 
 let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
-if (!worldsArg.includes("text") && !worldsArg.includes("cognitivemap")) {
+if (!worldsArg.includes("text") && !worldsArg.includes("cognitivemap") && !worldsArg.includes("hypertext")) {
   source = {kind: "none"}; // code and simulations require no external text dataset
 } else if (arg("text")) {
   const files = arg("text").split(",").map(f => path.resolve(f)), heldSet = [], heldParas = []; let k = 0;
@@ -131,7 +131,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
 const mapOnly = worlds => worlds.length === 1 && worlds[0] === "maptext";
-const cognitiveOnly = worlds => worlds.length > 0 && worlds.every(x => x === "maptext" || x === "cognitivemap");
+const cognitiveOnly = worlds => worlds.length > 0 && worlds.every(x => x === "maptext" || x === "cognitivemap" || x === "hypertext");
 const cpuGraphOnly = worlds => mapOnly(worlds) || cognitiveOnly(worlds);
 function gpuFor(worlds = worldsArg) {
   // The N-D world uses the exact graph navigator on CPU, NOT a PyTorch GPU kernel.
@@ -243,7 +243,7 @@ http.createServer((req, res) => {
     req.on("end",()=>{
       let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid text hypermaze request"});}
       const sl=slots.find(x=>x.w===+m.w);
-      if(!sl?.worlds.includes("cognitivemap"))return json(res,{error:"Select a graph with cognitivemap enabled"});
+      if(!sl?.worlds.some(w=>w==="cognitivemap"||w==="hypertext"))return json(res,{error:"Select a graph with cognitivemap or hypertext enabled"});
       if(typeof m.start!=="string"||!m.start||m.start.length>256||
          typeof m.goal!=="string"||!m.goal||m.goal.length>256)
         return json(res,{error:"Provide a single observed start and goal token"});
