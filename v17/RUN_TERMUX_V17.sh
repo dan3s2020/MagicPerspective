@@ -29,6 +29,7 @@ Options:
   --paused           Wait for Start in native browser UI
   --fresh            Do NOT resume; archives previous brain files as native V17 does
   --trace            Record opt-in actual training transitions
+  --no-agent-noise   ABLATION: disable internal noise agency on a FRESH brain
   --help             Print usage
 
 NO CUDA on Android: GPU shared PyTorch head and CUDA audit are not run by this CPU launcher.
@@ -61,6 +62,7 @@ SAMPLE=0
 PAUSED=0
 FRESH=0
 TRACE=0
+AGENT_NOISE=1
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -82,6 +84,7 @@ while [ "$#" -gt 0 ]; do
     --paused) PAUSED=1; shift ;;
     --fresh) FRESH=1; shift ;;
     --trace) TRACE=1; shift ;;
+    --no-agent-noise) AGENT_NOISE=0; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -142,9 +145,11 @@ elif [ "$FRESH" -eq 1 ]; then
 fi
 if [ "$PAUSED" -eq 0 ]; then set -- "$@" --start; fi
 if [ "$TRACE" -eq 1 ]; then set -- "$@" --trace-transformations; fi
+if [ "$AGENT_NOISE" -eq 1 ]; then set -- "$@" --endogenous-noise; fi
 
 echo "Original V17 UI: http://127.0.0.1:$PORT/transcend/torus-aether/ui/index.html?live=1"
 echo "CPU mode: original brain/maze/transform/text, NO CUDA, NO PyTorch shared updates."
+echo "Organism-owned noise policy: $(if [ "$AGENT_NOISE" -eq 1 ]; then echo enabled; else echo disabled-on-fresh-brains; fi)."
 echo "Runtime: $OUT"
 echo "Use Ctrl+C once to stop and save."
 
