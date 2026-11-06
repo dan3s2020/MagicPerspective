@@ -206,9 +206,9 @@ export class ConstructedPathLearner {
       // Feed the original V17 Brain (and optionally shared PyTorch transition
       // queue) rather than training a disconnected demonstration agent.
       if(live){
-        const S=[1,2,3,4];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+        const S=[1,2,3,4,127];for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
           const x=pos%n+dx,y=Math.floor(pos/n)+dy,j=y*n+x;
-          const v=x<0||y<0||x>=n||y>=n||belief[j]===-1?0:belief[j]===1?1:
+          const v=x<0||y<0||x>=n||y>=n||belief[j]===-1?4:belief[j]===1?1:
             j===world.goal?2:j===pos?3:0;
           live(S[v]);
         }
