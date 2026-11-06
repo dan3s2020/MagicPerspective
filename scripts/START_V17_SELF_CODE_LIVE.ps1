@@ -2,6 +2,7 @@
 # Run from a clean, updated clone on D:. Never deletes or overwrites old checkpoints.
 param(
     [string]$Data = "D:\training\OpenThoughts3-1.2M",
+    [string]$Out = "",
     [int]$Port = 8872,
     [int]$GpuWorlds = 64,
     [int]$GpuTextBatch = 8,
@@ -15,7 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $branch = "feature/V17-NATIVE-SELF-CODE-PORTALS-20261106"
-$runtime = Join-Path $root "v17\runtime-native-selfcode-windows"
+$runtime = if ([string]::IsNullOrWhiteSpace($Out)) { Join-Path $root "v17\runtime-native-selfcode-windows" } else { $Out }
 if (-not (Test-Path -LiteralPath (Join-Path $root ".git"))) { throw "Launcher must run from a Git clone." }
 $actualBranch = (& git -C $root branch --show-current).Trim()
 if ($LASTEXITCODE -ne 0 -or $actualBranch -ne $branch) { throw "Wrong Git branch: $actualBranch" }
