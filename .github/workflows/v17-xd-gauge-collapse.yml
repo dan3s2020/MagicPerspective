@@ -1,0 +1,23 @@
+name: MagicPerspective xD native geometry symmetry and collapse experiments
+on:
+  push:
+    branches:
+      - experiment/V17-XD-PREDICTIVE-STATE-COLLAPSE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  xd-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Read-only symmetry and 1024D dimensional reduction on original Geometry.learn
+        run: node --test v17/tests/xd-gauge-collapse.test.mjs
+      - name: Previous 2D→5D geometry + causal language observations remain unchanged
+        run: |
+          node --test v17/tests/dimensional-lift-noise.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
