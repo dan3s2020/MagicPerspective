@@ -284,6 +284,18 @@ export class Brain {
         if (a > .2) T.setEdge("o:self", "s:" + S[k], "attract", 1 + 4 * a); if (c < .5) T.setEdge("o:self", "s:" + S[k], "repel", 1 + 4 * (1 - c)); } }
     if (this.causal) for (const k of this.causal.selfKinds) { const y = TSYM[k]; if (y !== undefined) { T.node("s:" + y, "sym", "◆"); T.setEdge("o:self", "s:" + y, "is", 2); } }
     for (let o = 0; o < 8; o++) { const e = bodyEffect(this.body, o) || D?.effect(o); if (!e) continue; T.node("s:" + O[o], "sym", "▶" + o); T.setEdge("s:" + O[o], "o:self", "moves", 3, (e[0] > 0 ? "→" : e[0] < 0 ? "←" : e[1] > 0 ? "↓" : "↑")); }
+    // Visualize *real* internal noise decisions as owned connections in the
+    // SAME native living graph, not as invented random standalone particles.
+    if (this.noiseAgent) {
+      T.node("o:noise", "self", "noise");
+      T.setEdge("o:self", "o:noise", "owns", 3);
+      for (const [site, count] of Object.entries(this.noiseAgent.bySite)) {
+        if (count <= 0) continue;
+        const id = "o:noise:" + site;
+        T.node(id, "A", site);
+        T.setEdge("o:noise", id, "portal", Math.min(12, 1 + Math.log1p(count)), "" + count + " decisions");
+      }
+    }
   }
   beginExercise() { (this.align ||= new AligningGraph()).begin(); }          // a new exercise of a world starts: its own memory starts empty
   dissolve() {                                                               // solve: rows lived only once are let go
