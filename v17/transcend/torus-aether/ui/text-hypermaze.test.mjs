@@ -93,9 +93,21 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
    shape:"D",shapeSame:0,answer:0}
  ]};
  const calls=[];
+ const trainingEvent={kind:"TRAINING_QA_COMMITTED",seq:1,at:Date.now(),
+  where:"CUDA_BATCH_COMMITTED",prompt:"which route?",observedAnswer:"az",
+  fullAnswerChars:2,brainChars:1234,
+  trainingMemory:{rowsObserved:7,successorTraining:{updates:139}},
+  before:{before:"az",abstained:false,seenQABefore:6},
+  after:{output:"az",graph:observed.hybrid.graph}
+ };
  const fetch=async(url,options={})=>{
   calls.push({url,options});
-  const payload=url.startsWith("/language-maze/observatory")?{
+  const payload=url.startsWith("/hypermaze/live?")?{
+   protocol:"LIVE_TRAINING_COMMITTED_QA_STREAM",w:0,liveWorker:true,
+   status:"antrenează",events:[trainingEvent],latestSeq:1,chars:1234,
+   gpuPhase:"CUDA training",training:{rowsObserved:7,
+     successorTraining:{updates:139,states:22}}
+  }:url.startsWith("/language-maze/observatory")?{
    protocol:"OBSERVED_TRAINING_TEXT_WORLD",observedPrompt:"What is the route?"}:
    url==="/language-maze/analyze"?observed:
    url==="/eval"?frozen:
@@ -111,6 +123,17 @@ test("the full 4D viewer opens on actual V18 learned topology and replays step-b
  vm.runInNewContext(source,ctx,{filename:"text-hypermaze.js"});
  await $("tabHypermaze").fire("click");
  assert.equal($("hmOverlay").hidden,false);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.ok(calls.some(c=>c.url.startsWith("/hypermaze/live?")),
+  "Must auto-subscribe to ACTUAL training on tab opening, without user request.");
+ assert.equal($("hmLiveBadge").textContent.includes("LIVE"),true);
+ assert.equal($("hmTrainingRows").textContent,"7");
+ assert.equal($("hmTrainingTD").textContent,"139");
+ assert.equal($("hmTrainingMatch").textContent,"100.0%");
+ assert.ok($("hmLiveMetrics").textContent.includes("CUDA training"));
+ assert.equal(calls.filter(c=>c.url==="/eval").length,0,
+  "Opening live training MUST NOT trigger frozen evaluation");
+
  assert.ok($("hmCanvas").canvas.calls.some(c=>c.n==="fillText"));
  await $("hmLoadObserved").fire("click");
  await new Promise(resolve=>setImmediate(resolve));
