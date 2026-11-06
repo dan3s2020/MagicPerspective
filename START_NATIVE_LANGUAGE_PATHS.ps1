@@ -6,6 +6,9 @@ param(
   [int]$Maze = 160,
   [int]$Eval = 8,
   [int]$Candidates = 8,
+  [int]$LoopPenalty = 4,
+  [int]$LoopWindow = 24,
+  [double]$Gamma = 0.9,
   [switch]$Resume,
   [switch]$Strict
 )
@@ -14,6 +17,8 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
 $entry = Join-Path $repo "isolated\native-language-paths\train.mjs"
 $tests = Join-Path $repo "isolated\native-language-paths\native.test.mjs"
+$multiTests = Join-Path $repo "isolated\native-language-paths\multipath.test.mjs"
+$loopTests = Join-Path $repo "isolated\native-language-paths\repetition.test.mjs"
 if (-not (Test-Path -LiteralPath $Data -PathType Container)) {
   throw "Nu exista corpusul Parquet: $Data . Nu se vor genera exercitii artificiale."
 }
@@ -32,16 +37,18 @@ Write-Host "Repository: $repo"
 Write-Host "Dataset: $Data"
 Write-Host "Out: $Out"
 Write-Host "Original V17 UI si celelalte clonarile raman intacte."
-& node --test $tests
+& node --test $tests $multiTests $loopTests
 if ($LASTEXITCODE -ne 0) { throw "Testele de conformitate pentru mecanismul original au esuat. Trainingul este blocat." }
 $arguments = @(
   $entry, "--data", $Data, "--out", $Out,
   "--rows", "$Rows", "--bytes", "$Bytes", "--maze", "$Maze",
-  "--eval", "$Eval", "--candidates", "$Candidates"
+  "--eval", "$Eval", "--candidates", "$Candidates",
+  "--gamma", "$Gamma", "--loop-penalty", "$LoopPenalty", "--loop-window", "$LoopWindow"
 )
 if ($Resume) { $arguments += "--resume" }
 if ($Strict) { $arguments += "--strict" }
 & node @arguments
 if ($LASTEXITCODE -ne 0) { throw "Experimentul a esuat sau a fost intrerupt. Consultati iesirea si raportul, daca exista." }
 Write-Host ("Raport real: " + (Join-Path $Out "report.json")) -ForegroundColor Green
-Write-Host "Nu reprezinta dovada de intelegere semantica generala." -ForegroundColor Yellow
+Write-Host "Compare original V17, SR tie-break, lexical retrieval, repeated-text guard in report.json" -ForegroundColor Cyan
+Write-Host "Nu reprezinta dovada de intelegere semantica generala sau interferenta cuantica." -ForegroundColor Yellow
