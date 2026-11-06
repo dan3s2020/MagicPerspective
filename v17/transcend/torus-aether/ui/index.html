@@ -33,6 +33,18 @@
   .where{font-size:12.5px;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 9px;margin:6px 0}.where .ctx{color:var(--gold);font-family:ui-monospace,monospace}
   .liveList{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}.lgc{min-width:0;border:1px solid #23384c;border-radius:8px;padding:9px 10px;font-size:12px;overflow-wrap:anywhere}.lgc.on{border-color:var(--gold)}.lgc .t{cursor:pointer}.lgc .sc{display:grid;grid-template-columns:minmax(82px,.65fr) minmax(0,1.35fr);gap:5px 10px;margin:6px 0;line-height:1.4}.lgc .sc>span{min-width:0;overflow-wrap:anywhere}.lgc .sc b{font-weight:600}.lgc .bt{display:flex;gap:4px;flex-wrap:wrap}.lgc .bt button{padding:2px 7px;font-size:12px}.st{font-size:11px;padding:1px 6px;border-radius:6px;background:#1d2b3a}.st.run{background:#174a2c;color:#7ee0a1}.lg{text-align:left;font-size:12px;padding:6px 8px}.lg small{color:var(--dim);font-size:11px}.lg.on{border-color:var(--gold);color:var(--gold)}
   body.live #run,body.live #reset,body.live .sl:has(#speed),body.live .sl:has(#ltemp),body.live .sl:has(#pnoise),body.live .sl:has(#dims),body.live .sl:has(#bud),body.live .sl:has(#wires),body.live .sl:has(#gnoise),body.live .sl:has(#glr),body.live .sl:has(#repel){display:none}
+  #textMazeBox{margin:12px 0 16px;padding:12px;background:#060e16;border:1px solid #294968;border-radius:12px;min-width:0}
+  #textMazeBox[hidden]{display:none!important}
+  #textMazeBox canvas{width:100%;height:auto;display:block;background:#040b13;border:1px solid #243b51;border-radius:9px}
+  #textMazeBox .tm-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  #textMazeBox .tm-row button{font-size:12px;padding:5px 9px}
+  #textMazeBox input[type=range]{min-width:95px;accent-color:var(--gold)}
+  #textMazeBox select{background:#101d2b;border:1px solid #294968;color:var(--ink);padding:5px;border-radius:7px}
+  #textMazeInfo{font:12px/1.5 ui-monospace,monospace;color:#9fcef0;overflow-wrap:anywhere}
+  #textMazeFrame{margin-top:8px;padding:9px;background:#0b1825;border-left:3px solid #f5b301;
+    white-space:pre-wrap;overflow-wrap:anywhere;font:11.5px/1.6 ui-monospace,monospace;max-height:230px;overflow:auto}
+  #textMazeLegend{font-size:11px;color:#9cb1c3;line-height:1.65}
+  #textMazeLegend b{color:#f5b301}
   .gen{margin-top:6px;font:12px/1.5 ui-monospace,monospace;color:var(--ink);background:#0a121c;border-radius:8px;padding:6px 8px;word-break:break-all}
   #chatTab{position:fixed;right:16px;bottom:16px;z-index:30;background:var(--gold);color:#000;border:0;font-weight:600;box-shadow:0 4px 18px #0008}
   #chatPane{position:fixed;right:16px;bottom:64px;z-index:30;width:min(440px,calc(100vw - 32px));height:min(640px,calc(100vh - 90px));display:none;flex-direction:column;background:#070d14;border:1px solid #29425a;border-radius:12px;box-shadow:0 10px 40px #000c}
@@ -229,6 +241,28 @@
         <h2>Lumea transformărilor (obiecte, comutatoare, uși — fără nume)</h2>
         <canvas id="transCv" width="420" height="420" style="width:100%;background:#05080c;border-radius:8px"></canvas>
         <p class="note" id="transOut">—</p>
+      </div>
+      <div id="textMazeBox" hidden>
+        <h2>Labirintul hiperdimensional al textului · același creier · LIVE</h2>
+        <p id="textMazeInfo">Lumea text este activă. Aștept primele tranziții de caractere învățate.</p>
+        <p id="textMazeLegend">AURIU = forma prezisă înainte să vadă răspunsul · ALBASTRU = cursorul executând acțiuni în graful învățat · ROȘU = abatere de la linia inițială · VIOLET = traseu recalculat · GRI = alternative reale. Șase niveluri de context: 1 / 2 / 4 / 8 / 16 / 32.</p>
+        <canvas id="textMazeCv" width="700" height="410" aria-label="Trasee reale pentru fiecare caracter și alternativele lui, actualizate automat din antrenamentul text"></canvas>
+        <div class="tm-row">
+          <button id="textMazePlay">▶ Mișcare</button>
+          <button id="textMazePause">⏸ Pauză</button>
+          <button id="textMazePrev">◀ Pas</button>
+          <button id="textMazeNext">Pas ▶</button>
+          <button id="textMazeRestart">↺ Reia</button>
+          <label class="dim">Viteză <input id="textMazeSpeed" type="range" min="100" max="1300" step="100" value="320"></label>
+        </div>
+        <div class="tm-row">
+          <label class="dim" style="flex:1">Pasul <input id="textMazeScrub" type="range" min="0" max="0" value="0" step="1" style="width:100%"></label>
+          <span id="textMazeFrameNo" class="dim">0 / 0</span>
+          <label class="dim">Vedere <select id="textMazeMode"><option value="both">Global + cursor</option><option value="global">Global</option><option value="body">Din cursor</option></select></label>
+          <label class="dim">Rotație 5D <select id="textMazePlane"><option value="03">X–W</option><option value="14">Y–V</option><option value="01">X–Y</option><option value="02">X–Z</option></select></label>
+        </div>
+        <p class="note">Forma este calculată înainte de învățarea răspunsului curent. Pozițiile sunt o proiecție a stărilor și coordonatelor simbolurilor din graful original, nu geometrie semantică 5D dovedită. Mișcările sunt rezultate reale ale politicii locale, redate vizual la viteză reglabilă.</p>
+        <pre id="textMazeFrame">Fără episod de predicție încă.</pre>
       </div>
     </div>
     <div id="sharedBox" hidden style="margin:12px 0;border:1px solid #24405d;border-radius:10px;padding:12px">
