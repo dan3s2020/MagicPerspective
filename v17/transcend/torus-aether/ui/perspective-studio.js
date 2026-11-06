@@ -233,17 +233,67 @@ $('trEval').addEventListener('click',async()=>{
  }catch(e){$('trStatus').textContent='Nu există încă suficiente date sau evaluatorul a eșuat: '+e.message;}
  finally{$('trEval').disabled=false;}
 });
+// Lightweight phase telemetry has its own endpoint. Do not download and re-render
+// the entire V17 graph merely to show that a 4GB GPU is currently computing.
+let telemetryPoll=false,lastHeartbeat=null,telemetryReceivedAt=0;
+function formatDuration(ms){
+ if(!Number.isFinite(ms))return '—';
+ return ms<1000?Math.round(ms)+' ms':(ms/1000).toFixed(1)+' s';
+}
+function updateTelemetry(t,status,error){
+ const hud=$('liveTelemetry'),pane=$('mPhase');
+ if(!t){
+  const text='Backend '+(status||'unknown')+' · niciun heartbeat încă. Dacă antrenarea este în curs, se verifică pornirea workerului GPU.';
+  hud.textContent=text;pane.textContent=text;return;
+ }
+ lastHeartbeat=t;telemetryReceivedAt=Date.now();
+ const p=t.phase||{},phase=p.phase||'indisponibil',current=Number(p.phaseElapsedMs||0);
+ const completed=Number(p.done||0),total=Number(p.total||0);
+ const progress=total>0?' · '+completed+'/'+total+' unități raportate':' · progres numeric indisponibil';
+ const duration=Object.entries(p.totalsMs||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+ const headline='V17 '+(status||'active')+' · '+phase+' · '+formatDuration(current)+progress;
+ const second='Text '+count(t.chars)+' chars · '+value(t.textCharsPerSecond,1)+' chars/s · Maze '+count(t.mazePlayed)+
+  ' · Transform '+count(t.transformPlayed)+' · GPU '+(t.gpuDevice||'—');
+ const failures=t.gpuError||t.sharedError||error||null;
+ hud.textContent=headline+'\n'+second+(failures?'\nEROARE: '+failures:'');
+ hud.style.borderColor=failures?'#bd5460':'#426378';
+ pane.textContent=headline+'\n'+second+
+  '\nHeap V17 '+count(t.heapMB)+' MB · exerciții text '+count(t.exercises)+' · observații corp '+count(t.bodyTransitions)+
+  '\nDurata cumulată după fază:\n'+duration.map(([name,ms])=>'  '+name+': '+formatDuration(ms)).join('\n')+
+  '\nTimpul unei faze poate crește în timpul execuției CUDA. Nu înseamnă că workerul s-a oprit.'+
+  (failures?'\nERROR: '+failures:'');
+}
+async function fetchTelemetry(){
+ if(telemetryPoll||document.hidden)return;
+ telemetryPoll=true;
+ try{
+  const res=await fetch('/telemetry?w='+currentGraph,{cache:'no-store'});
+  if(!res.ok)throw Error('HTTP '+res.status);
+  const data=await res.json();
+  if(data.available&&data.telemetry)updateTelemetry(data.telemetry,data.status,data.error);
+  else updateTelemetry(null,data.status,data.error);
+ }catch(err){
+  const since=lastHeartbeat?Date.now()-telemetryReceivedAt:Infinity;
+  if(since>5000){
+   const text='Nu pot citi telemetria backend: '+err.message+'. Verifică serverul pe portul 8876.';
+   $('liveTelemetry').textContent=text;$('mPhase').textContent=text;
+  }
+ }finally{telemetryPoll=false;}
+}
 let polling=false;
 async function fetchLive(){
- if(polling)return;polling=true;
+ if(polling||document.hidden||!(side.classList.contains('metricsOn')||side.classList.contains('transferOn')))return;
+ polling=true;
  try{
   const r=await fetch('/graph?w='+currentGraph,{cache:'no-store'});
   if(!r.ok)throw Error('HTTP '+r.status);
-  const state=await r.json();if(!state.nodes)throw Error('Graph #'+currentGraph+' not available or not started');
+  const state=await r.json();
+  if(!state.nodes)throw Error('Graph #'+currentGraph+' not available or not started');
   addRecord(currentGraph,state);renderMetrics(state);renderTransfer(state);
  }catch(e){
-  $('mRaw').textContent='Backend unavailable: '+e.message;
-  $('trStatus').textContent='Aștept backend real: '+e.message;
+  $('mRaw').textContent='Graf backend indisponibil: '+e.message;
+  $('trStatus').textContent='Aștept graf backend: '+e.message;
  }finally{polling=false;}
 }
-fetchLive();setInterval(fetchLive,1700);
+fetchTelemetry();setInterval(fetchTelemetry,1000);
+fetchLive();setInterval(fetchLive,3000);
