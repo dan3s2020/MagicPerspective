@@ -65,7 +65,8 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null,
+    perspective: g?.perspective || t?.perspective || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
@@ -137,6 +138,24 @@ http.createServer((req, res) => {
         const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
         opts.list = list.map(t => toB(t).slice(0, Math.max(50, +opts.max || 20000))); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
+  // Frozen perspective evaluation on the selected REAL V17 Brain, no separate demo server.
+  if (req.method === "POST" && url === "/perspective-eval") {
+    const sl = slots.find(x => x.w === +q.get("w"));
+    const count = Math.max(4, Math.min(80, Math.floor(+q.get("count") || 20)));
+    const seed = Math.max(0, Math.min(1000000, Math.floor(+q.get("seed") || 73)));
+    if (!sl || !sl.worlds.includes("maze")) return json(res, {error:"Select a graph training real labyrinths"});
+    if (!sl.wk) {
+      const file = saveOf(sl);
+      if (!fs.existsSync(file)) return json(res,{error:"No saved Brain available"});
+      try { return json(res,{...Brain.load(file).testPerspective(count,seed),fromSave:true}); }
+      catch (err) { return json(res,{error:err.message}); }
+    }
+    const id=++chatId;let ended=false;
+    const timer=setTimeout(()=>{if(ended)return;ended=true;chats.delete(id);json(res,{error:"Frozen evaluation timeout"});},180000);
+    chats.set(id,r=>{if(ended)return;ended=true;clearTimeout(timer);json(res,{...r,w:sl.w});});
+    sl.wk.postMessage({perspectiveExam:{id,count,seed}});
+    return;
+  }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
     const sl = slots.find(x => x.w === +q.get("w")), sizes = (q.get("sizes") || "7,9,11,13,15,17,19,21,25,31,41,51").split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per = Math.max(1, Math.min(10, +q.get("per") || 1));
     if (!sl) return json(res, {error: "nu există graful"});
