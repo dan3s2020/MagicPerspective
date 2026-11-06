@@ -368,6 +368,126 @@ export class ObservedTransformations {
     return {found:false,reason:"no-learned-path-satisfies-goal",goal:{required:req},
       expanded,search,observed:this.records.size,operators:this.operators.size};
   }
+  // A second, LOCAL perspective using the SAME actual learned edit graph.
+  // The global line is frozen FIRST. Each subsequent step is an action
+  // independently chosen from locally available learned operators and goal
+  // information, with an optional copy of the organism-owned noise policy.
+  // The local controller can take a different route, then rediscover a plan.
+  // Crucially, the textual world model's action effects are NOT an independent
+  // external semantic judge: they are the operations induced from training.
+  embody(plan,{maxSteps=40,noiseAgent=null,localPolicy=true}={}) {
+    if(!plan?.found)return {attempted:false,reason:plan?.reason||"no-shape"};
+    const required=plan.goal.required;
+    const start=tokenizeObservation(plan.start);
+    let tokens=start.slice(),currentPlan=plan,position=0,corrections=0,
+      executed=0,alternateMoves=0,failures=0,stalled=0;
+    const frames=[{index:0,stage:"before-first-action",
+      state:renderObservation(tokens),globalShape:plan.initialShape||[plan.start],
+      localOptions:[],perspective:"global",goalReached:false}];
+    const visits=new Map([[freezeKey(tokens),1]]);
+    const agency=noiseAgent?Object.assign(Object.create(Object.getPrototypeOf(noiseAgent)),
+      structuredClone(noiseAgent)):null;
+    for(let k=0;k<maxSafe(Math.trunc(maxSteps),1,120);k++){
+      const known=this.structuralSupport(tokens);
+      if(this._goal(tokens,required)&&known.consistent)break;
+      const state=renderObservation(tokens);
+      let candidates=this.neighbors(tokens);
+      if(!candidates.length){failures++;break;}
+      // The local perspective does NOT see an oracle route. Scores combine
+      // experienced operator support, goal progress and local revisits.
+      const oldGoal=required.filter(t=>tokens.includes(t)).length;
+      const ranked=candidates.map(next=>{
+        const key=freezeKey(next.tokens),seen=visits.get(key)||0;
+        const newGoal=required.filter(t=>next.tokens.includes(t)).length;
+        const score=(newGoal-oldGoal)*1.4+
+          Math.log1p(next.action.observedSupport||0)*.18-
+          seen*.85;
+        return {...next,score,seen,progress:newGoal-oldGoal};
+      }).sort((a,b)=>b.score-a.score||
+        b.action.observedSupport-a.action.observedSupport||
+        renderObservation(a.tokens).localeCompare(renderObservation(b.tokens)));
+      if(!currentPlan.found||currentPlan.initialShape?.[0]!==state){
+        currentPlan=this.plan({required,start:state,allowUnseenStart:true,
+          maxDepth:Math.min(8,Math.max(4,maxSafe(maxSteps-k,1,8))),
+          maxExpanded:2500});
+        position=0;corrections++;
+      }
+      const intended=currentPlan.initialShape?.[1]||null;
+      let choice=ranked[0],choiceIndex=0,why="operator-support + goal-overlap + local novelty";
+      const noise=agency?.decide({domain:"text",known:true,planned:!!intended})||null;
+      if(noise?.site==="imagination"&&ranked.length>1){
+        const selected=agency.output(0,ranked.length,noise);
+        if(selected!==0){choice=ranked[selected];choiceIndex=selected;
+          why="endogenous imagination from a frozen copy of organism noise policy";}
+      }
+      // If the local controller is stuck, it can consult its newly computed
+      // goal-directed line; this is explicitly recorded as a perspective swap.
+      if((visits.get(freezeKey(choice.tokens))||0)>=3&&intended){
+        const directed=ranked.find(x=>renderObservation(x.tokens)===intended);
+        if(directed){choice=directed;choiceIndex=ranked.indexOf(choice);
+          why="local revisit → switch to overhead route";
+        }
+      }
+      if(!localPolicy&&intended){
+        const directed=ranked.find(x=>renderObservation(x.tokens)===intended);
+        if(directed){choice=directed;choiceIndex=ranked.indexOf(choice);
+          why="follow global planned action";}
+      }
+      const spec=this.operators.get(choice.action.key);
+      const actual=spec?runAction(tokens,spec,choice.action.index):null;
+      if(!actual){failures++;frames.push({index:k+1,stage:"failed-action",state,
+        intended,chosen:choice.action,actual:null,why,error:"operator rejected"});break;}
+      const after=renderObservation(actual),matched=intended===after;
+      if(!matched)alternateMoves++;
+      executed++;
+      visits.set(freezeKey(actual),(visits.get(freezeKey(actual))||0)+1);
+      // If it moved off the overhead path, recompute using only the currently
+      // reached text state + learned operators + goal tokens. Never use a
+      // reference target sentence or a hidden ground-truth graph.
+      let updated=null;
+      if(!matched){
+        updated=this.plan({required,start:after,allowUnseenStart:true,
+          maxDepth:Math.min(8,Math.max(4,maxSafe(maxSteps-k-1,1,8))),
+          maxExpanded:2500});
+        currentPlan=updated;corrections++;position=0;
+      } else {
+        const tail=currentPlan.initialShape?.slice(1)||[after];
+        currentPlan={...currentPlan,initialShape:tail};
+        position++;
+      }
+      const support=this.structuralSupport(actual);
+      const completed=this._goal(actual,required)&&support.consistent;
+      frames.push({index:k+1,stage:"after-action",before:state,state:after,
+        plannedNext:intended,chosen:choice.action,selectedIndex:choiceIndex,
+        after,worldModelExpected:renderObservation(choice.tokens),
+        predictionMatched:matched,causalEffectMatched:after===renderObservation(choice.tokens),
+        alternativePath:!matched,localCandidateCount:ranked.length,
+        alternatives:ranked.slice(0,8).map(x=>({state:renderObservation(x.tokens),
+          score:+x.score.toFixed(5),observedSupport:x.action.observedSupport,
+          action:x.action})),why,noise,
+        goalReached:completed,remainingShape:currentPlan.initialShape||null,
+        correctedShape:updated?.found?updated.initialShape:null,
+        correctedPathExists:updated?.found??null,
+        perspective:matched?"body":"body → overhead → body",
+        effectSource:"learned-text-action-model",
+        realSemanticWorldFeedback:false});
+      tokens=actual;
+      if(completed)break;
+      if(!matched&&updated&&!updated.found)stalled++;
+      if(stalled>3)break;
+    }
+    const final=renderObservation(tokens);
+    const success=this._goal(tokens,required)&&this.structuralSupport(tokens).consistent;
+    return {attempted:true,start:plan.start,predictedBeforeMovement:plan.predicted,
+      final,success,executed,corrections,alternateMoves,failures,
+      reachedPredictedGoal:final===plan.predicted,
+      initialShape:plan.initialShape,frames,
+      independentBodyActions:localPolicy,
+      perspectiveChanges:frames.filter(x=>x.perspective?.includes("→")).length,
+      effectSource:"learned-text-action-model",referenceProvided:false,
+      frozen:true,semanticValidation:false,
+      note:"Actual learned edit operations executed in the organism's internal text world; NOT independent semantic ground truth."};
+  }
   execute(plan,{record=true}={}) {
     if(!plan?.found) return {verified:false,reason:"no-plan"};
     let tokens=tokenizeObservation(plan.start);
