@@ -7,6 +7,7 @@ const side=document.querySelector("aside.side");
 let selectedGraph=0,paired=null,evaluation=null,step=0,playTimer=null;
 let pairBusy=false,evalBusy=false,pollBusy=false,positions=null;
 let pollAt=null,observedRequest=false,lastObservedAt=0,observedReady=false;
+const tdHistory=new Map(); // true telemetry samples only
 const number=x=>Number.isFinite(x)?Number(x).toLocaleString("ro-RO"):"—";
 const fixed=(x,d=5)=>Number.isFinite(x)?Number(x).toFixed(d):"—";
 const percent=x=>Number.isFinite(x)?(100*x).toFixed(2)+"%":"—";
@@ -29,7 +30,7 @@ function resetPlans(){
  stopReplay();paired=null;positions=null;step=0;
  el("scStep").value="0";el("scStep").max="0";
  message("scStepLabel","0 / 0");
- for(const id of ["scV","scS","scCandidates","scTies","scDivergence","scAgreement"])message(id,"—");
+ for(const id of ["scV","scS","scCandidates","scTies","scDivergence","scAgreement","scOnlineCovered","scOnlineRoot"])message(id,"—");
  message("scStepDetail","Nu există încă un traseu calculat pe acest creier.");
  message("scPathDiff","Nu există încă un traseu calculat.");
  message("scPlanStatus","Introdu o întrebare și propagă ambele câmpuri pe backendul real.");
@@ -94,6 +95,59 @@ async function getJson(url,options={}){
  if(value.error)throw Error(value.error);
  return value;
 }
+function renderTdTraining(stat,w){
+ const ids=["scTdRows","scTdUpdates","scTdStates","scTdError","scTdCharacters","scTdScales"];
+ if(!stat||stat.enabled!==true){
+  for(const id of ids)message(id,"—");
+  message("scTdStatus","Backendul încă nu raportează antrenare TD. Dacă actualizezi codul în timpul unui server pornit, salvează și repornește.");
+  blank("scTdCanvas","Aștept date reale ale TD…");return;
+ }
+ message("scTdRows",number(stat.rows));
+ message("scTdUpdates",number(stat.updates));
+ message("scTdStates",number(stat.states)+" / "+number(stat.maxStates));
+ message("scTdError",fixed(stat.tdAbsMean,7));
+ message("scTdCharacters",number(stat.characters));
+ message("scTdScales",(stat.levelUpdates||[]).map(number).join(" / "));
+ const samples=tdHistory.get(w)||[];
+ const newPoint={at:Date.now(),updates:stat.updates,error:stat.tdAbsMean,states:stat.states};
+ if(!samples.length||samples.at(-1).updates!==newPoint.updates||
+    samples.at(-1).error!==newPoint.error||samples.at(-1).states!==newPoint.states){
+  samples.push(newPoint);if(samples.length>160)samples.shift();tdHistory.set(w,samples);
+ }
+ message("scTdStatus",(stat.updates>0?"ÎNVĂȚARE TD DIN CORPUS":"NU A PRIMIT ÎNCĂ RÂNDURI Q/A")+
+  " · "+number(stat.rows)+" exemple, "+number(stat.updates)+" actualizări, "+
+  number(stat.states)+" stări. Scări: "+(stat.levels||[]).join(" / ")+
+  (stat.restored?" · checkpoint restaurat":"")+
+  (stat.evicted?" · stări eliminate: "+number(stat.evicted):"")+
+  ". Actualizările și eroarea TD nu sunt precizie lingvistică.");
+ drawTdTraining(samples);
+}
+function drawTdTraining(samples){
+ if(!samples?.length){blank("scTdCanvas","Fără observații de antrenare");return;}
+ const c=el("scTdCanvas"),g=c.getContext("2d"),W=c.width,H=c.height;
+ g.fillStyle="#030d16";g.fillRect(0,0,W,H);
+ const L=55,R=W-16,T=19,M=106,B=H-25,N=samples.length;
+ const maxUpdates=Math.max(1,...samples.map(p=>p.updates));
+ const maxError=Math.max(1e-7,...samples.map(p=>p.error));
+ const x=i=>L+(R-L)*(N===1?.5:i/(N-1));
+ const plot=(k,color,top,bottom,max)=>{
+  g.strokeStyle=color;g.lineWidth=2.2;g.beginPath();
+  samples.forEach((p,i)=>{
+   const y=bottom-(bottom-top)*Math.max(0,Math.min(1,p[k]/max));
+   if(i)g.lineTo(x(i),y);else g.moveTo(x(i),y);
+  });g.stroke();
+  if(N===1){g.fillStyle=color;g.beginPath();g.arc(x(0),bottom-
+   (bottom-top)*Math.min(1,samples[0][k]/max),3,0,Math.PI*2);g.fill();}
+ };
+ g.strokeStyle="#345268";g.lineWidth=1;
+ for(const y of [T,M,B]){g.beginPath();g.moveTo(L,y);g.lineTo(R,y);g.stroke();}
+ plot("updates","#56dcc6",T,M-7,maxUpdates);
+ plot("error","#e7aa6e",M+9,B,maxError);
+ g.fillStyle="#b9d6e2";g.font="11px system-ui";
+ g.fillText("TD updates "+number(samples.at(-1).updates),L+5,T+12);
+ g.fillText("TD |Δ| "+fixed(samples.at(-1).error,6),L+5,M+24);
+ g.fillText("Succesiune de actualizări reale din worker · "+N+" punct(e)",L+5,H-6);
+}
 async function refreshLive(){
  if(pollBusy||document.hidden||!active())return;
  pollBusy=true;
@@ -113,6 +167,7 @@ async function refreshLive(){
   message("scTransitions",number(lm?.characterTransitionsObserved));
   message("scGoals",number(lm?.knownGoalObservationCount));
   message("scRulesCount",number(lm?.observedPositionalRules));
+  renderTdTraining(lm?.successorTraining??null,w);
   const gpuMode=g.gpu?.settings?.device||meta.gpu?.device||"off / indisponibil";
   message("scGpu",gpuMode);
   const lines=[
@@ -249,7 +304,9 @@ function plotValues(){
  const route=r.pathNodes,denom=Math.max(1,route.length-1);
  const series=[
   {key:"potential",color:"#efb85e",name:"V17 max"},
-  {key:"successorOccupancy",color:"#39d7c2",name:"Successor S"}
+  {key:"successorOccupancy",color:"#39d7c2",name:"Successor S"},
+  {key:"successorOnline",color:"#ce9df1",name:"TD antrenat"},
+  {key:"successorEmpirical",color:"#638aa9",name:"fallback empiric"}
  ];
  for(const item of series){
   const avail=route.some(id=>Number.isFinite(r.graph.nodes[id]?.[item.key]));
@@ -351,6 +408,8 @@ function showPair(value){
  message("scTies",number(diagn.globalTieBreaks??0)+" / "+number(diagn.localTieBreaks??0));
  message("scDivergence",diff.same?"IDENTIC":"DIFERIT");
  message("scAgreement",percent(b.localAgreementRate));
+ message("scOnlineCovered",number(diagn.onlineCoveredNodes)+" / "+number(diagn.onlineNodes));
+ message("scOnlineRoot",fixed(diagn.empiricalRootOccupancy)+" / "+fixed(diagn.rootOccupancy));
  message("scPathDiff",diff.text+"\nOriginal: "+excerpt(a.output,170)+
    "\nHibrid: "+excerpt(b.output,170));
  message("scPlanStatus",
@@ -368,7 +427,8 @@ function showPair(value){
   original:{pathLength:a.steps,output:a.output,rootV:a.field?.[0],
    graphNodes:a.graph?.nodes?.length,candidates:a.candidates,abstained:a.abstained},
   hybrid:{pathLength:b.steps,output:b.output,rootV:b.field?.[0],
-   successor:diagn,localAgreementRate:b.localAgreementRate,
+   successor:diagn,onlineTraining:diagn.training,
+   localAgreementRate:b.localAgreementRate,
    graphNodes:b.graph?.nodes?.length,graphEdges:b.graph?.edges?.length,
    candidates:b.candidates,abstained:b.abstained},
   warning:"V17/S fields are classical, not measured quantum amplitudes. Reached known goal != general text understanding."
@@ -478,6 +538,7 @@ el("scEvaluate").addEventListener("click",async()=>{
 // Real telemetry while this tab is visible; no synthetic chart updates.
 setInterval(()=>{if(active())refreshLive();},2300);
 resetPlans();clearEvaluation();
+blank("scTdCanvas","Aștept actualizările TD din antrenare…");
 // This IS the dedicated isolated V18 Successor checkout. On the genuine
 // live server landing page show the new observatory immediately; old V17
 // Train/Eval/Graph tabs remain available and retain their own handlers.
