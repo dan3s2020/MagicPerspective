@@ -36,6 +36,22 @@ jobs:
       - name: Shared PyTorch noise-channel and frozen evaluation invariants
         working-directory: v17/transcend/torus-aether/gpu
         run: python -m unittest -v test_shared_perspective test_transfer_benchmark
+  paired-ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Frozen matched-seed real-world comparison against no-noise and fixed-noise baselines
+        run: |
+          node v17/scripts/audit-endogenous-noise.mjs --train-mazes 16 --train-transforms 3 --test 12 --seeds 8 > noise-ablation.json
+          cat noise-ablation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v17-real-world-noise-ablation-json
+          path: noise-ablation.json
   windows-parse:
     runs-on: windows-latest
     timeout-minutes: 9
