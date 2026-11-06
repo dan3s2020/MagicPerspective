@@ -10,6 +10,7 @@
 // zoom out forever; zoom in until the section can no longer stay full and you enter the node at the centre — inside
 // is the world of what followed it in the lived stream, again an infinite torus, one character deeper each time.
 import {TextExperiment} from "../../epistemic-text/engine.mjs";
+import {Observatory} from "./observatory.js";
 import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
@@ -371,7 +372,7 @@ function write() {
 function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
-  $("steps").textContent = t.toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
+  $("steps").textContent = (LIVE ? (liveSummary?.chars ?? liveSnap?.chars ?? 0) : t).toLocaleString(); $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
   $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
       `<br>cum citește acum: urmează alinierile de încredere cu ascuțimea <b>${M.g}</b>, forma cântărește <b>${M.form}</b>` +
@@ -426,7 +427,10 @@ $("write").onclick = () => write();
 $("wtemp").addEventListener("change", () => { if (t) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
 const LIVE = new URLSearchParams(location.search).has("live");
-let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null;
+let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null, liveSummary = null;
+let livePulling=false;
+const observatory = LIVE ? new Observatory({getGraph:()=>liveW}) : null;
+if(observatory)observatory.select(liveW);
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
   for (const [id, type, label, act, born, err] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); if (err) n.err = performance.now(); keep.add(id); }
@@ -434,7 +438,11 @@ function applySnap(gs) {
   edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : ""), {a: a2, b: b2, kind, w, label, hot: 1}]));
   if (gs.text && gs.text.length !== (liveSnap?.text?.length || -1) || !data.length) { data = Array.from(gs.text || "", c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
-  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
+  strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); 
+  // The CUDA stream increments chars, while the original per-event Node
+  // graph is only given sampled text from GPU batches. Show BOTH as distinct
+  // measurements instead of displaying 0 for 400k trained characters.
+  t = gs.chars ?? gs.lived ?? 0; liveSnap = gs; view.dirty = true; findConcepts();
   if (gs.shared) renderShared(gs.shared);   // t: every step lived (text characters and every world's symbols)
   renderAgentNoise(gs.endogenousNoise || null);
   renderPerspective(gs.perspective || null);
@@ -490,6 +498,7 @@ $("observedTransformPlan").onclick=async()=>{
       "&start="+encodeURIComponent(start);
     const res=await fetch(u,{method:"POST"}),r=await res.json();
     if(r.error)throw Error(r.error);
+    observatory?.setComposition(r);
     if(!r.found){
       out.textContent="Nu există încă o cale învățată: "+(r.reason||"necunoscut")+
         " · stări extinse "+(r.expanded||0);
@@ -827,7 +836,7 @@ function bootLive() {
   D = 5; rand = rng(7); nodes = new Map(); edges = new Map(); recent = {C: [], F: []}; strip = []; groups = []; geo = {U: new Map(), V: new Map(), B: new Map()}; data = [];
   chain = {A: [{wires: [], form: () => liveSnap?.form || ""}]}; running = false;
   $("livePanel").hidden = false; document.body.classList.add("live");
-  livePull(); setInterval(livePull, 1500); loop();
+  livePull(); setInterval(livePull, 1100); loop();
 }
 if (LIVE) bootLive(); else
 fetch("/corpus").then(r => r.json()).then(c => {
@@ -859,8 +868,11 @@ fetch("/corpus").then(r => r.json()).then(c => {
 // ---- the Evaluare tab: a copy from the save, on the CPU, on unseen labyrinths / text / desired configurations; first attempt ----
 { let R = null, kind = "maze", cur = 0, t0 = 0, evAgainNow = false;
   const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], pct = v => v == null ? "—" : (100 * v).toFixed(1) + "%", side = document.querySelector("aside.side");
-  $("tabTrain").onclick = () => { side.classList.remove("evalOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); };
-  $("tabEval").onclick = () => { side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("evW").textContent = "#" + liveW; };
+  $("tabTrain").onclick = () => { side.classList.remove("evalOn","obsOn"); $("tabTrain").classList.add("on"); $("tabEval").classList.remove("on"); $("tabObserve").classList.remove("on"); };
+  $("tabEval").onclick = () => { side.classList.remove("obsOn");side.classList.add("evalOn"); $("tabEval").classList.add("on"); $("tabTrain").classList.remove("on"); $("tabObserve").classList.remove("on"); $("evW").textContent = "#" + liveW; };
+  $("tabObserve").onclick = () => { side.classList.remove("evalOn");side.classList.add("obsOn");
+    $("tabObserve").classList.add("on");$("tabTrain").classList.remove("on");
+    $("tabEval").classList.remove("on");observatory?.render(); };
   $("evKind").onchange = () => { for (const el of document.querySelectorAll("#evalPane [data-k]")) el.hidden = el.dataset.k !== $("evKind").value; };
   const items = () => !R ? [] : kind === "maze" ? R.mazes : kind === "transform" ? R.tasks : R.exercises || [];
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
