@@ -2,6 +2,19 @@
 
 Source basis: original `v17-torus-aether` graph visualizer and trainer preserved byte-for-byte except for explicitly listed, small integration hooks. Base ancestry: `experiment/SHARED-TRANSFORM-PATH-PROOF-20261106`, which also preserves the isolated language experiments. This is **a functioning first integration slice**, not a universal language solver or completion of the full Verbatim architecture.
 
+
+## NEW isolated Windows launcher (verified PowerShell 5.1 syntax)
+
+From a fresh clone of this experimental branch, run:
+
+```powershell
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\v17\START_V17_UNIFIED.ps1" -Data "D:\training\OpenThoughts3-1.2M" -Port 8862 -Gpu cuda:0 -GpuWorlds 128 -Vram 3
+```
+
+Open `http://127.0.0.1:8862/transcend/torus-aether/ui/index.html?live=1`. This is the **original V17 NestView** with extra panels, not a replacement UI. The launcher uses `v17/runtime-unified-20261106` inside the new checkout, never the older `runtime-devour` checkpoint directory; it resumes its own state by default. `-Fresh` makes a new training session and archives that branch's previous snapshots. It runs both original V17 GPU self-test and a new actual CUDA gradient self-test for the shared PyTorch learner; startup fails rather than claiming CUDA was used if either fails. GPU availability on the user's Windows machine has not yet been verified by this conversation.
+
+The new **Evaluează modelul comun (înghețat, lumi nevăzute)** button calls `/shared-eval` and evaluates real held-out maze/transform actions using copies of the original learner. The command does not train on test transitions. It reports feature-space prediction MSE and identity baseline, **not** maze success percentage or language understanding. A held-out Q/A prompt is used without its answer if available. 
+
 ## What actually executes in the same V17 runtime
 
 1. **Original V17:** `Brain` and `Discoverer` keep their original decisions, map generation, CUDA world batches, text-card learning, checkpoints, and 5D/NestView drawing. No existing trained weights are overwritten by the new head.

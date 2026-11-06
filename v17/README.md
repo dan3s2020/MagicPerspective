@@ -38,3 +38,8 @@ node --test tests/*.test.mjs
 ```
 
 Rezultatele și metodele sunt în `docs/TORUS_AETHER_ABC_20261104.md`.
+
+
+## Experimental: unified real-world transformation learner (isolated)
+
+Branch `feature/V17-UNIFIED-LIVING-PERSPECTIVE-20261106` preserves this V17 trainer and its NestView while adding a common PyTorch state-transition learner, observed maze/transform/text interventions and a frozen held-out evaluation panel. For a separate checkout on Windows, start `v17/START_V17_UNIFIED.ps1` (port 8862, separate run directory) and read `v17/docs/UNIFIED_LIVING_PERSPECTIVE_20261106.md`. The extra model has not demonstrated natural-language semantics, universal transfer or device-level CUDA behavior on the user's GPU; do not equate it with the original maze 100% evaluator.
