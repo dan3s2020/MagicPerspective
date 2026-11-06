@@ -114,3 +114,48 @@ export function routeDivergence(global,actual){
  return {diverged:at>=0,firstDifferentNodeIndex:at,
    predictedNodes:a.length,executedNodes:b.length};
 }
+
+/**
+ * Use actual online-trained ORIGINAL V17 Geometry.U five-torus embeddings,
+ * not a guessed numeric 5D coordinate system.
+ *
+ * The 5 vector coordinates come straight from /graph -> gs.U. The browser
+ * projects four of the five; the fifth is a genuine learned slice variable.
+ * Repeated characters occupy the same torus location. An observed prefix
+ * world is a DIFFERENT state representation and must not be conflated with
+ * a native byte/symbol embedding.
+ */
+export function native5DSymbolLayout(source,Uentries){
+ if(!Array.isArray(Uentries))throw Error("Native learned 5D U geometry is unavailable");
+ const U=new Map();
+ for(const pair of Uentries){
+  if(!Array.isArray(pair)||pair.length!==2)continue;
+  const [code,vec]=pair;
+  if(!Number.isInteger(Number(code))||Number(code)<0||
+     !Array.isArray(vec)||vec.length<5||vec.slice(0,5).some(x=>!Number.isFinite(x)))continue;
+  U.set(Number(code),vec.slice(0,5).map(x=>2*(x-Math.floor(x)) -1));
+ }
+ const locate=ch=>{
+  if(typeof ch!=="string"||!ch.length)return null;
+  return U.get(ch.codePointAt(0))?.slice()||null;
+ };
+ const dimensions=["X=Geometry.U[0], learned five-torus",
+  "Y=Geometry.U[1], learned five-torus",
+  "Z=Geometry.U[2], learned five-torus",
+  "W=Geometry.U[3], learned five-torus",
+  "Slice=Geometry.U[4], learned five-torus"];
+ if(source?.nodes&&Array.isArray(source.nodes)){
+  const coords=source.nodes.map(n=>locate(n.lastCharacter));
+  const known=coords.filter(Boolean).length;
+  return {coords,known,missing:coords.length-known,possible:coords.length,
+   dimensions,representation:"ORIGINAL_V17_LEARNED_5_TORUS_SYMBOL_COORDINATES"};
+ }
+ if(source?.tracks&&Array.isArray(source.tracks)){
+  const tracks=source.tracks.map(t=>({...t,coords:t.chars.map(locate)}));
+  const known=tracks.reduce((a,t)=>a+t.coords.filter(Boolean).length,0);
+  const possible=tracks.reduce((a,t)=>a+t.coords.length,0);
+  return {tracks,known,missing:possible-known,possible,dimensions,
+   representation:"ORIGINAL_V17_LEARNED_5_TORUS_SYMBOL_COORDINATES"};
+ }
+ throw Error("Native torus overlay needs observed graph or real frozen text tracks");
+}
