@@ -169,7 +169,7 @@ export class LiveResearch {
       observedCharacters:this.trainingChars,graphEntries:this.atlas.examples.length,
       source:'real OpenThoughts3 Parquet, current V17 worker Brain',
       workerModel:'Original V17 Brain plus an isolated Q/A evidence atlas in the SAME worker; the SR planner is an evaluated extension, not the next-character learning engine',
-      goalIsTrainingAnswer:true,semanticsProven:false,
+      goalIsTrainingAnswer:true,semanticsProven:false,trainingUpdatesFromSR:0,
       rates:this.rate(),totals:{...this.usages},
       history:this.history.slice(-120),last:this.last,heldout:this.heldout,
       error:this.error,progress:this.progress,config:this.config,...extra
