@@ -44,3 +44,7 @@ Original image files found in the active runtime are fingerprinted by name, pixe
 The new V17/Torus source files do not alter the locked original 56-message transcript, previous Verbatim files, their hashes, or the release gates. Do not report whole-conversation completeness from 19 recovered messages. `VERBATIM_INCOMPLETE` and the mirror gate remain **BLOCKED** until the actual full export and original media are recovered and individually verified.
 
 These are source records, not claims that the architecture has been implemented, tested, proven, or that the entire historical native transcript has been recovered. The original Verbatim completeness gates remain BLOCKED until their conditions are independently satisfied.
+
+## 2026-11-06: USER-only exact maze→language world / recursive character submaze continuation
+
+[Exact visible USER messages about the global-local 2D maze mechanism, no-substitution regression, hierarchical hyperdimensional character mazes and implementation request](./verbatim/2026-11-06-MAZE-LANGUAGE-MYSTIC-PERSPECTIVE-USER-TURNS-VERBATIM-PARTIAL.md) are preserved **literally** as a partial USER-only ordered sequence. This is not the full native conversation; intermediate assistant/tool turns and source media are not present. The full Verbatim completion release gate remains **BLOCKED**. For implementation scope and limitations, see [blocking regression #25](https://github.com/dan3s2020/MagicPerspective/issues/25) and the independent V18 experimental branch, not an implied approval to add substitute architectures.
