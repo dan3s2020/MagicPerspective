@@ -2,7 +2,7 @@
 
 Branch: `feature/V17-NATIVE-SELF-CODE-PORTALS-20261106`
 
-This is NOT the standalone demo. On this opt-in branch, the original V17 `devour/worker.mjs` instantiates `NativeSelfCodeWorld` on each enabled **existing V17 Brain**, and interleaves self-code experience with live maze and transformation training. The original V17 graph and dashboard server are preserved. The fourth world is opted into using `--worlds maze,transform,selfcode` (also supports `text` when a corpus is provided).
+This is NOT the standalone demo. On this opt-in branch, the original V17 `devour/worker.mjs` instantiates `NativeSelfCodeWorld` on each enabled **existing V17 Brain**, and interleaves self-code experience with live maze and transformation training. The original V17 graph and dashboard server are preserved. Observed source-code state/action/state transitions now also enter the existing `SharedExperience` queue and the shared PyTorch model (the fourth domain), when a real PyTorch device is enabled. Existing three-domain PyTorch checkpoints migrate their per-domain counters without replacing weights. The fourth world is opted into using `--worlds maze,transform,selfcode` (also supports `text` when a corpus is provided).
 
 ## Native mechanisms
 
@@ -34,7 +34,7 @@ node --test v17/transcend/torus-aether/devour/selfcode-evaluator.test.mjs
 node --test experimental/self-world/code-world.test.mjs
 ```
 
-New component tests and pre-existing Self-Code World tests passed locally (13/13 in one environment). Native full V17/Termux end-to-end acceptance is **not yet independently verified on the user's phone**. The full original Windows V17 CUDA runner has not been modified, and this Termux script specifically uses CPU.
+New component tests and pre-existing Self-Code World tests passed locally (14/14 in one environment). Native full V17/Termux end-to-end acceptance is **not yet independently verified on the user's phone**. The full original Windows V17 CUDA runner has not been modified, and this Termux script specifically uses CPU.
 
 ## Non-claims and remaining work
 
