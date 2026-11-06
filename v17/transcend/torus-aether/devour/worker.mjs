@@ -111,11 +111,57 @@ const saveText = () => {
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
 };
+// Live hypermaze is opt-in from an open UI and samples only REAL completed
+// training rows. Bounded events; no model/original CUDA/maze law changed.
+let hypermazeLiveUntil=0,lastHypermazeAt=0,hypermazeEvent=0;
+const shouldObserveHypermaze = row =>
+  Date.now()<hypermazeLiveUntil && Date.now()-lastHypermazeAt>=1750 &&
+  typeof row?.prompt==="string" && typeof row?.answer==="string" &&
+  row.prompt.trim() && row.answer.trim();
+function beforeHypermazeRow(row){
+ if(!shouldObserveHypermaze(row))return null;
+ lastHypermazeAt=Date.now();
+ try{
+  // The Q/A world has NOT observed this training row yet. Its existing
+  // prediction is genuinely prior to the new language-world update.
+  const prev=languageMaze.plan(row.prompt,{mode:"original",maxReplay:384});
+  return {before:prev.abstained?null:prev.output,
+    abstained:!!prev.abstained,candidates:prev.candidates??0,
+    seenQABefore:languageMaze.stats().rowsObserved,
+    charsBefore:brain.chars};
+ }catch(err){return {before:null,abstained:true,error:err.message,
+    seenQABefore:languageMaze.stats().rowsObserved,charsBefore:brain.chars};}
+}
+function afterHypermazeRow(row,prior,where){
+ if(!prior)return;
+ try{
+  const after=languageMaze.plan(row.prompt,{mode:"hybrid",maxReplay:1024,
+    observeReplans:false});
+  parentPort.postMessage({
+    type:"hypermaze-live",w:workerData.gw,kind:"TRAINING_QA_COMMITTED",
+    event:++hypermazeEvent,at:Date.now(),where,
+    brainChars:brain.chars,sourceRows:brain.sourceRows,
+    phase:stageTimes?.phase??"training",trainingMemory:languageMaze.stats(),
+    prompt:row.prompt.slice(0,1200),
+    observedAnswer:String(row.answer).slice(0,1024),
+    fullAnswerChars:[...String(row.answer)].length,
+    answerPreviewTruncated:[...String(row.answer)].length>1024,
+    before:prior,after,
+    provenance:"Real completed Q/A row. BEFORE=previous memory before this row; AFTER=updated learned world. Observed characters are training targets, not autonomous agent actions."
+  });
+ }catch(err){parentPort.postMessage({type:"hypermaze-live",w:workerData.gw,
+    kind:"TRAINING_QA_ERROR",event:++hypermazeEvent,at:Date.now(),
+    brainChars:brain.chars,error:err.message});}
+}
 const absorbText = (row,{languageAlreadyObserved=false}={}) => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
   // Complete original Q/A row committed to the training stream. In CUDA
   // batches, the new learner has already observed EVERY completed row below.
-  if(!languageAlreadyObserved)observeCompletedTrainingRows([row],languageMaze);
+  const hypermazePrior=!languageAlreadyObserved?beforeHypermazeRow(row):null;
+  if(!languageAlreadyObserved){
+    observeCompletedTrainingRows([row],languageMaze);
+    afterHypermazeRow(row,hypermazePrior,"CPU_OR_COMMITTED_LONG_CUDA_ROW");
+  }
   textPaths.learn(row.prompt, row.answer);
   causalText.train(row.prompt, row.answer, textPaths,
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
@@ -238,7 +284,15 @@ const processGpuText = async (exs, meta) => {
   // not inherit that subsampling: every real, completed Q/A observation is
   // consumed exactly once in its original order, without altering the
   // existing causal tool's behavior or the original V17 CUDA alignment.
-  observeCompletedTrainingRows(meta,languageMaze);
+  // Do not subsample learning or change original GPU text CUDA processing.
+  // Only a subscribed UI gets a bounded real Q/A path snapshot on commit.
+  if(Date.now()<hypermazeLiveUntil){
+    for(const row of meta){
+      const prior=beforeHypermazeRow(row);
+      observeCompletedTrainingRows([row],languageMaze);
+      afterHypermazeRow(row,prior,"CUDA_BATCH_COMMITTED");
+    }
+  }else observeCompletedTrainingRows(meta,languageMaze);
   for(let j=0;j<meta.length;j+=Math.max(1,Math.floor(meta.length/8)))
     absorbText(meta[j],{languageAlreadyObserved:true});
   changePhase("CUDA: model comun de transformări",0,shared.queue.length);
@@ -259,7 +313,7 @@ function reportAfterCommit(){
     lastCommitReportChars=brain.chars;reportedFirst=true;
   }
 }
-parentPort.on("message", m => { if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
+parentPort.on("message", m => { if(m&&m.hypermazeLive===true){hypermazeLiveUntil=Date.now()+8500;return;} if (m && m.controls) { const C = brain.setControls(m.controls); parentPort.postMessage({type: "note", w: workerData.gw, text: "controls " + JSON.stringify(C)}); shot(true); return; }
   if (m && m.sharedEval) {
     const {id, seed = 74129} = m.sharedEval;
     void (async () => {
