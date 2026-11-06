@@ -14,6 +14,7 @@ import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
 import {NestView, PLANES6, rotation6} from "./nestview.mjs";
+import {chooseVisibleGraph} from "./live-follow.mjs";
 const mazeLabel = c => { const i = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15].indexOf(c); return i < 0 ? null : i < 4 ? "◆" + "αβγδ"[i] : "▶" + (i - 4); };   // the exercise's raw symbols: no meaning given
 
 const ctxAt = (d, i) => Array.from({length: 4}, (_, j) => d[(i - j - 1 + d.length) % d.length]);
@@ -426,13 +427,15 @@ $("write").onclick = () => write();
 $("wtemp").addEventListener("change", () => { if (t) write(); });
 // ---------- live: the graph devouring a world on the trainer (devour.mjs), not in this page ----------
 const LIVE = new URLSearchParams(location.search).has("live");
-let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null;
+const initialLiveParams = new URLSearchParams(location.search);
+let liveW = +(initialLiveParams.get("w") || 0), liveSnap = null;
+let liveSelectionLocked = initialLiveParams.has("w");
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
   for (const [id, type, label, act, born, err] of gs.nodes) { const n = node(id, type, label); n.label = label; if (born !== undefined) n.bt = born; n.act = Math.max(n.act, act); if (err) n.err = performance.now(); keep.add(id); }
   for (const id of [...nodes.keys()]) if (!keep.has(id)) nodes.delete(id);
   edges = new Map(gs.edges.map(([a2, b2, kind, w, label]) => [a2 + ">" + b2 + (["is", "attract", "repel", "moves", "align", "miss"].includes(kind) ? ">" + kind : ""), {a: a2, b: b2, kind, w, label, hot: 1}]));
-  if (gs.text && gs.text.length !== (liveSnap?.text?.length || -1) || !data.length) { data = Array.from(gs.text || "", c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
+  if (typeof gs.text === "string" && (gs.text !== (liveSnap?.text || "") || !data.length)) { data = Array.from(gs.text, c2 => c2.charCodeAt(0)); occ.clear(); knot = null; }
   flow.length = 0; gs.flow.forEach((p2, i) => flow.push({a: p2[0], b: p2[1], t0: frame - (gs.flow.length - i) * .3}));
   strip = gs.strip.map(([y, ok, fixed, broke]) => ({y, ok, fixed, broke})); t = gs.lived ?? gs.chars; liveSnap = gs; view.dirty = true; findConcepts();
   if (gs.shared) renderShared(gs.shared);   // t: every step lived (text characters and every world's symbols)
@@ -515,9 +518,33 @@ function drawTrans() {
   for (let i = 0; i < n * n; i++) { g2.fillStyle = hue(F.b[i]); g2.fillRect(ox + (i % n) * s2 + 1, (i / n | 0) * s2 + 1, s2 - 2, s2 - 2); }
   for (let i = 0; i < n * n; i++) if (L.goal[i] !== 17) { g2.strokeStyle = hue(L.goal[i]); g2.lineWidth = 3; g2.setLineDash([4, 3]); g2.strokeRect(ox + (i % n) * s2 + 3, (i / n | 0) * s2 + 3, s2 - 6, s2 - 6); g2.setLineDash([]); }
 }
+async function pullSelectedGraph() {
+  const indicator = $("viewerStatus");
+  try {
+    const r = await fetch("/graph?w=" + liveW, {cache: "no-store"});
+    if (!r.ok) {
+      if (indicator) indicator.textContent = "Graful #" + liveW + " nu are încă o captură; caut un graf activ...";
+      return false;
+    }
+    const gs = await r.json();
+    if (!Array.isArray(gs.nodes)) return false;
+    applySnap(gs);
+    const batch = gs.gpu?.batch;
+    if (indicator) indicator.textContent = "VIZUALIZEZI GRAFUL #" + liveW +
+      " · " + gs.nodes.length + " noduri · " + (gs.lived || 0).toLocaleString() +
+      " momente · " + (data?.length || 0).toLocaleString() + " simboluri în viewer" +
+      (batch ? " · " + batch.phase + " " + batch.done + "/" + batch.total : "");
+    return true;
+  } catch (err) {
+    if (indicator) indicator.textContent = "Vizualizator #" + liveW + ": " + err.message;
+    return false;
+  }
+}
 async function livePull() {
-  try { const r = await fetch("/graph?w=" + liveW, {cache: "no-store"}); if (r.ok) { const gs = await r.json(); if (gs.nodes) applySnap(gs); } } catch {}
+  await pullSelectedGraph();
   try { const L = await (await fetch("/graphs", {cache: "no-store"})).json(); const p2 = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
+    const visible = chooseVisibleGraph(L.graphs, liveW, liveSelectionLocked);
+    if (visible !== liveW) { liveW = visible; clearLive(); await pullSelectedGraph(); }
     $("corpus").textContent = `lumea pe care o devorează: ${L.world}`;
     // one card per graph: its own score in every world it lives, its state, and its own controls
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
@@ -529,7 +556,12 @@ async function livePull() {
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
-      c.querySelector(".t").onclick = () => { liveW = +c.dataset.w; nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull(); };
+      c.querySelector(".t").onclick = () => {
+        liveW = +c.dataset.w; liveSelectionLocked = true;
+        const url = new URL(location.href); url.searchParams.set("w", String(liveW));
+        history.replaceState(null, "", url);
+        nodes.clear(); edges.clear(); liveSnap = null; data = []; view.path = ""; view.mode = "inside"; nv.cam = {k: 0, w: "", x: 0, y: 0, S: 300}; nv.placed = false; livePull();
+      };
       for (const b of c.querySelectorAll("button")) b.onclick = async ev => { ev.stopPropagation(); const act = b.dataset.do;
         if ((act === "reset" || act === "remove") && !armedNow(c.dataset.w + act)) { armed.set(c.dataset.w + act, performance.now() + 4000); b.textContent = "sigur?"; return; }
         armed.delete(c.dataset.w + act);
