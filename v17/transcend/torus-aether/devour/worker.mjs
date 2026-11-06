@@ -309,8 +309,8 @@ parentPort.on("message", m => { if (m && m.controls) { const C = brain.setContro
   if(m&&m.successorPairExam){
     const {id,prompt}=m.successorPairExam;
     try{
-      const original=languageMaze.plan(prompt,{maxReplay:256,mode:"original"});
-      const hybrid=languageMaze.plan(prompt,{maxReplay:256,mode:"hybrid"});
+      const original=languageMaze.plan(prompt,{maxReplay:4096,mode:"original"});
+      const hybrid=languageMaze.plan(prompt,{maxReplay:4096,mode:"hybrid"});
       parentPort.postMessage({type:"chat",id,kind:"successor-pair",
         protocol:"FROZEN_SAME_EXPERIENCED_TEXT_WORLD",
         original,hybrid,trainingMemory:languageMaze.stats(),
