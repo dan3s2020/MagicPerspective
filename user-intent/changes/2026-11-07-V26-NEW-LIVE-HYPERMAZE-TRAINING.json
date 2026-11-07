@@ -24,12 +24,21 @@
     "Graph and actual preaction solution path render in new browser UI",
     "Pause/resume/step/save/load/test/reset and corpus load functional",
     "Frozen train/test split; negative controls; truthful reported measured accuracy",
-    "Original 2D parity unaffected; no checkpoint regression"
+    "Original 2D parity unaffected; no checkpoint regression",
+    "real browser controls and graph screenshot validated, Windows PowerShell startup verified"
   ],
   "known_unverified": [
     "real Windows PowerShell end-to-end launch",
     "real RTX 3050 Ti CUDA acceleration",
     "general-language >=70% unseen OpenThoughts answers"
   ],
-  "status": "IMPLEMENTATION_IN_PROGRESS"
+  "status": "EXPERIMENTAL_NATIVE_TRAINING_UI_IMPLEMENTED_CI_VERIFIED__SEMANTIC_70_PERCENT_OPEN",
+  "evidence_path": "v17/apps/hypermaze-studio-v26/EVIDENCE.md",
+  "ci": {
+    "run_id": 42344117032,
+    "server_and_engine_tests": "6/6",
+    "real_browser_test": "1/1 Chrome screenshot uploaded",
+    "real_windows_powerShell": "PASS health/training/noise 0.37",
+    "semantic_qa_70_percent": "NOT_TESTED"
+  }
 }
