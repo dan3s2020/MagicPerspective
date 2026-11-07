@@ -1,0 +1,91 @@
+name: V41 FAST complete byte-exact Markdown archive
+on:
+  push:
+    branches:
+      - handoff/V41-FAST-EXACT-SOURCE-20261107
+    paths:
+      - .github/workflows/export-v41-full-source-md.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  export-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Build single self-contained Markdown from exact immutable Git commit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import subprocess, hashlib, base64, textwrap, pathlib, datetime
+          BASE = '8363fb5f9bb4e0e2654e67d80643fc18e5dce973'
+          OUT = pathlib.Path('V41_FAST_ALL_EXACT_CODE.md')
+          ls = subprocess.check_output(['git','ls-tree','-r','-z','--full-tree',BASE])
+          entries = []
+          for item in ls.split(b'\0'):
+              if not item: continue
+              descriptor, raw_path = item.split(b'\t',1)
+              mode, kind, sha = descriptor.split(b' ')
+              entries.append((raw_path, mode.decode(), kind.decode(), sha.decode()))
+          n = 0
+          total = 0
+          with OUT.open('w',encoding='utf-8',newline='\n') as f:
+              f.write('# MagicPerspective V41 Fast — ALL ORIGINAL FILES, EXACT BYTES\n\n')
+              f.write('Original repository: https://github.com/dan3s2020/MagicPerspective\n\n')
+              f.write('Pinned Git commit: `'+BASE+'`\n\n')
+              f.write('**This Markdown embeds every tracked Git file from the pinned commit.** Every original file, including binary assets, is represented with its complete Base64 payload. UTF-8 text sources are additionally shown verbatim for human reading. The Base64 bytes, not Markdown presentation, are the lossless transport. No sources are patched or shortened.\n\n')
+              f.write('Tracked entries: '+str(len(entries))+'\n\n')
+              for raw_path, mode, kind, gitsha in entries:
+                  if kind != 'blob':
+                      raise RuntimeError('Unsupported entry that must not be silently skipped: '+repr(raw_path))
+                  blob = subprocess.check_output(['git','cat-file','blob',gitsha])
+                  total += len(blob)
+                  n += 1
+                  name = raw_path.decode('utf-8','surrogateescape')
+                  hexpath = raw_path.hex()
+                  dig = hashlib.sha256(blob).hexdigest()
+                  f.write('\n---\n\n### FILE '+str(n)+': `'+name.replace('`','\\`')+'`\n\n')
+                  f.write('Path UTF-8 bytes (HEX): `'+hexpath+'`  \n')
+                  f.write('Git mode: `'+mode+'`  \n')
+                  f.write('Git blob SHA-1/256 (repository object): `'+gitsha+'`  \n')
+                  f.write('Exact size in bytes: **'+str(len(blob))+'**  \n')
+                  f.write('SHA-256 original bytes: `'+dig+'`\n\n')
+                  try:
+                      content = blob.decode('utf-8','strict')
+                      if '\x00' in content: raise UnicodeError('NUL')
+                  except (UnicodeError,ValueError):
+                      f.write('Source is binary or non-UTF8; exact bytes preserved below.\n\n')
+                  else:
+                      runs=[len(x) for x in __import__('re').findall(r'`+',content)]
+                      fence='`'*max([4]+[x+1 for x in runs])
+                      f.write('**Original UTF-8 source, unchanged:**\n\n'+fence+'text\n')
+                      f.write(content)
+                      if not content.endswith('\n'): f.write('\n')
+                      f.write(fence+'\n\n')
+                  f.write('**Lossless exact bytes (Base64, no omissions):**\n\n```base64\n')
+                  s = base64.b64encode(blob).decode('ascii')
+                  for j in range(0,len(s),120): f.write(s[j:j+120]+'\n')
+                  f.write('```\n')
+              f.write('\n---\n\nOriginal tracked files exported: **'+str(n)+'**. Total original bytes: **'+str(total)+'**.\n')
+          print('DONE',OUT, 'original files',n,'original bytes',total,'markdown bytes',OUT.stat().st_size)
+          PY
+      - name: Commit the finished Markdown on isolated branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add V41_FAST_ALL_EXACT_CODE.md
+          git commit -m "Archive complete byte-exact original V41 Fast source in one Markdown"
+          git push origin HEAD:handoff/V41-FAST-EXACT-SOURCE-20261107
+      - name: Upload redundant downloadable artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: V41_FAST_ALL_EXACT_CODE
+          path: V41_FAST_ALL_EXACT_CODE.md
+          if-no-files-found: ignore
+          compression-level: 0
