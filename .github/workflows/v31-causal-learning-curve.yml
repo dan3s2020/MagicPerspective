@@ -38,6 +38,8 @@ jobs:
         run: node --test v17/tests/v31-three-hop-composition.test.mjs
       - name: Explore false shortcut physics and original replanning after rejected actions
         run: node --test v17/tests/v31-spurious-shortcut-recovery.test.mjs
+      - name: Verify opt-in physical causal transfer on 100 frozen unseen contexts and negative OOD worlds
+        run: node --test v17/tests/v31-physical-causal-transfer.test.mjs
       - name: Original V30, V22 and V19 regression tests remain intact
         run: |
           node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs
