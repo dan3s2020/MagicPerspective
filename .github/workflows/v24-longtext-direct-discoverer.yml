@@ -17,6 +17,8 @@ jobs:
           node-version: '22'
       - name: Learned state-dependent numeric semantics, 16 unseen long full answers with original shape and independent physics
         run: node --test v17/tests/v24-native-math-field-heldout.test.mjs
+      - name: 56 independent heldout long documents and distinct numeric goals under actual physical action checks
+        run: node --test v17/tests/v24-56-distinct-longmath-heldout.test.mjs
       - name: Native one-Brain real HTTP action training, original checkpoint and long heldout full answer
         run: node --test v17/tests/v24-native-math-http-runtime.test.mjs
       - name: True independent physical feedback, contextual walls and original solution-shape replanning
