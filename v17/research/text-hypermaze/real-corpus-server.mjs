@@ -170,7 +170,7 @@ export async function launch(options={}){
     const digest=url.searchParams.get("id")||"",
      offset=Number(url.searchParams.get("offset")||0),
      limit=Number(url.searchParams.get("limit")||50);
-    if((digest&&!/^\\d+:[a-f0-9]{64}$/.test(digest))||
+    if((digest&&!/^\d+:[a-f0-9]{64}$/.test(digest))||
        !Number.isSafeInteger(offset)||offset<0||
        !Number.isSafeInteger(limit)||limit<1||limit>200)
      return response(res,400,{error:"Original motif archive requires exact SHA256 id or valid 1..200 pagination"});
