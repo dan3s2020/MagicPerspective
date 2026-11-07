@@ -94,6 +94,8 @@ def make_maze(seed, n=7, braid=0.3):
 
 def exercise_batch(B, worlds, K, seed):
     """worlds: [{seed, n}], K: what the brain knows at the start of the batch. Returns every world's outputs."""
+    if not worlds:
+        raise ValueError("GPU labyrinth request has zero worlds; --gpu-worlds 0 must resolve to a positive autoWorlds count")
     mz = [make_maze(w["seed"], w["n"]) for w in worlds]; N = len(mz); P = max(m["n"] for m in mz)
     FLOOR, WALL, TARGET, SELF = 0, 1, 2, 3
     kind = np.full((N, P, P), -1, dtype=np.int64)                   # -1 = outside the exercise
@@ -169,6 +171,8 @@ def exercise_batch(B, worlds, K, seed):
 T_FLOOR, T_WALL, T_PLATE, T_LEVER, T_DOORP, T_DOORL = 0, 1, 2, 3, 4, 5
 class TBatch:
     def __init__(self, B, levels, moves):
+        if not levels:
+            raise ValueError("t_reset received zero transformation worlds; --gpu-worlds 0 must resolve to autoWorlds before calling the Python engine")
         self.B = B; self.N = len(levels); self.n = np.array([L["n"] for L in levels]); P = int(self.n.max()); self.P = P
         terr = np.full((self.N, P * P), T_WALL, dtype=np.int64)
         for b, L in enumerate(levels):
@@ -240,6 +244,8 @@ def exercise_learn_batch(B, worlds, K, seed):
     def add_at(acc, idx, val):                              # acc[idx] += val (repeated indices add up)
         if B.torch: acc.index_put_((idx,), val, accumulate=True)
         else: np.add.at(acc, idx, val)
+    if not worlds:
+        raise ValueError("GPU labyrinth request has zero worlds; --gpu-worlds 0 must resolve to a positive autoWorlds count")
     mz = [make_maze(w["seed"], w["n"]) for w in worlds]; N = len(mz); P = max(m["n"] for m in mz)
     FLOOR, WALL, TARGET, SELF = 0, 1, 2, 3
     kind_np = np.full((N, P, P), WALL, dtype=np.int64)          # outside a smaller exercise behaves as wall
@@ -506,5 +512,7 @@ if __name__ == "__main__":
         if not line: continue
         m = json.loads(line)
         try: r = S.handle(m)
-        except Exception as e: r = {"error": repr(e)}
+        except Exception as e:
+            import traceback
+            r = {"error": repr(e), "traceback": traceback.format_exc(limit=12)}
         r["id"] = m.get("id"); sys.stdout.write(json.dumps(r) + "\n"); sys.stdout.flush()
