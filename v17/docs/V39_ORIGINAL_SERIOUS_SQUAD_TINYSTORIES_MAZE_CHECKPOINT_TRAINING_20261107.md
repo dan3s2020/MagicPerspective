@@ -44,3 +44,31 @@ The launcher runs in **explicit CPU Node.js mode for V39's QA/TinyStories observ
 - The experimental original V36 goal-inference task learner, V37 failure-analysis overlays and V38 averaged QA learned features are separate branches; V39 currently integrates V38 with the V34 original multi-world Brain, not V36's separate task-intent memory. No universal single architecture convergence is claimed.
 - Real NVIDIA 3050 Ti CUDA performance and the 1.92 GB full TinyStories run are not proved by GitHub CPU CI; a user's local hardware integration test remains necessary. Never call CPU tests "real CUDA benchmark."
 - At most the requested number of genuine TinyStories source documents is consumed, not every byte of a 1.92 GB dataset by default. The progress bar reports **actual raw source byte offset / total file size**.
+
+
+## Final actual V39 production-mode evidence — all 4 CI jobs green
+
+Source commit verified BEFORE these documentation notes: \`e01af901381e5fe502645095737819e40a70ca51\`.
+Actual full run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42369687092
+
+**All four independent acceptance jobs PASS:**
+
+1. Real original Brain + UTF-8 TinyStories + SHA-/resume-safe SQuAD full CLI/HTTP interface/regression test: green.
+2. Exact original V34 full native xD source/character/maze HTTP regression, not a replacement model: green.
+3. Official SHA-pinned 2,400 SQuAD TRAIN examples × 2 epochs, 500 separate TRAIN calibration questions, **650 frozen official DEV human questions** executed through THIS NEW V39 trainer, not only the older V38 test: green.
+4. Full **Windows PowerShell 5.1** launcher actually executed with freshly downloaded/authenticated SQuAD JSON, original native V17 \`Brain.v8\`, 80 genuine human QA examples, five Unicode real TXT story observations, fresh separate output directory and frozen DEV evaluation: green. Existing source Brain SHA unchanged. PowerShell parser checks also green.
+
+**Actual V39 native official CPU result (not a promised RTX benchmark):**
+- Original \`Discoverer\` initial maze attraction: **26 genuinely lived 2D episodes**.
+- TRAIN supervised human question exposures: **4,800**.
+- Learned sparse QA weight snapshots: **23**.
+- Internal article-disjoint TRAIN calibration: **83/500 raw full answers** (selected average vs last solely from TRAIN).
+- External article-disjoint official DEV after policy freeze: **130/650 exact whole answers = 20.00%**, **135/650 SQuAD-normalized = 20.77%**.
+- Original \`Brain.v8\` checkpoint reloaded and verified identical first-shape and terminal response, zero additional QA exposure on restart, no duplicate TinyStories consumed, original source Brain SHA unchanged.
+- Progress during 4,800 training exposures: about **217 original QA supervision events/s on GitHub Actions CPU**; not full CUDA, not story throughput, not a laptop measurement.
+
+For context, the copied V38 unchanged independent baseline in the same green run reports **121/650** (18.62% raw) and 127/650 normalized. V39 excludes training pairs with inconsistent official source offsets (or corrects them only when *exactly* supported by Unicode codepoint→UTF-16 position conversion). The resulting 130/650 is a different screened TRAIN sample selection. **Do not infer a universally superior architecture from this nine-example difference** without paired multiple-seed study and confidence intervals.
+
+The Windows real process smoke used 5 authentic UTF-8 fixture stories, **not the entire original 1.92GB TinyStories file**, with actual local bytes consumed recorded and saved; the real SQuAD JSON was freshly downloaded from official origin and verified by SHA256. The native Original \`ObservedTransformations\` module learned from the stories, but original AligningGraph CUDA sequence model did NOT receive those bytes in this V39 lane. Full 1.92GB local Windows/RTX acceptance still missing.
+
+**Science gate:** correct frozen extractive QA answers 130/650. Unseen autonomous mathematical/OpenThoughts answers 100%, native GPU acceleration and complete 5D/noise-causal benefit remain unverified. V39 is a TESTED research training runner, not a replacement for all original motors. Do NOT merge into main as a fully general intelligent system.
