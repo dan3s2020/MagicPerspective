@@ -162,7 +162,8 @@ export class NativeGoalTextMaze {
  // This is the SAME native Discoverer value-propagation method, lifted to an
  // arbitrary learned adjacency rather than inventing a second beam predictor.
  plan({start,required,maxStates=this.maxStates,
-  geometryWeight=this.geometryWeight,sharedPolicyWeight=this.sharedPolicyWeight}={}){
+  geometryWeight=this.geometryWeight,sharedPolicyWeight=this.sharedPolicyWeight,
+  includeTopology=false}={}){
   const goal=validatedRequired(required),origin=line(start);
   if(!origin)throw Error("Start text must be observed before planning");
   if(maxStates!==this.maxStates)
@@ -213,6 +214,29 @@ export class NativeGoalTextMaze {
    noNextByteSubstitution:true,
    modelObservationCount:b.observedTransformations.seen
   };
+  if(includeTopology){
+   // ALL true explored text states, learned action edges, native 5D phase
+   // positions and propagated potentials. This is the DATA behind the
+   // visualizer, never a decorative static polytope or synthetic demo.
+   // Public only on explicitly opted-in original native research endpoint.
+   result.topology={
+    complete:!!w.visited?.bounded,originalNativeV17Graph:true,
+    nodes:w.nodes.map((n,i)=>({id:i,kind:n.kind,
+     text:n.id,observed:n.isPreviouslyObserved===true,
+     position5D:n.coordinates5D||null,
+     geometryEvidence:n.geometryEvidence||null,
+     depth:n.depth,goal:n.goal===true,
+     potential:shape?.values?.[i]??null})),
+    edges:w.edges.flatMap((list,i)=>list.map(e=>({
+     from:i,to:e.to,kind:e.action?.kind||"unknown",
+     fromToken:e.action?.from??null,toToken:e.action?.to??null,
+     observedSupport:e.observedSupport,actionIndex:e.action?.index??null}))),
+    initialShapeIds:[0,...route.map(r=>r.to)],
+    sourceId:0,source:"exact observed/edit-expanded native hypermaze",
+    notIndependentSemanticWorld:true,
+    coordinatesAreOriginalLearned5DTorus:true
+   };
+  }
   return result;
  }
  // BODY execution starts only AFTER the global shape has been frozen.
