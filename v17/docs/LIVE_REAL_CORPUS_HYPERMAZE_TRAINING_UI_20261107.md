@@ -71,6 +71,34 @@ The HTTP test launches the ACTUAL \`devour.mjs\` node server and \`worker.mjs\` 
 - Selected original V17 UI/backend regression tests continue to pass.
 - GitHub Actions: \`.github/workflows/v17-live-hypermaze-real-training.yml\`; first green run commit \`224ed0655b5b4f4671d22f09faa32e4647fa44ff\`, job \`128266632689\`; subsequent wrapper update green at commit \`3054a0180fea04253dbe49f7473fff35a17152ec\`, job \`128266808383\`.
 
+## Real Chromium UI acceptance — PASSED
+
+After the original no-mock HTTP trainer test passed, a separate FULL BROWSER test
+\`v17/tests/live-corpus-hypermaze-browser.test.mjs\` was added with real Playwright Chromium.
+It launches the same original \`devour.mjs\` and \`worker.mjs\` on the same actual repository text corpus, opens
+\`/transcend/torus-aether/ui/index.html?live=1\` without clicking another tab, and asserts:
+
+- The existing **Antrenare** tab remains active; original 2D toroidal graph is visible.
+- The existing V17 text-maze box is still visible (all original controls retained).
+- The NEW hypermaze is automatically visible only after actual training rows arrive.
+- Real corpus episode, pre-answer form and observed response appear in page text.
+- The path canvas renders nonblank measured pixels (no simulated path injection).
+- Replay/pause/step controls work, and export/frozen-eval controls exist.
+- Browser page errors are **[]**.
+
+First browser test FOUND a real JS error (\`validNumber\` undefined in the timeline renderer). This was fixed **only** in the new UI module, not hidden. Rerunning the same independent browser test succeeded.
+
+Final verified Chromium run: commit \`20a9bbccb6de35ff79db2987ac951e76a38d8714\`,
+job \`128268342903\`: actual 8 source rows visible, the original graph and original text labyrinth both visible, 566 sampled meaningful non-background canvas pixels, zero browser runtime errors. Job PASSED. Parallel real engine/unit regression job \`128268343153\` also PASSED.
+
+To rerun browser CI locally with Chromium:
+
+    npm install --no-save playwright
+    npx playwright install chromium
+    node --test v17/tests/live-corpus-hypermaze-browser.test.mjs
+
+These are controlled browser acceptance tests, NOT a claim that the user's Windows workstation already launched OpenThoughts training.
+
 ## IMPORTANT: honest boundaries
 
 - This is **serious real online training with observable causal prediction-versus-answer traces**, not a canned demo; but it is an INDEPENDENT context-transition training component alongside native V17, not yet proof of an autonomous newly discovered high-dimensional semantic navigation policy.
