@@ -146,7 +146,7 @@ export class QuestionGoalNavigator {
   return rows.slice(0,cap(Math.trunc(maxCandidates),1,50));
  }
  plan(question,{map,geometry=null,disc=null,temperature=0,maxNodes=1500,
-  maxCandidates=9,geometryWeight=1.75}={}){
+  maxCandidates=9,geometryWeight=1.75,record=false}={}){
   if(typeof question!=="string"||!question.trim()||question.length>100000)
    throw Error("A nonempty question under 100000 characters is required");
   if(!(map instanceof LearnedCognitiveMap))throw Error("Native V17 observed map required");
@@ -172,12 +172,8 @@ export class QuestionGoalNavigator {
    predictedTargets:attempts,training:before,referenceAnswerProvided:false,
    originalMethod:"Discoverer.shape"};
   const moves=path.path.map((step,i)=>{
-   const from=path.field?.nodes?.[i]??step.from;
-   const target=path.field?.nodes?.[i+1]??step.to;
-   const predecessor=path.states?path.states[from]:null;
-   const successor=path.states?path.states[target]:null;
    return {step:i,action:step.action,fromIndex:step.from,toIndex:step.to,
-    before:predecessor,after:successor,
+    before:null,after:null,
     valueBefore:path.field?.values?.[step.from]??null,
     valueAfter:path.field?.values?.[step.to]??null};
   });
@@ -213,7 +209,7 @@ export class QuestionGoalNavigator {
    dimensions:!!(g5&&full.some(x=>x.geometricKnown))?38:33,
    noAnswerOracle:true,
    honestCaveat:"A learned question->goal estimate + exact native Discoverer.shape over previously observed text transitions; not guaranteed correct for unseen language semantics."};
-  this.last={found,predictedText:result.predictedText.slice(0,120),
+  if(record)this.last={found,predictedText:result.predictedText.slice(0,120),
    plannedSteps:result.plannedSteps,observed:result.observedEdgesUsed,
    directOriginalMethod:result.originalOperator};
   return result;
