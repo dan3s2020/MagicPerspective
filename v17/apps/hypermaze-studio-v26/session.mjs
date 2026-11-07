@@ -262,7 +262,7 @@ export class StudioSession extends EventEmitter {
       createdAt:new Date().toISOString(),source:{path:this.corpus.path,
       fingerprint:this.corpus.fingerprint,sizeBytes:this.corpus.sizeBytes},
       config:this.config,stats:this.stats,sequence:this.sequence,
-      model:this.model.export(),effects:this.effects};
+      rngState:this.random.state(),model:this.model.export(),effects:this.effects};
     await fs.mkdir(this.checkpointDir,{recursive:true});
     const name="v26-"+Date.now()+"-"+this.stats.episodes+".json";
     const dest=path.join(this.checkpointDir,name);
@@ -283,9 +283,11 @@ export class StudioSession extends EventEmitter {
     this.config=bounded(saved.config);
     this.model=model;this.effects=saved.effects;this.stats=saved.stats;
     this.sequence=saved.sequence||0;
-    // Original random episode seeds are derived from episodes, not guessed time.
+    // A full random generator snapshot is required because each task consumes
+    // multiple draws; episode count alone cannot reproduce its hidden state.
     this.random=seeded(this.config.seed);
-    for(let i=0;i<this.stats.episodes;i++)this.random();
+    if(!Number.isInteger(saved.rngState))throw Error("Checkpoint lacks exact RNG state");
+    this.random.restore(saved.rngState);
     this.phase="paused";this.last=null;this.recent=[];
     this.message("success","Restored checkpoint without modifying V17 weights");
     return this.snapshot();
