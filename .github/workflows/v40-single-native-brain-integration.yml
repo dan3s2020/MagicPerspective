@@ -21,10 +21,14 @@ jobs:
           node --check v17/research/text-hypermaze/real-squad-evidence-paths.mjs
           node --check v17/research/text-hypermaze/v40-original-brain-evidence.mjs
           node --check v17/tests/v40-single-original-brain-integration.test.mjs
+          node --check v17/research/text-hypermaze/START_V40_REAL_HUMAN_QA.mjs
+          node --check v17/research/text-hypermaze/v40-original-source-witness-memory.mjs
       - name: One original brain checkpoint, witnessed intent, real QA preference and strict refusal
         run: node --test v17/tests/v40-single-original-brain-integration.test.mjs
       - name: Exact V32 compact source motif memory, verified replay, and saved original Brain manifest
         run: node --test v17/tests/v40-source-memory-shared-brain.test.mjs
+      - name: Safety guards for serious real human original-Brain training
+        run: node --test v17/tests/v40-real-training-checkpoint-guard.test.mjs
       - name: Original V34 integration core compatibility
         run: |
           node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
