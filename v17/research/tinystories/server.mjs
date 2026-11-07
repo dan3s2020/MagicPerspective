@@ -113,7 +113,7 @@ export class TinyStoriesTrainer{
   finished:this.finished,saveRequested:this.saveRequested,
   train:this.train,valid:this.valid,checkpoint:this.checkpoint,
   checkPointIsolated:true,sourceDelimiter:this.trainMeta?.delimiter,
-  serverTime:now(),gpuModel:this.model?.algorithm||"observed-hashed-context-1to4"};}
+  serverTime:now(),model:this.model,gpuModel:this.model?.algorithm||"observed-hashed-context-1to4"};}
  async commit(){
   if(!this.gpu||!this.model)throw Error("GPU trainer not initialized");
   const checkpoint=await this.gpu.call({cmd:"text_fast_save"});
@@ -223,6 +223,7 @@ export class TinyStoriesTrainer{
    // Old trained TinyStories model remains in GPU memory and is never reset.
    // Only the dataset cursor moves back to the beginning for the next epoch.
    this.state.epoch++;
+   this.state.startedAt=now();
    this.state.bytesRead=0;
    this.state.percent=0;
    this.finished=false;
@@ -310,7 +311,10 @@ export async function launch(opts){
   const address="http://127.0.0.1:"+app.port+"/";
   exec('start "" "'+address+'"',()=>{});
  }
- if(opts.autoStart)app.start();
+ if(opts.autoStart)void app.start().catch(e=>{
+  app.state.phase="error";app.state.error=message(e);
+  console.error("TINYSTORIES_ALL_TRAIN_START_ERROR",app.state.error);
+ });
  let shutting=false;
  const terminate=async()=>{
   if(shutting)return;shutting=true;
