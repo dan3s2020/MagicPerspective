@@ -1,0 +1,58 @@
+name: "V17 REAL persistent CUDA future text pool and exactly-once native Brain"
+on:
+  push:
+    branches:
+      - experiment/V17-RESIDENT-CUDA-TEXT-LOOKAHEAD-RING-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  resident-pool-cpu-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install only real native NumPy reference
+        run: python -m pip install --disable-pip-version-check numpy
+      - name: Syntax of original V17 CUDA learner, pool and server
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/resident_text_pool.py
+          python -m py_compile v17/tests/test_resident_cuda_text_pool.py
+          node --check v17/transcend/torus-aether/devour/resident-cuda-queue.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+      - name: GPU-resident FIFO parity on ORIGINAL worlds_gpu.Server.handle and TextCard.live()
+        run: python -m unittest discover -s v17/tests -p test_resident_cuda_text_pool.py -v
+      - name: ORIGINAL exact full-atlas long text reference and impossible-to-silently-skip exercises
+        run: python -m unittest discover -s v17/tests -p test_v17_full_atlas_cuda_hang.py -v
+      - name: Bounded authentic OpenThoughts prefetch, no duplicate commit, restarted CUDA process
+        run: node --test v17/tests/resident-cuda-text-queue.test.mjs
+      - name: Original GPU child watchdog and hard/idle timeout recovery remains intact
+        run: node --test v17/tests/gpu-stall-watchdog.test.mjs
+      - name: Original full V17 native Brain, REAL corpus, text atlas, checkpoints
+        run: |
+          node --test v17/tests/native-xd-brain-integration.test.mjs
+          node --test v17/tests/complete-xd-native-live-http.test.mjs
+  original-v17-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium for original native V17 UI test
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Original V17 whole atlas/maze/text UI with real worker path replay and zero JavaScript errors
+        run: node --test v17/tests/complete-xd-atlas-browser.test.mjs
