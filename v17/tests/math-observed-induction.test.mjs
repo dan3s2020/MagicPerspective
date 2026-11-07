@@ -99,3 +99,51 @@ test("frozen training and no numerical answer leakage into the original Discover
   assert.ok(payload.ret.every(v=>Number.isInteger(v)&&v>=0&&v<=3));
   assert.deepEqual(r.path,inspectPredictedMathPath(y,d,verifyMathTransition).path);
 });
+
+test("numerical extrapolation far outside training coefficients, verified against independent exact symbolic rules",()=>{
+  const {m}=experience(64);m.fit();
+  const n=2048;let passed=0,unique=0;
+  const next=generator(0x778a4ccf);
+  const seen=new Set();
+  for(let i=0;i<n;i++){
+    const q=next(),s={stage:"factored",
+      a:(q.a<0?-1:1)*(20+((Math.abs(q.a)*37+i)%981)),
+      b:(q.b<0?-1:1)*(20+((Math.abs(q.b)*29+i)%981)),
+      c:rational(((q.c*937+i*31)%200001))};
+    const id=[s.a,s.b,s.c.n].join(":");
+    if(seen.has(id))continue;seen.add(id);unique++;
+    const order1=["divide","subtract"],order2=["distribute","subtract","divide"];
+    for(const chain of [order1,order2]){
+      let state=s;
+      for(const action of chain){
+        const predicted=m.predict(state,action);
+        const exact=applyMathRule(state,action);
+        assert.deepEqual(predicted,exact,JSON.stringify({s,state,action,predicted,exact}));
+        assert.ok(verifyMathTransition(state,action,predicted));
+        state=predicted;
+      }
+      assert.equal(state.stage,"isolated");
+      assert.ok(equalRational(state.c,rational(s.c.n-s.a*s.b,s.a)));
+    }
+    passed++;
+  }
+  console.log("MATH_OUT_OF_DISTRIBUTION_EXTRAPOLATION",JSON.stringify({
+    examples:passed,branchesPerExample:2,verifiedSymbolicSteps:passed*5,
+    trainingCoefficientLimit:"abs(a)<=9, abs(b)<=12, abs(c)<=80",
+    testCoefficientRange:"20..1000 (a,b), ~200000 c",heldoutOnly:true}));
+  assert.equal(passed,n);
+});
+test("corrupted observations cannot synthesize a valid five-rule algebra",()=>{
+  const {m}=experience(64);
+  const records=m.observed.get("factored|divide");
+  for(let i=0;i<records.length;i+=2)
+    records[i].after.c=rational(records[i].after.c.n+7,records[i].after.c.d);
+  m.fit();
+  assert.ok(m.rules.size<5,JSON.stringify(m.summary()));
+  const d=trainOriginalDiscoverer(140,11);
+  const w=makeLearnedMathWorld(3,-2,13,m);
+  const result=inspectPredictedMathPath(w,d,verifyMathTransition);
+  // The independent rules have not been fabricated to fill conflicting evidence.
+  assert.ok(w.availableRoutes<2, "inconsistent observations must not yield both correct derivations");
+  console.log("MATH_CORRUPTED_EVIDENCE",JSON.stringify({learned:m.rules.size,originalRequired:5,availableRoutes:w.availableRoutes}));
+});
