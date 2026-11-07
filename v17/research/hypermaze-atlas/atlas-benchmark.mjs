@@ -80,6 +80,23 @@ export function firstDifferentChar(a,b){
   index:i,predicted:a[i]??'<end>',expected:b[i]??'<end>',prefix:a.slice(Math.max(0,i-36),i)};
  return null;
 }
+export function traceOutputCharacters(plan,referenceActions){
+ const predicted=plan.solutionShape?.join(" ")||"",reference=referenceActions.join(" ");
+ const actions=plan.route||[],source=[];let cursor=0;
+ for(let actionIndex=0;actionIndex<actions.length;actionIndex++){
+  for(let i=0;i<actions[actionIndex].action.length;i++)source[cursor++]=actionIndex;
+  if(actionIndex<actions.length-1)source[cursor++]=actionIndex;
+ }
+ const characters=[...predicted].map((character,index)=>({
+  index,character,reference:reference[index]??"<end>",
+  matchesReference:character===reference[index],actionIndex:source[index]??null
+ }));
+ const routeEvidence=actions.map((a,index)=>({index,action:a.action,from:a.from,to:a.to,
+  condition:a.condition,confidence:a.confidence,evidenceIds:a.evidenceIds,sourceWorlds:a.evidenceWorlds}));
+ return{predicted,reference,characters,routeEvidence,exactString:predicted===reference,
+  firstDifference:firstDifferentChar(predicted,reference),
+  note:"Different optimal valid paths may have different character strings; this is not automatically a task failure."};
+}
 export function evaluate({seed=1181,worlds=96,examples=76,noise=.055}={}){
  const data=trainWorlds({seed,examples,noise}),conditional=data.atlas;
  conditional.fit({allowContext:true});
@@ -102,7 +119,7 @@ export function evaluate({seed=1181,worlds=96,examples=76,noise=.055}={}){
    const p=learner.plan(w.start,w.goal,cells),r=learner.evaluate(p,actualStep,cells);
    attempt[name]={found:p.found,success:r.success,initialShape:p.solutionShape||[],reason:p.reason,
     explored:p.explored||0,firstWrongCharacter:firstDifferentChar(r.predictedOutput,w.oracle.join(' ')),
-    firstMismatch:r.firstMismatch,
+    firstMismatch:r.firstMismatch,characterAttribution:traceOutputCharacters(p,w.oracle),
     executedTrace:r.trace.map(t=>({from:t.from,action:t.action,predictedTo:t.predictedTo,actualTo:t.actualTo,matched:t.matched,blocked:t.blocked})),
     missingActions:p.missingActions||[],rejectedWallCount:p.rejected?.length||0};
    stats.correct+=+r.success;stats.noPath+=+(!p.found);
