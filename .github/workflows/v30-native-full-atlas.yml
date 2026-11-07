@@ -1,0 +1,29 @@
+name: V30 native full atlas failure forensics
+on:
+  push:
+    branches:
+      - experiment/V30-FULL-ATLAS-FAILURE-FORENSICS-20261107
+  workflow_dispatch:
+jobs:
+  actual-native-atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Baseline and viewer source syntax
+        run: |
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/atlas-explorer.js
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+      - name: V30 actual cognitive model and append-only history
+        run: node --test v17/tests/v30-full-atlas-diagnostics.test.mjs
+      - name: Native Node worker + API + original UI integration
+        run: node --test v17/tests/v30-native-atlas-http.test.mjs
+      - name: Original frozen cross-world, maze, and V22 tests
+        run: |
+          node --test v17/tests/v22-long-unseen-shape.test.mjs
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
