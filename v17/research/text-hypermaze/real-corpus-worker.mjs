@@ -262,6 +262,13 @@ async function train(){
     counters.fileIndex=f;counters.offset=endOffset;
     if(result.empty)counters.emptyTextRows++;
     else counters.parsedRows++;
+    // Never announce 100% consumption of 594MB if the converted JSONL
+    // schema is not actually readable by the original native learner.
+    // Stop BEFORE any further silent no-op, preserving the committed state.
+    if(counters.rowsRead===100&&counters.emptyTextRows>20)
+     throw Error("Unsupported real JSONL shape: "+counters.emptyTextRows+
+       "/100 source rows contain no discoverable text. "+
+       "Inspect actual top-level fields; refusing to fake dataset learning.");
     if(originalRow%holdoutEvery===0){
      counters.heldoutRows++;heldoutProbe(result.text);
     }else{
