@@ -16,6 +16,7 @@ import {tokenizeObservation,renderObservation} from
  "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {ContextAxisNavigator} from "./context-axis-evidence.mjs";
 import {planNumericOnCumulativeMemory} from "./cumulative-numeric-shape.mjs";
+import {recordOriginalHypermazeAttempt,originalHypermazeAtlas} from "./cumulative-atlas.mjs";
 import {planNativeQuestionOnCumulativeMemory} from "./cumulative-question-goal.mjs";
 
 const norm=s=>renderObservation(tokenizeObservation(String(s??"")));
@@ -209,12 +210,28 @@ export class CumulativeHyperMaze {
  // Prior independent research on contextual nonlinear movement and
  // hidden path-order memory is attached to this SAME persistent Brain.
  // We do not use A* here; only the original Discoverer.shapeGraph.
- planNumeric(args={}){return planNumericOnCumulativeMemory(this,args);}
- // A real unobserved question itself supplies the task goal; the hidden
- // dependent answer number is never accepted as a goal constraint.
- planQuestion(args={}){return planNativeQuestionOnCumulativeMemory(this,args);}
-
- plan({start,required,allowInferred=false,maxExpansionDepth=10,
+ planNumeric(args={}){
+  const computed=planNumericOnCumulativeMemory(this,args);
+  const atlasAttemptId=recordOriginalHypermazeAttempt(this.state,computed,
+   {...args,numeric:true});
+  return {...computed,atlasAttemptId};
+ }
+ // Query-only semantic/numeric language bridge from the existing V30
+ // research branch, preserving all prior contract and model behavior.
+ planQuestion(args={}){
+  const computed=planNativeQuestionOnCumulativeMemory(this,args);
+  const atlasAttemptId=recordOriginalHypermazeAttempt(this.state,computed,
+   {...args,question:true,numeric:true});
+  return {...computed,atlasAttemptId};
+ }
+ atlas(options={}){return originalHypermazeAtlas(this.brain,options);}
+ // All successful and failed preaction attempts live in SAME native Brain.
+ plan(args={}){
+  const computed=this._plan(args);
+  const atlasAttemptId=recordOriginalHypermazeAttempt(this.state,computed,args);
+  return {...computed,atlasAttemptId};
+ }
+ _plan({start,required,allowInferred=false,maxExpansionDepth=10,
   maxGraphNodes=this.state.maxStates,includeTopology=false}={}){
   const S=this.state;
   const source=norm(start),goals=unique(required||[]).map(x=>String(x));
