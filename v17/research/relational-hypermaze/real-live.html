@@ -94,6 +94,7 @@ if(Number.isInteger(nativePort)&&nativePort>=1024&&nativePort<=65535){
  $("oldUI").src="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
 }
 let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false;
+let pathTimer=null; // Playback of the frozen predicted route, never invented physical execution.
 const SVG="http://www.w3.org/2000/svg";
 function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
  for(const [k,v] of Object.entries(attrs||{}))n.setAttribute(k,String(v));
@@ -167,9 +168,21 @@ function draw(g){
     n.kind+" #"+n.id);
   svg("text",{x:p.x+14,y:p.y+11,fill:"#b9a5d7","font-size":10},root,"V="+v.toFixed(4));
  }
+ if(pathTimer){clearInterval(pathTimer);pathTimer=null;}
+ const playback=[xy.get(0),...(g.route||[]).map(e=>xy.get(e.to))].filter(Boolean);
+ if(playback.length>1){
+  const marker=svg("circle",{cx:playback[0].x,cy:playback[0].y,r:6,
+    fill:"#ffffff",stroke:"#ffca68","stroke-width":2},root);
+  let step=0;
+  pathTimer=setInterval(()=>{
+   step=(step+1)%playback.length;
+   marker.setAttribute("cx",playback[step].x);
+   marker.setAttribute("cy",playback[step].y);
+  },650);
+ }
  set("shapeMeta","Noduri "+(g.totalNodes||g.nodes.length)+" · pași prezis "+
   (g.route?.length||0)+" · "+(g.found?"ținta găsită":"abținere")+
-  " · etape cu tranziție real observată: "+(g.route||[]).filter(x=>x.verified).length);
+  " · PLAYBACK AL PREDICȚIEI, nu execuție fizică · tranziții observate: "+(g.route||[]).filter(x=>x.verified).length);
  set("traceText",JSON.stringify({method:g.method,beforeAction:g.beforeAction,route:g.route,
   field:g.field,learnedContext:g.hypotheses||g.learnedContexts},null,2));
 }
