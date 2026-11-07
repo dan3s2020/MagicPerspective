@@ -45,20 +45,39 @@ export class LearnedTargetReference {
    return {found:false,reason:'NO_QUERY'};
   if(this.exampleCount<8||!this.positive.some(Boolean)||!this.negative.some(Boolean))
    return {found:false,reason:'INSUFFICIENT_PRIOR_GOAL_FEEDBACK'};
-  let matched=0;const candidates=[];
+  const entries=[];
   for(const line of document.split('\n')){
-   const hit=QUAD.exec(line);if(!hit)continue;
-   matched++;
-   const score=this.posterior(shared(question,line));
+   const hit=QUAD.exec(line);
+   if(hit)entries.push({line,tuple:hit[0],words:wordSet(line)});
+  }
+  const matched=entries.length,queryWords=wordSet(question),freq=new Map();
+  // Completely unsupervised document-frequency evidence prevents shared
+  // stop words such as "world" or "observed" from becoming false goals.
+  // We cannot hardcode the heldout referent or supply the hidden goal.
+  for(const e of entries)for(const word of queryWords)
+   if(e.words.has(word))freq.set(word,(freq.get(word)||0)+1);
+  const maxOccurrence=Math.max(2,Math.floor(matched*.01));
+  const candidates=[];
+  for(const e of entries){
+   const rare=[...queryWords].filter(word=>e.words.has(word)&&
+     (freq.get(word)||Infinity)<=maxOccurrence);
+   // A previously unobserved identifier with no distinct document mention
+   // is not a navigable target, even if generic words accidentally overlap.
+   if(!rare.length)continue;
+   const score=this.posterior(Math.min(4,rare.length));
    if(score<=.55)continue;
-   const position=hit[0].split(',').map(x=>Number(x.trim()));
+   const position=e.tuple.split(',').map(x=>Number(x.trim()));
    const goal=enc(position);
-   if(validCell(goal))candidates.push({goal,score,line:line.slice(0,180)});
+   if(validCell(goal))candidates.push({goal,score,
+     distinctiveness:rare.reduce((s,w)=>s+1/freq.get(w),0),
+     line:e.line.slice(0,180)});
   }
   if(!candidates.length)return {found:false,reason:'NO_LEARNED_GOAL_REFERENCE',
    inspectedCoordinateStatements:matched};
   const bestScore=Math.max(...candidates.map(x=>x.score));
-  const best=candidates.filter(x=>Math.abs(x.score-bestScore)<1e-12);
+  const top=candidates.filter(x=>Math.abs(x.score-bestScore)<1e-12);
+  const bestRarity=Math.max(...top.map(x=>x.distinctiveness));
+  const best=top.filter(x=>Math.abs(x.distinctiveness-bestRarity)<1e-12);
   if(best.length!==1)return {found:false,reason:'AMBIGUOUS_GOAL_REFERENCE',
    candidates:best.length,inspectedCoordinateStatements:matched};
   return {found:true,goal:best[0].goal,score:bestScore,
