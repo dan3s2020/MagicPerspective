@@ -43,6 +43,9 @@ table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;pad
 <div class="metric"><small>Trasee anticipate</small><strong id="plans">—</strong></div>
 <div class="metric"><small>Rezolvări fizic verificate</small><strong id="success">—</strong></div>
 <div class="metric"><small>Trasee lipsă / eșecuri</small><strong id="failed">—</strong></div>
+<div class="metric"><small>Ferestre text observate de V17</small><strong id="nativeSeen">—</strong></div>
+<div class="metric"><small>Operatori text V17 (contrast)</small><strong id="nativeOps">—</strong></div>
+<div class="metric"><small>Stări text evictate de limita de memorie</small><strong id="nativeEvicted">—</strong></div>
 </div>
 <div class="controls" style="margin-top:10px">
 <span class="muted" id="shapeState">—</span><span class="muted" id="native5D">—</span><span class="muted" id="noise">—</span>
@@ -70,6 +73,7 @@ table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;pad
 <div id="legend">
 <span><i class="swatch" style="background:#6ae2b4"></i>Observat efectiv într-o lume</span>
 <span><i class="swatch" style="background:#7ea5d4"></i>Prezise prin transfer (încă neverificate aici)</span>
+<span><i class="swatch" style="background:#ab83d8"></i>Contraste text V17, nu efecte cauzale confirmate</span>
 <span><i class="swatch" style="background:#ffc870"></i>Traseul anticipat de originalul Discoverer</span>
 <span><i class="swatch" style="background:#fd8395"></i>Cale cunoscută blocată de design</span>
 </div>
@@ -95,7 +99,10 @@ table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;pad
 <option value="attempts">Toate traseele prezise</option>
 <option value="failures">Eșecuri și coridoare lipsă</option>
 <option value="worlds">Toate lumile observate</option>
-<option value="rules">Toate transformările învățate</option>
+<option value="rules">Transformări fizice transferabile V30</option>
+<option value="textOperators">TOȚI operatorii textuali din V17/V29</option>
+<option value="textStates">Toate stările textuale încă păstrate în V17</option>
+<option value="axes">Axele de acțiune 5D învățate de V17</option>
 <option value="witnesses">Fiecare observație originală</option>
 <option value="outcomes">Fiecare rezultat fizic verificat</option>
 </select></label>
@@ -152,6 +159,9 @@ async function status(){
   show("plans",num(s.atlas.recordedFrozenPlans));
   show("success",num(s.atlas.physicallyValidatedSuccesses));
   show("failed",num(s.atlas.unplannedBlockedWorlds+s.atlas.physicallyValidatedFailures));
+  show("nativeSeen",num(s.originalNativeText.observations));
+  show("nativeOps",num(s.originalNativeText.learnedTextContrastOperators));
+  show("nativeEvicted",num(s.originalNativeText.evictedTextStates));
   show("shapeState","V17: țintă "+s.training.originalTargetAttraction.toFixed(3)+
     ", conductanță "+s.training.originalFloorConductance.toFixed(3));
   show("native5D","Axe originale: "+s.geometry.originalLearnedDimensions+
@@ -178,9 +188,10 @@ async function loadPage(){
    tableCell(tr,typeof name==="string"?name.slice(0,180):JSON.stringify(name));
    tableCell(tr,x.outcome===true||x.completeExact===true?"REUȘIT":
     x.found===false?"FĂRĂ CALE":x.outcome===false||x.completeExact===false?"GREȘIT":
-    x.ready===true?"UTILIZABIL":x.type||"NEVERIFICAT");
+    x.ready===true?"UTILIZABIL":x.admittedAsPhysicalTransformation===false?
+    "CONTRAST, NU ACȚIUNE":x.type||"NEVERIFICAT");
    const reason=x.reason??x.planFailure??x.designRestriction??
-    x.blockedReasonCounts??x.frontier??x.independentWorlds??"—";
+    x.blockedReasonCounts??x.frontier??x.independentWorlds??x.observedSupport??"—";
    tableCell(tr,typeof reason==="object"?JSON.stringify(reason):reason);
    if(tr.dataset.id)tr.onclick=()=>chooseAttempt(Number(tr.dataset.id));
    body.appendChild(tr);
@@ -284,16 +295,17 @@ function draw(g){
   const active=selected.has(e.from+"|"+e.to);
   const blocked=String(e.status).includes("BLOCKED");
   const physical=String(e.status).includes("PHYSICALLY_VERIFIED");
+  const contrast=String(e.status).includes("TEXT_CONTRAST");
   const seen=String(e.status).includes("WITNESSED");
   svg("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,
-   stroke:active?"#ffc870":blocked?"#fd8395":physical||seen?"#6ae2b4":"#7ea5d4",
+   stroke:active?"#ffc870":blocked?"#fd8395":contrast?"#ab83d8":physical||seen?"#6ae2b4":"#7ea5d4",
    "stroke-width":active?3.7:1.5,
    "stroke-dasharray":seen||physical?"":"6 4",opacity:active?1:.55},root);
  }
  for(const n of nodes){
   const p=xy.get(n.text);if(!p)continue;
   const c=svg("circle",{cx:p.x,cy:p.y,r:n.goal?11:6,
-   fill:n.observedInRealWorld?"#6ae2b4":n.goal?"#ffc870":"#709fd1",
+   fill:n.observedInRealWorld?"#6ae2b4":n.observedInTextCorpus?"#ab83d8":n.goal?"#ffc870":"#709fd1",
    opacity:.92,stroke:"#162638","stroke-width":1.6},root);
   const title=document.createElementNS(SVG,"title");
   title.textContent=n.text+" | Original V17 5D: "+
@@ -301,7 +313,9 @@ function draw(g){
   c.appendChild(title);
   c.addEventListener("click",()=>show("detail",JSON.stringify({
    text:n.text,depth:p.depth,original5D:geometry(n),observedInOriginalWorld:n.observedInRealWorld??null,
-   goal:n.goal??null,potential:n.potential??null,sourceWorlds:n.sourceWorlds??[],
+   goal:n.goal??null,potential:n.potential??null,
+   originalNativeTextState:n.observedInTextCorpus??false,
+   sourceWorlds:n.sourceWorlds??[],
    otherNodeMetadata:n},null,2)));
  }
  show("graphInfo",(isGlobal?"ATLAS GLOBAL":"LABIRINTUL EXPANDAT AL ÎNCERCĂRII")+" · "+
