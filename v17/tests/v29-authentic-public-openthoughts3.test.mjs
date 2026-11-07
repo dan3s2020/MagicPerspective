@@ -64,6 +64,19 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
  const offsets=[0,210000,810000],length=8;
  const rows=(await Promise.all(offsets.map(x=>realRows(x,length)))).flat();
  assert.equal(rows.length,24);
+ const realPairs=rows.map(x=>qaPairsFromRealJSON(x)[0]);
+ const describeTokenLengths=s=>{
+  const tokens=String(s).match(/[\\p{L}\\p{N}]+(?:['’][\\p{L}\\p{N}]+)*|[^\\s]/gu)||[];
+  return tokens.length;
+ };
+ const qLengths=realPairs.map(x=>describeTokenLengths(x.question));
+ const aLengths=realPairs.map(x=>describeTokenLengths(x.answer));
+ const lengths={questionTokens:{min:Math.min(...qLengths),max:Math.max(...qLengths),
+    mean:qLengths.reduce((a,b)=>a+b,0)/qLengths.length},
+  answerTokens:{min:Math.min(...aLengths),max:Math.max(...aLengths),
+    mean:aLengths.reduce((a,b)=>a+b,0)/aLengths.length},
+  answerOver128:aLengths.filter(x=>x>128).length,
+  questionOver128:qLengths.filter(x=>x>128).length};
  const names=rows.map(x=>qaPairsFromRealJSON(x)[0].question);
  assert.equal(new Set(names).size,24,"Identical questions must not fake diversity");
  const root=fs.mkdtempSync(path.join(os.tmpdir(),"magic-v29-public-openthoughts-"));
@@ -104,6 +117,8 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
    realJSONLBytes:size,realFileSHA256:hash,
    fullRealQuestions:24,realTrainedPairs:measured.qaTrainingPairs,
    realHeldoutQuestions:measured.qaFrozenHeldoutQuestions,
+   actuallyLearnedQAPairs:measured.qaLearnedPairs,
+   tokenLengthDistribution:lengths,
    wholeAnswerRawExact:measured.qaFrozenWholeRawExact,
    wholeAnswerRawAccuracy:measured.qaWholeAnswerExactRate,
    wholeAnswerCanonicalExact:measured.qaFrozenWholeCanonicalExact,
