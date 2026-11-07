@@ -295,7 +295,30 @@ export class NativeGoalTextMaze {
   if(w.depthPruned)causes.push("depth-limit-reached");
   if(w.blocked)causes.push("structural-support-restrictions");
   if(!result.found&&!causes.length)causes.push("known-transformations-do-not-connect-goal");
+  const exploredKeys=new Set(w.edges.flatMap(list=>
+    list.map(edge=>edge.action?.key).filter(Boolean)));
+  const relevant=[...model.operators.values()]
+    .filter(op=>goal.includes(op.to)||goal.includes(op.from));
+  const unusedRelevant=relevant.filter(op=>!exploredKeys.has(op.key));
   result.diagnostic={
+   // These are actual architectural restrictions, NOT missing words guessed
+   // by a decorative visualizer.
+   designRestrictions:{
+    modelMaxTokens:model.maxTokens,longTextObservationsRejected:model.rejectedLong,
+    recentCorpusWindow:model.maxObserved,olderRawSentencesEvicted:model.evicted,
+    learnedOperatorCapacity:model.maxOperators,operatorsRejectedAtCapacity:model.droppedOperators,
+    candidateComparisonLimit:model.maxCandidatePairs,
+    observedSamplesPerOperatorStored:4,
+    searchStateBudget:maxStates,searchDepthBudget:maxDepth,
+    priorCorpusOutsideAtlasNotReplayed:this.atlas.summary().counts?.baseline>0
+   },
+   relevantLearnedOperators:relevant.length,
+   relevantOperatorsUnavailableFromExploredStates:unusedRelevant.length,
+   sampleUnavailableOperators:unusedRelevant.slice(0,120).map(op=>({
+    key:op.key,kind:op.kind,from:op.from,to:op.to,
+    left:op.left,right:op.right,support:op.sourceObservations
+   })),
+   allLearnedOperatorsPageableInAtlas:true,
    outcome:result.found?"path-found":w.complete?"no-path-in-finite-known-closure":"not-found-search-incomplete",
    reason:result.found?"path-found":causes[0]||"known-transformations-do-not-connect-goal",
    causes:result.found?[]:causes,missingTargetTokens,
@@ -325,7 +348,8 @@ export class NativeGoalTextMaze {
     edges:w.edges.flatMap((list,i)=>list.map(e=>({
      from:i,to:e.to,kind:e.action?.kind||"unknown",
      fromToken:e.action?.from??null,toToken:e.action?.to??null,
-     observedSupport:e.observedSupport,actionIndex:e.action?.index??null}))),
+     observedSupport:e.observedSupport,operatorKey:e.action?.key??null,
+     actionIndex:e.action?.index??null}))),
     initialShapeIds:[0,...route.map(r=>r.to)],
     unresolvedFrontier:w.nodes.map((n,i)=>({i,n}))
       .filter(({i,n})=>(n.depth>=maxDepth&&n.kind!==1)||
