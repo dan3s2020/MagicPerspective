@@ -53,6 +53,8 @@ if ($LASTEXITCODE -ne 0) { throw "Git clone failed" }
 
 Native UI: `http://127.0.0.1:8866/transcend/torus-aether/ui/index.html?live=1`. The V20 and V21 observatories run inside the **same original UI page**, alongside original V17 graph controls and other panels. V21 frames are sampled on documents 1–4 and every 20th trained document, but online predictions are scored before **every eligible document**. Sampled replay is not the full unabridged original corpus.
 
+Optional: add `-IncludeCognitive` to the PowerShell launcher to run the existing V19 learned cognitive action-world **alongside** the V20/V21 contextual graph and the native V17 maze/transform worlds inside the same original worker and Brain checkpoint. This preserves V19's original learned causal action functionality; it is not evidence that its physics and the V21 contextual token field have become a single verified semantic model. The optional V19 world also runs Node CPU.
+
 To resume the **same isolated save** after a clean stop: use the same launcher and pass `-Resume`; do not re-clone into an existing destination. The new contextual graph's operations use **Node CPU**. Passing `-Gpu cuda:0` enables the original V17 CUDA route for other compatible worlds, but does **not** make V21's graph or every Brain operation run on CUDA. No independent execution on the owner's RTX 3050 Ti is claimed.
 
 Optional tests:
