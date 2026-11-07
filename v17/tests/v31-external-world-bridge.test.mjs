@@ -53,6 +53,11 @@ test("V31: 4 partial source worlds => frozen whole unknown-world path => real ac
   required:["21"],physicalStep:realTwo
  });
  assert.equal(result.realExternalSteps,2);
+ assert.equal(ex.atlas.page({section:"attempts"}).total,1);
+ assert.equal(ex.atlas.page({section:"outcomes"}).total,2);
+ assert.equal(ex.atlas.summary().failedPhysicalOutcomes,0);
+ assert.ok(ex.atlas.page({section:"attempts"}).items[0].predictedWholePath.length===3);
+ assert.ok(ex.atlas.page({section:"outcomes"}).items.every(x=>x.status==="EXTERNALLY_VERIFIED_CORRECT_ACTION"));
  assert.equal(result.correctlyVerifiedSteps,2);
  assert.equal(result.invalidPredictedSteps,0);
  assert.equal(result.fullyMatchedIndependentPhysics,true);
@@ -113,6 +118,12 @@ test("wrong target-world physics falsifies a transferred action and creates a wa
  });
  assert.equal(result.correctlyVerifiedSteps,0);
  assert.equal(result.invalidPredictedSteps,1);
+ assert.equal(ex.atlas.summary().independentWorldAttempts,1);
+ assert.equal(ex.atlas.summary().failedPhysicalOutcomes,1);
+ const failure=ex.atlas.page({section:"outcomes"}).items[0];
+ assert.equal(failure.status,"EXTERNALLY_FALSIFIED_ACTION");
+ assert.equal(failure.firstWrongExpected,"Ava has 19 marbles.");
+ assert.equal(failure.firstWrongObserved,"Ava has 20 marbles.");
  assert.equal(result.after.originalFound,false);
  assert.equal(result.firstFailure.predicted,"Ava has 19 marbles.");
  assert.equal(result.firstFailure.actual,"Ava has 20 marbles.");
@@ -139,6 +150,10 @@ test("native Brain checkpoint remembers cross-world transfer + newly verified cu
   const file=path.join(dir,"native.v8");ex.brain.save(file);
   const loaded=Brain.load(file),restored=new CrossWorldBridgeExperiment(loaded);
   assert.equal(restored.atlas.summary().walkableVerifiedEdges,2);
+  assert.equal(restored.atlas.page({section:"attempts"}).total,1);
+  assert.equal(restored.atlas.page({section:"outcomes"}).total,2);
+  assert.equal(restored.atlas.page({section:"outcomes"}).items[0].attemptId,
+    restored.atlas.page({section:"attempts"}).items[0].id);
   assert.equal(restored.transfer.summary().reusableActions,2);
   const atlas=new ForensicPathAtlas(loaded);
   assert.equal(atlas.analyse({start:"Ava has 17 marbles.",required:["21"]}).topology.verifiedPathExists,true);
