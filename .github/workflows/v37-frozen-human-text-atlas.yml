@@ -1,0 +1,21 @@
+name: V37 native original Brain real-text missing path forensic audit
+on:
+  push:
+    branches:
+      - experiment/V37-REAL-TEXT-FROZEN-ATLAS-FAILURE-CAUSES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-full-source-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Analyze EVERY actual source candidate state after the 450 original frozen human SQuAD answers; missing vs ranking failures
+        run: node --test v17/tests/v37-real-squad-frozen-forensics.test.mjs
+      - name: Original native Brain and 2D-maze algorithm parity unchanged
+        run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
