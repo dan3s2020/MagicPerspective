@@ -20,6 +20,7 @@ import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
+import {runV23Lab} from "./v23-lab-adapter.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -367,6 +368,53 @@ http.createServer((req, res) => {
       });
       sl.wk.postMessage({hypermazePlan:{id,start:m.start,goal:m.goal,maxSteps}});
     });return;
+  }
+  // V24: optional measured V23 research inside the SAME original Brain.
+  // No override of /chat, /eval, CUDA or original worlds.
+  if (req.method === "POST" && url === "/v23-lab") {
+    let body="",tooLarge=false;
+    req.on("data",d=>{
+      body+=d;
+      if(body.length>8400000){tooLarge=true;req.destroy();}
+    });
+    req.on("end",()=>{
+      if(tooLarge)return;
+      let m;
+      try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid V23 JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap"))
+        return json(res,{error:"Enable original V17 cognitivemap world before using V23"});
+      if(!["numeric","temporal"].includes(m.kind)||!["train","plan","page"].includes(m.command))
+        return json(res,{error:"V23 kind must be numeric/temporal and command train/plan/page"});
+      if(!sl.wk || sl.status==="gata"){
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"No saved original Brain checkpoint"});
+          if(m.command==="train"&&sl.wk)return json(res,{error:"The previous worker is finishing; avoid racing a checkpoint save"});
+          const brain=Brain.load(file);
+          const result=runV23Lab(brain,m);
+          if(result.changed)brain.save(file);
+          return json(res,{...result,frozen:m.command!=="train",fromSave:true,
+            note:m.command==="page"?"Frozen page cache is process-local; replan if worker exited":null});
+        }catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);
+        json(res,{error:"Native V23 worker timed out; no success inferred"});
+      },60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      if(m.command!=="train")sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Worker exited before any original Brain checkpoint was saved"});
+          const brain=Brain.load(file),result=runV23Lab(brain,m);
+          return json(res,{...result,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
+      sl.wk.postMessage({v23Lab:{...m,id}});
+    });
+    return;
   }
   if (req.method === "POST" && url === "/cognitive-observe") {
     let body="";req.on("data",d=>{body+=d;if(body.length>32768)req.destroy();});
