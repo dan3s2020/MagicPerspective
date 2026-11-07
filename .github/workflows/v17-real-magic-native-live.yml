@@ -43,3 +43,50 @@ jobs:
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/observed-transformations-v17.test.mjs
+
+  windows-launcher-safety:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse ALL original and new PowerShell launchers using Windows PowerShell
+        shell: powershell
+        run: |
+          $files = @(
+            "v17/START_V17.ps1",
+            "v17/START_MAGIC_REAL.ps1",
+            "v17/START_REAL_TEXT_AXES.ps1"
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file).Path, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              throw ("PowerShell parser errors in " + $file + ": " + ($errors | Out-String))
+            }
+            Write-Host "WINDOWS_PS_SYNTAX_OK $file"
+          }
+      - name: Refuse to overwrite an unrelated Windows output directory
+        shell: powershell
+        run: |
+          $out = Join-Path $env:TEMP "magic-native-refuse-existing"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $untouched = Join-Path $out "user-precious-data.txt"
+          Set-Content -LiteralPath $untouched -Value "DO NOT DELETE" -NoNewline
+          $orig = (Get-FileHash -LiteralPath $untouched -Algorithm SHA256).Hash
+          $dataset = Join-Path $env:TEMP "magic-fake-existing-data-folder"
+          New-Item -ItemType Directory -Force -Path $dataset | Out-Null
+          $errors = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $dataset -Out $out -Gpu off -Port 8874 2>&1 | Out-String
+          if ($LASTEXITCODE -eq 0) { throw "Unsafe launcher accepted unrelated existing output" }
+          if ((Get-FileHash -LiteralPath $untouched -Algorithm SHA256).Hash -ne $orig) {
+            throw "Original user data changed"
+          }
+          if ($errors -notmatch "Refusing to touch") {
+            throw ("Launcher refused to start for wrong reason: " + $errors)
+          }
+          Write-Host "WINDOWS_SAFE_REFUSAL_OK Existing data byte-identical"
