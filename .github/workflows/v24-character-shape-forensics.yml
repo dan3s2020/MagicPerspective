@@ -1,0 +1,46 @@
+name: V24 V17 original 10-15 percent text shape + character cross-world unblock evidence
+on:
+  push:
+    branches: [experiment/V24-CHARACTER-HYPERMAZE-FORENSICS-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-character-atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Character-level complete source V24 forensic blocked/unlocked paths and negative controls
+        run: node --test v17/tests/v24-character-forensics.test.mjs
+      - name: Preserve original V17 full 2D maze source and 84 noise parity episodes
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Preserve original V23 full cross-world corpus and long text paths
+        run: node --test v17/tests/v23-cross-world-atlas.test.mjs
+      - name: Restore ORIGINAL V17 free-run unseen character solution shape with honest long-answer boundary
+        run: node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
+      - name: End-to-end ORIGINAL native V17 text AligningGraph.write rescue 10 percent acceptance
+        run: node --test v17/tests/veil-aether.text-migration.test.mjs
+      - name: Native V23 real five-world corpus full atlas HTTP
+        run: node --test v17/tests/v23-native-atlas-http.test.mjs
+      - name: Source syntax and no deletions
+        run: |
+          node --check v17/transcend/torus-aether/worlds/character-hypermaze.mjs
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          git merge-base --is-ancestor 50596856da9dec827c738414f3a0e2fbd64621d0 HEAD
+          deleted="$(git diff --name-only --diff-filter=DR 50596856da9dec827c738414f3a0e2fbd64621d0 HEAD)"
+          if [ -n "$deleted" ]; then echo "$deleted"; exit 1; fi
+  windows-source:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: No CUDA launcher damaged
+        shell: powershell
+        run: |
+          $t=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'v17/START_V22_CPU_REAL_TEXT.ps1').Path,[ref]$t,[ref]$errors)
+          if($errors.Count){throw ($errors|Out-String)}
