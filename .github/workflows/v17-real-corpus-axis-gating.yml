@@ -1,0 +1,28 @@
+name: V17 actual corpus train and frozen axis-gate benchmark
+on:
+  push:
+    branches:
+      - experiment/V17-REAL-CORPUS-AXIS-GATING-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-corpus-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax checking native Brain / real corpus adapter / gate
+        run: |
+          node --check v17/research/learned-axes/real-text-gate.mjs
+          node --check v17/research/learned-axes/train-real-text.mjs
+          node --check v17/tests/real-corpus-axis-gating.test.mjs
+      - name: Run real text from actual existing MagicPerspective docs through native Brain, frozen split, save/resume and regression
+        run: node --test v17/tests/real-corpus-axis-gating.test.mjs
+      - name: Original V17 path/gating regressions
+        run: |
+          node --test v17/tests/learned-axis-gating.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
