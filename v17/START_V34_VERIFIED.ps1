@@ -5,6 +5,7 @@
 # Does not overwrite OriginalOut or any other agent's folder.
 param(
  [Parameter(Mandatory=$true)][string]$Data,
+ [string]$Worlds = "text,maze,transform",
  [string]$OriginalOut = "",
  [string]$Out = "",
  [int]$Port = 8897,
@@ -82,6 +83,7 @@ if ($existing.Count -gt 0 -and $sourceBrains.Count -gt 0) {
 }
 $opts = @{
  Data = $Data
+ Worlds = $Worlds
  Out = $Out
  Port = $Port
  Workers = $Workers
@@ -101,6 +103,7 @@ if ($existing.Count -eq 0) {
  $opts.ResumeFrom = $OriginalOut
 }
 Write-Host "MagicPerspective V34 - original V17 CUDA + native xD + six-scale text-path atlas" -ForegroundColor Cyan
+Write-Host "Worlds enabled: $Worlds (same original Brain worker)"
 Write-Host "Original checkpoint directory NOT modified: $OriginalOut"
 Write-Host "Separate V34 runtime: $Out"
 Write-Host "Live ORIGINAL UI: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
