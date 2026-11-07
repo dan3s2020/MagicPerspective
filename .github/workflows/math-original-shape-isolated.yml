@@ -1,0 +1,24 @@
+name: V21 Original Shape — Isolated Exact Mathematics World
+on:
+  push:
+    branches:
+      - experiment/V21-MATH-ORIGINAL-SHAPE-20261107
+  workflow_dispatch:
+jobs:
+  original-math-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check original geometry and new arithmetic world syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/worlds/math.mjs
+          node --check v17/tests/math-original-shape.test.mjs
+      - name: Exact algebra, native V17 shape, frozen unseen problems and leakage control
+        run: node --test v17/tests/math-original-shape.test.mjs
+      - name: No regression in original maze organism
+        run: node --test v17/tests/torus-organism.test.mjs
