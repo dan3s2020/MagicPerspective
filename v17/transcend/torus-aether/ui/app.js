@@ -868,7 +868,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
   for (const id of ["evT", "evNoise"]) $(id).oninput = () => $(id + "Out").textContent = $(id).value;
   const show = i => { const L = items(); if (!L.length) return; cur = (i + L.length) % L.length; textPage = 0; t0 = performance.now(); table(); if (kind === "text") textView(); };
   const table = () => { const L = items(); if (!L.length) { $("evalTab").innerHTML = ""; return; }
-    if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>forma scrisă înainte</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td></tr>`).join("") + "</table>";
+    if (kind === "text") { $("evalTab").innerHTML = "<table><tr><th align=left>exercițiu</th><th>răspunsul (soluția) ghicit</th><th>tot exercițiul</th><th>graful vechi, pe răspuns</th><th>forma scrisă înainte</th><th>RASPUNS INTREG EXACT</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n} caractere</td><td align=center><b>${pct(m.answer)}</b></td><td align=center>${pct(m.all)}</td><td align=center>${pct(m.oldAnswer)}</td><td align=center>${pct(m.shapeSame)}</td><td align=center>${m.firstAnswerExact===null?"NEEVALUAT":m.firstAnswerExact?"DA":"NU"}</td></tr>`).join("") + "</table>";
       for (const tr of $("evalTab").querySelectorAll("tr[data-i]")) tr.onclick = () => show(+tr.dataset.i); return; }
     $("evalTab").innerHTML = kind === "maze"
       ? "<table><tr><th align=left>labirint</th><th>forma prezisă înainte</th><th>a ajuns</th><th>pași / optim</th><th>pași după formă / explorare</th></tr>" + L.map((m, i) => `<tr data-i="${i}" style="cursor:pointer;${i === cur ? "color:var(--gold)" : ""}"><td>${m.n}×${m.n}</td><td align=center>${pct(m.first)}</td><td align=center>${m.solved ? "<b style='color:var(--green)'>da</b>" : "nu"}</td><td align=center>${m.steps} / ${m.optimal}</td><td align=center>${m.how?.plan ?? 0} / ${m.how?.explore ?? 0}</td></tr>`).join("") + "</table>"
@@ -892,6 +892,37 @@ fetch("/corpus").then(r => r.json()).then(c => {
       textPage = direction === "prev" ? textPage - 1 : direction === "next" ? textPage + 1 : Math.floor(Math.max(0, a0) / PAGE);
       textView();
     };
+  };
+  const reportStrictExact = r => {
+    const pct=$("cpuExactRate"),count=$("cpuExactCount"),verdict=$("cpuExactVerdict");
+    if(!pct || !count || !verdict) return;
+    if (r.error) {
+      pct.textContent="EROARE";count.textContent="-- / --";
+      verdict.textContent=r.error;return;
+    }
+    if (r.heldoutAnswerComplete !== true || r.firstAnswerExactRate == null) {
+      pct.textContent="NEVALIDAT";count.textContent="-- / --";
+      verdict.textContent="Un scor partial pe caractere sau un exercitiu trunchiat NU demonstreaza un raspuns intreg corect. Ruleaza testul cu lungime MAX 0.";
+      return;
+    }
+    pct.textContent=(100*r.firstAnswerExactRate).toFixed(2)+"%";
+    count.textContent=Number(r.firstAnswerExactCorrect)+" / "+Number(r.firstAnswerExactTotal);
+    verdict.textContent=r.firstAnswerTarget70Reached ?
+      "PRAG 70% ATINS DOAR PE ACESTE RASPUNSURI INTREGI HELDOUT. NU confirma 70% general pe orice intrebare." :
+      "PRAG 70% NEATINS pe setul real de raspunsuri complete nevazute. Algoritmul NU a demonstrat tinta ceruta.";
+  };
+  const cpuButton=$("cpuExactEvaluate");
+  if(cpuButton)cpuButton.onclick=()=>{
+    if(!LIVE) { $("cpuExactVerdict").textContent="Trainerul nativ nu este conectat.";return; }
+    $("tabEval").click();
+    $("evKind").value="text";$("evKind").onchange();
+    $("evNum").value="16";
+    $("evMax").value="0";   // 0 means FULL Q/A, not a cropped prefix.
+    $("evT").value="0";$("evTOut").textContent="0";
+    $("evNoise").value="0";$("evNoiseOut").textContent="0";
+    $("cpuExactRate").textContent="SE EVALUEAZA...";
+    $("cpuExactVerdict").textContent="Se genereaza raspunsul intreg doar din intrebare, pe checkpointul inghetat, fara ground-truth vizibil modelului.";
+    $("evGo").click();
   };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
@@ -926,6 +957,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
+      if (kind === "text") reportStrictExact(r);
       if (r.error) $("evOut").textContent = r.error;
       else { R = r; const head = `graful #${r.w}, după ${(r.lived || 0).toLocaleString()} pași trăiți: `;
         $("evCv").hidden = kind === "text"; $("evalText").hidden = kind !== "text"; $("evT").value = r.T ?? $("evT").value;
@@ -933,7 +965,15 @@ fetch("/corpus").then(r => r.json()).then(c => {
           $("evOut").innerHTML = head + `<b>${ok}/${r.mazes.length} rezolvate din prima</b> · forma prezisă dinainte, în medie <b>${pct(sh)}</b> corectă · auriu punctat = ce prezice înainte de prima mișcare, albastru = pe unde a mers` + (r.mind ? `<br><span class="dim">încrederea în formă ${r.mind.trust.plan[0]}/${r.mind.trust.plan[1]} · în explorare ${r.mind.trust.explore[0]}/${r.mind.trust.explore[1]} (urmează forma doar dacă prima ≥ 0.9 × a doua) · ieșiri al căror efect îl știe: ${r.mind.effects.map((e, o) => e ? "▶" + o + "→(" + e + ")" : null).filter(Boolean).join(" ") || "niciuna"}${r.mind.gpu ? ` · ultimul lot GPU: ${r.mind.gpu.batch} lumi, ${r.mind.gpu.differ ?? 0} unde rezultatul de pe placă diferă de cel trăit` : ""}</span>` : ""); }
         else if (kind === "transform") { const T = r.tasks.filter(t => !t.impossible), I = r.tasks.filter(t => t.impossible), pred = T.reduce((a, t) => a + t.predicted, 0);
           $("evOut").innerHTML = head + `<b>${T.filter(t => t.solved).length}/${T.length} configurații nevăzute atinse din prima</b> · predicții cauzale greșite ${pred ? pct(T.reduce((a, t) => a + t.failed, 0) / pred) : "—"} · imposibile recunoscute ${I.filter(t => t.said).length}/${I.length} · conturul punctat = configurația dorită`; }
-        else { $("evOut").innerHTML = head + `${r.exercises.length} ${r.source}, de la cel mai mic la cel mai mare, temperatura ${r.T}, zgomot ${r.noise}: <b>răspunsul (soluția) ghicit din prima ${pct(r.answer)}</b> · tot exercițiul ${pct(r.all)} · graful vechi pe răspuns ${pct(r.oldAnswer)}<br><span class="dim">verde = ghicit, roșu = greșit, ▸ = de aici începe răspunsul; ține mouse-ul pe o literă: ce a ghicit în locul ei. Fiecare apăsare trage alte exerciții.</span>`; }
+        else { const strict=r.firstAnswerExactRate==null ?
+          "RASPUNS INTREG EXACT: NEVALIDAT (seteaza lungimea 0 si reruleaza)" :
+          "RASPUNS INTREG EXACT DIN PRIMA: <b>"+r.firstAnswerExactCorrect+"/"+r.firstAnswerExactTotal+
+          " = "+(100*r.firstAnswerExactRate).toFixed(2)+"%</b> / tinta 70% "+
+          (r.firstAnswerTarget70Reached?"ATINSA pe setul acesta":"NEATINSA");
+          $("evOut").innerHTML = head+strict+"<br>"+r.exercises.length+" "+r.source+
+          ", temperatura "+r.T+", noise "+r.noise+": caractere ghicite individual "+
+          "<b>"+pct(r.answer)+"</b> | graful vechi "+pct(r.oldAnswer)+
+          "<br><span class='dim'>Scorul pe CARACTERE nu este scorul pe RASPUNSURI INTREGI. Comparatia finala se face numai dupa generarea raspunsului complet.</span>"; }
         show(0); } }
     catch (err) { $("evOut").textContent = "nu am putut ajunge la trainer: " + err.message; }
     $("evGo").disabled = false; };
