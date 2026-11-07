@@ -107,20 +107,24 @@ export class LearnedCognitiveMap {
       // the full original record remains in the dataset and the atlas
       // records each explicit bridge, without inventing an action edge.
       this.segmentedLongSentences++;
-      let added=false;
-      for(let start=0;start<t.length;start+=64){
+      let added=false,previous=null;
+      const starts=[];
+      for(let start=0;start<t.length-96;start+=64)starts.push(start);
+      starts.push(t.length-96); // last page ALWAYS full, no artificial short-tail sentence
+      for(const start of starts){
         const window=t.slice(start,start+96);
         if(this.observeSentence(window,{source:source===null?null:String(source)+"@"+start}))added=true;
-        if(start){
+        if(previous!==null){
           this.observedSegmentBridges++;
           this.onAtlasEvidence?.({type:"segment-bridge",world:"text",
             documentId:this.activeObservation??source,
-            kind:"observed-overlap-32",fromOffset:start-64,toOffset:start,
-            fromWindowTokens:t.slice(start-64,start+32),
+            kind:"observed-overlap",fromOffset:previous,toOffset:start,
+            fromWindowTokens:t.slice(previous,previous+96),
             toWindowTokens:window,
-            overlapTokens:t.slice(start,start+32),
+            overlapTokens:t.slice(start,previous+96),
             evidenceLevel:"OBSERVED_CONTIGUOUS_TOKENS_NOT_INFERRED_TRANSFORM"});
         }
+        previous=start;
       }
       return added;
     }
