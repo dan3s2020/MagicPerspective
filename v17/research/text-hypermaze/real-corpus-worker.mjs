@@ -36,6 +36,9 @@ const counters={
  inputFiles:files.length,totalBytes,bytesRead:0,bytesForLearning:0,
  sourceTextUTF8Bytes:0,trainTextUTF8Bytes:0,observedTokens:0,trainTokens:0,
  tokenWindows:0,actualObservedWindows:0,trainedRows:0,heldoutRows:0,
+ qaTrainingPairs:0,qaLearnedPairs:0,qaFrozenHeldoutQuestions:0,
+ qaFrozenGoalsFound:0,qaFrozenWholeRawExact:0,qaFrozenWholeCanonicalExact:0,
+ qaFrozenPredictionErrors:0,qaLastPrediction:null,
  rowsRead:0,parsedRows:0,emptyTextRows:0,malformedRows:0,
  preActionProbes:0,probeEligible:0,probeCorrect:0,
  endogenousNoiseDecisions:0,endogenousNoiseCorrect:0,
@@ -74,6 +77,15 @@ function info(){
   heldoutTop1NextStateAccuracy:counters.probeEligible?
    counters.probeCorrect/counters.probeEligible:null,
   accuracyMeaning:"frozen local next-state only; NOT semantic exact-answer accuracy",
+  qaWholeAnswerExactRate:counters.qaFrozenHeldoutQuestions?
+    counters.qaFrozenWholeRawExact/counters.qaFrozenHeldoutQuestions:null,
+  qaCanonicalWholeAnswerExactRate:counters.qaFrozenHeldoutQuestions?
+    counters.qaFrozenWholeCanonicalExact/counters.qaFrozenHeldoutQuestions:null,
+  qaFrozenGoalCoverage:counters.qaFrozenHeldoutQuestions?
+    counters.qaFrozenGoalsFound/counters.qaFrozenHeldoutQuestions:null,
+  qaRoleWitnessedAxisEdges:brain?.qaRoleEvidence?.edges?.length??0,
+  qaRoleActiveObservations:brain?.qaRoleEvidence?.examples?.length??0,
+  qaSemanticCaveat:"Full answers are scored WITHOUT passing heldout answer or target tokens to the original shape planner.",
   saturated:o?.droppedOperators>0,
   boundedMemoryWarning:"Observed text-window states are bounded; evicted states are not permanently retained as individual observations. All source bytes are streamed, not all bytes become unique persistent nodes."
  };
@@ -221,7 +233,32 @@ function absorbLine(segments){
   counters.trainTextUTF8Bytes+=Buffer.byteLength(text,"utf8");
  }
 }
-function heldoutProbe(segments){
+function heldoutProbe(segments,qaPairs=[]){
+ // The heldout correct answer is read ONLY after the frozen question-only
+ // field has produced its entire prediction or abstained. No gold enters model.
+ for(const pair of qaPairs){
+  counters.qaFrozenHeldoutQuestions++;
+  let plan=null,error=null;
+  try{plan=engine.planQA({question:pair.question});}
+  catch(e){error=errText(e);counters.qaFrozenPredictionErrors++;}
+  const proposed=plan?.found?plan.predicted:null;
+  counters.qaFrozenGoalsFound+=Number(typeof proposed==="string");
+  const actual=pair.answer.trim();
+  const exact=proposed!==null&&proposed===actual;
+  const canonical=proposed!==null&&proposed===
+    renderObservation(tokenizeObservation(actual));
+  counters.qaFrozenWholeRawExact+=Number(exact);
+  counters.qaFrozenWholeCanonicalExact+=Number(canonical);
+  counters.qaLastPrediction={
+   questionPreview:pair.question.slice(0,140),
+   modelPrediction:proposed?.slice(0,400)??null,
+   plannedActions:plan?.actions?.length??0,
+   exactWholeAnswer:exact,canonicalWholeAnswer:canonical,
+   reason:plan?.reason||error||null,
+   withheldReferenceNeverPassedToModel:true
+  };
+ }
+
  // Completely frozen. NEVER observe a withheld reference, never provide
  // a goal derived from it to the planner, and never claim this is an IQ test.
  for(const text of segments.slice(0,1)){
@@ -277,11 +314,17 @@ async function train(){
        "/100 source rows contain no discoverable text. "+
        "Inspect actual top-level fields; refusing to fake dataset learning.");
     if(originalRow%holdoutEvery===0){
-     counters.heldoutRows++;heldoutProbe(result.text);
+     counters.heldoutRows++;heldoutProbe(result.text,result.qaPairs||[]);
     }else{
      counters.trainedRows++;
      counters.bytesForLearning+=bytes;
      absorbLine(result.text);
+     // Real user/GPT relation learned in same original Brain only.
+     for(const pair of result.qaPairs||[]){
+      counters.qaTrainingPairs++;
+      const learned=engine.observeQA(pair.question,pair.answer);
+      counters.qaLearnedPairs+=Number(!!learned.learned);
+     }
      if(brain.observedTransformations.droppedOperators>0)
       throw Error("REAL hypermaze action capacity reached after "+
        brain.observedTransformations.operators.size+" learned operators. "+
@@ -329,6 +372,16 @@ parentPort.on("message",m=>{
    if(!running&&!done){paused=false;running=train().finally(()=>{running=null;});}
    else if(!done)paused=false;
    publish();return send("rpc",{id,result:info()});
+  }
+  if(m.cmd==="qa"){
+   const question=String(m.question||"");
+   if(!question.trim()||question.length>4000)
+    throw Error("Real Q/A question must contain 1..4000 characters");
+   const plan=engine.planQA({question});
+   const body=m.execute&&plan.found?engine.executeQA(plan):null;
+   return send("rpc",{id,result:{...plan,body,originalBrain:true,
+    realTrainingCorpus:files.map(x=>x.path),
+    withheldAnswerSupplied:false,generalNaturalLanguageAccuracyProven:false}});
   }
   if(m.cmd==="plan"){
    const start=String(m.start||""),required=m.required;
