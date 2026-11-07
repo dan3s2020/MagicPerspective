@@ -314,7 +314,11 @@ export async function runOriginalV39(config){
    if(!["pause","resume","save"].includes(command))return write({error:"Unknown control"},400);
    if(command==="pause")controls.paused=true;
    if(command==="resume")controls.paused=false;
-   if(command==="save")controls.saveRequested=true;
+   if(command==="save"){
+    if(state.state==="complete"||state.state==="paused")
+      doSave("local-user-requested-completed-checkpoint");
+    else controls.saveRequested=true;
+   }
    return write({ok:true,command,checkpointProtected:true});
   }
   return write({error:"Unknown local endpoint"},404);
@@ -323,6 +327,7 @@ export async function runOriginalV39(config){
   server.once("error",reject);server.listen(config.port,"127.0.0.1",resolve);
  });
  const started=performance.now(),step0=state.qaExposure;
+ let lastSavedQa=state.qaExposure,lastSavedStories=state.stories;
  const sync=async()=>{
   if(controls.saveRequested){controls.saveRequested=false;doSave("user-requested");}
   if(controls.paused){state.paused=true;state.state="paused";await yieldToEventLoop();await new Promise(x=>setTimeout(x,120));}
@@ -363,9 +368,13 @@ export async function runOriginalV39(config){
     if(source.storyFile&&state.stories<config.storyLimit&&
       state.qaExposure%config.storyEvery===0)liveStory();
    }else if(!liveStory())break;
-   if(state.qaExposure>0&&state.qaExposure%config.checkpointEvery===0&&
-      state.qaExposure!==step0&&state.qaExposure<=totalExposures)
+   if((state.qaExposure!==lastSavedQa&&state.qaExposure>0&&
+       state.qaExposure%config.checkpointEvery===0)||
+      (state.stories!==lastSavedStories&&state.stories>0&&
+       state.stories%config.checkpointEvery===0)){
     doSave("periodic-real-training-checkpoint");
+    lastSavedQa=state.qaExposure;lastSavedStories=state.stories;
+   }
    const duration=(performance.now()-started)/1000;
    state.examplesPerSecond=duration>0?(state.qaExposure-step0)/duration:null;
    if(state.qaExposure%25===0||doneQA()){
