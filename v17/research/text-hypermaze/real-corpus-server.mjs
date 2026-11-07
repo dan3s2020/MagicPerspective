@@ -45,7 +45,7 @@ const response=(res,status,obj)=>{const str=JSON.stringify(obj);
  res.end(str);
 };
 export async function launch(options={}){
- const conf=options.data?{...parseArgs([
+ const conf=options.data?parseArgs([
   "--data",options.data,"--out",options.out||path.join(here,"../../../runtime-real-openthoughts-hypermaze"),
   "--port",String(options.port||8899),
   "--holdout-every",String(options.holdoutEvery||100),
