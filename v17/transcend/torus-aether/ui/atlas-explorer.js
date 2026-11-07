@@ -131,4 +131,6 @@ canvas.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,px:panX,
 canvas.addEventListener("pointermove",e=>{if(!drag)return;const r=canvas.getBoundingClientRect();panX=drag.px+(e.clientX-drag.x)*canvas.width/r.width;panY=drag.py+(e.clientY-drag.y)*canvas.height/r.height;draw();});
 canvas.addEventListener("pointerup",()=>drag=null);canvas.addEventListener("pointercancel",()=>drag=null);
 draw();
+// Explicit opt-in for real native browser integration testing; default UI unchanged.
+if(new URLSearchParams(location.search).get("atlasAutoLoad")==="1")load();
 }
