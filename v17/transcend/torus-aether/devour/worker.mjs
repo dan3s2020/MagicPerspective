@@ -621,8 +621,24 @@ const doSave = () => { saveNow = false; if (saveFile) try {
 } catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
   text:"Checkpoint save FAILED: "+err.message});} };
 let k = 0, textBatch = [], textMeta = [];
+// Accurate startup milestones help distinguish source decoder, pause state,
+// original first-symbol physics and checkpoint stalls on real Windows.
+// These statements are OBSERVATIONS, never training data or substituted paths.
+parentPort.postMessage({type:"note",w:workerData.gw,
+ text:"V34_STARTUP_DIAG: original worker loaded; paused="+paused+
+  "; source="+source.kind+"; chars="+brain.chars+"; exercises="+(brain.exercises||0)});
+setWorkerPhase("native first source: waiting for row decode");
 shot(true); await hold();
+parentPort.postMessage({type:"note",w:workerData.gw,
+ text:"V34_STARTUP_DIAG: initial hold released; paused="+paused});
+let firstRowDiagnosed=false,firstSymbolDiagnosed=false;
 for await (const ex of stream()) {
+  if(!firstRowDiagnosed){
+   firstRowDiagnosed=true;
+   parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"V34_STARTUP_DIAG: first authentic source row decoded; symbols="+
+      (ex.bytes?.length||0)+"; sourceRow="+ex.k+"; paused="+paused});
+  }
   await hold();
   if (TEXT && k++ < skip) continue;                                         // a resumed brain does not live the same exercises twice
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
@@ -662,10 +678,18 @@ for await (const ex of stream()) {
     textBatch = []; textMeta = []; shot(true);
   }
   setWorkerPhase("CPU: native V17 text exercise");
+  if(!firstSymbolDiagnosed)parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"V34_STARTUP_DIAG: executing first actual native Brain.live symbol"});
   const startedAtChars=brain.chars;
   brain.exercises = (brain.exercises || 0) + (TEXT ? 1 : 0); if (TEXT) brain.beginExercise();
   for (const y of ex.bytes) {
     brain.live(y, brain.chars % 50 === 0); brain.chars++;
+    if(!firstSymbolDiagnosed){
+      firstSymbolDiagnosed=true;
+      parentPort.postMessage({type:"note",w:workerData.gw,
+        text:"V34_STARTUP_DIAG: first Brain.live symbol COMMITTED; chars="+brain.chars});
+      shot(true);
+    }
     if (brain.chars % 2000 === 0) shot();
     if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); shot(); }
     if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } report(); }
