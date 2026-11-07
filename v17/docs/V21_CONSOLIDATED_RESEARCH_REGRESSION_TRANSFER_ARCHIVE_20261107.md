@@ -9,6 +9,14 @@
 
 > Regula obligatorie: exactul VERBATIM al utilizatorului are prioritate asupra interpretărilor tehnice. `AGENTS.md`, `VERBATIM_ROOT.md`, `verbatim/SOURCE_POLICY.md`, `REGRESSION_USER_DIRECTIVE_2026-11-06.md` și Issue #25 rămân aplicabile. Nu se închide regresia printr-un simplu test verde.
 
+## Actualizare V21 - indicator simboluri distincte versus procent dataset (2026-11-07)
+
+Dupa o instalare noua, utilizatorul a observat **194.790 pasi traiti** dar **100 simboluri absorbite**. Acesta NU este un prag de 100 exercitii: vizualizatorul numara doar caracterele/simbolurile DISTINCTE din alfabetul finit, in timp ce `Brain.lived` include text si lumi de labirint/transform. Parquet este convertit in ASCII cu un alfabet aproape saturat, deci afisajul distinctelor poate ramane stabil in timp ce antrenarea continua.
+
+V21 a primit masurare reala din metadatele Parquet/TXT (exercitii totale, de antrenare si held-out), fiecare worker raportand `progress.trained/total/remaining/percent` cu dovada backend, noul panou LIVE si bara de progres. In cazul logului cu 10.000 exercitii, 16 held-out lasa 9.984 randuri de antrenare; cifra real consumata NU poate fi dedusa din screenshot, ci este citita din `/graphs` dupa actualizare. Testele Parquet/TXT, partitia pe workeri si procesul HTTP real sunt atasate workflowului.
+
+Document complet: [V21_DATASET_CONSUMPTION_AND_SYMBOL_VOCAB_20261107.md](./V21_DATASET_CONSUMPTION_AND_SYMBOL_VOCAB_20261107.md). Mesajul exact al utilizatorului este pastrat in arhiva Verbatim partiala. Aceasta corectie NU modifica algoritmul, datasetul, checkpointurile sau semnificatia scorului original `shapeSame`.
+
 ## 1. Surse, proveniență, lacune
 
 - Cererea de autorizare curentă: `user-intent/2026-11-07-current-chat-authorization.md` (fragment literal: „I allow you to do it”).
