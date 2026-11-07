@@ -155,7 +155,7 @@ jobs:
             $path = (Resolve-Path $file).Path
             $bytes = [System.IO.File]::ReadAllBytes($path)
             if (@($bytes | Where-Object { $_ -gt 127 }).Count -gt 0) {
-              throw "Non-ASCII bytes in $file: Windows PowerShell 5.1 may misread UTF-8 em dash as a smart quotation mark."
+              throw "Non-ASCII bytes in ${file}: Windows PowerShell 5.1 may misread UTF-8 em dash as a smart quotation mark."
             }
             $tokens = $null
             $problems = $null
