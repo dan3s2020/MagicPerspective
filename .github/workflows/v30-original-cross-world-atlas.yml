@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Original V22 source and maze prediction parity
-        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Existing original V17 native shapeGraph parity
+        run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
       - name: V30 independent cross-world paths, denials and native Brain save/load
         run: node --test v17/tests/v30-cross-episode-transfer.test.mjs
