@@ -128,8 +128,9 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
     <option value="verified">Doar tranziții fizic confirmate din lumi anterioare</option>
     <option value="inferred">Tranziții confirmate + ipoteze din operatori și axe contextuale învățate</option>
     <option value="numeric">Câmp numeric dependent de stare, descoperit din efectele observate în alte lumi</option>
+    <option value="question">Întrebare nouă: învață singur ținta din exemplele Q/A și caută calea prin alte lumi</option>
    </select>
-   <label class="formlabel" for="cumStart">Starea curentă / textul de plecare</label>
+   <label class="formlabel" for="cumStart">Starea curentă sau întrebarea nouă (modul Întrebare)</label>
    <textarea id="cumStart" placeholder="Starea din care dorești să construiești rețeaua accesibilă; fără răspunsul de referință."></textarea>
    <label class="formlabel" for="cumRequired">Condiția obiectivului, fără răspuns complet (mod text)</label>
    <input id="cumRequired" placeholder="Tokeni ceruți în starea finală, separați prin virgulă" autocomplete="off">
