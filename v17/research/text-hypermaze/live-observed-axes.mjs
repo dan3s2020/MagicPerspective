@@ -9,6 +9,7 @@ import path from "node:path";
 import {CoupledTextMaze} from "./coupled-axes.mjs";
 import {StateDependentTextAxes} from "./state-dependent-axes.mjs";
 import {learnedHolonomy} from "./path-holonomy.mjs";
+import {LivePredictiveStateGate} from "./live-predictive-state-gate.mjs";
 
 const expr=/\b\d+\s*[+*×÷\/-]\s*\d+\s*=\s*\d+\b/gu;
 const cap=(v,n)=>String(v||"").slice(0,n);
@@ -42,6 +43,7 @@ export class LiveObservedMathAxes {
   this.coupled=new CoupledTextMaze({maxValue:100000,maxExpanded:2000});
   this.conditional=new StateDependentTextAxes({maxValue:100000,maxExpanded:2000});
   this.saveFile=saveFile;
+  this.predictiveState=new LivePredictiveStateGate();
   this.rows=0;this.extracted=0;this.coupledAccepted=0;this.conditionalAccepted=0;
   this.samples=[];this.rejected=0;
  }
@@ -50,6 +52,10 @@ export class LiveObservedMathAxes {
   const candidates=equationLines(text);
   for(const pair of candidates){
    this.extracted++;
+   // Predict with ONLY earlier observed evidence, before either existing
+   // transformation learner absorbs this pair. This is a measured live check,
+   // not an offline precomputed diagram or a replacement decoder.
+   this.predictiveState.observePair(pair.before,pair.after,pair.source);
    const a=this.coupled.observePair(pair.before,pair.after);
    const b=this.conditional.observePair(pair.before,pair.after);
    if(a.learned)this.coupledAccepted++;
@@ -81,6 +87,7 @@ export class LiveObservedMathAxes {
    templatesCoupled:this.coupled.grammars.size,
    templatesConditional:this.conditional.data.size,
    lastExample:last,axes,dependent,
+   predictiveState:this.predictiveState.report(),
    caveat:"Adjacent equations are observed text, not proof of causal intervention; no fabricated labels and no universal arithmetic claims"};
  }
  plan(start,goals){
@@ -102,11 +109,19 @@ export class LiveObservedMathAxes {
    holonomy={ready:!!h.ready,reason:h.reason||null,commutator:h.commutator||null,
     ...("compressedExtraStateCoordinates" in h?{compressedExtraStateCoordinates:h.compressedExtraStateCoordinates}:{})};
   }catch(e){holonomy={ready:false,reason:e.message};}
+  // Predict the first movement of the EXISTING frozen goal path using the
+  // earlier empirically selected context-axis, before any goal execution.
+  let preActionEffect={available:false,reason:"no-observed-state-dependent-first-action"};
+  if(plan?.found&&field==="state-dependent"&&plan.actions?.length){
+   const op=plan.actions[0],indices=plan.model?.numericTokenIndices;
+   if(Array.isArray(indices)&&Number.isInteger(op.primary))
+    preActionEffect=this.predictiveState.forecastAction(start,indices[op.primary],op.step);
+  }
   const unchanged=JSON.stringify(counts)===JSON.stringify({
    rows:this.rows,extracted:this.extracted,accepted:this.coupledAccepted,
    nonlinear:this.conditionalAccepted});
   if(!unchanged)throw Error("Frozen math planning unexpectedly modified learner evidence");
-  return {found:!!plan?.found,field,plan,holonomy,training:counts,
+  return {found:!!plan?.found,field,plan,holonomy,preActionEffect,training:counts,
    input:start,goals,referenceAnswerProvided:false,
    actualWorldExecution:false,
    independentSemanticVerifier:false,
@@ -115,11 +130,12 @@ export class LiveObservedMathAxes {
  }
  save(){
   if(!this.saveFile)return 0;
-  const payload={v:1,rows:this.rows,extracted:this.extracted,
+  const payload={v:2,rows:this.rows,extracted:this.extracted,
    coupledAccepted:this.coupledAccepted,conditionalAccepted:this.conditionalAccepted,
    rejected:this.rejected,samples:this.samples,
    coupled:{grammars:this.coupled.grammars,observations:this.coupled.observations,rejected:this.coupled.rejected},
-   conditional:{data:this.conditional.data,observations:this.conditional.observations,rejected:this.conditional.rejected}};
+   conditional:{data:this.conditional.data,observations:this.conditional.observations,rejected:this.conditional.rejected},
+   predictiveState:this.predictiveState.export()};
   const bytes=v8.serialize(payload);
   fs.mkdirSync(path.dirname(this.saveFile),{recursive:true});
   fs.writeFileSync(this.saveFile+".tmp",bytes);fs.renameSync(this.saveFile+".tmp",this.saveFile);
@@ -129,7 +145,7 @@ export class LiveObservedMathAxes {
   const x=new LiveObservedMathAxes({saveFile});
   if(!saveFile||!fs.existsSync(saveFile))return x;
   const o=v8.deserialize(fs.readFileSync(saveFile));
-  if(o.v!==1||!(o.coupled?.grammars instanceof Map)||
+  if(![1,2].includes(o.v)||!(o.coupled?.grammars instanceof Map)||
     !(o.conditional?.data instanceof Map))throw Error("Incompatible math observer checkpoint");
   x.rows=o.rows;x.extracted=o.extracted;x.coupledAccepted=o.coupledAccepted;
   x.conditionalAccepted=o.conditionalAccepted;x.rejected=o.rejected;x.samples=o.samples;
@@ -137,6 +153,8 @@ export class LiveObservedMathAxes {
   x.coupled.observations=o.coupled.observations;x.coupled.rejected=o.coupled.rejected;
   x.conditional.data=o.conditional.data;
   x.conditional.observations=o.conditional.observations;x.conditional.rejected=o.conditional.rejected;
+  if(o.v===2)x.predictiveState=LivePredictiveStateGate.restore(o.predictiveState);
+  // Original v1 V17 sidecars remain readable and preserve all existing evidence.
   return x;
  }
 }

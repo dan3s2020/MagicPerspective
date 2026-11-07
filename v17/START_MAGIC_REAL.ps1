@@ -21,6 +21,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_V17.ps1"
+$branchTag = "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107"
 if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
  throw "Original complete CUDA V17 launcher missing: $launcher"
 }
@@ -43,6 +44,9 @@ if (Test-Path -LiteralPath $Out) {
  if (Test-Path -LiteralPath $marker) {
   $existing = Get-Content -LiteralPath $marker -Raw | ConvertFrom-Json
   if ($existing.kind -ne "magic-native-v17") { throw "Output directory does not contain a native MagicPerspective marker." }
+  if ($existing.branch -and $existing.branch -ne $branchTag) {
+   throw "Refusing to resume a DIFFERENT MagicPerspective branch in the same output folder. Use a NEW -Out directory."
+  }
   if ($existing.corpus -ne [System.IO.Path]::GetFullPath($Data)) {
    throw "Cannot resume with different corpus; original progress preserved."
   }
@@ -57,7 +61,7 @@ if (-not (Test-Path -LiteralPath $marker)) {
   kind = "magic-native-v17"
   corpus = [System.IO.Path]::GetFullPath($Data)
   created = (Get-Date).ToString("o")
-  branch = "feature/V17-REAL-LIVE-AXES-MAZE-20261107"
+  branch = $branchTag
  } | ConvertTo-Json | Set-Content -LiteralPath $marker -Encoding UTF8
 }
 $magic = "http://127.0.0.1:$Port/transcend/torus-aether/ui/magic.html?live=1"

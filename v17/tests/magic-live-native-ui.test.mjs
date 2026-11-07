@@ -68,7 +68,7 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   const html=await htmlResponse.text();
   for(const id of ["field","paths","chart","mChars","mTokens","mStates","mOps",
    "mAccuracy","worker","start","pause","save","noise","applyNoise",
-   "autoProbe","probe","ops","stream","gpu","pathStep","axisX","axisY","axisZ"])
+   "autoProbe","probe","ops","stream","gpu","pathStep","axisX","axisY","axisZ","predictiveState"])
    assert.ok(html.includes('id="'+id+'"'),"Missing real MAGIC UI control: "+id);
   const js=await fetch(url+"/transcend/torus-aether/ui/magic.js");
   assert.equal(js.status,200);
@@ -127,6 +127,9 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    await sleep(120);
   }
   assert.ok(learnedMath,"Original native worker failed to absorb observed math lines: "+logs);
+  assert.ok(learnedMath.predictiveState?.pairs>=5,"Real native worker did not run the pre-update predictive gate");
+  assert.equal(learnedMath.predictiveState.testScored,0,
+   "Small fixture cannot claim out-of-sample predictive benefit before sufficient evidence");
   const planned=await (await fetch(url+"/real-math-plan?w=0&start="+encodeURIComponent("5 * 6 = 30")+
    "&index=0&value=6",{method:"POST"})).json();
   assert.equal(planned.frozen,true,JSON.stringify(planned));
@@ -151,6 +154,8 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    ],{encoding:"utf8",timeout:20000,maxBuffer:10*1024*1024});
    assert.equal(result.status,0,"Chromium runtime failed to render magic UI: "+result.stderr?.slice(-2500));
    assert.match(result.stdout, /id="mChars"/);
+   assert.match(result.stdout, /Perechi observate:/,
+    "Predictive-state panel did not render measurements from actual V17 worker graph");
    assert.match(result.stdout,/Where the solution takes shape/);
    const connected=/data-magic-connected="true"/.test(result.stdout);
    const observed=+(result.stdout.match(/data-magic-observed-chars="(\d+)"/)?.[1]||0);
@@ -165,6 +170,7 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    pathModelRows:episode.modelRowsBeforeNewObservation,bodyFrames:episode.frames.length,
    globalPath:episode.globalPrediction.slice(0,60),telemetry:telemetry.points.length,
    actualNumericPairs:learnedMath.coupledPairs,actualNumericTransforms:learnedMath.stateDependentPairs,
+   realPreUpdatePairChecks:learnedMath.predictiveState.pairs,
    frozenMathPath:planned.plan.states,mathCheckpoint:true,
    cuda:false,reason:"CI has no NVIDIA GPU; original CUDA launcher still performs device self-tests on user machine"
   }));
