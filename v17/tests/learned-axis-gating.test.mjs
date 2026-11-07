@@ -178,3 +178,19 @@ test("observed live trace exposes true predicted solution-shape, stochastic bran
   firstSteps:withSurprise.history.slice(0,6)
  }));
 });
+
+test("boundary of the finding: learned permutations cannot invent new symbols or solve arithmetic by rearrangement",()=>{
+ const s=setup(64,83,.18),model=s.learner;
+ const start=[0,1,2,3,4,5],invalidGoal=[0,1,2,3,4,6],duplicated=[0,1,2,3,4,4];
+ assert.equal(model.route(start,invalidGoal),null);
+ assert.equal(model.route(start,duplicated),null);
+ for(const action of ACTIONS){
+  const next=model.move(start,action);
+  assert.deepEqual([...next].sort((a,b)=>a-b),start);
+ }
+ console.log("PERMUTATION_LIMITATION",JSON.stringify({
+  conservedMultiset:true,createsNewSymbols:false,
+  cannotSolveUnobservedArithmetic:true,
+  interpretation:"Structure discovery works in a reversible symbolic transformation world, not yet general language or algebra"
+ }));
+});
