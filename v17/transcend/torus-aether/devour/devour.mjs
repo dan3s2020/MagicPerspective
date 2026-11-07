@@ -22,7 +22,8 @@ import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {atlasPath,readAtlasPage,appendAtlasEvent} from "./atlas-journal.mjs";
 import {answerForensics} from "./atlas-answer-forensics.mjs";
-import {answerFromOriginalPath} from '../worlds/path-answer-writer.mjs';
+import {answerFromOriginalPath,answerFromObservedInstructionPath} from '../worlds/path-answer-writer.mjs';
+import {observeInstructionTrajectory} from '../worlds/observed-instruction-goals.mjs';
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -427,6 +428,128 @@ http.createServer((req, res) => {
       sl.wk.postMessage({cognitiveObserve:{id,before:m.before,action:m.action,
         after:m.after,accepted:m.accepted}});
     });return;
+  }
+  // V36 experimental: genuine prior instruction/effect observation, attached
+  // to the SAME original learned cognitive map and native Brain checkpoint.
+  // A caller must report real before/action/after observations. The endpoint
+  // cannot independently verify the external world's physical truth.
+  if(req.method==="POST"&&url==="/instruction-observe"){
+    let body="",bytes=0,oversize=false;
+    req.on("data",part=>{
+      bytes+=part.length;
+      if(bytes>512*1024){oversize=true;return;}
+      body+=part;
+    });
+    req.on("end",()=>{
+      if(oversize)return json(res,{error:"Instruction observation payload exceeds 512 KiB"});
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid instruction observation JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl||!sl.worlds.includes("cognitivemap"))
+        return json(res,{error:"A real V17 cognitive Brain is required"});
+      if(!Array.isArray(m.states)||m.states.length<2||m.states.length>9||
+         !m.states.every(x=>typeof x==="string"&&x.length<=131072)||
+         typeof m.instruction!=="string"||m.instruction.length>240||
+         typeof m.episodeId!=="string"||m.episodeId.length>160||
+         m.executedTransitionsObserved!==true)
+        return json(res,{error:"Require attested original before/after episode states, instruction and unique episode ID; desired but unexecuted answers are not training evidence"});
+      if(!sl.wk||sl.status==="gata"){
+        try{
+          const f=saveOf(sl);
+          if(!fs.existsSync(f))throw Error("No original cognitive checkpoint to resume");
+          const brain=Brain.load(f);
+          if(!brain.cognitiveMap)throw Error("Original Brain contains no cognitive memory");
+          const model=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const sourceReports=[];
+          for(let i=1;i<m.states.length;i++)
+            sourceReports.push(model.observeWorld(m.states[i-1]+"\n"+m.states[i],
+              {id:m.episodeId+":"+i}));
+          const learned=observeInstructionTrajectory(model,{
+            instruction:m.instruction,states:m.states,episodeId:m.episodeId,
+            executedTransitionsObserved:true});
+          brain.cognitiveMap=model.export();
+          appendAtlasEvent(atlasPath(f),{type:"instruction-effect-observed",world:"text",
+            instruction:m.instruction,episodeId:m.episodeId,
+            actualExternallyReportedSequence:m.states,evidence:learned,
+            independentlyVerifiedPhysicalTruth:false,originalBrain:true,trainingEvent:true});
+          const checkpointMB=brain.save(f)/1e6;
+          return json(res,{...learned,sourceReports,checkpointMB,fromSave:true,
+            originalBrain:true,externalPhysicalTruthNotIndependentlyVerified:true});
+        }catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);json(res,{error:"Original V17 instruction observation timeout"});
+      },60000);
+      chats.set(id,response=>{clearTimeout(timer);json(res,response);});
+      sl.wk.postMessage({instructionObserve:{id,instruction:m.instruction,
+        states:m.states,episodeId:m.episodeId,executedTransitionsObserved:true}});
+    });
+    return;
+  }
+  // Frozen Q/A, WITHOUT an explicitly supplied target token and WITHOUT
+  // allowing a reference answer to enter the original planner.
+  if(req.method==="POST"&&url==="/instruction-answer"){
+    let body="",bytes=0,oversize=false;
+    req.on("data",part=>{
+      bytes+=part.length;if(bytes>160000){oversize=true;return;}body+=part;
+    });
+    req.on("end",()=>{
+      if(oversize)return json(res,{error:"Instruction answer query too long"});
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid V36 instruction query JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl||!sl.worlds.includes("cognitivemap"))
+        return json(res,{error:"The original V17 cognitive Brain is required"});
+      if(Object.hasOwn(m,"reference")||Object.hasOwn(m,"expected")||
+         Object.hasOwn(m,"answer")||Object.hasOwn(m,"target")||
+         Object.hasOwn(m,"goal"))
+        return json(res,{error:"Gold answer/goal must NEVER enter inference; learned instruction effects supply goal"});
+      if(typeof m.instruction!=="string"||m.instruction.length>240||
+         typeof m.source!=="string"||m.source.length>131072||
+         !Number.isSafeInteger(m.maxTokens??512)||(m.maxTokens??512)<1||
+         (m.maxTokens??512)>2048)
+        return json(res,{error:"Invalid bounded original V17 source and task instruction"});
+      const opts={maxTokens:m.maxTokens??512,
+        maxNodes:Math.min(20000,Math.max(2,Math.trunc(Number(m.maxNodes)||384))),
+        maxDepth:Math.min(256,Math.max(1,Math.trunc(Number(m.maxDepth)||8))),
+        includeAtlas:true,allowComposedInstructions:m.allowComposedInstructions===true};
+      const saved=()=>{
+        const f=saveOf(sl);
+        if(!fs.existsSync(f))return {error:"No original cognitive checkpoint"};
+        try{
+          const brain=Brain.load(f);
+          if(!brain.cognitiveMap)throw Error("Original cognitive Brain memory missing");
+          const map=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const before=JSON.stringify(map.export());
+          const answer=answerFromObservedInstructionPath(map,{
+            instruction:m.instruction,source:m.source},opts);
+          if(before!==JSON.stringify(map.export()))
+            throw Error("Frozen instruction inference mutated original map");
+          const {fullAtlas,terminalTokens,...safe}=answer;
+          appendAtlasEvent(atlasPath(f),{type:"planning-attempt",world:"text",
+            intent:m.instruction,input:m.source,goalWasInferred:true,
+            frozen:true,referenceEnteredBeforePlan:false,
+            fullPredictedPath:answer.path||[],reason:answer.reason||null,
+            found:!!answer.found,observedIntentEpisodes:answer.evidence?.sourceTrainingEpisodes||[],
+            originalMethod:"Discoverer.shape",
+            fullAtlas:fullAtlas||{states:[],neighbors:[],targets:[]},
+            pathDrivenAnswer:answer.answer??null,
+            semanticCorrectnessNotEstablished:true,
+            evidenceLevel:"FROZEN_OBSERVED_INTENT_GOAL_ORIGINAL_SHAPE"});
+          return {...safe,kind:"instruction-answer",frozen:true,fromSave:true,
+            fullAtlasRecorded:!!fullAtlas,originalMethod:"Discoverer.shape",
+            trainingModified:false,referenceWasNotProvided:true};
+        }catch(err){return {error:err.message};}
+      };
+      if(!sl.wk||sl.status==="gata")return json(res,saved());
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);
+        json(res,{error:"Original V17 instruction path timeout"});
+      },90000);
+      chats.set(id,response=>{clearTimeout(timer);json(res,response);});
+      sl.pendingFrozen?.set(id,()=>{clearTimeout(timer);json(res,saved());});
+      sl.wk.postMessage({instructionAnswer:{id,instruction:m.instruction,
+        source:m.source,...opts}});
+    });
+    return;
   }
   // V31 isolated, read-only, path-CAUSED answer via actual ORIGINAL Discoverer.shape.
   // This is distinct from legacy AligningGraph.write() and cannot accept a reference answer.
