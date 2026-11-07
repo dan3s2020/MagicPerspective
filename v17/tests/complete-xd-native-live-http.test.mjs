@@ -72,6 +72,18 @@ test("ORIGINAL V17 worker reads ACTUAL repository corpus, owns trained xD transf
    });
    assert.ok(journal.entries[0].frames);
    assert.equal(journal.entries[0].referenceNotUsedForFreePrediction,true);
+   const nativeFrozen=await fetchJSON(base+"/native-atlas-eval?w=0&count=3",
+     {method:"POST"});
+   assert.equal(nativeFrozen.nativeAtlasEval,true,JSON.stringify(nativeFrozen));
+   assert.equal(nativeFrozen.rows,3);
+   assert.equal(nativeFrozen.noTraining,true);
+   assert.equal(nativeFrozen.nativeGraphUnchanged,true);
+   assert.equal(nativeFrozen.trainingAtlasEpisodesBefore,
+     nativeFrozen.trainingAtlasEpisodesAfter,
+     "Heldout must not increment real training episodes");
+   assert.ok(nativeFrozen.characters>0);
+   assert.ok(nativeFrozen.missingEdges+nativeFrozen.wrongRanking<=
+     nativeFrozen.characters);
    const frozen=await fetchJSON(base+"/xd-atlas-eval?w=0&dimensions=2048&seed=81919",
     {method:"POST"});
    assert.equal(frozen.xdAtlasTest,true,JSON.stringify(frozen));
