@@ -1,0 +1,47 @@
+{
+  "change_id": "V27-UI-ONLY-NO-TRAINING-SUBSTITUTION",
+  "source": "verbatim/2026-11-07-V27-UI-ONLY-METRICS-CORRECTION.txt",
+  "exact_user_quote": "ti-am zis SA SCHIMBI UI-UL NU SCOPUL TRAININGULUI!!! TREBUIA SA PASTRAM ACELEASI MASURATORI CA SA PUTEM COMPARA",
+  "state": "BLOCKED_UNTIL_IMPLEMENTED_AND_TESTED",
+  "base_ref": "experiment/V25-FROZEN-LONGTEXT-SHAPE-EVIDENCE-20261107",
+  "replaced_regression_branch": "experiment/V26-NEW-LIVE-TEXT-HYPERMAZE-TRAINING-20261107",
+  "allowed_change": "UI layout, styles, visualization and read-only metrics bindings only",
+  "forbidden": [
+    "Replace existing trainer",
+    "Use V26 controlled corpus-word substitution as original semantic task",
+    "Recompute metrics with changed denominators or different datasets",
+    "Change model weights, state transitions, checkpoints, corpora or train/test split",
+    "Claim cross-version performance comparison until run identifiers, seed, denominator and task equality validated"
+  ],
+  "baseline_paths": [
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/app.js",
+    "v17/transcend/torus-aether/ui/server.mjs",
+    "v17/transcend/torus-aether/worlds/exercise.mjs"
+  ],
+  "required_native_measurements": [
+    "maze.played",
+    "maze.test.n",
+    "maze.test.solved",
+    "maze.test.ratio",
+    "maze.test.shape",
+    "transform.played",
+    "transform.test.solved",
+    "transform.test.ratio",
+    "transform.test.failedRate",
+    "transform.test.saidLimitation",
+    "shared.training.step",
+    "shared.training.preUpdatePredictionLoss",
+    "shared.training.identityBaselineLoss",
+    "shared.training.trace.before",
+    "shared.training.trace.predicted",
+    "shared.training.trace.observed",
+    "shared-eval.examples",
+    "shared-eval.loss",
+    "shared-eval.identityBaselineLoss",
+    "text unseen accuracy/ALIGNED if present from native endpoint",
+    "original dataset progress/counters",
+    "real graph snapshots and noise control"
+  ],
+  "validation": "Unchanged original API payload replay into both old and new UI; byte/field-level equality of underlying native measurements; test train/test split and checkpoint compatibility; V26 metrics explicitly NOT comparable"
+}
