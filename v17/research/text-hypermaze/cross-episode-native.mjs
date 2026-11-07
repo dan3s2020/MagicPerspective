@@ -225,23 +225,59 @@ export class NativeCrossEpisodeTransfer {
   if(actions.length>30)throw Error("Too many candidate action types");
   const rules=actions.map(label=>memory.rules.get(label))
    .filter(r=>r&&this._ready(r));
+  const missingLabels=actions.filter(label=>!memory.rules.has(label));
+  const withheldRules=actions.map(label=>memory.rules.get(label))
+   .filter(r=>r&&!this._ready(r)).map(r=>({
+     action:r.action,observations:r.witnesses,
+     independentWorlds:r.worlds.size,conflicted:r.conflicted,
+     reason:r.conflicted?"CONTRADICTORY_OBSERVED_EFFECTS":
+       r.worlds.size<this.minWorlds?"INSUFFICIENT_INDEPENDENT_WORLDS":
+       r.type==="numeric-delta"&&r.values.size<this.minWorlds?
+         "INSUFFICIENT_DISTINCT_INPUT_VALUES":"INSUFFICIENT_WITNESSES"
+   }));
   const kind={floor:0,wall:1,target:2,self:3},
    originText=renderObservation(sourceTokens);
   const nodes=[{id:0,text:originText,tokens:sourceTokens,depth:0,
    kind:kind.self,origin:true}],
    edges=[[]],indexed=new Map([[originText,0]]);
   let index=0,blocked=0,hypothesisEdges=0;
+  const blockers=new Map(),blockedSamples=[],
+    depthFrontier=[],stateCapFrontier=[];
+  const block=(reason,detail)=>{
+   blocked++;blockers.set(reason,(blockers.get(reason)||0)+1);
+   if(blockedSamples.length<160)blockedSamples.push({reason,...detail});
+  };
   while(index<nodes.length){
    const here=nodes[index],pos=index++;
-   if(here.depth>=this.maxDepth||this._goal(here.tokens,goal))continue;
+   if(this._goal(here.tokens,goal))continue;
+   if(here.depth>=this.maxDepth){
+    for(const rule of rules){
+     const effect=proposedAction(here.tokens,rule);
+     if(!effect||renderObservation(effect.tokens)===here.text)continue;
+     depthFrontier.push({from:pos,action:rule.action,
+       next:renderObservation(effect.tokens),reason:"DEPTH_BUDGET_PREVENTS_EDGE"});
+     block("DEPTH_BUDGET_PREVENTS_EDGE",{from:pos,action:rule.action});
+    }
+    continue;
+   }
    for(const rule of rules){
     const effect=proposedAction(here.tokens,rule);
-    if(!effect){blocked++;continue;}
+    if(!effect){
+     block(actionInapplicable(here.tokens,rule),
+       {from:pos,action:rule.action,depth:here.depth});
+     continue;
+    }
     const after=renderObservation(effect.tokens);
     if(after===here.text)continue;
     let next=indexed.get(after);
     if(next===undefined){
-     if(nodes.length>=this.maxStates){blocked++;continue;}
+     if(nodes.length>=this.maxStates){
+      stateCapFrontier.push({from:pos,action:rule.action,next:after,
+       reason:"STATE_BUDGET_PREVENTS_EDGE"});
+      block("STATE_BUDGET_PREVENTS_EDGE",
+       {from:pos,action:rule.action,depth:here.depth});
+      continue;
+     }
      next=nodes.length;indexed.set(after,next);
      nodes.push({id:next,text:after,tokens:effect.tokens,
       depth:here.depth+1,kind:this._goal(effect.tokens,goal)?kind.target:kind.floor});
