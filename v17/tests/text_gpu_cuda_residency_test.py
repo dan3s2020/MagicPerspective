@@ -48,8 +48,15 @@ class ExactCudaResidency(unittest.TestCase):
             self.skipTest("real CUDA is required; no CPU substitute")
         source = subprocess.run(
             ["git", "-C", str(ROOT.parent), "show",
-             "HEAD:v17/transcend/torus-aether/gpu/text_gpu.py"],
+             "c3247481fea58b89f6792f4d914f9e11a11af9cd:v17/transcend/torus-aether/gpu/text_gpu.py"],
             check=True, capture_output=True, text=True).stdout
+        # The original test pointed to HEAD and therefore compared the
+        # candidate against itself. Pin the actual parent of V41 Fast:
+        # the immutable V41 baseline where the CUDA fast port did not exist.
+        # Assert the two independent sources differ before comparison.
+        actual = (GPU / "text_gpu.py").read_text(encoding="utf-8")
+        self.assertNotEqual(source, actual,
+            "REGRESSION ORACLE IS THE CANDIDATE ITSELF; this test cannot prove equivalence")
         oracle = types.ModuleType("prechange_cuda_text_gpu")
         exec(compile(source, "PRECHANGE_TEXT_GPU.py", "exec"), oracle.__dict__)
         rng = np.random.default_rng(91)
