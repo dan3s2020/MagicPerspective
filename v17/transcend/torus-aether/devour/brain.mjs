@@ -192,13 +192,30 @@ export class Brain {
       // the shape of the solution, before it is seen: from the question alone it writes the whole answer
       const shape = a0 >= 0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
-      out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
+      // Exact FIRST-TRY whole-answer scoring. The prediction is generated
+      // using ONLY the question prefix before the held-out answer (above).
+      // The withheld answer is consulted only here, AFTER prediction.
+      // Normalization removes trailing whitespace only (line endings), not
+      // missing words, altered punctuation or incorrect characters.
+      const predictedAnswer = a0 >= 0 ? String.fromCharCode(...shape).trimEnd() : null;
+      const hiddenAnswer = a0 >= 0 ? String.fromCharCode(...ex.slice(a0)).trimEnd() : null;
+      const firstAnswerExact = an && predictedAnswer !== null ?
+        (predictedAnswer === hiddenAnswer ? true : false) : null;
+      out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows, firstAnswerExact,
         shape: a0 >= 0 ? String.fromCharCode(...shape) : null,
         shapeSame: an ? same / an : null,
         answerBoundaryFound: a0 >= 0,
         invalidShapeReason: a0 >= 0 ? null : "NO_ANSWER_BOUNDARY_IN_EVALUATED_PREFIX"}); }
     const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
-    return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer")};
+    const exactScored = out.filter(x => x.firstAnswerExact !== null);
+    const firstAnswerExactRate = exactScored.length ?
+      exactScored.filter(x => x.firstAnswerExact).length / exactScored.length : null;
+    return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer"),
+      firstAnswerExactRate,
+      firstAnswerExactCorrect: exactScored.filter(x=>x.firstAnswerExact).length,
+      firstAnswerExactTotal: exactScored.length,
+      firstAnswerTarget70Reached: firstAnswerExactRate === null ? null : firstAnswerExactRate >= .70,
+      firstAnswerMetric: "STRICT COMPLETE HELD-OUT ANSWER EXACT BEFORE VIEWING GROUND TRUTH; not character accuracy"};
   }
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
