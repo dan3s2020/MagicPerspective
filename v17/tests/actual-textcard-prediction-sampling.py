@@ -36,11 +36,11 @@ def run(chunk):
             assert actual == current[pos], "Predictions must match real training bytes"
             assert isinstance(guessed, int) and 0 <= guessed < 128
             observed.append((pos, actual, guessed))
-    if chunk == 32:
-        assert [p for p, _, _ in observed] == list(range(1, len(current)))
-        assert sum(a == g for _, a, g in observed) == result["hits"], (result, observed)
-        print("ACTUAL_TEXTCARD_PREDICTIONS_MATCH_TRAINING_HITS",
-              {"computed": result["seen"], "observed": len(observed), "matches": result["hits"], "chunks": len(updates)})
+    assert [p for p, _, _ in observed] == list(range(1, len(current))), "Every CUDA-predicted position must be streamed"
+    assert sum(a == g for _, a, g in observed) == result["hits"], (result, observed)
+    print("ACTUAL_TEXTCARD_PREDICTIONS_MATCH_TRAINING_HITS",
+          {"chunk": chunk, "computed": result["seen"], "streamed": len(observed),
+           "matches": result["hits"], "chunks": len(updates)})
     return result
 
 
