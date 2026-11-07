@@ -78,8 +78,11 @@ $parameters=@(
 if($fresh){$parameters+="-Fresh"}
 $native=Start-Process -FilePath "powershell.exe" -WorkingDirectory $Root -ArgumentList $parameters -PassThru
 $ready=$false
-for($i=0;$i -lt 240;$i++){
+for($i=0;$i -lt 1800;$i++){
   Start-Sleep -Milliseconds 500
+  if(($i % 60) -eq 0){
+    Write-Host "Awaiting ORIGINAL CUDA text preflight and real /graphs, no success assumed..." -ForegroundColor DarkCyan
+  }
   if($native.HasExited){throw "Original V17 launcher exited; inspect its own PowerShell window"}
   try{
     $state=Invoke-RestMethod -Uri "http://127.0.0.1:$NativePort/graphs" -TimeoutSec 2
