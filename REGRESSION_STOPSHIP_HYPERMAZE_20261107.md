@@ -91,3 +91,15 @@ After 1,000 distinct 1.27KB observations, the old `last-96 IDs / last-80 queried
 - `v17/research/text-hypermaze/production-release-gate.mjs --gate` must remain **BLOCKED**.
 
 Verified current research CI: https://github.com/dan3s2020/MagicPerspective/actions/runs/42343690214
+
+## 2026-11-07: new isolated full native 5D textual-world UI is REAL, browser-verified
+
+The isolated research branch now additionally includes:
+- `v17/transcend/torus-aether/ui/native-hypermaze.html` and `native-hypermaze.js`: a NEW page, preserving the original `index.html` and earlier `magic.html` byte-for-byte.
+- Live selectable original V17 Brain and unchanged Start/Pause/Save controls from `/graphs` and `/control`.
+- Explicit user-provided start state and goal constraints (not withheld answer), POST `/native-hypermaze?topology=1&execute=1`; the original Worker computes and returns real explored textual states, learned operator edges, 5D positions, original `Discoverer.shapeGraph` potentials, global pre-action path, and actual learned-body frames.
+- Native canvas projects original learned 5D coordinates, with clearly disclosed **2D topological layout fallback** where learned coordinates are missing; golden initial shape and cyan body path are real calculated routes; slider and automatic animation step through the original worker's actual execution frames.
+- **Real headless Google Chrome connected to the original running V17 server/worker**, with DOM `data-native-connected="true"`, `data-native-node-count="6"`, `data-native-before-action="true"` and genuine heldout "He is calm." → "She is calm.", original UI untouched. Browser execution was verified in GitHub Actions: real browser job 128318582143; latest both checks green at commit 0cafa697e3d7528e270b1ae0f41c62b7c59db17e.
+- A flaky earlier Chromium `--dump-dom` returned empty stdout while Chrome exit code was zero. That failure was recorded rather than misclassified; a later measured job produced 10,721 actual DOM bytes. Browser timing must not be inferred from green backend unit tests.
+
+This is the actual data visualization of a learned original text-transformation world, not a static mock. HOWEVER, it still does NOT solve open-ended semantic QA, the original full-RAM/GPU corpus pipeline, causal 5D generalization or the all-byte source archival requirement. **No production command is authorized**.
