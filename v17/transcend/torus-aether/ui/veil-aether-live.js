@@ -2,7 +2,7 @@
 // No artificial trajectories, invented states or training in the browser.
 const $=id=>document.getElementById(id);
 const canvas=$("veilCanvas"),ctx=canvas.getContext("2d");
-let data=null,planned=null,frame=0,playing=true,loaded="",polling=false,at=0;
+let data=null,planned=null,originalShape=null,frame=0,playing=true,loaded="",polling=false,at=0;
 const pct=v=>v==null?"—":(100*v).toFixed(2)+"%";
 const worker=()=>Math.max(0,Math.trunc(Number($("textMazeWorker")?.value)||0));
 const coords=(n,W,H)=>{
@@ -58,6 +58,13 @@ function render(){
  if(!data){draw();return;}
  const l=data.last||{},frames=l.frames||[],now=frames[Math.max(0,frame-1)]||null;
  const values=[
+  "ORIGINAL V17 — forma soluției SCRISĂ DIN ÎNTREBARE (test înghețat): "+
+    (originalShape?.status==="MEASURED"
+     ? pct(originalShape.originalShapeSame)+" | teacher-forced: "+pct(originalShape.teacherForcedAccuracy)+
+        " | "+originalShape.trainedChars+" caractere învățate | "+originalShape.generatedLength+
+        " caractere generate dinainte"
+     : originalShape?.status||"aștept primul test real"),
+  "Măsurări diferite: original free-run ≠ V20 next-token ≠ V21 traseu contextual",
   "Documente reale: "+data.documents+" | stări contextuale distincte: "+data.states+" | muchii: "+data.edges,
   "Predicții PRE-ingest: "+data.onlinePredictions+
     " | acoperire: "+pct(data.contextCoverage)+" | context corect (acoperite): "+pct(data.contextAccuracyCovered),
@@ -91,6 +98,7 @@ async function poll(){
   if(!resp.ok)throw Error("HTTP "+resp.status);
   const o=await resp.json();
   data=o.hypermaze?.veil||null;
+  originalShape=o.shapeAudit||null;
   if(!data){$("veilStatus").textContent="Aștept lumea hypertext sau cognitivemap din worker";render();return;}
   const k=String(data.last?.id??"")+":"+String(data.last?.start?.join(" ")??"")+":"+
    String(data.last?.goal?.join(" ")??"");
