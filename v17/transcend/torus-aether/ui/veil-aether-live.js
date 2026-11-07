@@ -2,6 +2,7 @@
 // No artificial trajectories, invented states or training in the browser.
 const $=id=>document.getElementById(id);
 const canvas=$("veilCanvas"),ctx=canvas.getContext("2d");
+const actionCanvas=$("veilActionCanvas"),actionCtx=actionCanvas?.getContext("2d");
 let data=null,planned=null,originalShape=null,frame=0,playing=true,loaded="",polling=false,at=0;
 const pct=v=>v==null?"—":(100*v).toFixed(2)+"%";
 const worker=()=>Math.max(0,Math.trunc(Number($("textMazeWorker")?.value)||0));
@@ -54,6 +55,66 @@ function draw(){
  ctx.fillStyle="#b4d0df";ctx.font="12px monospace";
  ctx.fillText("AURIU: forma inițială | MOV: forma recalculată | ALBASTRU: parcurs real",12,H-17);
 }
+function drawActualActions(){
+ if(!actionCtx)return;
+ const C=data?.causalField,g=actionCtx,W=actionCanvas.width,H=actionCanvas.height;
+ g.fillStyle="#07101b";g.fillRect(0,0,W,H);
+ g.fillStyle="#9ccfe1";g.font="12px monospace";
+ g.fillText("CAUSAL V17 · actual (before, action, after) observations",12,18);
+ if(!C?.graph?.nodes?.length){g.fillText("Aștept evenimente reale din lumile V17...",20,H/2);return;}
+ const domains=["maze","transform","text","code"];
+ const colors=["#45c9ea","#e9a668","#aa86ee","#9db5ab"];
+ const pos=new Map();
+ for(const node of C.graph.nodes){
+   const idx=Math.max(0,domains.indexOf(node.domain));
+   const phi=((Math.imul(node.id+1,2654435761)>>>0)/4294967296)*Math.PI*2;
+   const d=25+Math.min(68,Math.sqrt(node.count||1)*11);
+   pos.set(node.id,{x:Math.max(14,Math.min(W-14,W*(.13+idx*.244)+d*Math.cos(phi))),
+     y:Math.max(28,Math.min(H-24,H*.5+d*Math.sin(phi))),node});
+ }
+ for(let i=0;i<domains.length;i++){
+   g.fillStyle=colors[i];g.fillText(domains[i]+" "+(C.counts?.[domains[i]]||0),W*(.13+i*.244)-40,39);
+ }
+ for(const e of C.graph.edges){
+   const a=pos.get(e.from),b=pos.get(e.to);if(!a||!b)continue;
+   const latest=C.last?.from===e.from&&C.last?.to===e.to&&C.last?.action===e.action;
+   g.strokeStyle=latest?"#fff0a8":"rgba(133,167,207,.25)";
+   g.lineWidth=latest?3:Math.min(1.7,.5+Math.log1p(e.count)*.14);
+   g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();
+ }
+ for(const node of C.graph.nodes){
+   const p=pos.get(node.id);if(!p)continue;
+   g.fillStyle=colors[Math.max(0,domains.indexOf(node.domain))];
+   g.beginPath();g.arc(p.x,p.y,2+Math.min(4,Math.log1p(node.count)),0,2*Math.PI);g.fill();
+ }
+ if(C.last){
+   g.fillStyle="#fff0a8";g.font="12px monospace";
+   g.fillText("ULTIMA ACȚIUNE REALĂ: "+C.last.domain+" / "+C.last.action,12,H-13);
+ }
+}
+function renderActualActions(){
+ const C=data?.causalField;
+ if(C){
+   const axes=(C.actualActionAxes||[]).slice(0,7).map(x=>
+     x.action+" → "+x.changedCoordinateEvidence.map(([i,n])=>i+":"+n).join(", "));
+   const alternatives=(C.stochasticBranches||[]).slice(0,5).map(x=>
+     x.domain+" / "+x.action+" → "+x.distinctObservedOutcomes+
+      " rezultate, entropie "+x.entropyBits.toFixed(2)+" bits");
+   const order=(C.observedNoncommuting||[]).slice(0,4).map(x=>
+     x.domain+" "+x.actions.join("→")+" ≠ "+x.actions.slice().reverse().join("→"));
+   $("veilActionStats").textContent=[
+     "Evenimente V17: "+JSON.stringify(C.counts)+" | stări "+C.states+" | muchii "+C.edges,
+     "Ultimul rezultat observat: "+(C.last?C.last.domain+"/"+C.last.action+
+       " #"+C.last.from+" → #"+C.last.to+" | schimbat: "+C.last.changed:"—"),
+     "AXE observate per operație: "+axes.length,...axes,
+     "Ramuri condiționale observate: "+(C.stochasticBranches||[]).length,...alternatives,
+     "ORDINI observate AB ≠ BA: "+(C.observedNoncommuting||[]).length,...order,
+     "Dovadă de acțiuni trăite, NU de transfer semantic sau dimensiuni fizice."
+   ].join("\n");
+ }else $("veilActionStats").textContent="Aștept observații reale...";
+ drawActualActions();
+}
+
 function render(){
  if(!data){draw();return;}
  const l=data.last||{},frames=l.frames||[],now=frames[Math.max(0,frame-1)]||null;
@@ -89,7 +150,7 @@ function render(){
  $("veilStats").textContent=values.filter(Boolean).join("\n");
  const limit=Math.max(0,(l.actual?.length||1)-1);
  $("veilScrub").max=limit;$("veilScrub").value=Math.min(frame,limit);
- $("veilStep").textContent="Pas "+frame+" / "+limit;draw();
+ $("veilStep").textContent="Pas "+frame+" / "+limit;draw();renderActualActions();
 }
 async function poll(){
  if(polling)return;polling=true;
