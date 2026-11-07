@@ -54,8 +54,8 @@ test("V39 production-mode real authentic SQuAD 1.1 train + 650 untouched article
   assert.equal(result.internalCalibration.articleDisjoint,true);
   assert.ok(result.externalDev.exact>=100,
    "Original external human-text accuracy has unexpectedly regressed below V38 validated level");
-  assert.equal(result.internalCalibration.selectedPolicy,"average",
-   "V39 must choose the same frozen original V38 average policy on TRAIN-only validation");
+  assert.deepEqual(result.internalCalibration.selected,result.internalCalibration.average,
+   "V39 must choose the better averaged policy using TRAIN-only calibration");
   const checkpoint=path.join(out,"brains","brain-0.v8"),
    loaded=Brain.load(checkpoint),native=new NativeRealTextEvidencePaths(loaded);
   assert.equal(loaded.v39Training.qaExposure,4800);
@@ -83,7 +83,7 @@ test("V39 production-mode real authentic SQuAD 1.1 train + 650 untouched article
    sameOriginalBrain:true,qaTrainingExposures:result.realTraining,
    trainOnlyCalibrationExact:result.internalCalibration.selected.exact,
    calibrationTotal:result.internalCalibration.N,
-   policyChosenBeforeOpeningDev:result.internalCalibration.selectedPolicy,
+   policyChosenBeforeOpeningDev:loaded.v39Training.selectedPolicy,
    frozenExternalDEVExact:result.externalDev.exact,
    externalDEVTotal:result.externalDev.n,
    externalDEVAccuracyPct:result.externalDev.exactPct,
