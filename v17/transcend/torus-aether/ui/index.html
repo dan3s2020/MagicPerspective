@@ -179,6 +179,34 @@
       <p class="note">Proiectie 2D a topologiei invatate, cu muchii cauzale reale si ipoteze din contraste. Linie aurie = planul inghetat; punct luminos = ANIMATIA PLANULUI, nu miscare executata. Actiunile reale sunt exclusiv cele confirmate mai jos prin feedback.</p>
       <canvas id="v22OriginalShapeCanvas" width="960" height="440" style="width:100%;height:440px;max-width:100%;background:#07131c;border:1px solid #2e5369;border-radius:9px" aria-label="Graful textual N-D invatat si forma solutiei prezisa de Discoverer.shape"></canvas>
       <pre id="v22OriginalShapeCaption" style="white-space:pre-wrap;color:#b7d4e7;font:12px ui-monospace,monospace">Astept evaluare reala pe harta cognitiva. Niciun traseu inventat.</pre>
+      <section id="v23AtlasBox" style="padding:12px;border:1px solid #7193a7;border-radius:9px;background:#0a1925">
+        <h3>V23 - ATLAS COMPLET persistat, toate lumile si toate incercarile (in pagini)</h3>
+        <p class="note">Acestea sunt dovezi/transformari observate si cai candidate; fiecare cale esuata are motivul si limitele de design. Nu sunt calcule preprogramate de succes. Jurnalul este append-only, nu sterge istoria pentru a incapea in RAM. Resturile de istorie compacte anterior instalarii V23 nu pot fi reconstruite complet.</p>
+        <div class="row" style="flex-wrap:wrap">
+          <label>Creier # <input id="v23AtlasWorker" type="number" min="0" step="1" value="0" style="width:60px"></label>
+          <label>Filtru
+            <select id="v23AtlasKind">
+              <option value="">Toate dovezile</option>
+              <option value="rule-evidence">Transformari invatate din documente</option>
+              <option value="observed-external-transition">Actiuni reale labirint/transformari</option>
+              <option value="observed-action">Actiuni si ziduri verificate</option>
+              <option value="planning-attempt">Cai incercate, reusite si esecuri</option>
+            </select>
+          </label>
+          <button id="v23AtlasLoad" type="button">Citeste atlasul REAL</button>
+          <button id="v23AtlasPrev" type="button">Pagina anterioara</button>
+          <button id="v23AtlasNext" type="button">Pagina urmatoare</button>
+          <a id="v23AtlasExport" href="/atlas-export?w=0" target="_blank" rel="noopener noreferrer">Export integral JSONL fara paginare</a>
+        </div>
+        <pre id="v23AtlasStatus" style="white-space:pre-wrap;max-height:180px;overflow:auto;color:#b7d9ee;font:12px ui-monospace,monospace" aria-live="polite">Citeste jurnalul; niciun graf artificial.</pre>
+        <pre id="v23AtlasComparison" style="white-space:pre-wrap;max-height:230px;overflow:auto;color:#edd7ac;font:12px ui-monospace,monospace">Astept comparatia intre rutele reusite, rutele imposibile in memoria actuala si limitele arhitecturii.</pre>
+        <div class="row">
+          <label>Eveniment de inspectat <select id="v23AtlasRecord"></select></label>
+          <label>Nod initial vizualizat <input id="v23AtlasNodeOffset" type="number" min="0" value="0" style="width:80px"></label>
+        </div>
+        <canvas id="v23AtlasCanvas" width="940" height="440" style="width:100%;height:440px;background:#06121c;border:1px solid #2c536a;border-radius:9px" aria-label="Nodurile, muchiile, forma prezisa si zidurile reale ale unui atlas hiperdimensional"></canvas>
+        <pre id="v23AtlasRaw" style="white-space:pre-wrap;max-height:380px;overflow:auto;color:#bfdce8;font:11px ui-monospace,monospace">Alege orice eveniment pentru tot continutul lui, fara rezumare.</pre>
+      </section>
       <h3>Feedback real: verificarea unui zid sau a unei transformări</h3>
       <p class="note">Înregistrează numai o acțiune executată efectiv și observația de după. Un traseu dedus din text rămâne o ipoteză până când lumea îi confirmă efectul.</p>
       <div class="row"><label>Înainte <input id="cognitiveBefore" type="text" size="30" value="He is calm."></label></div>
@@ -328,5 +356,6 @@
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
  <script type="module" src="v22-original-text-labyrinth-live.js"></script>
+ <script type="module" src="v23-full-atlas-live.js"></script>
 </body>
 </html>
