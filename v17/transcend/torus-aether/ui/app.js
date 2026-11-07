@@ -674,7 +674,12 @@ function renderDatasetProgress(gr, corpusInfo) {
         "Timp total lot: " + ms(x.total) +
           " | rata reala: " + Math.round(x.charactersPerSecond || 0).toLocaleString("ro-RO") + " caractere/s",
         "EXERCITII COMPLET ANTRENATE / SEC: " + (Number(x.exercisesPerSecond) || 0).toFixed(4) +
-          " | tinta ceruta: 100/s (NU rânduri doar citite)",
+          " | tinta ceruta: 100/s (NU randuri doar citite)",
+        "VITEZA SUSTINUTA pe " + (x.measuredWindowBatches || 0) + " loturi TERMINATE: " +
+          (Number(x.sustainedExercisesPerSecond) || 0).toFixed(4) + " exercitii/s; " +
+          Math.round(Number(x.sustainedCharactersPerSecond) || 0).toLocaleString("ro-RO") + " caractere/s" +
+          (x.target100ReachedOnMeasuredWindow ? " | TINTA 100/s ATINSA IN FEREASTRA MASURATA" :
+           " | tinta 100/s NEATINSA in aceasta fereastra"),
         "Python text_learn (CUDA + index/reconstructie): " + ms(x.card),
         "CPU V17 - graful original: " + ms(x.originalGraphTrace),
         "CPU V19/V20/V21 - corpus, grafuri si cai: " + ms(x.causalTextAndCode),
