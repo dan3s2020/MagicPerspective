@@ -453,7 +453,7 @@ export class NativeGoalTextMaze {
    };
   }
   if(recordAtlas){
-   result.atlasSequence=this.atlas.append("search",{
+   result.atlasSequence=this.atlas.appendSearch({
     world:"text",start:result.start,required:goal,found:result.found,
     initialShape:result.initialShape,actions:result.actions,
     diagnostic:result.diagnostic,graph:result.graph,
@@ -564,6 +564,7 @@ export class NativeGoalTextMaze {
   return finalResult;
  }
  atlasPage(options){return this.atlas.page(options);}
+ atlasGraph(options){return this.atlas.graphPage(options);}
  atlasSummary(){return this.atlas.summary();}
  atlasOperators(options){return this.atlas.operatorCatalog(
   this.brain.observedTransformations.operators,options);}
