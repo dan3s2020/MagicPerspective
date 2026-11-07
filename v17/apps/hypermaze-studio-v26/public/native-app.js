@@ -195,6 +195,11 @@ function renderNativeDataset(d,m){
   value("nativeProgressChars","Caractere procesate: "+fmt(m.chars));
   value("nativeProgressHeldout","Holdout separat: "+fmt(m.progressHeldout)+" exerciții");
   $("nativeProgressFill").style.width=pct===null?"0%":pct+"%";
+  // A 0.02% real corpus share is <1px on screen. A tiny visibility marker
+  // means "non-zero", while numeric percentage remains exactly unchanged.
+  $("nativeProgressFill").style.minWidth=pct>0?"6px":"0";
+  $("nativeProgressFill").title=pct>0&&pct<.5?
+    "Progres real "+m.progressPercent+"; segmentul minim de 6px este doar un marker de vizibilitate.":"Progres proporțional "+m.progressPercent;
   $("nativeProgressTrack").setAttribute("aria-valuenow",String(pct??0));
   const batch=d.graph?.batch||d.graph?.batchNow||d.graph?.gpuBatch||null;
   const phase=typeof batch==="object"?batch?.phase:batch;
@@ -202,6 +207,13 @@ function renderNativeDataset(d,m){
     "GPU: "+String(m.nativeDevice||"—")+
     " · "+fmt(m.completedExercisesPerSecond,2)+" ex/s");
   value("nativeProgressHeartbeat","Verificat "+new Date().toLocaleTimeString("ro-RO"));
+  const connection=$("connection");
+  connection.classList.toggle("error",failed);
+  connection.classList.toggle("connected",!failed);
+  value("connectionText",failed?"API CONECTAT · WORKER ÎN EROARE":
+    h.active?"ORIGINAL V17 · TRAINING ACTIV":
+    "API V17 CONECTAT · WORKER "+h.state);
+  if(failed)value("mAccSub","ULTIMUL SCOR SALVAT · WORKER OPRIT/EROARE");
   const fatal=$("nativeFatal");fatal.hidden=!failed;
   if(failed)fatal.textContent="WORKERUL ORIGINAL V17 ESTE ÎN EROARE:\n"+
     String(h.error||d.nativeCudaError||"Unknown fatal error")+
@@ -223,8 +235,8 @@ function renderNativeDataset(d,m){
     if(previous!==null&&m.progressTrained<previous)
       appendLog("warn","Dataset counter reset or changed: verify process/checkpoint identity");
   }
-  let message=failed?"ANTRERNAREA NU RULEAZĂ: workerul V17 a eșuat.":
-    !h.active?"ANTRERNAREA NU RULEAZĂ: "+h.state:
+  let message=failed?"ANTRENAREA NU RULEAZĂ: workerul V17 a eșuat.":
+    !h.active?"ANTRENAREA NU RULEAZĂ: "+h.state:
     startRequestedAt?"Start acceptat. Aștept creșterea REALĂ a contorului de exerciții.":
     lastTrainingProgressAt?"Ultimul progres confirmat la "+
       new Date(lastTrainingProgressAt).toLocaleTimeString("ro-RO")+
