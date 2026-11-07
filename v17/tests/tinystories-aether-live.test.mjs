@@ -4,7 +4,7 @@ import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
 import net from "node:net";
-import {spawnSync} from "node:child_process";
+import {spawn,spawnSync} from "node:child_process";
 import {launch,TinyStoriesTrainer} from "../research/tinystories/server.mjs";
 import {sourceMetadata,stories} from "../research/tinystories/story-stream.mjs";
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
@@ -111,9 +111,18 @@ test("real independent TinyStories Python GPU protocol: train, LIVE UI, frozen v
   const names=["google-chrome","chromium","chromium-browser"];
   const browser=names.find(n=>spawnSync("which",[n],{encoding:"utf8"}).status===0);
   if(browser){
-   const render=spawnSync(browser,["--headless","--no-sandbox","--disable-gpu",
-    "--disable-dev-shm-usage","--dump-dom","--virtual-time-budget=1800",url+"/"],
-    {encoding:"utf8",timeout:20000,maxBuffer:8*1024*1024});
+   // The browser MUST run asynchronously: blocking this Node process
+   // would also block the very same actual HTTP server it needs to fetch.
+   const render=await new Promise((resolve,reject)=>{
+    const child=spawn(browser,["--headless","--no-sandbox","--disable-gpu",
+     "--disable-dev-shm-usage","--dump-dom","--virtual-time-budget=1800",url+"/"]);
+    let stdout="",stderr="";
+    child.stdout.on("data",d=>stdout+=d.toString());
+    child.stderr.on("data",d=>stderr+=d.toString());
+    child.on("error",reject);
+    child.on("exit",status=>resolve({status,stdout,stderr}));
+    setTimeout(()=>{if(child.exitCode===null)child.kill("SIGKILL");},19000).unref();
+   });
    assert.equal(render.status,0,render.stderr?.slice(-1200));
    assert.match(render.stdout,/data-tinystories-connected="true"/);
    assert.match(render.stdout,/data-tinystories-trained="120"/);
