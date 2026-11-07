@@ -85,3 +85,18 @@ test("contradictory observed action transitions invalidate the route, not quietl
   assert.equal(m.formObservedWorld("text",["STATE","0"],{slots:{1:"64"}},
     {maxNodes:100}).found,false);
 });
+
+test("511 observed transformations fit the existing 512-node V22 evaluation budget without erasing attraction",()=>{
+  const steps=511, m=makeObservedChain(steps);
+  const p=m.formObservedWorld("text",["STATE","0"],{slots:{1:String(steps)}},
+    {maxNodes:512});
+  assert.equal(p.found,true,"Original propagation must span the whole existing graph budget");
+  assert.equal(p.path.length,steps);
+  assert.ok(p.field.values[0]>0,"Whole solution is planned from node zero");
+  assert.equal(p.path[0].action,"observed-action-0");
+  assert.equal(p.path.at(-1).action,"observed-action-510");
+  console.log("V23_MAX_NATIVE_OBSERVED_PATH",JSON.stringify({
+    plannedBeforeAction:p.plannedBeforeAction,steps,
+    fieldAtStart:p.field.values[0],method:p.directOriginalMethod
+  }));
+});
