@@ -66,6 +66,17 @@ test("ORIGINAL V17 worker reads ACTUAL repository corpus, owns trained xD transf
    assert.ok(page.totalStates>=page.entries.length);
    assert.ok(page.entries.length>=1);
    assert.equal(page.noTruncationOfOriginalGraph,true);
+   const edits=await fetchJSON(base+"/atlas-graph?w=0&family=edits&offset=0&limit=8");
+   assert.equal(edits.nativeAtlasPage,true);
+   assert.equal(edits.kind,"native-observed-edit-transformations");
+   assert.ok(Number.isInteger(edits.totalOperators));
+   assert.ok(edits.totalOperators>=edits.entries.length);
+   assert.equal(edits.originalGraphNotMutated,true);
+   const gated=await fetchJSON(base+
+     "/evidence-gated-text-path?w=0&start="+encodeURIComponent("the moon is bright")+
+     "&required="+encodeURIComponent("moon,bright"),{method:"POST"});
+   assert.equal(gated.evidenceGatedText,true);
+   assert.equal(typeof gated.result.found,"boolean");
    const journal=await poll(async()=>{
      const r=await fetchJSON(base+"/atlas-log?w=0&offset=0&limit=3");
      return r.entries?.length?r:null;
