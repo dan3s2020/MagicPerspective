@@ -150,6 +150,10 @@
       <label class="dim">Trace LIVE / actualizare la fiecare pas <input id="veilScrub" type="range" min="0" max="0" value="0" style="width:100%"></label>
       <label class="dim">Viteză replay (ms/pas) <input id="veilSpeed" type="range" min="60" max="1600" step="20" value="320"></label>
       <pre id="veilStats" style="white-space:pre-wrap;max-height:330px;overflow:auto;color:#c9d9ff;font:12px ui-monospace,monospace">Aștept predicții și tranziții.</pre>
+      <h3>AETHER · efecte cauzale trăite în aceeași memorie (maze / transform / text)</h3>
+      <p class="note">Nodurile și muchiile de aici vin NUMAI din acțiuni și observații reale ale organismului V17. Localizarea axelor = poziții schimbate măsurate; necomutativitatea AB ≠ BA se afișează doar când ambele ordine sunt observate. Harta este o proiecție de vizualizare, NU o dovadă 4D sau de transfer semantic.</p>
+      <canvas id="veilActionCanvas" width="820" height="310" style="display:block;width:100%;background:#07101b;border:1px solid #36546c;border-radius:8px" aria-label="Efectele reale ale acțiunilor observate în fiecare lume"></canvas>
+      <pre id="veilActionStats" style="white-space:pre-wrap;max-height:240px;overflow:auto;color:#abdcf6;font:12px ui-monospace,monospace">Aștept efectele cauzale reale.</pre>
       <h3>Test înghețat · forma soluției între contexte observate</h3>
       <div class="row"><label>Start (2 simboluri): <input id="veilStart" type="text" size="19" placeholder="She is"></label>
         <label>Țintă (2 simboluri): <input id="veilGoal" type="text" size="19" placeholder="is calm"></label>
