@@ -25,16 +25,17 @@ export function parseExplicitRewriteQuestion(question,{maxTokens=512}={}){
   return {ok:true,from,to,initial,tokens,goal:{slots:{[locations[0]]:to}},slot:locations[0]};
 }
 
-export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,maxTokens=512,seed=74129,includeAtlas=false}={}){
+export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,maxTokens=512,seed=74129,includeAtlas=false,minVerifiedContexts=0}={}){
   if(!(model instanceof LearnedCognitiveMap))
     throw new Error('Use the original LearnedCognitiveMap — no standalone answer predictor');
   const parsed=parseExplicitRewriteQuestion(question,{maxTokens});
   if(!parsed.ok)return {found:false,answer:null,reason:parsed.error,source:'Discoverer.shape',path:[]};
   const plan=model.formSolution(parsed.initial,parsed.goal,
-    {maxNodes,maxDepth,maxTokens,seed,transfer:true,temperature:0});
+    {maxNodes,maxDepth,maxTokens,seed,transfer:true,temperature:0,minVerifiedContexts});
   const evidence={
     goalType:'EXPLICIT_REPLACEMENT_REQUEST_NOT_INFERRED_SEMANTIC_GOAL',
     goalPredicate:parsed.goal,question,source:'Discoverer.shape',
+    causalEvidenceRequiredAcrossIndependentContexts:minVerifiedContexts,
     actualWriter:'PATH_TERMINAL_STATE_READOUT_NOT_LEGACY_ALIGNING_GRAPH',
     semanticOpenThoughtsAnswer:false,firstTry:true,
     modelLearningChanged:false,found:!!plan.found,
