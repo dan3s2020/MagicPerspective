@@ -102,7 +102,8 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.equal(result.body?.externalSemanticGoalValidated,false);
   assert.equal(result.exactUnseenLargeAnswerProven,false);
   assert.equal(result.atlas?.schema,"v17-native-observed-path-atlas-v1");
-  assert.ok(result.planId?.startsWith("0:"));
+  assert.ok(result.planId?.startsWith("0:")||result.planId?.startsWith("saved:0:"),
+   "Real original Brain may finish corpus before HTTP plan; both live and saved paths are valid");
   assert.ok(result.atlas.paths.some(p=>p.isInitialShape&&p.actions.length>=1));
   assert.ok(result.atlas.transformations.length>=2);
   assert.ok(result.atlas.transformations.some(x=>x.examples?.[0]?.from));
@@ -137,7 +138,9 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   const catalog=await(await fetch(url+"/native-hypermaze-operators?w=0&offset=0&limit=100")).json();
   assert.ok(catalog.total>=4);
   assert.ok(catalog.operators.some(x=>x.evidence?.[0]?.from));
-  assert.equal(catalog.source,"same original persistent Brain.v8");
+  assert.ok(["same original persistent Brain.v8",
+    "same original saved Brain.v8"].includes(catalog.source),
+   "All operator evidence must come from the exact original Brain, never a replacement model");
   assert.ok(result.topology?.nodes?.length>=3,"Actual native learned text-world nodes are missing");
   assert.ok(result.topology.edges.length>=1,"Actual original observed transformation edges are missing");
   assert.ok(result.topology.nodes.some(n=>n.position5D?.length===5),
