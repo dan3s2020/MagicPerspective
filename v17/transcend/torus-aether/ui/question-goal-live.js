@@ -80,6 +80,11 @@ function show(){
    "Țintă prezisă din întrebare: "+JSON.stringify(p.predictedGoal?.tokens),
    "Scor țintă 32D: "+p.predictedGoal?.distance32+
     " · scor geometric 5D: "+(p.predictedGoal?.distance5??"NEDISPONIBIL"),
+   "MOD DE NAVIGARE: "+(p.navigationMode||"legacy")+ 
+    " · lungime învățată "+(p.predictedLength??"—")+
+    " · lungime planificată "+p.plannedSteps+
+    " · stări temporale "+(p.graph?.states??"—")+
+    " · graf trunchiat "+(p.graph?.truncated??"—"),
    "DIMENSIUNI ACTIVE: "+p.dimensions+
     " · geografie 5D învățată "+(p.geometryActive?"DA":"NU"),
    "Pași prezis: "+p.plannedSteps+" · muchii observate folosite: "+p.observedEdgesUsed,
@@ -116,6 +121,7 @@ ui("questionGoalPlan").onclick=async()=>{
   const data=await request("/question-goal-plan","POST",{
    w:selected(),question:q,
    maxNodes:Math.max(100,Math.min(4000,Number(ui("questionGoalNodes").value)||1500)),
+   temporal:ui("questionGoalTemporal").checked,maxTemporalStates:6000,
    temperature:Number(ui("questionGoalNoise").value)||0
   });
   S.plan=data;S.frame=0;S.playing=!!data.ready;S.lastTick=0;show();
@@ -128,7 +134,8 @@ ui("questionGoalHeldTest").onclick=async()=>{
  try{
   const n=Math.max(1,Math.min(16,Math.trunc(Number(ui("questionGoalHeldN").value)||4)));
   const r=await request("/question-goal-heldout?w="+selected()+"&count="+n+
-   "&maxNodes="+(Number(ui("questionGoalNodes").value)||1500),"POST");
+   "&maxNodes="+(Number(ui("questionGoalNodes").value)||1500)+
+   "&temporal="+(ui("questionGoalTemporal").checked?"1":"0"),"POST");
   ui("questionGoalHeldResults").textContent=[
    "SURSĂ: "+r.source,"Antrenare în evaluare: NU",
    "Răspuns de referință în planificator: NU",
@@ -136,6 +143,7 @@ ui("questionGoalHeldTest").onclick=async()=>{
     " · RĂSPUNS COMPLET EXACT: "+r.exact+" / "+r.total+
     " ("+fmt(r.exactPercent)+"%)",
    "Caractere/tokenuri la poziția corectă: "+pct(r.positionMean),
+   "EROARE MEDIE LUNGIME: "+fmt(r.meanAbsLengthError)+" tokenuri",
    "100% pe orice text nevăzut demonstrat: NU",
    ...r.results.map(e=>"#"+e.index+" · "+(e.exact?"EXACT":"GREȘIT")+
     " · output "+e.generatedChars+"/"+e.answerChars+
