@@ -278,7 +278,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Worker busy; no fabricated empty atlas response"});
     },25000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
-    sl.wk.postMessage({nativeAtlasPage:{id,scale,offset,limit}});
+    sl.wk.postMessage({nativeAtlasPage:{id,scale,offset,limit,family:q.get("family")==="edits"?"edits":"scales"}});
     return;
   }
   // Full finite-world frozen test. The agent receives the ENTIRE map, no
