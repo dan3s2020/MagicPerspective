@@ -97,3 +97,25 @@ test("blocked contextual edit operators and bridge suggestions are EXPLAINED, ne
   assert.equal(d.observedAnchorDiagnostics.interventionIsHypothesisOnly,true);
   assert.equal(observed.operators.size,before);
 });
+
+test("native frozen unseen QA evaluation never trains on the reference and separates free-run from prefix-aided next-char accuracy",()=>{
+ const model=new ConstructedPathLearner(),atlas=new NativeTextPathAtlas();
+ for(let i=0;i<35;i++)model.trainText("first style "+i,"abcd abcd abcdd?");
+ const before=JSON.stringify(model.scales.map(s=>[s.edges.size,s.observations]));
+ const reportBefore=JSON.stringify(atlas.summary());
+ const held=[
+  {prompt:"a question unseen in train",answer:"abcd abcda?"},
+  {prompt:"another held-out question",answer:"bbbbbbb?"}
+ ];
+ const measured=atlas.evaluateFrozen(model,held,{max:2});
+ assert.equal(measured.rows,2);
+ assert.equal(measured.noTraining,true);
+ assert.equal(measured.noReferenceInInitialPlan,true);
+ assert.equal(measured.nativeGraphUnchanged,true);
+ assert.equal(measured.examples.length,2);
+ assert.ok(measured.characters>0);
+ assert.ok(measured.missingEdges+measured.wrongRanking<=measured.characters);
+ assert.equal(JSON.stringify(model.scales.map(s=>[s.edges.size,s.observations])),before);
+ assert.equal(JSON.stringify(atlas.summary()),reportBefore,
+  "frozen heldout evaluation must not increment ORIGINAL training atlas counters");
+});
