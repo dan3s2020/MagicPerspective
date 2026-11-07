@@ -67,17 +67,20 @@ export class LearnedCognitiveMap {
     this.sentenceObservations=0;this.compactedExamples=0;this.compactedRules=0;
     this.documents=0;this.evaluations=0;
     this.last=null;this.version=1;
+    this.onAtlasEvidence=null;this.activeObservation=null; // transient, not part of saved Brain
   }
   // One complete input is perceived before any attempt to move.
   observeWorld(text,{id=null}={}){
     if(typeof text!=='string')throw Error('Expected observed world text');
     const parts=text.match(/[^.!?\n]+[.!?]?/gu)||[];
+    this.activeObservation=id;
     let added=0,rulesBefore=this.rules.size;
     for(const part of parts){
       const tokens=tokenizeWorld(part);if(!tokens.length||tokens.length>96)continue;
       if(this.observeSentence(tokens,{source:id}))added++;
     }
     this.documents++;
+    this.activeObservation=null;
     return {absorbed:true,documents:this.documents,newSentences:added,
       newRuleHypotheses:this.rules.size-rulesBefore,ruleCount:this.rules.size};
   }
@@ -164,7 +167,14 @@ export class LearnedCognitiveMap {
     const ctx=contextOf(at,before,'replace');
     r.contexts ||= [];
     if(!r.contexts.some(x=>JSON.stringify(x)===JSON.stringify(ctx))&&r.contexts.length<24)r.contexts.push(ctx);
-    if(!r.sources.includes(pair)){r.observations++;if(r.sources.length<12)r.sources.push(pair);}
+    if(!r.sources.includes(pair)){
+      r.observations++;if(r.sources.length<12)r.sources.push(pair);
+      this.onAtlasEvidence?.({type:"rule-evidence",kind:r.kind,world:"text",
+        documentId:this.activeObservation,action:r.id,at:r.at,from:r.from,to:r.to,
+        before:unkey(before),after:unkey(after),contexts:r.contexts,
+        observations:r.observations,accepted:r.accepted,rejected:r.rejected,
+        evidenceLevel:"OBSERVED_CONTRAST_NOT_CAUSAL_PROOF"});
+    }
   }
   #editEvidence(operation,at,from,to,before,after){
     const name=JSON.stringify([operation,at,from,to]);let r=this.rules.get(name);
@@ -178,7 +188,14 @@ export class LearnedCognitiveMap {
     const ctx=contextOf(at,before,operation);
     r.contexts ||= [];
     if(!r.contexts.some(x=>JSON.stringify(x)===JSON.stringify(ctx))&&r.contexts.length<24)r.contexts.push(ctx);
-    if(!r.sources.includes(pair)){r.observations++;if(r.sources.length<12)r.sources.push(pair);}
+    if(!r.sources.includes(pair)){
+      r.observations++;if(r.sources.length<12)r.sources.push(pair);
+      this.onAtlasEvidence?.({type:"rule-evidence",kind:r.kind,world:"text",
+        documentId:this.activeObservation,action:r.id,operation,at,from,to,
+        before:unkey(before),after:unkey(after),contexts:r.contexts,
+        observations:r.observations,accepted:r.accepted,rejected:r.rejected,
+        evidenceLevel:"OBSERVED_COMPLETE_STATE_CONTRAST_NOT_VERIFIED_ACTION"});
+    }
   }
   // A real before/action/after observation can teach an unfamiliar
   // contiguous string transformation; no predefined grammar labels.
@@ -190,6 +207,9 @@ export class LearnedCognitiveMap {
     if(!accepted){
       record.blocked++;this.interventions.set(key(b)+'|'+action,record);
       const known=this.rules.get(action);if(known)known.rejected++;
+      this.onAtlasEvidence?.({type:"observed-action",world:"text",
+        before:b,after:a,action,accepted:false,
+        reason:"WALL_ACTION_REJECTED",evidenceLevel:"REAL_OBSERVATION"});
       return {learned:false,wall:true,action};
     }
     let prefix=0,suffix=0;
@@ -211,6 +231,10 @@ export class LearnedCognitiveMap {
     }
     r.observations++;r.accepted++;
     record.accepted++;this.interventions.set(key(b)+'|'+action,record);
+    this.onAtlasEvidence?.({type:"observed-action",world:"text",
+      before:b,after:a,action,accepted:true,
+      predictedTransformation:{at:prefix,from,to},
+      ambiguous:!!r.ambiguous,evidenceLevel:"REAL_OBSERVATION"});
     return {learned:!r.ambiguous,wall:false,action,from,to,at:prefix};
   }
   // Grounded interventions: this method NEVER calls an oracle. Callers pass the
@@ -228,6 +252,10 @@ export class LearnedCognitiveMap {
     if(correct)record.accepted++;else record.blocked++;
     this.interventions.set(id,record);
     const r=this.rules.get(action);
+    this.onAtlasEvidence?.({type:"observed-action",world:"text",
+      before:b,after:a,action,accepted,predicted:pred,
+      accurate:correct,evidenceLevel:"REAL_INTERVENTION",
+      reason:correct?"MATCHED_EXPECTED_EFFECT":"WALL_OR_WRONG_EFFECT"});
     if(r){r.accepted+=Number(correct);r.rejected+=Number(!correct);}
     else if(correct){
       // The portable route has now been independently executed by a real
@@ -291,6 +319,10 @@ export class LearnedCognitiveMap {
       this.externalEdges.set(index,transition);
     }
     transition.count++;this.externalObservations++;
+    this.onAtlasEvidence?.({type:"observed-external-transition",world:domain,
+      before:a,after:b,action:String(action),context:String(context),
+      ambiguous:transition.ambiguous,count:transition.count,
+      evidenceLevel:"ACTUAL_V17_WORLD_TRANSITION"});
     return {known:true,domain,conflict:transition.ambiguous,count:transition.count};
   }
   // The ORIGINAL V17 shape operator also runs over observed non-language edges.
