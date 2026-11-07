@@ -68,6 +68,8 @@ export class StateDependentTextAxes {
    const delta=from.map((v,i)=>to[i]-v);
    if(delta.filter(x=>x!==0).length!==2){this.rejected++;return {learned:false,reason:"not-two-changes"};}
    const key=template(a),entry=this.data.get(key)||{indices,samples:[]};
+   // Every new REAL state transition invalidates its previously learned field.
+   delete entry.cachedField;
    entry.samples.push({before:from,after:to,delta,evidence:{before,after}});
    entry.samples.push({before:to,after:from,delta:delta.map(x=>-x),evidence:{before:after,after:before}});
    this.data.set(key,entry);this.observations++;return {learned:true,delta};
@@ -75,7 +77,16 @@ export class StateDependentTextAxes {
  discover(start){
    const tokens=tokenizeObservation(start),entry=this.data.get(template(tokens));
    if(!entry)return {ready:false,reason:"no-training-pairs"};
-   const result=groupSamples(entry.samples,entry.indices.length);
+   // An unchanged observed transition graph has one exact learned field.
+   // Reuse it across repeated heldout queries and embodied execution; never
+   // skip an observation, since observePair deletes this cache on EVERY update.
+   const sampleCount=entry.samples.length;
+   let result=entry.cachedField?.sampleCount===sampleCount?
+     entry.cachedField.result:null;
+   if(!result){
+     result=groupSamples(entry.samples,entry.indices.length);
+     entry.cachedField={sampleCount,result};
+   }
    return {...result,numericTokenIndices:entry.indices.slice(),pairedObservations:this.observations};
  }
  apply(tokens,op,model) {
