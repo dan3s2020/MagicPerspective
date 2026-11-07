@@ -9,7 +9,7 @@ import {spawn} from "node:child_process";
 import {fileURLToPath} from "node:url";
 
 const here=path.dirname(fileURLToPath(import.meta.url));
-const v17=path.resolve(here,"../..");
+const v17=path.resolve(here,"..");
 const assets=path.resolve(here,".");
 const allowed=new Map([
  ["GET",new Set(["/graphs","/graph","/state","/telemetry","/shared-eval-status"])],
