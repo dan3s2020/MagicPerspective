@@ -96,6 +96,44 @@ export class RealTextAtlas{
     edges:neighbors.flatMap((a,i)=>a.map(e=>({from:i,to:e.to,action:e.action,verified:e.verified}))).slice(0,traceLimit*2),
     field:field.slice(0,traceLimit),totalNodes:nodes.length};
  }
+ atlasView({count=60}={}){
+  if(!Number.isInteger(count)||count<1||count>120)throw Error("Invalid atlas size");
+  const rs=[...this.records.values()].slice(-count),nodes=[],edges=[],shown=new Map();
+  for(const r of rs){
+   const question=nodes.length;
+   nodes.push({id:question,kind:"observed-question",
+    label:r.prompt.slice(0,256),recordId:r.id});
+   const answer=nodes.length;
+   nodes.push({id:answer,kind:"observed-answer",
+    label:r.answer.slice(0,256),recordId:r.id});
+   shown.set(r.id,question);
+   edges.push({from:question,to:answer,action:"witnessed:dialogue-response",
+    verified:true,sourceRow:r.sourceRow});
+  }
+  for(const r of rs){
+   const from=shown.get(r.id);
+   for(const candidate of this.candidates(r.prompt)){
+    const to=shown.get(candidate.id);
+    if(to==null||to===from)continue;
+    if(candidate.score<Math.max(.1,this.config.minScore))continue;
+    if(edges.some(e=>e.from===from&&e.to===to))continue;
+    edges.push({from,to,action:"hypothesis:lexical-question-overlap",
+      verified:false,score:candidate.score});
+    // Limit unverified connections so visualization stays navigable.
+    if(edges.filter(e=>e.from===from&&!e.verified).length>=2)break;
+   }
+  }
+  const field=new Array(nodes.length).fill(0);
+  const g=projectObservedWorld(nodes,field,this.records,this.nextId,terms);
+  return {view:"observed-atlas",found:false,
+   reason:"NO_GOAL_PREDICTION_IN_MEMORY_ATLAS",
+   method:"observed memory only; no Discoverer.shape invoked",
+   beforeAction:false,route:[],field,nodes:g.nodes,edges,
+   dimensions:g.dimensions,axisLabels:g.axisLabels,
+   totalNodes:nodes.length,observedEdges:edges.filter(e=>e.verified).length,
+   hypothesizedEdges:edges.filter(e=>!e.verified).length,
+   source:"Real corpus rows witnessed by this V24 process; NO synthetic path"};
+ }
  summary(){return {config:this.config,stats:{...this.stats},activeRecords:this.records.size,
    distinctTerms:this.postings.size,nextId:this.nextId,
    method:"Original Discoverer.shape; hypothesis similarity, observed dialogue transformations"};}
