@@ -75,6 +75,7 @@ export class NativeWorldAtlas{
   const reasonCounts={};
   for(const x of recordedProblems)reasonCounts[x.reason||"NO_REASON"]=(reasonCounts[x.reason||"NO_REASON"]||0)+1;
   const sourceWorlds=new Set(a.witnesses.map(x=>x.episodeId));
+  const originalText=this.brain.observedTransformations;
   return {
    originalBrain:"SAME V17 Brain (.v8 checkpoint)",atlasVersion:30,
    witnessedEvents:a.witnesses.length,sourceWorlds:sourceWorlds.size,
@@ -87,8 +88,15 @@ export class NativeWorldAtlas{
    physicallyValidatedFailures:fail.length,
    unplannedBlockedWorlds:recordedProblems.length,
    planFailureReasons:reasonCounts,
-   completeMemoryHistory:true, // Every event is retained in this saved Brain.
+   completeCrossWorldWitnessHistory:true, // Every V30 event is in this Brain.
    completeKnownRuleAtlas:true,
+   originalNativeTextObservations:originalText?.seen||0,
+   originalNativeTextOperators:originalText?.operators?.size||0,
+   originalNativeTextActiveStates:originalText?.records?.size||0,
+   originalNativeTextEvictedStates:originalText?.evicted||0,
+   originalTextFullRawHistoryRetained:(originalText?.evicted||0)===0,
+   originalLearned5DActionAxes:this.brain.hypermazeLearnedAxes?.size||0,
+   nativeTextContrastsUsedAsPhysicalActions:false,
    allLanguageStatesKnown:false,
    allReachableStatesEnumerated:false,
    reportingPolicy:"All stored events and full local graphs page-by-page, never fabricate omitted edges"
@@ -100,6 +108,30 @@ export class NativeWorldAtlas{
   const a=this.store,m=this.memory;
   let all;
   if(section==="witnesses")all=a.witnesses;
+  else if(section==="textOperators"){
+   const obs=this.brain.observedTransformations;
+   const epoch=(obs?.operators?.size||0)+":"+(obs?.seen||0);
+   if(this._textOperatorsCache?.epoch!==epoch){
+    this._textOperatorsCache={epoch,items:[...obs?.operators?.values()||[]].map(r=>({
+     key:r.key,action:r.kind,from:r.from,to:r.to,left:r.left,right:r.right,
+     evidence:r.evidence,observedSupport:r.sourceObservations,
+     admittedAsPhysicalTransformation:false,
+     neededBeforeCrossWorldWalk:"Independent action-labelled before/after effects in two worlds"
+    }))};
+   }
+   all=this._textOperatorsCache.items;
+  }
+  else if(section==="textStates")all=[...this.brain.observedTransformations?.records?.values()||[]]
+   .filter(x=>Array.isArray(x.tokens)).map(x=>({
+     id:x.id,text:renderObservation(x.tokens),
+     occurrences:x.count,source:"original-V17-native-text-window",
+     heldInActiveMemory:true,causalActionNotInferred:true
+   }));
+  else if(section==="axes")all=[...this.brain.hypermazeLearnedAxes?.entries()||[]].map(([key,r])=>({
+   action:key,observations:r.count,meanDelta5D:Array.isArray(r.sum)&&r.count?
+     r.sum.map(v=>v/r.count):null,
+   source:"original-Brain geometry observations; not invented by V30"
+  }));
   else if(section==="attempts")all=a.attempts.map(x=>({
    id:x.id,episodeId:x.episodeId,tag:x.tag,found:x.found,
    reason:x.reason,goal:x.goal,start:x.start,predicted:x.predicted,
