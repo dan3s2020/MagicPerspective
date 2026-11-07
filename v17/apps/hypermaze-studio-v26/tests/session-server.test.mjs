@@ -36,10 +36,14 @@ test("real corpus cold-start, measured learning, frozen 50 unseen worlds, pause/
    const json=JSON.parse(await fs.readFile(checkpoint.path,"utf8"));
    assert.equal(json.model.rules.length,6);
    assert.ok(Number.isInteger(json.rngState));
+   assert.ok(json.last?.graph?.nodes?.length>=64,"Replay graph and trace must survive checkpoint");
+   assert.ok(json.lastRaw?.before?.length>=1024,"Checkpoint must preserve full raw text");
    const restored=new StudioSession({corpusPath:DEFAULT_CORPUS,checkpointDir:dir,
      config:{axes:6,words:1024,seed:74129}});
    await restored.initialize();await restored.restore(checkpoint.path);
    assert.deepEqual(restored.model.export(),session.model.export());
+   assert.deepEqual(restored.last?.initialPath,session.last?.initialPath);
+   assert.deepEqual(restored.lastRaw?.before,session.lastRaw?.before);
    assert.equal(restored.random.state(),session.random.state());
    const a=session.step(),b=restored.step();
    assert.deepEqual(a.task.tokens,b.task.tokens);
@@ -80,6 +84,7 @@ test("new HTML/CSS/JS served by local API, controls, text upload, export and hea
    assert.match(html,/Hypermaze/);assert.match(html,/id="graphCanvas"/);
    assert.match(html,/id="startBtn"/);assert.match(html,/id="evalBtn"/);
    assert.match(css,/\.canvas-frame/);assert.match(js,/new EventSource/);
+   assert.match(js,/axisPicker\.innerHTML/,"Axis slice selector must show actual learnt dimensions");
    const health=await (await fetch(base+"/api/health")).json();
    assert.equal(health.ok,true);
    const stepped=await post("/api/control",{action:"step"});
@@ -92,6 +97,8 @@ test("new HTML/CSS/JS served by local API, controls, text upload, export and hea
    assert.equal(evaled.data.result.stats.holdoutWorlds,6);
    const exported=await (await fetch(base+"/api/export")).json();
    assert.equal(exported.stats.trainWorlds,1);
+   assert.ok(exported.fullText?.before?.length>=512,"Export must not truncate raw text");
+   assert.ok(exported.learnerCheckpoint?.rules?.length>0);
    const save=await post("/api/control",{action:"save"});
    assert.ok(save.data.result.path.endsWith(".json"));
    const restore=await post("/api/control",{action:"restore",file:save.data.result.path});
