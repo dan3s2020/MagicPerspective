@@ -30,6 +30,8 @@ jobs:
           name: v31-causal-learning-curve-logs
           path: v17/artifacts/v31-learning-curve*
           if-no-files-found: warn
+      - name: Native full-text 1800-token, provenance, search-bounds, and no-shortcut tests
+        run: node --test v17/tests/v31-long-complete-text-path.test.mjs
       - name: Original V30, V22 and V19 regression tests remain intact
         run: |
           node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs
