@@ -227,6 +227,9 @@ const worldsOnce = async (record) => {                                     // on
   if (gpuSet) { shot(true); throw Error("CUDA world execution stopped: " + (gpuError || "CUDA backend was not initialized") + ". Refusing to continue only hypertext while selected maze/transform worlds stall."); } // fail closed
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
+// Eight FINISHED real batches, never queued/read rows, give a stable
+// throughput measurement independent of UI animation or checkpoint size.
+const recentTextBatchThroughput = [];
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 8)));
 const processGpuText = async (exs, meta) => {
   const profileText = process.env.MP_PROFILE_TEXT === "1";
@@ -283,6 +286,15 @@ const processGpuText = async (exs, meta) => {
   if ((MAZE || TRANS || MAPTEXT) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   if (brain.textGpu) {
     const end = performance.now();
+    recentTextBatchThroughput.push({
+      exercises: exs.length,
+      characters: exs.reduce((sum, e) => sum + e.length, 0),
+      milliseconds: Math.max(1, end - profStart)
+    });
+    if (recentTextBatchThroughput.length > 8) recentTextBatchThroughput.shift();
+    const windowMs = recentTextBatchThroughput.reduce((sum, x) => sum + x.milliseconds, 0);
+    const windowExercises = recentTextBatchThroughput.reduce((sum, x) => sum + x.exercises, 0);
+    const windowCharacters = recentTextBatchThroughput.reduce((sum, x) => sum + x.characters, 0);
     brain.textGpu.hostMs = {
       card: +(profCardEnd - profStart).toFixed(2),
       originalGraphTrace: +(profTraceEnd - profCardEnd).toFixed(2),
@@ -294,6 +306,11 @@ const processGpuText = async (exs, meta) => {
       textExercises: exs.length,
       exercisesPerSecond: +(exs.length * 1000 / Math.max(1, end - profStart)).toFixed(4),
       targetExercisesPerSecond: 100,
+      measuredWindowBatches: recentTextBatchThroughput.length,
+      measuredWindowExercises: windowExercises,
+      sustainedExercisesPerSecond: +(1000 * windowExercises / Math.max(1, windowMs)).toFixed(4),
+      sustainedCharactersPerSecond: +(1000 * windowCharacters / Math.max(1, windowMs)).toFixed(2),
+      target100ReachedOnMeasuredWindow: windowExercises > 0 && 1000 * windowExercises / Math.max(1, windowMs) >= 100,
       charactersPerSecond: +((exs.reduce((sum, e) => sum + e.length, 0) * 1000) / Math.max(1, end - profStart)).toFixed(2),
       note: "wall-clock per completed batch; card includes GPU+Python synchronization and suffix-index rebuild; not a GPU utilization sensor",
       detailedCudaSync: profileText
