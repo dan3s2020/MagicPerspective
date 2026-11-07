@@ -25,7 +25,7 @@ const every=Math.max(1,Number(flag("save-every","5000")));
 const maxChars=Math.max(64,Number(flag("row-chars","20000")));
 const seed=Number(flag("seed","17"));
 const output=flag("out");
-const datasetPath=flag("data"),txtPath=flag("text");
+const datasetPath=flag("data"),txtPath=flag("text"),importBrain=flag("import-brain");
 if(!output||!!datasetPath===!!txtPath||
   ![maxRows,evalChars,every,maxChars,seed].every(Number.isFinite)){
  console.error("Usage: node v17/research/learned-axes/train-real-text.mjs --data D:\\training\\OpenThoughts3-1.2M --out D:\\MagicPerspective-Real-Gating --max-rows 50000 --resume");
@@ -37,16 +37,19 @@ const input={kind:datasetPath?"parquet":"text",path:path.resolve(datasetPath||tx
 const saveFile=path.join(out,"brain-real-text.v8"),manifestFile=path.join(out,"progress.json");
 const resultFile=path.join(out,"heldout-results.json"),eventsFile=path.join(out,"train-events.jsonl");
 const resume=has("resume"),evalOnly=has("eval-only");
+if(resume&&importBrain)throw Error("Choose either --resume or --import-brain, not both.");
+if(importBrain&&!fs.existsSync(path.resolve(importBrain)))throw Error("Imported Brain checkpoint not found: "+importBrain);
 if(!resume&&fs.existsSync(out)&&fs.readdirSync(out).length)
  throw Error("Output folder is not empty; refusing overwrite. Specify --resume to continue an existing isolated run.");
 fs.mkdirSync(out,{recursive:true});
 if(resume&&(!fs.existsSync(saveFile)||!fs.existsSync(manifestFile)))
  throw Error("Resume requires both the exact saved Brain and progress.json.");
 let manifest=resume?JSON.parse(fs.readFileSync(manifestFile,"utf8")):
- {version:1,input,seed,cursor:-1,trained:0,chars:0,created:new Date().toISOString(),complete:false};
+ {version:1,input,seed,cursor:-1,trained:0,chars:0,created:new Date().toISOString(),complete:false,
+   importedCheckpoint:importBrain?path.resolve(importBrain):null};
 if(manifest.version!==1||JSON.stringify(manifest.input)!==JSON.stringify(input)||manifest.seed!==seed)
  throw Error("Resume input/seed mismatch. Refusing to combine unrelated training.");
-let brain=resume?Brain.load(saveFile):new Brain({seed,rules:"winner"});
+let brain=resume?Brain.load(saveFile):importBrain?Brain.load(path.resolve(importBrain)):new Brain({seed,rules:"winner"});
 const begun=Date.now();
 const trim=row=>String(row??"").slice(0,maxChars);
 function consume(raw,position){
@@ -153,7 +156,8 @@ const chosen=selectedVal.gated.accuracy>selectedVal.native.accuracy?"learned":"n
 const deployedAccuracy=chosen==="learned"?selectedTest.gated.accuracy:baseline.native.accuracy;
 const report={
  schema:1,time:new Date().toISOString(),trainingSource:input,evalSource,
- nativeBrain:true,trainingRows:manifest.trained,trainingChars:manifest.chars,
+ nativeBrain:true,importedCheckpoint:manifest.importedCheckpoint||null,
+ trainingRows:manifest.trained,trainingChars:manifest.chars,
  actualObservedTextTokens:pre,observedEditOperators:brain.observedTransformations.operators.size,
  causalAxes:"context-history lengths learned from corpus; no claim of discovered physical axes",
  gate,validation:{native:selectedVal.native,learned:selectedVal.gated,
