@@ -216,6 +216,36 @@ export class RealTrainer{
  }
 
 }
+// Probe the actual original V17 server before showing its UI.
+// Never claim a running V17 instance just because the V24 page is live.
+function probeNativePort(port){
+ return new Promise(resolve=>{
+  if(!Number.isInteger(port)||port<1024||port>65535)return resolve(null);
+  const req=http.get({host:"127.0.0.1",port,path:"/graphs",timeout:550},res=>{
+   if(res.statusCode!==200){res.resume();return resolve(null);}
+   let data="";
+   res.setEncoding("utf8");
+   res.on("data",chunk=>{data+=chunk;if(data.length>131072)req.destroy();});
+   res.on("end",()=>{try{
+    const j=JSON.parse(data);
+    if(!Array.isArray(j.graphs)||!Array.isArray(j.worlds))return resolve(null);
+    resolve({online:true,port,graphs:j.graphs.length,worlds:j.worlds,
+      url:"http://127.0.0.1:"+port+"/transcend/torus-aether/ui/index.html?live=1"});
+   }catch{resolve(null);}});
+  });
+  req.on("error",()=>resolve(null));
+  req.on("timeout",()=>req.destroy());
+ });
+}
+async function discoverNativePort(preferred){
+ const ports=[preferred,8862,8866,8841,8840].filter((p,i,a)=>
+   Number.isInteger(p)&&a.indexOf(p)===i);
+ for(const port of ports){
+  const state=await probeNativePort(port);if(state)return state;
+ }
+ return {online:false,reason:"V17_SERVER_OFFLINE",
+   hint:"Start original V17 independently; the V24 shape and metrics remain available."};
+}
 export async function makeHTTP(trainer,{port=8899,host="127.0.0.1"}={}){
  const html=await fsp.readFile(path.join(dirname,"real-live.html"),"utf8");
  const server=http.createServer(async(req,res)=>{
@@ -242,6 +272,10 @@ export async function makeHTTP(trainer,{port=8899,host="127.0.0.1"}={}){
       steps:t.route?.length||0,question:t.question.slice(0,120)})));
    if(req.method==="GET"&&u.pathname==="/api/events")return send(res,200,trainer.events);
    if(req.method==="GET"&&u.pathname==="/api/health")return send(res,200,{ok:trainer.mode!=="error",mode:trainer.mode});
+   if(req.method==="GET"&&u.pathname==="/api/native"){
+    const requested=u.searchParams.has("port")?Number(u.searchParams.get("port")):null;
+    return send(res,200,await discoverNativePort(Number.isInteger(requested)?requested:null));
+   }
    if(req.method==="POST"){
     let content="";for await(const part of req){content+=part;
      if(content.length>100000){send(res,413,{error:"Request too large"});return;}}
