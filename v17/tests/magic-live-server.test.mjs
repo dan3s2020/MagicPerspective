@@ -83,9 +83,10 @@ test("ACTUAL native V17 text: responsive magical UI, live SSE, training, frozen 
   assert.doesNotMatch(page,/Math.random\(\).*fake|setInterval\([^)]*addFake/i);
   const es=await fetch(s.base+"/api/events");
   assert.equal(es.headers.get("content-type").startsWith("text/event-stream"),true);
-  const received=await es.body.getReader().read();
+  const reader=es.body.getReader();
+  const received=await reader.read();
   assert.match(new TextDecoder().decode(received.value),/^data:/);
-  await es.body.cancel();
+  await reader.cancel();
   await command(s,"start");
   const observed=await poll(s,x=>x.state.finished&&x.state.rows===12);
   assert.ok(observed.model.tokens>0);
