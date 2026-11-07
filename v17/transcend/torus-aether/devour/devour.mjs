@@ -27,7 +27,12 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --resume continues every brain from its save; /reset (the page's button) starts every brain again from nothing
 // many worlds at once on the GPU (gpu/worlds_gpu.py): --gpu cuda:0|cuda:1|cpu|off, --gpu-worlds N (no limit here),
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
-let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 2), textChunk: +arg("gpu-text-chunk", 128), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
+let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0),
+  textBatch: +arg("gpu-text-batch", 2),textChunk: +arg("gpu-text-chunk", 128),
+  textPoolMB: +arg("gpu-pool-mb", 128),
+  prefetchExercises: +arg("gpu-prefetch-exercises", 32),
+  prefetchMaxBytes: +arg("gpu-prefetch-bytes", 24000000),
+  vram:+arg("vram",0),util:+arg("gpu-util",100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
 for (const x of worldsArg) if (!["text", "maze", "transform", "selfcode"].includes(x)) throw Error("unknown world " + x + " (text, maze, transform, selfcode)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
@@ -226,7 +231,7 @@ http.createServer((req, res) => {
     for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
   if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform", "selfcode"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
-    for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
+    for (const k of ["device", "worlds", "vram", "util", "textBatch", "textPoolMB", "prefetchExercises", "prefetchMaxBytes"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
   // Every recorded training episode is stored append-only in its real
   // native worker journal; read only a bounded byte range from a known path.
