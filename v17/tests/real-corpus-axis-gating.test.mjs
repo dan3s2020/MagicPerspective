@@ -93,6 +93,8 @@ test("REAL existing V17 documentation feeds original Brain + gated evaluation; s
   assert.ok(r3.trainingRows>=r2.trainingRows);
   assert.ok(r3.finalTest.tokens>0);
   assert.equal(r3.modelMutationsDuringTest,0);
+  assert.equal(Object.values(r3.observedEditKinds).reduce((a,b)=>a+b,0),r3.observedEditOperators);
+  assert.ok(r3.observedEditExamples.every(e=>e.evidence&&e.support>0));
   console.log("REAL_DOCUMENTS_FULL_PARTITION",JSON.stringify({
     rows:r3.trainingRows,observedTokens:r3.actualObservedTextTokens,
     operators:r3.observedEditOperators,heldout:r3.finalTest.tokens,
