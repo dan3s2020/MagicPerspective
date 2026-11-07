@@ -48,7 +48,11 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   "She is happy.",
   "She is tired.",
   "He is tired.",
-  "He is calm."
+  "He is calm.",
+  "Știința este calmă.",
+  "Știința este rapidă.",
+  "Experiența este rapidă.",
+  "Experiența este stabilă."
  ].join("\n")+"\n","utf8");
  const port=await freePort(),url="http://127.0.0.1:"+port;
  const command=[
@@ -97,7 +101,22 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.equal(result.body?.frames[0]?.worldActionsExecuted,0);
   assert.equal(result.body?.externalSemanticGoalValidated,false);
   assert.equal(result.exactUnseenLargeAnswerProven,false);
+  // The REAL original V17 native worker must retain Romanian diacritics
+  // in the observed world, and infer a completely unseen Unicode goal.
+  const unicodeGoal=new URLSearchParams({w:"0",
+   start:"Experiența este stabilă.",required:"Știința,stabilă",execute:"1"});
+  const unicode=await(await fetch(url+"/native-hypermaze?"+unicodeGoal,
+   {method:"POST"})).json();
+  assert.equal(unicode.found,true,JSON.stringify(unicode).slice(0,1300));
+  assert.equal(unicode.predicted,"Știința este stabilă.");
+  assert.equal(unicode.plannedBeforeFirstAction,true);
+  assert.equal(unicode.referenceAnswerProvided,false);
+  assert.equal(unicode.body?.executedFinal,"Știința este stabilă.");
   const savedSnapshot=Brain.load(save);
+  assert.equal(savedSnapshot.observedTransformations.containsSentence("Știința este calmă."),true,
+   "The original native text-world learner lost real Romanian diacritics");
+  assert.equal(savedSnapshot.observedTransformations.containsSentence("Știința este stabilă."),false,
+   "Frozen Unicode target was leaked to actual Brain training");
   assert.ok(savedSnapshot.disc.attract(KIND.target)>.2);
   assert.ok(savedSnapshot.noiseAgent);
   assert.ok(savedSnapshot.observedTransformations.seen>=4);
@@ -116,6 +135,8 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
    preactionGlobalShape:result.initialShape,
    actionsActuallyExecuted:result.body.actions,
    originalNoisePolicy:!!savedSnapshot.noiseAgent,
+   rawUnicodeTrainingPreserved:true,
+   predictedUnseenRomanianState:unicode.predicted,
    exactLongUnseenText100PercentProven:false,
    CUDAHardwareBenchmarkNotYetRun:true,
    noNewUIControls:true
