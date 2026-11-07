@@ -216,9 +216,10 @@ export class LearnedPathMemory {
    examples:copy(this.examples),configuration:{minPerAction:this.minPerAction,
    maxExpanded:this.maxExpanded,maxSamples:this.maxSamples}};}
  static restore(state){
-  if(state?.version!==1||!state.model?.actions)throw Error("Unknown model checkpoint schema");
+  if(state?.version!==1||!Array.isArray(state.examples))throw Error("Checkpoint missing full observed-transition ledger");
+  if(state.model!==null&&!state.model?.actions)throw Error("Invalid trained model in checkpoint");
   const m=new LearnedPathMemory(state.configuration||{});
-  m.model=copy(state.model);
+  m.model=state.model?copy(state.model):null;
   m.examples=Array.isArray(state.examples)?copy(state.examples):[];
   if(state.samples>0&&!Array.isArray(state.examples))
    throw Error("Old checkpoint lacks the training ledger; refusing partial resume");
