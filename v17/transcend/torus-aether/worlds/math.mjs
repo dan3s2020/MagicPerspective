@@ -19,7 +19,7 @@ export const equalRational = (u, v) => u.n === v.n && u.d === v.d;
 function state(stage, a, b, c) { return Object.freeze({stage, a, b, c}); }
 function equivalentSolution(s) {
   if (!s || s.a === 0) throw new Error("Degenerate equation needs a separate goal class");
-  return overInteger(minusInteger(s.c, s.b), s.a);
+  return s.stage === "factored" ? minusInteger(overInteger(s.c, s.a), s.b) : overInteger(minusInteger(s.c, s.b), s.a);
 }
 function sameState(u, v) {
   return Boolean(u && v && u.stage === v.stage && u.a === v.a && u.b === v.b && equalRational(u.c, v.c));
