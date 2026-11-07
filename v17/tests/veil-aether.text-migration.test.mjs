@@ -77,7 +77,7 @@ test("original V17 Q/A learning resumes ON TOP OF intact V20 and V21 hypermaze e
   assert.ok(cognitive>=60,"Legacy V20 documents not really observed");
   const oldEdges=TextHypermaze.restore(old.hypermaze).edges.size;
   await worker.stop();worker=null;
-  worker=await launch({out,input,worlds:"text,hypertext,maze,transform",port:await freePort(),resume:true});
+  worker=await launch({out,input,worlds:"text,hypertext,cognitivemap,maze,transform",port:await freePort(),resume:true});
   graph=await worker.until(g=>g.chars>1500&&g.exercises>20&&g.hypermaze?.documents>=cognitive,130000);
   assert.ok(graph.chars>1500,"Original text learner did not consume actual Q/A characters");
   assert.ok(graph.exercises>20,"V17 original exercise counter must advance");
@@ -88,6 +88,10 @@ test("original V17 Q/A learning resumes ON TOP OF intact V20 and V21 hypermaze e
   const recovered=Brain.load(saved);
   assert.ok(recovered.chars>0&&recovered.exercises>0);
   assert.ok(recovered.align?.mem.n>0,"Original AligningGraph memory was not trained");
+  assert.equal(recovered.cognitiveMap?.documents,cognitive,
+    "Newly enabled original V19 cognitive atlas must absorb ALL old V20 corpus documents while V20/V21 skip duplicates");
+  assert.ok(recovered.cognitiveMap?.rules?.length!==0,"V19 learned atlas should not be missing");
+
   assert.equal(recovered.cognitiveDocuments,cognitive,"Must not lose or duplicate V20 corpus evidence");
   assert.ok(TextHypermaze.restore(recovered.hypermaze).edges.size>=oldEdges);
   assert.ok(TextHypermaze.restore(recovered.hypermaze).veil.nodes.length>0);
