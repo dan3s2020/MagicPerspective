@@ -435,6 +435,16 @@ const processGpuText = async (exs, meta) => {
 parentPort.on("message", m => {
   // On-demand PAGE through the ORIGINAL persistent six-scale graph. No
   // static 220-edge cap, no answer generated and no native memory update.
+  if(m?.evidenceGatedText){
+    const {id,start="",required=[],maxSteps=8,maxExpanded=6000}=m.evidenceGatedText;
+    try{
+      const result=brain.planEvidenceGatedTextRoute(start,required,{maxSteps,maxExpanded});
+      parentPort.postMessage({type:"chat",id,evidenceGatedText:true,result});
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,evidenceGatedText:true,error:err.message});
+    }
+    return;
+  }
   if(m?.nativeAtlasPage){
     const {id,scale=0,offset=0,limit=80}=m.nativeAtlasPage;
     try{
