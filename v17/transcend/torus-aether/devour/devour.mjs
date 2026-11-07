@@ -21,6 +21,7 @@ import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {atlasPath,readAtlasPage,appendAtlasEvent} from "./atlas-journal.mjs";
+import {answerForensics} from "./atlas-answer-forensics.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -245,7 +246,22 @@ http.createServer((req, res) => {
             return json(res,{error:"Strict unknown-answer generation budget must be integer 1..200000, fixed BEFORE scoring"});
         }
         opts.list = list.map(t => limitExerciseBytes(toB(t), requestedMax)); delete opts.text; }
-      const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
+      const id = ++ev.id; ev.wait.set(id, r => {
+        // Post-hoc ONLY: the ORIGINAL frozen evaluator has already written
+        // every first-try answer. No reference text enters training/generation.
+        // Character output is from AligningGraph.write(), NOT Discoverer.shape().
+        if (m.kind === "text" && opts.verifiedUniqueHeldout === true &&
+            r.heldoutAnswerComplete === true && !r.error) {
+          try {
+            for (const evidence of answerForensics(r, opts.list, {worker: sl.w}))
+              appendAtlasEvent(atlasPath(saveOf(sl)), evidence);
+          } catch (err) {
+            // Never falsify metrics or change frozen scoring on an audit error.
+            r.atlasAnswerForensicsError = err.message;
+          }
+        }
+        return json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined});
+      }); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
     const sl = slots.find(x => x.w === +q.get("w")), sizes = (q.get("sizes") || "7,9,11,13,15,17,19,21,25,31,41,51").split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per = Math.max(1, Math.min(10, +q.get("per") || 1));
     if (!sl) return json(res, {error: "nu există graful"});
