@@ -7,10 +7,12 @@ if(run){
   const answer=$("v31PathAnswer"),status=$("v31PathStatus"),evidence=$("v31PathEvidence");
   const maxTokens=Number($("v31PathTokens").value),
     maxNodes=Number($("v31PathNodes").value),
-    maxDepth=Number($("v31PathDepth").value);
+    maxDepth=Number($("v31PathDepth").value),
+    minVerifiedContexts=Number($("v31PathCausal").value);
   const question=$("v31PathInput").value;
   if(!question||question.length>131072||![maxTokens,maxNodes,maxDepth].every(Number.isSafeInteger)||
-    maxTokens<1||maxTokens>2048||maxNodes<2||maxNodes>20000||maxDepth<1||maxDepth>256){
+    maxTokens<1||maxTokens>2048||maxNodes<2||maxNodes>20000||maxDepth<1||maxDepth>256||
+    !Number.isSafeInteger(minVerifiedContexts)||minVerifiedContexts<0||minVerifiedContexts>32){
     status.textContent="EROARE: textul trebuie să fie prezent; maxTokens ≤2048, maxNodes ≤20000, maxDepth ≤256.";
     return;
   }
@@ -22,7 +24,7 @@ if(run){
     // only AFTER this native frozen path has already been recorded.
     const res=await fetch("/path-answer",{
       method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({w:worker,question,maxTokens,maxNodes,maxDepth}),
+      body:JSON.stringify({w:worker,question,maxTokens,maxNodes,maxDepth,minVerifiedContexts}),
       cache:"no-store"
     });
     if(!res.ok)throw Error("HTTP "+res.status);
@@ -38,6 +40,7 @@ if(run){
       frozen:data.frozen,trainingModified:data.trainingModified,
       referenceWasNotProvided:data.referenceWasNotProvided,
       nodesConsidered:data.nodesConsidered,candidateEdges:data.candidateEdges,
+      requiredIndependentPhysicalContexts:minVerifiedContexts,
       path:data.path,diagnostics:data.diagnostics,
       missingReason:data.reason
     },null,2);
