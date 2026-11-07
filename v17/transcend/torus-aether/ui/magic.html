@@ -72,6 +72,20 @@ main{min-width:0;padding:22px clamp(14px,2.5vw,35px) 34px}.head{display:flex;jus
       <div id="ops" class="list scroll"><div class="dim">Se așteaptă operații observate din corpus.</div></div>
       <div class="controlbar"><button id="autoProbe">⟡ Caută o țintă proprie</button><span id="probeStatus" class="dim">Fără țintă artificială</span></div>
       <div id="probe" class="readout scroll">Nicio probă încă. Căutarea nu primește răspunsul corect drept intrare.</div>
+      <div class="panelbody" style="border-top:1px solid var(--line)">
+        <div class="eyebrow">Axe matematice cuplate · din textul real</div>
+        <p class="side-detail" id="mathStats">Se așteaptă perechi numerice observate. Zero exemple = zero legi pretinse.</p>
+        <div class="eyebrow">Formă numerică înainte de acțiune</div>
+        <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr;gap:6px;margin-top:8px">
+          <input id="mathStart" value="2 * 3 = 6" aria-label="Expresia numerică inițială">
+          <input id="mathIndex" type="number" min="0" max="60" step="1" value="0" aria-label="Indicele numeric al obiectivului">
+          <input id="mathValue" type="number" min="0" max="100000" step="1" value="4" aria-label="Valoarea numerică dorită">
+        </div>
+        <p class="dim" style="font-size:10px">Indicele este poziția tokenului (de ex. 0, 2 sau 4 pentru „2 * 3 = 6”). Obiectivul nu conține răspunsul complet.</p>
+        <button id="mathPlan" style="margin:8px 0">✧ Prezice traseul în modelul observat</button>
+      </div>
+      <canvas id="mathPath" class="stage" style="height:150px" aria-label="Traseul numeric din transformări învățate"></canvas>
+      <pre id="mathOut" class="readout scroll">Nicio probă matematică reală încă.</pre>
     </div>
     <div class="panel">
       <div class="panelhead"><div class="eyebrow">04 / timp, energie și memorie</div><h2>Amprenta antrenării</h2><span class="tag">Telemetrie măsurată</span></div>
@@ -79,6 +93,8 @@ main{min-width:0;padding:22px clamp(14px,2.5vw,35px) 34px}.head{display:flex;jus
       <div class="panelbody">
         <div class="tags"><span class="tag cyan">● caractere</span><span class="tag gold">● transformări</span><span class="tag rose">● semnale de eroare</span></div>
         <div id="gpu" class="readout" style="padding:12px 0 0">CUDA: aștept informații de la worker.</div>
+        <div class="eyebrow" style="margin-top:14px">Perspective contextuale observate · selecția axelor</div>
+        <div id="scaleTrust" class="readout" style="padding:9px 0">Nu există încă date pe scările contextuale.</div>
         <div class="eyebrow" style="margin-top:14px">Ultimele caractere văzute de organism</div>
         <pre id="stream" class="mono" style="white-space:pre-wrap;overflow-wrap:anywhere;color:#bad8e5;max-height:130px;overflow:auto">Aștept corpusul real…</pre>
       </div>
