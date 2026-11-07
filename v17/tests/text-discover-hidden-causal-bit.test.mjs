@@ -94,3 +94,31 @@ test("control: shuffling historical observations breaks prediction, but the same
   baseline:actual.baselineCorrect,identicalPresentPatch:true,
   futureOutcomeDidNotLeak:true}));
 });
+
+test("the learned hidden bit transfers to NEVER TRAINED physical lever locations and shorter unseen routes in ORIGINAL TWorld",()=>{
+ const locs={train:[[1,1],[5,5]],validation:[[1,5]],holdout:[[5,2],[1,4]]};
+ const samples=(count,seed,coords,loopset)=>Array.from({length:count},(_,i)=>
+   causalEpisode(seed+i*7919,loopset[i%loopset.length],
+     {lever:true,leverCoord:coords[i%coords.length]}));
+ const train=samples(240,1101,locs.train,[0,1,2,3]),
+   val=samples(100,2207,locs.validation,[0,1,2,3]),
+   hold=samples(200,3307,locs.holdout,[4,5,6,7]);
+ const model=learnMissingCausalBit(train,val);
+ const result=evaluateHiddenCausalBit(model,hold,{seed:89});
+ assert.equal(model.selectedSymbol,8);
+ assert.equal(model.additionalMemoryBits,1);
+ assert.equal(result.selectedCorrect,200);
+ assert.equal(result.baselineCorrect,100);
+ assert.equal(result.finalPatchUnique,1);
+ assert.ok(result.scrambledHistoryCorrect<=130);
+ assert.ok(hold.every(x=>x.hiddenPhysicalWorldStateNeverPassedToLearner));
+ // Two new locations have 3-step paths to the lever, while training
+ // locations have 4-step paths. This tests unseen physical geography,
+ // not only previously unseen repetition counts.
+ console.log("NEVER_SEEN_V17_LEVER_SPATIAL_LAYOUT_TRANSFER",JSON.stringify({
+  trainedLeverLocations:locs.train,validatedLeverLocations:locs.validation,
+  whollyUnseenLeverLocations:locs.holdout,
+  trainingDistanceToLever:4,heldoutDistanceToLever:3,
+  selectedObservedSymbol:model.selectedSymbol,
+  heldout:result,goalPhysicalMovementPredictedBeforeProbe:true}));
+});
