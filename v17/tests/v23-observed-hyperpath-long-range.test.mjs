@@ -102,7 +102,9 @@ test("511 observed transformations fit the existing 512-node V22 evaluation budg
 });
 
 const taughtPhaseActions = (steps=48) => {
-  const m=new LearnedCognitiveMap();
+  // Opt-in larger state budget only for complete held-out document tests;
+  // default live V17 state limit stays exactly as before.
+  const m=new LearnedCognitiveMap({maxStateTokens:2048});
   // Learn the effects from short lived state/action contrasts; the long
   // held-out question and its complete target sentence NEVER appear in training.
   for(let i=0;i<steps;i++) {
@@ -124,7 +126,7 @@ test("48 consecutive original Discoverer actions solve an unseen 2048-token text
   const pre=JSON.stringify(m.export());
   assert.equal(m.examples.size,0,"The evaluation text must not enter observed sentence corpus");
   const plan=m.formSolution(novel,{slots:{0:"phase:"+steps}},
-    {maxNodes:100,maxDepth:64,temperature:0});
+    {maxNodes:100,maxDepth:64,trustedObservedActions:true,temperature:0});
   assert.equal(JSON.stringify(m.export()),pre,"Planning must not modify training evidence");
   assert.equal(plan.directOriginalMethod,"Discoverer.shape");
   assert.equal(plan.plannedBeforeAction,true);
@@ -157,10 +159,10 @@ test("48-step unseen long-text composition fails if causal action physics is abl
   const m=taughtPhaseActions(48);
   const novel=["phase:0",...Array.from({length:2047},(_,i)=>"new_"+i)];
   const goal={slots:{0:"phase:48"}};
-  const good=m.formSolution(novel,goal,{maxNodes:100,maxDepth:64});
+  const good=m.formSolution(novel,goal,{maxNodes:100,maxDepth:64,trustedObservedActions:true});
   assert.equal(good.found,true);
   m.rules.delete("advance:23");
-  const ablated=m.formSolution(novel,goal,{maxNodes:100,maxDepth:64});
+  const ablated=m.formSolution(novel,goal,{maxNodes:100,maxDepth:64,trustedObservedActions:true});
   assert.equal(ablated.found,false,"A missing learned action must break the route");
 });
 
@@ -168,12 +170,12 @@ test("real-world contradictory outcome invalidates the 48-step unseen plan",()=>
   const m=taughtPhaseActions(48);
   const novel=["phase:0",...Array.from({length:2047},(_,i)=>"unseen_"+i)];
   const good=m.formSolution(novel,{slots:{0:"phase:48"}},
-    {maxNodes:100,maxDepth:64});
+    {maxNodes:100,maxDepth:64,trustedObservedActions:true});
   assert.equal(good.found,true);
   m.observeActionResult({
     before:["phase:23","training-only-tail"], action:"advance:23",
     after:["phase:999","training-only-tail"],accepted:true});
   const invalid=m.formSolution(novel,{slots:{0:"phase:48"}},
-    {maxNodes:100,maxDepth:64});
+    {maxNodes:100,maxDepth:64,trustedObservedActions:true});
   assert.equal(invalid.found,false,"Conflicting transformation cannot be assumed traversable");
 });
