@@ -13,6 +13,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Python original text engine GPU allocation regression (no device needed)
+        run: |
+          python3 -m pip install --quiet numpy
+          python3 -m unittest discover -s v17/tests -p test_v21_gpu_text_allocation.py -v
       - name: V21 actual dataset consumption and percentage accounting (TXT, Parquet, workers)
         run: node --test v17/tests/veil-aether.dataset-progress.test.mjs
       - name: V21 observed contextual graph, pre-action shape, no-leak and preservation tests
