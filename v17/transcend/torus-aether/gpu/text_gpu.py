@@ -36,7 +36,17 @@ class X:                                         # numpy or torch, the same call
         if self.t: return torch.as_tensor(np.asarray(a), dtype={np.int64: torch.int64, np.int32: torch.int32, np.float32: torch.float32, np.uint8: torch.uint8, bool: torch.bool}[dt], device=self.dev)
         return np.asarray(a, dtype=dt)
     def tonp(self, a): return a.cpu().numpy() if self.t else a
-    def zeros(self, shape, dt=np.int64): return self.arr(np.zeros(shape, dtype=dt), dt) if self.t else np.zeros(shape, dtype=dt)
+    def zeros(self, shape, dt=np.int64):
+        if self.t:
+            # The original path allocated EVERY temporary tensor in NumPy
+            # host memory, then copied the zeros to the CUDA device:
+            # torch.as_tensor(np.zeros(...), device=self.dev).
+            # torch.zeros constructs the SAME values/dtype/shape directly
+            # on the existing device; no model math or training rule changes.
+            return torch.zeros(shape, dtype={np.int64: torch.int64, np.int32: torch.int32,
+                    np.float32: torch.float32, np.uint8: torch.uint8,
+                    bool: torch.bool}[dt], device=self.dev)
+        return np.zeros(shape, dtype=dt)
     def i64(self, a): return a.long() if self.t else a.astype(np.int64)
     def f32(self, a): return a.float() if self.t else a.astype(np.float32)
     def where(self, c, a, b): return torch.where(c, a, b) if self.t else np.where(c, a, b)
@@ -73,7 +83,7 @@ class Index:                                     # suffix array of the REVERSED 
         steps = max(1, int(np.ceil(np.log2(n + 1))) + 1)
         for k in range(maxK):
             c = ctx[:, k]; alive = (hi > lo) & (c >= 0)
-            if not bool(alive.any()): break
+            if not X.t and not bool(alive.any()): break  # avoid per-depth CUDA -> CPU synchronization
             def bound(strict):
                 a = lo.clone() if X.t else lo.copy(); b = hi.clone() if X.t else hi.copy()
                 for _ in range(steps):
