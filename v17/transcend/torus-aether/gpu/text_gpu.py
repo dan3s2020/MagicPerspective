@@ -204,7 +204,10 @@ class TextCard:
             sy = np.full(Q, -1, dtype=np.int64); sk = np.zeros(Q, dtype=np.int64); sfar = np.zeros(Q, dtype=np.int64)
             fsy = np.full(Q, -1, dtype=np.int64); fsk = np.zeros(Q, dtype=np.int64); fsfar = np.zeros(Q, dtype=np.int64)
             for q, (i, o) in enumerate(zip(Pi, Oi)):
-                e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - L:i][::-1] if L else [];  # exact context, O(maxK), NOT reverse O(i) entire preceding document ys_true[q] = e[i]
+                e = exs[o]
+                L = min(i, self.maxK)
+                ctx[q, :L] = e[i - L:i][::-1] if L else []  # O(maxK), identical original context
+                ys_true[q] = e[i]  # CRITICAL: original real next symbol, never synthetic zero
             for q, (i, o) in enumerate(zip(Pi, Oi)):
                 h = self._selfidx(exs, o, progress=progress); r = h.get(i)
                 if r: sy[q], sk[q], sfar[q], fsy[q], fsk[q], fsfar[q] = r
