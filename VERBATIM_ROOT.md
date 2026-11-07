@@ -63,3 +63,8 @@ The user requested **all not-yet-recorded conversation added verbatim on main al
 **What is actually verified:** The isolated `experiment/V17-LIVE-BODY-PERSPECTIVE-20261106` branch passed V17 integration, held-out, checkpoint and original HTTP UI tests on GitHub Windows/Linux. These are *limited software claims*; the personal Windows/CUDA machine was not used here and no universal transfer-to-text or discovered physical hyperdimension is proven.
 
 **Full transcript still UNVERIFIED / release gate BLOCKED.** Some older and intervening USER/ASSISTANT turns, original screenshots, tool/UI artifacts, native IDs and exact timestamp/binary fidelity remain unavailable. Do not change `verbatim/coverage.json`, `verbatim/continuation-index.json` or `implementation-mirror.json` to declare completeness without the authentic source and clause-level verification. No code is merged onto `main` by these documentation additions.
+
+
+## 2026-11-07: exact additional user regression / all-byte integrity and original motor
+
+[Exact 2026-11-07 directive](./verbatim/2026-11-07-TINYSTORIES-CRITICAL-REGRESSION-USER-VERBATIM.txt) and [documented TinyStories unauthorized motor substitution](./docs/INCIDENT_TINYSTORIES_UNAUTHORIZED_MOTOR_REPLACEMENT_20261107.md). The directive is preserved literally as one independently recovered USER turn; do not falsely certify the whole conversation. Full system acceptance remains BLOCKED; no native code or historical bytes were overwritten to record it.
