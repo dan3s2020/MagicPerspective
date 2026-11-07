@@ -66,6 +66,7 @@ export class LearnedCognitiveMap {
     this.compactedExternalEdges=0;
     this.sentenceObservations=0;this.compactedExamples=0;this.compactedRules=0;
     this.documents=0;this.evaluations=0;
+    this.segmentedLongSentences=0;this.observedSegmentBridges=0;
     this.last=null;this.version=1;
     this.onAtlasEvidence=null;this.activeObservation=null; // transient, not part of saved Brain
   }
@@ -74,10 +75,22 @@ export class LearnedCognitiveMap {
     if(typeof text!=='string')throw Error('Expected observed world text');
     const parts=text.match(/[^.!?\n]+[.!?]?/gu)||[];
     this.activeObservation=id;
-    let added=0,rulesBefore=this.rules.size;
+    let added=0,rulesBefore=this.rules.size,prevEnd=null,sentenceNumber=0;
     for(const part of parts){
-      const tokens=tokenizeWorld(part);if(!tokens.length||tokens.length>96)continue;
+      const tokens=tokenizeWorld(part);if(!tokens.length)continue;
+      if(prevEnd!==null){
+        // This is REAL contiguous source ordering, NOT a hallucinated
+        // semantic edit. Links the sentence slices as one continuous
+        // world even when no individual exercise contains every rule.
+        this.observedSegmentBridges++;
+        this.onAtlasEvidence?.({type:"segment-bridge",world:"text",
+          documentId:id,kind:"observed-adjacent-sentences",
+          fromSentence:sentenceNumber-1,toSentence:sentenceNumber,
+          lastTokens:prevEnd,firstTokens:tokens.slice(0,32),
+          evidenceLevel:"OBSERVED_DOCUMENT_CONTINUITY_NOT_ACTION"});
+      }
       if(this.observeSentence(tokens,{source:id}))added++;
+      prevEnd=tokens.slice(-32);sentenceNumber++;
     }
     this.documents++;
     this.activeObservation=null;
@@ -86,7 +99,31 @@ export class LearnedCognitiveMap {
   }
   observeSentence(input,{source=null}={}){
     const t=Array.isArray(input)?input.slice():tokenizeWorld(input);
-    if(!t.length||t.length>96||t.some(s=>typeof s!=='string'))return false;
+    if(!t.length||t.some(s=>typeof s!=='string'))return false;
+    if(t.length>96){
+      // Original V19 silently DROPPED every >96-token sentence. Preserve
+      // the entire observed ordering as overlapping 96-token pages (32-token
+      // bridges). Every token appears in at least one real observed page;
+      // the full original record remains in the dataset and the atlas
+      // records each explicit bridge, without inventing an action edge.
+      this.segmentedLongSentences++;
+      let added=false;
+      for(let start=0;start<t.length;start+=64){
+        const window=t.slice(start,start+96);
+        if(this.observeSentence(window,{source:source===null?null:String(source)+"@"+start}))added=true;
+        if(start){
+          this.observedSegmentBridges++;
+          this.onAtlasEvidence?.({type:"segment-bridge",world:"text",
+            documentId:this.activeObservation??source,
+            kind:"observed-overlap-32",fromOffset:start-64,toOffset:start,
+            fromWindowTokens:t.slice(start-64,start+32),
+            toWindowTokens:window,
+            overlapTokens:t.slice(start,start+32),
+            evidenceLevel:"OBSERVED_CONTIGUOUS_TOKENS_NOT_INFERRED_TRANSFORM"});
+        }
+      }
+      return added;
+    }
     const id=key(t);if(this.examples.has(id))return false;
     if(this.examples.size>=this.limits.maxExamples)this.compactObservedExamples();
     this.sentenceObservations++;
@@ -368,7 +405,7 @@ export class LearnedCognitiveMap {
   }
   buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth,transfer=true}={}){
     const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
-    if(!start.length||start.length>96||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
+    if(!start.length||start.length>32768||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits: 1..32768 tokens, 2..20000 nodes, 1..256 depth; never silently truncate an input');
     LearnedCognitiveMap.matchGoal(start,goal);
     const queue=[start],byKey=new Map([[key(start),0]]),out=[[]],depth=[0];
     let rejected=0,truncated=false,imagined=0,portableCount=0;
@@ -527,6 +564,8 @@ export class LearnedCognitiveMap {
   }
   report(){return {version:1,documents:this.documents,observedSentences:this.examples.size,
     inducedActionRules:this.rules.size,sentenceObservations:this.sentenceObservations,
+    segmentedLongSentences:this.segmentedLongSentences,
+    observedSegmentBridges:this.observedSegmentBridges,
     compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
     activeSentenceMemory:this.examples.size,externalTransitionObservations:this.externalObservations,
     observedDomainEdges:this.externalEdges.size,compactedExternalEdges:this.compactedExternalEdges,
@@ -535,7 +574,10 @@ export class LearnedCognitiveMap {
     rejectedActions:[...this.rules.values()].reduce((s,r)=>s+r.rejected,0),last:this.last,
     interpretation:'Rules learned from contrasts are hypotheses until actions are observed. No next-token trainer.'};}
   export(){return {version:1,limits:this.limits,documents:this.documents,
-    sentenceObservations:this.sentenceObservations,compactedExamples:this.compactedExamples,
+    sentenceObservations:this.sentenceObservations,
+    segmentedLongSentences:this.segmentedLongSentences,
+    observedSegmentBridges:this.observedSegmentBridges,
+    compactedExamples:this.compactedExamples,
     compactedRules:this.compactedRules,
     examples:[...this.examples],skeletons:[...this.skeletons].map(([k,m])=>[k,[...m]]),
     shorterIndex:[...this.shorterIndex],
@@ -546,6 +588,8 @@ export class LearnedCognitiveMap {
     if(data?.version!==1)throw Error('Incompatible cognitive map checkpoint version');
     const m=new LearnedCognitiveMap(data.limits);m.documents=data.documents;
     m.sentenceObservations=data.sentenceObservations||0;
+    m.segmentedLongSentences=data.segmentedLongSentences||0;
+    m.observedSegmentBridges=data.observedSegmentBridges||0;
     m.compactedExamples=data.compactedExamples||0;m.compactedRules=data.compactedRules||0;
     m.examples=new Map(data.examples);m.skeletons=new Map(data.skeletons.map(([k,a])=>[k,new Map(a)]));
     m.shorterIndex=new Map(data.shorterIndex||[]);
