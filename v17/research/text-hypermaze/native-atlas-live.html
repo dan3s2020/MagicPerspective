@@ -46,6 +46,15 @@ table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;pad
 <div class="metric"><small>Ferestre text observate de V17</small><strong id="nativeSeen">—</strong></div>
 <div class="metric"><small>Operatori text V17 (contrast)</small><strong id="nativeOps">—</strong></div>
 <div class="metric"><small>Stări text evictate de limita de memorie</small><strong id="nativeEvicted">—</strong></div>
+<div class="metric"><small>Exerciții Parquet parcurse</small><strong id="parquetRows">—</strong></div>
+<div class="metric"><small>Rată observată de citire / învățare</small><strong id="rowsPerSecond">—</strong></div>
+<div class="metric"><small>Caractere text observate</small><strong id="characters">—</strong></div>
+</div>
+<div style="margin-top:10px">
+<progress id="parquetProgress" value="0" max="100" style="width:100%;height:15px"></progress>
+<div class="controls"><span id="parquetPercent" class="muted">Dataset Parquet încă neconectat</span>
+<span id="parquetSavedCursor" class="muted">Checkpoint text: —</span>
+<span id="parquetHeld" class="muted">Heldout: —</span></div>
 </div>
 <div class="controls" style="margin-top:10px">
 <span class="muted" id="shapeState">—</span><span class="muted" id="native5D">—</span><span class="muted" id="noise">—</span>
@@ -165,6 +174,24 @@ async function status(){
   show("nativeSeen",num(s.originalNativeText.observations));
   show("nativeOps",num(s.originalNativeText.learnedTextContrastOperators));
   show("nativeEvicted",num(s.originalNativeText.evictedTextStates));
+  const dataset=s.realOpenThoughtsParquet;
+  if(dataset?.trainRows){
+   const percent=Math.min(100,100*dataset.cursor/dataset.trainRows);
+   $("parquetProgress").value=percent;
+   show("parquetRows",num(dataset.cursor)+" / "+num(dataset.trainRows));
+   show("rowsPerSecond",num(dataset.rowsPerSecond)+" rânduri/s");
+   show("characters",num((dataset.promptCharacters||0)+(dataset.answerCharacters||0)));
+   show("parquetPercent",percent.toFixed(2)+"% din rândurile de ANTRENARE citite"+
+     " · "+(dataset.datasetFullyConsumed?"complet":"în curs / parțial"));
+   show("parquetSavedCursor","Ultimul cursor salvat: "+num(dataset.lastSavedCursor));
+   show("parquetHeld","Nevăzute, excluse din antrenare: "+num(dataset.heldOut));
+  }else{
+   show("parquetRows","0 / —");show("rowsPerSecond","—");
+   show("characters","0");$("parquetProgress").value=0;
+   show("parquetPercent","Dataset Parquet încă neconectat");
+   show("parquetSavedCursor","Cursor salvat: —");
+   show("parquetHeld","Heldout: —");
+  }
   show("shapeState","V17: țintă "+s.training.originalTargetAttraction.toFixed(3)+
     ", conductanță "+s.training.originalFloorConductance.toFixed(3));
   show("native5D","Axe originale: "+s.geometry.originalLearnedDimensions+
