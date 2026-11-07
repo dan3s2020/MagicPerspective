@@ -4,6 +4,7 @@
 // Unicode handled as codepoints; complete state retained in every node.
 // A world-contrast is only a hypothesis until independent action feedback.
 import {Discoverer,KIND} from "./exercise.mjs";
+import {explainCharacterGaps} from "./character-gap-diagnostics.mjs";
 
 const AT="__CHAR_XWORLD__:";
 const cp=s=>Array.from(String(s));
@@ -190,7 +191,13 @@ export class CharacterHypermaze{
   const missing=Object.entries(goal.charSlots).filter(([at,ch])=>
      !states.some(s=>s[Number(at)]===ch)).map(([at,ch])=>({position:Number(at),wanted:ch,
        foundAtPosition:[...new Set(states.map(s=>s[Number(at)]).filter(x=>x!==undefined))]}));
+  const detailedBlockers=explainCharacterGaps({
+    start,goal,states,depth,allEvidence:this.allEvidence(),
+    admittedRules:rules,interventions:this.interventions,
+    transfer,minIndependentWorlds:this.minIndependentWorlds
+  });
   const diag={
+    ...detailedBlockers,
     availableEvidenceClasses:this.evidence.size,admittedCrossWorldClasses:rules.length,
     observedContrasts:this.received,projectedCandidateEdges:projected,
     rejectedByWorldWalls:blocked,rejectedByStateBudget:rejected,
