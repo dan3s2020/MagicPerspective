@@ -1,0 +1,80 @@
+name: V42 Fast strict native CPU parity and real V41Fast checkpoint resume
+on:
+  push:
+    branches:
+      - perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107
+  pull_request:
+    branches:
+      - codex/v41-exact-cuda-speed-ui
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-brain-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V41 Fast vs optimized native 64+32 context and checkpoint exact bytes
+        run: |
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --test v17/tests/v42-original-cpu-context-parity.test.mjs
+      - name: Original full finite xD & text/maze/train/cause learned state regression
+        run: node --test v17/tests/v34-incremental-observed-character-rules.test.mjs v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: V41Fast original text optimization remains present and untouched
+        run: |
+          node --test v17/tests/constructed-paths-speed-equivalence.test.mjs
+          node --check v17/apps/hypermaze-studio-v26/native-bridge.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/native-app.js
+  windows-checkpoint-import:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Windows PowerShell parse and no-local-checkpoint safety
+        shell: powershell
+        run: |
+          $ErrorActionPreference="Stop"
+          foreach($p in @('v17/START_V42_RESUME_V41_FAST.ps1','v17/START_V41_SPEED_PROFILE.ps1')){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path,[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ('Invalid PowerShell: '+($errors|Out-String))}
+          }
+          Write-Host 'V42_WINDOWS_SYNTAX_PASS'
+      - name: ACTUAL V41Fast Brain.save V8 and sidecar fixture, import only, verify SHA and no mutation
+        shell: powershell
+        run: |
+          $ErrorActionPreference="Stop"
+          $root=Join-Path $env:RUNNER_TEMP 'V41 real source with spaces'
+          $source=Join-Path $root 'source V41Fast output'
+          $dest=Join-Path $root 'V42 separate output'
+          $data=Join-Path $root 'Parquet folder'
+          New-Item -ItemType Directory -Force -Path $data|Out-Null
+          node 'v17/tests/v42-create-original-checkpoint-fixture.mjs' $source
+          if($LASTEXITCODE -ne 0){throw 'Original Brain.save fixture failed'}
+          $src=Join-Path $source 'brains\brain-0-winner.v8'
+          $old=(Get-FileHash -LiteralPath $src -Algorithm SHA256).Hash
+          $sidecar=Join-Path $source 'brains\brain-0-winner.v8.causal.json'
+          $oldAux=(Get-FileHash -LiteralPath $sidecar -Algorithm SHA256).Hash
+          & 'v17/START_V42_RESUME_V41_FAST.ps1' -SourceCheckpoint $src -Data $data -Out $dest -ImportOnly
+          if($LASTEXITCODE -ne 0){throw 'V42 original checkpoint import failed'}
+          $copied=Join-Path $dest 'brains\brain-0-winner.v8'
+          if(!(Test-Path -LiteralPath $copied)){throw 'No original Brain copied'}
+          if((Get-FileHash -LiteralPath $copied -Algorithm SHA256).Hash -ne $old){throw 'Brain checkpoint modified'}
+          if((Get-FileHash -LiteralPath $src -Algorithm SHA256).Hash -ne $old){throw 'Source checkpoint modified'}
+          if((Get-FileHash -LiteralPath (Join-Path $dest 'brains\brain-0-winner.v8.causal.json') -Algorithm SHA256).Hash -ne $oldAux){throw 'Auxiliary state changed'}
+          if((Get-FileHash -LiteralPath $sidecar -Algorithm SHA256).Hash -ne $oldAux){throw 'Original auxiliary state modified'}
+          $manifest=Get-Content -LiteralPath (Join-Path $dest 'V42_CHECKPOINT_IMPORT_MANIFEST.json') -Raw | ConvertFrom-Json
+          if(!$manifest.noSourceMutation -or $manifest.files.Count -lt 3){throw 'Missing provenance/incomplete sidecars'}
+          & 'v17/START_V42_RESUME_V41_FAST.ps1' -SourceCheckpoint 'Z:\DOES_NOT_EXIST\missing.v8' -Data $data -Out $dest -ImportOnly
+          if($LASTEXITCODE -ne 0){throw 'Existing destination resume must not recopy source'}
+          Write-Host 'V42_WINDOWS_REAL_V41FAST_CHECKPOINT_V8_ALL_SIDECARS_SHA256_AND_IDEMPOTENT_PASS'
