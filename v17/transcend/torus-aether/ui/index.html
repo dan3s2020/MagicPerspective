@@ -243,7 +243,7 @@
         <div id="realTextStats">Aștept primele exerciții procesate de workerul V17...</div>
         <progress id="realTextDatasetProgress" max="100" value="0" aria-label="Procent de exerciții din datasetul de antrenare consumate"></progress>
         <div id="realTextPhase">Aștept faza reală a procesării CUDA / CPU.</div>
-        <p class="streamNote">VERDE = caracter prezis corect înainte de observație. ROȘU = predicție diferită de caracterul observat. Sunt afișate eșantioane reale, marcate cu pozițiile lor; nu pretindem că fiecare caracter este transmis către browser. Toate exercițiile sunt procesate în antrenare.</p>
+        <p class="streamNote">VERDE = caracter prezis corect înainte de observație. ROȘU = predicție diferită de caracterul observat. Motorul transmite TOATE predicțiile efectuate pentru fiecare chunk CUDA (prima poziție a exercițiului este context, nu se ghicește). Browserul păstrează ultimele fragmente, pentru viteză; antrenarea nu sare peste niciun caracter.</p>
         <div id="realTextRecent" role="log" aria-live="off" aria-label="Caractere reale observate și prezise de CUDA">Aștept predicțiile primei bucăți reale de text...</div>
       </section>
       <div class="row"><button id="allStart">▶ Start toate</button><button id="allPause">⏸ Pauză toate</button><button id="allSave">💾 Salvează toate</button><button id="liveReset" title="toate creierele pornesc din nou, goale (salvările vechi sunt puse deoparte)">⟲ Reset toate la 0</button></div>
