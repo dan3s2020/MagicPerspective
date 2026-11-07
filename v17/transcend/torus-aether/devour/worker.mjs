@@ -368,7 +368,8 @@ parentPort.on("message", m => {
     const {id,focusSequence,after=0,limit=250}=m.nativeHypermazeReplay;
     try{
       if(!nativeHypermaze)throw Error("Original hypermaze archive replay not enabled");
-      const result=nativeHypermaze.replayArchivedWorlds({focusSequence,after,limit});
+      const actualFocus=focusSequence||nativeHypermaze.atlasSummary().lastTextWorldSequence;
+      const result=nativeHypermaze.replayArchivedWorlds({focusSequence:actualFocus,after,limit});
       parentPort.postMessage({type:"chat",id,nativeHypermazeReplay:true,
        ...result,actualOriginalBrain:true,trainingAnswersNotUsed:true});
       shot(true);
