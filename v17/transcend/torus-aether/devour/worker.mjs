@@ -277,6 +277,34 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
+// LIVE controlled-world training: full finite 128-state xD maze, every wall,
+// every corridor and all 7 active physical coordinates available BEFORE
+// action. The original native Brain owns/persists the action atlas, and no
+// correct action sequence is supplied. Do not enumerate 2^2048 states.
+const liveXdWorld = async () => {
+  if(!(xdAtlasEvery>0)||brain.chars<nextXd)return null;
+  const dims=[16,64,256,1024,2048];
+  const index=brain.xdAtlas.trainedWorlds;
+  const dimension=dims[index%dims.length];
+  const seed=1000003+index*7919;
+  setWorkerPhase("xD: full "+dimension+"D finite maze; learn transformations from actions");
+  const result=brain.liveCompleteXDWorld({
+    dimensions:dimension,seed,physicsSeed:17,heldoutSeed:seed+99001
+  });
+  if(xdAtlasLog)xdAtlasLog.write(JSON.stringify({
+    episode:index+1,atChars:brain.chars,...result
+  })+"\n");
+  parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"Full finite "+dimension+"D xD atlas (7 active axes): "+
+      "training solved="+result.training.execution.solved+
+      ", unseen WITHOUT target probes solved="+result.heldout.execution.solved+
+      ", shortest path="+result.heldout.plan.evaluatorPhysicalShortestPath+
+      ", actions observed previously="+brain.xdAtlas.effects.size});
+  nextXd=brain.chars+xdAtlasEvery;
+  shot(true);
+  await atlasFlush();
+  return result;
+};
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
@@ -387,6 +415,9 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+  // The full xD world executes in the SAME native Brain after real text is committed.
+  await liveXdWorld();
+  await atlasFlush();
   batchNow = null;
   setWorkerPhase("completed text batch; preparing next exercises");
   // Heavy frozen evaluation and serializing the entire native Brain must
@@ -578,7 +609,7 @@ for await (const ex of stream()) {
       await flushShared();
     }
   }
-  if(TEXT) autonomousCheckpoint();
+  if(TEXT) {await liveXdWorld();await atlasFlush();autonomousCheckpoint();}
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
@@ -595,5 +626,11 @@ setWorkerPhase("final checkpoint and test");
 report(stop ? false : true);
 shot(true); // publish ALL final learned transformations, graph, text and noise even for small corpora and no-noise organisms
 if (gpu) gpu.close();
+if(nativeAtlasLog)await new Promise((resolve,reject)=>{
+  nativeAtlasLog.once("error",reject);nativeAtlasLog.end(resolve);
+});
+if(xdAtlasLog)await new Promise((resolve,reject)=>{
+  xdAtlasLog.once("error",reject);xdAtlasLog.end(resolve);
+});
 await selfcode?.close();
 parentPort.close();
