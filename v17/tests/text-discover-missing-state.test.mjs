@@ -39,8 +39,13 @@ function samples(field,kind,{n,seed,lower,span,minLength,variation}){
  const rng=seedRandom(seed),output=[];
  for(let i=0;i<n;i++){
    const x=lower+Math.floor(rng()*span),y=lower+Math.floor(rng()*span);
-   const start=kind==="integrable"?x+" * "+y+" = "+(x*y)+".":
-      x+" @ "+y+" ~ "+(x*y)+".";
+   // In a non-integrable field there is no globally defined z(x,y).
+   // The learner starts from the currently observed state; choose a positive
+   // independent z offset in the stronger field to avoid crossing the toy
+   // world's explicit nonnegative output boundary during random exploration.
+   const z0=kind==="strongerNoncommuting"?x*y+10000:x*y;
+   const start=kind==="integrable"?x+" * "+y+" = "+z0+".":
+      x+" @ "+y+" ~ "+z0+".";
    const length=minLength+Math.floor(rng()*variation),actions=[];
    for(let t=0;t<length;t++)actions.push({
      primary:rng()<.5?0:1,step:rng()<.5?1:-1
