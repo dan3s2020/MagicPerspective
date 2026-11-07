@@ -85,3 +85,16 @@ test("V24: no route after removing required learned action; restored checkpoint 
   restored.rules.delete("rewrite-B");
   assert.equal(restored.formSolution(state,{slots:{1:"C"}},{maxNodes:16,maxDepth:4}).found,false);
 });
+
+test("V24: original fixed-offset repeated-anchor and insertion physics must stay supported",()=>{
+  const repeated=new LearnedCognitiveMap();
+  repeated.observeActionResult({before:["A","X","A"],action:"edit-first",
+    after:["B","X","A"],accepted:true});
+  assert.deepEqual(repeated.predict(["A","X","A"],"edit-first"),["B","X","A"]);
+  assert.equal(repeated.rules.get("edit-first").positionMode,undefined);
+  const insertion=new LearnedCognitiveMap();
+  insertion.observeActionResult({before:["X","Y"],action:"insert-middle",
+    after:["X","Z","Y"],accepted:true});
+  assert.deepEqual(insertion.predict(["X","Y"],"insert-middle"),["X","Z","Y"]);
+  assert.equal(insertion.rules.get("insert-middle").positionMode,undefined);
+});
