@@ -54,6 +54,7 @@ const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restor
 brain.setSharedObserver(sample => {
   shared.observe(sample);
   if(cognitive)cognitive.observeExternalTransition(sample);
+  if(hypermaze)hypermaze.veil.observeExperience(sample); // shared actual V17 actions: maze, transform, text, code
 });
 const saveCognitive = () => {
   if(cognitive)brain.cognitiveMap = cognitive.export();
@@ -214,6 +215,20 @@ parentPort.on("message", m => {
     }catch(err){
       parentPort.postMessage({type:"chat",kind:"hypermaze-eval",id,error:err.message});
     }
+    return;
+  }
+  if(m?.veilPlan){
+    const {id,start,goal,maxSteps=160}=m.veilPlan;
+    try{
+      if(!hypermaze)throw Error("Contextual veil world not enabled");
+      const before=JSON.stringify([hypermaze.veil.docs,hypermaze.veil.nodes.length,
+        hypermaze.veil.edges.size,hypermaze.veil.predictions]);
+      const plan=hypermaze.veil.plan(start,goal,{maxSteps});
+      if(before!==JSON.stringify([hypermaze.veil.docs,hypermaze.veil.nodes.length,
+        hypermaze.veil.edges.size,hypermaze.veil.predictions]))
+        throw Error("Frozen perspective path mutated learned state");
+      parentPort.postMessage({type:"chat",kind:"veil-plan",id,...plan,frozen:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"veil-plan",id,error:err.message});}
     return;
   }
   if(m?.hypermazePlan){
