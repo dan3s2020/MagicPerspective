@@ -225,6 +225,22 @@ http.createServer((req, res) => {
        !Number.isSafeInteger(value)||value<0||value>100000)
       return json(res,{error:"A start expression and valid numeric index/value constraint are required"});
     const goals=[{index,value}];
+    // An original full V17 frozen exam may occupy the worker for many
+    // seconds. Observed math axes are saved atomically after EACH real batch.
+    // Plan from that authentic immutable snapshot without waiting for the
+    // training thread; never invent an answer or use unseen examples.
+    const liveSnapshotFile=saveOf(sl)+".observed-math-axes.v8";
+    if(fs.existsSync(liveSnapshotFile)){
+      try {
+        const frozen=LiveObservedMathAxes.restore(liveSnapshotFile);
+        const answer=frozen.plan(start,goals);
+        return json(res,{...answer,w:sl.w,fromSave:true,
+          savedSnapshotAt:fs.statSync(liveSnapshotFile).mtimeMs,
+          provenance:"real-observed-axes-from-completed-training-batch"});
+      }catch(error){
+        if(!sl.wk)return json(res,{error:error.message});
+      }
+    }
     if(!sl.wk){
       const file=saveOf(sl)+".observed-math-axes.v8";
       if(!fs.existsSync(file))return json(res,{found:false,reason:"No saved observed math axes"});
