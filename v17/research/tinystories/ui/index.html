@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070b1a">
+<title>MagicPerspective — TinyStories Aether</title>
+<style>
+:root{color-scheme:dark;--bg:#050a17;--panel:#0b1527;--border:#25374e;--text:#e9f1fb;--muted:#90a5bd;--gold:#f2cb87;--cyan:#82d6ec;--rose:#f688a1;--green:#69e3c3;--purple:#bd97f6}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);font-family:"Segoe UI",Inter,system-ui,sans-serif;background:radial-gradient(ellipse 70% 30% at 44% -10%,#17436b65,transparent),radial-gradient(ellipse 46% 50% at 95% 90%,#421d5950,transparent),var(--bg)}
+button,input{font:inherit}button{border-radius:10px;border:1px solid #3d5471;color:var(--text);padding:10px 14px;background:#13243a;cursor:pointer;transition:filter .15s,transform .1s}button:hover{filter:brightness(1.25)}button:active{transform:scale(.98)}button:disabled{opacity:.5;cursor:not-allowed}
+a{color:#8fdef3;text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1660px;margin:0 auto;padding:clamp(16px,2vw,32px)}
+.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:23px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:16px}.sigil{width:68px;height:68px;display:grid;place-items:center;font:44px Georgia,serif;color:var(--gold);border:1px solid #a38b59;border-radius:50%;box-shadow:0 0 30px #b4915840;background:#142234}
+.eyebrow{color:#9aafc8;text-transform:uppercase;letter-spacing:.2em;font-size:10px}.top h1{font:normal clamp(26px,2.6vw,42px)/1.1 Georgia,serif;letter-spacing:-.035em;margin:6px 0}.top p{font-size:12px;color:var(--muted);margin:0}
+.status{display:flex;align-items:center;gap:9px;background:#0c1b2c;border:1px solid #324b63;border-radius:30px;padding:10px 16px}.orb{width:9px;height:9px;background:var(--gold);box-shadow:0 0 13px var(--gold);border-radius:50%}.orb.active{background:var(--green);box-shadow:0 0 13px var(--green)}.orb.error{background:var(--rose);box-shadow:0 0 13px var(--rose)}
+.controls{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px}.controls button{min-width:119px}.primary{background:linear-gradient(110deg,#705338,#a37c40);border-color:#dec17c;color:#fff7e3}.quiet{background:#101d30}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}.metric{background:linear-gradient(145deg,#111f32ce,#091326e6);padding:15px 17px;border:1px solid var(--border);border-radius:13px;min-width:0}.metric .k{letter-spacing:.15em;text-transform:uppercase;font-size:10px;color:#a4bdd3}.metric .v{font:normal clamp(21px,2.6vw,37px) Georgia,serif;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric .sub{font-size:10px;color:#789ab0;margin-top:3px}
+.progress{margin:14px 0 17px;background:#0a1527;border:1px solid var(--border);border-radius:14px;padding:14px 18px}.progresshead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:#a7c1d3;margin-bottom:10px}.bar{height:7px;background:#172d43;overflow:hidden;border-radius:10px}.fill{height:100%;width:0;background:linear-gradient(90deg,#8a6dcb,#e0b675,#68d4bd);transition:width .25s}.columns{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}.panel{background:linear-gradient(160deg,#0e1a2bb8,#070f1fcf);border:1px solid var(--border);border-radius:15px;overflow:hidden;min-width:0}
+.panelhead{border-bottom:1px solid #243b50;padding:16px 18px;display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}.panelhead h2{margin:0;font:normal 21px Georgia,serif}.panelbody{padding:17px}.tag{font-size:11px;color:var(--gold);border:1px solid #725d49;border-radius:30px;padding:5px 10px}.tag.green{color:var(--green);border-color:#286b60}
+canvas{width:100%;display:block;background:radial-gradient(ellipse at center,#192b49,#081020 70%)}#chart{height:200px}#path{height:300px}
+.legend{display:flex;flex-wrap:wrap;gap:15px;padding:12px 18px;border-top:1px solid #1f364b;font-size:11px;color:#b7c9d7}.dot{display:inline-block;border-radius:100%;width:9px;height:9px;margin-right:4px}.story{font-family:"Cascadia Code",Consolas,monospace;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;max-height:290px;overflow:auto;color:#d7e7f2}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sample{background:#0b1a2c;border:1px solid #29465b;border-radius:10px;padding:12px}.sample b{font-size:11px;color:var(--gold)}.sample p{font-family:Consolas,monospace;white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.45;margin:9px 0 0;color:#bad3e4;max-height:150px;overflow:auto}
+.notes{font-size:11px;color:#a6b9ca;line-height:1.6}.notes strong{color:#e8d3a7}.details{display:grid;gap:7px;font:11px/1.5 Consolas,monospace;color:#9eb7cb}.details span{color:var(--gold)}.history{max-height:165px;overflow:auto}.history pre{font:11px/1.7 Consolas,monospace;color:#a9c9df;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}.footer{padding:16px 0;font-size:11px;color:#91a6b7;line-height:1.6}
+.gridbottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr)}.columns{grid-template-columns:1fr}}
+@media(max-width:750px){.metrics{grid-template-columns:repeat(2,1fr)}.comparison,.gridbottom{grid-template-columns:1fr}.top .status{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="mark"><div class="sigil" aria-hidden="true">✧</div><div>
+      <div class="eyebrow">MagicPerspective / Independent Language World</div>
+      <h1>TinyStories <span style="color:var(--gold)">Aether</span></h1>
+      <p>O singură lume. Povești reale. Tranziții textuale învățate pe CUDA. Nicio lume de maze sau OpenThoughts în acest proces.</p>
+    </div></div>
+    <div class="status"><div class="orb" id="orb"></div><strong id="status">Conectare…</strong></div>
+  </header>
+  <div class="controls">
+    <button id="start" class="primary">▶ Antrenează</button>
+    <button id="pause">Ⅱ Pauză</button>
+    <button id="save">◈ Salvează checkpoint</button>
+    <button id="test">◎ Testează povești nevăzute</button>
+    <button id="refresh" class="quiet">↻ Actualizează</button>
+  </div>
+  <section class="metrics">
+    <div class="metric"><div class="k">Povești învățate</div><div class="v" id="stories">—</div><div class="sub">Confirmate de modelul GPU</div></div>
+    <div class="metric"><div class="k">Viteză povești</div><div class="v" id="storiesRate">—</div><div class="sub">povești / secundă măsurate</div></div>
+    <div class="metric"><div class="k">Viteză text</div><div class="v" id="mbRate">—</div><div class="sub">MB / secundă citiți + învățați</div></div>
+    <div class="metric"><div class="k">Octeți UTF-8 învățați</div><div class="v" id="chars">—</div><div class="sub">Actualizări condiționale reale</div></div>
+    <div class="metric"><div class="k">Precizie validare</div><div class="v" id="accuracy">—</div><div class="sub">Povești nefolosite la antrenare</div></div>
+    <div class="metric"><div class="k">Sursă GPU</div><div class="v" id="device">—</div><div class="sub" id="deviceInfo">Antrenorul nu este pornit</div></div>
+  </section>
+  <section class="progress">
+    <div class="progresshead"><span><b id="pct">0.00%</b> din fișierul TinyStories de antrenare</span><span id="dataProgress">0 MB / — MB</span><span id="saveStatus">Checkpoint: —</span></div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+  </section>
+  <main class="columns">
+    <article class="panel">
+      <div class="panelhead"><div><div class="eyebrow">01 / TRASEUL DIN LIMBAJ</div><h2>Predicție înainte de observație</h2></div><span class="tag">Albastru: real · Aur: prezis</span></div>
+      <canvas id="path" aria-label="Traseele caracterelor prezise și observate, derivate din modelul real"></canvas>
+      <div class="legend"><span><i class="dot" style="background:var(--cyan)"></i>Text observat</span><span><i class="dot" style="background:var(--gold)"></i>Predicția modelului înainte de update</span><span><i class="dot" style="background:var(--rose)"></i>Diferența</span></div>
+      <div class="panelbody">
+        <div class="eyebrow">Ce ghicea efectiv înainte să învețe povestea</div>
+        <div class="comparison">
+          <div class="sample"><b>REAL — povestea observată</b><p id="actual">Aștept primul lot real…</p></div>
+          <div class="sample"><b>PREDICȚIE — modelul anterior</b><p id="predicted">Aștept prima predicție calculată…</p></div>
+        </div>
+        <p class="notes" id="predictionNote">Aceasta este o predicție de caractere, nu o soluție semantică verificată. Este calculată înainte ca modelul să învețe povestea afișată.</p>
+      </div>
+    </article>
+    <article class="panel">
+      <div class="panelhead"><div><div class="eyebrow">02 / ENERGIE ȘI TIMP</div><h2>Fluxul de învățare</h2></div><span class="tag green">Date autentice</span></div>
+      <canvas id="chart" aria-label="Viteza și actualizările observate pe parcursul antrenării"></canvas>
+      <div class="legend"><span><i class="dot" style="background:var(--green)"></i>MB/s</span><span><i class="dot" style="background:var(--purple)"></i>Povești/s</span></div>
+      <div class="panelbody">
+        <div class="eyebrow">Modelul și progresul verificabil</div>
+        <div class="details" id="details">Aștept informațiile workerului…</div>
+      </div>
+    </article>
+  </main>
+  <section class="gridbottom">
+    <div class="panel"><div class="panelhead"><h2>Test pe povești nevăzute</h2><span class="tag">Frozen / fără învățare</span></div><div class="panelbody">
+      <div class="details" id="heldout">Apasă „Testează povești nevăzute” pentru evaluarea separată pe TinyStories-valid.txt. Rezultatul nu actualizează modelul.</div>
+    </div></div>
+    <div class="panel"><div class="panelhead"><h2>Jurnalul observațiilor</h2><span class="tag">Verificabil</span></div><div class="panelbody history"><pre id="log">Se așteaptă serverul TinyStories…</pre></div></div>
+  </section>
+  <footer class="footer">Cercetare experimentală MagicPerspective. Acest mod rapid folosește un model real de distribuții condiționale pe 1–4 caractere (ordinele 3 și 4 sunt reprezentate prin hashing). Nu este același lucru cu întregul creier V17 sau cu un LLM neuronal complet; măsurătorile și limitările sunt afișate explicit. Checkpointul și corpusul sunt separate de toate celelalte experimente.</footer>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
