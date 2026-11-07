@@ -21,7 +21,31 @@ jobs:
           node --check v17/experiments/graph0-self-path-ablation.mjs
           node --check v17/experiments/graph0-ablation-core.test.mjs
           node --check v17/experiments/graph0-ablation-end-to-end.test.mjs
+          node --check v17/experiments/create-graph0-fixture.mjs
       - name: Native AligningGraph no-training ablation tests
         run: node --test v17/experiments/graph0-ablation-core.test.mjs
       - name: Native Brain.save Brain.load comparison across original and filtered policies
         run: node --test v17/experiments/graph0-ablation-end-to-end.test.mjs
+  windows-launcher-smoke:
+    runs-on: windows-2022
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Save synthetic native V17 graph0 fixture
+        shell: pwsh
+        run: |
+          node v17/experiments/create-graph0-fixture.mjs "$env:RUNNER_TEMP\graph0-source"
+          if ($LASTEXITCODE -ne 0) { throw "Fixture creation failed" }
+      - name: Execute exact Windows PowerShell 5.1 checkpoint-copy launcher
+        shell: pwsh
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File "v17\experiments\RUN_GRAPH0_ABLATION.ps1" -SourceBrains "$env:RUNNER_TEMP\graph0-source" -ResultsRoot "$env:RUNNER_TEMP\graph0-results" -Max 80
+          if ($LASTEXITCODE -ne 0) { throw "Windows isolated ablation failed" }
+          $matches = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-results" -Recurse -File -Filter "comparison-T06.csv")
+          if ($matches.Count -ne 1) { throw "Missing unique Windows comparison CSV" }
+          $rows = @(Import-Csv -LiteralPath $matches[0].FullName)
+          if ($rows.Count -ne 12) { throw "Expected 12 T=0.6 comparison rows; found $($rows.Count)" }
+          Write-Host "WINDOWS_NATIVE_ABLATION_PASS: $($rows.Count) comparison rows"
