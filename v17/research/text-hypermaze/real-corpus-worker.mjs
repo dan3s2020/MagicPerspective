@@ -17,6 +17,7 @@ import {playExercise,KIND}
 import {makeMaze,seedOf,SEEDS}
  from "../../transcend/torus-aether/worlds/labyrinth.mjs";
 import {NativeGoalTextMaze} from "./goal-conditioned-native.mjs";
+import {ForensicPathAtlas} from "./forensic-path-atlas.mjs";
 import {rawJSONLLines,parseActualJSONL} from "./openthoughts-jsonl-source.mjs";
 
 const opts=workerData.opts,files=workerData.files,out=workerData.out;
@@ -381,6 +382,39 @@ parentPort.on("message",m=>{
    if(!running&&!done){paused=false;running=train().finally(()=>{running=null;});}
    else if(!done)paused=false;
    publish();return send("rpc",{id,result:info()});
+  }
+  if(m.cmd==="atlas"){
+   // Optional read-only view of the SAME one Brain that currently trains.
+   // No reference answer is accepted. Do not infer physical causality from
+   // adjacent words or copy-only Q/A chunks.
+   const observer=new ForensicPathAtlas(brain);
+   const allowed=["nodes","verified","blocked","proposals","textOnly",
+    "operators","observations","qaEpisodes","crossWorld"];
+   if(!allowed.includes(m.section||"nodes"))
+    throw Error("Unknown native forensic atlas page section");
+   const start=String(m.start||""),required=Array.isArray(m.required)?m.required:[];
+   if(start.length>4000||required.length>16||
+      required.some(x=>typeof x!=="string"||x.length>150))
+    throw Error("Bounded start and 0..16 explicit goal tokens only");
+   let original=null,originalError=null;
+   if(start.trim()&&required.length){
+    try{original=engine.plan({start,required,includeTopology:false});}
+    catch(e){originalError=e.message;}
+   }
+   const report=start.trim()&&required.length?
+    observer.analyse({start,required,nativePlan:original,
+      maxRoutes:Math.min(40,Math.max(1,Number(m.maxRoutes)||20)),
+      maxDepth:Math.min(96,Math.max(1,Number(m.maxDepth)||24)),
+      maxExamples:Math.min(100,Math.max(1,Number(m.maxExamples)||80))}):null;
+   const page=observer.page({section:m.section||"nodes",
+    offset:m.offset||0,limit:m.limit||120});
+   return send("rpc",{id,result:{originalBrain:true,model:"ONE ORIGINAL V17 Brain",
+    originalPlanner:"Discoverer.shapeGraph",referenceAnswerSupplied:false,
+    canClaimWholeEverLivedAtlas:false,summary:observer.summary(),
+    page,report,originalError,
+    allRetainedSections:["nodes","verified","blocked","proposals",
+     "textOnly","operators","observations","qaEpisodes","crossWorld"],
+    caveat:"Retained text evidence is not automatically an executable semantic action."}});
   }
   if(m.cmd==="qa"){
    const question=String(m.question||"");
