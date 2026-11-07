@@ -610,6 +610,33 @@
   <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
+<section id="v40LivePanel" style="margin:16px;padding:14px;border:1px solid #3c857f;border-radius:10px;background:#081b27;color:#e4f3fc;max-width:1280px">
+  <h2>V40 · Original Brain · memoria dintre lumi, obiectiv învățat și text uman</h2>
+  <p style="font-size:13px">Interfață reală peste workerul V17/V34 și checkpointul lui, nu o simulare. Cele două trasee originale coexistă: V36 folosește obiective învățate din acțiuni observate; V39 folosește ponderi antrenate pe întrebări umane și Discoverer.shapeGraph pentru a extrage un răspuns din pasajul vizibil. V32 păstrează doar dovezi de sursă; nu generează automat răspunsuri semantice.</p>
+  <div class="row" style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+    <label>Worker V17 <input id="v40LiveWorker" type="number" min="0" step="1" value="0" style="width:65px"></label>
+    <label>Perspectivă
+      <select id="v40LiveMode">
+        <option value="human-extractive">V39 · răspuns în pasajul dat</option>
+        <option value="instruction-goal">V36 · obiectiv învățat din experiențe</option>
+      </select>
+    </label>
+    <button id="v40LiveAsk" type="button">Prezice din calea originală</button>
+  </div>
+  <label>Întrebare / instrucțiune
+    <textarea id="v40LiveQuestion" rows="2" style="display:block;width:100%;background:#081827;color:#eef7ff;border:1px solid #45697e;border-radius:6px">Which city hosted the meeting?</textarea>
+  </label>
+  <label>Pasaj complet observat / starea inițială
+    <textarea id="v40LiveSource" rows="4" style="display:block;width:100%;background:#081827;color:#eef7ff;border:1px solid #45697e;border-radius:6px">The meeting was hosted in Rome yesterday.</textarea>
+  </label>
+  <p id="v40LiveStatus" role="status" aria-live="polite" style="font-size:13px;color:#a7d6e8">Necesită un Brain original restaurat cu dovezi V40 reale. Fără memorie învățată se va afișa eroare, nu un răspuns fictiv.</p>
+  <h3>Răspuns întreg, din calea aleasă înainte de verificare</h3>
+  <pre id="v40LiveAnswer" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:#84eac7">Nu a fost făcută încă o predicție.</pre>
+  <h3>Calea originală, întregul graf de candidați, dovezile și eșecurile</h3>
+  <pre id="v40LiveEvidence" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;font-size:12px;color:#b4cbe4">Atlasul apare numai după un calcul real pe worker sau pe Brain-ul salvat.</pre>
+  <p style="font-size:12px;color:#a8c0d0">Această secțiune nu modifică antrenarea și nu primește răspunsul de referință. Un răspuns extras din pasajul furnizat nu înseamnă că organismul a rezolvat OpenThoughts3 fără context. Niciun control anterior din UI nu a fost șters sau mutat.</p>
+</section>
 <script type="module" src="v34-research-live.js"></script>
+<script type="module" src="v40-live-human.js"></script>
 </body>
 </html>
