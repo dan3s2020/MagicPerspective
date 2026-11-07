@@ -16,6 +16,8 @@ jobs:
         with: {node-version: '22'}
       - name: Character-level complete source V24 forensic blocked/unlocked paths and negative controls
         run: node --test v17/tests/v24-character-forensics.test.mjs
+      - name: Actual native five-world CPU character atlas, frozen original V17 shape, and exact full disk journal
+        run: node --test v17/tests/v24-native-character-forensics.test.mjs
       - name: Preserve original V17 full 2D maze source and 84 noise parity episodes
         run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
       - name: Preserve original V23 full cross-world corpus and long text paths
@@ -29,6 +31,9 @@ jobs:
       - name: Source syntax and no deletions
         run: |
           node --check v17/transcend/torus-aether/worlds/character-hypermaze.mjs
+          node --check v17/transcend/torus-aether/ui/v24-character-forensic-live.js
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
           git merge-base --is-ancestor 50596856da9dec827c738414f3a0e2fbd64621d0 HEAD
           deleted="$(git diff --name-only --diff-filter=DR 50596856da9dec827c738414f3a0e2fbd64621d0 HEAD)"
