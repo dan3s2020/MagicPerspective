@@ -17,6 +17,8 @@ jobs:
         run: node --test v17/tests/veil-aether.test.mjs
       - name: V21 actual observed action axes, stochastic causal branching, path-order memory
         run: node --test v17/tests/veil-aether.observed-action-field.test.mjs
+      - name: V21 do not score truncated 200-character question as a failed written answer
+        run: node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
       - name: V21 actual multiworld worker, live UI and HTTP evidence
         run: node --test v17/tests/veil-aether.http.test.mjs
       - name: V21 preserve native V17 Q/A shape learning after legacy checkpoint resume
@@ -41,6 +43,8 @@ jobs:
         run: node --test v17/tests/veil-aether.cuda-failclosed.test.mjs
       - name: V21 client JavaScript syntax
         run: node --check v17/transcend/torus-aether/ui/veil-aether-live.js
+      - name: Original V17 UI script syntax preserved
+        run: node --check v17/transcend/torus-aether/ui/app.js
       - name: Original V20 real corpus process, HTTP and checkpoint regressions
         run: node --test v17/tests/torus-text-hypermaze.test.mjs
       - name: Original V19 cognitive model and world-source regressions
