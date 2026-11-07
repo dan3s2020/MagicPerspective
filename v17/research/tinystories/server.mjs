@@ -102,7 +102,7 @@ export class TinyStoriesTrainer{
   });
   nativeWorker.on("message",m=>{
    if(m.type==="state"){
-    this.state.native={...m,percent:this.trainMeta?.size?
+    this.state.native={...this.state.native,...m,percent:this.trainMeta?.size?
      100*m.bytesRead/this.trainMeta.size:0,
      lagBehindFastStories:Math.max(0,this.state.stories-m.stories)};
    }else if(m.type==="fatal"||m.type==="exam-error"){
@@ -310,7 +310,8 @@ export async function launch(opts){
     if(url.pathname==="/api/start")return send(res,app.start());
     if(url.pathname==="/api/pause")return send(res,app.pause());
     if(url.pathname==="/api/save")return send(res,app.save());
-    if(url.pathname==="/api/native-test")return send(res,app.nativeCommand("evaluate"));
+    if(url.pathname==="/api/native-start")return send(res,app.nativeCommand("start"));
+     if(url.pathname==="/api/native-test")return send(res,app.nativeCommand("evaluate"));
      if(url.pathname==="/api/native-graph")return send(res,app.nativeCommand("snapshot"));
      if(url.pathname==="/api/test")return send(res,await app.evaluate({
      maxStories:positive(url.searchParams.get("stories")||32,"heldout stories",1,128)
