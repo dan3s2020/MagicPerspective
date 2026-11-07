@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#060b16">
+<title>MagicPerspective · The Living Aether</title>
+<style>
+:root{color-scheme:dark;--bg:#050915;--panel:#0a1223;--panel2:#101c30;--line:#243a50;--cream:#f0f6fd;--muted:#9eb3cb;--gold:#eec77c;--cyan:#63d1eb;--mint:#67ddb6;--rose:#ff8198;--purple:#bf9dff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--cream);font-family:Inter,"Segoe UI",system-ui,sans-serif;font-size:13px;letter-spacing:.01em;min-height:100vh;overflow-x:hidden}
+button,select,input{font:inherit;color:inherit}button,select{cursor:pointer}button{background:linear-gradient(135deg,#192e44,#0d1a2d);border:1px solid #33516d;padding:9px 13px;border-radius:10px;transition:background .15s,border .15s,transform .15s}button:hover{border-color:#85c7ed;background:#1a324e}button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:not-allowed}input,select{border:1px solid #324960;border-radius:8px;padding:8px;background:#0b192a;width:100%;outline:none}input:focus,select:focus{border-color:#74cfea}input[type=range]{accent-color:var(--gold);padding:0}a{color:#93d8ec}small,.dim{color:var(--muted)}.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:radial-gradient(ellipse 55% 40% at 50% -10%,#193c4b82,transparent),radial-gradient(ellipse 30% 30% at 85% 65%,#31264c40,transparent),#050915}
+.sidebar{border-right:1px solid #1b3548;padding:26px 17px;background:linear-gradient(180deg,#09172aee,#050b17f2);position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:16px}
+.identity{display:flex;gap:10px;align-items:center}.sigil{width:42px;height:42px;border:1px solid #b69b5f;border-radius:50%;display:grid;place-items:center;font-size:25px;color:var(--gold);box-shadow:0 0 22px #e1ab4b22}
+.eyebrow{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#9db4c8}.brand{font:600 18px Georgia,serif;letter-spacing:.025em}.sidebar h3{font-size:10px;letter-spacing:.19em;text-transform:uppercase;color:#9db1bf;margin:11px 0 0}.statelist{display:grid;gap:8px}
+.status{padding:12px;border:1px solid #2b465b;background:#0d1c2c;border-radius:12px}.status strong{display:block;font-size:13px;margin:4px 0}.status small{font-size:11px}
+.dots{display:inline-block;width:8px;height:8px;border-radius:50%;background:#8ca3b4;margin-right:6px}.dots.online{background:var(--mint);box-shadow:0 0 11px #67ddb6aa}.dots.error{background:var(--rose)}
+.side-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.side-actions button{padding:10px 5px}.accent{border-color:#b69359;background:linear-gradient(135deg,#634f32,#2e261f);color:#ffedc9}.side-detail{font-size:11px;line-height:1.6;color:#8ba8b8}.side-bottom{margin-top:auto}
+main{min-width:0;padding:22px clamp(14px,2.5vw,35px) 34px}.head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}.head h1{font:400 clamp(27px,3vw,42px)/1.1 Georgia,serif;margin:3px 0 7px;letter-spacing:-.035em}.head p{color:#a2bccd;margin:0;max-width:750px;font-size:12px;line-height:1.55}.head .links{display:flex;gap:9px;align-items:center}.head .links a{text-decoration:none;border:1px solid #355268;border-radius:9px;padding:9px 11px}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:15px}.metric{min-width:0;background:linear-gradient(155deg,#0d1d30bb,#080f1ecc);border:1px solid #22394e;border-radius:14px;padding:15px 16px}.metric .num{font:400 clamp(23px,2.15vw,34px)/1.3 Georgia,serif;color:#eaeafa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:8px}.metric span{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#a2b6c4}
+.panes{display:grid;grid-template-columns:minmax(0,1.38fr) minmax(330px,1fr);gap:14px}.panel{background:linear-gradient(145deg,#0e1c2bcc,#070e1dcc);border:1px solid #243b52;border-radius:16px;overflow:hidden;min-width:0;position:relative}.panelhead{padding:15px 17px;border-bottom:1px solid #233a4c;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.panelhead h2{font:400 18px Georgia,serif;margin:0;flex:1;min-width:190px}.panelhead .eyebrow{width:100%;color:#79bacd}.panelbody{padding:14px 17px}.stage{width:100%;display:block;background:radial-gradient(ellipse at 50% 55%,#132941,#050b18 72%);touch-action:none}.field{height:400px}.paths{height:335px}.chart{height:150px;background:#07111e}.tags{display:flex;gap:7px;flex-wrap:wrap;font-size:11px;color:#9ab3c4}.tag{border:1px solid #304a62;padding:4px 8px;border-radius:30px}.tag.gold{color:var(--gold)}.tag.cyan{color:var(--cyan)}.tag.rose{color:var(--rose)}
+.controlbar{display:flex;align-items:center;gap:8px;padding:12px 16px;flex-wrap:wrap;border-top:1px solid #20384e;background:#0b1624}.controlbar label{display:flex;align-items:center;gap:7px;color:var(--muted)}.controlbar select{width:76px;padding:5px}.controlbar input[type=range]{width:94px}.mono{font-family:"Cascadia Code",Consolas,monospace;font-size:11px;line-height:1.6}.scroll{max-height:340px;overflow:auto;scrollbar-color:#35506a #0c1727}.readout{padding:14px 17px;line-height:1.65;color:#c5d8e6;white-space:pre-wrap;overflow-wrap:anywhere;font-family:"Cascadia Code",Consolas,monospace;font-size:11px}.readout b{color:var(--gold)}.list{display:grid;gap:7px;padding:14px 17px}.op{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;background:#0e1c2d;border:1px solid #253c54;padding:10px;border-radius:9px;overflow-wrap:anywhere}.op .p{font-family:Consolas,monospace;color:#a9dbe9;font-size:11px}.op .c{font:600 11px Consolas;color:#e9bf84}.pulse{color:var(--mint)}.err{color:var(--rose)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.pathbar{display:flex;gap:8px;align-items:center}.pathbar input[type=range]{flex:1}.footer{margin-top:16px;font-size:11px;line-height:1.6;color:#8fa9bc;border:1px solid #243a50;border-radius:10px;padding:12px 15px}
+@media(max-width:1200px){.panes{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:16px}.side-bottom{margin-top:0}.metrics{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.field{height:320px}.paths{height:285px}.head .links{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="identity"><div class="sigil" aria-hidden="true">✧</div><div><div class="eyebrow">the living aether</div><div class="brand">MagicPerspective</div></div></div>
+  <div class="status"><div class="eyebrow">Legătură cu organismul</div><strong id="connection"><i class="dots"></i>Conectare…</strong><small id="connectionDetail">Se așteaptă date reale de la server</small></div>
+  <h3>Organism activ</h3>
+  <select id="worker" aria-label="Selectează creierul antrenat"><option value="0">#0 · aștept răspuns</option></select>
+  <div id="workerInfo" class="side-detail">Nu există încă informații despre worker.</div>
+  <h3>Acțiuni reale</h3>
+  <div class="side-actions">
+    <button id="start" class="accent">▶ Antrenează</button><button id="pause">Ⅱ Pauză</button>
+    <button id="save">◈ Salvează</button><button id="check">↻ Sincronizează</button>
+  </div>
+  <h3>Noise al organismului</h3>
+  <label class="side-detail" for="noise">Negative samples reale: <output id="noiseOut">—</output></label>
+  <input id="noise" type="range" min="0" max="12" step="1" value="3" aria-label="Zgomot geometric">
+  <button id="applyNoise">Aplică noise creierului selectat</button>
+  <p class="side-detail">Modifică <b>gnoise</b> din controlul nativ V17. Nu schimbă RNG-ul viitor al lumii sau dimensiunile fizice.</p>
+  <div class="side-bottom">
+    <h3>Sursa vizualizării</h3>
+    <p class="side-detail">Nodurile, coordonatele 5D, predicția, acțiunile, operatorii și graficele provin din <code>/graph</code>, <code>/graphs</code> și <code>/telemetry</code> ale V17. Fără date: fără trasee fictive.</p>
+  </div>
+</aside>
+<main>
+  <div class="head"><div><div class="eyebrow">experimental observatory · live training</div><h1>Where the solution takes shape</h1><p>Forma prezisă înaintea mișcării. Corpul care execută. Ramurile observate, abaterile și reconstruirea căii — în același graf V17.</p></div><div class="links"><a href="./index.html?live=1">Interfața originală</a><a href="/dashboard">Statistici V17</a></div></div>
+  <section class="metrics" aria-label="Măsurători reale de antrenament">
+    <div class="metric"><span>Caractere trăite</span><div id="mChars" class="num">—</div></div>
+    <div class="metric"><span>Tokenuri text observate</span><div id="mTokens" class="num">—</div></div>
+    <div class="metric"><span>Stări contextuale</span><div id="mStates" class="num">—</div></div>
+    <div class="metric"><span>Transformări învățate</span><div id="mOps" class="num">—</div></div>
+    <div class="metric"><span>Precizie text nevăzut</span><div id="mAccuracy" class="num">—</div></div>
+  </section>
+  <section class="panes">
+    <div class="panel">
+      <div class="panelhead"><div class="eyebrow">01 / spațiul viu</div><h2>Torusul organismului</h2><span class="tag">Poziții 5D învățate</span></div>
+      <canvas id="field" class="stage field" aria-label="Proiecția pozițiilor toroidale reale și a muchiilor învățate"></canvas>
+      <div class="controlbar"><label>Axa X <select id="axisX"></select></label><label>Axa Y <select id="axisY"></select></label><label>Axa adâncime <select id="axisZ"></select></label><button id="recenter">⟳ Recentrează</button><span class="dim" id="fieldCount">Așteptare noduri</span></div>
+    </div>
+    <div class="panel">
+      <div class="panelhead"><div class="eyebrow">02 / destinul posibil</div><h2>Forma soluției înainte de acțiune</h2><span class="tag gold">Aur: predicție</span></div>
+      <canvas id="paths" class="stage paths" aria-label="Traseul prezis și pașii executați în modelul textual real"></canvas>
+      <div class="controlbar"><button id="pathPrev">◀</button><button id="pathPlay">▶</button><button id="pathNext">▶|</button><input type="range" id="pathStep" min="0" max="0" value="0" step="1" aria-label="Cadru traseu"><span class="mono" id="pathFrame">0 / 0</span></div>
+      <div id="pathInfo" class="readout scroll">Aștept predicții capturate înaintea următorului exemplu real. Nu desenez un traseu până nu apare în model.</div>
+    </div>
+    <div class="panel">
+      <div class="panelhead"><div class="eyebrow">03 / explorare și repercusiuni</div><h2>Arborele transformărilor</h2><span class="tag cyan">Observații reale</span></div>
+      <div id="ops" class="list scroll"><div class="dim">Se așteaptă operații observate din corpus.</div></div>
+      <div class="controlbar"><button id="autoProbe">⟡ Caută o țintă proprie</button><span id="probeStatus" class="dim">Fără țintă artificială</span></div>
+      <div id="probe" class="readout scroll">Nicio probă încă. Căutarea nu primește răspunsul corect drept intrare.</div>
+    </div>
+    <div class="panel">
+      <div class="panelhead"><div class="eyebrow">04 / timp, energie și memorie</div><h2>Amprenta antrenării</h2><span class="tag">Telemetrie măsurată</span></div>
+      <canvas id="chart" class="stage chart" aria-label="Caractere învățate în timp și semnale V17"></canvas>
+      <div class="panelbody">
+        <div class="tags"><span class="tag cyan">● caractere</span><span class="tag gold">● transformări</span><span class="tag rose">● semnale de eroare</span></div>
+        <div id="gpu" class="readout" style="padding:12px 0 0">CUDA: aștept informații de la worker.</div>
+        <div class="eyebrow" style="margin-top:14px">Ultimele caractere văzute de organism</div>
+        <pre id="stream" class="mono" style="white-space:pre-wrap;overflow-wrap:anywhere;color:#bad8e5;max-height:130px;overflow:auto">Aștept corpusul real…</pre>
+      </div>
+    </div>
+  </section>
+  <div class="footer" id="disclaimer">Observator conectat la motorul original V17. Proiecția toroidală descrie pozițiile celor 5 coordonate ale simbolurilor; nu demonstrează o geometrie semantică 5D sau inteligență cuantică. Traseele sunt din acțiunile prezise și executate în modelul învățat, nu dintr-un evaluator semantic extern.</div>
+</main>
+</div>
+<script type="module" src="./magic.js"></script>
+</body>
+</html>
