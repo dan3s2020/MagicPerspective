@@ -137,6 +137,60 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
   ]};
 }
 
+// Attribute EVERY predicted code point to the original observed starting
+// state or to the specific actually learned action that introduced/replaced
+// it, with provenance from that operator's REAL corpus before/after example.
+// Prefix/suffix tracking preserves origin through later insert/delete shifts;
+// this is a lineage of the planned INTERNAL text transformation, not a
+// claimed neural explanation or proof of an independent semantic reason.
+export function traceOriginalCharacterOrigins(plan){
+ const states=plan?.initialShape||[];
+ if(!states.length)return {available:false,reason:"missing-frozen-original-shape"};
+ let current=chars(states[0]);
+ let origins=current.map((ch,i)=>({kind:"observed-start",initialIndex:i,
+  character:ch,actionIndex:null,operatorKey:null,evidence:null}));
+ const steps=[];
+ for(let i=0;i<Math.min(plan.actions?.length||0,states.length-1);i++){
+  const old=chars(states[i]),next=chars(states[i+1]);
+  if(old.join("")!==current.join(""))
+   return {available:false,reason:"internal-state-mismatch-before-action",actionIndex:i};
+  let prefix=0;
+  while(prefix<old.length&&prefix<next.length&&old[prefix]===next[prefix])prefix++;
+  let suffix=0;
+  while(suffix<old.length-prefix&&suffix<next.length-prefix&&
+   old[old.length-1-suffix]===next[next.length-1-suffix])suffix++;
+  const oldChange=old.slice(prefix,old.length-suffix);
+  const newChange=next.slice(prefix,next.length-suffix);
+  const action=plan.actions[i];
+  const update=newChange.map((character,index)=>({
+   kind:"learned-text-transformation",character,
+   actionIndex:i,characterIndexWithinAction:index,
+   operatorKey:action?.key||null,
+   operatorKind:action?.kind||null,
+   operatorFrom:action?.operatorFrom??null,
+   operatorTo:action?.operatorTo??null,
+   sourceState:states[i],targetState:states[i+1],
+   evidence:action?.learnedFrom??null,
+   observedSupport:action?.observedSupport??null
+  }));
+  origins=[...origins.slice(0,prefix),...update,
+   ...(suffix?origins.slice(origins.length-suffix):[])];
+  steps.push({actionIndex:i,operatorKey:action?.key||null,
+   operatorFrom:action?.operatorFrom??null,operatorTo:action?.operatorTo??null,
+   sourceEvidence:action?.learnedFrom??null,
+   startCodepoint:prefix,removed:oldChange.join(""),inserted:newChange.join(""),
+   originalBeforeState:states[i],predictedAfterState:states[i+1]});
+  current=next;
+ }
+ if(current.join("")!==String(plan.predicted??"")||current.length!==origins.length)
+  return {available:false,reason:"final-frozen-path-differs-from-reported-prediction"};
+ return {available:true,unit:"Unicode-code-point",
+  predictedCharacters:origins.map((v,i)=>({index:i,...v})),
+  transformations:steps,
+  stateCount:states.length,
+  basedOnlyOnOriginalObservedOperators:true,
+  neuralCausalExplanationProven:false};
+}
 function changedCharacterAudit(predicted,reference){
  const p=chars(predicted),g=chars(reference),max=Math.max(p.length,g.length);
  const mismatches=[],matches=[];
@@ -196,6 +250,13 @@ export function auditNativePath({plan,atlas,reference,brain}){
  const predicted=String(plan.predicted??""),referenceHash=hash(reference);
  const exact=predicted===reference;
  const charAudit=changedCharacterAudit(predicted,reference);
+ const lineage=traceOriginalCharacterOrigins(plan);
+ if(lineage.available){
+  for(const wrong of charAudit.incorrectCharacters)
+   wrong.originalPathSource=lineage.predictedCharacters[wrong.index]||null;
+  charAudit.predictedCharacterOrigins=lineage.predictedCharacters;
+  charAudit.originalActionSpans=lineage.transformations;
+ }
  const referenceWasEnumerated=!!plan.topology?.nodes?.some(x=>x.text===reference);
  const alternativeRouteToReference=!!atlas?.paths?.some(x=>x.states.at(-1)===reference);
  const operatorGap=missingTokenEdits(predicted,reference,
@@ -218,7 +279,9 @@ export function auditNativePath({plan,atlas,reference,brain}){
   referenceUTF8Bytes:Buffer.byteLength(reference),predictedUTF8Bytes:Buffer.byteLength(predicted),
   completeTextExactFirstTry:exact,
   scoreIsExternalSemanticAnswer:false,
-  charAudit,operatorGap,failureCategories:[...new Set(categories)],
+  charAudit,characterAttributionAvailable:lineage.available,
+  characterAttributionUnavailability:lineage.available?null:lineage.reason,
+  operatorGap,failureCategories:[...new Set(categories)],
   referenceWasEnumerated,alternativeRouteToReference,
   possibleDesignBarriers:atlas?.possibleDesignBarriers||[],
   // The scorer is an independent observer. It NEVER calls
