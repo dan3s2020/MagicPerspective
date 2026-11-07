@@ -85,6 +85,15 @@ function info(){
     counters.qaFrozenGoalsFound/counters.qaFrozenHeldoutQuestions:null,
   qaRoleWitnessedAxisEdges:brain?.qaRoleEvidence?.edges?.length??0,
   qaRoleActiveObservations:brain?.qaRoleEvidence?.examples?.length??0,
+  qaLongFormEpisodes:brain?.qaRoleEvidence?.longForm?.episodes??0,
+  qaLongFormQuestionTokens:brain?.qaRoleEvidence?.longForm?.questionTokens??0,
+  qaLongFormAnswerTokens:brain?.qaRoleEvidence?.longForm?.answerTokens??0,
+  qaLongFormChunkNodes:brain?.qaRoleEvidence?.longForm?.questionChunks+
+    brain?.qaRoleEvidence?.longForm?.answerChunks||0,
+  qaLongFormSequentialEdges:brain?.qaRoleEvidence?.longForm?.observedRoleTransitions??0,
+  qaLongFormActiveChunkDigests:brain?.qaRoleEvidence?.longForm?.activeChunks??0,
+  qaLongFormEvictedSequences:brain?.qaRoleEvidence?.longForm?.evictedSequences??0,
+  qaLongFormUnretained:brain?.qaRoleEvidence?.longForm?.tooLongToRetainChunks??0,
   qaSemanticCaveat:"Full answers are scored WITHOUT passing heldout answer or target tokens to the original shape planner.",
   saturated:o?.droppedOperators>0,
   boundedMemoryWarning:"Observed text-window states are bounded; evicted states are not permanently retained as individual observations. All source bytes are streamed, not all bytes become unique persistent nodes."
