@@ -234,10 +234,40 @@ const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
   const startChars = brain.chars;
-  await brain.learnTextGPU(gpu, exs, progress => {
-    batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
-    shot();
-  });
+  // The Python call can contain a 229,187-character exercise batch.
+  // Keep the original UI genuinely responsive even before the first CUDA
+  // microchunk finishes. This heartbeat reports ELAPSED time, never
+  // fabricates character progress or commits partial document counts.
+  const tBatch = performance.now();
+  let lastRealProgress = tBatch;
+  const heartbeat = setInterval(() => {
+    if (!batchNow) return;
+    batchNow = {
+      ...batchNow,
+      elapsedSeconds: +((performance.now() - tBatch) / 1000).toFixed(1),
+      waitingSeconds: +((performance.now() - lastRealProgress) / 1000).toFixed(1),
+      progressSource: "last-completed-real-CUDA-microchunk",
+      warning: performance.now() - lastRealProgress > 60000
+        ? "NO CUDA MICROCHUNK COMPLETED FOR OVER 60 SECONDS - EXPENSIVE BATCH OR STALLED DEVICE; NO FAKE PROGRESS"
+        : null
+    };
+    shot(true);
+  }, 4000);
+  try {
+    await brain.learnTextGPU(gpu, exs, progress => {
+      lastRealProgress = performance.now();
+      batchNow = {
+        phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total,
+        elapsedSeconds: +((lastRealProgress - tBatch) / 1000).toFixed(1),
+        waitingSeconds: 0,
+        progressSource: "completed-original-CUDA-work",
+        warning: null
+      };
+      shot();
+    });
+  } finally {
+    clearInterval(heartbeat);
+  }
   const profCardEnd = performance.now();
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
