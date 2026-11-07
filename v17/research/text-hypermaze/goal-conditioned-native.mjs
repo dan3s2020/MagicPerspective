@@ -82,6 +82,12 @@ export class NativeGoalTextMaze {
  planCumulativeNumericWorld(request){
   return this.cumulative.planNumeric(request);
  }
+ // Full question-only path: prior Q/A examples learn WHICH numeric input
+ // variables the task requests; previously verified numeric-world actions
+ // supply its movement field; the original Discoverer constructs the path.
+ planCumulativeQuestion(request){
+  return this.cumulative.planQuestion(request);
+ }
  cumulativeWorldStatus(){return this.cumulative.audit();}
 
  // Experience ONLY actual observed text; no generated answer is inserted.
