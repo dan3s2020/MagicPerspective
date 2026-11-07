@@ -65,6 +65,30 @@ node --test v17/tests/veil-aether.http.test.mjs
 node --test v17/tests/torus-text-hypermaze.test.mjs
 ```
 
+## 2026-11-07 CPU-only Hermes Python → misleading partial-training failure (fixed on V21 only)
+
+Observed on the owner's Windows run:
+\`GPU ERROR: RuntimeError('torch.cuda.is_available() is false in C:\Users\DSV\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe (PyTorch 2.13.0+cpu) - no CPU fallback')\`.
+
+Root cause: original \`gpu/client.mjs\` chooses \`process.env.OCTOPUS_PY\` ahead of its own private GPU venv. Original \`START_V17.ps1\` builds CUDA and sets that variable; the V21 launcher initially did neither. Thus an inherited CPU-only Hermes Agent interpreter could be launched with \`--gpu cuda:0\`.
+
+Two corrections, both isolated:
+1. \`v17/ENSURE_V21_CUDA.ps1\` now checks the exact requested GPU with an actual PyTorch CUDA tensor on the explicitly specified interpreter, V21 private \`gpu/.venv\` or validated inherited CUDA Python; if none qualifies, it creates/installs a **private** V21 environment, verifies original \`worlds_gpu.py --selftest\` and \`shared_perspective.py --selftest\`, then overrides \`OCTOPUS_PY\`. It never reinstalls or changes Hermes Agent.
+2. Original V17 worker logic on a GPU error previously could continue consuming hypertext and report apparent training while the selected maze/transform CUDA worlds did not run. V21 worker now fail-closes if CUDA cannot initialize **before its first document**, and throws if an explicitly required GPU batch fails mid-run. It does not write a misleading partial-success checkpoint for a failed startup. Existing saves are not deleted.
+
+For an already cloned isolated V21 on Windows, stop the running trainer with Ctrl+C and update only if the checkout has no local modifications:
+\`\`\`powershell
+$dest = "D:\MagicPerspective-V21-Aether-Veil"
+if ((git -C $dest status --porcelain)) { throw "Working tree has changes; refusing to overwrite" }
+git -C $dest pull --ff-only
+if ($LASTEXITCODE -ne 0) { throw "Fast-forward update failed" }
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$dest\v17\START_V21_AETHER_VEIL.ps1" -Data "D:\training\OpenThoughts3-1.2M" -Gpu "cuda:0" -GpuWorlds 64 -Vram 3 -Resume
+\`\`\`
+
+Optional: pass \`-PythonExe "C:\path\to\your\proven\cuda\python.exe"\` to reuse a verified CUDA Python without installing inside V21. New defaults: \`-Cuda cu126\`, change only if the installed driver and PyTorch wheel require a different supported index.
+
+A successful GitHub Linux CI test does not verify the NVIDIA setup of the user's Windows laptop. Observe log line \`V21 CUDA: ready. OCTOPUS_PY=...\`, original V17 self-test success, and \`GPU ready\` in the worker. Reported 100% \`--gpu-util\` is an **allocation target**, not a measurement of instantaneous GPU load.
+
 ## Evidence, constraints, and next falsification
 
 CI on branch uses an isolated synthetic TXT fixture and the original Node worker, real HTTP endpoint, real checkpoint, plus existing V19/V20 tests. Passing CI proves that those particular native pathways work on the test runner. It does **NOT** prove a result on the user's local OpenThoughts data, zero-shot goal planning, natural-language understanding, automatic general-dimensional perception, optimal stochastic actions or NVIDIA full-device utilization.
