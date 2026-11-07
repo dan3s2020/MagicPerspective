@@ -99,6 +99,34 @@ export class LearnedAxisNavigator{
   }
   return null;
  }
+ // A measured decision trace. Executor is called AFTER choosing the action.
+ // Future random outcomes and the hidden teacher never enter the path planner.
+ observeExecution(execute,start,goal,{limit=14,chanceAware=false}={}){
+  const target=this.read(goal),initialState=this.read(start),initialShape=this.route(initialState,target);
+  const distances=this.distances(target),history=[];let state=start.slice();
+  for(let step=0;step<limit;step++){
+   const before=this.read(state);
+   if(k(before)===k(target))break;
+   const action=this.decide(before,target,{chanceAware,distanceMap:distances});
+   if(!action)break;
+   const predicted=this.move(before,action);
+   const possible=this.alternatives(before,action).map(o=>({next:o.next.slice(),p:o.p}));
+   // World outcome is observed only after committing to this action.
+   const nextWorld=execute(state,action),observed=this.read(nextWorld);
+   const probability=possible.find(o=>k(o.next)===k(observed))?.p||0;
+   const afterShape=this.route(observed,target);
+   history.push({step,before:before.slice(),action,predicted:predicted.slice(),
+    observed:observed.slice(),surprise:k(predicted)!==k(observed),
+    probabilityOfObserved:probability,possibleWorlds:possible,
+    repairedShape:afterShape?.map(x=>x.action)||null});
+   state=nextWorld;
+  }
+  const solved=k(this.read(state))===k(target);
+  return {axes:this.axes.slice(),start:initialState,target:target.slice(),
+   initialShape:initialShape?.map(x=>x.action)||null,
+   solved,steps:history.length,surprises:history.filter(x=>x.surprise).length,
+   history};
+ }
  // Derive all distances from learned transformations, never from the hidden-world oracle.
  distances(goal){
   const states=uniquePermutations(this.alphabet),ids=new Map(states.map((s,i)=>[k(s),i]));
