@@ -21,8 +21,13 @@ jobs:
           node --check v17/transcend/torus-aether/worlds/observed-instruction-goals.mjs
           node --check v17/transcend/torus-aether/worlds/path-answer-writer.mjs
           node --check v17/tests/v36-observed-intent-first-shot.test.mjs
+          node --check v17/tests/v36-native-real-intent-http.test.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
       - name: 360 frozen questions WITHOUT any answer target word - first-shot learning curve, cross-world causal effect removal and 1800-token long text
         run: node --test v17/tests/v36-observed-intent-first-shot.test.mjs
+      - name: Real ORIGINAL V17 worker and HTTP, actual corpus, independent instruction effect observations, frozen answers, Brain.v8 persisted, full original atlas
+        run: node --test v17/tests/v36-native-real-intent-http.test.mjs
       - name: Previous 360/360 EXPLICIT-goal first-shot V31 curve must remain EXACTLY unchanged
         env:
           MP_V31_CURVE_JSON: v17/artifacts/v31-control-curve.json
