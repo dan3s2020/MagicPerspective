@@ -379,6 +379,9 @@ export class LearnedCognitiveMap {
     // Default 0 preserves ALL prior V17/V23 behavior and saved checkpoints.
     if(!valid(minVerifiedContexts,0,32))throw Error('Invalid minimum independent causal contexts');
     const allPortable=transfer?portableTransformations(this.rules):[];
+    // Count ACTUAL physical action outcomes, grouped by BOTH transformation
+    // and its local observable context. Prevent accidental transfer of a
+    // successful "keeps" route to "denies" merely because words match.
     const outcomes=new Map();
     if(minVerifiedContexts>0)for(const [edge,counts] of this.interventions){
       const split=edge.lastIndexOf('|__XWORLD__:');
@@ -386,21 +389,38 @@ export class LearnedCognitiveMap {
       const originalState=edge.slice(0,split),action=edge.slice(split+1);
       const parsed=parsePortableId(action);
       if(!parsed)continue;
+      const pieces=unkey(originalState);
+      if(pieces[parsed.at]!==parsed.from)continue;
       const id=JSON.stringify([parsed.at,parsed.from,parsed.to]);
-      const entry=outcomes.get(id)||{accepted:new Set(),blocked:new Set()};
+      const context=JSON.stringify([pieces[parsed.at-1]??null,
+        pieces[parsed.at+1]??null,parsed.at===pieces.length-1]);
+      const group=outcomes.get(id)||new Map();
+      const entry=group.get(context)||{accepted:new Set(),blocked:new Set()};
       if(counts.accepted>0)entry.accepted.add(originalState);
       if(counts.blocked>0)entry.blocked.add(originalState);
-      outcomes.set(id,entry);
+      group.set(context,entry);outcomes.set(id,group);
     }
-    const admittedIds=new Set();
-    if(minVerifiedContexts>0)for(const [id,o] of outcomes)
-      if(o.accepted.size>=minVerifiedContexts&&o.blocked.size===0)admittedIds.add(id);
+    const admittedContexts=new Map();
+    if(minVerifiedContexts>0)for(const [id,contexts] of outcomes){
+      const matches=[];
+      for(const [signature,entry] of contexts){
+        if(entry.accepted.size<minVerifiedContexts||entry.blocked.size>0)continue;
+        const [left,right,atEnd]=JSON.parse(signature),[at]=JSON.parse(id);
+        matches.push({at,left,right,atEnd});
+      }
+      if(matches.length)admittedContexts.set(id,matches);
+    }
+    const admittedIds=new Set(admittedContexts.keys());
+    const contextAllows=(id,t,at)=>admittedContexts.get(id)?.some(ctx=>
+      ctx.at===at&&ctx.left===(t[at-1]??null)&&
+      ctx.right===(t[at+1]??null)&&ctx.atEnd===(at===t.length-1));
     const portable=minVerifiedContexts===0?allPortable:allPortable.flatMap(rule=>{
-      const positions=[...admittedIds].flatMap(x=>{
-        const [at,from,to]=JSON.parse(x);
-        return from===rule.from&&to===rule.to?[at]:[];
+      const supported=[...admittedContexts].flatMap(([id,ctx])=>{
+        const [at,from,to]=JSON.parse(id);
+        return from===rule.from&&to===rule.to?ctx:[];
       });
-      return positions.length?[{...rule,causallySupportedPositions:positions}]:[];
+      return supported.length?[{...rule,causallySupportedPositions:[...new Set(supported.map(x=>x.at))],
+        causallySupportedContexts:supported}]:[];
     });
     const portableClasses=portable.length,diagnostics={
       causalTransferMinAcceptedContexts:minVerifiedContexts,
@@ -422,7 +442,7 @@ export class LearnedCognitiveMap {
         // optional independent-physical-evidence gate as projected edges.
         const portableAction=parsePortableId(r.id);
         if(minVerifiedContexts>0&&portableAction&&
-           !admittedIds.has(JSON.stringify([portableAction.at,portableAction.from,portableAction.to])))continue;
+           !contextAllows(JSON.stringify([portableAction.at,portableAction.from,portableAction.to]),state,portableAction.at))continue;
         const next=this.predict(state,r.id);if(!next)continue;
         const nextKey=key(next),prior=this.interventions.get(key(state)+'|'+r.id);
         if(prior?.blocked>prior?.accepted){rejected++;continue;}
