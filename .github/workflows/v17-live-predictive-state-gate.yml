@@ -1,0 +1,60 @@
+name: MagicPerspective live predictive-state selection — REAL V17 worker, no-answer-leak
+on:
+  push:
+    branches:
+      - experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-v17-real-worker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax of actual V17 engine and live gate
+        run: |
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/magic.js
+          node --check v17/research/text-hypermaze/live-observed-axes.mjs
+          node --check v17/research/text-hypermaze/live-predictive-state-gate.mjs
+          node --check v17/tests/live-predictive-state-gate.test.mjs
+      - name: Critical train / validation / untouched holdout from actual sequential observations
+        run: node --test v17/tests/live-predictive-state-gate.test.mjs
+      - name: Existing real observed mathematical axes and versioned checkpoint regression
+        run: node --test v17/tests/live-observed-math-axes.test.mjs
+      - name: Live native V17 real worker, actual graph, UI, controls, sidecar persistence
+        run: node --test v17/tests/magic-live-native-ui.test.mjs
+      - name: V17 live observed language-maze regressions
+        run: |
+          node --test v17/tests/inline-language-maze-native.test.mjs
+          node --test v17/tests/language-maze-native-http.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+      - name: Frozen original V17 text planning and high-dimensional axis tests
+        run: |
+          node --test v17/tests/real-corpus-axis-gating.test.mjs
+          node --test v17/tests/learned-axis-gating.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+  windows-launcher-non-destructive:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse existing native PowerShell launchers, don't execute with simulated GPU
+        shell: powershell
+        run: |
+          foreach ($path in @("v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1")) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path).Path, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) { throw ("PowerShell syntax: " + $path + " " + ($errors | Out-String)) }
+            Write-Host "WINDOWS_PS_OK $path"
+          }
