@@ -1,0 +1,52 @@
+name: V17 ORIGINAL CUDA exact full-context fusion (no model replacement)
+on:
+  push:
+    branches:
+      - fix/V17-EXACT-CUDA-ALIGNMENT-PROGRESS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-original-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install torch CPU reference — no NVIDIA hardware exists on CI
+        run: python -m pip install numpy torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Syntax checks of exact full V17 original engine
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/exact_prefix_search.py
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+      - name: 1000 random exact range parity checks, all 64 context depths, unchanged actual V17 complete learner
+        working-directory: v17/transcend/torus-aether/gpu
+        run: python -m unittest -v test_exact_prefix_search.py
+      - name: Native V17 worker/UI/checkpoint regression
+        run: |
+          node --test v17/tests/torus-unified-gpu-text-boot.test.mjs
+          node --test v17/tests/magic-live-native-ui.test.mjs
+          node --test v17/tests/torus-gpu-text-progress.test.mjs
+          node --test v17/tests/live-predictive-state-gate.test.mjs
+  windows-original-launchers:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Existing V17 Windows CUDA and full-dataset entrypoints are unchanged
+        shell: powershell
+        run: |
+          foreach ($path in @("v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1","v17/INSTALL_FULL_AND_TRAIN.ps1")) {
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path).Path,[ref]$tokens,[ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw ("Syntax: "+$path+" "+($errors | Out-String)) }
+          }
