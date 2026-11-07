@@ -1,0 +1,24 @@
+name: V21 Aether Veil — Native V17/V20 contextual learning and regressions
+on:
+  push:
+    branches:
+      - experiment/V21-AETHER-VEIL-PREDICTIVE-PERSPECTIVE-20261107
+  workflow_dispatch:
+jobs:
+  aether-veil:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V21 observed contextual graph, pre-action shape, no-leak and preservation tests
+        run: node --test v17/tests/veil-aether.test.mjs
+      - name: Original V20 real corpus process, HTTP and checkpoint regressions
+        run: node --test v17/tests/torus-text-hypermaze.test.mjs
+      - name: Original V19 cognitive model and world-source regressions
+        run: |
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
+          node --test v17/tests/torus-world-source-regression.test.mjs
+          node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
