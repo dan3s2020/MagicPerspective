@@ -23,6 +23,8 @@ jobs:
           node --check v17/tests/native-hypermaze-persistent-atlas.test.mjs
       - name: Real original Discoverer shape with a missing transformation, evidence from another world, persistent learned graph, enumerated paths and all wrong characters
         run: node --test v17/tests/native-hypermaze-persistent-atlas.test.mjs
+      - name: Causal original operator deletion, ambiguous goal paths, 256-token design ceiling and complete multilingual UTF-8 ledger pagination
+        run: node --test v17/tests/native-hypermaze-operator-causality.test.mjs
       - name: Previous exact unseen 2D shape parity remains unchanged
         run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
       - name: Original short compositional hidden text cases and actual native noise checkpoint remain unchanged
