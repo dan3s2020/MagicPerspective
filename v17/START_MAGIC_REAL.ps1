@@ -22,8 +22,8 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_V17.ps1"
-$branchTag = "feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107"
-$compatibleBranches = @($branchTag, "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107")
+$branchTag = "fix/V17-EXACT-CUDA-ALIGNMENT-PROGRESS-20261107"
+$compatibleBranches = @($branchTag, "feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107", "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107")
 if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
  throw "Original complete CUDA V17 launcher missing: $launcher"
 }
