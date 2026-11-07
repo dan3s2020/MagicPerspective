@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
+import {AligningGraph} from "../transcend/torus-aether/align.mjs";
 
 const rules={depth:1,off:["R2","R4"],budEvery:100,empty:true,maxWires:32,fold:false};
 const create=()=>new Brain({rules,c:{margin:.05,window:400},seed:11});
@@ -116,4 +117,26 @@ test("long text outside numeric field is not silently passed off as solved",()=>
  assert.equal(r.text,"");
  assert.equal(r.noNextCharacterFallback,true);
  assert.ok(b.numericGoalField.skipped>=1);
+});
+
+
+test("genuine frozen heldout Q/A evaluation reports exact whole-answer path BEFORE legacy character diagnostics",()=>{
+  const b=train(cases[1]);
+  b.align=new AligningGraph();
+  const unseen="Q: What is 7 times 6?\nA: 7 * 6 = 42.\n\n";
+  // The independent reference is introduced ONLY when the heldout
+  // evaluator is called, never in any observePair() or training step.
+  const report=b.evalTextExercises([Uint8Array.from(Buffer.from(unseen,"utf8"))],
+    {T:0,noise:0,seed:77});
+  assert.equal(report.nativeGoalNoTeacherAnswerDuringPlanning,true);
+  assert.equal(report.nativeWholeAnswerExact,1);
+  assert.equal(report.exercises[0].nativeGoal.fullAnswerExact,true);
+  assert.equal(report.exercises[0].nativeGoal.wholePredictedBeforeFirstCharacter,
+    "7 * 6 = 42.");
+  assert.equal(report.exercises[0].shapeLegacyDiagnosticOnly,true);
+  assert.equal(report.exercises[0].nativeGoal.noNextCharacterFallback,true);
+  console.log("V17_FROZEN_EXACT_WHOLE_SOLUTION "+JSON.stringify({
+    exact:report.nativeWholeAnswerExact,preaction:true,heldout:true,
+    legacyNextCharacterDiagnosticSeparate:true
+  }));
 });
