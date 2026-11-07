@@ -97,3 +97,23 @@ test("observational corruption is tolerated, but noise is not credited with disc
   assert.equal(count,288);
  }
 });
+
+test("ORGANISM REUSES TRANSFORMATIONS PARSED FROM 32 TEXT EXERCISES, NOT GIVEN AS READY STRUCTURED INPUT",()=>{
+ const {atlas,fragments}=trainWorlds({seed:1181,examples:76});
+ assert.equal(fragments.length,32);
+ for(const f of fragments){
+  assert.ok(f.text.length>2000);
+  assert.equal(f.ignored,1);
+  assert.equal(f.samples.length,76);
+  assert.deepEqual([...new Set(f.samples.map(x=>x.action))],[f.action]);
+  assert.ok(f.samples.every(x=>atlas.events[x.id].provenance.startsWith("document:"+f.world+"/line:")));
+ }
+ const learned=atlas.fit({allowContext:true});
+ assert.equal(learned.discoveredConditionalRules,6);
+ const testWorld=holdoutWorld(1309746),plan=atlas.plan(testWorld.start,testWorld.goal,parseTerrain(testWorld.document));
+ assert.ok(plan.found);
+ assert.equal(atlas.evaluate(plan,actualStep,testWorld.cells).success,true);
+ console.log("SEGMENTED_TEXT_ATLAS_TRANSFER",JSON.stringify({trainDocuments:fragments.length,
+  observedTextEvents:atlas.events.length,conditions:learned.discoveredConditionalRules,
+  heldoutBeforeActionPath:plan.solutionShape}));
+});
