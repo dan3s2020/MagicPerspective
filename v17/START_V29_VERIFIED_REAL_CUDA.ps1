@@ -27,7 +27,7 @@ if ($Gpu -notin @("off","cuda:0","cuda:1")) { throw "Unsupported original GPU: $
 if (!(Get-Command node -ErrorAction SilentlyContinue)) { throw "Node.js is required" }
 function Assert-FreePort([int]$Port) {
   if ($Port -lt 1024 -or $Port -gt 65535) { throw "Port outside 1024..65535: $Port" }
-  $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Parse("127.0.0.1"),$Port)
+  $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse("127.0.0.1"), $Port)
   try {
     $listener.Start()
   } catch {
