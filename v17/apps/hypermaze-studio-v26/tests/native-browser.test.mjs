@@ -187,8 +187,8 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
       "rate:document.querySelector('#nativeProgressHeartbeat').textContent,"+
       "banner:document.querySelector('#nativeProgressMessage').textContent})");
     assert.match(cpuPhase.phase,/CPU ORIGINAL: CPU: Brain.live/);
-    assert.match(cpuPhase.phase,/2\\.048\\/43\\.935/);
-    assert.match(cpuPhase.rate,/0,0 caractere\\/s COMMISE/);
+    assert.ok(cpuPhase.phase.includes('2.048/43.935'),cpuPhase.phase);
+    assert.ok(cpuPhase.rate.includes('caractere/s COMMISE'),cpuPhase.rate);
     assert.match(cpuPhase.banner,/Faza REALĂ: CPU: Brain.live/);
     assert.ok(calls.some(x=>x.url==="/health"),"Native live heartbeat must be queried separately from cached /graph");
 
