@@ -398,7 +398,9 @@ http.createServer((req, res) => {
         if(typeof m.question!=="string"||!m.question.trim()||m.question.length>100000)
           return json(res,{error:"A nonempty question up to 100000 characters is required"});
         const maxNodes=Math.max(20,Math.min(4000,Math.trunc(Number(m.maxNodes)||1500))),
-          temperature=Math.max(0,Math.min(2,Number(m.temperature)||0));
+          temperature=Math.max(0,Math.min(2,Number(m.temperature)||0)),
+          temporal=m.temporal===true,
+          maxTemporalStates=Math.max(200,Math.min(8000,Math.trunc(Number(m.maxTemporalStates)||6000)));
         if(!sl.wk){
           const file=saveOf(sl);
           if(!fs.existsSync(file))return json(res,{error:"Native V24 Brain checkpoint not saved"});
@@ -409,7 +411,8 @@ http.createServer((req, res) => {
             cognitive=LearnedCognitiveMap.restore(brain.cognitiveMap);
           const before=JSON.stringify([navigator.export(),cognitive.report()]);
           const result=navigator.plan(m.question,{map:cognitive,geometry:brain.trace.geo,
-            disc:{temp:temperature},maxNodes});
+            disc:{temp:temperature},maxNodes,
+            navigationMode:temporal?"temporal":"legacy",maxTemporalStates});
           const movement=result.ready?navigator.execute(result,{map:cognitive}):null;
           if(before!==JSON.stringify([navigator.export(),cognitive.report()]))
             throw Error("Frozen saved question-goal plan mutated learned state");
@@ -419,7 +422,8 @@ http.createServer((req, res) => {
           chats.delete(id);json(res,{error:"Native original Discoverer question-goal plan timed out"});
         },120000);
         chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-        sl.wk.postMessage({questionGoalPlan:{id,question:m.question,maxNodes,temperature}});
+        sl.wk.postMessage({questionGoalPlan:{id,question:m.question,maxNodes,
+          temperature,temporal,maxTemporalStates}});
       }catch(err){json(res,{error:err.message});}
     });
     return;
@@ -433,7 +437,9 @@ http.createServer((req, res) => {
     if(source.kind!=="parquet")
       return json(res,{error:"Exact episode-disjoint Parquet held-out split required"});
     const count=Math.max(1,Math.min(16,Math.trunc(+(q.get("count")||4)))),
-      maxNodes=Math.max(20,Math.min(4000,Math.trunc(+(q.get("maxNodes")||1200))));
+      maxNodes=Math.max(20,Math.min(4000,Math.trunc(+(q.get("maxNodes")||1200)))),
+      temporal=q.get("temporal")==="1",
+      maxTemporalStates=Math.max(200,Math.min(8000,Math.trunc(+(q.get("maxTemporalStates")||6000))));
     void (async()=>{
       const ds=await openTextDataset(source.root);
       if(ds.held<count)throw Error("Not enough original Parquet held-out rows");
@@ -448,7 +454,8 @@ http.createServer((req, res) => {
             return Promise.reject(Error("Question-goal model not trained/saved"));
           const nav=QuestionGoalNavigator.restore(brain.questionGoalNavigator),
             cognitive=LearnedCognitiveMap.restore(brain.cognitiveMap);
-          return Promise.resolve(nav.plan(question,{map:cognitive,geometry:brain.trace.geo,maxNodes}));
+          return Promise.resolve(nav.plan(question,{map:cognitive,geometry:brain.trace.geo,
+            maxNodes,navigationMode:temporal?"temporal":"legacy",maxTemporalStates}));
         }
         return new Promise((resolve,reject)=>{
           const id=++chatId,timer=setTimeout(()=>{
@@ -456,7 +463,8 @@ http.createServer((req, res) => {
           },120000);
           chats.set(id,result=>{clearTimeout(timer);
             result.error?reject(Error(result.error)):resolve(result);});
-          sl.wk.postMessage({questionGoalPlan:{id,question,maxNodes,temperature:0}});
+          sl.wk.postMessage({questionGoalPlan:{id,question,maxNodes,temperature:0,
+            temporal,maxTemporalStates}});
         });
       };
       const results=[];
@@ -474,15 +482,20 @@ http.createServer((req, res) => {
           steps:planned.plannedSteps||0,exact:!!output&&output===truth,
           characterExact:false,
           tokenPositionAccuracy:correct/Math.max(1,a.length),
+          predictedLength:planned.predictedLength??null,
+          plannedLength:planned.plannedSteps??null,referenceAnswerTokens:a.length,
+          absoluteTokenLengthError:Math.abs((planned.plannedSteps||0)-a.length),
           predictedPreview:output.slice(0,250),
           error:planned.ready?null:planned.reason||"no learned path"});
         results.at(-1).characterExact=!!output&&output===truth;
       }
       const n=results.length,good=results.filter(x=>x.exact).length,found=results.filter(x=>x.found).length;
-      return json(res,{frozen:true,source:"Original OpenThoughts3 Parquet held-out rows, never trained",
+      return json(res,{frozen:true,source:"Native selected Parquet held-out rows; authenticity must be verified separately",
+        navigationMode:temporal?"temporal-original-shape":"legacy-original-shape",
         referenceAnswerOnlyInHTTPParent:true,
         total:n,found,exact:good,exactPercent:n?good/n*100:null,
         positionMean:results.reduce((s,r)=>s+r.tokenPositionAccuracy,0)/Math.max(1,n),
+        meanAbsLengthError:results.reduce((s,r)=>s+r.absoluteTokenLengthError,0)/Math.max(1,n),
         allCorrect:good===n,sufficientForUniversal100PctProof:false,results,
         warning:"Correctly routed observed tokens are not necessarily a correct unseen answer."});
     })().catch(err=>json(res,{error:err.message}));
