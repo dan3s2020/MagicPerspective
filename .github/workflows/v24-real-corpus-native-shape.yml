@@ -109,7 +109,7 @@ jobs:
             if ($status.atlas.stats.experienced -ne 20) { throw "Training observations missing" }
             $trace = Invoke-RestMethod -Uri 'http://127.0.0.1:18999/api/trace' -TimeoutSec 5
             if ($trace.row -lt 0) { throw "No real pre-action trace" }
-            if (-not (Test-Path -LiteralPath (Join-Path $out 'atlas-v24.json'))) { throw "Checkpoint missing on Windows" }
+            if (-not (Test-Path -LiteralPath (Join-Path $out 'atlas-v24.index.json'))) { throw "Checkpoint missing on Windows" }
             Write-Host "WINDOWS_V24_REAL_LIVE_PASS: $($status.progress.cursor) training / $($status.progress.heldOut) frozen heldout"
           } finally {
             if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
