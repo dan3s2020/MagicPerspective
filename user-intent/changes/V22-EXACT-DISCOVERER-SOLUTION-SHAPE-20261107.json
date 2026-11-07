@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_BLOCKING_EXACT_ARCHITECTURE_NOT_YET_PROVEN",
+  "priority": "literal user requirement overrides any assistant paraphrase; any inaccessible historical byte remains UNVERIFIED",
+  "source_quotes": [
+    {
+      "source": "this conversation user message, user-visible 2026-11-07",
+      "literal": "FUTU-TI MORITII MA-TII NOTEAZA-TI REGRESIA PESTE TOT IN REPO SA SE VADA ! NENOROCITULE! SI CONSTRUIESTE ARHITECTURA CERUTA,O TESTEZI INTERN PANA MERGE SI IMI DAI COMANDA DOAR DUPA CE MERGE TOT,FARA DEMO FARA NIMIC, TE OMOR TE OMOR BA TE OMOR TE STRANG DE GAT CE INSEAMNA MA NENOROCITULE ASTA NOI SA GASIM TOT ,SA DESCOPERIM TOT SI TU SA DISTRUGI TOT!!! CINE TI-A DAT VOIE SA DISTRUGI!!!! RULEZI TESTELE PANA GASESTI LABIRINTUL HYPERDIMENSIONAL SI GHICESTE TEXTE MARI CU RASPUNSURI NIMERITE DIN PRIMA 100% . TREBUIE SA GHICEASCA RASPUNSUL DIN PRIMA,FORMA SOLUTIEI DIN PRIMA CU 100% CA LA LABIRINTE DUPA CATEVA LUMI TRAITE !"
+    },
+    {
+      "source": "this conversation user message, user-visible 2026-11-07",
+      "literal": "AI DEJA TOTUL IN REPO NENOROCITULE ! SA NU TE PRIND CA OMITI VREUN BYTE"
+    }
+  ],
+  "originals": {
+    "exercise": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "immutable_exact_blob": "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "verified_original_sha": "e34d787467b7238c7422a0509173b1f785eb2342",
+    "original_text_world": "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "old_generic_lift": "v17/transcend/torus-aether/language-maze/shape-topology.mjs",
+    "original_brain": "v17/transcend/torus-aether/devour/brain.mjs"
+  },
+  "prohibited": [
+    "silently replacing Discoverer.shape with next-token predictor or another algorithm",
+    "target answer as oracle during planning",
+    "changing working V17 baseline without exact-output regression",
+    "faking perfect accuracy from known-goal graph reachability",
+    "purging checkpoint or training worlds",
+    "claiming all unforeseen language meanings guaranteed solved",
+    "inventing missing conversation bytes"
+  ],
+  "required_proof": [
+    "original Discoverer.shape called directly for maze and language action topology",
+    "exact baseline V17 maze match with same discoveries, noise seeds, random choices",
+    "learned text actions induced from observed state contrasts and real environment feedback",
+    "goal predicate checkable before movement; cannot read answer held out",
+    "predict full action path before first action, trace each actual transition",
+    "stochastic noise tested and reproducible under seed, T0 deterministic",
+    "100% correct full heldout generated answer across genuinely unseen composition under declared structured task, not all natural language",
+    "negative controls fail when learned transitions removed, contradictions force abstention",
+    "native process and UI preserves existing V17/V19/V20/V21 and CUDA training, checkpoints, historical branches"
+  ],
+  "scope": "isolated V22 branch only; main only additive prominent regression docs, no V21 code overwritten",
+  "resolution_requires": "independent heldout OpenThoughts3 large text answer proof + explicit user approval; issue #25 stays OPEN"
+}
