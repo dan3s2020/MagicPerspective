@@ -271,6 +271,10 @@ export async function makeHTTP(trainer,{port=8899,host="127.0.0.1"}={}){
     trainer.traceHistory.map(t=>({row:t.row,found:t.found,exact:t.exact,wordF1:t.wordF1,
       steps:t.route?.length||0,question:t.question.slice(0,120)})));
    if(req.method==="GET"&&u.pathname==="/api/events")return send(res,200,trainer.events);
+   if(req.method==="GET"&&u.pathname==="/api/atlas"){
+    const count=int(number(u.searchParams.get("count"),60),1,120,"atlas count");
+    return send(res,200,trainer.model.atlasView({count}));
+   }
    if(req.method==="GET"&&u.pathname==="/api/health")return send(res,200,{ok:trainer.mode!=="error",mode:trainer.mode});
    if(req.method==="GET"&&u.pathname==="/api/native"){
     const requested=u.searchParams.has("port")?Number(u.searchParams.get("port")):null;
