@@ -366,15 +366,42 @@ export class LearnedCognitiveMap {
     if(!entries.length)throw Error('Goal must constrain at least one position');
     return entries.every(([i,token])=>valid(Number(i),0,tokens.length-1)&&tokens[Number(i)]===token);
   }
-  buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth,transfer=true,maxTokens=96}={}){
+  buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth,transfer=true,maxTokens=96,minVerifiedContexts=0}={}){
     const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
     if(!start.length||start.length>maxTokens||!valid(maxTokens,1,2048)||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
     LearnedCognitiveMap.matchGoal(start,goal);
     const queue=[start],byKey=new Map([[key(start),0]]),out=[[]],depth=[0];
     let rejected=0,truncated=false,imagined=0,portableCount=0;
     let depthLimited=0;
-    const portable=transfer?portableTransformations(this.rules):[];
+    // OPTIONAL conservative causal transfer: do not extrapolate an operator
+    // solely from co-occurring sentence contrasts when real action feedback
+    // across multiple independent observed world states is available.
+    // Default 0 preserves ALL prior V17/V23 behavior and saved checkpoints.
+    if(!valid(minVerifiedContexts,0,32))throw Error('Invalid minimum independent causal contexts');
+    const allPortable=transfer?portableTransformations(this.rules):[];
+    const outcomes=new Map();
+    if(minVerifiedContexts>0)for(const [edge,counts] of this.interventions){
+      const split=edge.lastIndexOf('|__XWORLD__:');
+      if(split<0)continue;
+      const originalState=edge.slice(0,split),action=edge.slice(split+1);
+      const parsed=parsePortableId(action);
+      if(!parsed)continue;
+      const id=JSON.stringify([parsed.at,parsed.from,parsed.to]);
+      const entry=outcomes.get(id)||{accepted:new Set(),blocked:new Set()};
+      if(counts.accepted>0)entry.accepted.add(originalState);
+      if(counts.blocked>0)entry.blocked.add(originalState);
+      outcomes.set(id,entry);
+    }
+    const admittedIds=new Set();
+    if(minVerifiedContexts>0)for(const [id,o] of outcomes)
+      if(o.accepted.size>=minVerifiedContexts&&o.blocked.size===0)admittedIds.add(id);
+    const portable=minVerifiedContexts===0?allPortable:allPortable.filter(rule=>
+      [...admittedIds].some(x=>{const [at,from,to]=JSON.parse(x);return from===rule.from&&to===rule.to;}));
     const portableClasses=portable.length,diagnostics={
+      causalTransferMinAcceptedContexts:minVerifiedContexts,
+      portableClassesBeforeCausalEvidenceFilter:allPortable.length,
+      portableClassesExcludedByCausalEvidence:allPortable.length-portable.length,
+      causalActionClassesWithIndependentSuccess:admittedIds.size,
       portableClasses,observedActionRules:this.rules.size,
       sourceExamplesActive:this.examples.size,
       compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
@@ -432,6 +459,8 @@ export class LearnedCognitiveMap {
     if(truncated)diagnostics.excludedByDesign.push("MAX_NODES_EXCEEDED");
     if(depthLimited)diagnostics.excludedByDesign.push("MAX_DEPTH_EXCEEDED");
     if(!portable.length)diagnostics.excludedByDesign.push("INSUFFICIENT_INDEPENDENT_CONTEXT_EVIDENCE_FOR_TRANSFER");
+    if(minVerifiedContexts>0&&allPortable.length>portable.length)
+      diagnostics.excludedByDesign.push("INSUFFICIENT_CAUSAL_EXECUTION_EVIDENCE_FOR_PORTABLE_ROUTE");
     const targets=queue.map((tokens,i)=>LearnedCognitiveMap.matchGoal(tokens,goal)?i:null).filter(i=>i!==null);
     if(!targets.length){
       const demanded=Object.values(goal.slots);
@@ -452,8 +481,8 @@ export class LearnedCognitiveMap {
   // Same V17 operator, same .97 and .5 thresholds: no BFS oracle or target string.
   // Only the target PREDICATE seeds the attraction field; its successful states
   // must emerge from learned transition hypotheses.
-  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null,transfer=true,maxTokens=96}={}){
-    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth,transfer,maxTokens});
+  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null,transfer=true,maxTokens=96,minVerifiedContexts=0}={}){
+    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth,transfer,maxTokens,minVerifiedContexts});
     if(world.targets.includes(0))return {found:true,path:[],world,field:{reason:'ALREADY_AT_GOAL',values:[]},
       goal:clone(goal),learnedRules:this.rules.size,novelGoal:false,
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
