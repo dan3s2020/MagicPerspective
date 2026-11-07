@@ -27,7 +27,7 @@ test("heldout answer-only score respects true starting answer boundary",()=>{
  assert.equal(result["1"].answerAlignedTrueByteBlocked,4);
  assert.equal(result["1"].answerGeometricTrueByteRecoveryPossible,4);
  assert.equal(result["1"].alignedTrueByteBlocked,10);
- assert.equal(result["1"].geometricTrueByteRecoveryPossible,10);
+ assert.equal(result["1"].geometricTrueByteRecoveryPossible,5,"only the five A bytes have geometric support, including the one A in the prefix");
  assert.equal(result["1"].answerTotal,4);
  assert.equal(result["1"].fieldCoverageFraction,1);
  assert.equal(result["0"].allTotal,bytes.length-4);
