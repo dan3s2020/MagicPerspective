@@ -310,3 +310,73 @@ test("MB-scale genuine JSONL disk ingestion benchmark: full original native text
   fs.rmSync(folder,{recursive:true,force:true});
  }
 });
+
+test("On original learned-operator saturation STOP, preserve last clean Brain and SOURCE cursor, then restart with larger capacity to finish exact remaining JSONL",{
+ timeout:210000
+},async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"real-hypermaze-capacity-recovery-"));
+ const file=path.join(dir,"train-00015-of-00120.jsonl"),out=path.join(dir,"runtime");
+ const common="The actual real observation states that every machine has a documented environment and that its changes must be tracked.";
+ const rows=Array.from({length:180},(_,i)=>JSON.stringify({
+  conversations:[
+   {from:"human",value:common+" State marker item"+(i*17+3)+"."},
+   {from:"gpt",value:common+" State marker item"+(i*17+9)+"."}
+  ]
+ }));
+ fs.writeFileSync(file,rows.join("\n")+"\n");
+ const sourceSize=fs.statSync(file).size;
+ let first=null,second=null;
+ try{
+  first=await launch({data:file,out,port:await freePort(),autoStart:true,
+   saveEvery:5,holdoutEvery:20,transitionEvery:10,
+   windowTokens:48,maxTokensPerSegment:64,
+   maxObserved:300,maxOperators:100,heapMB:1024});
+  let failure=null;
+  const until=Date.now()+75000;
+  while(Date.now()<until){
+   const r=await(await fetch(first.base+"/api/status")).json();
+   if(r.error){failure=r.error;break;}
+   await delay(110);
+  }
+  assert.ok(failure?.includes("capacity reached"),
+   "The real original model must stop when memory for actions fills, NEVER falsely declare 100%");
+  const manifest=JSON.parse(fs.readFileSync(
+   path.join(out,"native-hypermaze-progress.json"),"utf8"));
+  assert.ok(manifest.counters.rowsRead>0&&manifest.counters.rowsRead<180);
+  assert.ok(manifest.counters.bytesRead<sourceSize);
+  assert.equal(manifest.counters.rowsRead%5,0,
+   "A partially trained row must NEVER advance the durable source cursor");
+  const original=Brain.load(path.join(out,manifest.checkpoint));
+  assert.equal(original.observedTransformations.maxOperators,100);
+  const protectedCount=original.observedTransformations.operators.size;
+  await first.close();first=null;
+  second=await launch({data:file,out,port:await freePort(),autoStart:true,
+   saveEvery:30,holdoutEvery:20,transitionEvery:10,
+   windowTokens:48,maxTokensPerSegment:64,
+   maxObserved:300,maxOperators:40000,heapMB:1024});
+  const final=await waitFor(second.base,s=>s.completed===true,90000);
+  assert.equal(final.bytesRead,sourceSize);
+  assert.equal(final.rowsRead,180);
+  assert.equal(final.trainedRows,171);
+  assert.equal(final.heldoutRows,9);
+  assert.equal(final.operatorsDropped,0,
+   "The resumed original Brain must finish after a genuine capacity increase");
+  const end=JSON.parse(fs.readFileSync(
+   path.join(out,"native-hypermaze-progress.json"),"utf8"));
+  const saved=Brain.load(path.join(out,end.checkpoint));
+  assert.equal(saved.observedTransformations.maxOperators,40000);
+  assert.ok(saved.observedTransformations.operators.size>=protectedCount);
+  console.log("ORIGINAL_NATIVE_CAPACITY_SAFE_RESTART",JSON.stringify({
+   originalCap:100,largerCap:40000,
+   committedBeforeFirstFailure:manifest.counters.rowsRead,
+   previousLearnedActionsProtected:protectedCount,
+   fullyConsumedAfterResume:final.bytesRead,
+   fullOriginalJSONLRows:180,heldoutRows:9,
+   noPartiallyCommittedLine:true,noOtherTrainerUsed:true
+  }));
+ }finally{
+  if(first)await first.close();
+  if(second)await second.close();
+  fs.rmSync(dir,{recursive:true,force:true});
+ }
+});
