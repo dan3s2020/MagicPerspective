@@ -413,6 +413,21 @@ parentPort.on("message",m=>{
     noProvidedReferenceAnswer:true,
     fullGeneralLanguageCompetenceProven:false}});
   }
+  if(m.cmd==="cumulativeQuestion"){
+   const question=String(m.question||"");
+   if(!question.trim()||question.length>4000)
+    throw Error("Native question-only cumulative navigation needs a 1..4000 character question; never send the answer");
+   const prediction=engine.planCumulativeQuestion({
+    question,maxGraphNodes:Number(m.maxGraphNodes||2200),
+    maxExpansionDepth:Number(m.maxExpansionDepth||18),
+    includeTopology:!!m.topology
+   });
+   return send("rpc",{id,result:{...prediction,
+    originalBrain:true,goalFromPreviousQuestionExamples:true,
+    fullGoldAnswerNotPassed:true,
+    independentPhysicalAcceptanceStillRequired:true,
+    unrestrictedSemanticAnswerAccuracyProven:false}});
+  }
   if(m.cmd==="cumulativeNumeric"){
    const start=String(m.start||"");
    if(!start.trim()||start.length>4000||!Array.isArray(m.numericGoals)||
