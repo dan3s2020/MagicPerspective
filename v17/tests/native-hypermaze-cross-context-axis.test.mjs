@@ -54,6 +54,9 @@ test("Two distinct lived context mazes generate evidence-backed reusable native 
  const atlas=enumerateNativePaths(after);
  assert.ok(atlas.initialShape.usedEdges.length>=1);
  assert.equal(atlas.topology.completeNaturalLanguage,false);
+ assert.ok(atlas.contextTransferHypotheses.known>=1);
+ assert.ok(atlas.contextTransferHypotheses.usedInInitialShape>=1);
+ assert.ok(atlas.initialShape.usedEdges.some(x=>x.contextFreeTransferHypothesis===true));
  assert.equal(atlas.paths.length>=1,true);
  const body=native.execute(after,{trainNoise:false,enableNoise:false});
  assert.equal(body.solvedInternalGoal,true);
@@ -63,7 +66,14 @@ test("Two distinct lived context mazes generate evidence-backed reusable native 
  assert.equal(audited.characterAttributionAvailable,true);
  assert.ok(audited.charAudit.predictedCharacterOrigins.some(x=>
   x.kind==="learned-text-transformation"&&x.operatorFrom==="He"&&
-  x.evidence?.from==="He is tired."));
+  x.evidence?.from==="He is tired."&&
+  x.contextFreeTransferHypothesis===true&&x.independentlyObservedContexts===2));
+ const wrongContext=auditNativePath({plan:after,atlas,reference:"He was ready.",brain:b});
+ assert.equal(wrongContext.completeTextExactFirstTry,false);
+ assert.ok(wrongContext.failureCategories.includes(
+  "unverified-cross-context-axis-contributed-to-wrong-character"));
+ assert.ok(wrongContext.charAudit.incorrectCharacters.some(x=>
+  x.originalPathSource?.contextFreeTransferHypothesis));
  assert.equal(b.observedTransformations.containsSentence("She was ready."),false);
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),"mp-context-axis-"));
  try{
