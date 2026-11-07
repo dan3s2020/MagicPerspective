@@ -1,0 +1,40 @@
+name: "V17 FULL Atlas - exact native CUDA text hang repair"
+on:
+  push:
+    branches:
+      - fix/V17-FULL-ATLAS-REAL-CUDA-TEXT-HANG-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-real-text-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Python dependencies for ORIGINAL NumPy native TextCard reference
+        run: python -m pip install --disable-pip-version-check numpy
+      - name: Syntax verify ORIGINAL model, GPU server, and exact regression
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          python -m py_compile v17/tests/test_v17_full_atlas_cuda_hang.py
+      - name: EXACT original 64-character context and actual 190k document reference, SelfMem native parity, progress and trust
+        run: python -m unittest discover -s v17/tests -p test_v17_full_atlas_cuda_hang.py -v
+      - name: Existing exact original V17 prefix/search interval equivalence tests
+        run: python -m unittest discover -s v17/tests -p text_index_fast_test.py -v
+      - name: Existing all 6 original trust variants and actual observed train history
+        run: python -m unittest discover -s v17/tests -p text_variant_fast_test.py -v
+      - name: Original native Brain, full xD atlas and persistent text navigation unchanged
+        run: |
+          node --test v17/tests/complete-xd-maze-atlas.test.mjs
+          node --test v17/tests/native-xd-brain-integration.test.mjs
+          node --test v17/tests/native-evidence-gated-integration.test.mjs
+      - name: Real ORIGINAL V17 server, worker, actual corpus and checkpoint recovery
+        run: node --test v17/tests/complete-xd-native-live-http.test.mjs
