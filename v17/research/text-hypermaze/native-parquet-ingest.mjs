@@ -59,6 +59,8 @@ export async function ingestNativeParquet(runtime,root,{saveEvery=5000,
  if(m.cursor>target)throw Error("Requested limit lower than saved original Brain cursor");
  runtime.state="running";runtime.lastError=null;
  let begin=Date.now(),startCursor=m.cursor;
+ m.sessionStartedAt=new Date(begin).toISOString();
+ m.rowsPerSecond=0;
  for(let index=m.cursor;index<target;index++){
   let row;
   try{row=await ds.exercise(index);}
@@ -79,6 +81,10 @@ export async function ingestNativeParquet(runtime,root,{saveEvery=5000,
   if(m.cursor%saveEvery===0){
    m.lastSavedCursor=m.cursor;runtime.save();
   }
+  if(m.cursor%32===0){
+   const sec=Math.max(0.001,(Date.now()-begin)/1000);
+   m.rowsPerSecond=+(Math.max(0,m.cursor-startCursor)/sec).toFixed(2);
+  }
   if(m.cursor%2000===0){
    const sec=Math.max(1e-3,(Date.now()-begin)/1000);
    console.log("V30_REAL_OPENTHOUGHTS_NATIVE_CROSSWORLD",JSON.stringify({
@@ -92,6 +98,8 @@ export async function ingestNativeParquet(runtime,root,{saveEvery=5000,
   if(m.cursor%32===0)await yieldLoop();
  }
  runtime.state=m.cursor>=ds.trainRows?"finished":"partial";
+ m.rowsPerSecond=+(Math.max(0,m.cursor-startCursor)/
+  Math.max(0.001,(Date.now()-begin)/1000)).toFixed(2);
  m.lastSavedCursor=m.cursor;runtime.save();
  return {
   rowsConsumed:m.cursor,totalTrainRows:ds.trainRows,heldoutExcluded:ds.held,
