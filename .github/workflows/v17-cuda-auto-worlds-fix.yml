@@ -15,6 +15,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the real NumPy GPU-protocol parity dependency
+        run: python3 -m pip install "numpy>=2,<3"
       - name: Confirm Python and NumPy (CPU parity of the original GPU engine)
         run: |
           python3 -c "import numpy, sys; print('NUMPY', numpy.__version__, 'PYTHON', sys.version)"
