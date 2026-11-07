@@ -366,6 +366,28 @@ http.createServer((req, res) => {
   }
   // Actual native Brain: observe only independently witnessed before/after
   // arithmetic state transitions. Never insert evaluation answers as training.
+  // The source of an actual transition must be the independent world/user,
+  // not our preaction candidate. No background simulated execution.
+  if(req.method==="POST"&&url==="/native-math-step"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>120000)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid actual physics observation JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap")||!sl.wk)
+        return json(res,{error:"An ACTIVE original cognitive Brain is required for live physical feedback"});
+      if(!Number.isSafeInteger(m.planId)||m.planId<1||
+         typeof m.accepted!=="boolean"||
+         typeof m.afterDocument!=="string"||!m.afterDocument||
+         m.afterDocument.length>110000)
+        return json(res,{error:"Report an accepted or rejected real action and complete independently observed afterDocument"});
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);json(res,{error:"Original Brain physical-feedback wait timed out"});
+      },60000);
+      chats.set(id,reply=>{clearTimeout(timer);json(res,reply)});
+      sl.wk.postMessage({nativeMathStep:{
+        id,planId:m.planId,afterDocument:m.afterDocument,accepted:m.accepted}});
+    });return;
+  }
   if(req.method==="POST"&&url==="/native-math-observe"){
     let body="";req.on("data",d=>{body+=d;if(body.length>16384)req.destroy();});
     req.on("end",()=>{
