@@ -273,6 +273,21 @@ http.createServer((req, res) => {
   }
   // An EXHAUSTIVE paged view of every stored learned native context state
   // and outgoing transition. Querying does not trigger teacher training.
+  if(req.method==="GET"&&url==="/gpu-future-path"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original native Brain worker is not running"});
+    const context=q.get("context")||"";
+    if(!context||Buffer.byteLength(context,"utf8")>64||
+      [...Buffer.from(context,"utf8")].some(c=>c>=128))
+      return json(res,{error:"Need 1..64 exact ASCII bytes of context, no truncated/guessed symbols"});
+    const id=++chatId;
+    const timer=setTimeout(()=>{chats.delete(id);
+      json(res,{error:"GPU future context query exceeded 30s; no invented evidence"});
+    },30000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({gpuFutureProbe:{id,context}});
+    return;
+  }
   if(req.method==="GET"&&url==="/atlas-graph"){
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
     if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
