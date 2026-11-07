@@ -118,3 +118,63 @@ test("original pre-action shape navigates 100 unseen >1KB full textual states wi
  assert.equal(finished,100,"An actual original learned-operator body failed to execute at least one complete long target state");
  assert.ok(cacheHits>=99,"Bounded original topology cache must prevent 100 repeated full scans");
 });
+
+test("1,000 distinct >1KB corpus observations train ORIGINAL native V17 operator graph and 24 remaining passages stay frozen unseen",{
+ timeout:180000
+},()=>{
+ const b=new Brain({rules:{depth:1,off:["R2","R4"],budEvery:100,
+   empty:true,maxWires:32,fold:false},seed:11});
+ for(let i=0;i<70;i++){
+  playExercise(makeMaze(seedOf(SEEDS.train,2090+i*17),[7,9,11][i%3]),b.disc);
+  if(i>=24&&b.disc.attract(KIND.target)>.2&&
+   b.disc.conduct(KIND.floor)>=.5&&b.disc.self()>=0)break;
+ }
+ assert.ok(b.disc.attract(KIND.target)>.2);
+ const M=new NativeGoalTextMaze(b,{maxStates:3500,maxDepth:5});
+ const all=[];
+ for(let a=0;a<4;a++)for(let c=0;c<4;c++)for(let d=0;d<4;d++)
+  for(let e=0;e<4;e++)for(let f=0;f<4;f++)all.push([a,c,d,e,f]);
+ assert.equal(all.length,1024);
+ const inputs=all.slice(0,1000),hidden=all.slice(1000);
+ const start=passage([0,0,0,0,0]);
+ const bytes=inputs.reduce((n,x)=>n+Buffer.byteLength(passage(x),"utf8"),0);
+ const t0=performance.now();
+ for(const x of inputs)M.observe(passage(x));
+ const secs=(performance.now()-t0)/1000;
+ const original= b.observedTransformations;
+ assert.equal(original.seen,1000);
+ assert.ok(original.operators.size>=40,
+  "Large real observation loop learned too few reusable transformations");
+ assert.equal(hidden.length,24);
+ let exact=0,executed=0,cached=0;
+ const t1=performance.now();
+ for(const x of hidden){
+  const gold=passage(x),goals=x.map((v,i)=>axes[i][v]);
+  assert.equal(original.containsSentence(gold),false,"Frozen heldout passage leaked");
+  const result=M.plan({start,required:goals});
+  if(result.graph.topologyCacheHit)cached++;
+  if(result.found&&result.predicted===gold)exact++;
+  if(result.found){
+   const body=M.execute(result,{trainNoise:false,enableNoise:false,maxSteps:8});
+   if(body.solvedInternalGoal&&body.executedFinal===gold)executed++;
+  }
+ }
+ const inferenceSeconds=(performance.now()-t1)/1000;
+ const result={numberOfActualDistinctLongObservations:1000,
+  trainingUTF8MB:+(bytes/1e6).toFixed(3),
+  observedMBPerSecond:+(bytes/1e6/secs).toFixed(4),
+  observedExercisesPerSecond:+(1000/secs).toFixed(2),
+  trainingElapsedSeconds:+secs.toFixed(3),
+  trainedV17Operators:original.operators.size,
+  heldout24ExactBeforeFirstAction:exact,heldout24Executed:executed,
+  heldoutLongBytesAtLeast:Buffer.byteLength(start),
+  inferenceElapsedSeconds:+inferenceSeconds.toFixed(3),
+  cachedHypermazeQueries:cached,
+  originalCPUOnly:true,notRTXCUDAThroughput:true,
+  notRealOpenThoughtsCorpus:true,notGeneralSemanticAnswerAccuracy:true,
+  nodeHeapMiB:+(process.memoryUsage().heapUsed/1048576).toFixed(2)};
+ console.log("NATIVE_1K_LONG_OBSERVED_CORPUS_CPU_THROUGHPUT",JSON.stringify(result));
+ assert.equal(exact,24,"Frozen original-motor full long predictions must cover all remaining unique combinations");
+ assert.equal(executed,24,"The original body's actions must actually reach the withheld long states");
+ assert.equal(original.seen,1000,"Heldout test must not secretly train on answers");
+});
