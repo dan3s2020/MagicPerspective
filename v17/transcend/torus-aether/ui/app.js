@@ -911,6 +911,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
       "PRAG 70% ATINS DOAR PE ACESTE RASPUNSURI INTREGI HELDOUT. NU confirma 70% general pe orice intrebare." :
       "PRAG 70% NEATINS pe setul real de raspunsuri complete nevazute. Algoritmul NU a demonstrat tinta ceruta.";
   };
+  let cpuExactSelected=false;
   const cpuButton=$("cpuExactEvaluate");
   if(cpuButton)cpuButton.onclick=()=>{
     if(!LIVE) { $("cpuExactVerdict").textContent="Trainerul nativ nu este conectat.";return; }
@@ -922,11 +923,13 @@ fetch("/corpus").then(r => r.json()).then(c => {
     $("evNoise").value="0";$("evNoiseOut").textContent="0";
     $("cpuExactRate").textContent="SE EVALUEAZA...";
     $("cpuExactVerdict").textContent="Se genereaza raspunsul intreg doar din intrebare, pe checkpointul inghetat, fara ground-truth vizibil modelului.";
+    cpuExactSelected=true;
     $("evGo").click();
   };
   $("evGo").onclick = async () => {
     if (!LIVE) { $("evOut").textContent = "Evaluarea rulează pe grafurile din trainer (START_V17.ps1)."; return; }
     const again = evAgainNow; evAgainNow = false; if (!again) kind = $("evKind").value;
+    const strictRun=cpuExactSelected;cpuExactSelected=false;
     if (kind === "maptext") {
       $("evW").textContent = "#" + liveW;
       $("evGo").disabled = true;
@@ -953,7 +956,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
       return;
     }
     const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
-      : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value)} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
+      : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value), strictHeldout: strictRun} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
