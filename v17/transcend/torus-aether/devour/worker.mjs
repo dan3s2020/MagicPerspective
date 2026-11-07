@@ -17,6 +17,8 @@ import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {cognitiveRouteSnapshot} from "../worlds/cognitive-route-snapshot.mjs";
+import {nativeMathRouteSnapshot} from "../worlds/native-math-route-snapshot.mjs";
+import {NativeMathGoalField} from "../../../research/goal-path-field/native-math-graph.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
@@ -52,6 +54,11 @@ const codeWorld = CODE ? new SelfCodeWorld(brain) : null; // shares the original
 const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : null;
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
+// One learned native action field ON the original Brain and in its own .v8
+// checkpoint. It is optional, off until genuine paired action observations.
+const nativeMath = COGNITIVE ?
+  (brain.nativeMathField ? NativeMathGoalField.restore(brain.nativeMathField)
+    : new NativeMathGoalField()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
 const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 // A V21 hypertext-only checkpoint can have 200 observed documents but ZERO
@@ -71,6 +78,7 @@ brain.setSharedObserver(sample => {
 const saveCognitive = () => {
   if(cognitive)brain.cognitiveMap = cognitive.export();
   if(hypermaze)brain.hypermaze = hypermaze.export();
+  if(nativeMath?.observedPairs)brain.nativeMathField = nativeMath.export();
 };
 const absorbCognitive = row => {
   if(!cognitive && !hypermaze)return null;
@@ -358,6 +366,36 @@ parentPort.on("message", m => {
         throw Error("Frozen plan mutated training state");
       parentPort.postMessage({type:"chat",kind:"hypermaze",id,...plan,frozen:true});
     }catch(err){parentPort.postMessage({type:"chat",kind:"hypermaze",id,error:err.message});}
+    return;
+  }
+  // Freeze one complete goal-conditioned predicted path before writing.
+  // Do not run the character predictor or expose a hidden answer here.
+  if(m?.nativeMathEval){
+    const {id,document,goals,seed=4105,temperature=0}=m.nativeMathEval;
+    try{
+      if(!nativeMath||nativeMath.observedPairs<1)
+        throw Error("This original Brain has no experienced mathematical action field");
+      const pre=JSON.stringify(nativeMath.export());
+      const plan=nativeMath.formSolution(document,goals,{seed,temperature});
+      if(pre!==JSON.stringify(nativeMath.export()))
+        throw Error("Frozen native action planning modified learned evidence");
+      parentPort.postMessage({type:"chat",kind:"native-math-eval",id,
+        ...nativeMathRouteSnapshot(plan),nativeBrain:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"native-math-eval",id,error:err.message});}
+    return;
+  }
+  if(m?.nativeMathObserve){
+    const {id,before,after}=m.nativeMathObserve;
+    try{
+      if(!nativeMath)throw Error("Enable existing cognitivemap on original Brain");
+      const observation=nativeMath.observePair(before,after);
+      if(!observation.learned)throw Error("Observed input pair is outside this measurable action family: "+observation.reason);
+      saveCognitive();
+      const savedMB=saveFile?brain.save(saveFile)/1e6:null;
+      shot(true);
+      parentPort.postMessage({type:"chat",kind:"native-math-observation",id,
+        result:observation,report:nativeMath.report(),savedMB,nativeBrain:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"native-math-observation",id,error:err.message});}
     return;
   }
   if(m?.cognitiveObserve){
