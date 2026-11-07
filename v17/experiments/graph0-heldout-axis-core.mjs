@@ -27,6 +27,8 @@ export function mixedPrediction(alignScores,field,alpha=0){
   }
   if(z>0)for(let i=0;i<128;i++)F[i]/=z;
   const fAvailable=z>0;
+  if(!A.available&&!fAvailable){const p=new Float64Array(129);p[32]=1;
+    return {top:32,probabilities:p,fieldAvailable:false,alignAvailable:false};}
   const aWeight=!fAvailable?1:!A.available?0:1-alpha;
   const fWeight=!A.available?1:!fAvailable?0:alpha;
   let top=32,best=-1,probTruth=0;
