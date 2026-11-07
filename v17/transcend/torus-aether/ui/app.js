@@ -604,7 +604,21 @@ function renderDatasetProgress(gr, corpusInfo) {
   if (!box) return;
   const p = gr?.progress;
   if (!p || !Number.isFinite(p.total) || !Number.isFinite(p.trained)) {
-    box.hidden = true;
+    // Keep the dataset indicator visible in the EXACT "Ce s-a nascut"
+    // metrics section, even when the selected graph is not ready or the
+    // browser is still talking to an old backend. Never silently hide it.
+    box.hidden = false;
+    $("datasetProgressPct").textContent = "--%";
+    $("datasetProgressCount").textContent = "-- / --";
+    $("datasetProgressRemaining").textContent = "--";
+    $("datasetHeldOut").textContent = corpusInfo?.heldOut != null ?
+      Math.trunc(corpusInfo.heldOut).toLocaleString("ro-RO") : "--";
+    $("datasetProgressBar").value = 0;
+    $("datasetProgressInfo").textContent = corpusInfo?.trainRows != null ?
+      "Astept progresul grafului selectat; datasetul are " +
+        Math.trunc(corpusInfo.trainRows).toLocaleString("ro-RO") +
+        " exercitii de antrenare. Daca ramane --%, actualizeaza codul V21, reporneste trainerul cu -Resume si foloseste Ctrl+F5." :
+      "Progresul este indisponibil: astept metadatele reale de la /graphs. Verifica trainerul V21 si reincarca pagina cu Ctrl+F5.";
     return;
   }
   box.hidden = false;
