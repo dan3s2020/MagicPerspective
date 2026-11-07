@@ -38,3 +38,18 @@ jobs:
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/observed-transformations-v17.test.mjs
           node --test v17/tests/live-corpus-hypermaze.test.mjs
+
+  actual-browser-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium to verify genuine V17 browser rendering
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Real original training worker and browser, full maze and true-native graph pages, frozen text and xD
+        run: node --test v17/tests/complete-xd-atlas-browser.test.mjs
