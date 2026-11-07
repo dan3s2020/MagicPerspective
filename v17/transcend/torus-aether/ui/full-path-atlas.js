@@ -33,7 +33,7 @@ export class NativeFullPathAtlasView{
   this.worker=null;this.text=null;this.xd=null;this.xdFrame=0;
   this.playing=true;this.lastTick=0;this.lastWorld="";
   this.page=null;this.pageHistory=[];this.scale=0;this.pageOffset=0;
-  this.logOffset=0;this.logRecent=[];this.pending=false;
+  this.logOffset={text:0,xd:0};this.logRecent={text:[],xd:[]};this.pending=false;
   this.activeXDEval=false;
   this.setup();
  }
@@ -48,7 +48,7 @@ export class NativeFullPathAtlasView{
   click("atlasXdEval",()=>this.testXD());
   click("atlasPageNext",()=>this.loadPage(this.page?.nextOffset??0));
   click("atlasPagePrev",()=>this.loadPage(this.pageHistory.pop()??0,false));
-  by("atlasScale")?.addEventListener("change",e=>{this.scale=+e.target.value;this.pageHistory=[];
+  by("atlasScale")?.addEventListener("change",e=>{this.scale=e.target.value==="edits"?"edits":+e.target.value;this.pageHistory=[];
     this.loadPage(0);});
   click("atlasPageExport",()=>this.exportFile("original-native-scale-"+this.scale+"-offset-"+this.pageOffset+".json",this.page));
   click("atlasLogMore",()=>this.loadLog());
@@ -62,7 +62,7 @@ export class NativeFullPathAtlasView{
   const worker=this.getWorker();
   if(worker!==this.worker){
     this.worker=worker;this.page=null;this.pageHistory=[];this.pageOffset=0;this.logOffset=0;
-    this.lastWorld="";this.xdFrame=0;this.playing=true;this.logRecent=[];
+    this.lastWorld="";this.xdFrame=0;this.playing=true;this.logOffset={text:0,xd:0};this.logRecent={text:[],xd:[]};
     setText("atlasPageText","Așteaptă încărcarea paginii reale a grafului...");
     this.loadPage(0);
   }
@@ -216,6 +216,24 @@ export class NativeFullPathAtlasView{
   const {ctx:c,w,h}=cvs,page=this.page;
   if(!page){c.fillStyle=cc.muted;c.font="13px monospace";
     c.fillText("Caută graful real din checkpoint: alege scara și încarcă pagina.",14,33);return;}
+  if(page.kind==="native-observed-edit-transformations"){
+    const ops=page.entries||[],n=Math.min(ops.length,90);
+    if(!n)return;
+    c.fillStyle=cc.text;c.font="11px monospace";
+    c.fillText("ORIGINAL NATIVE EDIT OPERATORS · "+page.totalOperators+
+      " păstrate · pagină "+page.offset+".."+(page.offset+page.returned),12,17);
+    for(let i=0;i<n;i++){
+      const op=ops[i],y=35+i*(h-55)/Math.max(1,n),
+        x1=22+(i%3)*Math.max(1,w-95)/4,x2=x1+Math.max(80,w/4);
+      dash(c,x1,y,x2,y,op.support>1?cc.green:cc.gold,Math.min(4,1+Math.log1p(op.support)));
+      circle(c,x1,y,3,cc.blue);circle(c,x2,y,3,cc.violet);
+      if(n<=28){c.fillStyle=cc.muted;c.font="9px monospace";
+        c.fillText(crop(op.from,8)+"→"+crop(op.to,8),x1+8,y-4);}
+    }
+    c.fillStyle=cc.muted;c.font="10px monospace";
+    c.fillText("Fiecare săgeată = editare observată; numai în contexte compatibile cu ancorele originale",12,h-9);
+    return;
+  }
   const entries=(page.entries||[]).slice(0,90);
   const p=new Map(entries.map((e,i)=>[e.from,{
     x:27+(i%10)*(w-54)/9,y:36+Math.floor(i/10)*(h-80)/Math.max(1,Math.ceil(entries.length/10)-1)
@@ -261,20 +279,34 @@ export class NativeFullPathAtlasView{
   this.pending=true;setText("atlasPageText","Se citesc nodurile și TOATE muchiile din memoria originală V17...");
   try{
     const old=this.pageOffset,requestedWorker=this.getWorker();
-    const u="/atlas-graph?w="+requestedWorker+"&scale="+this.scale+
+    const family=this.scale==="edits"?"edits":"scales";
+    const u="/atlas-graph?w="+requestedWorker+"&family="+family+
+      "&scale="+(family==="edits"?0:this.scale)+
       "&offset="+offset+"&limit=70";
     const r=await fetch(u),result=await r.json();
     if(result.error)throw Error(result.error);
     if(requestedWorker!==this.getWorker())return;
     if(remember&&this.page&&offset!==0)this.pageHistory.push(old);
     this.page=result;this.pageOffset=offset;
-    setText("atlasPageText","Scara "+result.contextTokens+
-      " · "+result.totalStates+" stări memorate · pagina de la "+offset+
-      " conține "+result.returned+" stări reale\n"+
-      (result.entries||[]).slice(0,10).map(x=>crop(x.from,70)+
-        " → "+x.actions.map(a=>a.action+":"+a.total).slice(0,6).join(", ")).join("\n")+
-      "\n(următoarea pagină: "+(result.nextOffset??"sfârșit")+
-      "; toate stările există în Brain, nu numai cele desenate)");
+    if(result.kind==="native-observed-edit-transformations"){
+      setText("atlasPageText","ORIGINAL V17 · "+result.totalOperators+
+        " editări învățate · "+result.droppedOriginalOperators+
+        " operatori refuzați de bugetul de memorie ORIGINAL"+
+        "\nPagina offset "+offset+" · "+result.returned+" operatori; fiecare păstrează exemplele sursă.\n"+
+        (result.entries||[]).map(op=>op.kind+" @"+op.index+": "+
+          crop(op.from,24)+" → "+crop(op.to,24)+
+          " · ancore "+crop(op.left,16)+" / "+crop(op.right,16)+
+          " · susținere "+op.support+
+          " · exemple "+JSON.stringify(op.evidence)).join("\n"));
+    }else{
+      setText("atlasPageText","Scara "+result.contextTokens+
+        " · "+result.totalStates+" stări memorate · pagina de la "+offset+
+        " conține "+result.returned+" stări reale\n"+
+        (result.entries||[]).slice(0,10).map(x=>crop(x.from,70)+
+          " → "+x.actions.map(a=>a.action+":"+a.total).slice(0,6).join(", ")).join("\n")+
+        "\n(următoarea pagină: "+(result.nextOffset??"sfârșit")+
+        "; toate stările există în Brain, nu numai cele desenate)");
+    }
     this.drawNativePage();
   }catch(err){setText("atlasPageText","Atlasul nu a răspuns: "+err.message+
     " · procesul poate fi ocupat cu CUDA");}
