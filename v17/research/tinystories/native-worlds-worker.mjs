@@ -185,7 +185,9 @@ async function run(){
    progressRows++;
    progressOffset=item.endOffset;
    if(saveFlag||since()-lastCheckpoint>=saveSeconds*1000)commit();
-   publish(false,progressRows%8===0);
+   // Force genuine fresh graph on every eighth lived story even when
+   // training outruns the 700ms status throttle; never leave initial empty U.
+   publish(progressRows%8===0,progressRows%8===0);
    await yieldNow();
   }
   if(!stop){paused=true;send({type:"finished",rows:progressRows,offset:progressOffset});}
