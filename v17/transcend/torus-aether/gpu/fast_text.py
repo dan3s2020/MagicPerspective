@@ -71,6 +71,9 @@ class StreamingFastText:
         self.saved_at_chars = 0
         self.loaded = False
         self.last_checkpoint_time = None
+        self.cursor_epoch = 1
+        self.cursor_offset = 0
+        self.cursor_known = False
         self.unified = None
         restored = None
         if resume and checkpoint and os.path.exists(checkpoint):
@@ -89,6 +92,10 @@ class StreamingFastText:
                 self.saved_at_chars = self.chars
                 self.loaded = True
                 restored = {k: data[k].copy() for k in data.files if k.startswith("unified_")}
+                if "cursor_epoch" in data and "cursor_offset" in data:
+                    self.cursor_epoch = int(data["cursor_epoch"])
+                    self.cursor_offset = int(data["cursor_offset"])
+                    self.cursor_known = True
 
         # Existing 256 MiB learned TinyStories counts are reused verbatim.
         # New heads live inside THIS model, on the SAME selected GPU.
@@ -156,6 +163,15 @@ class StreamingFastText:
                 "savedChars": self.saved_at_chars,
                 "unified": extended}
 
+    def cursor(self, epoch, offset):
+        if not isinstance(epoch, int) or epoch < 1:
+            raise ValueError("Invalid TinyStories corpus epoch")
+        if not isinstance(offset, int) or offset < 0:
+            raise ValueError("Invalid TinyStories source cursor")
+        self.cursor_epoch = epoch
+        self.cursor_offset = offset
+        self.cursor_known = True
+
     def _selected_counts(self, features):
         n = features.shape[1]
         if not n:
@@ -222,6 +238,8 @@ class StreamingFastText:
             np.savez(f, format=np.int64(FORMAT),
                      counts=arr, last_index=np.int64(self.last_index),
                      chars=np.int64(self.chars), rows=np.int64(self.rows),
+                     cursor_epoch=np.int64(self.cursor_epoch),
+                     cursor_offset=np.int64(self.cursor_offset),
                      **self.unified.serialize())
             f.flush()
             os.fsync(f.fileno())
@@ -245,4 +263,7 @@ class StreamingFastText:
                 "checkpoint": bool(self.checkpoint),
                 "unified": self.unified.report(),
                 "pretrainedTinyStoriesRetained": self.loaded,
-                "integratedIntoSameCheckpoint": True}
+                "integratedIntoSameCheckpoint": True,
+                "cursorEpoch": self.cursor_epoch,
+                "cursorOffset": self.cursor_offset,
+                "cursorKnown": self.cursor_known}
