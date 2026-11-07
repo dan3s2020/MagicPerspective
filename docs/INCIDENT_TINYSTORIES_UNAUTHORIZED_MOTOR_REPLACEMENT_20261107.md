@@ -38,3 +38,20 @@ The original V17 `worker.mjs` also converts non-ASCII characters to `?`, losing 
 **DO NOT CLOSE THE STOPSHIP.** Main executable files remain untouched; original user's explicit semantic and full-GPU requirements have not been demonstrated.
 
 Final verified research CI: https://github.com/dan3s2020/MagicPerspective/actions/runs/42343690214 ; isolated PR #58.
+
+## 2026-11-07 — complete-known-operator hypermaze atlas and two additional falsification controls
+
+User's precise new request: provide as complete a learned hyperdimensional maze as the original Brain can construct, reuse transformations between fragmented text exercises, show ALL enumerated successful and failed routes, and compare character-by-character paths against withheld references to learn why a correct path was absent or not selected. Exact directive preserved in isolated `verbatim/2026-11-07-COMPLETE-HYPERMAZE-ATLAS-USER-VERBATIM.txt`.
+
+Draft original motor research: [PR #72](https://github.com/dan3s2020/MagicPerspective/pull/72), branch `experiment/V17-FULL-TRANSFORMATION-ATLAS-20261107`; full evidence and API: `v17/docs/NATIVE_COMPLETE_KNOWN_HYPERMAZE_ATLAS_20261107.md`.
+
+Results verified in GitHub Actions (actual original V17/Node tests, not simulated visuals):
+
+- Missing action `He→She` first produces a frozen failed `He is calm.`→`She is calm.` path. The same Brain subsequently sees the different training sentence `She is tired.`, learns the reusable observed action, produces the previously unseen `She is calm.` full solution before action, and persists it through original `Brain.v8` save/load. Original atlas enumerated two distinct finite simple paths.
+- Ablating this exact learned action in a checkpoint **COPY** makes the formerly reachable goal disappear; restoring the saved Brain restores the path. **Causal proof of this observed action in this finite learned text maze**, NOT proof that noise/5D geometry yields general language understanding.
+- A partial goal like `She` has at least three reachable final states `She is calm / tired / brave`. If the original Brain chooses a different valid state than a withheld reference, postmortem classifies **wrong route / underdetermined goal**, not a nonexistent transformation.
+- A 2-action goal reached from a real TXT worker is correctly marked **FRONTIER NOT EXPLORED** at maximum depth 1 and is successfully reached by widening to depth 6 on the **same learned Brain**, no reset.
+- The atlas lists actual original operator evidence, all enumerated simple paths **within finite declared limits**, backtracking, dead ends, cycles, unexpanded frontiers, and exact Unicode-codepoint mistakes. A separate later audit receives the reference **only after pre-action plan is persisted** in append-only `*.hypermaze-atlas.jsonl`; full operator and history lists have paginated APIs. The original UI remains unmodified; isolated Chromium UI shows genuine path graphs rather than fake torus nodes.
+- Original V17 42/42 unseen-2D-shape parity and 100/100 + 24/24 controlled long structured text tests remain preserved. No `.npz`, legacy `.v8` or prior branch has been overwritten.
+
+**RELEASE REMAINS BLOCKED.** The atlas is only closed over the currently KNOWN learned operator graph within finite user-visible budgets, not over the entirety of natural language. The original observation index has `maxTokens=256`, `maxObserved=12000`, `maxOperators=18000` limits and reports rejections/evictions. The learned 5D coordinate field and noise policy have not demonstrated improved external semantic goal success. Transfer of the pretrained 2.1M-story TinyStories counts into this original native engine, independent full long-form unseen semantic Q&A and actual original CUDA training throughput are unverified. No production launch command is authorized.
