@@ -51,3 +51,21 @@ The observed ~64.43% TinyStories-valid top-1 UTF-8 prediction is a teacher-force
 ## Incident record
 
 Source: user's current conversation, 2026-11-07. The exact visible user directive is in `verbatim/2026-11-07-HYPERMAZE-REGRESSION-STOPSHIP-USER-VERBATIM.txt`. Legacy source SHA and file list remain in Git history; this branch intentionally does not rewrite main, older branches, or saved .v8/.npz files.
+
+## Verified independent research results — native branch CI (2026-11-07)
+
+GitHub Actions verified the actual original source and explicit runtime integration, not just static source grep:
+- **42 / 42** previously unseen 2D maze layouts: after **25 actual original maze training episodes**, the new arbitrary-graph form reproduced the old original \`Discoverer.shape()\` full path exactly. This is **algorithm parity**, not a measured claim of optimal/semantic answers.
+- **6 / 6** deliberately withheld **TWO-TRANSFORMATION** textual combinations: after **26 actual original maze episodes** plus 19 observed short sentences, the SAME original attraction/conductance propagation predicted the complete 2-edit answer state before the first action. The exact answer sentence was NOT in training; the task explicitly supplied target-token constraints. This is **short structured generalization**, NOT long unseen prose or an independent external semantic-world judge.
+- The actual original V17 \`devour/worker.mjs\` was started on a TXT corpus; the saved same \`Brain.v8\` gained 6 authentic text operators, 6 learned 5D action axes, 1 actual corpus ingestion record and a preaction text shape, with native \`NoiseAgency\` and original UI preserved. No native original-source file was deleted or replaced.
+- Native trained-noise unit acceptance: original \`NoiseAgency\` made 5 real decisions, same original transferable path policy had 5 measured learning updates, the full \`Brain.v8\` restored its policies and the learned text geometry.
+- **Causal controls: 0 of 6 final answers changed** when learned 5D geometric preference was disabled; likewise 0 of 6 when the transferable shared-policy preference was disabled. **Hence these tests do not prove 5D geometry or the shared policy *caused* the correct answer.** Such proof remains a mandatory unfinished task.
+- User's ~2.1M-story / 1.89G-byte pretrained TinyStories \`.npz\` was NEVER loaded into native \`Brain\`, converted or overwritten in this branch. Transferring this knowledge faithfully is **NOT IMPLEMENTED**, despite preserving the original file.
+- **0 measured long unseen first-try semantic answers**, no real NVIDIA RTX 3050 Ti original Brain CUDA throughput, and no proven 100% on large task-defined language answers. **RELEASE BLOCKED**.
+
+A formal independently audited release gate lives at
+\`v17/research/text-hypermaze/production-release-gate.mjs\`.
+When genuine evidence is absent, \`--gate\` returns nonzero and
+\`v17/tests/hypermaze-stopship-release.test.mjs\` verifies that the release is blocked.
+Never rename component tests to "100% solved" or disable the gate to report success.
+Research CI: https://github.com/dan3s2020/MagicPerspective/actions/workflows/v17-native-hypermaze-stopship-research.yml.
