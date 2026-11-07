@@ -26,7 +26,9 @@
     "v17/tests/v23-observed-relational-hypermaze.test.mjs",
     "v17/docs/V23_OBSERVED_RELATIONAL_HYPERMAZE_EVIDENCE_20261107.md",
     "user-intent/changes/V23-OBSERVED-RELATIONAL-HYPERMAZE-20261107.json",
-    ".github/workflows/v23-observed-relational-hypermaze.yml"
+    ".github/workflows/v23-observed-relational-hypermaze.yml",
+    "v17/tests/v23-noisy-long-route.test.mjs",
+    "v17/docs/V23_LONG_PATH_NOISE_STRESS_EVIDENCE_20261107.md"
   ],
   "original_unchanged": true,
   "current_hypothesis": "Witnessed state/action/next-state descriptions induce a navigable four-axis relational graph; original V17 shape operator propagates a known goal through unseen textual worlds and predicts a complete action route before physical execution.",
@@ -51,5 +53,15 @@
     "Issue #25 OPEN"
   ],
   "provenance_note": "Written after isolated proof and source creation in this session, not falsely backdated.",
-  "no_checkpoints_or_existing_engines_changed": true
+  "no_checkpoints_or_existing_engines_changed": true,
+  "additional_evidence_precommit": {
+    "scope": "same direct original Discoverer.shape executed in isolated V8 with 100 heldout seeds 160000..160099",
+    "goal_known": true,
+    "route_steps": "20..39",
+    "mean_document_bytes": 60953,
+    "clean": 100,
+    "erased_15percent_single_view": 2,
+    "erased_15percent_three_repeated_views": 87,
+    "not_natural_semantic_proof": true
+  }
 }
