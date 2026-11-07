@@ -51,7 +51,33 @@ function observedChange(beforeText,afterText){
   signature:"token-replace:"+JSON.stringify([from,to])};
 }
 function fresh(){return {version:1,witnesses:0,rejected:0,conflicts:0,
- rules:new Map(),lastPlan:null};}
+ rules:new Map(),lastPlan:null,atlas:{
+  witnesses:[],attempts:[],outcomes:[],nextId:1
+ }};}
+function evidenceLog(memory,event){
+ memory.atlas ||= {witnesses:[],attempts:[],outcomes:[],nextId:1};
+ const entry={id:memory.atlas.nextId++,time:new Date().toISOString(),...event};
+ memory.atlas.witnesses.push(entry);return entry.id;
+}
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b)[a,b]=[b,a%b];return a;};
+function actionInapplicable(tokens,r){
+ if(r.conflicted)return "CONFLICTED_EVIDENCE";
+ if(r.type==="numeric-delta"){
+  const values=tokens.filter(x=>integer.test(x));
+  if(!values.length)return "NO_NUMERIC_COORDINATE";
+  if(values.length!==1)return "AMBIGUOUS_NUMERIC_COORDINATES";
+  const target=Number(values[0])+r.delta;
+  if(!Number.isSafeInteger(target)||target<0||target>1000000)
+   return "NUMERIC_COORDINATE_OUT_OF_DESIGN_RANGE";
+  return "NO_PREDICTABLE_EFFECT";
+ }
+ if(r.type==="token-replace"){
+  const count=tokens.filter(x=>x===r.from).length;
+  return count===0?"SOURCE_SYMBOL_NOT_IN_THIS_WORLD":
+   count>1?"REPEATED_SOURCE_SYMBOL_AMBIGUOUS":"NO_PREDICTABLE_EFFECT";
+ }
+ return "UNKNOWN_ACTION_FAMILY_NOT_IMPLEMENTED";
+}
 const proposedAction=(tokens,rule)=>{
  if(rule.conflicted)return null;
  if(rule.type==="numeric-delta"){
@@ -97,17 +123,26 @@ export class NativeCrossEpisodeTransfer {
   const memory=this.brain.crossEpisodeTransformations;
   if(accepted!==true||!to){
    memory.rejected++;
+   evidenceLog(memory,{type:"rejected",episodeId,action:key,before:from,
+    after:to,reason:"world-action-not-accepted"});
    return {learned:false,reason:"world-action-not-accepted",world:episodeId};
   }
   const effect=observedChange(from,to);
   if(!effect||effect.from===effect.to){
-   memory.rejected++;return {learned:false,reason:"unsupported-witnessed-effect",
+   memory.rejected++;
+   evidenceLog(memory,{type:"rejected",episodeId,action:key,before:from,
+    after:to,reason:"unsupported-witnessed-effect",
+    designRestriction:"Only one-token substitutions and numeric deltas are currently implemented"});
+   return {learned:false,reason:"unsupported-witnessed-effect",
      world:episodeId};
   }
   let rule=memory.rules.get(key);
   if(!rule){
    if(memory.rules.size>=1024){
-    memory.rejected++;return {learned:false,reason:"action-memory-cap"};
+    memory.rejected++;
+    evidenceLog(memory,{type:"rejected",episodeId,action:key,before:from,
+     after:to,reason:"action-memory-cap",maxRules:1024});
+    return {learned:false,reason:"action-memory-cap"};
    }
    rule={action:key,type:effect.type,signature:effect.signature,
     from:effect.from,to:effect.to,delta:effect.delta??null,
@@ -117,6 +152,10 @@ export class NativeCrossEpisodeTransfer {
   }
   if(rule.signature!==effect.signature){
    rule.conflicted=true;rule.conflictCount++;memory.conflicts++;
+   evidenceLog(memory,{type:"conflict",episodeId,action:key,
+    before:from,after:to,previousSignature:rule.signature,
+    observedSignature:effect.signature,
+    reason:"contradictory-action-physics"});
    return {learned:false,reason:"contradictory-action-physics",
     action:key,conflicted:true};
   }
@@ -127,7 +166,12 @@ export class NativeCrossEpisodeTransfer {
     after:to.slice(0,200),sourceHash:stable(from+"\n"+to)});
   }
   memory.witnesses++;
-  return {learned:true,action:key,world:episodeId,from:effect.from,to:effect.to,
+  const atlasEventId=evidenceLog(memory,{type:"witness",episodeId,action:key,
+    before:from,after:to,signature:effect.signature,
+    effectKind:effect.type,sourceHash:stable(from+"\n"+to),
+    independentWorlds:rule.worlds.size});
+  return {learned:true,action:key,world:episodeId,atlasEventId,
+   from:effect.from,to:effect.to,
    kind:effect.type,support:rule.witnesses,independentWorlds:rule.worlds.size,
    ready:this._ready(rule)};
  }
