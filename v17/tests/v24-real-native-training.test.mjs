@@ -131,3 +131,36 @@ test("V24: Windows UTF-8 BOM input preserves first real Q/A row",async t=>{
   assert.equal(rows[0].index,0);assert.equal(rows[0].prompt,f.rows[0].prompt);
  }
 });
+
+
+test("V24: full native Parquet training to real held-out test and checkpoint, not only reader",async t=>{
+ const dir=process.env.MP_V24_PARQUET_FIXTURE;if(!dir)return;
+ const src=await openRealSource({data:dir});
+ const tmp=await fs.mkdtemp(path.join(os.tmpdir(),"mp-v24-parquet-training-"));
+ t.after(()=>fs.rm(tmp,{recursive:true,force:true}));
+ const trainer=await new RealTrainer({source:src,out:tmp,maxRecords:90,
+   saveEvery:13,onlineEvery:7}).initialize();
+ trainer.start();await trainer.loop;
+ assert.equal(trainer.mode,"finished");
+ assert.equal(trainer.progress.cursor,src.trainRows);
+ assert.equal(trainer.model.stats.experienced,src.trainRows);
+ assert.equal(trainer.heldout.count,src.heldRows);
+ assert.equal(trainer.heldout.heldOutIsNeverTrained,true);
+ const saved=JSON.parse(await fs.readFile(trainer.checkpoint,"utf8"));
+ assert.equal(saved.progress.cursor,src.trainRows);
+ const held=await src.heldOut();
+ for(const row of held)assert.ok(![...trainer.model.records.values()].some(r=>r.sourceRow===row.index));
+});
+test("V24: actual OpenThoughts-like nested conversations parquet, human/gpt roles and separate heldout",async()=>{
+ const dir=process.env.MP_V24_PARQUET_CONVERSATION_FIXTURE;if(!dir)return;
+ const src=await openRealSource({data:dir});
+ assert.equal(src.totalRows,85);assert.equal(src.heldRows,16);assert.equal(src.trainRows,69);
+ let first;
+ for await(const row of src.trainingFrom(0)){first=row;break;}
+ assert.equal(first.index,0);
+ assert.ok(first.prompt.includes("nested human question 0"),JSON.stringify(first));
+ assert.ok(first.answer.includes("nested gpt answer 0"),JSON.stringify(first));
+ const held=await src.heldOut();
+ assert.equal(held[0].index,69);
+ assert.ok(held[0].prompt.includes("nested human question 69"));
+});
