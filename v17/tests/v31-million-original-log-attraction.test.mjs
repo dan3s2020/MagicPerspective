@@ -82,7 +82,8 @@ test("REPRODUCE real original 1e-12 regression: native field loses a known 1500-
  const backward=Array.from({length:N},(_,i)=>i>0?[{to:i-1,action:"advance"}]:[]);
  const legacy=disc.shapeGraph(kinds,forward,0,{details:true});
  const normal=originalAttractionSparse(disc,kinds,forward,0);
- assert.equal(legacy?.targetReached===true,true);
+ assert.equal(legacy?.targetReached===true,false,
+  "This regression case MUST expose the native long-path cutoff before claiming log-domain repair");
  console.log("V31_LEGACY_LONG_CHAIN_RESULT",JSON.stringify({
   size:N,legacyTargetReached:!!legacy?.targetReached,
   sparseNativeTargetReached:!!normal?.targetReached,
