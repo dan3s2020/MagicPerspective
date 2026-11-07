@@ -12,15 +12,15 @@ parentPort.on("message", m => { let r;
       r = brain.evalTextExercises(m.opts.list, {T: m.opts.T, noise: m.opts.noise});
       // Do NOT certify a 70% complete-answer test when the evaluator was
       // given only a 20k-prefix of an unknown-length Q/A exercise.
-      if (m.opts.fullAnswerRequested !== true) {
+      if (m.opts.fullAnswerRequested !== true || m.opts.verifiedUniqueHeldout !== true) {
         r.firstAnswerExactRate = null;
         r.firstAnswerExactCorrect = 0;
         r.firstAnswerExactTotal = 0;
         r.firstAnswerTarget70Reached = null;
         for (const row of r.exercises) row.firstAnswerExact = null;
-        r.firstAnswerMetric = "NOT CERTIFIABLE: select maximum length 0 = FULL exercise";
+        r.firstAnswerMetric = "NOT CERTIFIABLE: require FULL original length 0 AND unique, independent original heldout examples (no replacement)";
       }
-      r.heldoutAnswerComplete = m.opts.fullAnswerRequested === true;
+      r.heldoutAnswerComplete = m.opts.fullAnswerRequested === true && m.opts.verifiedUniqueHeldout === true;
     }
     else r = {error: "unknown kind " + m.kind};
   } catch (err) { r = {error: err.message}; }
