@@ -11,7 +11,10 @@ const key=x=>JSON.stringify(x);
 export const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,Number(n)||lo));
 export function seeded(seed=1){
   let s=(Number(seed)>>>0)||1;
-  return ()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return (s>>>0)/4294967296;};
+  const next=()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return (s>>>0)/4294967296;};
+  next.state=()=>s>>>0;
+  next.restore=(value)=>{if(!Number.isInteger(value))throw Error("Invalid RNG checkpoint");s=(value>>>0)||1;};
+  return next;
 }
 export class ObservedEffects {
   constructor({maxRules=12}={}){
