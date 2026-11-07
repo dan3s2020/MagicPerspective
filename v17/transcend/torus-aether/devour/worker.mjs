@@ -388,8 +388,8 @@ parentPort.on("message", m => {
         generatedStates:plan.world?.states.length,candidateGoals:plan.world?.targets.length,
         novelGoal:plan.novelGoal||false,
         start:plan.world?.states[0]?.join(" "),
-        plannedPath:plan.path?.map(e=>({action:e.action,after:plan.world.states[e.to]?.join(" ")})),
-        shapeField:plan.field?.values?.slice(0,128),
+        plannedPath:plan.path?.map(e=>({from:e.from,to:e.to,action:e.action,after:plan.world.states[e.to]?.join(" ")})),
+        shapeField:plan.field?.values||[],
         successor:plan.found?cognitive.successor(plan.world).map(x=>({gamma:x.gamma,goalOccupancyAtStart:x.goalOccupancyAtStart})):[],
         law:plan.planningLaw||null,truncated:plan.world?.truncated||false};
       if(JSON.stringify(pre)!==JSON.stringify(cognitive.report()))throw Error("Frozen evaluation changed learning state");
