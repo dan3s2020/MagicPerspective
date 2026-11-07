@@ -15,6 +15,7 @@ import {SelfCodeWorld} from "../worlds/self-code.mjs";
 import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {CharacterHypermaze} from "../worlds/character-hypermaze.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {AtlasJournal,atlasPath} from "./atlas-journal.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
@@ -53,11 +54,21 @@ const codeWorld = CODE ? new SelfCodeWorld(brain) : null; // shares the original
 const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : null;
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
+const characterAtlas=COGNITIVE?
+  (brain.characterAtlas ? CharacterHypermaze.restore(brain.characterAtlas) : new CharacterHypermaze()):null;
+const characterRecovery=characterAtlas && !brain.characterAtlas && cognitive?.rules?.size?
+  characterAtlas.ingestLegacyRules(cognitive.rules):0;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
 const atlasJournal=cognitive&&saveFile?
   new AtlasJournal(atlasPath(saveFile)):null;
-if(cognitive&&atlasJournal)
-  cognitive.onAtlasEvidence=event=>atlasJournal.record(event);
+if(characterAtlas)characterAtlas.atlasSink=event=>atlasJournal?.record(event);
+if(cognitive)cognitive.onAtlasEvidence=event=>{
+  atlasJournal?.record(event); // keep V23 original records exactly
+  characterAtlas?.observeWordContrast(event); // same brain, same observed corpus
+};
+if(characterRecovery)atlasJournal?.record({type:"character-legacy-recovery",
+  recoveredEvents:characterRecovery,source:"ACTIVE_V19_RULE_MEMORY",
+  note:"Older compacted examples are NOT reconstructed; no fabricated evidence"});
 const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 // A V21 hypertext-only checkpoint can have 200 observed documents but ZERO
 // native text exercises. When enabling the previously omitted 'text' world on
@@ -76,6 +87,7 @@ brain.setSharedObserver(sample => {
 const saveCognitive = () => {
   if(atlasJournal)atlasJournal.sync(); // audit disk is flushed BEFORE checkpoint saving
   if(cognitive)brain.cognitiveMap = cognitive.export();
+  if(characterAtlas)brain.characterAtlas=characterAtlas.export();
   if(hypermaze)brain.hypermaze = hypermaze.export();
 };
 const absorbCognitive = row => {
@@ -168,7 +180,7 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, exercises: brain.exercises || 0, progress: corpusProgress(), dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shapeAudit:lastShapeAudit, atlas:atlasJournal?.status()||null,
+    shapeAudit:lastShapeAudit, atlas:atlasJournal?.status()||null,characterAtlas:characterAtlas?.status()||null,
     shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { saveCognitive(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
@@ -179,7 +191,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const currentTextLength = brain.trace.text.length;
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, progress: corpusProgress(), controls: brain.controls, shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze?.snapshot() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, progress: corpusProgress(), controls: brain.controls, shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, characterAtlas:characterAtlas?.status()||null, hypermaze: hypermaze?.snapshot() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
@@ -382,6 +394,46 @@ parentPort.on("message", m => {
       parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,
         result,report:cognitive.report(),savedMB});
     }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,error:err.message});}
+    return;
+  }
+  if(m?.characterObserve){
+    const {id,before,after,action,accepted}=m.characterObserve;
+    try{
+      if(!characterAtlas)throw Error("Character map is not enabled in this original cognitive world");
+      const result=characterAtlas.observeIntervention({before,after,action,accepted});
+      saveCognitive();
+      const savedMB=saveFile?brain.save(saveFile)/1e6:null;
+      shot(true);
+      parentPort.postMessage({type:"chat",id,kind:"character-observation",
+        result,atlas:characterAtlas.status(),savedMB});
+    }catch(err){parentPort.postMessage({type:"chat",id,kind:"character-observation",error:err.message});}
+    return;
+  }
+  if(m?.characterEval){
+    const {id,initial,goal,maxNodes=4096,maxDepth=8,temperature=0,seed=74129}=m.characterEval;
+    try{
+      if(!characterAtlas)throw Error("Character map not enabled: select original cognitivemap world");
+      const before=characterAtlas.formSolution(initial,goal,
+        {transfer:false,maxNodes,maxDepth,temperature,seed});
+      const after=characterAtlas.formSolution(initial,goal,
+        {transfer:true,maxNodes,maxDepth,temperature,seed,disc:brain.disc});
+      parentPort.postMessage({type:"chat",id,kind:"character",frozen:true,
+        originalWriterUnmodified:true,priorWordOnlyDoesNotNavigateCharacters:true,
+        before:{found:before.found,reason:before.reason,
+          diagnostics:before.world.diagnostics,fullPredictedPath:before.firstPrediction||[]},
+        after:{found:after.found,reason:after.reason,method:after.method,
+          predictionBeforeAnyAction:after.plannedBeforeAction,
+          predictedActions:after.firstPrediction||[],
+          shapeField:after.field.values,
+          fullPredictedNodes:after.field.nodes,
+          completeKnownGraph:!after.world.diagnostics.nodeLimitReached&&
+            !after.world.diagnostics.depthLimitReached,
+          wholeAtlas:{states:after.world.states.map(s=>s.join("")),
+            neighbors:after.world.neighbors,targets:after.world.targets},
+          diagnostics:after.world.diagnostics},
+        characterAtlas:characterAtlas.status(),atlas:atlasJournal?.status()||null,
+        naturalLanguageAnswerExactUnknown:true});
+    }catch(err){parentPort.postMessage({type:"chat",id,kind:"character",error:err.message});}
     return;
   }
   if(m?.cognitiveEval){
