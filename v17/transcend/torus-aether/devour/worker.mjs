@@ -421,12 +421,14 @@ parentPort.on("message", m => {
     return;
   }
   if(m?.instructionAnswer){
-    const {id,instruction,source,maxTokens=512,maxNodes=384,maxDepth=8}=m.instructionAnswer;
+    const {id,instruction,source,maxTokens=512,maxNodes=384,maxDepth=8,
+      allowComposedInstructions=false}=m.instructionAnswer;
     try{
       if(!cognitive)throw Error("Original V17 cognitive world is disabled");
       const before=JSON.stringify(cognitive.export());
       const answer=answerFromObservedInstructionPath(cognitive,{instruction,source},{
-        maxTokens,maxNodes,maxDepth,includeAtlas:true});
+        maxTokens,maxNodes,maxDepth,includeAtlas:true,
+        allowComposedInstructions:!!allowComposedInstructions});
       if(JSON.stringify(cognitive.export())!==before)
         throw Error("Frozen V36 answer mutated the original Brain's learned memory");
       const {fullAtlas,terminalTokens,...safe}=answer;
