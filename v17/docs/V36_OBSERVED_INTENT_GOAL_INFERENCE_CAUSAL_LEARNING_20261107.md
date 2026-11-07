@@ -72,3 +72,22 @@ Representative native test report: **36 original corpus documents observed, 2 wi
 5. **Unbounded corpus retention and automatic novel goals:** Existing cognitive observation index, at most 2048 text tokens here, witness-memory growth, unfinished unseen semantic targets, and inference of multiple relevant slots remain unsolved design constraints. The append-only atlas records actual new evidence but does not claim to reconstruct every historical byte never observed by this branch.
 
 **Do not merge this draft or replace the user's native UI or prior TinyStories checkpoint until an independently verified natural Q/A release test passes.**
+
+## Further first-shape → REAL independent simulated actions → error/wall test
+
+The original `answerFromObservedInstructionPath` now accepts an **optional** independent `externalStep({before,action,stepIndex,proposedNext})` callback, executed only AFTER the complete native V17 goal-conditioned first-shape is already frozen. The callback returns actual environment `{after,accepted}`; its result is compared against every learned motor prediction before any text answer is released.
+
+The new V36 two-hop test uses an **independent synthetic controlled world transition function** that looks only at its actual state, NOT the learned model's `predict`, teacher reference, or the proposed next output:
+- `tea→coffee→water` survives **both** independently checked state transitions and returns the exact unseen terminal text `Visitor keeps water.`.
+- When the external environment rejects step 2 as a **wall**, the previously planned two-action path is correctly invalidated. No final answer is manufactured; the exact failed step and both observed action outcomes remain in the diagnostic.
+- When an environment accepts step 1 but produces an effect different from the frozen predicted effect, the result is refused as `EXTERNAL_ACTION_EFFECT_DIFFERS_FROM_FROZEN_PATH`, with the conflicting observation preserved.
+- The original `LearnedCognitiveMap.export()` is **bit-for-bit unchanged** through all three frozen world validations. No hidden answer enters the planner and no accidental training updates are permitted.
+- With no external callback (production HTTP query), the result remains clearly labelled **internal learned-action replay**, NOT physical-world success.
+
+This is a stronger independently executed **controlled deterministic world** proof, NOT independently observed physical reality outside the test. Verified on full native Linux/Windows workflow: https://github.com/dan3s2020/MagicPerspective/actions/runs/42363526386 (both jobs green, original V31/V22/V30/V19 regressions passed).
+
+## Other human-text discoveries NOT combined into this experiment
+
+A distinct sibling V35 research branch measured a real supervised Stanford SQuAD 1.1 reading comprehension task using original V17 `Brain.disc.shapeGraph`: **62/450 exact full answers (13.78%)** on 450 genuine heldout article-disjoint DEV questions, compared with **1/450** with no learned question-preference and **14/450** with shuffled heldout questions. That finding is genuine human extractive-QA, but V35 uses a separate supervised source-span preference head. It has **NOT** been secretly merged into V36's target-free original learned action navigation or counted toward V36's controlled 100% curves. Independent evidence: https://github.com/dan3s2020/MagicPerspective/actions/runs/42361550762, source `experiment/V35-REAL-SQUAD-EVIDENCE-PATHS-20261107`.
+
+A full unrestricted first-shot semantic Q/A test remains the deciding release gate.
