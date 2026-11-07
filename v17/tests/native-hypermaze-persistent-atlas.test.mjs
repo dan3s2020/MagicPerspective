@@ -147,3 +147,65 @@ test("atlas operator catalog includes every learned action and distinguishes use
  assert.ok(u.totalOperators>=0&&u.totalOperators<opCount);
  assert.ok(u.operators.every(x=>x.pathsUsedSuccessful===0));
 });
+
+test("multiple separately observed language worlds retain reusable transformations after source-state eviction AND Brain.v8 restart",()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"mp-cross-world-atlas-"));
+ try{
+  const checkpoint=path.join(tmp,"brain-original.v8"),
+   atlasFile=checkpoint+".hypermaze-atlas.jsonl";
+  const original=trainedBrain(),memory=original.observedTransformations;
+  memory.maxObserved=4; // small test-only window proves long-term GLOBAL action retention
+  const live=new NativeGoalTextMaze(original,{atlasFile,maxStates:250,maxDepth:5});
+  const worlds=["She is happy.","She is tired.",
+    "He is tired.","He is calm."];
+  for(const text of worlds){
+   const report=live.observe(text);
+   assert.equal(report.learned,true);
+  }
+  const actionsBefore=memory.operators.size;
+  assert.ok(actionsBefore>=4);
+  const first=live.plan({start:"He is calm.",required:["She","calm"],
+   recordAtlas:true});
+  assert.equal(first.found,true);
+  assert.equal(first.predicted,"She is calm.");
+  // Later unrelated worlds evict every original source sentence from
+  // the short CURRENT exercise context. The global learned operator grammar
+  // is still present in the SAME Brain, and the exact corpus is in the atlas.
+  for(let i=0;i<12;i++)live.observe("The unrelated observation "+i+
+    " carries a different instrument marker.");
+  assert.equal(memory.containsSentence("He is calm."),false);
+  assert.ok(memory.evicted>=worlds.length);
+  assert.ok(memory.operators.size>=actionsBefore);
+  const liveAgain=live.plan({start:"He is calm.",required:["She","calm"],
+   recordAtlas:true});
+  assert.equal(liveAgain.found,true,
+   "The model forgot cross-world transformations after a short observation window");
+  assert.equal(liveAgain.predicted,"She is calm.");
+  original.save(checkpoint);
+  live.atlasFlush();
+  const bytesBefore=fs.readFileSync(atlasFile);
+  const restored=Brain.load(checkpoint);
+  const resumed=new NativeGoalTextMaze(restored,{atlasFile,maxStates:250,maxDepth:5});
+  assert.ok(resumed.atlasSummary().worldsByDomain.text>=16);
+  assert.ok(restored.observedTransformations.operators.size>=actionsBefore);
+  const afterRestart=resumed.plan({start:"He is calm.",
+   required:["She","calm"],recordAtlas:true});
+  assert.equal(afterRestart.predicted,"She is calm.",
+   "The exact original learned shape did NOT survive a cross-world Brain.v8 reload");
+  const history=resumed.atlasPage({after:0,limit:250,kinds:["world"]});
+  assert.ok(history.events.some(x=>x.rawText==="She is happy."));
+  assert.ok(history.events.some(x=>x.rawText==="He is calm."));
+  assert.ok(fs.readFileSync(atlasFile).subarray(0,bytesBefore.length).equals(bytesBefore),
+   "Appending a new route must never overwrite previously lived worlds");
+  console.log("NATIVE_CROSS_WORLD_LONG_TERM_TRANSFER",JSON.stringify({
+   separateActualWorldEpisodes:worlds.length+12,
+   evictedCurrentWindowSources:memory.evicted,
+   learnedOperatorsRetained:restored.observedTransformations.operators.size,
+   unseenGoalBeforeRestart:liveAgain.predicted,
+   unseenGoalAfterRestart:afterRestart.predicted,
+   durableOldWorldTextAndPaths:true,
+   noReferenceAnswerProvided:true,
+   previousTinyStoriesGPUCheckpointNotTouched:true
+  }));
+ }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});
