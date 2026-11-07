@@ -17,6 +17,7 @@ param(
   [switch]$IncludeCognitive,
   [ValidatePattern('^cu[0-9]{3}$')][string]$Cuda = "cu126",
   [string]$PythonExe = "",
+  [switch]$ProfileText,
   [switch]$Resume
 )
 $ErrorActionPreference = "Stop"
@@ -89,6 +90,12 @@ $selectedWorlds = if ($IncludeCognitive) {
 }
 if ($selectedWorlds -notmatch '(^|,)text(,|$)') { throw "Refusing V21 startup without native text training." }
 
+# Optional high-resolution CUDA phase timings; includes additional synchronization.
+# Coarse per-batch wall times are always measured, with no CUDA sync overhead.
+if ($ProfileText) {
+  $env:MP_PROFILE_TEXT = "1"
+  Write-Host "Profiling enabled: CUDA alignment / imagination / reindex phases (may slow training)" -ForegroundColor Yellow
+}
 Write-Host "MAGICPERSPECTIVE V21 - REAL TEXT + AETHER/VEIL + MAZE/TRANSFORM" -ForegroundColor Cyan
 Write-Host "Native V17 AligningGraph.write trains on ACTUAL Q/A corpus. V20/V21 observe same documents." -ForegroundColor Green
 Write-Host "Worlds: $selectedWorlds"
