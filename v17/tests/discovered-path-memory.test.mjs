@@ -166,3 +166,17 @@ test("original MagicPerspective Brain and frozen original text generator are not
  console.log("UNMODIFIED_NATIVE_V17",JSON.stringify({brainObservations:before,nativeOperators:beforeNative,
   geometryDimensions:a.trace.geo.D,independentResearch:true}));
 });
+
+test("early checkpoint retains all observations even when the action model has not fitted yet",()=>{
+ const learner=new LearnedPathMemory({minPerAction:20});
+ learner.observe([10,20,30,5],"E+",[11,20,71,3]);
+ learner.observe([12,21,40,2],"N+",[12,22,104,1]);
+ const snapshot=learner.export();
+ assert.equal(snapshot.samples,2);
+ assert.equal(snapshot.model,null);
+ const restored=LearnedPathMemory.restore(snapshot);
+ assert.equal(restored.model,null);
+ assert.equal(restored.examples.length,2);
+ assert.deepEqual(restored.examples,learner.examples);
+ console.log("EARLY_CHECKPOINT_COMPLETE_LEDGER",JSON.stringify({events:2,trained:false,lossless:true}));
+});
