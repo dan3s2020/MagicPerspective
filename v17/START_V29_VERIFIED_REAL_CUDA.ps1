@@ -13,6 +13,7 @@ param(
   [int]$GpuTextBatch = 3,
   [double]$Vram = 3,
   [int]$GpuUtil = 100,
+  [switch]$AllowNew,
   [switch]$NoBrowser
 )
 $ErrorActionPreference = "Stop"
@@ -49,6 +50,9 @@ Assert-FreePort $NativePort
 Assert-FreePort $UIPort
 $ActualOut = [System.IO.Path]::GetFullPath($OriginalOut)
 $ExpectedSave = Join-Path $ActualOut "brains\brain-0-$Arms.v8"
+if (!(Test-Path -LiteralPath $ExpectedSave -PathType Leaf) -and !$AllowNew) {
+  throw "Original checkpoint NOT FOUND: $ExpectedSave. V29 refuses silent restart-from-zero. Supply the correct -OriginalOut directory from your prior V17 run, or explicitly use -AllowNew for a brand-new experiment."
+}
 Write-Host "V29 / NEW V26 UI + ORIGINAL V17 REAL TRAINING" -ForegroundColor Cyan
 Write-Host "Dataset: $Data"
 Write-Host "Original checkpoint directory: $ActualOut"
