@@ -34,6 +34,8 @@ jobs:
         run: node --test v17/tests/v31-long-complete-text-path.test.mjs
       - name: Real V17 native worker, full-text path-to-answer, atlas evidence and no oracle leaks
         run: node --test v17/tests/v31-native-path-answer-http.test.mjs
+      - name: Frozen long text with THREE original Shape hops and lost-edge recoverability
+        run: node --test v17/tests/v31-three-hop-composition.test.mjs
       - name: Original V30, V22 and V19 regression tests remain intact
         run: |
           node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs
