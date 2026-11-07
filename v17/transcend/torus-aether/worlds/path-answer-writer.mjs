@@ -9,7 +9,7 @@ const render=tokens=>tokens.join(' ')
   .replace(/([([{])\s+/gu,'$1');
 
 export function parseExplicitRewriteQuestion(question,{maxTokens=512}={}){
-  if(typeof question!=='string'||question.length>20000)
+  if(typeof question!=='string'||question.length>131072)
     return {ok:false,error:'UNSUPPORTED_INPUT_BOUNDARY'};
   const m=instruction.exec(question);
   if(!m)return {ok:false,error:'UNSUPPORTED_INSTRUCTION_GRAMMAR'};
