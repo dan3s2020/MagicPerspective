@@ -435,7 +435,7 @@ http.createServer((req, res) => {
       events: stream.events.filter(e => e.seq > after).slice(-110),
       committedExercises: Math.max(graphs.get(w)?.exercises || 0, last.get(w)?.exercises || 0)});
   }
-  if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
+  if (url === "/graphs") return json(res, {world, every, goalTraining, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
     return res.end(g ? JSON.stringify({...g, test: last.get(w)?.test || null, world}) : "{}"); }
