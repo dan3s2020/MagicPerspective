@@ -50,12 +50,12 @@
     "actualRTX3050Ti_run": false
   },
   "hardware_CUDA_unverified": {
-    "CUDA_3090": false,
     "actual_3050ti_performance_tested": false,
     "text_GPU_selftest_on_actual_laptop": "MUST_EXECUTE_V32_START_SCRIPT",
     "actual_VRAM_reservation_bytes": "NOT_MEASURED_YET",
     "actual_speedup_over_V29": "NOT_MEASURED_YET",
-    "natural_semantic_70_percent": "NOT_PROVEN"
+    "natural_semantic_70_percent": "NOT_PROVEN",
+    "GPU_requested": "NVIDIA GeForce RTX 3050 Ti Laptop GPU"
   },
   "limits": "A green CPU CI proves math parity and live native HTTP/UI integration, not an RTX 3050 Ti CUDA throughput increase."
 }
