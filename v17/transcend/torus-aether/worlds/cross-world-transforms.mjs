@@ -54,6 +54,9 @@ export function candidatePortable(state,portable,interventions){
    for(let i=0;i<state.length;i++){
      if(state[i]!==r.from||
         (r.causallySupportedPositions&&!r.causallySupportedPositions.includes(i)))continue;
+     if(r.causallySupportedContexts&&!r.causallySupportedContexts.some(ctx=>
+       ctx.at===i&&ctx.left===(state[i-1]??null)&&
+       ctx.right===(state[i+1]??null)&&ctx.atEnd===(i===state.length-1)))continue;
      const action=portableId(i,r.from,r.to),id=state.join(SEP)+"|"+action;
      const seen=interventions.get(id);
      if(seen?.blocked && seen.blocked>=seen.accepted)continue;
