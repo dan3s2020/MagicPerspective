@@ -117,7 +117,7 @@ export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1",a
        job.status=code===0&&!job.error?"passed":"failed";
        state.last.unshift({...job});state.last=state.last.slice(0,8);
        if(archiveDir){
-         const record={id:job.id,kind,label:job.label,status:job.status,started:job.started,ended:job.ended,
+         const record={id:job.id,kind,label:job.label,source:job.source,status:job.status,started:job.started,ended:job.ended,
            exitCode:job.exitCode,error:job.error,metrics:job.metrics,stdoutFile:job.stdoutFile,stderrFile:job.stderrFile};
          fs.appendFileSync(path.join(archiveDir,"research-index.jsonl"),JSON.stringify(record)+"\n");
        }
