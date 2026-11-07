@@ -95,6 +95,11 @@ function info(){
   qaLongFormEvictedSequences:brain?.qaRoleEvidence?.longForm?.evictedSequences??0,
   qaLongFormUnretained:brain?.qaRoleEvidence?.longForm?.tooLongToRetainChunks??0,
   qaSemanticCaveat:"Full answers are scored WITHOUT passing heldout answer or target tokens to the original shape planner.",
+  // One persistent original Brain graph across training rows and episodes.
+  // Distinguish witnessed real operators/observed sequence from validated
+  // physical paths; a text-adjacent segment is NOT a semantic wall crossing.
+  crossMazeMemory:engine?.cumulativeWorldStatus?.()||null,
+  crossMazeTopologicalCompleteness:"bounded by retained observations; cannot assume unknown language connections exist",
   saturated:o?.droppedOperators>0,
   boundedMemoryWarning:"Observed text-window states are bounded; evicted states are not permanently retained as individual observations. All source bytes are streamed, not all bytes become unique persistent nodes."
  };
@@ -391,6 +396,37 @@ parentPort.on("message",m=>{
    return send("rpc",{id,result:{...plan,body,originalBrain:true,
     realTrainingCorpus:files.map(x=>x.path),
     withheldAnswerSupplied:false,generalNaturalLanguageAccuracyProven:false}});
+  }
+  if(m.cmd==="cumulative"){
+   const start=String(m.start||"");
+   if(!start.trim()||start.length>4000||!Array.isArray(m.required)||
+    m.required.length<1||m.required.length>16)
+    throw Error("Cross-maze planning needs observed source and explicit 1..16 goal tokens; no hidden answer");
+   const plan=engine.planCumulativeWorld({
+    start,required:m.required,allowInferred:!!m.allowInferred,
+    maxExpansionDepth:Number(m.maxExpansionDepth||12),
+    maxGraphNodes:Number(m.maxGraphNodes||2200),
+    includeTopology:!!m.topology
+   });
+   return send("rpc",{id,result:{...plan,originalBrain:true,
+    trainedRealOperators:brain.observedTransformations.operators.size,
+    noProvidedReferenceAnswer:true,
+    fullGeneralLanguageCompetenceProven:false}});
+  }
+  if(m.cmd==="cumulativeNumeric"){
+   const start=String(m.start||"");
+   if(!start.trim()||start.length>4000||!Array.isArray(m.numericGoals)||
+      m.numericGoals.length<1||m.numericGoals.length>12)
+    throw Error("Numeric cumulative goal needs current text and input indices ONLY");
+   const plan=engine.planCumulativeNumericWorld({
+    start,numericGoals:m.numericGoals,
+    maxExpansionDepth:Number(m.maxExpansionDepth||18),
+    maxGraphNodes:Number(m.maxGraphNodes||2200),
+    includeTopology:!!m.topology
+   });
+   return send("rpc",{id,result:{...plan,
+    originalBrain:true,noProvidedDependentAnswer:true,
+    everyPredictedNumericalStepMustBePhysicallyVerified:true}});
   }
   if(m.cmd==="plan"){
    const start=String(m.start||""),required=m.required;
