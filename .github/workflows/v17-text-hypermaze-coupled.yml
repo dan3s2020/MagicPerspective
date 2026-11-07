@@ -1,0 +1,28 @@
+name: V17 text hypermaze — compositional directions, math invariants and stochastic replanning
+on:
+  push:
+    branches:
+      - experiment/V17-TEXT-MAZE-COUPLED-AXES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  text-hypermaze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of real V17 import + experimental learned-axis operator
+        run: |
+          node --check v17/research/text-hypermaze/coupled-axes.mjs
+          node --check v17/research/text-hypermaze/context-axis-evidence.mjs
+          node --check v17/tests/text-hypermaze-coupled-axes.test.mjs
+      - name: Sparse context-axis tests and unseen arithmetic solution-shape proofs
+        run: node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
+      - name: Original unchanged V17 textual transformations regression
+        run: node --test v17/tests/observed-transformations-v17.test.mjs
+      - name: Original unchanged V17 maze-to-text path construction regression
+        run: node --test v17/tests/constructed-paths-v17.test.mjs
