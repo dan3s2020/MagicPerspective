@@ -11,7 +11,7 @@ import {LearnedCognitiveMap} from "../transcend/torus-aether/worlds/learned-cogn
 // correct complete output is constructed ONLY after the initial plan exists.
 const CORPUS_FILE = new URL("../docs/TORUS_AETHER_ABC_20261104.md", import.meta.url);
 const raw = fs.readFileSync(CORPUS_FILE, "utf8");
-const words = raw.match(/[\\p{L}\\p{N}_\\-]+/gu) || [];
+const words = raw.match(/[\p{L}\p{N}_-]+/gu) || [];
 const SOURCE_SHA256 = createHash("sha256").update(raw).digest("hex");
 assert.ok(words.length >= 8200, "Need 8,200 source words, or the frozen test is invalid");
 const TRAIN = words.slice(0, 2048);
