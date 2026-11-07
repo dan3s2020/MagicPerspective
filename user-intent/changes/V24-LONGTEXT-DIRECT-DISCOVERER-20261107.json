@@ -1,7 +1,7 @@
 {
   "version": 1,
   "date": "2026-11-07",
-  "status": "OPEN_BLOCKING_PRE_IMPLEMENTATION",
+  "status": "IN_PROGRESS_FIRST_LONGTEXT_CI_PENDING",
   "source_quotes": [
     {
       "source": "user-visible 2026-11-07 direct request in current conversation",
@@ -24,7 +24,11 @@
   "new_files": [
     "v17/tests/v24-longtext-independent-heldout.test.mjs",
     ".github/workflows/v24-longtext-direct-discoverer.yml",
-    "v17/docs/V24_LONGTEXT_DIRECT_DISCOVERER_EVIDENCE_20261107.md"
+    "v17/docs/V24_LONGTEXT_DIRECT_DISCOVERER_EVIDENCE_20261107.md",
+    "v17/transcend/torus-aether/worlds/observed-transformations.mjs",
+    "v17/research/text-hypermaze/state-dependent-axes.mjs",
+    "v17/research/goal-path-field/native-math-graph.mjs",
+    "v17/tests/v24-native-math-field-heldout.test.mjs"
   ],
   "scope": "Repair ONLY long-state admission with explicit opt-in size bound and TRUSTED observer-accepted action hypothesis conductance in the existing cognitive graph adapter; preserve same original 0.97 .5 .2 2N Discoverer.shape law. Original default model/test behavior unchanged; require independent-physics heldout evaluation and causal ablations, without claiming semantic general intelligence.",
   "prior_failed_test": "GitHub run 42341046064 / job 128308568926: three RED V23 tests throw 'Invalid cognitive planning limits' on 2048-token unseen text; original 84 retinas, 144 and 511 accepted edge path tests PASS.",
@@ -36,5 +40,11 @@
     "Only explicit trusted-action-evidence hypothesis gate may raise path conductance to address numeric extinction; observable and reversible",
     "Record exact heldout metrics; failures and CUDA/semantic gaps must remain explicit"
   ],
-  "release_gate": "BLOCKED until real unseen full OpenThoughts3 Q/A correctness, full native UI and user RTX 3050 Ti CUDA are established; passing synthetic symbolic graph tests is not a user-requested production release"
+  "release_gate": "BLOCKED until real unseen full OpenThoughts3 Q/A correctness, full native UI and user RTX 3050 Ti CUDA are established; passing synthetic symbolic graph tests is not a user-requested production release",
+  "additional_source_immutability": [
+    "Copy exact bytes of proven v17/transcend/torus-aether/worlds/observed-transformations.mjs blob 203af6f21b3834bc6d9487e78cef268bba7f37e5 from experiment/V17-TEXT-MAZE-COUPLED-AXES-20261107",
+    "Copy exact bytes of proven v17/research/text-hypermaze/state-dependent-axes.mjs blob 4a69a622e9221b1b18bee310343d0a1e3d25e46d from the same research branch",
+    "Only use observed-pair induction and apply() from research; DO NOT invoke its alternative A* plan(); original Discoverer.shape() is only path planner"
+  ],
+  "additional_evaluation": "Unseen arithmetic result NOT provided in goal; learn nonlinear numeric action field from six real observed before/after pairs, generalize to new long document body and independent action physics; report hallucinated failures and ablations. Does not mean unrestricted OpenThoughts answers 100%."
 }
