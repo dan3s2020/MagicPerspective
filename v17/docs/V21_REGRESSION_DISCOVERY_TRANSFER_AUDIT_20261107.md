@@ -6,6 +6,18 @@ The former V21 launcher started hypertext,maze,transform but omitted the native 
 
 This explains why a rolling 86.2% alignment result, V20 ~17.44% token prediction, and 0% free-generated answer shape could coexist. They measure different tasks. Bellman residual ~1e-16 for Q→:→{ shows a shortest path on a known-goal observed token graph, NOT a semantic answer generated before the answer was known.
 
+## Second confirmed evaluation defect: 200-character truncation before A:
+
+The original evalTextExercises began with a0=0 even if a selected 200-character prefix omitted the newline A: answer boundary. It then wrongly treated all evaluated question characters as answer characters and reported shapeSame=0%. This is a false-zero metric when no answer was present, independent of learning.
+
+V21 now uses a0=-1 until the literal newline A: marker is actually observed. When absent, answer, shape and shapeSame are null (not zero), invalidShapeReason names the missing answer boundary, and the original UI recommends increasing the evaluation length or selecting 0 to use the entire exercise. Original AligningGraph.write algorithm and model weights are untouched. A dedicated frozen test checks 200-character question-only snippets versus a complete same question plus answer.
+
+Note: whether the user's own screenshot was truncated before the boundary requires inspecting the actual Q/A source. The code could produce false zero, but the screenshot alone does not establish the entire cause.
+
+## Resuming newly enabled V19 action learning without double-absorbing V20/V21
+
+On a hypertext-only checkpoint (original cognitiveDocuments>0), activating original V19 cognitive rules for the first time must replay those old documents into V19, while the already observed V20 and V21 graph must skip them. The V21 worker now tracks previouslyObservedCognitive and previouslyObservedHyper independently. It only increments the aggregate unique-document count when processing a genuinely new document. The combined native regression resumes with text,hypertext,cognitivemap,maze,transform and checks that V19 absorbs previous documents, V20 counts stay unchanged, and original free-run shape >=10% on the fixed synthetic heldout fixture.
+
 ## Fix and strict native regression
 
 - START_V21_AETHER_VEIL.ps1 reconstructed cleanly; PowerShell syntax must pass CI. Native default worlds now text,hypertext,maze,transform in the SAME original Brain; adding -IncludeCognitive enables original V19 cognitive atlas.
