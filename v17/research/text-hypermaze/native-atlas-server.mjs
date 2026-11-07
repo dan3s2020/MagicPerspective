@@ -83,6 +83,17 @@ export class NativeAtlasRuntime{
     originalFloorConductance:this.brain.disc.conduct(KIND.floor)
    },
    atlas:r,
+   originalNativeText:{
+    source:"Existing V17/V29 ObservedTransformations in the SAME Brain",
+    observations:this.brain.observedTransformations?.seen||0,
+    learnedTextContrastOperators:this.brain.observedTransformations?.operators?.size||0,
+    activeObservedTextStates:this.brain.observedTransformations?.records?.size||0,
+    evictedTextStates:this.brain.observedTransformations?.evicted||0,
+    fullPastRawTextStatesRetained:(this.brain.observedTransformations?.evicted||0)===0,
+    contrastEdgesAreVerifiedCausalActions:false,
+    contrastActionsAdmittedToV30Navigator:false,
+    note:"Original real corpus contrasts are visible and preserved, but require independent action effects to become walkable physics"
+   },
    frontierSemantics:"All known edges EXPANDED inside bounded graph, never entire natural language",
    geometry:{
     originalLearnedDimensions:this.brain.trace.geo.D,
