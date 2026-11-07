@@ -69,6 +69,11 @@ test('native V19 worker ingests complete documents, persists learned graph, and 
   assert.equal(answer.novelGoal,true);
   assert.ok(answer.plannedPath.length>=1);
   assert.equal(answer.law,'ORIGINAL_V17_ATTRACTION_0.97');
+  assert.equal(answer.directOriginalMethod,'Discoverer.shape',
+    'The actual native text planner MUST invoke V17 Discoverer.shape, not the V19 duplicated law');
+  assert.ok(Array.isArray(answer.preActionShape)&&answer.preActionShape.length>=2);
+  assert.equal(answer.frozen,true);
+  assert.ok(Number.isFinite(answer.noiseTemperature)&&answer.noiseTemperature>=0);
   const tooMany=await fetch(base+'/add?arm=stable%2Bmany&worlds=maptext',{method:'POST'});
   assert.equal(tooMany.status,200,'Original nontext graph can still be added without source corruption');
   const after=await get(base+'/graphs');
