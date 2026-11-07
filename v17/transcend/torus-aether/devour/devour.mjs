@@ -41,7 +41,7 @@ const CLAWS = {stable: {margin: .05, window: 400}, grow: {cap: 6}, "stable+grow"
 const arms = arg("arms", "winner").split(",").map(a => { if (CLAWS[a]) return {name: a, rules: ARMS.winner, c: CLAWS[a]};
   if (!ARMS[a]) throw Error("unknown arm " + a + " (" + [...Object.keys(ARMS), ...Object.keys(CLAWS)] + ")"); return {name: a, rules: ARMS[a]}; });
 
-let source, evalText = "", heldPick = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
+let source, evalText = "", heldPick = async () => [], heldPickUnique = async () => [];          // heldPick(n): n unseen exercises drawn at random (Evaluare)
 if (!worldsArg.includes("text") && !worldsArg.includes("cognitivemap") && !worldsArg.includes("hypertext")) {
   source = {kind: "none"}; // code and simulations require no external text dataset
 } else if (arg("text")) {
@@ -49,12 +49,14 @@ if (!worldsArg.includes("text") && !worldsArg.includes("cognitivemap") && !world
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (para.trim().length < 20) continue; k++;
     if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
   heldPick = async n => Array.from({length: n}, () => heldParas[Math.floor(Math.random() * heldParas.length)]);
+  heldPickUnique = async n => heldParas.slice(0,Math.min(heldParas.length,n)); // fixed, no replacement
   source = {kind: "text", files, heldSet, totalRows: k, trainRows: k - heldSet.length, heldRows: heldSet.length};
 } else {
   const root = arg("data", DEFAULT_TEXT_ROOT), ds = await openTextDataset(root);
   for (let k = 0; k < ds.held && evalText.length < evalChars; k++) { const x = await ds.heldOut(k); evalText += "Q: " + x.prompt + "\nA: " + x.answer + "\n\n"; }
   source = {kind: "parquet", root, totalRows: ds.total, trainRows: ds.trainRows, heldRows: ds.held};
   heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
+  heldPickUnique = async n => { const o=[]; for (let j=0;j<Math.min(n,ds.held);j++){ const x=await ds.heldOut(j); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
 validateWorldSource(worldsArg, source);
@@ -220,10 +222,17 @@ http.createServer((req, res) => {
       const opts = m.opts || {};
       const toB = t => Array.from(t, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; }).filter(c => c !== 13);
       if (m.kind === "text") { opts.own = !!(opts.text && opts.text.trim());     // your text, or unseen exercises drawn at random, new every time
-        const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
+        const strictHeldout = opts.strictHeldout === true && !opts.own;
+        const want = Math.max(1,Math.min(200,Math.trunc(+opts.count||12)));
+        const list = strictHeldout ? await heldPickUnique(want) :
+          opts.again && sl.lastText ? sl.lastText :
+          opts.own ? [opts.text] : await heldPick(want);
+        if (!list.length) return json(res,{error:"Dataset has zero distinct heldout Q/A exercises; cannot certify 70%"});
+        sl.lastText = list;   // "again": the same exercises
         let requestedMax; try { requestedMax = requestedExerciseLength(opts.max); }
         catch (err) { return json(res, {error: err.message}); }
         opts.fullAnswerRequested = requestedMax === 0;
+        opts.verifiedUniqueHeldout = strictHeldout && requestedMax === 0;
         opts.list = list.map(t => limitExerciseBytes(toB(t), requestedMax)); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
