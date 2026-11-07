@@ -20,6 +20,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
 const workers = +arg("workers", Math.max(1, os.cpus().length - 1)), every = +arg("every", 200000), maxChars = +arg("chars", 0) || Infinity;
 const checkpointEvery = Math.max(0,Math.trunc(+arg("checkpoint-every",0)));
+const xdAtlasEvery=Math.max(0,Math.trunc(+arg("xd-atlas-every",0)));
 // 0 preserves the native behavior; nonzero decouples atomic saves from expensive frozen evaluations.
 const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), evalChars = +arg("eval", 4000);
 // worlds the same brains live: text (the corpus) and/or maze (the 2D maps); brains are saved in <out>/brains and
@@ -141,12 +142,14 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
     language: g?.language || t?.language || null, hypermaze:g?.hypermaze || t?.hypermaze || null,
+    nativePathAtlas:g?.nativePathAtlas || t?.nativePathAtlas || null,
+    xdAtlas:g?.xdAtlas || t?.xdAtlas || null,
     endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;sl.launchedAt=Date.now();sl.lastHeartbeatAt=null;sl.lastHeartbeat=null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".hypermaze.json"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".hypermaze.json", ".native-paths.json", ".path-atlas.jsonl", ".xd-atlas.jsonl"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
@@ -155,7 +158,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, checkpointEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
+    worlds: sl.worlds, mazeEvery, checkpointEvery, xdAtlasEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
@@ -225,6 +228,107 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
+  // Every recorded training episode is stored append-only in its real
+  // native worker journal; read only a bounded byte range from a known path.
+  // Offset is an opaque BYTE cursor; no arbitrary client filesystem paths.
+  if(req.method==="GET"&&url==="/atlas-log"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl)return json(res,{error:"Unknown worker"});
+    const kind=q.get("kind")==="xd"?"xd-atlas":"path-atlas";
+    const file=saveOf(sl)+"."+kind+".jsonl";
+    const offset=Number(q.get("offset")||0),limit=Math.min(30,Math.max(1,+q.get("limit")||8));
+    if(!Number.isSafeInteger(offset)||offset<0)return json(res,{error:"Invalid append-only byte cursor"});
+    if(!fs.existsSync(file))return json(res,{entries:[],nextOffset:0,kind,
+      message:"Journal has no completed rows yet"});
+    const size=fs.statSync(file).size;
+    if(offset>=size)return json(res,{entries:[],nextOffset:offset,kind,
+      doneForNow:true,totalBytes:size});
+    const bytes=Math.min(size-offset,4*1024*1024),buf=Buffer.allocUnsafe(bytes);
+    const fd=fs.openSync(file,"r");let read=0;
+    try{read=fs.readSync(fd,buf,0,bytes,offset);}
+    finally{fs.closeSync(fd);}
+    const part=buf.subarray(0,read),lines=[],starts=[];
+    let begin=0;
+    for(let pos=0;pos<part.length&&lines.length<limit;pos++){
+      if(part[pos]===10){
+        lines.push(part.subarray(begin,pos).toString("utf8"));
+        starts.push(pos+1);begin=pos+1;
+      }
+    }
+    if(!lines.length)return json(res,{entries:[],nextOffset:offset,kind,
+      error:"Current atlas record exceeds 4 MiB or is not yet committed; no cursor advanced"});
+    const entries=[];
+    for(const line of lines){
+      try{entries.push(JSON.parse(line));}
+      catch(err){return json(res,{error:"Corrupt atlas journal record at byte "+offset+": "+err.message});}
+    }
+    return json(res,{kind,w,entries,nextOffset:offset+starts.at(-1),
+      totalBytes:size,moreAvailable:offset+starts.at(-1)<size,
+      source:"REAL append-only training episode journal"});
+  }
+  // An EXHAUSTIVE paged view of every stored learned native context state
+  // and outgoing transition. Querying does not trigger teacher training.
+  if(req.method==="GET"&&url==="/atlas-graph"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    const scale=Math.max(0,Math.min(5,Math.trunc(+(q.get("scale")||0))));
+    const offset=Math.max(0,Math.trunc(+(q.get("offset")||0)));
+    const limit=Math.max(1,Math.min(200,Math.trunc(+(q.get("limit")||80))));
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Worker busy; no fabricated empty atlas response"});
+    },25000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({nativeAtlasPage:{id,scale,offset,limit,family:q.get("family")==="edits"?"edits":"scales"}});
+    return;
+  }
+  // REAL disjoint held-out QA from original Parquet split or held-out text
+  // paragraphs. Neither the Brain nor the native inspector is updated.
+  if(req.method==="POST"&&url==="/native-atlas-eval"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    const count=Math.max(1,Math.min(16,Math.trunc(+(q.get("count")||6))));
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Native frozen text atlas evaluation timed out"});
+    },45000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result,
+      source:"original V17 held-out corpus split; no teacher update"});});
+    void heldPick(count).then(rows=>{
+      if(chats.has(id))sl.wk.postMessage({nativeAtlasEval:{id,rows}});
+    }).catch(err=>{if(chats.has(id)){chats.delete(id);clearTimeout(timer);
+      json(res,{error:"Could not read disjoint heldout corpus: "+err.message});}});
+    return;
+  }
+  if(req.method==="POST"&&url==="/evidence-gated-text-path"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original V17 Brain worker unavailable"});
+    const start=(q.get("start")||"").slice(0,1000);
+    const required=(q.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,16);
+    if(!start||!required.length)
+      return json(res,{error:"Required: start sentence and goal tokens, not an ideal answer"});
+    const maxSteps=Math.max(1,Math.min(9,Math.trunc(+(q.get("steps")||8))));
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Native evidence-gated worker busy; no fabricated result"});
+    },25000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({evidenceGatedText:{id,start,required,maxSteps,maxExpanded:6000}});
+    return;
+  }
+  // Full finite-world frozen test. The agent receives the ENTIRE map, no
+  // correct path, no new probes; we compare the real action execution.
+  if(req.method==="POST"&&url==="/xd-atlas-eval"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    const dimensions=Math.trunc(+(q.get("dimensions")||1024));
+    const seed=Math.trunc(+(q.get("seed")||81919));
+    if(!Number.isInteger(dimensions)||dimensions<16||dimensions>8192)
+      return json(res,{error:"Dimension range 16..8192"});
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Frozen xD evaluation timed out"});
+    },25000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({xdAtlasTest:{id,dimensions,seed}});
+    return;
+  }
   // Sidecar-only settings. Native Brain and CUDA training parameters are unchanged.
   if(req.method==="POST"&&url==="/hypermaze-config"){
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
@@ -448,7 +552,9 @@ http.createServer((req, res) => {
       shared:graphs.get(w)?.shared||null,
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null,
-      hypermaze:graphs.get(w)?.hypermaze||null});
+      hypermaze:graphs.get(w)?.hypermaze||null,
+      nativePathAtlas:graphs.get(w)?.nativePathAtlas||null,
+      xdAtlas:graphs.get(w)?.xdAtlas||null});
   }
   if (url === "/health") {
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);

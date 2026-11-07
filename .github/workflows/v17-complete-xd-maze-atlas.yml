@@ -1,0 +1,57 @@
+name: V17 complete finite xD mazes + cross-world learned path atlas
+on:
+  push:
+    branches:
+      - experiment/V17-COMPLETE-XD-MAZE-TRANSFER-ATLAS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  full-world-transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntactic check, no fake/missing maze action route injected
+        run: |
+          node --check v17/transcend/torus-aether/worlds/full-xd-maze-atlas.mjs
+          node --check v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: Test complete FULL physical maps, learned axis transfer, all missed edges and adversarial changed rules
+        run: node --test v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: Test cross-episode native language atlas with all six persistent text graphs and missing-edge reasons
+        run: |
+          node --check v17/transcend/torus-aether/worlds/native-text-path-atlas.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --test v17/tests/native-text-path-atlas.test.mjs
+      - name: ACTUAL original V17 server, real corpus training, complete xD atlas, native text graph pagination, checkpoint and frozen execution
+        run: node --test v17/tests/complete-xd-native-live-http.test.mjs
+      - name: "Native V17 six-scale text atlas: inspect real missing/incorrect paths and paginate every state/observed transformation"
+        run: node --test v17/tests/native-text-path-atlas.test.mjs
+      - name: "Native Brain checkpoint: same xD and language learner state after save/resume"
+        run: node --test v17/tests/native-xd-brain-integration.test.mjs
+      - name: Evidence gated native text paths learn missing axis from genuinely witnessed bridge sentences
+        run: node --test v17/tests/native-evidence-gated-integration.test.mjs
+      - name: Native V17 upstream original graph/noise/observed language path regressions
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/live-corpus-hypermaze.test.mjs
+
+  actual-browser-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium to verify genuine V17 browser rendering
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Real original training worker and browser, full maze and true-native graph pages, frozen text and xD
+        run: node --test v17/tests/complete-xd-atlas-browser.test.mjs

@@ -8,13 +8,16 @@ import path from "node:path";
 import {openTextDataset} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveHyperMaze,parseHeldoutText} from "./live-hypermaze.mjs";
+import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
+import {CompleteXDWorld} from "../worlds/full-xd-maze-atlas.mjs";
+import {once} from "node:events";
 import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
-const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, saveFile, resume} = workerData;
+const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, xdAtlasEvery = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
 // A real text corpus may be Q/A pairs OR free prose. Both contain observed
@@ -110,6 +113,30 @@ const selfcode = SELF_CODE ? new NativeSelfCodeWorld({brain,saveFile,seed:brain.
 if(workerData.paused)selfcode?.pause();
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
+const nativeAtlasFile=saveFile?saveFile+".native-paths.json":null;
+const nativeAtlasLogFile=saveFile?saveFile+".path-atlas.jsonl":null;
+let nativeAtlas=new NativeTextPathAtlas({maxFrames:160,maxLast:12});
+if(resume&&nativeAtlasFile&&fs.existsSync(nativeAtlasFile)){
+  try{
+    const saved=JSON.parse(fs.readFileSync(nativeAtlasFile,"utf8"));
+    if(saved.version!==1)throw Error("Unsupported atlas version");
+    nativeAtlas=Object.assign(new NativeTextPathAtlas(),saved);
+  }catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"Native text-path atlas not loaded: "+err.message});}
+}
+// Append only REAL seen training episodes. Native six-scale graph lives in
+// the original Brain checkpoint; all its current nodes and edges can be read
+// in /atlas-graph pages independently of these causal search journals.
+if(nativeAtlasLogFile)fs.mkdirSync(path.dirname(nativeAtlasLogFile),{recursive:true});
+const nativeAtlasLog=nativeAtlasLogFile?fs.createWriteStream(nativeAtlasLogFile,
+  {flags:"a",highWaterMark:1<<20}):null;
+const xdAtlasLogFile=saveFile?saveFile+".xd-atlas.jsonl":null;
+const xdAtlasLog=xdAtlasLogFile?fs.createWriteStream(xdAtlasLogFile,
+  {flags:"a",highWaterMark:1<<20}):null;
+const atlasFlush=async()=>{
+  if(nativeAtlasLog?.writableNeedDrain)await once(nativeAtlasLog,"drain");
+  if(xdAtlasLog?.writableNeedDrain)await once(xdAtlasLog,"drain");
+};
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
@@ -128,6 +155,10 @@ const saveText = () => {
   if(hyperFile){
     fs.writeFileSync(hyperFile+".tmp",JSON.stringify(hyperMaze.export()));
     fs.renameSync(hyperFile+".tmp",hyperFile);
+  }
+  if(nativeAtlasFile){
+    fs.writeFileSync(nativeAtlasFile+".tmp",JSON.stringify(nativeAtlas));
+    fs.renameSync(nativeAtlasFile+".tmp",nativeAtlasFile);
   }
 };
 // The very same corpus, already lived by the original AligningGraph, is also
@@ -183,8 +214,14 @@ const absorbConstructed = row => {
   if (typeof row?.prompt !== 'string' || typeof row?.answer !== 'string' ||
       !row.prompt.trim() || !row.answer.trim()) return;
   previewCurrentLanguageWorld(row);
-  // Every actual answer becomes a chain of observed character transitions.
-  // No held-out sample enters this stream. The same Brain owns the path model.
+  // Prediction FIRST, from the REAL six-scale native Brain, with no answer
+  // available. Only after this is frozen do we diagnose with the actual
+  // observed answer. The native graph is trained LAST, preventing leakage.
+  const before=nativeAtlas.before(brain.constructedPaths,row.prompt,
+    {episode:row.k,observed:brain.observedTransformations,maxOutput:48});
+  const judged=nativeAtlas.after(brain.constructedPaths,before,row.answer,
+    {observed:brain.observedTransformations,maxAnalyze:512});
+  if(nativeAtlasLog)nativeAtlasLog.write(JSON.stringify(judged)+"\n");
   brain.learnConstructedText(row.prompt,row.answer);
 };
 const absorbText = row => {
@@ -196,6 +233,7 @@ const absorbText = row => {
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 let nextAutoSave=checkpointEvery>0?(brain.chars||0)+checkpointEvery:Infinity;
+let nextXd=xdAtlasEvery>0?(brain.chars||0)+xdAtlasEvery:Infinity;
 const autonomousCheckpoint = () => {
   if(!saveFile||!Number.isFinite(nextAutoSave)||brain.chars<nextAutoSave)return false;
   setWorkerPhase("CPU: checkpoint without frozen unseen evaluation");
@@ -215,6 +253,8 @@ const report = (final = false) => {
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     hypermaze: TEXT ? hyperMaze.report() : null,
+    nativePathAtlas:TEXT?nativeAtlas.summary():null,
+    xdAtlas:brain.xdAtlas?.summary({includeWorld:true})||null,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try {
@@ -232,9 +272,39 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     hypermaze: TEXT ? hyperMaze.report() : null,
+    nativePathAtlas:TEXT?nativeAtlas.summary():null,
+    xdAtlas:brain.xdAtlas?.summary({includeWorld:true})||null,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
+// LIVE controlled-world training: full finite 128-state xD maze, every wall,
+// every corridor and all 7 active physical coordinates available BEFORE
+// action. The original native Brain owns/persists the action atlas, and no
+// correct action sequence is supplied. Do not enumerate 2^2048 states.
+const liveXdWorld = async () => {
+  if(!(xdAtlasEvery>0)||brain.chars<nextXd)return null;
+  const dims=[16,64,256,1024,2048];
+  const index=brain.xdAtlas.trainedWorlds;
+  const dimension=dims[index%dims.length];
+  const seed=1000003+index*7919;
+  setWorkerPhase("xD: full "+dimension+"D finite maze; learn transformations from actions");
+  const result=brain.liveCompleteXDWorld({
+    dimensions:dimension,seed,physicsSeed:17,heldoutSeed:seed+99001
+  });
+  if(xdAtlasLog)xdAtlasLog.write(JSON.stringify({
+    episode:index+1,atChars:brain.chars,...result
+  })+"\n");
+  parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"Full finite "+dimension+"D xD atlas (7 active axes): "+
+      "training solved="+result.training.execution.solved+
+      ", unseen WITHOUT target probes solved="+result.heldout.execution.solved+
+      ", shortest path="+result.heldout.plan.evaluatorPhysicalShortestPath+
+      ", actions observed previously="+brain.xdAtlas.effects.size});
+  nextXd=brain.chars+xdAtlasEvery;
+  shot(true);
+  await atlasFlush();
+  return result;
+};
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
@@ -345,6 +415,9 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+  // The full xD world executes in the SAME native Brain after real text is committed.
+  await liveXdWorld();
+  await atlasFlush();
   batchNow = null;
   setWorkerPhase("completed text batch; preparing next exercises");
   // Heavy frozen evaluation and serializing the entire native Brain must
@@ -360,6 +433,59 @@ const processGpuText = async (exs, meta) => {
   shot();
 };
 parentPort.on("message", m => {
+  // On-demand PAGE through the ORIGINAL persistent six-scale graph. No
+  // static 220-edge cap, no answer generated and no native memory update.
+  if(m?.evidenceGatedText){
+    const {id,start="",required=[],maxSteps=8,maxExpanded=6000}=m.evidenceGatedText;
+    try{
+      const result=brain.planEvidenceGatedTextRoute(start,required,{maxSteps,maxExpanded});
+      parentPort.postMessage({type:"chat",id,evidenceGatedText:true,result});
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,evidenceGatedText:true,error:err.message});
+    }
+    return;
+  }
+  if(m?.nativeAtlasPage){
+    const {id,scale=0,offset=0,limit=80}=m.nativeAtlasPage;
+    try{
+      const page=m.nativeAtlasPage.family==="edits"?
+        nativeAtlas.operatorPage(brain.observedTransformations,{offset,limit}):
+        nativeAtlas.page(brain.constructedPaths,{scale,offset,limit});
+      parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,...page});
+    }catch(err){parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,error:err.message});}
+    return;
+  }
+  if(m?.nativeAtlasEval){
+    const id=m.nativeAtlasEval.id;
+    try{
+      const held=Array.isArray(m.nativeAtlasEval.rows)?
+        m.nativeAtlasEval.rows.map(parseHeldoutText).filter(Boolean):[];
+      const tested=nativeAtlas.evaluateFrozen(brain.constructedPaths,held,
+        {max:Math.min(16,held.length)});
+      parentPort.postMessage({type:"chat",id,nativeAtlasEval:true,...tested,
+        trainingRowsBefore:brain.constructedPaths.textRows,
+        trainingAtlasEpisodesBefore:nativeAtlas.episodes,
+        trainingAtlasEpisodesAfter:nativeAtlas.episodes});
+    }catch(err){parentPort.postMessage({type:"chat",id,nativeAtlasEval:true,error:err.message});}
+    return;
+  }
+  // Freeze the learned axis operators before testing a NEW complete world.
+  // Test seeds are distinct from all training episodes; no probes supplied.
+  if(m?.xdAtlasTest){
+    const {id,dimensions=1024,seed=81919}=m.xdAtlasTest;
+    try{
+      if(!Number.isInteger(dimensions)||dimensions<16||dimensions>8192)
+        throw Error("Choose ambient dimensions 16..8192");
+      if(!Number.isInteger(seed))throw Error("Seed must be integer");
+      const world=new CompleteXDWorld({dimensions,seed,physicsSeed:17});
+      const frozen=brain.xdAtlas.testFrozen(world);
+      parentPort.postMessage({type:"chat",id,xdAtlasTest:true,
+        result:frozen,learnedEffects:brain.xdAtlas.effects.size,
+        noTestTargetProbes:true});
+      shot(true);
+    }catch(err){parentPort.postMessage({type:"chat",id,xdAtlasTest:true,error:err.message});}
+    return;
+  }
   if(m && m.hyperMazeConfig){
     if(Number.isFinite(+m.hyperMazeConfig.noise))
       hyperMaze.noise=Math.max(0,Math.min(1,+m.hyperMazeConfig.noise));
@@ -530,13 +656,15 @@ for await (const ex of stream()) {
     // If a row is truncated, only use the observed PREFIX, never the
     // unobserved continuation (strict no-leak partial-observation rule).
     const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars)};
-    absorbObservedDifferences(livedRow);
     if(livedChars===ex.bytes.length&&!stop){
-      absorbHyperMaze(ex);absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
+      // Diagnose BEFORE observing the current sentence/answer in EITHER
+      // the six-scale graph or the contextual edit-operator atlas.
+      absorbHyperMaze(ex);absorbLanguage(ex);absorbConstructed(ex);
+      absorbObservedDifferences(livedRow);absorbText(ex);
       await flushShared();
-    }
+    }else absorbObservedDifferences(livedRow);
   }
-  if(TEXT) autonomousCheckpoint();
+  if(TEXT) {await liveXdWorld();await atlasFlush();autonomousCheckpoint();}
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
@@ -553,5 +681,11 @@ setWorkerPhase("final checkpoint and test");
 report(stop ? false : true);
 shot(true); // publish ALL final learned transformations, graph, text and noise even for small corpora and no-noise organisms
 if (gpu) gpu.close();
+if(nativeAtlasLog)await new Promise((resolve,reject)=>{
+  nativeAtlasLog.once("error",reject);nativeAtlasLog.end(resolve);
+});
+if(xdAtlasLog)await new Promise((resolve,reject)=>{
+  xdAtlasLog.once("error",reject);xdAtlasLog.end(resolve);
+});
 await selfcode?.close();
 parentPort.close();

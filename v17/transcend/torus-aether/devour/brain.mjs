@@ -18,11 +18,13 @@ import {PerspectiveLearner, perspectiveEpisode, evaluatePerspective} from "../wo
 import {TextPerspectives} from "../language-universe/perspectives.mjs";
 import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/constructed-paths.mjs";
 import {ObservedTransformations} from "../worlds/observed-transformations.mjs";
+import {evidenceGatedTextRoute} from "../worlds/evidence-gated-text-route.mjs";
+import {CompleteXDWorld,LearnedXDActionAtlas} from "../worlds/full-xd-maze-atlas.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,LearnedXDActionAtlas};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -40,7 +42,7 @@ export class Brain {
   observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.xdAtlas = new LearnedXDActionAtlas(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -61,6 +63,7 @@ export class Brain {
     this.language ||= new TextPerspectives({maxStates:85000});
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
     this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
+    this.xdAtlas ||= new LearnedXDActionAtlas(); // first-class cross-world transform memory, saved in SAME Brain
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
@@ -533,6 +536,28 @@ export class Brain {
         T.setEdge("o:noise", id, "portal", Math.min(12, 1 + Math.log1p(count)), "" + count + " decisions");
       }
     }
+  }
+  planEvidenceGatedTextRoute(start,required,{maxSteps=8,maxExpanded=6000}={}){
+    // Exact original stored operators, with optional RESEARCH bridge evidence;
+    // original strict actor is unchanged and not bypassed silently.
+    return evidenceGatedTextRoute(this.observedTransformations,
+      {start,required,maxSteps,maxExpanded});
+  }
+  // Each XD exercise exposes a FULL finite graph before any action. Only
+  // action effects learned from earlier physical interventions may label it.
+  // The atlas is part of THIS native Brain.v8 checkpoint (not an external
+  // demo or an untracked browser graph).
+  liveCompleteXDWorld({dimensions=64,seed=this.seed+101,
+    physicsSeed=17,heldoutSeed=seed+99001}={}){
+    const train=new CompleteXDWorld({dimensions,seed,physicsSeed});
+    const learned=this.xdAtlas.trainWorld(train);
+    const heldout=new CompleteXDWorld({dimensions,seed:heldoutSeed,physicsSeed});
+    const frozen=this.xdAtlas.testFrozen(heldout);
+    return {training:learned,heldout:frozen,
+      realExposedFiniteTopology:true,heldoutNoInterventions:true,
+      sharedBrainCheckpoint:true,ambientDimensions:dimensions,
+      activeRank:train.axes,
+      limitations:"7 active bits in a complete 128-state finite maze; not all 2^D hypercube states."};
   }
   beginExercise() { (this.align ||= new AligningGraph()).begin(); }          // a new exercise of a world starts: its own memory starts empty
   dissolve() {                                                               // solve: rows lived only once are let go

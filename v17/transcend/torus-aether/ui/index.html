@@ -328,6 +328,74 @@
       <canvas id="sharedCv" width="420" height="210" style="width:100%;background:#061524;border-radius:8px"></canvas>
       <p class="note" id="sharedVectorSourceNote">Modelul PyTorch 32D nu a confirmat încă nicio actualizare. Acest panou NU demonstrează că modelul învață pe Termux.</p>
     </div>
+    <div id="fullAtlasPanel" hidden style="margin:14px 0;border:1px solid #536781;border-radius:12px;padding:13px;background:#07111c">
+      <h2>ATLAS COMPLET · trasee, transformări, conexiuni lipsă · același Brain V17</h2>
+      <p class="note">Doi observatori ai MEMORIEI NATIVE, nu un demo: (1) toate coridoarele unui labirint finit dat integral organismului, cu efectele acțiunilor descoperite din lumi anterioare; (2) cele șase grafuri textuale persistente învățate din OpenThoughts, înaintea răspunsului curent. Păstrăm dovezile și rateurile, inclusiv operatorii necunoscuți și alternativele cu scor greșit.</p>
+      <h2>1. Întregul labirint finit xD · fiecare coridor și zid, înaintea planului</h2>
+      <p id="atlasXdTotals" class="note">Așteaptă prima lume de antrenament în Brain.</p>
+      <canvas id="atlasXdCanvas" width="950" height="540" style="width:100%;height:480px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px" aria-label="Toate 128 stările finite în proiecție 2D, coridoare reale, ziduri, traseu inițial, acțiuni efectuate și conexiuni fără transformări învățate"></canvas>
+      <p id="atlasXdHover" class="note">Trece cu mouse-ul peste celule pentru coordonatele numerice reale și starea zidurilor.</p>
+      <div class="row">
+        <button id="atlasXdPlay">▶ Redare</button>
+        <button id="atlasXdPause">⏸ Pauză</button>
+        <button id="atlasXdBack">◀ Pas</button>
+        <button id="atlasXdForward">Pas ▶</button>
+        <button id="atlasXdReset">↺ Reia</button>
+        <label class="dim" style="flex:1">Poziție în traseu <input id="atlasXdScrub" type="range" min="0" max="0" step="1" value="0" style="width:100%"></label>
+      </div>
+      <pre id="atlasXdStep" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:220px;overflow:auto">Așteaptă pașii reali.</pre>
+      <pre id="atlasXdMissing" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:190px;overflow:auto">Așteaptă lista de conexiuni posibile, învățate și lipsă.</pre>
+      <div class="row">
+        <label class="dim">Dimensiuni ambientale <select id="atlasDimension">
+          <option value="16">16D</option><option value="64">64D</option>
+          <option value="256">256D</option><option value="1024" selected>1024D</option>
+          <option value="2048">2048D</option><option value="8192">8192D</option>
+        </select></label>
+        <label class="dim">Seed pentru lume nouă <input id="atlasUnseenSeed" type="number" value="81919" min="1" step="1" style="width:95px"></label>
+        <button id="atlasXdEval">Testează traseul PE HARTA COMPLETĂ nevăzută</button>
+        <button id="atlasXdExport">Exportă TOATĂ harta + traseele</button>
+      </div>
+      <pre id="atlasXdEvalText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:190px;overflow:auto;font-size:12px">Testarea nu primește acțiunea corectă sau calea ideală; află dacă transformările memorate ajung.</pre>
+      <p class="note">Limită declarată: lumea are 7 axe active și 128 stări, chiar dacă este reprezentată într-un spațiu cu 8192 coordonate. Nu desenăm și nu afirmăm că au fost enumerate 2^8192 stări. Proiecția 2D reprezintă numeric cele 128 stări expuse integral.</p>
+      <h2>2. Labirintul textului · originea fiecărei predicții și lipsa fiecărei legături</h2>
+      <p id="atlasTextTotals" class="note">Așteaptă dovezi din exerciții reale.</p>
+      <p id="atlasTextMissing" class="note">Eroare = caracter fără legătură SAU caracter existent, dar clasat sub altă opțiune.</p>
+      <canvas id="atlasTextCanvas" width="950" height="300" style="width:100%;height:235px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px" aria-label="Compararea poziție cu poziție între alegerea modelului nativ și răspunsul textual real"></canvas>
+      <pre id="atlasTextReason" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:12px">Nu s-a învățat încă suficient text pentru un traseu.</pre>
+      <div class="row">
+        <button id="atlasTextFrozenEval">Testează pe TEXT NEVĂZUT (înghețat)</button>
+        <button id="atlasTextExport">Exportă traseul, alternativele și toate motivele erorilor</button>
+      </div>
+      <pre id="atlasTextFrozenResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font-size:12px">Testul folosește partiția originală held-out; planifică înainte de a compara cu răspunsul și nu actualizează Brain.</pre>
+      <h2>3. Căile interzise de design vs. transformări dovedite din lumi anterioare</h2>
+      <p class="note">Se compară planificarea NATIVĂ strictă cu navigarea pe axe al căror context a variat într-adevăr în observații. O ipoteză fără dovezi rămâne închisă. Nu furniza răspunsul complet, doar condiții ale țintei.</p>
+      <div class="row">
+        <label class="dim" style="flex:1">Stare observată <input id="atlasGatedStart" type="text" placeholder="O propoziție observată în corpus" style="width:100%" /></label>
+        <label class="dim" style="flex:1">Condiții obiectiv <input id="atlasGatedGoal" type="text" placeholder="token1,token2,token3" style="width:100%" /></label>
+        <button id="atlasGatedGo">Verifică toate căile permise și cele blocate</button>
+      </div>
+      <canvas id="atlasGatedCanvas" width="950" height="280"
+        style="width:100%;height:240px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px"
+        aria-label="Traseu textual real cu muchii originale permise, muchii recuperate prin dovezi și direcții imposibile"></canvas>
+      <pre id="atlasGatedResult" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:300px;overflow:auto">Alege o propoziție observată, apoi compară harta strictă cu legăturile susținute de dovezi.</pre>
+      <h2>4. Atlasul original NELIMITAT de paginile desenate: toate cele șase scale</h2>
+      <p class="note">Fiecare pagină citește direct din <code>Brain.constructedPaths.scales</code>. Alege contextul, navighează prin toate stările memorate și vezi toate acțiunile și destinațiile lor. Orice vizualizare are limită de pixeli; datele originale nu sunt înlocuite cu o hartă inventată.</p>
+      <div class="row">
+        <label class="dim">Context memorat <select id="atlasScale">
+          <option value="0">1 caracter</option><option value="1">2 caractere</option>
+          <option value="2">4 caractere</option><option value="3">8 caractere</option>
+          <option value="4">16 caractere</option><option value="5">32 caractere</option><option value="edits">TOATE transformările contextuale (editări)</option>
+        </select></label>
+        <button id="atlasPagePrev">◀ Pagina anterioară</button>
+        <button id="atlasPageNext">Pagina următoare ▶</button>
+        <button id="atlasPageExport">Exportă pagina REALĂ JSON</button>
+      </div>
+      <canvas id="atlasGraphCanvas" width="950" height="390" style="width:100%;height:325px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px" aria-label="Proiecție parțială a nodurilor grafurilor textuale native din pagina curentă"></canvas>
+      <pre id="atlasPageText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:290px;overflow:auto;font-size:11px">Se vor încărca stările native, fără trunchierea memoriei originale.</pre>
+      <h2>5. Jurnalul tuturor încercărilor înregistrate, inclusiv a celor fără cale</h2>
+      <div class="row"><label class="dim">Jurnal <select id="atlasLogKind"><option value="text">Limbaj: caractere și cauze</option><option value="xd">Labirinturi xD: căi reușite și ratate</option></select></label><button id="atlasLogMore">Încarcă următoarele episoade reale din jurnal</button></div>
+      <pre id="atlasLogText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto;font-size:11px">Jurnalul este adăugat pe disc, în fișierele .path-atlas.jsonl și .xd-atlas.jsonl; aici îl poți parcurge paginat.</pre>
+    </div>
     <div id="agentNoiseBox" hidden style="margin:12px 0;border:1px solid #375354;border-radius:10px;padding:12px">
       <h2>Zgomotul ales de organism · decizii și consecințe reale</h2>
       <p class="note">Politica internă poate alege inclusiv zero: percepție, imaginație, acțiune. Nu este sliderul extern de zgomot și nu afirmă încă transfer universal.</p>

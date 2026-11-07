@@ -1,4 +1,4 @@
-name: V17 evidence: route-area memory, noncommuting text axes and real causal-world local aliasing
+name: "V17 evidence: route-area memory, noncommuting text axes and real causal-world local aliasing"
 on:
   push:
     branches:
@@ -19,7 +19,7 @@ jobs:
         run: |
           node --check v17/research/text-hypermaze/path-holonomy.mjs
           node --check v17/tests/text-path-holonomy-memory.test.mjs
-      - name: Hypothesis: route-area memory with 200 held-out path ablations + actual V17 world controls
+      - name: "Hypothesis: route-area memory with 200 held-out path ablations + actual V17 world controls"
         run: node --test v17/tests/text-path-holonomy-memory.test.mjs
       - name: Re-run source text hypermaze nonlinear movement and native V17 edit tests
         run: |

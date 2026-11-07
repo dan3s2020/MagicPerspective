@@ -14,6 +14,7 @@ import {Observatory} from "./observatory.js";
 import {LanguageMazeViewer} from "./language-maze-view.js";
 import {InlineTextMaze} from "./inline-text-maze.js";
 import {CorpusHyperMazeView} from "./corpus-hypermaze-live.js";
+import {NativeFullPathAtlasView} from "./full-path-atlas.js";
 import {ObservedTextPathMap} from "./observed-text-path-map.js";
 import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
@@ -403,7 +404,7 @@ function stats() {
 let frame = 0;
 function loop() {
   if (LIVE && frame % 90 === 0) evaluate();
-  if (LIVE) { drawMaze(); drawTrans(); inlineTextMaze?.tick(performance.now()); corpusHyperMaze?.tick(performance.now());
+  if (LIVE) { drawMaze(); drawTrans(); inlineTextMaze?.tick(performance.now()); corpusHyperMaze?.tick(performance.now()); fullPathAtlas?.tick(performance.now());
     if(frame%3===0){perspectiveDraw();constructedDraw();} }
   if (running) { const k = val("speed"); for (let i = 0; i < k; i++) step(i === k - 1); }
   for (const n of nodes.values()) n.act *= .93;
@@ -456,6 +457,7 @@ const observatory = LIVE ? new Observatory({getGraph:()=>liveW}) : null;
 const languageMazeViewer = LIVE ? new LanguageMazeViewer() : null;
 const inlineTextMaze = LIVE ? new InlineTextMaze() : null;
 const corpusHyperMaze = LIVE ? new CorpusHyperMazeView({getWorker:()=>liveW}) : null;
+const fullPathAtlas = LIVE ? new NativeFullPathAtlasView({getWorker:()=>liveW}) : null;
 if(observatory)observatory.select(liveW);
 function applySnap(gs) {
   D = 5; geo.U = new Map(gs.U); const keep = new Set();
@@ -482,6 +484,7 @@ function applySnap(gs) {
   inlineTextMaze?.update(gs,!!liveSummary?.worlds?.includes("text")||
     (!liveSummary && (gs.textMaze?.epoch||0)>0));
   corpusHyperMaze?.update(gs);
+  fullPathAtlas?.update(gs);
 }
 // Original Brain global->local observations, not a separate demo animation.
 let perspectiveEpisodeKey = '', perspectiveT0 = 0, perspectiveLast = null;
