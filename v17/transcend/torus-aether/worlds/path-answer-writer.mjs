@@ -2,7 +2,7 @@
 // exposed by the existing V19/V23 LearnedCognitiveMap. Isolated research
 // adapter: it does NOT change AligningGraph.write() or claim unrestricted NL.
 import {tokenizeWorld,LearnedCognitiveMap} from './learned-cognitive-map.mjs';
-import {inferObservedInstructionGoal} from './observed-instruction-goals.mjs';
+import {inferObservedInstructionGoal,inferComposedInstructionGoal} from './observed-instruction-goals.mjs';
 
 const instruction=/^Replace "([^"\r\n]+)" with "([^"\r\n]+)" in:\n([^\r\n]+)$/u;
 const render=tokens=>tokens.join(' ')
@@ -92,10 +92,11 @@ export function firstTryCharacterComparison(predicted,reference){
 // phrases, NOT a claim of general language comprehension.
 export function answerFromObservedInstructionPath(model,{instruction,source}={},
  {maxDepth=8,maxNodes=384,maxTokens=512,seed=74129,includeAtlas=false,
- minEpisodes=2}={}){
+ minEpisodes=2,allowComposedInstructions=false}={}){
  if(!(model instanceof LearnedCognitiveMap))
   throw Error('The ORIGINAL LearnedCognitiveMap is required');
- const inference=inferObservedInstructionGoal(model,{instruction,source,minEpisodes});
+ const inference=(allowComposedInstructions?inferComposedInstructionGoal:inferObservedInstructionGoal)
+  (model,{instruction,source,minEpisodes});
  const base={source:'Discoverer.shape',
   actualWriter:'ORIGINAL_LEARNED_PATH_TERMINAL_STATE_NOT_NEXT_CHARACTER_MODEL',
   inferredGoalFromEarlierObservedActions:true,
