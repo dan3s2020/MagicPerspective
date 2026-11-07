@@ -768,7 +768,10 @@ $("cognitiveEvaluate").onclick = async () => {
       " | Propoziții observate: "+result.observedSentences+
       " | Stări generate de reguli: "+result.generatedStates+
       " | Țintă nouă: "+result.novelGoal+
-      "\nLegea de propagare: "+result.law+
+      "\nMetoda REALA: "+result.directOriginalMethod+
+      " | temperatura V17: "+result.noiseTemperature+
+      "\nFORMA INITIALA COMPLETA (nodurile grafului): "+(result.preActionShape||[]).join(" → ")+
+      "\nLegea de propagare: "+result.law
       "\nStarea inițială: "+result.start+
       "\nTRASEUL INTERN (niciun pas executat încă):\n"+
       (result.plannedPath||[]).map((p,i)=>(i+1)+". "+p.action+" → "+p.after).join("\n")+
