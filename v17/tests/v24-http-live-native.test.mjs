@@ -47,19 +47,19 @@ else test("real V24 native Parquet worker + original 2D unaffected + UI + checkp
    if(child.exitCode!==null)throw Error("Native V24 server exited early: "+logs);
    try{
     graph=await get("/graph?w=0");
-    if(graph?.questionGoal?.rows>=28){complete=true;break;}
+    if(graph?.questionGoal?.rows>=64){complete=true;break;}
    }catch{}
    await pause(180);
   }
   assert.ok(complete,"Missing native end-to-end Q/A training: "+logs);
-  assert.equal(graph.questionGoal.rows,28);
+  assert.equal(graph.questionGoal.rows,64);
   assert.ok(graph.questionGoal.observedActions>100);
   assert.ok(graph.questionGoal.observedChars>300);
   assert.ok(graph.questionGoal.geometryChars>0);
   assert.equal(graph.questionGoal.originalMazeMethod??graph.questionGoal.last?.originalMazeMethod,
     "Discoverer.shape");
   assert.ok(graph.cognitive?.observedSentences>0);
-  assert.ok(graph.hypermaze?.documents>=28);
+  assert.ok(graph.hypermaze?.documents>=64);
   const html=await (await fetch(host+"/transcend/torus-aether/ui/index.html?live=1")).text();
   assert.ok(html.includes('id="questionGoalCanvas"'));
   assert.ok(html.includes('src="app.js"'));
@@ -99,7 +99,7 @@ else test("real V24 native Parquet worker + original 2D unaffected + UI + checkp
   assert.ok(saved.cognitiveMap);
   const navigator=QuestionGoalNavigator.restore(saved.questionGoalNavigator);
   const map=LearnedCognitiveMap.restore(saved.cognitiveMap);
-  assert.equal(navigator.rows,28);
+  assert.equal(navigator.rows,64);
   assert.ok(![...navigator.terminals].some(([k])=>k.includes("WITHHELD_UNOBSERVED_ANSWER")));
   const direct=navigator.plan(question,{map,geometry:saved.trace.geo,maxNodes:1200});
   assert.equal(direct.originalOperator,"Discoverer.shape");
