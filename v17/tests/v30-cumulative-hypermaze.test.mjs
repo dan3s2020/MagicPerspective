@@ -7,6 +7,7 @@ import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 import {makeMaze,seedOf,SEEDS} from "../transcend/torus-aether/worlds/labyrinth.mjs";
 import {playExercise,KIND} from "../transcend/torus-aether/worlds/exercise.mjs";
 import {CumulativeHyperMaze} from "../research/text-hypermaze/cumulative-hypermaze.mjs";
+import {NativeGoalTextMaze} from "../research/text-hypermaze/goal-conditioned-native.mjs";
 
 const rules={depth:1,off:["R2","R4"],budEvery:100,empty:true,maxWires:32,fold:false};
 function brain(){
@@ -238,4 +239,60 @@ test("sparse cross-world samples must NOT create false confident nonlinear axes"
   numericGoals:[{index:0,value:8},{index:2,value:7}]});
  assert.equal(p.found,false);
  assert.equal(p.reason,"INSUFFICIENT_CROSS_CONTEXT_EVIDENCE");
+});
+
+test("real existing NativeGoalTextMaze (not an isolated research planner) uses and checkpoints the SAME cumulative cross-maze Brain",()=>{
+ const b=brain(),native=new NativeGoalTextMaze(b,{maxStates:300,maxDepth:6});
+ for(let i=0;i<12;i++)native.observeVerifiedWorldTransition({
+  episode:"new-world-"+i,before:node(i),after:node(i+1),
+  action:action(i),accepted:true,source:"verified-external-world-action"
+ });
+ const a=native.planCumulativeWorld({start:node(0),required:["exit"],
+  includeTopology:true});
+ assert.equal(a.found,true);
+ assert.equal(a.steps,12);
+ assert.equal(a.originalPlanner,"Discoverer.shapeGraph");
+ assert.equal(a.actions.every(x=>x.edgeStatus==="physically-verified"),true);
+ const unrelated=new NativeGoalTextMaze(b);
+ const after=unrelated.planCumulativeWorld({start:node(0),required:["exit"]});
+ assert.deepEqual(after.actions,a.actions,"Cumulative paths must survive creating a NEW temporary view of the SAME Brain");
+ const metrics=native.cumulativeWorldStatus();
+ assert.equal(metrics.episodes,12);
+ assert.equal(metrics.physicallyVerifiedEdges,12);
+ assert.equal(metrics.memoryNodes,13);
+ // The ordinary previous native paths and Q/A controls remain available.
+ assert.equal(typeof native.plan,"function");
+ assert.equal(typeof native.planQA,"function");
+ assert.equal(typeof b.disc.shape,"function");
+ assert.equal(typeof b.disc.shapeGraph,"function");
+});
+
+test("numerical field discovered in other episodes is accessible via SAME native V17 UI/worker engine and replayed from one Brain checkpoint",()=>{
+ const b=brain(),native=new NativeGoalTextMaze(b);
+ const worldEvidence=[
+ ["2 * 3 = 6.","3 * 3 = 9."],["2 * 4 = 8.","3 * 4 = 12."],
+ ["2 * 3 = 6.","2 * 4 = 8."],["3 * 3 = 9.","3 * 4 = 12."]
+ ];
+ worldEvidence.forEach(([before,after],i)=>native.observeVerifiedWorldTransition({
+  episode:"math-experience-"+i,before,after,action:"measured-change-"+i,
+  accepted:true,source:"independent-causal-math-world"
+ }));
+ const req={start:"5 * 6 = 30.",
+  numericGoals:[{index:0,value:8},{index:2,value:7}],
+  maxGraphNodes:1000,maxExpansionDepth:15};
+ const prediction=native.planCumulativeNumericWorld(req);
+ assert.equal(prediction.found,true);
+ assert.equal(prediction.predicted,"8 * 7 = 56.");
+ assert.equal(prediction.originalPlanner,"Discoverer.shapeGraph");
+ assert.equal(prediction.goalDependentAnswerSupplied,false);
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"mp-v30-native-integration-"));
+ try{
+  const file=path.join(dir,"original-brain.v8");
+  b.save(file);
+  const loaded=Brain.load(file),resumed=new NativeGoalTextMaze(loaded);
+  const again=resumed.planCumulativeNumericWorld(req);
+  assert.equal(again.predicted,prediction.predicted);
+  assert.deepEqual(again.actions,prediction.actions);
+  assert.equal(loaded.hypermazeCumulativeExperience.episodesObserved,4);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
 });
