@@ -393,7 +393,7 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None; self.text_limit = 32768; self.text_chunk = 128
+    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None; self.text_pool = None; self.text_limit = 32768; self.text_chunk = 128
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
@@ -422,6 +422,18 @@ class Server:
             info["autoWorlds"] = int(max(16, min(auto_cap, budget * .4 / (11 * 11 * 14 * 8))))
         else:
             info["autoWorlds"] = 2048
+        # Keep a live, bounded part of VRAM for future TRAIN examples. This
+        # is REAL source text, never dummy allocation to inflate GPU metrics.
+        # Reserve >=75% of this PyTorch budget for native suffix arrays,
+        # transformations and training scratch. Prefetch allocation remains
+        # lazy and grows only when actual Parquet bytes are transmitted.
+        from resident_text_pool import ResidentTextPool
+        requested_mb = max(1.0, float(m.get("textPoolMB", 128)))
+        max_mb = max(1.0, min(512.0, (budget * .25) / 1e6))
+        pool_mb = min(requested_mb, max_mb)
+        self.text_pool = ResidentTextPool(self.B.device if self.B.torch else "numpy",
+            max_bytes=int(pool_mb * 1e6), max_exercises=512)
+        info["textPool"] = self.text_pool.status()
         info["autoText"] = 2
         info["textMemoryWindow"] = self.text_limit
         info["textChunk"] = self.text_chunk
@@ -434,6 +446,29 @@ class Server:
         if c == "init": r = self.init(m)
         elif c == "exercise": r = {"worlds": exercise_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))}
         elif c == "exercise_learn": r = exercise_learn_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))
+        elif c == "text_pool_add":
+            import base64
+            if self.text_pool is None:
+                raise RuntimeError("resident text pool not initialized")
+            entries = [{"id": e["id"], "raw": base64.b64decode(e["b64"], validate=True)}
+                       for e in m.get("entries", [])]
+            r = {"textPool": self.text_pool.add(entries),
+                 "status": "future-examples-staged-not-trained"}
+        elif c == "text_pool_probe":
+            import base64
+            if self.text_pool is None:
+                raise RuntimeError("resident text pool not initialized")
+            query = base64.b64decode(m["b64"], validate=True)
+            r = {"futureEvidence": self.text_pool.probe_raw_future(query,
+                       max_hits=max(1, min(128, int(m.get("maxHits", 32))))),
+                 "textPool": self.text_pool.status()}
+        elif c == "text_pool_commit":
+            if self.text_pool is None:
+                raise RuntimeError("resident text pool not initialized")
+            r = {"textPool": self.text_pool.commit(m.get("ids", [])),
+                 "status": "already learned and committed to original Brain"}
+        elif c == "text_pool_status":
+            r = {"textPool": self.text_pool.status() if self.text_pool else None}
         elif c == "text_load":                                  # the brain's whole text memory, when the card (re)starts: nothing lived is missing here
             import base64
             from text_gpu import TextCard
@@ -462,10 +497,15 @@ class Server:
             chunk = max(32, min(512, int(m.get("chunk") or self.text_chunk)))
             while True:
                 try:
-                    r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),
+                    # A queued batch reuses the ORIGINAL source bytes
+                    # transmitted earlier, instead of serializing 10k-100k
+                    # JSON integers again. No training on other future rows.
+                    samples = self.text_pool.get(m["ids"]) if m.get("ids") is not None else m["exercises"]
+                    r = self.text.live(samples, m.get("trust", []), m.get("g", 8.0),
                                        m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])],
                                        chunk=chunk, progress=text_progress)
                     r["textChunk"] = chunk
+                    if self.text_pool is not None: r["textPool"] = self.text_pool.status()
                     break
                 except RuntimeError as exc:
                     if not (self.B.torch and str(self.B.device).startswith("cuda") and
