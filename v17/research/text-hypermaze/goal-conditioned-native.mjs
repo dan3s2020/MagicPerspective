@@ -61,47 +61,55 @@ export class NativeGoalTextMaze {
    }
   }
  }
+ // Original GraphTrace/5D action-axis update for EACH genuinely new
+ // edit discovered from current training OR verified historical rehearsal.
+ // Same original Brain, same geometry, same transform evidence.
+ _indexNewOperators(old){
+  let newPairs=0;
+  const geo=this.brain.trace.geo;
+  const axes=this.brain.hypermazeLearnedAxes ||= new Map();
+   for(const [id,op] of this.brain.observedTransformations.operators){
+    if(old.has(id))continue;
+    for(const evidence of op.evidence||[]){
+     // Original, actually lived before/after states, never a fabricated
+     // pair or a withheld answer. Geometry learns these very same edges.
+     const from="text-state:"+evidence.from,to="text-state:"+evidence.to;
+     geo.learn(from,to);
+     // Learn a reusable 5D action displacement from two REAL observed states.
+     // This is the same original Geometry.U, not a second fake embedding.
+     // It is signed on the torus, so a new unseen state can get an ephemeral
+     // predicted position from a known starting state plus this action.
+     const u=geo.U.get(from),v=geo.U.get(to);
+     if(u&&v&&u.length===5&&v.length===5){
+      const axis=axes.get(id)||{sum:[0,0,0,0,0],count:0};
+      for(let d=0;d<5;d++){
+       const delta=v[d]-u[d];
+       axis.sum[d]+=delta-Math.round(delta);
+      }
+      axis.count++;axes.set(id,axis);
+     }
+     this.brain.trace.node(from,"A",evidence.from.slice(0,100));
+     this.brain.trace.node(to,"A",evidence.to.slice(0,100));
+     this.brain.trace.setEdge(from,to,"observed-text-transform",
+      Math.min(8,1+Math.log1p(op.sourceObservations)),op.kind);
+     newPairs++;
+    }
+   }
+  const novel=[...this.brain.observedTransformations.operators.values()]
+   .filter(op=>!old.has(op.key));
+  return {newPairs,novel,geo};
+ }
  // Experience ONLY actual observed text; no generated answer is inserted.
  // Text edit operators and their evidence come from the EXISTING Brain.
  observe(text){
   if(typeof text!=="string"||!text.trim())return {learned:false,reason:"empty-text"};
   const old=new Set(this.brain.observedTransformations.operators.keys());
   const observed=this.brain.learnObservedTransformations(text);
-  let newPairs=0;
-  const geo=this.brain.trace.geo;
-  const axes=this.brain.hypermazeLearnedAxes ||= new Map();
-  for(const [id,op] of this.brain.observedTransformations.operators){
-   if(old.has(id))continue;
-   for(const evidence of op.evidence||[]){
-    // Original, actually lived before/after states, never a fabricated
-    // pair or a withheld answer. Geometry learns these very same edges.
-    const from="text-state:"+evidence.from,to="text-state:"+evidence.to;
-    geo.learn(from,to);
-    // Learn a reusable 5D action displacement from two REAL observed states.
-    // This is the same original Geometry.U, not a second fake embedding.
-    // It is signed on the torus, so a new unseen state can get an ephemeral
-    // predicted position from a known starting state plus this action.
-    const u=geo.U.get(from),v=geo.U.get(to);
-    if(u&&v&&u.length===5&&v.length===5){
-     const axis=axes.get(id)||{sum:[0,0,0,0,0],count:0};
-     for(let d=0;d<5;d++){
-      const delta=v[d]-u[d];
-      axis.sum[d]+=delta-Math.round(delta);
-     }
-     axis.count++;axes.set(id,axis);
-    }
-    this.brain.trace.node(from,"A",evidence.from.slice(0,100));
-    this.brain.trace.node(to,"A",evidence.to.slice(0,100));
-    this.brain.trace.setEdge(from,to,"observed-text-transform",
-     Math.min(8,1+Math.log1p(op.sourceObservations)),op.kind);
-    newPairs++;
-   }
-  }
-  const novel=[...this.brain.observedTransformations.operators.values()]
-    .filter(op=>!old.has(op.key));
+  const {newPairs,novel,geo}=this._indexNewOperators(old);
   // Capture exact original text, including UTF-8 diacritics. The atlas is
   // an append-only evidence log, NOT another trained model or separate brain.
-  this.atlas.append("world",{world:"text",observedEpisode:this.livedTexts+1,
+  const atlasWorldSequence=this.atlas.append("world",{world:"text",
+   observedEpisode:this.livedTexts+1,
    rawText:text,utf8Bytes:Buffer.byteLength(text,"utf8"),
    observedUnits:observed.observedUnits,
    learnedSentences:observed.newSentences,
@@ -114,11 +122,13 @@ export class NativeGoalTextMaze {
    support:op.sourceObservations,evidence:op.evidence||[],
    originEpisode:this.livedTexts+1,
    beforeAndAfterActuallyObserved:true});
+  this.lastWorldSequence=atlasWorldSequence;
   this.livedTexts++;
   this.livedGraphTransitions+=newPairs;
   this._topologyCache=null; // actual new observations invalidate frozen topology
 
-  return {learned:true,observed,...observed,newRealGeometryPairs:newPairs,
+  return {learned:true,observed,...observed,
+   atlasWorldSequence,newRealGeometryPairs:newPairs,
    sharedBrain:true,geoDimensions:geo.D,source:"real observed corpus only"};
  }
  // Build a bounded hyperdimensional state graph from learned EDIT OPERATORS.
