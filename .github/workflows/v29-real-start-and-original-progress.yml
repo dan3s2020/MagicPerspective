@@ -38,3 +38,25 @@ jobs:
           path: v28-native-ui-real-chrome.png
           if-no-files-found: warn
           retention-days: 7
+
+  windows-fail-closed-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse real V29 PowerShell source and refuse a stale occupied native port
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $script=Join-Path $pwd 'v17\START_V29_VERIFIED_REAL_CUDA.ps1'
+          $tokens=$null;$syntaxErrors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($script,[ref]$tokens,[ref]$syntaxErrors) | Out-Null
+          if($syntaxErrors.Count -gt 0) {throw ('PowerShell syntax invalid: '+($syntaxErrors | Out-String))}
+          $listener=[System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse('127.0.0.1'),8908)
+          $listener.Start()
+          try {
+            $output=(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Data $env:TEMP -OriginalOut $env:TEMP -NativePort 8908 -UIPort 8909 -Gpu off 2>&1 | Out-String)
+            if($LASTEXITCODE -eq 0){throw 'V29 silently accepted occupied port'}
+            if($output -notmatch 'PORT 8908 OCCUPIED') {throw ('Wrong error: '+$output)}
+            Write-Host 'V29_WINDOWS_FAIL_CLOSED: original checkpoint unchanged; occupied native port prevented duplicate trainer'
+          } finally {$listener.Stop()}
