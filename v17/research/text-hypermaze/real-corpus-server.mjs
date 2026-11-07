@@ -145,6 +145,49 @@ export async function launch(options={}){
     const result=await rpc(commands[action]);
     return response(res,200,{ok:true,action,status:result});
    }
+   // Same actual original Brain worker and same native UI, not a second
+   // model, simulated demo endpoint or fabricated path.
+   if(req.method==="POST"&&url.pathname==="/native-cumulative"){
+    const start=url.searchParams.get("start")||"";
+    const required=(url.searchParams.get("required")||"")
+     .split(",").map(x=>x.trim()).filter(Boolean);
+    if(!start.trim()||start.length>4000||
+     !required.length||required.length>16)
+     return response(res,400,{error:"Need 1..16 visible task tokens and a real start; do not pass reference answer"});
+    const depth=Number(url.searchParams.get("depth")||12),
+     budget=Number(url.searchParams.get("budget")||2200);
+    if(!Number.isSafeInteger(depth)||depth<1||depth>32||
+     !Number.isSafeInteger(budget)||budget<10||budget>8000)
+     return response(res,400,{error:"Expansion budget must be 10..8000 nodes and depth 1..32"});
+    const data=await rpc("cumulative",{
+     start,required,allowInferred:url.searchParams.get("inferred")==="1",
+     maxExpansionDepth:depth,maxGraphNodes:budget,
+     topology:url.searchParams.get("topology")==="1"
+    },120000);
+    return response(res,200,data);
+   }
+   if(req.method==="POST"&&url.pathname==="/native-cumulative-numeric"){
+    const start=url.searchParams.get("start")||"";
+    const raw=(url.searchParams.get("inputs")||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(!start.trim()||start.length>4000||
+      raw.length<1||raw.length>12||
+      raw.some(x=>!/^\\d+:\\d+$/.test(x)))
+     return response(res,400,{error:"Numeric task inputs format index:value,index:value; no output answer"});
+    const numericGoals=raw.map(x=>{
+     const [index,value]=x.split(":").map(Number);
+     return {index,value};
+    });
+    const depth=Number(url.searchParams.get("depth")||18),
+     budget=Number(url.searchParams.get("budget")||2200);
+    if(!Number.isSafeInteger(depth)||depth<1||depth>32||
+     !Number.isSafeInteger(budget)||budget<10||budget>8000)
+     return response(res,400,{error:"Numeric expansion budget 10..8000 nodes and depth 1..32"});
+    const data=await rpc("cumulativeNumeric",{
+     start,numericGoals,maxExpansionDepth:depth,
+     maxGraphNodes:budget,topology:url.searchParams.get("topology")==="1"
+    },120000);
+    return response(res,200,data);
+   }
    if(req.method==="POST"&&url.pathname==="/native-qa"){
     const question=url.searchParams.get("question")||"";
     if(!question.trim()||question.length>4000)
