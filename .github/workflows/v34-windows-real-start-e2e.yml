@@ -78,7 +78,17 @@ jobs:
             }
             if(-not $ready){throw 'Native V34 Windows endpoint did not launch'}
             if($st.sourceTraining.nativeTextStatesActive -le 0){throw 'Original corpus knowledge not restored'}
-            $char=Invoke-RestMethod -Uri "$base/v34/research?w=0" -Method Post -ContentType 'application/json' -Body '{"type":"character-status"}' -TimeoutSec 15
+            Write-Host ('V34_WIN_NATIVE_HEALTH_BEFORE_CHARACTER ' + ((Invoke-RestMethod -Uri "$base/health?w=0" -TimeoutSec 3) | ConvertTo-Json -Depth 5 -Compress))
+            try {
+              $char=Invoke-RestMethod -Uri "$base/v34/research?w=0" -Method Post -ContentType 'application/json' -Body '{"type":"character-status"}' -TimeoutSec 15
+            } catch {
+              Write-Host ('V34_WIN_CHARACTER_REQUEST_FAILED ' + $_.Exception.Message)
+              try {
+                $h=Invoke-RestMethod -Uri "$base/health?w=0" -TimeoutSec 3
+                Write-Host ('V34_WIN_NATIVE_HEALTH_AT_CHARACTER_TIMEOUT ' + ($h | ConvertTo-Json -Depth 5 -Compress))
+              } catch {Write-Host ('V34_WIN_HEALTH_UNAVAILABLE ' + $_.Exception.Message)}
+              throw
+            }
             if($char.operation -ne 'real-original-V17-corpus-to-Unicode-transformations'){throw "Native character observation failed: $($char.error)"}
             $obs=Invoke-RestMethod -Uri "$base/v34/research?w=0" -Method Post -ContentType 'application/json' -Body '{"type":"numeric-observe","before":"2 @ 3 ~ 6","after":"3 @ 3 ~ 9","actualActionWitness":true}' -TimeoutSec 15
             if(-not $obs.evidence.learned){throw "Observed numeric action not learned: $($obs.error)"}
