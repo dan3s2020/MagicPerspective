@@ -78,6 +78,8 @@ export class NativeGoalTextMaze {
   }
   this.livedTexts++;
   this.livedGraphTransitions+=newPairs;
+  this._topologyCache=null; // actual new observations invalidate frozen topology
+
   return {learned:true,observed,...observed,newRealGeometryPairs:newPairs,
    sharedBrain:true,geoDimensions:geo.D,source:"real observed corpus only"};
  }
@@ -89,46 +91,72 @@ export class NativeGoalTextMaze {
   const model=this.brain.observedTransformations;
   const seed=tokenizeObservation(start),normalized=renderObservation(seed);
   if(!seed.length)throw Error("Observed start text is required");
-  const originCoords=this.brain.trace.geo.U.get("text-state:"+normalized)||null;
-  const nodes=[{id:normalized,tokens:seed,depth:0,kind:3,
-    coordinates5D:originCoords}],ids=new Map([[normalized,0]]);
-  const edges=[[]];let pending=0,operatorEdges=0,blocked=0;
-  while(pending<nodes.length&&nodes.length<this.maxStates){
-   const at=pending++,cur=nodes[at];
-   if(cur.depth>=this.maxDepth||cur.kind===1)continue;
-   const choices=model.neighbors(cur.tokens);
-   // Strict bounded expansion; retain reproducible order, never invent edges.
-   for(const choice of choices){
-    const dest=renderObservation(choice.tokens);
-    const support=model.structuralSupport(choice.tokens);
-    const allowed=!support.verified||support.consistent;
-    if(!allowed)blocked++;
-    let next=ids.get(dest);
-    if(next===undefined){
-     if(nodes.length>=this.maxStates)break;
-     const reached=allowed&&target(choice.tokens,required)&&support.consistent;
-     next=nodes.length;ids.set(dest,next);
-     const stored=this.brain.trace.geo.U.get("text-state:"+dest);
-     const axis=this.brain.hypermazeLearnedAxes?.get(choice.action.key);
-     const inferred=!stored&&axis?.count&&Array.isArray(cur.coordinates5D)&&
-      cur.coordinates5D.length===5?
-      cur.coordinates5D.map((v,d)=>{
-       const updated=v+axis.sum[d]/axis.count;
-       return updated-Math.floor(updated);
-      }):null;
-     nodes.push({id:dest,tokens:choice.tokens,depth:cur.depth+1,
-      kind:allowed?(reached?2:0):1,goal:reached,
-      coordinates5D:stored||inferred,
-      geometryEvidence:stored?"observed":inferred?"learned-action-axis":"unavailable",
-      isPreviouslyObserved:model.containsSentence(dest)});
-     edges.push([]);
+  // Graph topology does NOT depend on the requested target. Construct the
+  // identical observed operator graph once, then label the learned goal
+  // constraints at query time. This avoids regenerating thousands of long
+  // text states before EVERY frozen answer, and never caches teacher answers.
+  // Invalidate on any new corpus observation, original geometry update,
+  // topology budget change or new start. Cache is an ephemeral bounded view,
+  // not a second trained Brain and not serialized into a .v8 checkpoint.
+  const geo=this.brain.trace.geo;
+  const cacheKey=JSON.stringify([normalized,model.seen,model.operators.size,
+    geo.n,this.maxStates,this.maxDepth]);
+  let cached=this._topologyCache;
+  const topologyCacheHit=cached?.cacheKey===cacheKey;
+  if(!topologyCacheHit){
+   const originCoords=geo.U.get("text-state:"+normalized)||null;
+   const originSupport=model.structuralSupport(seed);
+   const nodes=[{id:normalized,tokens:seed,depth:0,kind:3,
+     support:originSupport,coordinates5D:originCoords,
+     isPreviouslyObserved:model.containsSentence(normalized)}];
+   const ids=new Map([[normalized,0]]),edges=[[]];
+   let pending=0,operatorEdges=0,blocked=0;
+   while(pending<nodes.length&&nodes.length<this.maxStates){
+    const at=pending++,cur=nodes[at];
+    if(cur.depth>=this.maxDepth||cur.kind===1)continue;
+    const choices=model.neighbors(cur.tokens);
+    // Strict bounded expansion; EVERY action was learned from observations.
+    for(const choice of choices){
+     const dest=renderObservation(choice.tokens);
+     const support=model.structuralSupport(choice.tokens);
+     const allowed=!support.verified||support.consistent;
+     if(!allowed)blocked++;
+     let next=ids.get(dest);
+     if(next===undefined){
+      if(nodes.length>=this.maxStates)break;
+      next=nodes.length;ids.set(dest,next);
+      const stored=geo.U.get("text-state:"+dest);
+      const axis=this.brain.hypermazeLearnedAxes?.get(choice.action.key);
+      const inferred=!stored&&axis?.count&&Array.isArray(cur.coordinates5D)&&
+       cur.coordinates5D.length===5?
+       cur.coordinates5D.map((v,d)=>{
+        const updated=v+axis.sum[d]/axis.count;
+        return updated-Math.floor(updated);
+       }):null;
+      nodes.push({id:dest,tokens:choice.tokens,depth:cur.depth+1,
+       kind:allowed?0:1,support,
+       coordinates5D:stored||inferred,
+       geometryEvidence:stored?"observed":inferred?"learned-action-axis":"unavailable",
+       isPreviouslyObserved:model.containsSentence(dest)});
+      edges.push([]);
+     }
+     edges[at].push({to:next,action:choice.action,
+      observedSupport:choice.action.observedSupport});
+     operatorEdges++;
     }
-    edges[at].push({to:next,action:choice.action,
-     observedSupport:choice.action.observedSupport});
-    operatorEdges++;
    }
+   cached={cacheKey,raw:{nodes,edges,operatorEdges,blocked}};
+   this._topologyCache=cached;
   }
-  return {nodes,edges,operatorEdges,blocked,goalNodes:nodes.filter(x=>x.goal).length,
+  const raw=cached.raw;
+  const nodes=raw.nodes.map((node,index)=>{
+   const reached=index!==0&&node.kind!==1&&
+     node.support?.consistent&&target(node.tokens,required);
+   return {...node,kind:reached?2:node.kind,goal:!!reached};
+  });
+  return {nodes,edges:raw.edges,operatorEdges:raw.operatorEdges,
+   blocked:raw.blocked,goalNodes:nodes.filter(x=>x.goal).length,
+   topologyCacheHit:!!topologyCacheHit,
    visited:persistentWorldBound(nodes.length,this.maxStates),source:normalized};
  }
  // This is the SAME native Discoverer value-propagation method, lifted to an
@@ -170,6 +198,7 @@ export class NativeGoalTextMaze {
    originalAttraction:b.disc.attract(2),
    originalFloorConductance:b.disc.conduct(0),
    graph:{observedOperatorEdges:w.operatorEdges,states:w.nodes.length,
+    topologyCacheHit:w.topologyCacheHit,
     blocked:w.blocked,goalNodes:w.goalNodes,
     geometry5DObservedNodes:w.nodes.filter(n=>n.geometryEvidence==="observed").length,
     geometry5DInferredNodes:w.nodes.filter(n=>n.geometryEvidence==="learned-action-axis").length,
