@@ -438,7 +438,13 @@ class Server:
             import base64
             from text_gpu import TextCard
             self.text = TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit); raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
-            if len(raw): self.text.append([raw])
+            def original_text_load_progress(done, total, phase):
+                if "id" in m:
+                    sys.stdout.write(json.dumps({"id": m["id"], "type": "progress",
+                        "phase": "text-load-" + str(phase),
+                        "done": int(done), "total": int(total)}) + "\n")
+                    sys.stdout.flush()
+            if len(raw): self.text.append([raw], progress=original_text_load_progress)
             r = {"memory": int(len(self.text.mem))}
         elif c == "text_learn":                                 # text exercises lived on the card; only the totals go back
             if self.text is None:
@@ -449,6 +455,10 @@ class Server:
                     sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
                                                  "done": int(done), "total": int(total)}) + "\n")
                     sys.stdout.flush()
+            # The first message MUST precede potentially expensive full
+            # exercise self-indexing and CUDA context preparation. Counts are
+            # phase progress, NOT fabricated completed training characters.
+            text_progress(0, 1, "received-real-text-batch")
             chunk = max(32, min(512, int(m.get("chunk") or self.text_chunk)))
             while True:
                 try:

@@ -1,0 +1,46 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "MP-V17-REAL-CUDA-STALL-BROKEN-PREFIX-20261107",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "Current conversation uploaded screenshot image(20261107-093705).png and user prompt",
+    "exact_user_quote": "VEZI CA AU MAI APARUT DESCOPERIRI IN REPO"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/gpu/text_gpu.py",
+    "algorithm": "Original V17 TextCard.live + exact Index.align, original Brain.learnTextGPU, original solution-shape mechanism remains unchanged",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/gpu/text_gpu.py",
+    "v17/transcend/torus-aether/gpu/worlds_gpu.py",
+    "v17/transcend/torus-aether/gpu/client.mjs",
+    "v17/tests/gpu-stall-watchdog.test.mjs"
+  ],
+  "added_mechanisms": [
+    "Bounded exact same context copy only, with native progress during existing self-index and suffix indexing; no new decoder or token model"
+  ],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "v17/tests/test_v17_full_atlas_cuda_hang.py",
+    "v17/tests/text_index_fast_test.py",
+    "v17/tests/text_variant_fast_test.py",
+    "v17/tests/gpu-stall-watchdog.test.mjs",
+    "v17/tests/native-xd-brain-integration.test.mjs",
+    "v17/tests/native-evidence-gated-integration.test.mjs",
+    "v17/tests/complete-xd-native-live-http.test.mjs",
+    "v17/tests/complete-xd-atlas-browser.test.mjs"
+  ],
+  "actual_observed_results": "GitHub Actions native CPU/Linux+Chromium CI PASS for both jobs on commit ce14c294ce01831da7e8c89fe780efebe42d546a. 190000-char, 271-context exact copy 0.10677s vs 0.000268s (398.56x copy microbench ONLY); all original context symbols, SelfMem, suffix arrays, trust, 6 variant choices, native Brain save/reload, 4 watchdog tests and Chromium original UI pass. Actual RTX3050Ti throughput and resolution of exact user's Python hang still unverified.",
+  "limitations": [
+    "Root cause of specific RTX3050Ti hang cannot be conclusively attributed without its Python process trace",
+    "CPU/Linux CI cannot prove RTX CUDA throughput",
+    "Never substitute original Discoverer.shape or train on heldout answer",
+    "Original V17 solution-shape goal regression MP-REG-2026-11-06-001 remains OPEN"
+  ],
+  "verification_status": "PASS_SOURCE_AND_CPU_CI; NVIDIA_CUDA_HARDWARE_AND_FULL_SEMANTIC_RELEASE_UNVERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
