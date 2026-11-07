@@ -339,7 +339,12 @@ function displayMetrics(){
   "Motor: "+(gpu.info?.name||gpu.info?.device||gpu.settings?.device||"necunoscut")+
   " · Fază: "+(gpu.batch?.phase||"—")+
   " · lot: "+fmt(gpu.batch?.done)+" / "+fmt(gpu.batch?.total)+
-  " · învățare text CUDA: "+(gpu.text?.acc!=null?pct(gpu.text.acc):"încă fără metrică"):
+  " · fără progres: "+fmt(gpu.batch?.noProgressSeconds)+" secunde"+
+  " · învățare text CUDA: "+(gpu.text?.acc!=null?pct(gpu.text.acc):"încă fără metrică")+
+  (gpu.text?.phaseTimes?" · lot precedent [aliniere "+fmt(gpu.text.phaseTimes.alignmentMs)+
+   " ms / imaginație "+fmt(gpu.text.phaseTimes.imaginationMs)+
+   " ms / index "+fmt(gpu.text.phaseTimes.indexRebuildMs)+
+   " ms / organe originale CPU "+fmt(gpu.text.graphReplayMs)+" ms]":""):
   "CUDA: nu apare încă în snapshotul original. Verifică dacă ai pornit cu -Gpu cuda:0.";
  const newest=String(G?.text||"");
  if(newest.length&&S?.chars!==state.lastChar){
