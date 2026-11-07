@@ -69,6 +69,10 @@ test('native V17 worker really exports the persisted complete atlas and existing
   assert.match(js,/fullPredictedPath/);
   assert.match(js,/v30AtlasChars/);
   assert.match(js,/\/atlas-export/);
+  // Validate rejected worker IDs before the finite corpus worker can exit.
+  const missing=await get('/atlas?w=999&limit=1');
+  assert.ok(missing.error,'Wrong worker must not grant access to other files');
+
   // Real Chromium render test on the same native worker, not a DOM mock.
   const browser=['google-chrome','chromium','chromium-browser'].find(cmd=>
     spawnSync(cmd,['--version'],{encoding:'utf8',timeout:4000}).status===0);
@@ -90,10 +94,6 @@ test('native V17 worker really exports the persisted complete atlas and existing
     trainingAndOriginalButtonsPreserved:true
   }));
 
-  let missing;
-  try{missing=await get('/atlas?w=999&limit=1');}
-  catch(err){throw Error('Native process after Chrome: '+JSON.stringify({exitCode:proc.exitCode,lastLog:log.slice(-2400),error:String(err)}));}
-  assert.ok(missing.error,'Wrong worker must not grant access to other files');
   console.log('V30_NATIVE_END_TO_END',JSON.stringify({
    actualDocuments:graph.cognitive.documents,good:good.found,bad:bad.found,
    originalMethod:good.directOriginalMethod,atlasEvents:page.rows.length,
