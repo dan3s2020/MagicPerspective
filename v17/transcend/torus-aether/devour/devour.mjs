@@ -281,6 +281,23 @@ http.createServer((req, res) => {
     sl.wk.postMessage({nativeAtlasPage:{id,scale,offset,limit,family:q.get("family")==="edits"?"edits":"scales"}});
     return;
   }
+  // REAL disjoint held-out QA from original Parquet split or held-out text
+  // paragraphs. Neither the Brain nor the native inspector is updated.
+  if(req.method==="POST"&&url==="/native-atlas-eval"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    const count=Math.max(1,Math.min(16,Math.trunc(+(q.get("count")||6))));
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Native frozen text atlas evaluation timed out"});
+    },45000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result,
+      source:"original V17 held-out corpus split; no teacher update"});});
+    void heldPick(count).then(rows=>{
+      if(chats.has(id))sl.wk.postMessage({nativeAtlasEval:{id,rows}});
+    }).catch(err=>{if(chats.has(id)){chats.delete(id);clearTimeout(timer);
+      json(res,{error:"Could not read disjoint heldout corpus: "+err.message});}});
+    return;
+  }
   // Full finite-world frozen test. The agent receives the ENTIRE map, no
   // correct path, no new probes; we compare the real action execution.
   if(req.method==="POST"&&url==="/xd-atlas-eval"){
