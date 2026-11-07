@@ -89,6 +89,8 @@ Test two state-dependent learned fields from contrasting observations:
 - x+ causes a dependent-state change equal to y;
 - y+ causes a dependent-state change equal to 2*x.
 
+**Verified numerical counterexample on unseen starting state `5 @ 6 ~ 30`:** applying X then Y produces `6 @ 7 ~ 48`, but applying Y then X produces `6 @ 7 ~ 47` (difference of one). Their visible first two numeric coordinates are identical. The transformed dependent state and/or route history is needed to distinguish them.
+
 From an unseen state, x→y and y→x have identical final x,y but different dependent output. The route composition is non-commutative. This indicates a candidate reason why the apparent position alone can be insufficient: the organism may need additional state/history coordinates to predict the same visible goal correctly. This is not evidence of quantum physics.
 
 ## Methods and limitations
