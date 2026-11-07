@@ -395,7 +395,7 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None; self.text_limit = 32768; self.text_chunk = 128
+    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.fast_text = None; self.shared = None; self.text_limit = 32768; self.text_chunk = 128
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
@@ -436,6 +436,27 @@ class Server:
         if c == "init": r = self.init(m)
         elif c == "exercise": r = {"worlds": exercise_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))}
         elif c == "exercise_learn": r = exercise_learn_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))
+        elif c in ("fast_text_load", "fast_text_learn", "fast_text_eval", "fast_text_save"):
+            if not self.B.torch:
+                raise RuntimeError("Fast context training REQUIRES PyTorch; no silent NumPy substitution")
+            from fast_context_gpu import FastContextHead
+            if self.fast_text is None:
+                self.fast_text = FastContextHead(str(self.B.device))
+            if c == "fast_text_load":
+                checkpoint = m.get("checkpoint")
+                if not checkpoint:
+                    raise ValueError("Fast context load requires a real checkpoint path")
+                r = self.fast_text.load(checkpoint)
+            elif c == "fast_text_learn":
+                r = self.fast_text.train(m["exercises"],
+                                         sample_stride=int(m.get("sampleStride", 16)))
+                if m.get("checkpoint"):
+                    r["checkpoint"] = self.fast_text.save(m["checkpoint"])
+            elif c == "fast_text_eval":
+                r = self.fast_text.evaluate(m["exercises"],
+                                             sample_stride=int(m.get("sampleStride", 1)))
+            elif c == "fast_text_save":
+                r = self.fast_text.save(m["checkpoint"])
         elif c == "text_load":                                  # the brain's whole text memory, when the card (re)starts: nothing lived is missing here
             import base64
             from text_gpu import TextCard
