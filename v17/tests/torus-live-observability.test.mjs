@@ -115,11 +115,18 @@ test('Original native V17 live panel has correctly synchronized CPU/CUDA counter
   assert.ok(Array.isArray(t.observedTransformations?.topOperators));
   const p=await fetch(host+'/control?do=pause&w=0',{method:'POST'});
   assert.equal(p.status,200);
-  const paused=(await read(host+'/graphs')).graphs[0];
-  // A small real corpus can finish completely before the pause request.
-  // Both outcomes are valid: it must never pretend to be actively training.
-  assert.ok(['pauză','gata'].includes(paused.status),
-    'Worker neither paused nor legitimately completed its finite corpus: '+paused.status);
+  let paused=(await read(host+'/graphs')).graphs[0];
+  // A small real corpus can finish while a control request is in flight.
+  // Distinguish a clean final worker report from an unexplained worker exit;
+  // never label a crash as a successful training completion.
+  for(let i=0;i<20&&paused.status==='oprit'&&!paused.final;i++){
+    await sleep(100);
+    paused=(await read(host+'/graphs')).graphs[0];
+  }
+  assert.ok(['pauză','gata'].includes(paused.status) ||
+    (paused.status==='oprit'&&paused.final===true),
+    'Worker neither paused nor published an authenticated final snapshot: '+
+    JSON.stringify({status:paused.status,final:paused.final,chars:paused.chars}));
   assert.ok(paused.chars>=live.chars);
   console.log('REAL_V17_OBSERVABILITY '+JSON.stringify({
     trainingChars:paused.chars,graphEvents:paused.lived,

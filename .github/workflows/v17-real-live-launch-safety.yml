@@ -1,0 +1,48 @@
+name: V17 real native launcher safety and original UI regression
+on:
+  push:
+    branches:
+      - fix/V17-ACTUAL-TRAINING-START-AND-LIVE-OBSERVABILITY-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-live-windows-syntax:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse both PowerShell launchers exactly (never start a fake trainer)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          foreach ($file in @("v17/START_V17.ps1", "v17/START_NATIVE_V17_TRAINING_LIVE.ps1")) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw "$file PowerShell parser errors: $($errors | Out-String)" }
+            Write-Host "PowerShell syntax OK: $file"
+          }
+      - name: Safety guard rejects a nonexistent real dataset before any training
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Continue"
+          $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\v17\START_NATIVE_V17_TRAINING_LIVE.ps1 -Data "Z:\NONEXISTENT_REAL_CORPUS" 2>&1 | Out-String
+          if ($LASTEXITCODE -eq 0 -or $out -notmatch 'REAL OpenThoughts dataset not found') {
+            throw "Launcher failed to reject missing real corpus explicitly: $out"
+          }
+          Write-Host "Missing data fails closed; no demo fallback."
+          exit 0
+  original-runtime-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Native V17 backend and original live UI behavior
+        run: |
+          node --test v17/tests/torus-live-observability.test.mjs
+          node --test v17/tests/torus-unified-http.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
