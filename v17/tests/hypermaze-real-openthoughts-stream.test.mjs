@@ -5,7 +5,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import net from "node:net";
-import {spawnSync} from "node:child_process";
+import {spawnSync,spawn} from "node:child_process";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 import {rawJSONLLines,parseActualJSONL,textsFromRealJSON}
  from "../research/text-hypermaze/openthoughts-jsonl-source.mjs";
@@ -169,11 +169,23 @@ test("Full actual JSONL training (not legacy byte predictor), pause/save/resume,
    .find(x=>spawnSync("which",[x],{encoding:"utf8"}).status===0);
   if(browser){
    const url=again.base+"/transcend/torus-aether/ui/native-hypermaze.html";
-   const run=spawnSync(browser,["--headless","--no-sandbox",
-    "--disable-gpu","--disable-dev-shm-usage","--dump-dom",
-    "--virtual-time-budget=4700",url],{
-     encoding:"utf8",timeout:24000,maxBuffer:12*1024*1024});
-   assert.equal(run.status,0,run.stderr?.slice(-1100));
+   // Chrome MUST run asynchronously while the actual Node HTTP server
+   // remains responsive. spawnSync here deadlocked the IN-PROCESS test
+   // server, returning empty DOM despite the model and API working.
+   const run=await new Promise((resolve,reject)=>{
+    const child=spawn(browser,["--headless","--no-sandbox",
+     "--disable-gpu","--disable-dev-shm-usage","--dump-dom",
+     "--virtual-time-budget=4700",url]);
+    let stdout="",stderr="";
+    child.stdout.on("data",b=>{stdout+=b.toString();});
+    child.stderr.on("data",b=>{stderr+=b.toString();});
+    const timer=setTimeout(()=>{child.kill("SIGKILL");},24000);
+    child.on("error",e=>{clearTimeout(timer);reject(e);});
+    child.on("exit",(status,signal)=>{
+     clearTimeout(timer);resolve({status,signal,stdout,stderr});
+    });
+   });
+   assert.equal(run.status,0,"Actual native JSONL Chrome: "+run.stderr?.slice(-1100));
    assert.match(run.stdout,/data-real-corpus-native="true"/);
    assert.match(run.stdout,/id="realPercent">100.00%/);
    assert.match(run.stdout,/data-native-connected="true"/);
