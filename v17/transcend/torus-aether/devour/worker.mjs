@@ -333,6 +333,20 @@ parentPort.on("message", m => {
     }
     return;
   }
+  // Native original Discoverer.shape, frozen on the ACTUAL V21 contextual memory.
+  if(m?.veilNativePlan){
+    const {id,start,goal,maxSteps=160}=m.veilNativePlan;
+    try{
+      if(!hypermaze)throw Error("Contextual veil world not enabled");
+      if(!brain.disc)throw Error("Original Discoverer missing from Brain");
+      const before=JSON.stringify(hypermaze.veil.export());
+      const plan=hypermaze.veil.planNative(brain.disc,start,goal,{maxSteps});
+      if(before!==JSON.stringify(hypermaze.veil.export()))
+        throw Error("Native frozen path mutated learned graph");
+      parentPort.postMessage({type:"chat",kind:"veil-native-plan",id,...plan,frozen:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"veil-native-plan",id,error:err.message});}
+    return;
+  }
   if(m?.veilPlan){
     const {id,start,goal,maxSteps=160}=m.veilPlan;
     try{
