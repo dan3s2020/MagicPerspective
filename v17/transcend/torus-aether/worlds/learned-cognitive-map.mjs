@@ -3,6 +3,7 @@
 // No hidden answer strings, maze BFS distances or oracle solution paths enter training.
 import {shapeOnLearnedTopology} from '../language-maze/shape-topology.mjs';
 import {KIND,Discoverer} from './exercise.mjs';
+import {portableTransformations,candidatePortable,inspectPortable,parsePortableId} from './cross-world-transforms.mjs';
 
 export const tokenizeWorld = s => String(s).normalize('NFC')
   .match(/[\p{L}\p{M}\p{N}_]+(?:['’\-][\p{L}\p{M}\p{N}_]+)*|[^\s]/gu) || [];
@@ -218,17 +219,29 @@ export class LearnedCognitiveMap {
     const b=Array.isArray(before)?before.slice():tokenizeWorld(before);
     const a=Array.isArray(after)?after.slice():tokenizeWorld(after);
     if(typeof action!=='string'||typeof accepted!=='boolean')throw Error('Observed action and accepted flag required');
-    if(!this.rules.has(action))throw Error('Action not learned from observations: '+action);
+    const portable=parsePortableId(action);
+    if(!this.rules.has(action)&&!portable)
+      throw Error('Action not learned from observations: '+action);
     const pred=this.predict(b,action);
     const correct=accepted&&pred!==null&&key(a)===key(pred);
     const id=key(b)+'|'+action;const record=this.interventions.get(id)||{accepted:0,blocked:0};
     if(correct)record.accepted++;else record.blocked++;
     this.interventions.set(id,record);
-    const r=this.rules.get(action);r.accepted+=Number(correct);r.rejected+=Number(!correct);
+    const r=this.rules.get(action);
+    if(r){r.accepted+=Number(correct);r.rejected+=Number(!correct);}
+    else if(correct){
+      // The portable route has now been independently executed by a real
+      // action in this exact state. Promote this *observed result* into an
+      // ordinary local span rule without retroactively verifying the whole
+      // transform class or other hypothetical corridors.
+      this.observeActionResult({before:b,action,after:a,accepted:true});
+    }
     return {predicted:pred,actual:a,predictionCorrect:correct,blocked:!correct};
   }
   predict(input,action){
     const t=Array.isArray(input)?input.slice():tokenizeWorld(input);
+    if(parsePortableId(action))
+      return inspectPortable(this.rules,action,t,this.interventions);
     const r=this.rules.get(action);
     if(!r||r.ambiguous)return null;
     const op=r.operation||'replace';
@@ -321,15 +334,25 @@ export class LearnedCognitiveMap {
     if(!entries.length)throw Error('Goal must constrain at least one position');
     return entries.every(([i,token])=>valid(Number(i),0,tokens.length-1)&&tokens[Number(i)]===token);
   }
-  buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth}={}){
+  buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth,transfer=true}={}){
     const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
     if(!start.length||start.length>96||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
     LearnedCognitiveMap.matchGoal(start,goal);
     const queue=[start],byKey=new Map([[key(start),0]]),out=[[]],depth=[0];
-    let rejected=0,truncated=false,imagined=0;
+    let rejected=0,truncated=false,imagined=0,portableCount=0;
+    let depthLimited=0;
+    const portable=transfer?portableTransformations(this.rules):[];
+    const portableClasses=portable.length,diagnostics={
+      portableClasses,observedActionRules:this.rules.size,
+      sourceExamplesActive:this.examples.size,
+      compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
+      maxNodes,maxDepth,transfer,excludedByDesign:[],
+      pathSource:"observed local changes + multiple independent world contexts",
+      goalKnownOnlyAsPredicate:true
+    };
     for(let head=0;head<queue.length;head++){
       const state=queue[head],currentDepth=depth[head];
-      if(currentDepth>=maxDepth)continue;
+      if(currentDepth>=maxDepth){depthLimited++;continue;}
       for(const r of this.rules.values()){
         const next=this.predict(state,r.id);if(!next)continue;
         const nextKey=key(next),prior=this.interventions.get(key(state)+'|'+r.id);
@@ -347,9 +370,49 @@ export class LearnedCognitiveMap {
           support:r.observations,verified:!!prior?.accepted});
         imagined++;
       }
+      // A new exercise can be only one SEGMENT of the world. Reuse
+      // transformation evidence from OTHER complete sentences/maze episodes,
+      // but require 2 independent original contexts before any projection.
+      // These edges remain HYPOTHESES, not known walls or correct answers.
+      for(const suggestion of candidatePortable(state,portable,this.interventions)){
+        const next=suggestion.next, nextKey=key(next);
+        if(out[head].some(x=>x.action===suggestion.action&&
+            key(queue[x.to])===nextKey))continue;
+        let dest=byKey.get(nextKey);
+        if(dest===undefined){
+          if(queue.length>=maxNodes){truncated=true;continue;}
+          dest=queue.length;queue.push(next);byKey.set(nextKey,dest);
+          depth.push(currentDepth+1);out.push([]);
+        }
+        out[head].push({to:dest,action:suggestion.action,
+          transformation:{at:suggestion.at,from:suggestion.from,to:suggestion.to},
+          support:suggestion.support,verified:suggestion.verified,
+          hypothesis:true,crossWorld:true,
+          provenance:suggestion.provenance,
+          observedPositions:suggestion.sourceWorldPositions});
+        portableCount++;imagined++;
+      }
     }
+    diagnostics.depthFrontierStates=depthLimited;
+    diagnostics.portableProjectedEdges=portableCount;
+    diagnostics.nodeLimitReached=truncated;
+    diagnostics.depthLimitReached=depthLimited>0;
+    if(truncated)diagnostics.excludedByDesign.push("MAX_NODES_EXCEEDED");
+    if(depthLimited)diagnostics.excludedByDesign.push("MAX_DEPTH_EXCEEDED");
+    if(!portable.length)diagnostics.excludedByDesign.push("INSUFFICIENT_INDEPENDENT_CONTEXT_EVIDENCE_FOR_TRANSFER");
     const targets=queue.map((tokens,i)=>LearnedCognitiveMap.matchGoal(tokens,goal)?i:null).filter(i=>i!==null);
+    if(!targets.length){
+      const demanded=Object.values(goal.slots);
+      const observedTokens=new Set(queue.flat());
+      const missing=Array.from(new Set(demanded.filter(v=>!observedTokens.has(v))));
+      diagnostics.goalTokensNeverGenerated=missing;
+      if(missing.length)diagnostics.excludedByDesign.push("MISSING_GOAL_TRANSFORMATION_OR_CONTEXT");
+      diagnostics.failureReason=truncated?"SEARCH_BUDGET_EXHAUSTED_NOT_PROOF_OF_IMPOSSIBILITY":
+        depthLimited?"DEPTH_BUDGET_EXHAUSTED_NOT_PROOF_OF_IMPOSSIBILITY":
+        "NO_REACHABLE_GOAL_IN_CURRENT_EVIDENCE_NOT_PROOF_OF_IMPOSSIBILITY";
+    }
     return {states:queue,neighbors:out,start:0,targets,goal:clone(goal),truncated,
+      diagnostics,portableProjectedEdges:portableCount,
       estimatedTransitions:imagined,rejected,fromObservedExamples:this.examples.size,
       source:'observed complete-sentence contrasts + actual action feedback',
       unseenStates:queue.filter(s=>!this.examples.has(key(s))).length};
@@ -357,12 +420,13 @@ export class LearnedCognitiveMap {
   // Same V17 operator, same .97 and .5 thresholds: no BFS oracle or target string.
   // Only the target PREDICATE seeds the attraction field; its successful states
   // must emerge from learned transition hypotheses.
-  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null}={}){
-    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth});
+  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null,transfer=true}={}){
+    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth,transfer});
     if(world.targets.includes(0))return {found:true,path:[],world,field:{reason:'ALREADY_AT_GOAL',values:[]},
       goal:clone(goal),learnedRules:this.rules.size,novelGoal:false,
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
-    if(!world.targets.length)return {found:false,reason:'NO_GOAL_STATE_IN_LEARNED_MAP',world,
+    if(!world.targets.length)return {found:false,
+      reason:world.diagnostics?.failureReason||'NO_GOAL_STATE_IN_LEARNED_MAP',world,
       learnedRules:this.rules.size,path:[],field:null};
     // This invokes the ACTUAL original Discoverer.shape method from
     // exercise.mjs with the discovered N-D text-world adjacency. No V19/V20
@@ -373,7 +437,9 @@ export class LearnedCognitiveMap {
     return {found:reached,path,world,field,goal:clone(goal),
       learnedRules:this.rules.size,novelGoal:reached&&!this.examples.has(key(world.states[path.at(-1)?.to??0])),
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97',
-      directOriginalMethod:'Discoverer.shape',noise:field.temperature};
+      directOriginalMethod:'Discoverer.shape',noise:field.temperature,
+      usedCrossWorld:!!path.find(h=>h.action?.startsWith('__XWORLD__:')),
+      projectedCrossWorldEdges:world.portableProjectedEdges};
   }
   // The path is constructed FIRST. Every step then calls a REAL environment
   // callback; failures produce feedback (walls) and stop, never silently pass.
