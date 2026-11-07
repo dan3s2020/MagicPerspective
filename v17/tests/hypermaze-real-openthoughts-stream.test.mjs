@@ -7,6 +7,7 @@ import os from "node:os";
 import net from "node:net";
 import {spawnSync,spawn} from "node:child_process";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
+import {ObservedTransformations} from "../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {rawJSONLLines,parseActualJSONL,textsFromRealJSON}
  from "../research/text-hypermaze/openthoughts-jsonl-source.mjs";
 import {launch} from "../research/text-hypermaze/real-corpus-server.mjs";
@@ -203,4 +204,34 @@ test("Full actual JSONL training (not legacy byte predictor), pause/save/resume,
   if(again)await again.close();
   fs.rmSync(root,{recursive:true,force:true});
  }
+});
+
+test("Million-row-style UTF-8 stream cannot leak evicted rare observed states through inverted index; original model keeps learning",()=>{
+ const original=new ObservedTransformations({maxObserved:75,maxOperators:600,
+  maxTokens:128});
+ for(let i=0;i<850;i++){
+  const result=original.observeSentence("The actual observation record was indexed with unique identifier entry"+i+
+   " and the current environmental condition was calm.");
+  assert.equal(result.learned,true);
+ }
+ assert.equal(original.records.size,75);
+ assert.equal(original.evicted,775);
+ assert.equal(original.order.length,75);
+ assert.equal(original.lookup.size,75);
+ assert.equal(original.containsSentence(
+  "The actual observation record was indexed with unique identifier entry0 and the current environmental condition was calm."),false);
+ assert.equal(original.containsSentence(
+  "The actual observation record was indexed with unique identifier entry849 and the current environmental condition was calm."),true);
+ assert.ok(original.index.size<180,
+  "Evicted rare source tokens remained forever in index and will OOM a 594MB+ real corpus");
+ for(const posting of original.index.values()){
+  assert.ok(posting instanceof Set,"All fresh full-corpus postings must be bounded O(1) sets");
+  assert.ok([...posting].every(id=>original.records.has(id)),
+   "Dead observed records survived in a token posting, silently increasing RAM");
+ }
+ console.log("ORIGINAL_LEARNING_INDEX_MEMORY_BOUNDED",JSON.stringify({
+  totalObservations:850,activeStates:original.records.size,
+  archivedAsEvicted:original.evicted,livePostingKeys:original.index.size,
+  learnedOperators:original.operators.size,fullSourceStreamNotFalselyClaimedRetained:true
+ }));
 });
