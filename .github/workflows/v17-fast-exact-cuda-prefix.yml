@@ -19,6 +19,8 @@ jobs:
         run: python -m pip install numpy
       - name: Exact source-based reference versus fast-prefix binary search across 1..64 depths
         run: python -m unittest discover -s v17/tests -p text_index_fast_test.py -v
+      - name: Six native trust variants remain identical when reusing CUDA histograms
+        run: python -m unittest discover -s v17/tests -p text_variant_fast_test.py -v
   existing-v17-trainer:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
