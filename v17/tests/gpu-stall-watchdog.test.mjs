@@ -11,16 +11,16 @@ const testWithFakeGPU=async(task)=>{
  const stub=path.join(dir,"fake-gpu");
  // CI Linux fake Python executable, independent of actual PyTorch/NVIDIA.
  // It receives the same newline-delimited JSON RPC commands as worlds_gpu.py.
- const program=String.raw\`#!/usr/bin/env node
+ const program=String.raw`#!/usr/bin/env node
 let buf="";
 process.stdin.setEncoding("utf8");
 process.stdin.on("data",data=>{
  buf+=data;
  let at;
- while((at=buf.indexOf("\\n"))>=0){
+ while((at=buf.indexOf("\n"))>=0){
   const line=buf.slice(0,at);buf=buf.slice(at+1);
   const m=JSON.parse(line);
-  const send=r=>process.stdout.write(JSON.stringify({id:m.id,...r})+"\\n");
+  const send=r=>process.stdout.write(JSON.stringify({id:m.id,...r})+"\n");
   if(m.cmd==="init"){
     if(process.env.STUB_HANG_INIT==="1")continue;
     send({device:"fake:0",initialized:true});
@@ -39,7 +39,7 @@ process.stdin.on("data",data=>{
   }else send({ok:true});
  }
 });
-\`;
+`;
  fs.writeFileSync(stub,program,{mode:0o755});
  fs.chmodSync(stub,0o755);
  const old=process.env.OCTOPUS_PY;
