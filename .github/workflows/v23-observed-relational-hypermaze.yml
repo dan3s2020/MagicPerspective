@@ -1,0 +1,21 @@
+name: V23 native Discoverer relational hypermaze
+on:
+  push:
+    branches:
+      - experiment/V23-OBSERVED-RELATIONAL-HYPERMAZE-20261107
+  workflow_dispatch:
+jobs:
+  reproducible:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V22 original shape and immutable source
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: V23 held-out physics and negatives
+        run: node --test v17/tests/v23-observed-relational-hypermaze.test.mjs
+      - name: Full measured synthetic structured text benchmark
+        run: node v17/research/relational-hypermaze/benchmark.mjs
