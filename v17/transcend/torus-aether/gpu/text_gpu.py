@@ -204,7 +204,7 @@ class TextCard:
             sy = np.full(Q, -1, dtype=np.int64); sk = np.zeros(Q, dtype=np.int64); sfar = np.zeros(Q, dtype=np.int64)
             fsy = np.full(Q, -1, dtype=np.int64); fsk = np.zeros(Q, dtype=np.int64); fsfar = np.zeros(Q, dtype=np.int64)
             for q, (i, o) in enumerate(zip(Pi, Oi)):
-                e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - 1::-1][:L] if i - 1 >= 0 else []; ys_true[q] = e[i]
+                e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - L:i][::-1] if L else [];  # exact context, O(maxK), NOT reverse O(i) entire preceding document ys_true[q] = e[i]
             for q, (i, o) in enumerate(zip(Pi, Oi)):
                 h = self._selfidx(exs, o); r = h.get(i)
                 if r: sy[q], sk[q], sfar[q], fsy[q], fsk[q], fsfar[q] = r
@@ -276,7 +276,7 @@ class TextCard:
         LUT = X.arr(lut, np.float32)
         for c0 in range(0, len(starts), 2048):
             St = starts[c0:c0 + 2048]; Rn = len(St); ctx = np.full((Rn, self.maxK), -2, dtype=np.int64)
-            for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - 1::-1][:L]
+            for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - L:i][::-1]  # same symbols/order, bounded copy
             CX = X.arr(ctx); ok = np.ones(Rn, dtype=bool)
             for step in range(K):
                 if progress is not None and step % 8 == 0: progress(c0 * K + step * Rn, len(starts) * K, 'imagination')
