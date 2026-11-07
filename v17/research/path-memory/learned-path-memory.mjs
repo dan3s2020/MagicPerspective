@@ -7,13 +7,23 @@
 import {tokenizeObservation} from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 
 const EPS=1e-8;
-const tpl=xs=>xs.map(t=>/^\d+$/u.test(t)?"#":t).join("\u001f");
+const tpl=xs=>xs.map(t=>/^-?\d+$/u.test(t)?"#":t).join("\u001f");
 const same=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
 const arr=x=>Array.isArray(x)?x.slice():tokenizeObservation(x);
 const parse=x=>{
- const tokens=arr(x),indices=tokens.flatMap((v,i)=>/^\d+$/u.test(v)?[i]:[]);
+ // The V17 tokenizer treats a minus sign as punctuation. For signed integer
+ // observations only, reconstruct the numeric token before template matching.
+ // No linguistic/semantic interpretation is introduced.
+ const raw=arr(x),tokens=[];
+ for(let i=0;i<raw.length;i++){
+  const v=String(raw[i]);
+  if(v==="-"&&i+1<raw.length&&/^\d+$/u.test(String(raw[i+1]))){
+   tokens.push("-"+String(raw[i+1]));i++;
+  }else tokens.push(v);
+ }
+ const indices=tokens.flatMap((v,i)=>/^-?\d+$/u.test(v)?[i]:[]);
  const values=indices.map(i=>Number(tokens[i]));
- if(!values.length||values.some(v=>!Number.isSafeInteger(v)))throw Error("Only nonnegative safe integer numeric observations are supported");
+ if(!values.length||values.some(v=>!Number.isSafeInteger(v)))throw Error("Only safe integer numeric observations are supported");
  return {tokens,indices,values,template:tpl(tokens)};
 };
 const average=a=>a.reduce((s,x)=>s+x,0)/a.length;
