@@ -16,6 +16,7 @@ import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
+import {AtlasJournal,atlasPath} from "./atlas-journal.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
@@ -53,6 +54,10 @@ const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : n
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
+const atlasJournal=cognitive&&saveFile?
+  new AtlasJournal(atlasPath(saveFile)):null;
+if(cognitive&&atlasJournal)
+  cognitive.onAtlasEvidence=event=>atlasJournal.record(event);
 const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 // A V21 hypertext-only checkpoint can have 200 observed documents but ZERO
 // native text exercises. When enabling the previously omitted 'text' world on
@@ -69,6 +74,7 @@ brain.setSharedObserver(sample => {
   if(hypermaze)hypermaze.veil.observeExperience(sample); // shared actual V17 actions: maze, transform, text, code
 });
 const saveCognitive = () => {
+  if(atlasJournal)atlasJournal.sync(); // audit disk is flushed BEFORE checkpoint saving
   if(cognitive)brain.cognitiveMap = cognitive.export();
   if(hypermaze)brain.hypermaze = hypermaze.export();
 };
@@ -162,7 +168,8 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, exercises: brain.exercises || 0, progress: corpusProgress(), dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shapeAudit:lastShapeAudit, atlas:atlasJournal?.status()||null,
+    shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { saveCognitive(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
@@ -382,7 +389,18 @@ parentPort.on("message", m => {
     try{
       if(!cognitive)throw Error("This graph has no cognitive world");
       const pre=cognitive.report(),plan=cognitive.formSolution(initial,goal,
-        {disc:brain.disc,maxNodes,maxDepth});
+        {disc:brain.disc,maxNodes,maxDepth,transfer:true});
+      // Immutable initial shape, plus EVERY candidate navigable corridor
+      // considered in this frozen request, not just a 128-node UI sample.
+      // Failed requests retain their precise boundaries and missing edges.
+      atlasJournal?.record({type:"planning-attempt",world:"text",frozen:true,
+        input:initial,goal,found:plan.found,reason:plan.reason||null,
+        fullAtlas:{states:plan.world?.states||[],neighbors:plan.world?.neighbors||[],
+          targets:plan.world?.targets||[],allCandidateEdges:
+            (plan.world?.neighbors||[]).reduce((sum,row)=>sum+row.length,0)},
+        diagnostics:plan.world?.diagnostics||null,
+        fullPredictedPath:plan.path||[],originalMethod:plan.directOriginalMethod||null,
+        field:plan.field?.values||[],hypothesisNotVerifiedAsCorrectAnswer:true});
       const reply={type:"chat",id,kind:"cognitive",frozen:true,found:plan.found,
         reason:plan.reason||plan.field?.reason||null,
         rules:plan.learnedRules,observedSentences:plan.world?.fromObservedExamples,
@@ -396,7 +414,11 @@ parentPort.on("message", m => {
         directOriginalMethod:plan.directOriginalMethod||null,noiseTemperature:plan.noise??null,
         preActionShape:plan.field?.nodes?.slice(0,192)||[],
         topology:frozenTextShapeTopology(plan),
-        truncated:plan.world?.truncated||false};
+        truncated:plan.world?.truncated||false,
+        diagnostics:plan.world?.diagnostics||null,
+        usedCrossWorld:plan.usedCrossWorld||false,
+        projectedCrossWorldEdges:plan.projectedCrossWorldEdges||0,
+        fullAtlasJournal:atlasJournal?.status()||null};
       if(JSON.stringify(pre)!==JSON.stringify(cognitive.report()))throw Error("Frozen evaluation changed learning state");
       parentPort.postMessage(reply);
     }catch(err){parentPort.postMessage({type:"chat",id,kind:"cognitive",error:err.message});}
