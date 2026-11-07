@@ -614,6 +614,7 @@ function renderDatasetProgress(gr, corpusInfo) {
     $("datasetHeldOut").textContent = corpusInfo?.heldOut != null ?
       Math.trunc(corpusInfo.heldOut).toLocaleString("ro-RO") : "--";
     $("datasetProgressBar").value = 0;
+    if ($("gpuPerformanceInfo")) $("gpuPerformanceInfo").textContent = "Astept progresul si timpii din graful selectat.";
     $("datasetProgressInfo").textContent = corpusInfo?.trainRows != null ?
       "Astept progresul grafului selectat; datasetul are " +
         Math.trunc(corpusInfo.trainRows).toLocaleString("ro-RO") +
@@ -645,6 +646,34 @@ function renderDatasetProgress(gr, corpusInfo) {
     " exercitii tinute separat si neincluse in numitor. " +
     (p.overflow ? "ATENTIE: contorul depaseste dimensiunea partitiei; verifica reluarea checkpointului. " : "") +
     "Nu confunda aceste cifre cu simbolurile distincte.";
+  const display = $("gpuPerformanceInfo"), text = gr?.gpu?.text || null;
+  const ms = x => Number.isFinite(x) ? (x / 1000).toFixed(2) + "s" : "--";
+  if (display) {
+    if (text?.hostMs) {
+      const x=text.hostMs, y=text.phaseMs;
+      display.textContent = [
+        "TIMPI REALI, ULTIMUL LOT TEXT (" + (x.textExercises ?? text.batch ?? "--") + " exercitii)",
+        "Timp total lot: " + ms(x.total) +
+          " | rata reala: " + Math.round(x.charactersPerSecond || 0).toLocaleString("ro-RO") + " caractere/s",
+        "Python text_learn (CUDA + index/reconstructie): " + ms(x.card),
+        "CPU V17 - graful original: " + ms(x.originalGraphTrace),
+        "CPU V19/V20/V21 - corpus, grafuri si cai: " + ms(x.causalTextAndCode),
+        "Model comun PyTorch / transfer: " + ms(x.sharedPyTorch),
+        "Labirinturi + transformari: " + ms(x.mazeAndTransform),
+        y ? "PYTHON DETALIAT: aliniere " + ms(y.alignment) +
+          ", imaginatie " + ms(y.imagination) +
+          ", RECONSTRUIRE INDEX " + ms(y.reindex) : "PYTHON DETALIAT: porneste cu -ProfileText pentru aliniere/imaginatie/reindex (incetineste temporar)",
+        "Utilizarea GPU din Task Manager nu masoara aceste durate; Python include si sincronizari CPU."
+      ].join("\n");
+    } else if (gr?.gpu?.error) {
+      display.textContent = "GPU ERROR: " + gr.gpu.error;
+    } else {
+      display.textContent = p.mode === "native-text" ?
+        "Timpul real pe faze va aparea dupa primul lot CUDA complet. Daca ramane aici, verifica GPU/worker." :
+        "Graful selectat nu antreneaza textul nativ pe CUDA. Alege graful complet cu lumea text.";
+    }
+  }
+
 }
 
 async function livePull() {
