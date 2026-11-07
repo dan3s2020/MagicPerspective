@@ -212,9 +212,17 @@ export class LearnedPathMemory {
   }
   return {final:state,trace,success:trace.every(x=>x.matchesDependent)};
  }
- export(){return {version:1,model:copy(this.model),samples:this.examples.length};}
+ export(){return {version:1,model:copy(this.model),samples:this.examples.length,
+   examples:copy(this.examples),configuration:{minPerAction:this.minPerAction,
+   maxExpanded:this.maxExpanded,maxSamples:this.maxSamples}};}
  static restore(state){
   if(state?.version!==1||!state.model?.actions)throw Error("Unknown model checkpoint schema");
-  const m=new LearnedPathMemory();m.model=copy(state.model);return m;
+  const m=new LearnedPathMemory(state.configuration||{});
+  m.model=copy(state.model);
+  m.examples=Array.isArray(state.examples)?copy(state.examples):[];
+  if(state.samples>0&&!Array.isArray(state.examples))
+   throw Error("Old checkpoint lacks the training ledger; refusing partial resume");
+  if(m.examples.length!==state.samples)throw Error("Checkpoint training ledger size mismatch");
+  return m;
  }
 }
