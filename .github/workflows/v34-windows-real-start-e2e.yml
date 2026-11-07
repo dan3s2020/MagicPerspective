@@ -50,6 +50,8 @@ jobs:
           print('V34_WINDOWS_REAL_REPOSITORY_TEXT_SOURCE', rows, 'rows; not OpenThoughts semantic benchmark')
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Source-backed parquet writer failed' }
+          node v17/tests/v34-windows-dataset-read-probe.mjs (Join-Path $root 'actual repository text parquet with spaces')
+          if ($LASTEXITCODE -ne 0) { throw 'Original V17 Windows real Parquet first-row decoder failed' }
       - name: End-to-end Windows PowerShell launcher, native source Brain resume, UI/API and SHA protection
         shell: powershell
         run: |
