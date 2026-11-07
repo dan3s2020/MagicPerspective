@@ -21,3 +21,5 @@ jobs:
         run: node v17/research/relational-hypermaze/benchmark.mjs
       - name: Longer routes, independent noise, repeated observed perspectives
         run: node --test v17/tests/v23-noisy-long-route.test.mjs
+      - name: Unknown-answer entity first-try held-out QA structural proof
+        run: node --test v17/tests/v23-unknown-answer.test.mjs
