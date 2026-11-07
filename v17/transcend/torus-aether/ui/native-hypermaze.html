@@ -85,6 +85,15 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
     <textarea id="source" placeholder="Introduceți un text din lumea observată de organism; nu răspunsul de referință"></textarea>
     <label class="formlabel" for="required">Tokeni necesari în starea-țintă (separați prin virgulă)</label>
     <input id="required" placeholder="de exemplu: tokenA,tokenB" autocomplete="off">
+    <div class="controls" style="margin-top:11px">
+     <label class="formlabel" for="atlasMaxStates">Stări explorate, până la 10.000
+      <input id="atlasMaxStates" type="number" min="4" max="10000" step="100" value="1500">
+     </label>
+     <label class="formlabel" for="atlasMaxDepth">Adâncime acțiuni, până la 12
+      <input id="atlasMaxDepth" type="number" min="1" max="12" step="1" value="6">
+     </label>
+    </div>
+    <p class="muted" style="font-size:11px">Creșterea limitelor extinde labirintul construit din operatorii deja învățați, fără resetarea memoriei. Dacă persistă frontiere, atlasul rămâne explicit incomplet.</p>
     <div class="controls" style="margin-top:12px">
      <button id="plan" class="primary">◈ Prezice forma și execută</button>
     </div>
