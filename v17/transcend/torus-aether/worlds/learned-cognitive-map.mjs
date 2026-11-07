@@ -351,6 +351,46 @@ export class LearnedCognitiveMap {
       learnedRules:this.rules.size,novelGoal:reached&&!this.examples.has(key(world.states[path.at(-1)?.to??0])),
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
   }
+
+  // Experimental V21 extension: the ORIGINAL V17 Discoverer.shape() directly
+  // navigates this SAME V19 learned action world. Unlike the observed V21
+  // context graph, hypothetical successors are explicitly tagged as INFERRED
+  // from real before/action/after training, never as witnessed text.
+  // No teacher path or heldout full target sentence enters this method.
+  formSolutionNative(initial,goal,{disc,maxNodes,maxDepth}={}){
+    if(typeof disc?.shape!=="function")throw Error("Use original Brain.disc.shape, no replacement planner");
+    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth});
+    if(!world.targets.length)return {found:false,reason:"NO_GOAL_STATE_IN_LEARNED_MAP",
+      world,goal:clone(goal),learnedRules:this.rules.size,path:[],
+      originalDiscovererDirectlyUsed:true,plannedBeforeAction:true};
+    const edges=[];
+    for(let from=0;from<world.neighbors.length;from++){
+      for(const hop of world.neighbors[from]){
+        const support=Math.max(1,Math.trunc(hop.support||1));
+        edges.push({from,to:hop.to,action:hop.action,count:support,
+          provenance:hop.verified?"observed":"learned-rule-hypothesis"});
+      }
+    }
+    const baseConduct=Math.max(.5,disc.conduct?.(KIND.floor)??.5);
+    const conduct=world.states.map((_,i)=>i===world.start||world.targets.includes(i)?1:baseConduct);
+    const maxPlanned=Math.max(1,Math.min(256,Math.trunc(maxDepth||this.limits.maxDepth)));
+    const shape=disc.shape(null,0,-1,{nodes:world.states,edges,start:world.start,
+      goals:world.targets,conduct,maxSteps:maxPlanned});
+    const path=shape.path.map(e=>({
+      from:e.from,to:e.to,action:e.action,
+      transformation:world.neighbors[e.from].find(h=>h.to===e.to&&h.action===e.action)?.transformation,
+      support:e.observedCount,provenance:e.provenance,
+      potentialBefore:e.potentialBefore,potentialAfter:e.potentialAfter
+    }));
+    const reached=shape.found&&world.targets.includes(shape.nodes.at(-1));
+    return {found:reached,path,world,field:shape,goal:clone(goal),learnedRules:this.rules.size,
+      originalDiscovererDirectlyUsed:true,plannedBeforeAction:true,
+      noHiddenAnswerOracle:true,
+      novelGoal:reached&&!this.examples.has(key(world.states[shape.nodes.at(-1)])),
+      learnedTransformationHypotheses:path.filter(e=>e.provenance==="learned-rule-hypothesis").length,
+      planningLaw:"ORIGINAL_DISCOVERER_SHAPE_ON_LEARNED_TRANSFORMATIONS",
+      experimentalScope:"V19 observed local rules extrapolated to unseen state; NOT general natural-language semantic answering"};
+  }
   // The path is constructed FIRST. Every step then calls a REAL environment
   // callback; failures produce feedback (walls) and stop, never silently pass.
   execute(plan,{step,observe=true,brain=null}={}){
