@@ -147,6 +147,45 @@ test("atlas is append-only, reads entire >64KB events without truncation and pag
   }));
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+test("long 500-token sentence is NEVER silently discarded: overlapping real pages and every source position recorded",()=>{
+ const model=new LearnedCognitiveMap(),events=[];
+ model.onAtlasEvidence=e=>{if(e.type==="segment-bridge")events.push(e);};
+ const tokens=Array.from({length:500},(_,i)=>"word_"+i);
+ assert.equal(model.observeSentence(tokens,{source:"document-500"}),true);
+ assert.equal(model.segmentedLongSentences,1);
+ assert.ok(model.observedSegmentBridges>=5);
+ assert.ok(model.examples.size>=5);
+ const pages=[...model.examples.values()].map(x=>x.tokens);
+ assert.ok(pages.every(p=>p.length===96),"No short artificial suffix windows");
+ const seen=new Set(pages.flat()),source=new Set(tokens);
+ assert.equal(seen.size,500);
+ assert.deepEqual([...seen].sort(),[...source].sort());
+ for(let i=0;i<events.length;i++){
+   const e=events[i];
+   assert.equal(e.evidenceLevel,"OBSERVED_CONTIGUOUS_TOKENS_NOT_INFERRED_TRANSFORM");
+   assert.deepEqual(e.fromWindowTokens.slice(-e.overlapTokens.length),e.overlapTokens);
+   assert.deepEqual(e.toWindowTokens.slice(0,e.overlapTokens.length),e.overlapTokens);
+   assert.ok(e.toOffset>e.fromOffset);
+ }
+ const restored=LearnedCognitiveMap.restore(model.export());
+ assert.equal(restored.observedSegmentBridges,model.observedSegmentBridges);
+ assert.equal(restored.segmentedLongSentences,1);
+});
+test("an unseen 4,000-token input can navigate two cross-world transformations with complete unchanged tail",()=>{
+ const model=observed();
+ const tail=Array.from({length:3999},(_,i)=>"extremely_long_segment_"+i);
+ const plan=model.formSolution(["blue",...tail],goal,{maxNodes:24,maxDepth:5,transfer:true});
+ assert.equal(plan.found,true);
+ assert.equal(plan.path.length,2);
+ assert.equal(plan.world.states[plan.path.at(-1).to].length,4000);
+ assert.deepEqual(plan.world.states[plan.path.at(-1).to].slice(1),tail);
+ assert.ok(plan.world.diagnostics);
+ console.log("V23_LONG_HYPERMAZE",JSON.stringify({
+  tokens:4000,unseenSource:true,fullTailUnmodified:true,
+  originalMethod:plan.directOriginalMethod,steps:plan.path.length,
+  answerGoalExplicit:true
+ }));
+});
 test("all learned contrast and live intervention/external-domain actions are emitted to exact audit journal",()=>{
  const m=observed(),events=[];
  m.onAtlasEvidence=e=>events.push(e);
