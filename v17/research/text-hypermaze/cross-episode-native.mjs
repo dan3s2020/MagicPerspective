@@ -300,10 +300,52 @@ export class NativeCrossEpisodeTransfer {
   const reached=!!traversal?.targetReached;
   const path=reached?traversal.path:[];
   const values=traversal?.values||new Array(nodes.length).fill(0);
+  const originalShapeReady=this.brain.disc.attract(kind.target)>.2&&
+    this.brain.disc.conduct(kind.floor)>=.5;
+  const startValue=numberOf(sourceTokens);
+  const deltas=rules.filter(r=>r.type==="numeric-delta")
+    .map(r=>Math.abs(r.delta));
+  const deltaGcd=deltas.reduce((g,d)=>gcd(g,d),0);
+  const gap=goal?.numericEquals!==undefined&&startValue?
+    goal.numericEquals-startValue.value:null;
+  const impossibleResidue=Number.isInteger(gap)&&deltaGcd>0&&
+    Math.abs(gap)%deltaGcd!==0;
+  const cutoff=depthFrontier.length>0||stateCapFrontier.length>0;
+  const frontier={
+    closureOfAllCurrentlyAdmittedTransfers:!cutoff,
+    completeLanguageKnown:false,
+    explicitlyObservedVsHypothesized:"All planned edges extrapolate rules witnessed in other worlds",
+    counts:{
+      depthCutoff:depthFrontier.length,
+      stateCutoff:stateCapFrontier.length,
+      exploredStates:nodes.length,exploredEdges:hypothesisEdges
+    },
+    budget:{maxStates:this.maxStates,maxDepth:this.maxDepth},
+    missingLabels,withheldRules,
+    blockers:Object.fromEntries(blockers),
+    samples:blockedSamples,
+    possibleNextEdges:{
+      depth:depthFrontier.slice(0,300),
+      states:stateCapFrontier.slice(0,300),
+      exhaustiveSamples:depthFrontier.length<=300&&stateCapFrontier.length<=300
+    },
+    numericInvariant:{
+      source:startValue?.value??null,
+      goal:goal?.numericEquals??null,
+      gcdOfAvailableChanges:deltaGcd,
+      impossibleResidueWithAdmittedRules:impossibleResidue,
+      note:"Necessary constraint, not a proof that all other numeric goals are reachable"
+    },
+    originalShapeReady,
+    designCutoff:cutoff
+  };
   return {
    kind:"cross-episode-unified-original-native-shapeGraph",
    found:reached,reason:reached?null:!rules.length?
     "NO_ACTION_WITNESSED_IN_MULTIPLE_INDEPENDENT_WORLDS":
+    impossibleResidue?"NUMERIC_RESIDUE_UNREACHABLE_WITH_LEARNED_ACTIONS":
+    cutoff?"SEARCH_CUTOFF_BEFORE_CLOSURE":
+    !originalShapeReady?"ORIGINAL_SHAPE_ATTRACTION_NOT_LEARNED":
     "NO_REACHABLE_GOAL_IN_TRANSFERRED_WORLD",
    plannedBeforeFirstAction:true,referenceAnswerProvided:false,
    goalVisibleAsTaskPredicate:true,
@@ -312,8 +354,10 @@ export class NativeCrossEpisodeTransfer {
    initialShape:reached?[originText,...path.map(p=>nodes[p.to].text)]:[],
    actions:path.map(edge=>({...edge.action,
     from:nodes[edge.from].text,predictedNext:nodes[edge.to].text})),
-   graph:{
+   frontier,graph:{
     states:nodes.length,edges:hypothesisEdges,
+    closureOfKnownAdmittedActions:!cutoff,
+    completeNaturalLanguageWorld:false,
     blockedUnknownTransitions:blocked,
     learnedIndependentActions:rules.length,
     sourceWorldCount:new Set(rules.flatMap(r=>[...r.worlds])).size,
