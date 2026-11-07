@@ -20,11 +20,13 @@ import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/const
 import {ObservedTransformations,setObservedOperatorHook} from "../worlds/observed-transformations.mjs";
 import {SharedTransformationCore} from "../worlds/shared-transformation-core.mjs";
 import {GoalConditionedHyperpath} from "../worlds/goal-conditioned-hyperpath.mjs";
+import {NativeCoupledGoalField} from "../worlds/native-coupled-goal-field.mjs";
+import {StateDependentTextAxes} from "../../../research/text-hypermaze/state-dependent-axes.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore,GoalConditionedHyperpath};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore,GoalConditionedHyperpath,NativeCoupledGoalField,StateDependentTextAxes};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -69,7 +71,7 @@ export class Brain {
   }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.goalPaths = new GoalConditionedHyperpath(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.goalPaths = new GoalConditionedHyperpath(); this.numericGoalField = new NativeCoupledGoalField(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -91,6 +93,7 @@ export class Brain {
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
     this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
     this.goalPaths ||= new GoalConditionedHyperpath(); // legacy checkpoints regain learned goal path capacity
+    this.numericGoalField ||= new NativeCoupledGoalField(); // original checkpoint remains readable
     this.worldCore ||= new SharedTransformationCore();
     if(this.unifiedEnabled)this.enableUnifiedWorldLearning();
     else {this.constructedPaths.worldCore=null;setObservedOperatorHook(this.observedTransformations,null);}
@@ -129,7 +132,7 @@ export class Brain {
   // learn = it also lives the words it is told (and its own answer), like any other world; otherwise it only answers.
   chat(history, {T = .6, max = 400, stopBlank = true, learn = false, observePath = false,
     scanTemperatures = null, seed = (Math.random() * 2 ** 32) >>> 0,
-    mode = "legacy-character", required = null, start = null, maxDepth = 5,
+    mode = "goal-path", required = null, start = null, maxDepth = 5,
     ablateAxes = false} = {}) {
     // A real native goal-plan can now produce the COMPLETE planned answer
     // before the first output; it NEVER calls AligningGraph.write().
@@ -275,10 +278,29 @@ export class Brain {
   // Brain. No frozen heldout answer enters the model, and no char predictor
   // decides the goal-directed output of answerByGoalPath().
   learnGoalPathPair(question,answer) {
-    return (this.goalPaths ||= new GoalConditionedHyperpath()).observePair(question,answer);
+    const lexical=(this.goalPaths ||= new GoalConditionedHyperpath()).observePair(question,answer);
+    const coupled=(this.numericGoalField ||= new NativeCoupledGoalField()).observe(question,answer);
+    return {lexical,coupled};
   }
   answerByGoalPath(question,{required=null,start=null,maxDepth=5,ablateAxes=false,
     useUnified=true}={}) {
+    // The coupled local field is trained from actual paired text observations
+    // and predicts the COMPLETE output state without calling AligningGraph.
+    const numeric=this.numericGoalField ||=new NativeCoupledGoalField();
+    const frozenNumeric=numeric.plan(String(question),{ablateAxes});
+    if(frozenNumeric.ready){
+      const executed=numeric.executeFrozen(frozenNumeric);
+      return {text:executed.actual,mode:"goal-path",ready:executed.internalMatch,
+        predictedFullAnswerBeforeFirstCharacter:frozenNumeric.fullShape,
+        initialShape:frozenNumeric.states,stepAxes:frozenNumeric.axisMapping,
+        planSteps:frozenNumeric.actions,execution:executed,
+        learnedStateCount:numeric.report().observedNumericQAPairs,
+        learnedOperatorCount:numeric.report().correlatedTransitions,
+        plannedBeforeFirstAction:true,noNextCharacterFallback:true,
+        verifiedAgainstLearnedActionWorld:executed.internalMatch,
+        externallySemanticallyVerified:false,referenceAnswerUsed:false,
+        modelCoverage:numeric.report(),nativeGoalField:"coupled-state-dependent-axes"};
+    }
     const M=this.observedTransformations ||=new ObservedTransformations();
     const model=this.goalPaths ||=new GoalConditionedHyperpath();
     const shared=useUnified&&this.unifiedEnabled?this.worldCore:null;
