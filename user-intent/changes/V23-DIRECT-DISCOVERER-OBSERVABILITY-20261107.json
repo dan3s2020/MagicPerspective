@@ -1,0 +1,39 @@
+{
+  "contract_id": "MP-V23-DIRECT-DISCOVERER-20261107",
+  "priority": "USER_EXACT_OVER_AGENT_INFERENCE",
+  "authentic_source": "verbatim/2026-11-07-USER-V23-REQUIREMENT-VISIBLE-MESSAGE.txt",
+  "literal_user_quote": "CONSTRUIESTE ARHITECTURA CERUTA,O TESTEZI INTERN PANA MERGE SI IMI DAI COMANDA DOAR DUPA CE MERGE TOT,FARA DEMO FARA NIMIC, TE OMOR TE OMOR BA TE OMOR TE STRANG DE GAT CE INSEAMNA MA NENOROCITULE ASTA NOI SA GASIM TOT ,SA DESCOPERIM TOT SI TU SA DISTRUGI TOT!!! CINE TI-A DAT VOIE SA DISTRUGI!!!! RULEZI TESTELE PANA GASESTI LABIRINTUL HYPERDIMENSIONAL SI GHICESTE TEXTE MARI CU RASPUNSURI NIMERITE DIN PRIMA 100% . TREBUIE SA GHICEASCA RASPUNSUL DIN PRIMA,FORMA SOLUTIEI DIN PRIMA CU 100% CA LA LABIRINTE DUPA CATEVA LUMI TRAITE !AI DEJA TOTUL IN REPO NENOROCITULE ! SA NU TE PRIND CA OMITI VREUN BYTE. AI DEJA TOTUL IN REPO,TOATE DEMONSTRATIILE SI CUM SA NAVIGHEZI PRIN SPATIUL HYPERDIMENSIONAL DE NOISE ESTE DEJA TOTUL IN REPO MAGIC PERSPECTIVE",
+  "base_branch": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107",
+  "target_branch": "experiment/V23-DIRECT-DISCOVERER-OBSERVABILITY-20261107",
+  "original_baseline_paths": [
+    "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs"
+  ],
+  "proposed_paths": [
+    "v17/tests/torus-v23-exact-discoverer.test.mjs",
+    ".github/workflows/v23-direct-discoverer.yml",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/ui/app.js",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/cognitive-graph-live.js",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs"
+  ],
+  "minimum_scope": "Non-destructive native observed N-D graph visualization, seeded temperature control for actual Discoverer.shape, immutable V17 maze parity gate and honest frozen stats; NO substitute planner; no checkpoint overwrites",
+  "preserved_definitions": "Use original V17 Discoverer.shape as the only solution-shape operator; keep 2D path behavior and all V17/V21 controls and learning logic unchanged; no token predictor substitution.",
+  "extra_mechanisms": "none; projection of actual learned edges is diagnostic/read-only and does not claim an invented 4D latent",
+  "executable_tests": [
+    "node --test v17/tests/torus-v23-exact-discoverer.test.mjs",
+    "node --test v17/tests/torus-cognitive-learned-map.test.mjs",
+    "node --test v17/tests/torus-v19-cognitive-runtime.test.mjs"
+  ],
+  "observed_results": "NOT YET EXECUTED",
+  "limitations_open": [
+    "Full no-leakage first-shot 100% long natural language heldout answers is NOT proven",
+    "No full CUDA graph executor; currently graph operations are Node CPU",
+    "Native open-ended Q/A output remains AligningGraph; cognitive planner currently gated by explicit goal.slots",
+    "No claim of byte-perfect historical transcript; only quoted visible turn preserved"
+  ],
+  "acceptance_status": "BLOCKED_UNVERIFIED"
+}
