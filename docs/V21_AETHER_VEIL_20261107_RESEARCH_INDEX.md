@@ -6,6 +6,8 @@
 **Data:** 2026-11-07. **Intrare documentară pe `main` — fără transfer de cod experimental către `main`.**
 
 - [V22 CPU real fara CUDA — text + original Discoverer.shape + prag real 70% pe raspunsuri intregi nevazute (NU atins in CI: 0/2)](https://github.com/dan3s2020/MagicPerspective/blob/experiment/V22-CPU-REAL-QA-70-GATE-20261107/v17/docs/V22_CPU_REAL_QA_70_ACCEPTANCE_20261107.md)
+- **V24 caractere + V17 original, blocaje exacte si cai deblocate intre lumi:** [raportul integral cu teste, reguli, histograma erorilor si limite](https://github.com/dan3s2020/MagicPerspective/blob/experiment/V24-CHARACTER-HYPERMAZE-FORENSICS-20261107/v17/docs/V24_ORIGINAL_V17_10_15_SHAPE_VS_BLOCKED_UNBLOCKED_CHARACTER_PATHS_20261107.md) · [CI CPU/Windows GREEN #42357932423](https://github.com/dan3s2020/MagicPerspective/actions/runs/42357932423). **Codul V24 ramane numai in branch izolat; 70% raspunsuri complete naturale nu a fost demonstrat.**
+
 
 ## Unde este documentată cercetarea
 
