@@ -16,7 +16,7 @@ import {tokenizeObservation,renderObservation} from
  "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {ContextAxisNavigator} from "./context-axis-evidence.mjs";
 import {planNumericOnCumulativeMemory} from "./cumulative-numeric-shape.mjs";
-import {recordOriginalHypermazeAttempt,originalHypermazeAtlas} from "./cumulative-atlas.mjs";
+import {recordOriginalHypermazeAttempt,recordOriginalFrozenQA,originalHypermazeAtlas} from "./cumulative-atlas.mjs";
 import {planNativeQuestionOnCumulativeMemory} from "./cumulative-question-goal.mjs";
 
 const norm=s=>renderObservation(tokenizeObservation(String(s??"")));
@@ -225,6 +225,11 @@ export class CumulativeHyperMaze {
   return {...computed,atlasAttemptId};
  }
  atlas(options={}){return originalHypermazeAtlas(this.brain,options);}
+ auditFrozenQA(info){
+  // The withheld answer is intentionally not an accepted argument:
+  // only the independent scorer's equality booleans reach this Brain.
+  return recordOriginalFrozenQA(this.state,info);
+ }
  // All successful and failed preaction attempts live in SAME native Brain.
  plan(args={}){
   const computed=this._plan(args);
