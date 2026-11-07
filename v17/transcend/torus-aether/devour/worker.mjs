@@ -631,7 +631,13 @@ setWorkerPhase("native first source: waiting for row decode");
 shot(true); await hold();
 parentPort.postMessage({type:"note",w:workerData.gw,
  text:"V34_STARTUP_DIAG: initial hold released; paused="+paused});
-let firstRowDiagnosed=false,firstSymbolDiagnosed=false;
+let firstRowDiagnosed=false,firstSymbolDiagnosed=false,firstRowFinished=false;
+const v34Stage=label=>{
+ if(!firstRowFinished || firstCorpusAbsorptionDiagnosed)return;
+ parentPort.postMessage({type:"note",w:workerData.gw,
+  text:"V34_STARTUP_DIAG: "+label+" at chars="+brain.chars});
+};
+let firstCorpusAbsorptionDiagnosed=false;
 for await (const ex of stream()) {
   if(!firstRowDiagnosed){
    firstRowDiagnosed=true;
@@ -694,9 +700,10 @@ for await (const ex of stream()) {
       // The original periodic shot() still runs unmodified below.
     }
     if (brain.chars % 2000 === 0) shot();
-    if(startedAtChars===0 && brain.chars===32)
+    if(startedAtChars===0 && [32,64,128,256,ex.bytes.length].includes(brain.chars))
       parentPort.postMessage({type:"note",w:workerData.gw,
-        text:"V34_STARTUP_DIAG: first 32 source characters committed WITHOUT a full graph snapshot"});
+        text:"V34_STARTUP_DIAG: source characters COMMITTED="+brain.chars+
+         " / "+ex.bytes.length+" before expensive corpus absorption"});
 
     if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); shot(); }
     if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } report(); }
@@ -710,6 +717,11 @@ for await (const ex of stream()) {
       await new Promise(r => setImmediate(r));
   }
   const livedChars=brain.chars-startedAtChars;
+  if(firstRowDiagnosed && !firstRowFinished){
+    firstRowFinished=true;
+    parentPort.postMessage({type:"note",w:workerData.gw,
+      text:"V34_STARTUP_DIAG: native original character loop COMPLETE chars="+livedChars});
+  }
   observedPipeline.lastLoop={TEXT,stop,gpuSet:!!gpuSet,startedAtChars,
     now:brain.chars,livedChars,rowBytes:ex.bytes?.length,
     type:typeof ex.bytes,isArray:Array.isArray(ex.bytes),exercises:brain.exercises};
@@ -722,19 +734,35 @@ for await (const ex of stream()) {
     if(livedChars===ex.bytes.length&&!stop){
       // Diagnose BEFORE observing the current sentence/answer in EITHER
       // the six-scale graph or the contextual edit-operator atlas.
+      v34Stage("starting absorbHyperMaze");
       absorbHyperMaze(ex);
+      v34Stage("finished absorbHyperMaze; starting absorbLanguage");
       await new Promise(r => setImmediate(r));
       absorbLanguage(ex);
+      v34Stage("finished absorbLanguage; starting absorbConstructed");
       await new Promise(r => setImmediate(r));
       absorbConstructed(ex);
+      v34Stage("finished absorbConstructed; starting absorbObservedDifferences");
       await new Promise(r => setImmediate(r));
       absorbObservedDifferences(livedRow);
+      v34Stage("finished absorbObservedDifferences; starting absorbText");
       await new Promise(r => setImmediate(r));
       absorbText(ex);
+      v34Stage("finished absorbText; starting shared flush");
       await flushShared();
+      v34Stage("finished shared flush");
     }else absorbObservedDifferences(livedRow);
   }
-  if(TEXT) {await liveXdWorld();await atlasFlush();autonomousCheckpoint();}
+  if(TEXT) {
+    v34Stage("starting liveXdWorld");
+    await liveXdWorld();
+    v34Stage("finished liveXdWorld; starting atlasFlush");
+    await atlasFlush();
+    v34Stage("finished atlasFlush; starting autonomousCheckpoint");
+    autonomousCheckpoint();
+    v34Stage("finished autonomousCheckpoint");
+    firstCorpusAbsorptionDiagnosed=true;
+  }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
