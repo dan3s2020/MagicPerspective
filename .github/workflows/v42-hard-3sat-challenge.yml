@@ -1,0 +1,31 @@
+name: V42 adversarial 3-SAT original-shapeGraph challenge
+on:
+  push:
+    branches:
+      - experiment/V42-ADVERSARIAL-3SAT-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  adversarial-v42:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run original V42 engine on hard 3SAT, record SAT/UNSAT/UNKNOWN accurately
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test v17/tests/v42_hard_sat.test.mjs | tee v42-hard-sat-results.log
+      - name: Verify previous 16 actual V42 SAT regression tests
+        run: node --test v17/tests/v42_clause_hypermaze.test.mjs v17/tests/v42_3sat_hypermaze.test.mjs v17/tests/v42_3sat_feedback_maze.test.mjs
+      - name: Preserve full hard SAT results including timeout/UNKNOWN
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v42-hard-sat-results
+          path: v42-hard-sat-results.log
+          if-no-files-found: warn
