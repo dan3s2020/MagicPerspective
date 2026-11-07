@@ -58,6 +58,44 @@ async function poll(){
   document.documentElement.dataset.nativeConnected=String(!!native);
   document.documentElement.dataset.nativeObservedRows=String(native?.actualCorpusRows??0);
   if(item?.error)$("worldStatus").textContent="EROARE: "+item.error;
+  // The standalone corpus worker runs ONLY the previously tested original
+  // text hypermaze. All numbers are taken from the real source-offset and
+  // same original Brain, never a fabricated separate GPU trainer.
+  try{
+   const api=await getJson("/api/status");
+   const m=api.status;
+   if(m){
+    const format=v=>Number.isFinite(v)?
+     Intl.NumberFormat("ro-RO",{maximumFractionDigits:2}).format(v):"—";
+    $("realPhase").textContent=m.phase+" · "+
+     (m.checkpointWritten?"checkpoint salvat":"nesalvat încă");
+    $("realPercent").textContent=m.percent.toFixed(2)+"%";
+    $("realBar").style.width=Math.min(100,Math.max(0,m.percent))+"%";
+    $("realMBs").textContent=format(m.textMBPerSecond);
+    $("realEPS").textContent=format(m.exercisesPerSecond);
+    $("realRows").textContent=format(m.trainedRows);
+    $("realOps").textContent=format(m.learnedOperators);
+    $("realHeldout").textContent=m.probeEligible?
+     (100*m.probeCorrect/m.probeEligible).toFixed(2)+"%":"—";
+    $("realDetails").textContent=
+     format(m.bytesRead)+" / "+format(m.totalBytes)+" octeți JSONL · "+
+     format(m.observedTokens)+" tokeni text observați · "+
+     format(m.actualObservedWindows)+" ferestre antrenate · "+
+     format(m.heldoutRows)+" rânduri rezervate · "+
+     format(m.learnedGeometry5DAxes)+" axe 5D · "+
+     format(m.endogenousNoiseDecisions)+" decizii NoiseAgency · "+
+     format(m.oldStatesEvicted)+" stări scoase din memoria activă · "+
+     format(m.operatorsDropped)+" operatori neacceptați din cauza limitei";
+    document.documentElement.dataset.realCorpusPercent=m.percent.toFixed(2);
+    document.documentElement.dataset.realCorpusRows=String(m.trainedRows);
+    document.documentElement.dataset.realCorpusNative="true";
+    if(api.error)$("realPhase").textContent="EROARE: "+api.error;
+   }else{
+    $("realPhase").textContent=api.error||"Brain inițializează datele reale";
+   }
+  }catch{
+   $("realPhase").textContent="Mod de cercetare: fără server separat de corpus";
+  }
  }catch(error){
   $("connected").textContent="Offline";
   $("worldStatus").textContent="Conexiunea V17 nu este disponibilă";
