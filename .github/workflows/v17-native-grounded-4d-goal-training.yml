@@ -46,6 +46,6 @@ jobs:
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/torus-endogenous-noise.test.mjs
-          node --test v17/tests/torus-brain.test.mjs
+          node --test v17/tests/goal-text-original-brain-baseline.test.mjs
       - name: Verify prior independent long structured-text world experiment unaffected
         run: node --test v17/research/text-hypermaze/causal-text-4d-study.test.mjs
