@@ -433,6 +433,33 @@ const processGpuText = async (exs, meta) => {
   shot();
 };
 parentPort.on("message", m => {
+  // On-demand PAGE through the ORIGINAL persistent six-scale graph. No
+  // static 220-edge cap, no answer generated and no native memory update.
+  if(m?.nativeAtlasPage){
+    const {id,scale=0,offset=0,limit=80}=m.nativeAtlasPage;
+    try{
+      const page=nativeAtlas.page(brain.constructedPaths,{scale,offset,limit});
+      parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,...page});
+    }catch(err){parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,error:err.message});}
+    return;
+  }
+  // Freeze the learned axis operators before testing a NEW complete world.
+  // Test seeds are distinct from all training episodes; no probes supplied.
+  if(m?.xdAtlasTest){
+    const {id,dimensions=1024,seed=81919}=m.xdAtlasTest;
+    try{
+      if(!Number.isInteger(dimensions)||dimensions<16||dimensions>8192)
+        throw Error("Choose ambient dimensions 16..8192");
+      if(!Number.isInteger(seed))throw Error("Seed must be integer");
+      const world=new CompleteXDWorld({dimensions,seed,physicsSeed:17});
+      const frozen=brain.xdAtlas.testFrozen(world);
+      parentPort.postMessage({type:"chat",id,xdAtlasTest:true,
+        result:frozen,learnedEffects:brain.xdAtlas.effects.size,
+        noTestTargetProbes:true});
+      shot(true);
+    }catch(err){parentPort.postMessage({type:"chat",id,xdAtlasTest:true,error:err.message});}
+    return;
+  }
   if(m && m.hyperMazeConfig){
     if(Number.isFinite(+m.hyperMazeConfig.noise))
       hyperMaze.noise=Math.max(0,Math.min(1,+m.hyperMazeConfig.noise));
@@ -603,11 +630,13 @@ for await (const ex of stream()) {
     // If a row is truncated, only use the observed PREFIX, never the
     // unobserved continuation (strict no-leak partial-observation rule).
     const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars)};
-    absorbObservedDifferences(livedRow);
     if(livedChars===ex.bytes.length&&!stop){
-      absorbHyperMaze(ex);absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
+      // Diagnose BEFORE observing the current sentence/answer in EITHER
+      // the six-scale graph or the contextual edit-operator atlas.
+      absorbHyperMaze(ex);absorbLanguage(ex);absorbConstructed(ex);
+      absorbObservedDifferences(livedRow);absorbText(ex);
       await flushShared();
-    }
+    }else absorbObservedDifferences(livedRow);
   }
   if(TEXT) {await liveXdWorld();await atlasFlush();autonomousCheckpoint();}
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
