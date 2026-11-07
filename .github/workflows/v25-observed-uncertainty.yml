@@ -1,0 +1,32 @@
+name: V25 unknown causal effects rejection, full V24 original native preservation
+on:
+  push:
+    branches:
+      - experiment/V25-UNKNOWN-CAUSAL-EVENT-ABSTENTION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  strict-causal-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: New evidence gate syntax and retained original UI/native JS syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/observed-no-effect-gate.mjs
+          node --check v17/transcend/torus-aether/devour/v25-strict-adapter.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/v23-grounded-live.js
+      - name: Independently observed neutral worlds, unknown-effect rejection and 300-step no-answer route
+        run: node --test v17/tests/v25-unknown-causal-abstention.test.mjs
+      - name: V24 native original Brain + real HTTP + original checkpoints, 100k action shapes
+        run: node --test v17/tests/v24-native-brain-v23-http.test.mjs
+      - name: V23 original 100k whole event and numerical action regression
+        run: node --test v17/tests/v23-grounded-temporal-hypermaze.test.mjs v17/tests/v23-multiscale-grounded-hypermaze.test.mjs v17/tests/v23-learned-numeric-causal-shape.test.mjs
+      - name: Original V17/V22 exact shape, V19 cognitive and V21 boundaries
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs v17/tests/torus-cognitive-learned-map.test.mjs v17/tests/veil-aether.shape-boundary-regression.test.mjs
