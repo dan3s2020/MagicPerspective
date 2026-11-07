@@ -16,7 +16,7 @@ const STATIC=new Map([
 ]);
 function cli(args){
   const opts={port:8896,host:"127.0.0.1",corpus:DEFAULT_CORPUS,
-    checkpointDir:path.resolve("V26_CHECKPOINTS"),auto:true,config:{}};
+    checkpointDir:path.join(ROOT,"V26_CHECKPOINTS"),auto:true,config:{}};
   const keys=new Set(["port","host","corpus","checkpoint-dir",
     "axes","words","noise","batch","seed","max-read-mb","no-auto"]);
   for(let i=0;i<args.length;i++){
