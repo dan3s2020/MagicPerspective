@@ -81,8 +81,13 @@ jobs:
           $orig = (Get-FileHash -LiteralPath $untouched -Algorithm SHA256).Hash
           $dataset = Join-Path $env:TEMP "magic-fake-existing-data-folder"
           New-Item -ItemType Directory -Force -Path $dataset | Out-Null
-          $errors = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $dataset -Out $out -Gpu off -Port 8874 2>&1 | Out-String
-          if ($LASTEXITCODE -eq 0) { throw "Unsafe launcher accepted unrelated existing output" }
+          $originalPreference = $ErrorActionPreference
+          $ErrorActionPreference = "Continue"
+          try {
+            $errors = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $dataset -Out $out -Gpu off -Port 8874 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+          } finally { $ErrorActionPreference = $originalPreference }
+          if ($exitCode -eq 0) { throw "Unsafe launcher accepted unrelated existing output" }
           if ((Get-FileHash -LiteralPath $untouched -Algorithm SHA256).Hash -ne $orig) {
             throw "Original user data changed"
           }
