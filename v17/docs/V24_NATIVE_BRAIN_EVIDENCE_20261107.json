@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-07",
+  "branch": "experiment/V24-NATIVE-BRAIN-V23-GROUNDED-HYPERPATH-20261107",
+  "parent": "experiment/V23-GROUNDED-TEMPORAL-PREACTION-SHAPE-20261107@59be1fe226eaaf117145e6a9ee27059649652066",
+  "nativeCi": {
+    "runId": 42342970743,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42342970743",
+    "sourceHead": "0e527f3ba4d19440794a50af14bd43c440d84f82",
+    "suites": {
+      "nativeBrainHttp": 1,
+      "V23GroundedAndMultiscale": 6,
+      "V23Numeric": 4,
+      "V22Original": 6,
+      "V19CognitiveAndHttp": 20,
+      "V21ShapeBoundary": 2
+    },
+    "totalTests": 39,
+    "failures": 0,
+    "testedUnder": "GitHub Actions Ubuntu Node22. No NVIDIA RTX GPU or Windows browser."
+  },
+  "nativeHttpProof": {
+    "realServerPath": "v17/transcend/torus-aether/devour/devour.mjs",
+    "realWorkerPath": "v17/transcend/torus-aether/devour/worker.mjs",
+    "sameNativeBrainFile": "brain-0-stable+many.v8",
+    "initialOriginalCognitiveDocumentsAtLeast": 25,
+    "originalTextCharLearnerCharactersInCognitiveOnlyWorld": 0,
+    "physicallyReportedTrainingExamples": 36,
+    "verifiedActionTemplates": 1,
+    "firstHeldoutActions": 384,
+    "firstHeldoutAnswer": 13924,
+    "longDocumentCharacters": 4800055,
+    "longDocumentPredictedActions": 100000,
+    "longDocumentPreactionAnswer": 1212341,
+    "wholeAnswerAbsentFromText": true,
+    "wholeAnswerAbsentFromQuestion": true,
+    "originalMethod": "Discoverer.shape",
+    "originalShapeInvocations": 790,
+    "maxNodesPerCall": 129,
+    "learnedCheckpointUnchangedOnFrozenEvaluation": true,
+    "actualLongActionsExecutedThroughHttp": false,
+    "originalExistingControlsFoundInMarkup": [
+      "allStart",
+      "allSave",
+      "gpuApply",
+      "textMazeCanvas",
+      "cognitiveEvaluate"
+    ],
+    "addedControlsFoundInMarkup": [
+      "v23LabBox",
+      "v23PathCanvas",
+      "v23Plan",
+      "v23Scrub"
+    ],
+    "visualRuntimeBrowserScreenshotVerified": false
+  },
+  "preservedOriginal": {
+    "sourcePathsNotEdited": [
+      "v17/transcend/torus-aether/worlds/exercise.mjs",
+      "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+      "v17/transcend/torus-aether/devour/brain.mjs",
+      "v17/transcend/torus-aether/gpu/text_gpu.py",
+      "v17/START_V21_AETHER_VEIL.ps1"
+    ],
+    "modifiedPathsOnlyAdditions": [
+      "v17/transcend/torus-aether/devour/devour.mjs",
+      "v17/transcend/torus-aether/devour/worker.mjs",
+      "v17/transcend/torus-aether/ui/index.html"
+    ],
+    "nativeNoOriginalLinesDeleted": true,
+    "originalGitDiffSummary": "Compare base V23 SHA59be1fe... to V24 branch, original source modifications have 0 deletions."
+  },
+  "blocked": [
+    "The original V17 AligningGraph/Brain open-ended answer emitter is NOT yet controlled by the learned solution-shape graph.",
+    "Training in this V24 endpoint requires witnessed before/action/after examples supplied explicitly; native Q/A corpus auto-learning these semantic action laws remains UNVERIFIED.",
+    "Long-document answer exactness is proved only in constrained learned-syntax arithmetic/event worlds, not novel natural-language OpenThoughts3 heldout text.",
+    "No verified native UI pixel rendering or automatic physical per-step execution and replanning.",
+    "No full 4D/5D intrinsic dimensional discovery, real causal Noise Space integration, fractal self/world emergence.",
+    "No full CUDA cognitive computation or 100 complete OpenThoughts exercises/sec measurements on RTX3050Ti.",
+    "Full original conversation exact bytes/attachments are not all available. main issue #25 remains OPEN."
+  ],
+  "releaseStatus": "PARTIAL_NATIVE_INTEGRATION_VERIFIED__FULL_USER_REQUEST_BLOCKED"
+}
