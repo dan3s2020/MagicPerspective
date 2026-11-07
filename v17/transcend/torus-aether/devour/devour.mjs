@@ -233,6 +233,11 @@ http.createServer((req, res) => {
         catch (err) { return json(res, {error: err.message}); }
         opts.fullAnswerRequested = requestedMax === 0;
         opts.verifiedUniqueHeldout = strictHeldout && requestedMax === 0;
+        if(opts.verifiedUniqueHeldout){
+          opts.maxOutput = opts.maxOutput == null ? 4096 : Number(opts.maxOutput);
+          if(!Number.isSafeInteger(opts.maxOutput)||opts.maxOutput<1||opts.maxOutput>200000)
+            return json(res,{error:"Strict unknown-answer generation budget must be integer 1..200000, fixed BEFORE scoring"});
+        }
         opts.list = list.map(t => limitExerciseBytes(toB(t), requestedMax)); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
