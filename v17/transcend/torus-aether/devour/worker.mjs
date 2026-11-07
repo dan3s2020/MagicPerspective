@@ -172,13 +172,17 @@ const absorbText = row => {
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
 };
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
-let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
+let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0, ex0 = brain.exercises || 0;
+const liveRate=()=>{const seconds=Math.max(1e-6,(performance.now()-t0)/1000);
+  const chars=Math.max(0,brain.chars-c0),exercises=Math.max(0,(brain.exercises||0)-ex0);
+  return {seconds,charsPerSecond:chars/seconds,megabytesPerSecond:chars/seconds/1e6,
+    exercisesPerSecond:exercises/seconds,completedExercisesSinceStart:exercises};};
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
 const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
-    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
+    speed: liveRate().charsPerSecond, rate:liveRate(), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
     shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
@@ -191,7 +195,7 @@ const report = (final = false) => {
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 1100) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, rate:liveRate(), controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     realMathAxes: liveMathAxes?.report() || null,
@@ -215,7 +219,7 @@ const heartbeat=setInterval(()=>{
   // This heartbeat neither updates the model nor invents completed text.
   if(!batchNow||paused||stop)return;
   parentPort.postMessage({type:"heartbeat",w:workerData.gw,
-    chars:brain.chars,exercises:brain.exercises||0,
+    chars:brain.chars,exercises:brain.exercises||0,rate:liveRate(),
     phase:batchNow.phase,done:batchNow.done,total:batchNow.total,
     noProgressSeconds:Math.round((Date.now()-progressAt)/1000),
     at:Date.now()});
