@@ -291,6 +291,44 @@ http.createServer((req, res) => {
   }
   // Direct read-only navigation through this worker's REAL corpus-learned graph.
   // V21: frozen contextual-state field, not an alternate next-token generator.
+  // Additive native original Discoverer path, retained old Veil endpoint below.
+  if (req.method === "POST" && url === "/veil-native-plan") {
+    let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid contextual Veil request"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.some(w=>w==="cognitivemap"||w==="hypertext"))return json(res,{error:"Select a graph with cognitivemap or hypertext enabled"});
+      if(typeof m.start!=="string"||!m.start||m.start.length>256||
+         typeof m.goal!=="string"||!m.goal||m.goal.length>256)
+        return json(res,{error:"Provide a two observed tokens per start and goal context"});
+      const maxSteps=Math.max(1,Math.min(10000,Math.trunc(+m.maxSteps||160)));
+      if(!sl.wk || sl.status === "gata"){
+        try{
+          const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No saved hypermaze"});
+          const brain=Brain.load(save);
+          if(!brain.hypermaze)return json(res,{error:"No learned hypermaze in checkpoint"});
+          // Pure read-only plan on restored graph, never train on evaluation data.
+          const result=TextHypermaze.restore(brain.hypermaze).veil.planNative(brain.disc,m.start,m.goal,{maxSteps});
+          return json(res,{...result,frozen:true,fromSave:true});
+        }catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);json(res,{error:"Native Discoverer contextual route timed out"});
+      },60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Worker exited before any hypermaze checkpoint was saved"});
+          const brain=Brain.load(file);
+          const result=TextHypermaze.restore(brain.hypermaze).veil.planNative(brain.disc,m.start,m.goal,{maxSteps});
+          return json(res,{...result,frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
+      sl.wk.postMessage({veilNativePlan:{id,start:m.start,goal:m.goal,maxSteps}});
+    });return;
+  }
   if (req.method === "POST" && url === "/veil-plan") {
     let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
     req.on("end",()=>{
