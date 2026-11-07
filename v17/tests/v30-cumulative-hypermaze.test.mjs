@@ -363,3 +363,69 @@ test("two long LANGUAGE mazes without any identical 96-token segments discover a
   result:"short reusable lexical bridges, still unverified semantic physics"
  }));
 });
+
+test("ORGANISM learns GOAL from unseen natural-language question, combines Q/A episodes with physical numeric worlds, then original field finds whole answer without supplied answer or numeric goals",()=>{
+ const b=brain(),n=new NativeGoalTextMaze(b);
+ const witnessed=[
+  [2,3,6,3,3,9],
+  [2,4,8,3,4,12],
+  [2,3,6,2,4,8],
+  [3,3,9,3,4,12]
+ ];
+ witnessed.forEach(([x,y,z,x2,y2,z2],i)=>n.observeVerifiedWorldTransition({
+  episode:"physically-observed-math-maze-"+i,
+  before:x+" * "+y+" = "+z+".",
+  after:x2+" * "+y2+" = "+z2+".",
+  action:"recorded-world-effect-"+i,accepted:true,
+  source:"independent-numeric-world-transition"
+ }));
+ const observedPrompts=[
+  ["Compute 2 times 3.","2 * 3 = 6."],
+  ["Compute 2 times 4.","2 * 4 = 8."],
+  ["Compute 3 times 3.","3 * 3 = 9."],
+  ["Compute 3 times 4.","3 * 4 = 12."]
+ ];
+ for(const [q,a] of observedPrompts)n.observeQA(q,a);
+ const question="Compute 8 times 7.";
+ assert.equal(observedPrompts.some(([q])=>q===question),false);
+ const p=n.planCumulativeQuestion({question,maxGraphNodes:4000,maxExpansionDepth:18,
+  includeTopology:true});
+ assert.equal(p.found,true,JSON.stringify(p).slice(0,1100));
+ assert.equal(p.originalPlanner,"Discoverer.shapeGraph");
+ assert.equal(p.goalLearnedFromQuestion,true);
+ assert.equal(p.goalDependentAnswerSupplied,false);
+ assert.equal(p.referenceAnswerProvided,false);
+ assert.equal(p.predicted,"8 * 7 = 56.");
+ assert.ok(p.steps>=8);
+ assert.equal(p.sourceWitnessedQuestionAnswerExamples,4);
+ assert.equal(p.learnedQuestionNumericAxes.length,2);
+ assert.equal(p.topology.originalNativeV17Graph,true);
+ assert.equal(p.pathContainsInferredEdges,true);
+ for(const state of p.initialShape){
+  const ns=state.match(/\d+/g).map(Number);
+  assert.equal(ns[0]*ns[1],ns[2],"Independent physical arithmetic check on every predicted step");
+ }
+ console.log("V30_AUTONOMOUS_QUESTION_TO_HYPERMAZE",JSON.stringify({
+  trainedQuestionAnswerEpisodes:4,
+  physicallyWitnessedDifferentMazeEpisodes:4,
+  previouslyUnseenQuestion:question,fullFirstAnswer:p.predicted,
+  originalShapeSteps:p.steps,goalFromQuestionOnly:true,
+  dependentAnswerNotProvided:true,
+  semanticScope:"learned fixed question grammar and witnessed numeric field, not arbitrary OpenThoughts"
+ }));
+});
+
+test("no known goal grammar, no physically observed world effects, or contradictory Q/A must block question-only navigation",()=>{
+ const b=brain(),n=new NativeGoalTextMaze(b);
+ for(const [q,a] of [
+  ["Compute 2 times 3.","2 * 3 = 6."],
+  ["Compute 2 times 4.","2 * 4 = 8."],
+  ["Compute 3 times 3.","3 * 3 = 9."],
+  ["Compute 3 times 4.","3 * 4 = 12."]
+ ])n.observeQA(q,a);
+ assert.equal(n.planCumulativeQuestion({question:"Compute 8 times 7."}).found,false,
+  "Questions without accepted physical rules cannot invent a solution");
+ assert.equal(n.planCumulativeQuestion({question:"Describe photosynthesis in new words."}).found,false);
+ n.observeQA("Compute 2 times 3.","An unrelated contradictory outcome.");
+ assert.equal(n.planCumulativeQuestion({question:"Compute 8 times 7."}).found,false);
+});
