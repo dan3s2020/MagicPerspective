@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {LearnedCognitiveMap,tokenizeWorld} from '../transcend/torus-aether/worlds/learned-cognitive-map.mjs';
 import {answerFromOriginalPath,firstTryCharacterComparison}
   from '../transcend/torus-aether/worlds/path-answer-writer.mjs';
@@ -178,4 +179,4 @@ export function runLearningCurve(){
  console.log('V31_OOD_NEGATIVE',JSON.stringify(negative));
  return report;
 }
-if(import.meta.url===new URL('file://'+process.argv[1]).href)runLearningCurve();
+if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href)runLearningCurve();
