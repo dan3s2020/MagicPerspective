@@ -1,0 +1,100 @@
+name: "MagicPerspective cross-discovery audit: real text, local axes, math, holonomy and original V17/V20"
+on:
+  push:
+    branches:
+      - audit/V17-CROSS-DISCOVERIES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coexistence-with-native-v17:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: "Import only additive isolated research from PINNED sibling commits (not original V17 code)"
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum v17/transcend/torus-aether/devour/brain.mjs v17/transcend/torus-aether/align.mjs v17/transcend/torus-aether/concepts.mjs > "$RUNNER_TEMP/native-before.sha256"
+          git fetch --no-tags --depth=1 origin refs/heads/experiment/V17-LEARNED-LOCAL-AXES-CAUSAL-ROUTES-20261107:refs/remotes/origin/audit-local
+          test "$(git rev-parse refs/remotes/origin/audit-local)" = "282a393264564bd901fe944520f19240bf40393d"
+          git ls-tree -r --name-only refs/remotes/origin/audit-local v17/research/local-axes | while IFS= read -r f; do
+            mkdir -p "$(dirname "$f")"
+            git show "refs/remotes/origin/audit-local:$f" > "$f"
+          done
+          for f in v17/tests/local-axis-transport-shapes.test.mjs v17/tests/math-language-transformation-shapes.test.mjs v17/tests/coupled-symbolic-local-axes.test.mjs v17/tests/xd-2048-states-local-language.test.mjs v17/tests/native-geometry-hybrid-text.test.mjs v17/tests/native-context-axis-geometry.test.mjs; do
+            git show "refs/remotes/origin/audit-local:$f" > "$f"
+          done
+          git fetch --no-tags --depth=1 origin refs/heads/experiment/V17-PATH-HOLONOMY-MEMORY-DIMENSION-20261107:refs/remotes/origin/audit-holonomy
+          test "$(git rev-parse refs/remotes/origin/audit-holonomy)" = "c85ecd63de7a3aac11dadd87c506360fe77d406e"
+          git ls-tree -r --name-only refs/remotes/origin/audit-holonomy v17/research/text-hypermaze | while IFS= read -r f; do
+            mkdir -p "$(dirname "$f")"
+            git show "refs/remotes/origin/audit-holonomy:$f" > "$f"
+          done
+          for f in v17/tests/text-hypermaze-coupled-axes.test.mjs v17/tests/text-hypermaze-xd-invariants.test.mjs v17/tests/text-hypermaze-state-dependent.test.mjs v17/tests/text-path-holonomy-memory.test.mjs; do
+            git show "refs/remotes/origin/audit-holonomy:$f" > "$f"
+          done
+          sha256sum -c "$RUNNER_TEMP/native-before.sha256"
+          echo "NATIVE_V17_SOURCE_BYTE_IDENTICAL=true"
+          echo "PINNED_LOCAL_FRAMES=282a393264564bd901fe944520f19240bf40393d"
+          echo "PINNED_HOLONOMY=c85ecd63de7a3aac11dadd87c506360fe77d406e"
+      - name: "Check every imported module and cross-branch integration probe"
+        run: |
+          node --check v17/research/local-axes/transport.mjs
+          node --check v17/research/text-hypermaze/coupled-axes.mjs
+          node --check v17/research/text-hypermaze/state-dependent-axes.mjs
+          node --check v17/research/text-hypermaze/path-holonomy.mjs
+          node --check v17/tests/cross-discoveries-audit.test.mjs
+      - name: "Run all the learned local axis, math, signed-area, native geometry ablation and real-corpus tests in ONE original V17 checkout"
+        run: |
+          node --test \
+            v17/tests/cross-discoveries-audit.test.mjs \
+            v17/tests/real-corpus-axis-gating.test.mjs \
+            v17/tests/learned-axis-gating.test.mjs \
+            v17/tests/local-axis-transport-shapes.test.mjs \
+            v17/tests/math-language-transformation-shapes.test.mjs \
+            v17/tests/coupled-symbolic-local-axes.test.mjs \
+            v17/tests/xd-2048-states-local-language.test.mjs \
+            v17/tests/native-geometry-hybrid-text.test.mjs \
+            v17/tests/native-context-axis-geometry.test.mjs \
+            v17/tests/text-hypermaze-coupled-axes.test.mjs \
+            v17/tests/text-hypermaze-xd-invariants.test.mjs \
+            v17/tests/text-hypermaze-state-dependent.test.mjs \
+            v17/tests/text-path-holonomy-memory.test.mjs \
+            v17/tests/observed-transformations-v17.test.mjs \
+            v17/tests/constructed-paths-v17.test.mjs \
+            v17/tests/observed-text-paths.test.mjs
+  preserved-v20-live-world:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: b6a5d3aba4784fe7643509f03906ec4bb1752199
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: "Original isolated V20 hypermaze, cognition and world-source tests only (not merged into V17)"
+        run: |
+          node --test v17/tests/torus-text-hypermaze.test.mjs
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
+          node --test v17/tests/torus-world-source-regression.test.mjs
+          node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+  preserved-shared-world-core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 40c12dc6e72935863763f9f5ccc663024b3a7687
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: "Original isolated shared-world transformation core full V17 tests (not merged into PR35)"
+        run: |
+          node --test v17/tests/shared-world-core-v17.test.mjs
+          node --test v17/tests/shared-world-core-http.test.mjs
