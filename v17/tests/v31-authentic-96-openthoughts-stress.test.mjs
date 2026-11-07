@@ -172,11 +172,19 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
   // not a decorative static canvas or numbers from unrelated simulated tasks.
   const actualHTML=await(await fetch(app.base+"/")).text();
   assert.match(actualHTML,/id="qaLongTokens"/);
+  for(const element of ["atlasDiskMotifs","diskMotifId","diskMotifCount",
+   "diskSharedCount","diskSourceEdgeCount","diskRecallCount",
+   "diskMotifLookup","diskMotifLoad","diskMotifNext","diskMotifPrev",
+   "diskMotifResults"]){
+   assert.match(actualHTML,new RegExp('id="'+element+'"'));
+  }
   assert.match(actualHTML,/id="qaLongEdges"/);
   const actualJS=await(await fetch(app.base+
    "/transcend/torus-aether/ui/native-hypermaze.js")).text();
   assert.match(actualJS,/qaLongFormAnswerTokens/);
   assert.match(actualJS,/qaLongFormSequentialEdges/);
+  assert.match(actualJS,/native-motif-archive/);
+  assert.match(actualJS,/diskMotifRender/);
   assert.equal(measured.qaLongFormUnretained,0);
   assert.ok(measured.qaFrozenWholeRawExact>=0&&
    measured.qaFrozenWholeRawExact<=16);
@@ -234,6 +242,9 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
    evidenceRetainedMotifNodes:measured.crossMazeMemory.multiScaleActiveNodes,
    shortSharedAnchors:measured.crossMazeMemory.multiScaleSharedAnchors,
    originalOperatorDrops:measured.operatorsDropped,
+   durableArchivedMotifCount:measured.qaDiskMotifArchive.indexedExactMotifs,
+   durableArchivedSharedMotifs:measured.qaDiskMotifArchive.sharedExactMotifsAcrossEpisodes,
+   durableArchivedSourceEdgeTypes:measured.qaDiskMotifArchive.observedSourceOnlyEdgeTypes,
    observedMotifNodeEvictions:measured.crossMazeMemory.multiScaleEvictedSingletons+
     measured.crossMazeMemory.multiScaleEvictedRepeated,
    sampleIsNotFullDataset:true,
