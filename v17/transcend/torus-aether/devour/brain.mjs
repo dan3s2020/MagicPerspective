@@ -21,6 +21,7 @@ import {ObservedTransformations} from "../worlds/observed-transformations.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {TextWorldNavigator,LearnedClaim} from "../worlds/goal-text-navigator.mjs";
+import {LearnedTargetReference,planOriginal4DFromText} from "../worlds/goal-text-original-shape-bridge.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
 const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,TextWorldNavigator,LearnedClaim};
@@ -184,6 +185,37 @@ export class Brain {
     return {...shape,source:"original-v17-brain-goal-conditioned-text-world",
       frozen:true,actionsLearned:this.textGoal.transitions,
       lexicalExamples:this.textGoal.claims,sourceReliabilityExamples:this.textGoal.reliabilitySeen};
+  }
+  // V27 opt-in: target-reference confidence learned from OBSERVED completed
+  // prior tasks. No new model replaces the native AligningGraph or Discoverer.
+  // Plain versioned evidence is saved in this Brain's original .v8 checkpoint.
+  observeGoalReferenceOutcome({question,statement,isGoal}={}) {
+    const model=LearnedTargetReference.restore(
+      this.v27GoalEvidence||new LearnedTargetReference().export());
+    const observed=model.observe({question,statement,isGoal});
+    this.v27GoalEvidence=model.export();
+    return observed;
+  }
+  // Original Discoverer.shape follows verified learned world topology.
+  // It receives the actual question/document but NO answer ID or oracle path.
+  predictOriginal4DShapeFromQuestion(document,question,start,{axes,seed}={}) {
+    if(!this.v27GoalEvidence)
+      return {found:false,reason:"NO_PRIOR_GOAL_FEEDBACK",preAction:true,
+        originalMethod:"Discoverer.shape",goalSuppliedToPlanner:false,path:[]};
+    const before=this.textGoal.frozenFingerprint();
+    const evidence=JSON.stringify(this.v27GoalEvidence);
+    const model=LearnedTargetReference.restore(this.v27GoalEvidence);
+    const prediction=planOriginal4DFromText({
+      navigator:this.textGoal,disc:this.disc,reference:model,
+      document,question,start,axes,seed
+    });
+    if(before!==this.textGoal.frozenFingerprint()||
+       evidence!==JSON.stringify(this.v27GoalEvidence))
+      throw Error("V27 frozen goal-navigation evaluation mutated learned evidence");
+    return {...prediction,frozen:true,nativeBrain:true,
+      goalFeedbackObservations:model.exampleCount,
+      learnedActionObservations:this.textGoal.transitions,
+      learnedLexicalObservations:this.textGoal.claims};
   }
   // The ORIGINAL organism-owned NoiseAgency chooses a genuine intervention
   // into the goal-conditioned 4D plan. Only copied internal beliefs change;
