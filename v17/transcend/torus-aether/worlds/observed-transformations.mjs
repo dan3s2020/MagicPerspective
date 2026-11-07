@@ -66,21 +66,26 @@ function actionFrom(a,b) {
     beforeLength:a.length,afterLength:b.length};
 }
 function runAction(tokens,action,index) {
-  const t=cloneTokens(tokens);
-  if(index<0||index>t.length)return null;
-  const left=t[index-1]||null;
-  const right=t[index+(action.kind==="insert"?0:1)]||null;
-  // Anchors and the position of the editable part are discovered from real
-  // compared observations, never encoded as subject/verb/adjective rules.
+  if(index<0||index>tokens.length)return null;
+  const left=tokens[index-1]||null;
+  const right=tokens[index+(action.kind==="insert"?0:1)]||null;
+  // Check the unchanged REAL evidence-based anchors BEFORE copying a long
+  // paragraph. The old implementation allocated a full token-array clone
+  // for EVERY failed candidate index, even when its source word was absent.
   if(action.left!==null&&action.left!==left)return null;
   if(action.right!==null&&action.right!==right)return null;
   if(action.left===null&&index!==0)return null;
-  if(action.right===null&&index!==(action.kind==="insert"?t.length:t.length-1))return null;
-  if(action.kind==="replace"&&t[index]===action.from) t[index]=action.to;
-  else if(action.kind==="insert") t.splice(index,0,action.to);
-  else if(action.kind==="delete"&&t[index]===action.from)t.splice(index,1);
-  else return null;
-  return t;
+  if(action.right===null&&index!==(action.kind==="insert"?tokens.length:tokens.length-1))return null;
+  if(action.kind==="replace"&&tokens[index]===action.from){
+    const t=cloneTokens(tokens);t[index]=action.to;return t;
+  }
+  if(action.kind==="insert"){
+    const t=cloneTokens(tokens);t.splice(index,0,action.to);return t;
+  }
+  if(action.kind==="delete"&&tokens[index]===action.from){
+    const t=cloneTokens(tokens);t.splice(index,1);return t;
+  }
+  return null;
 }
 
 const signature = a => JSON.stringify([
@@ -260,10 +265,23 @@ export class ObservedTransformations {
     for(const token of tokens){buckets.add("e:"+token);buckets.add("i:"+token);}
     const keys=new Set();
     for(const b of buckets)for(const k of this.operatorIndex.get(b)||[])keys.add(k);
+    // Index real action anchors to positions ONCE. With 256-token passages,
+    // an original observed replacement of one rare word must not scan and
+    // allocate all 256 possible positions at every node in the solution
+    // hypermaze. No action rules or learned weights are changed.
+    const positions=new Map();
+    for(let i=0;i<tokens.length;i++){
+      const a=positions.get(tokens[i])||[];
+      a.push(i);positions.set(tokens[i],a);
+    }
     for(const k of keys){
       const op=this.operators.get(k);
       if(!op)continue;
-      for(let i=0;i<tokens.length+(op.kind==="insert"?1:0);i++){
+      const indices=op.kind==="insert"?
+        op.left===null?[0]:
+          (positions.get(op.left)||[]).map(i=>i+1):
+        positions.get(op.from)||[];
+      for(const i of indices){
         const result=runAction(tokens,op,i);
         if(!result)continue;
         const key=freezeKey(result);
