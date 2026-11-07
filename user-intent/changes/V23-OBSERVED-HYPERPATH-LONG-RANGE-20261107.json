@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_BLOCKING_LONG_HYPERPATH_SCALING; NOT A SEMANTIC RELEASE",
+  "priority": "exact user words > derived engineering interpretation",
+  "source_quotes": [
+    {
+      "source": "current user message 2026-11-07, exact visible excerpt",
+      "literal": "RULEZI TESTELE PANA GASESTI LABIRINTUL HYPERDIMENSIONAL SI GHICESTE TEXTE MARI CU RASPUNSURI NIMERITE DIN PRIMA 100% ."
+    },
+    {
+      "source": "current user message 2026-11-07, exact visible excerpt",
+      "literal": "AI DEJA TOTUL IN REPO,TOATE DEMONSTRATIILE SI CUM SA NAVIGHEZI PRIN SPATIUL HYPERDIMENSIONAL DE NOISE ESTE DEJA TOTUL IN REPO MAGIC PERSPECTIVE"
+    }
+  ],
+  "source_files": [
+    "AGENTS.md",
+    "REGRESSION_USER_DIRECTIVE_2026-11-06.md",
+    "docs/CRITICAL_REGRESSION_TEXTCARD_VS_HYPERDIMENSIONAL_GOAL_PATHS_20261107.md",
+    "user-intent/changes/V22-EXACT-DISCOVERER-SOLUTION-SHAPE-20261107.json"
+  ],
+  "base_branch": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107",
+  "base_commit": "2209e6f2d21aca8ee17b1f38306c510665d8c1a9",
+  "original_baseline": [
+    "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs"
+  ],
+  "changed_files": [
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "v17/tests/v23-observed-hyperpath-long-range.test.mjs",
+    ".github/workflows/v23-observed-hyperpath-long-range.yml",
+    "v17/docs/V23_OBSERVED_HYPERPATH_LONG_RANGE_EVIDENCE.md"
+  ],
+  "minimum_scope": "Preserve the exact original Discoverer.shape method, maze action RNG, model, UI, checkpoints and training. For fully observed accepted state transitions only, avoid an unearned 0.5 floor conductance that destroys a long already-verified path. No new answer oracle, character predictor or substitute planner.",
+  "extra_mechanisms": "None. No new predictive method; use the unchanged original attraction field with existing learned observed graph topology.",
+  "acceptance_tests": [
+    "Original maze shape equal on 80 fixed 2D cases with T=0 and T>0",
+    "128-state observed text-world chain predicts all actions before execution",
+    "Negative controls for unavailable target and contradictory action physics",
+    "Original V19 and V21 existing tests",
+    "CI Windows launcher parses"
+  ],
+  "observed_results": "NOT_RUN before change; Github Actions must report actual outcomes",
+  "limitations_open": [
+    "No answer-agnostic semantic natural language 100% proof",
+    "No user RTX 3050 Ti CUDA run",
+    "No 100+ full exercises/s measurement",
+    "No release or launch command until verified",
+    "Issue #25 remains OPEN"
+  ]
+}
