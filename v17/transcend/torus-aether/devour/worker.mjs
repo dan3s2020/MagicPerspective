@@ -386,14 +386,14 @@ parentPort.on("message", m => {
     return;
   }
   if(m?.pathAnswer){
-    const {id,question,maxTokens=512,maxNodes=384,maxDepth=8}=m.pathAnswer;
+    const {id,question,maxTokens=512,maxNodes=384,maxDepth=8,minVerifiedContexts=0}=m.pathAnswer;
     try{
       if(!cognitive)throw Error("Native cognitive world is disabled");
       if(typeof question!=="string"||question.length>131072)
         throw Error("Invalid bounded complete-text question");
       const pre=JSON.stringify(cognitive.export());
       const answer=answerFromOriginalPath(cognitive,question,{
-        maxTokens,maxNodes,maxDepth,includeAtlas:true
+        maxTokens,maxNodes,maxDepth,minVerifiedContexts,includeAtlas:true
       });
       if(JSON.stringify(cognitive.export())!==pre)
         throw Error("Frozen original path-answer readout mutated the cognitive memory");
