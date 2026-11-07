@@ -325,9 +325,12 @@ export class NativeCrossEpisodeTransfer {
     blockers:Object.fromEntries(blockers),
     samples:blockedSamples,
     possibleNextEdges:{
-      depth:depthFrontier.slice(0,300),
-      states:stateCapFrontier.slice(0,300),
-      exhaustiveSamples:depthFrontier.length<=300&&stateCapFrontier.length<=300
+      // Full exact known frontier, not the first 300 only.
+      // The UI/API pages this evidence; none of the known omitted corridors
+      // disappears merely because its record index is large.
+      depth:depthFrontier,
+      states:stateCapFrontier,
+      exhaustive:true
     },
     numericInvariant:{
       source:startValue?.value??null,
