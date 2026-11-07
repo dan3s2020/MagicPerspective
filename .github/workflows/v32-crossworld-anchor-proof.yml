@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
       - name: Reproducible cross-world missed anchors + out-of-context replay protection (must turn RED then GREEN)
         run: node --test v17/tests/v32-winnowed-crossworld-replay.test.mjs
+      - name: Lossless original motif/edge/episode archive parity versus 2x less disk target (research gate before enabling)
+        run: node --test v17/tests/v32-compact-motif-archive.test.mjs
       - name: Original full source motiffing and checkpoint/HTTP UI regression
         run: |
           node --test v17/tests/v31-motif-disk-memory.test.mjs
