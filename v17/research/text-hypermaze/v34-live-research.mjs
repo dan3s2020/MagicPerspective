@@ -34,34 +34,49 @@ function sameBrainSession(brain){
 function collectObservedCharacterHypotheses(brain,s){
  const native=brain.observedTransformations;
  if(!native)throw Error("Original V17 word contrast evidence absent");
- // This view is rebuilt only when the actual source corpus changes.
- const key=[native.seen,native.operators.size,native.comparisons].join(":");
- if(s.characters&&s.charactersEvidenceVersion===key)return s.characters;
- const c=new CharacterHypermaze({minIndependentWorlds:2});
- let inspected=0,observed=0,skipped=0;
+ // Build the original text-observation view ONCE per original Brain.
+ // A streaming corpus may change native.seen every sentence. Rebuilding
+ // every character rule and all evidence after each fresh sentence caused
+ // Windows UI stalls: preserve incremental provenance instead.
+ if(!s.characters){
+  s.characters=new CharacterHypermaze({minIndependentWorlds:2});
+  s.characterSeenEvents=new Map();
+  s.characterMetrics={inspected:0,observed:0,skipped:0};
+  s.charactersEvidenceVersion=null;
+ }
+ const c=s.characters,key=[native.seen,native.operators.size,native.comparisons].join(":");
+ if(s.charactersEvidenceVersion===key)return c;
+ const metrics=s.characterMetrics,seen=s.characterSeenEvents;
  for(const op of native.operators.values()){
   if(op.kind!=="replace"||!op.from||!op.to)continue;
+  let sourceEvents=seen.get(op.key);
+  if(!sourceEvents){sourceEvents=new Set();seen.set(op.key,sourceEvents);}
   for(const event of op.evidence||[]){
-   inspected++;
-   const before=tokenizeObservation(event.from),after=tokenizeObservation(event.to);
-   const at=op.index;
+   if(typeof event.from!=="string"||typeof event.to!=="string")continue;
+   const fingerprint=JSON.stringify([event.from,event.to]);
+   if(sourceEvents.has(fingerprint))continue;
+   sourceEvents.add(fingerprint);
+   metrics.inspected++;
+   const before=tokenizeObservation(event.from),
+    after=tokenizeObservation(event.to),at=op.index;
    if(before.length!==after.length||before[at]!==op.from||after[at]!==op.to){
-    skipped++;continue;
+    metrics.skipped++;continue;
    }
-   // Distinct sentence observations only. This source model does not keep
-   // source document IDs: never fake separate physical worlds.
-   const ok=c.observeWordContrast({type:"rule-evidence",world:"text",
+   // Neither the old word contrast nor its inferred 1-character step is
+   // automatically an independently executed physical intervention.
+   const accepted=c.observeWordContrast({type:"rule-evidence",world:"text",
     before,after,from:op.from,to:op.to,at,
     action:op.key,documentId:null});
-   observed+=Number(ok);
+   metrics.observed+=Number(accepted);
   }
  }
  c.originalV17ContrastProvenance={
   source:"SAME ORIGINAL V17 ObservedTransformations (retained corpus)",
+  extraction:"INCREMENTAL_EVIDENCE_FROM_ALREADY_OBSERVED_ORIGINAL_CORPUS",
   observedComparisons:native.comparisons,
-  scannedOriginalSentencePairs:inspected,
-  acceptedMinimalOneCharacterContrasts:observed,
-  unsupportedOrUnmatchedEvidence:skipped,
+  scannedOriginalSentencePairs:metrics.inspected,
+  acceptedMinimalOneCharacterContrasts:metrics.observed,
+  unsupportedOrUnmatchedEvidence:metrics.skipped,
   originalTextOperators:native.operators.size,
   originalTextSentencesRetained:native.records.size,
   originalTextSentencesEvicted:native.evicted,
@@ -69,7 +84,7 @@ function collectObservedCharacterHypotheses(brain,s){
   independentPhysicalWorldActionsVerified:false,
   noGoldAnswersUsed:true
  };
- s.characters=c;s.charactersEvidenceVersion=key;
+ s.charactersEvidenceVersion=key;
  return c;
 }
 function status(brain,s){
