@@ -138,6 +138,24 @@
       <pre id="textMazeUnseenOut" style="white-space:pre-wrap;max-height:240px;overflow:auto;color:#8ce1b4;font:12px ui-monospace,monospace">Nicio evaluare înghețată încă.</pre>
       <p class="note">Dovadă matematică verificabilă: V(țintă)=1, V(s)=0.97·max V(succesor). Residualul trebuie să fie aproape de 0. Un traseu optim și ascendent este o proprietate a grafului observat. Scorul pe documente noi este calculat ÎNAINTE să fie învățate. Aceste măsurători nu certifică înțelegerea semantică a limbajului.</p>
     </section>
+    <section id="veilBox" style="margin:12px 0;border:1px solid #7c6fa0;border-radius:10px;padding:12px">
+      <h2>AETHER / VEIL V21 · Stări contextuale, memorie, ramuri și forma soluției</h2>
+      <p class="note">Extensie reală, observată în același Brain V17/V20. Fiecare stare conține două simboluri consecutive; muchiile apar NUMAI din tranziții trăite în corpus. Compară predicția globală anterioară cu următorul pas REAL și alternativele empirice. Regula V(s)=0.97·max V(vecin) este aceeași ecuație de propagare ca în V17, NU o demonstrație de reutilizare directă a funcției originale Discoverer.shape() sau de înțelegere semantică.</p>
+      <div class="row"><span id="veilStatus" class="dim" aria-live="polite">Aștept date reale...</span></div>
+      <canvas id="veilCanvas" width="820" height="470" style="display:block;width:100%;background:#071019;border:1px solid #28465a;border-radius:8px" aria-label="Graful contextual învățat, forma globală și mișcările observate"></canvas>
+      <div class="row"><button type="button" id="veilPrev">◀ Pas</button>
+        <button type="button" id="veilPlay">⏸ Pauză</button>
+        <button type="button" id="veilNext">Pas ▶</button>
+        <span id="veilStep" class="dim">0 / 0</span></div>
+      <label class="dim">Trace LIVE / actualizare la fiecare pas <input id="veilScrub" type="range" min="0" max="0" value="0" style="width:100%"></label>
+      <label class="dim">Viteză replay (ms/pas) <input id="veilSpeed" type="range" min="60" max="1600" step="20" value="320"></label>
+      <pre id="veilStats" style="white-space:pre-wrap;max-height:330px;overflow:auto;color:#c9d9ff;font:12px ui-monospace,monospace">Aștept predicții și tranziții.</pre>
+      <h3>Test înghețat · forma soluției între contexte observate</h3>
+      <div class="row"><label>Start (2 simboluri): <input id="veilStart" type="text" size="19" placeholder="She is"></label>
+        <label>Țintă (2 simboluri): <input id="veilGoal" type="text" size="19" placeholder="is calm"></label>
+        <button type="button" id="veilPlan">Construiește ruta înainte de acțiune</button></div>
+      <pre id="veilPlanOut" style="white-space:pre-wrap;max-height:190px;overflow:auto;color:#f3d6a2;font:12px ui-monospace,monospace">Rutele sunt calculate doar pe muchii observate și nu schimbă memoria.</pre>
+    </section>
     <div id="cognitiveBox" hidden style="margin:12px 0;border:1px solid #25887e;border-radius:10px;padding:12px">
       <h2>Harta cognitivă a limbajului · ORIGINAL Discoverer.shape()</h2>
       <p class="note">Absoarbe observații complete, deduce transformări din contraste și propagă forma soluției înainte de acțiune. Regulile deduse sunt ipoteze până la verificarea efectelor într-o lume reală. Propoziția-țintă NU este transmisă creierului.</p>
@@ -266,5 +284,6 @@
 </div>
 <script type="module" src="app.js"></script>
 <script type="module" src="text-hypermaze-live.js"></script>
+ <script type="module" src="veil-aether-live.js"></script>
 </body>
 </html>
