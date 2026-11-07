@@ -101,6 +101,16 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   // Brain sequential hypermaze rather than rejected above 128 tokens.
   // This is evidence consumption, NOT answer-generation success.
   assert.equal(measured.qaLongFormEpisodes,20);
+  // V30: same Brain persists experience across source episodes but source
+  // adjacency cannot masquerade as independently verified physical axes.
+  assert.ok(measured.crossMazeMemory?.originalBrain);
+  assert.equal(measured.crossMazeMemory.roleEpisodes,20);
+  assert.equal(measured.crossMazeMemory.physicallyVerifiedEdges,0);
+  assert.equal(measured.crossMazeMemory.observedChunks,
+   measured.qaLongFormChunkNodes);
+  assert.equal(measured.crossMazeMemory.observedSequentialEdges,
+   measured.qaLongFormSequentialEdges);
+  assert.ok(measured.crossMazeMemory.sharedExactChunkAnchors>=0);
   // Never assume or invent how many tokens a real corpus has.
   // This EXACT check uses the original model tokenizer and the genuine
   // training-only row split, no approximate duplicate regex.
@@ -162,6 +172,8 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
    goalCoverage:measured.qaFrozenGoalCoverage,
    learnedQAAxes:measured.qaRoleWitnessedAxisEdges,
    originalOperatorCount:measured.learnedOperators,
+   originalBrainCumulativeMemory:measured.crossMazeMemory,
+   sourceOnlyChunksNotPhysicalActions:true,
    lastModelPrediction:measured.qaLastPrediction,
    preservedCheckpoint:true,device:"GitHub hosted CPU",
    realUsersPrivate594MBFileRead:false,
