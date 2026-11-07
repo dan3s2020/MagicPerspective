@@ -74,12 +74,17 @@ function evalOne(atlas,w,opts={}){
 export function benchmark({seed=17,worlds=96,prefix=2432,details=false,corrupt=0}={}){
   const train=evidence(seed,{corrupt}),examples=train.events.slice(0,prefix),atlas=new CausalAtlas4D();for(const e of examples)atlas.observe(e);atlas.fit();
   const fixed=fixedAtlasFrom(examples),last=new CausalAtlas4D();for(const e of train.byWorld.at(-1))last.observe(e);last.fit();
-  const sampled=[],results={seed,trainingWorlds:32,trainingObserved:examples.length,full:0,optimal:0,fixed:0,oneWorld:0,rank2:0,failures:[],shapeExamples:[],worlds,conditionalRules:[...atlas.model].filter(([a,m])=>m.kind==='conditional').map(([a])=>a)};
+  const sampled=[],controlFailures=[],results={seed,trainingWorlds:32,trainingObserved:examples.length,full:0,optimal:0,fixed:0,oneWorld:0,rank2:0,failures:[],shapeExamples:[],worlds,conditionalRules:[...atlas.model].filter(([a,m])=>m.kind==='conditional').map(([a])=>a)};
   for(let i=0;i<worlds;i++){
     const w=world(seed*100009+101+i*19),actual=evalOne(atlas,w);
     results.full+=+actual.solved;results.optimal+=+actual.optimal;
-    results.fixed+=+evalOne(fixed,w).solved;results.oneWorld+=+evalOne(last,w).solved;
-    results.rank2+=+evalOne(atlas,w,{rank:2}).solved;
+    const fixedOut=evalOne(fixed,w),oneWorldOut=evalOne(last,w),rank2Out=evalOne(atlas,w,{rank:2});
+    results.fixed+=+fixedOut.solved;results.oneWorld+=+oneWorldOut.solved;
+    results.rank2+=+rank2Out.solved;
+    if(details)controlFailures.push({worldSeed:w.seed,
+      fixed:{solved:fixedOut.solved,found:fixedOut.plan.found,reason:fixedOut.plan.reason||fixedOut.actual.wrong?.reason||null,firstIncorrectEdge:fixedOut.actual.wrong||null,shape:fixedOut.plan.shape||[],blockedFrontier:fixedOut.plan.frontier?.length||0},
+      isolatedWorld:{solved:oneWorldOut.solved,found:oneWorldOut.plan.found,reason:oneWorldOut.plan.reason||oneWorldOut.actual.wrong?.reason||null,unknownActions:oneWorldOut.plan.frontier?.filter(x=>x.reason==='action-never-observed').slice(0,8)||[],shape:oneWorldOut.plan.shape||[]},
+      hiddenAxes:{solved:rank2Out.solved,found:rank2Out.plan.found,reason:rank2Out.plan.reason||rank2Out.actual.wrong?.reason||null,unavailableAxisEdges:rank2Out.plan.frontier?.filter(x=>x.reason==='axis-hidden-by-ablation').length||0,shape:rank2Out.plan.shape||[]}});
     if(!actual.solved)results.failures.push({worldSeed:w.seed,start:decode(w.start),goal:decode(w.goal),reason:actual.plan.reason||actual.actual.wrong?.reason||'suboptimal',frontier:actual.plan.frontier?.slice(0,30)});
     if(details)sampled.push({worldSeed:w.seed,start:decode(w.start),goal:decode(w.goal),correct:actual.solved,optimal:actual.optimal,
       shape:actual.plan.shape||[],route:actual.plan.trace||[],failure:actual.actual.wrong||null,blockedEdges:actual.plan.frontier?.length||0});
@@ -87,7 +92,7 @@ export function benchmark({seed=17,worlds=96,prefix=2432,details=false,corrupt=0
   }
   const topology=atlas.completeAtlas();results.atlas={states:topology.states,possibleEdges:topology.possibleEdges,observedExact:topology.observedExact,inferred:topology.inferred,transforms:topology.transforms};
   results.holdoutNeverTrains=atlas.events.length===examples.length;
-  if(details)results.worldTraces=sampled;
+  if(details){results.worldTraces=sampled;results.failedControlPaths=controlFailures;}
   return {results,atlas,train};
 }
 export function learningCurve({seed=17,worlds=96}={}){
