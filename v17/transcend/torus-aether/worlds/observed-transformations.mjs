@@ -109,6 +109,8 @@ export class ObservedTransformations {
     this.seen=0;this.newObservations=0;this.comparisons=0;this.matchingComparisons=0;
     this.rejectedLong=0;this.evicted=0;this.droppedOperators=0;
     this.historicalReplays=0;
+    this.longUnitsWindowed=0;this.originalLongTokenCount=0;
+    this.longWindowSlices=0;
     this.executed=0;this.correctEffects=0;this.failedEffects=0;
     this.lastPlan=null;
   }
@@ -258,22 +260,65 @@ export class ObservedTransformations {
   // worlds. It may reveal a new exact one-edit pair with current states;
   // it does NOT increment the real training-corpus observation count and
   // cannot accept an unobserved heldout answer.
-  revisitArchivedSentence(sentence){
-    return this.observeSentence(sentence,{historicalReplay:true});
-  }
-  observeText(text){
-    if(typeof text!=="string")throw Error("Corpus observation must be text");
-    // Entire corpus is streamed. Each sentence is a real observation;
-    // question and answer strings may be different observations.
-    const units=text.split(/(?<=[.!?])\s+|\r?\n+/u).map(x=>x.trim()).filter(Boolean);
-    let newSentences=0,newOperators=0;
-    for(const unit of units){
-      const n=this.operators.size;
-      const r=this.observeSentence(unit);
-      if(r.learned)newSentences++;
-      newOperators+=this.operators.size-n;
+  // An observed long sentence is NOT discarded merely because its number
+  // of tokens exceeds the model's single-state working limit. Keep the
+  // WHOLE Unicode source verbatim in the persistent atlas (handled by its
+  // owning NativeGoalTextMaze). Rehearse contiguous, overlapping observed
+  // views so every actual token and adjacent pair enters the SAME original
+  // observed edit learner. These are real spans, NOT fabricated sentences
+  // or extra independent corpus exercises.
+  contiguousObservedWindows(sentence){
+    const t=tokenizeObservation(sentence);
+    if(t.length<=this.maxTokens)return [sentence];
+    if(this.maxTokens<4)throw Error("Native long-corpus windows require at least four working tokens");
+    const width=this.maxTokens;
+    const stride=Math.max(1,Math.floor(width/2));
+    const windows=[],starts=new Set();
+    for(let i=0;i<t.length;i+=stride){
+      const start=Math.min(i,t.length-width);
+      if(starts.has(start))break;
+      starts.add(start);
+      windows.push(renderObservation(t.slice(start,start+width)));
+      if(start+width===t.length)break;
     }
-    return {observedUnits:units.length,newSentences,newOperators};
+    return windows;
+  }
+  revisitArchivedSentence(sentence,{windowLong=false}={}){
+    const parts=windowLong?this.contiguousObservedWindows(sentence):[sentence];
+    const old=this.operators.size;
+    let realHistoricalSlices=0;
+    for(const part of parts){
+      this.observeSentence(part,{historicalReplay:true});
+      realHistoricalSlices++;
+    }
+    return {slices:realHistoricalSlices,newOperators:this.operators.size-old,
+      originalCorpusObservationsAdded:0,historicalOnly:true};
+  }
+  observeText(text,{windowLong=false}={}){
+    if(typeof text!=="string")throw Error("Corpus observation must be text");
+    const units=text.split(/(?<=[.!?])\s+|\r?\n+/u).map(x=>x.trim()).filter(Boolean);
+    let newSentences=0,newOperators=0,windowSlices=0,longUnits=0;
+    for(const unit of units){
+      const tokens=tokenizeObservation(unit);
+      const long=windowLong&&tokens.length>this.maxTokens;
+      const segments=long?this.contiguousObservedWindows(unit):[unit];
+      if(long){
+        longUnits++;this.longUnitsWindowed=(this.longUnitsWindowed||0)+1;
+        this.originalLongTokenCount=(this.originalLongTokenCount||0)+tokens.length;
+        this.longWindowSlices=(this.longWindowSlices||0)+segments.length;
+      }
+      for(const part of segments){
+        const n=this.operators.size;
+        const r=this.observeSentence(part);
+        if(r.learned)newSentences++;
+        newOperators+=this.operators.size-n;
+        windowSlices++;
+      }
+    }
+    return {observedUnits:units.length,newSentences,newOperators,
+      actualContiguousObservedSlices:windowSlices,longUnitsWindowed:longUnits,
+      originalCorpusTextPreservedOutsideWorkingState:true,
+      noSyntheticallyInventedSourceTokens:true};
   }
   neighbors(tokens){
     const out=[],seen=new Set();
@@ -628,7 +673,12 @@ export class ObservedTransformations {
       observed:this.newObservations,totalSeen:this.seen,activeObserved:this.records.size,
       comparedPairs:this.comparisons,oneChangePairs:this.matchingComparisons,
       learnedOperators:this.operators.size,learnedInvariantGroups:this.invariants.size,
-      evicted:this.evicted,skippedLong:this.rejectedLong,droppedNewOperators:this.droppedOperators,
+      evicted:this.evicted,skippedLong:this.rejectedLong,
+      longUnitsWindowed:this.longUnitsWindowed||0,
+      longObservationOriginalTokens:this.originalLongTokenCount||0,
+      contiguousObservedLongSlices:this.longWindowSlices||0,
+      historicalReplays:this.historicalReplays||0,
+      droppedNewOperators:this.droppedOperators,
       executed:this.executed,verifiedEffects:this.correctEffects,
       failedEffects:this.failedEffects,
       lastPlan:this.lastPlan?{found:this.lastPlan.found,unseen:this.lastPlan.unseen,
