@@ -100,3 +100,80 @@ test("511 observed transformations fit the existing 512-node V22 evaluation budg
     fieldAtStart:p.field.values[0],method:p.directOriginalMethod
   }));
 });
+
+const taughtPhaseActions = (steps=48) => {
+  const m=new LearnedCognitiveMap();
+  // Learn the effects from short lived state/action contrasts; the long
+  // held-out question and its complete target sentence NEVER appear in training.
+  for(let i=0;i<steps;i++) {
+    const result=m.observeActionResult({
+      before:["phase:"+i,"training-only-tail"],
+      action:"advance:"+i,
+      after:["phase:"+(i+1),"training-only-tail"],
+      accepted:true
+    });
+    assert.equal(result.learned,true);
+  }
+  return m;
+};
+
+test("48 consecutive original Discoverer actions solve an unseen 2048-token text state before output",()=>{
+  const steps=48, m=taughtPhaseActions(steps);
+  const novel=["phase:0",...Array.from({length:2047},(_,i)=>"unseen_unique_content_"+i)];
+  const complete=["phase:"+steps,...novel.slice(1)];
+  const pre=JSON.stringify(m.export());
+  assert.equal(m.examples.size,0,"The evaluation text must not enter observed sentence corpus");
+  const plan=m.formSolution(novel,{slots:{0:"phase:"+steps}},
+    {maxNodes:100,maxDepth:64,temperature:0});
+  assert.equal(JSON.stringify(m.export()),pre,"Planning must not modify training evidence");
+  assert.equal(plan.directOriginalMethod,"Discoverer.shape");
+  assert.equal(plan.plannedBeforeAction,true);
+  assert.equal(plan.found,true,"Confirmed local action physics must propagate to start of an unseen long text");
+  assert.equal(plan.path.length,steps,"The whole multi-action shape must exist before execution");
+  const independentlyExecuted=m.execute(plan,{
+    step:(state,action)=>{
+      const i=Number(String(action).split(":")[1]);
+      if(!Number.isInteger(i)||state[0]!=="phase:"+i)
+        return {after:state,accepted:false};
+      const after=state.slice();after[0]="phase:"+(i+1);
+      return {after,accepted:true}; // independent physics: ignores 'predicted'
+    }
+  });
+  assert.equal(independentlyExecuted.solved,true);
+  assert.equal(independentlyExecuted.trace.length,steps);
+  assert.ok(independentlyExecuted.trace.every(x=>x.accurate));
+  assert.deepEqual(independentlyExecuted.final,complete,
+    "FULL long output, not just goal marker or next-character proxy, must match");
+  console.log("V23_UNSEEN_LONG_COMPOSITION",JSON.stringify({
+    tokens:novel.length,actions:steps,
+    frozenBeforeFirstAction:true,
+    fullAnswerAccuracy:1,
+    matchedEveryToken:true,source:"independently executed symbolic physics",
+    baseline:"trained on 48 single-action examples; NO natural-language semantic accuracy implied"
+  }));
+});
+
+test("48-step unseen long-text composition fails if causal action physics is ablated",()=>{
+  const m=taughtPhaseActions(48);
+  const novel=["phase:0",...Array.from({length:2047},(_,i)=>"new_"+i)];
+  const goal={slots:{0:"phase:48"}};
+  const good=m.formSolution(novel,goal,{maxNodes:100,maxDepth:64});
+  assert.equal(good.found,true);
+  m.rules.delete("advance:23");
+  const ablated=m.formSolution(novel,goal,{maxNodes:100,maxDepth:64});
+  assert.equal(ablated.found,false,"A missing learned action must break the route");
+});
+
+test("real-world contradictory outcome invalidates the 48-step unseen plan",()=>{
+  const m=taughtPhaseActions(48);
+  const novel=["phase:0",...Array.from({length:2047},(_,i)=>"unseen_"+i)];
+  const good=m.formSolution(novel,{slots:{0:"phase:48"}},
+    {maxNodes:100,maxDepth:64});
+  assert.equal(good.found,true);
+  m.observeActionResult({
+    before:["phase:23","training-only-tail"], action:"advance:23",
+    after:["phase:999","training-only-tail"],accepted:true});
+  const invalid=m.formSolution(novel,{slots:{0:"phase:48"}},
+    {maxNodes:100,maxDepth:64});
+  assert.equal(invalid.found,false,"Conflicting transformation cannot be assumed traversable");
+});
