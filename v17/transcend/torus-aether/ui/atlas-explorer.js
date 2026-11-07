@@ -9,7 +9,8 @@ const filterRows=()=>entries.map((event,i)=>({event,i})).filter(({event:e})=>{
  return !f||(f==="found"&&e.type==="planning-attempt"&&e.found)||
  (f==="missing"&&e.type==="planning-attempt"&&!e.found)||
  (f==="blocked"&&(e.accepted===false||e.diagnostics?.excludedByDesign?.length))||
- (f==="evidence"&&e.type==="rule-evidence");
+ (f==="evidence"&&e.type==="rule-evidence")||
+ (f==="chars"&&e.type==="answer-evaluation"&&!e.answerExact);
 });
 function describe(){
 const attempts=entries.filter(e=>e.type==="planning-attempt"),ok=attempts.filter(e=>e.found).length;
@@ -30,6 +31,7 @@ area.appendChild(frag);if(!area.childNodes.length)area.textContent="Nu există e
 describe();
 }
 function predicted(e){
+if(e?.type==="answer-evaluation")return e.predictedAnswer??null;
 if(e?.type!=="planning-attempt"||!e.found)return null;
 const a=e.fullAtlas?.states||[],p=e.fullPredictedPath||[],i=p.length?p.at(-1).to:0;
 return a[i]===undefined?null:state(a[i]);
@@ -59,7 +61,7 @@ ctx.fillStyle="#06131f";ctx.fillRect(0,0,canvas.width,canvas.height);
 if(!chosen?.fullAtlas?.states?.length){
  ctx.fillStyle="#b9cddd";ctx.fillText("Selectează un eveniment de planificare real din jurnal.",20,38);return;
 }
-const {states,neighbors,targets=[]}=chosen.fullAtlas,p=chosen.fullPredictedPath||[],xy=geometry(states,neighbors);
+const {states=[],neighbors=[],targets=[]}=chosen.fullAtlas,p=chosen.fullPredictedPath||[],xy=geometry(states,neighbors);
 const route=new Set(p.map(x=>x.from+":"+x.to+":"+x.action)),goals=new Set(targets);
 ctx.save();ctx.translate(panX,panY);ctx.scale(scale,scale);
 let count=0;
@@ -80,12 +82,16 @@ ctx.fillText(states.length+" stări, "+count+" muchii; auriu=traseu, mov=transfe
 function select(e){
 chosen=e;scale=1;panX=panY=0;el("v30AtlasZoom").value="1";
 const graph=e.fullAtlas||{},states=graph.states||[],edges=graph.neighbors||[],p=e.fullPredictedPath||[];
+if(e.type==="answer-evaluation")el("v30AtlasReference").value=e.expectedAnswer??"";
 const lines=[
 "EVENIMENT: "+e.type+"; success="+e.found+"; time="+e.date,
 "Metoda originală: "+(e.originalMethod||"indisponibil")+"; evaluare înghețată="+!!e.frozen,
 "Stări="+states.length+"; muchii="+edges.reduce((s,x)=>s+(x?.length||0),0)+"; ținte="+(graph.targets?.length||0),
 "CAUZA EȘECULUI: "+(e.reason||e.diagnostics?.failureReason||"neînregistrată"),
 "PERETE OBSERVAT: "+(e.accepted===false)+"; acțiune: "+(e.action||"—"),
+"SURSĂ PREDICȚIE: "+(e.source||"nu este măsurată")+", controlată de Discoverer="+(e.causallyDrivenByDiscovererPath??"not measured"),
+"PRIMA EROARE CARACTER: "+(e.firstMismatch??"niciuna")+", răspuns întreg exact: "+(e.answerExact??"not scored"),
+"BLOCAJ ÎNTRE MOTOARE: "+(e.blockedByDesign||"not observed"),
 "LIMITĂ IMPUSĂ DE DESIGN: "+(e.diagnostics?.excludedByDesign||[]).join("; "),
 "DATE DIAGNOSTICE: "+JSON.stringify(e.diagnostics||null),
 "PAS CU PAS · traseu prezis înainte de prima acțiune:"
