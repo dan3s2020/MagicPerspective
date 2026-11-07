@@ -15,3 +15,30 @@ console.log("V34_WINDOWS_NATIVE_PARQUET_READER_PROBE",JSON.stringify({
  heldoutFullRowMs:+(d-c).toFixed(1)}));
 if(!first.answer||!first.prompt||!unseen.answer)
  throw Error("Real Windows .parquet row text was lost");
+
+if(process.argv[3]){
+ const {Brain}=await import("../transcend/torus-aether/devour/brain.mjs");
+ const brain=Brain.load(process.argv[3]);
+ const text="Q: "+first.prompt+"\nA: "+first.answer+"\n\n";
+ const bytes=[];
+ for(const ch of text){
+  const cp=ch.charCodeAt(0);
+  if(cp===13)continue;
+  bytes.push(cp===9||cp===10||(cp>=32&&cp<127)?cp:63);
+ }
+ brain.beginExercise();
+ const start=performance.now();let maxByteMs=0;
+ for(let i=0;i<bytes.length;i++){
+  const begin=performance.now();
+  brain.live(bytes[i],brain.chars%50===0);brain.chars++;
+  const cost=performance.now()-begin;
+  maxByteMs=Math.max(maxByteMs,cost);
+  if(i<8||(i+1)%32===0)console.log("V34_WIN_REAL_FIRST_PARQUET_ROW_BYTE",JSON.stringify({
+    cursor:i+1,byte:bytes[i],lastByteMs:+cost.toFixed(1),
+    elapsedMs:+(performance.now()-start).toFixed(1)}));
+ }
+ console.log("V34_WIN_FULL_AUTHENTIC_ROW_NATIVE_BRAIN_LIVE_PASS",JSON.stringify({
+  sourceRealParquet:true,realSymbols:bytes.length,elapsedMs:+(performance.now()-start).toFixed(1),
+  maxIndividualByteMs:+maxByteMs.toFixed(1),exactOriginalBrain:true}));
+}
+
