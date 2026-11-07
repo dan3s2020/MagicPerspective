@@ -72,8 +72,12 @@ jobs:
             corpus = [System.IO.Path]::GetFullPath($data)
             branch = "feature/V17-REAL-LIVE-AXES-MAZE-20261107"
           } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $out "magic-native-v17-run.json")
-          $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $data -Out $out -Gpu off -Port 8894 2>&1 | Out-String
-          $code = $LASTEXITCODE
+          $originalErrorPreference = $ErrorActionPreference
+          $ErrorActionPreference = "Continue"
+          try {
+            $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $data -Out $out -Gpu off -Port 8894 2>&1 | Out-String
+            $code = $LASTEXITCODE
+          } finally { $ErrorActionPreference = $originalErrorPreference }
           if ($code -eq 0) { throw "Cross-branch native checkpoint contamination was allowed" }
           if ($output -notmatch "Refusing to resume a DIFFERENT MagicPerspective branch") {
             throw ("Launcher refused for the wrong reason: " + $output)
