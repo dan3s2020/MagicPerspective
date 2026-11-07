@@ -126,6 +126,8 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
      <div class="card"><label>Ipoteze din observații</label><strong id="atlasProposed">—</strong></div>
      <div class="card"><label>Legături secvențiale, NU acțiuni</label><strong id="atlasSequential">—</strong></div>
      <div class="card"><label>Stări/muchii pierdute din buget</label><strong id="atlasEvicted">—</strong></div>
+     <div class="card"><label>Încercări înghețate din alte lumi</label><strong id="atlasAttempts">—</strong></div>
+     <div class="card"><label>Tranziții efectiv greșite</label><strong id="atlasFailed">—</strong></div>
    </div>
    <canvas id="atlasCanvas" width="1000" height="370" style="width:100%;height:auto;background:#061323;border:1px solid #38526d;border-radius:10px" aria-label="Atlasul real al componentelor, muchiilor și blocajelor de navigare"></canvas>
    <pre id="atlasDiagnosis" style="max-height:250px;overflow:auto;white-space:pre-wrap">Înainte de a calcula o cale: verificăm memoria și frontierele, fără răspuns de referință.</pre>
@@ -146,6 +148,8 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
      <option value="observations">Toate observațiile text reținute</option>
      <option value="qaEpisodes">Segmente Q/A cu proveniență</option>
      <option value="crossWorld">Reguli transferate din lumi diferite</option>
+     <option value="attempts">Încercări și trasee prezise înainte de mișcare</option>
+     <option value="outcomes">Acțiuni verificate și greșite în lumea externă</option>
     </select></label>
     <button id="atlasPrev">◀ Pagina anterioară</button>
     <span id="atlasPageInfo" class="muted">0 / 0</span>
