@@ -180,3 +180,15 @@ test("V24: actual OpenThoughts-like nested conversations parquet, human/gpt role
  assert.equal(trainer.heldout.count,16);
  for(const x of held)assert.ok(![...trainer.model.records.values()].some(r=>r.sourceRow===x.index));
 });
+
+
+test("V24: actual live UI script parses, includes native route playback, and keeps old V17 iframe",async()=>{
+ const html=await fs.readFile(new URL("../research/relational-hypermaze/real-live.html",import.meta.url),"utf8");
+ const script=html.match(/<script>([\s\S]*?)<\/script>/);
+ assert.ok(script,"inline V24 telemetry and animation script required");
+ const vm=await import("node:vm");
+ assert.doesNotThrow(()=>new vm.Script(script[1]));
+ assert.match(html,/id="oldUI"/);
+ assert.match(html,/Discoverer\.shape/);
+ assert.match(html,/PLAYBACK AL PREDICȚIEI/);
+});
