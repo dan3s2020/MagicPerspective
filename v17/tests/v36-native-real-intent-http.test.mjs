@@ -79,6 +79,33 @@ test('V36 ORIGINAL V17 live native HTTP + same Brain.v8: independent witnessed e
   assert.equal(complete.actualWriter,
    'ORIGINAL_LEARNED_PATH_TERMINAL_STATE_NOT_NEXT_CHARACTER_MODEL');
   assert.ok(complete.path.some(h=>h.crossWorld));
+  // A NEW instruction phrasing must NOT work merely because the source
+  // operator is known. Two independently observed phrasing surfaces
+  // allow an opt-in word-composition hypothesis in the SAME Brain.
+  const composed={...question,instruction:'Brew this refreshment',
+    allowComposedInstructions:true};
+  const beforeSecondWording=await post(base,'/instruction-answer',composed);
+  assert.equal(beforeSecondWording.found,false);
+  assert.equal(beforeSecondWording.reason,'UNKNOWN_INSTRUCTION_WORDS');
+  for(const [name,verb] of [['Zara','finds'],['Leo','keeps']]){
+   const witness=await post(base,'/instruction-observe',{
+    w:0,instruction:'Brew this drink',
+    states:[name+' '+verb+' tea.',name+' '+verb+' coffee.'],
+    episodeId:'verified-phrase-'+name,executedTransitionsObserved:true});
+   assert.equal(witness.ok,true,JSON.stringify(witness));
+  }
+  const stillStrict=await post(base,'/instruction-answer',
+   {...composed,allowComposedInstructions:false});
+  assert.equal(stillStrict.found,false);
+  assert.equal(stillStrict.reason,'UNSEEN_INSTRUCTION_INTENT');
+  const composedSuccess=await post(base,'/instruction-answer',composed);
+  assert.equal(composedSuccess.answer,'A visitor carries coffee.');
+  assert.equal(composedSuccess.evidence.unobservedInstructionPhrase,true);
+  assert.equal(composedSuccess.evidence.goalWasLearnedBeforeRequest,true);
+  const negated=await post(base,'/instruction-answer',{
+   ...composed,instruction:'Do not brew this refreshment'});
+  assert.equal(negated.found,false);
+  assert.equal(negated.reason,'UNKNOWN_INSTRUCTION_WORDS');
   const leak=await post(base,'/instruction-answer',
    {...question,reference:'A visitor carries coffee.'});
   assert.match(leak.error,/Gold answer\/goal must NEVER/);
@@ -100,13 +127,16 @@ test('V36 ORIGINAL V17 live native HTTP + same Brain.v8: independent witnessed e
   const savedBrain=Brain.load(savePaths[0]);
   assert.ok(savedBrain.cognitiveMap,'Original Brain.v8 did not persist cognitive map');
   const restored=LearnedCognitiveMap.restore(savedBrain.cognitiveMap);
-  assert.equal(restored.instructionGoalMemory.size,1);
-  assert.equal(restored.instructionGoalEpisodes,2);
+  assert.equal(restored.instructionGoalMemory.size,2);
+  assert.equal(restored.instructionGoalEpisodes,4);
   assert.equal(restored.instructionGoalMemory.get('brew the refreshment')[0].evidence.length,2);
+  assert.equal(restored.instructionGoalMemory.get('brew this drink')[0].evidence.length,2);
   console.log('V36_REAL_ORIGINAL_WORKER_INTENT_HTTP',JSON.stringify({
    nativeObservedCorpusDocuments:observed,independentObservedTrainingEpisodes:2,
    oneEpisodeAnswerFound:partial.found,
    twoEpisodeAnswerFound:complete.found,firstFrozenAnswer:complete.answer,
+   differentPreviouslyUnseenInstructionComposed:true,composedAnswer:composedSuccess.answer,
+   unknownNegatedInstructionAbstained:true,
    actualOriginalShapePath:complete.path.length,
    persistedSameNativeBrainV8:true,forensicEvents:inferred.length,
    hypotheticalUnexecutedTrainingRejected:true,
