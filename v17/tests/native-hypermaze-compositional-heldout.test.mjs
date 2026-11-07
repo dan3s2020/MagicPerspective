@@ -46,10 +46,11 @@ test("Original Discoverer.shapeGraph composes withheld text goals using ONLY act
   const expected=sentence(a,b);
   assert.equal(brain.observedTransformations.containsSentence(expected),false,
    "One withheld answer leaked into learned text: "+expected);
-  let start=sentence((a+1)%subjects.length,b);
-  if(withheldKey.has(((a+1)%subjects.length)+","+b))
-   start=sentence(a,(b+1)%properties.length);
-  assert.ok(actualTraining.includes(start),"Start must be a REAL observed sentence");
+  // Select a real, already-observed starting state from training ONLY;
+  // never substitute an unseen answer as the origin.
+  const start=subjects.map((_,i)=>sentence(i,b)).find(x=>
+   x!==expected&&actualTraining.includes(x));
+  assert.ok(start&&actualTraining.includes(start),"Start must be a REAL observed sentence");
   const problem={start,required:[subjects[a],properties[b]]};
   const proposed=adapter.plan(problem);
   assert.equal(proposed.plannedBeforeFirstAction,true);
