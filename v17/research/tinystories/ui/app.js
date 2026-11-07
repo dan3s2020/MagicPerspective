@@ -115,12 +115,13 @@ function paint(s){
  $("chars").textContent=num(s.chars);
  $("accuracy").textContent=s.heldout?.accuracy!=null?(s.heldout.accuracy*100).toFixed(2)+"%":"—";
  $("device").textContent=s.device||"—";
- $("deviceInfo").textContent=s.gpuInfo?.name||"Aștept GPU";
+ $("deviceInfo").textContent=(s.gpuInfo?.name||"Aștept GPU")+(s.unified?.onGPU?" · model extins":"");
  $("pct").textContent=pct(s.percent);
+ $("epoch").textContent=String(s.epoch||1);
  $("fill").style.width=Math.max(0,Math.min(100,s.percent||0))+"%";
  $("dataProgress").textContent=(s.bytesRead/1e6).toFixed(2)+" MB / "+(s.datasetSize/1e6).toFixed(1)+" MB";
  $("saveStatus").textContent="Checkpoint: "+(s.lastSave?new Date(s.lastSave).toLocaleTimeString("ro-RO"):"nu este încă salvat");
- $("start").disabled=bad||s.finished||(!s.paused&&!waiting);
+ $("start").disabled=bad||(!s.paused&&!waiting);
  $("pause").disabled=s.paused||bad;
  $("actual").textContent=s.preview?.preUpdate?.actual||"Aștept predicție pe text real…";
  $("predicted").textContent=s.preview?.preUpdate?.predicted||"Aștept predicție înainte de update…";
