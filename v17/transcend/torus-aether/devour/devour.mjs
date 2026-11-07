@@ -19,6 +19,7 @@ import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {CharacterHypermaze} from "../worlds/character-hypermaze.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {atlasPath,readAtlasPage,appendAtlasEvent} from "./atlas-journal.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
@@ -184,6 +185,22 @@ const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||nu
   fullAtlasAvailableThrough:"/atlas?w=<graph>&cursor=<byte_offset>",
   fullAtlasExport:"/atlas-export?w=<graph>",
   truncated:r.world?.truncated||false});
+const charReply=(before,after,atlas)=>({
+ frozen:true,kind:"character",originalWriterUnmodified:true,
+ priorWordOnlyDoesNotNavigateCharacters:true,
+ before:{found:before.found,reason:before.reason,
+   diagnostics:before.world.diagnostics,fullPredictedPath:before.firstPrediction||[]},
+ after:{found:after.found,reason:after.reason,method:after.method,
+   predictionBeforeAnyAction:after.plannedBeforeAction,
+   predictedActions:after.firstPrediction||[],shapeField:after.field.values,
+   fullPredictedNodes:after.field.nodes,
+   completeKnownGraph:!after.world.diagnostics.nodeLimitReached&&
+     !after.world.diagnostics.depthLimitReached,
+   wholeAtlas:{states:after.world.states.map(s=>s.join("")),
+     neighbors:after.world.neighbors,targets:after.world.targets},
+   diagnostics:after.world.diagnostics},
+ characterAtlas:atlas.status(),naturalLanguageAnswerExactUnknown:true
+});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
@@ -409,6 +426,79 @@ http.createServer((req, res) => {
       chats.set(id,x=>{clearTimeout(timer);json(res,x)});
       sl.wk.postMessage({cognitiveObserve:{id,before:m.before,action:m.action,
         after:m.after,accepted:m.accepted}});
+    });return;
+  }
+  if(req.method==="POST" && url==="/character-observe"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>1000000)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid character observation JSON"});}
+      const sl=slots.find(x=>x.w===Number(m.w));
+      if(!sl?.worlds.includes("cognitivemap")||!sl.wk)
+        return json(res,{error:"A running original cognitive world is required for real character feedback"});
+      if(typeof m.before!=="string"||typeof m.after!=="string"||
+         typeof m.action!=="string"||m.action.length>256||
+         typeof m.accepted!=="boolean"||m.before.length>100000||m.after.length>100000)
+        return json(res,{error:"Supply actual char-level before, action ID, after, accepted Boolean"});
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Character action feedback timeout"});},60000);
+      chats.set(id,x=>{clearTimeout(timer);json(res,x)});
+      sl.wk.postMessage({characterObserve:{id,before:m.before,after:m.after,
+        action:m.action,accepted:m.accepted}});
+    });return;
+  }
+  if(req.method==="POST" && url==="/character-eval"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>1000000)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid character evaluation JSON"});}
+      const sl=slots.find(x=>x.w===Number(m.w));
+      if(!sl?.worlds.includes("cognitivemap"))
+        return json(res,{error:"Original learned cognitive map world is required"});
+      if(typeof m.initial!=="string"||!m.initial||
+         m.initial.length>150000||!m.goal?.charSlots||
+         typeof m.goal.charSlots!=="object"||
+         Array.isArray(m.goal.charSlots)||
+         !Object.keys(m.goal.charSlots).length||
+         Object.keys(m.goal.charSlots).length>128)
+        return json(res,{error:"Provide FULL original text and checkable goal.charSlots; never a hidden answer oracle"});
+      const maxNodes=Math.min(20000,Math.max(2,Math.trunc(Number(m.maxNodes)||4096)));
+      const maxDepth=Math.min(256,Math.max(1,Math.trunc(Number(m.maxDepth)||8)));
+      const temperature=Number(m.temperature)||0;
+      const seed=Number(m.seed)||74129;
+      if(!Number.isFinite(temperature)||temperature<0||temperature>1||
+         !Number.isSafeInteger(seed)||seed<0)
+        return json(res,{error:"Bad original noise temperature or seed"});
+      const frozen=(file)=>{
+        const original=Brain.load(file);
+        const ch=CharacterHypermaze.restore(original.characterAtlas||null);
+        if(!original.characterAtlas&&original.cognitiveMap){
+          ch.ingestLegacyRules(LearnedCognitiveMap.restore(original.cognitiveMap).rules);
+        }
+        ch.atlasSink=event=>appendAtlasEvent(atlasPath(file),event);
+        const before=ch.formSolution(m.initial,m.goal,
+          {transfer:false,maxNodes,maxDepth,temperature,seed});
+        const after=ch.formSolution(m.initial,m.goal,
+          {transfer:true,maxNodes,maxDepth,temperature,seed,disc:original.disc});
+        return {...charReply(before,after,ch),fromSave:true};
+      };
+      if(!sl.wk||sl.status==="gata"){
+        try{
+          const file=saveOf(sl);if(!fs.existsSync(file))
+            return json(res,{error:"No original Brain checkpoint saved yet"});
+          return json(res,frozen(file));
+        }catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);
+        json(res,{error:"Original character Discoverer frozen planning timed out"});},60000);
+      chats.set(id,r=>{clearTimeout(timer);json(res,r)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{const file=saveOf(sl);if(!fs.existsSync(file))
+          return json(res,{error:"Worker ended before checkpoint"});
+          return json(res,frozen(file));
+        }catch(err){return json(res,{error:err.message});}
+      });
+      sl.wk.postMessage({characterEval:{id,initial:m.initial,goal:m.goal,
+        maxNodes,maxDepth,temperature,seed}});
     });return;
   }
   if (req.method === "POST" && url === "/cognitive-eval") {
