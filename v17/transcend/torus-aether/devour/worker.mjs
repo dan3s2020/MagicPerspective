@@ -17,6 +17,8 @@ import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observ
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
+const FAST_TEXT = TEXT && !!workerData.gpu?.fastText;
+const FAST_TEXT_SAMPLE_CHARS = 1024; // Only legacy side-observers are sampled, never GPU model training.
 // A real text corpus may be Q/A pairs OR free prose. Both contain observed
 // state transitions: explicit question->answer, or earlier->later sentence.
 // Never synthesize a desired answer, and never use held-out paragraphs here.
@@ -210,6 +212,24 @@ const gpuOn = async () => {
     try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
     catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
+let fastReadyFor=null;
+const fastCheckpoint = saveFile ? saveFile+".fast-context.pt" : null;
+const ensureFastText = async G => {
+  if(fastReadyFor===G)return;
+  if(!G?.info?.torch)throw Error("Fast text requires PyTorch on the selected GPU");
+  if(!fastCheckpoint)throw Error("Fast text requires an isolated persistent output folder");
+  const loaded=await G.call({cmd:"fast_text_load",checkpoint:fastCheckpoint});
+  const expected=brain.exercises||0;
+  if(expected!==loaded.exercises){
+    throw Error("Fast model and original Brain checkpoint disagree: Brain="+
+      expected+" exercises, vector weights="+loaded.exercises+
+      ". Refusing to silently duplicate or lose trained examples.");
+  }
+  fastReadyFor=G;
+  parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"Fast vector CUDA context weights "+(loaded.loaded?"resumed":"initialized")+
+    " at "+loaded.exercises+" committed exercises; deep original V17 text remains separately available."});
+};
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
   if (!gpuSet) { shared.error = "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
@@ -248,19 +268,55 @@ const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
   const startChars = brain.chars;
-  await brain.learnTextGPU(gpu, exs, progress => {
-    batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
-    shot();
-  });
+  if(FAST_TEXT){
+    const G=await gpuOn();
+    if(!G)throw Error(gpuError||"Fast CUDA backend not ready");
+    await ensureFastText(G);
+    await brain.learnFastTextGPU(G,exs,fastCheckpoint);
+    // ACTUAL frozen heldout text: never contributes to training.
+    if(H.length>1 && (brain.fastContext?.batches<=1 || brain.fastContext.batches%8===0)){
+      const evaluation=await G.call({cmd:"fast_text_eval",exercises:[H],sampleStride:1});
+      brain.textGpu.frozenHeldoutAccuracy=evaluation.accuracy;
+      brain.textGpu.frozenHeldoutSamples=evaluation.tested;
+    }
+  }else{
+    await brain.learnTextGPU(gpu, exs, progress => {
+      batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
+      shot();
+    });
+  }
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
-  if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
-  for(const row of meta){absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
-  for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  if(FAST_TEXT){
+    // Every byte has ALREADY updated the real CUDA context model.
+    // The much slower long-context legacy graph is explicitly sampled
+    // rather than claimed to have learned every character.
+    if(exs.length)for(const y of exs[0].slice(0,384))
+      brain.live(y,brain.lived%50===0,{old:true});
+    const observed=meta[0];
+    if(observed){
+      const sample={...observed,
+        bytes:observed.bytes.slice(0,FAST_TEXT_SAMPLE_CHARS),
+        prompt:typeof observed.prompt==="string"?observed.prompt.slice(0,512):observed.prompt,
+        answer:typeof observed.answer==="string"?observed.answer.slice(0,512):observed.answer};
+      absorbLanguage(sample);
+      absorbConstructed(sample);
+      absorbObservedDifferences(sample);
+      absorbText(sample);
+    }
+  }else{
+    if(exs.length)for(const y of exs[0])
+      brain.live(y,brain.lived%50===0,{old:true});
+    for(const row of meta){absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
+    for(let j=0;j<meta.length;j+=Math.max(1,Math.floor(meta.length/8)))absorbText(meta[j]);
+  }
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   batchNow = null;
+  // Keep original Brain checkpoint coherent with the atomically saved device
+  // head after EACH fast batch. Never let silent resume skip already learned rows.
+  if(FAST_TEXT && saveFile)doSave();
   // Report the first committed batch immediately, not only after 60,000 bytes.
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
   shot(true);
@@ -376,7 +432,7 @@ for await (const ex of stream()) {
       stop = true; break;
     }
     textBatch.push(ex.bytes); textMeta.push(ex);
-    if (textBatch.length >= selectedTextBatch() || textBatch.reduce((n, b) => n + b.length, 0) >= 120000) {
+    if (textBatch.length >= selectedTextBatch() || textBatch.reduce((n, b) => n + b.length, 0) >= (FAST_TEXT ? 1048576 : 120000)) {
       const exs = textBatch, meta = textMeta;
       try { await processGpuText(exs, meta); textBatch = []; textMeta = []; }
       catch (err) {
