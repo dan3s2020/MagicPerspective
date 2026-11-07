@@ -115,14 +115,40 @@ const absorbText = row => {
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
 };
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
+// Frozen held-out Q/A benchmark, independent from V20/V21 route reachability.
+// Prior V21 omitted the 'text' world and therefore displayed 0% open-loop
+// solution writing while reporting high retrospective alignment accuracy.
+// This is the *original* Brain.evalTextExercises/AligningGraph.write result.
+// Choose a complete prefix plus up to 160 answer characters; do not confuse
+// teacher-forced accuracy with truly free-generated answer accuracy.
+let lastShapeAudit = null;
+const originalShapeAudit = () => {
+  if (!TEXT) return {status:"NATIVE_TEXT_DISABLED",frozen:true,trainedChars:brain.chars};
+  if (!(brain.chars>0 && brain.exercises>0 && brain.align?.mem?.n>0))
+    return {status:"NATIVE_TEXT_NOT_TRAINED",frozen:true,trainedChars:brain.chars};
+  const mark = H.findIndex((ch,i) => ch===10 && H[i+1]===65 && H[i+2]===58);
+  if (mark<0) return {status:"HELDOUT_NO_QA_BOUNDARY",frozen:true,trainedChars:brain.chars};
+  const a0=mark+3, end=Math.min(H.length,a0+160);
+  if (end<=a0) return {status:"HELDOUT_NO_ANSWER",frozen:true,trainedChars:brain.chars};
+  try {
+    const x=brain.evalTextExercises([H.slice(0,end)],{T:0,noise:0,seed:74129}).exercises[0];
+    return {status:"MEASURED",frozen:true,trainedChars:brain.chars,
+      exerciseLength:x.n,answerLength:end-a0,teacherForcedAccuracy:x.answer,
+      originalShapeSame:x.shapeSame,generatedLength:x.shape.length,
+      generatedPreview:x.shape.slice(0,100),
+      meaning:"ORIGINAL V17 free-run answer, from question ONLY; held-out answer is scored AFTER prediction; not token graph reachability"};
+  }catch(err){return {status:"FROZEN_EVAL_ERROR",frozen:true,error:err.message,trainedChars:brain.chars};}
+};
+
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
 const report = (final = false) => {
+  lastShapeAudit=originalShapeAudit();
   const msg = {type: "test", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { saveCognitive(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
@@ -132,7 +158,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const currentTextLength = brain.trace.text.length;
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze?.snapshot() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, controls: brain.controls, shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze?.snapshot() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
