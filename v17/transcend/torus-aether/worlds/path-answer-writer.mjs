@@ -8,15 +8,16 @@ const render=tokens=>tokens.join(' ')
   .replace(/\s+([.,!?;:)\]}])/gu,'$1')
   .replace(/([([{])\s+/gu,'$1');
 
-export function parseExplicitRewriteQuestion(question){
-  if(typeof question!=='string'||question.length>5000)
+export function parseExplicitRewriteQuestion(question,{maxTokens=512}={}){
+  if(typeof question!=='string'||question.length>20000)
     return {ok:false,error:'UNSUPPORTED_INPUT_BOUNDARY'};
   const m=instruction.exec(question);
   if(!m)return {ok:false,error:'UNSUPPORTED_INSTRUCTION_GRAMMAR'};
   const [,from,to,initial]=m;
   if(from===to||!from||!to)return {ok:false,error:'NO_NONTRIVIAL_GOAL'};
   const tokens=tokenizeWorld(initial);
-  if(tokens.length>96)return {ok:false,error:'DESIGN_WALL_96_TOKENS'};
+  if(!Number.isSafeInteger(maxTokens)||maxTokens<1||maxTokens>2048)return {ok:false,error:'INVALID_MAX_TOKENS'};
+  if(tokens.length>maxTokens)return {ok:false,error:'DESIGN_WALL_MAX_TOKENS_'+maxTokens};
   const locations=tokens.flatMap((v,i)=>v===from?[i]:[]);
   if(locations.length!==1)return {ok:false,error:locations.length?'AMBIGUOUS_SOURCE_POSITIONS':'SOURCE_TOKEN_NOT_PRESENT'};
   if(tokenizeWorld(from).length!==1||tokenizeWorld(to).length!==1)
@@ -24,13 +25,13 @@ export function parseExplicitRewriteQuestion(question){
   return {ok:true,from,to,initial,tokens,goal:{slots:{[locations[0]]:to}},slot:locations[0]};
 }
 
-export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,seed=74129}={}){
+export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,maxTokens=512,seed=74129}={}){
   if(!(model instanceof LearnedCognitiveMap))
     throw new Error('Use the original LearnedCognitiveMap — no standalone answer predictor');
-  const parsed=parseExplicitRewriteQuestion(question);
+  const parsed=parseExplicitRewriteQuestion(question,{maxTokens});
   if(!parsed.ok)return {found:false,answer:null,reason:parsed.error,source:'Discoverer.shape',path:[]};
   const plan=model.formSolution(parsed.initial,parsed.goal,
-    {maxNodes,maxDepth,seed,transfer:true,temperature:0});
+    {maxNodes,maxDepth,maxTokens,seed,transfer:true,temperature:0});
   const evidence={
     goalType:'EXPLICIT_REPLACEMENT_REQUEST_NOT_INFERRED_SEMANTIC_GOAL',
     goalPredicate:parsed.goal,question,source:'Discoverer.shape',
@@ -38,8 +39,12 @@ export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,s
     semanticOpenThoughtsAnswer:false,firstTry:true,
     modelLearningChanged:false,found:!!plan.found,
     reason:plan.reason||null,
-    path:plan.path?.map(h=>({...h}))||[],
+    path:plan.path?.map(h=>{const edge=plan.world?.neighbors?.[h.from]?.find(e=>e.to===h.to&&e.action===h.action);
+      return {...h,verified:!!edge?.verified,crossWorld:!!edge?.crossWorld,
+        support:edge?.support??0,provenance:edge?.provenance||[],
+        transformation:edge?.transformation||h.transformation||null};})||[],
     nodesConsidered:plan.world?.states.length||0,
+    inputTokenCount:parsed.tokens.length,requestedMaxTokens:maxTokens,
     candidateEdges:plan.world?.estimatedTransitions||0,
     diagnostics:plan.world?.diagnostics||null,
     hypothesisVerifiedByEnvironment:false,
