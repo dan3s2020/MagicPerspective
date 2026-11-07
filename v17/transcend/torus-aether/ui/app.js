@@ -406,7 +406,12 @@ function stats() {
     "Caractere consumate: "+(liveSummary?.chars??liveSnap?.chars??0).toLocaleString("ro-RO")+
     " · exerciții alocate "+(D.trainingTotal??"—")+
     " · dataset "+(D.datasetRows??"—")+" rânduri"+
-    " · procentul este calculat din EXERCIȚII finalizate, nu din alfabet.":
+    " · procentul este calculat din EXERCIȚII finalizate, nu din alfabet."+
+    ((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch)?
+       " · FAZA REALĂ: "+(liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).phase+
+       " · "+((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).done??"—")+
+       "/"+((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).total??"—")+
+       " · fără progres "+((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).noProgressSeconds??0)+" s":"") :
     "Procentul real apare numai când serverul livrează totalul din dataset.";
   $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
