@@ -10,6 +10,7 @@ import {Brain} from "./brain.mjs";
 import {LiveHyperMaze,parseHeldoutText} from "./live-hypermaze.mjs";
 import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
 import {v34LiveResearch} from "../../../research/text-hypermaze/v34-live-research.mjs";
+import {V40OriginalBrainEvidence} from "../../../research/text-hypermaze/v40-original-brain-evidence.mjs";
 import {CompleteXDWorld} from "../worlds/full-xd-maze-atlas.mjs";
 import {once} from "node:events";
 import {GpuWorlds} from "../gpu/client.mjs";
@@ -452,6 +453,28 @@ parentPort.on("message", m => {
       parentPort.postMessage({type:"chat",id,v34Research:true,result});
     }catch(err){
       parentPort.postMessage({type:"chat",id,v34Research:true,error:err.message});
+    }
+    return;
+  }
+  // Optional ORIGINAL living Brain V40 human-source/observed-intent inference.
+  // NO separate worker, no hidden correct answer, no legacy byte generator
+  // substitution. Existing trained weights and witnessed task memory REQUIRED.
+  if(m?.v40FrozenAnswer){
+    const {id,request}=m.v40FrozenAnswer;
+    try{
+      if(!brain.v40UnifiedEvidence||!brain.realEvidencePathMemory)
+        throw Error('V40 evidence not trained in this original Brain; restore an authentic V40 saved checkpoint');
+      const before=brain.realEvidencePathMemory.updates;
+      const cognitive=JSON.stringify(brain.v40UnifiedEvidence.cognitiveSnapshot);
+      const integrated=new V40OriginalBrainEvidence(brain);
+      const result=integrated.answer(request);
+      if(brain.realEvidencePathMemory.updates!==before||
+         JSON.stringify(brain.v40UnifiedEvidence.cognitiveSnapshot)!==cognitive)
+        throw Error('Frozen V40 native inference attempted to mutate learned evidence');
+      parentPort.postMessage({type:'chat',id,v40FrozenAnswer:true,
+        result,originalNativeLiveWorker:true,originalBrainCheckpoint:true});
+    }catch(err){
+      parentPort.postMessage({type:'chat',id,v40FrozenAnswer:true,error:err.message});
     }
     return;
   }
