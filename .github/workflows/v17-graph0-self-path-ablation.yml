@@ -26,6 +26,9 @@ jobs:
           node --check v17/experiments/graph0-phase2.test.mjs
           node --check v17/experiments/graph0-geometry-wall-audit.mjs
           node --check v17/experiments/graph0-geometry-wall-audit.test.mjs
+          node --check v17/experiments/graph0-heldout-axis-core.mjs
+          node --check v17/experiments/graph0-heldout-axis-core.test.mjs
+          node --check v17/experiments/graph0-heldout-axis.mjs
       - name: Native AligningGraph no-training ablation tests
         run: node --test v17/experiments/graph0-ablation-core.test.mjs
       - name: Native Brain.save Brain.load comparison across original and filtered policies
@@ -34,6 +37,8 @@ jobs:
         run: node --test v17/experiments/graph0-phase2.test.mjs
       - name: Native 5D policy wall causal audit from any working directory
         run: node --test v17/experiments/graph0-geometry-wall-audit.test.mjs
+      - name: Native FIELD and ALIGNED predictive causal gating, no future leakage
+        run: node --test v17/experiments/graph0-heldout-axis-core.test.mjs
   windows-launcher-smoke:
     runs-on: windows-2022
     timeout-minutes: 12
@@ -78,3 +83,28 @@ jobs:
           $report = Get-Content -LiteralPath $wall[0].FullName -Raw | ConvertFrom-Json
           if (-not $report.invariantTextAllPrompts -or -not $report.geometryChangeVisible) { throw "5D wall audit invariance failed" }
           Write-Host "WINDOWS_GEOMETRY_POLICY_WALL_PASS: native text unchanged after changing actual 5D geometry"
+      - name: Install CI-only Parquet fixture generator
+        shell: pwsh
+        run: python -m pip install --quiet pyarrow
+      - name: Create native real-format Parquet with held-out rows
+        shell: pwsh
+        run: |
+          python "v17/experiments/create-heldout-axis-fixture.py" "$env:RUNNER_TEMP\graph0-parquet"
+          if ($LASTEXITCODE -ne 0) { throw "Parquet fixture generation failed" }
+      - name: Execute Windows 5.1 native frozen held-out 5D policy scoring
+        shell: pwsh
+        run: |
+          $copies = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-results" -Recurse -File -Filter "graph0-checkpoint-copy.v8")
+          if ($copies.Count -ne 1) { throw "Expected frozen checkpoint copy" }
+          $heldoutScript = Join-Path $env:GITHUB_WORKSPACE "v17\experiments\RUN_GRAPH0_HELDOUT_AXIS.ps1"
+          Push-Location $env:USERPROFILE
+          try {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $heldoutScript -CheckpointCopy $copies[0].FullName -Data "$env:RUNNER_TEMP\graph0-parquet" -ResultsRoot "$env:RUNNER_TEMP\graph0-heldout-results" -Rows 4 -MaxChars 512
+            if ($LASTEXITCODE -ne 0) { throw "Frozen held-out script failed outside repository CWD" }
+          } finally { Pop-Location }
+          $reports = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-heldout-results" -Recurse -File -Filter "graph0-heldout-axis-score.json")
+          if ($reports.Count -ne 1) { throw "Expected 1 held-out experiment report" }
+          $report = Get-Content -LiteralPath $reports[0].FullName -Raw | ConvertFrom-Json
+          if ($report.selectedRows -ne 4 -or $report.heldoutRowsAvailable -ne 16) { throw "Incorrect native heldout selection" }
+          if ($report.aggregates.normal."0".answerTotal -lt 16) { throw "Empty heldout answer assessment" }
+          Write-Host "WINDOWS_REAL_PARQUET_HELDOUT_PROBE_PASS: $($report.selectedRows) rows"
