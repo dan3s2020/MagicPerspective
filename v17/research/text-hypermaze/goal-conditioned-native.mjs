@@ -273,7 +273,43 @@ export class NativeGoalTextMaze {
    noNextByteSubstitution:true,
    modelObservationCount:b.observedTransformations.seen
   };
-  if(includeTopology){
+  // Globally learned transformations exist independently of the current
+  // excerpt. The atlas distinguishes a missing pathway from a TRUNCATED
+  // search, and never labels an unknown answer as semantically impossible.
+  const model=b.observedTransformations;
+  const known=new Set(tokenizeObservation(w.source));
+  for(const op of model.operators.values())
+   for(const x of [op.from,op.to,op.left,op.right])
+    if(x!==null&&x!==undefined)known.add(x);
+  const unknown=goal.filter(x=>!known.has(x));
+  if(unknown.length)for(const record of model.records.values()){
+   for(const x of unknown)if(record.tokens.includes(x))known.add(x);
+   if(unknown.every(x=>known.has(x)))break;
+  }
+  const missingTargetTokens=goal.filter(x=>!known.has(x));
+  const kindsFound=new Set([...model.operators.values()].map(op=>op.kind));
+  const causes=[];
+  if(missingTargetTokens.length)causes.push("missing-observed-goal-concepts");
+  if(!model.operators.size)causes.push("no-learned-action-operators");
+  if(w.capacityReached)causes.push("state-budget-exhausted");
+  if(w.depthPruned)causes.push("depth-limit-reached");
+  if(w.blocked)causes.push("structural-support-restrictions");
+  if(!result.found&&!causes.length)causes.push("known-transformations-do-not-connect-goal");
+  result.diagnostic={
+   outcome:result.found?"path-found":w.complete?"no-path-in-finite-known-closure":"not-found-search-incomplete",
+   reason:result.found?"path-found":causes[0]||"known-transformations-do-not-connect-goal",
+   causes:result.found?[]:causes,missingTargetTokens,
+   knownOperatorCount:model.operators.size,
+   missingActionKinds:["insert","delete","replace"].filter(x=>!kindsFound.has(x)),
+   availableActionKinds:[...kindsFound],
+   attemptedGlobalActions:route.length,
+   unexpandedFrontier:result.graph.unexpandedFrontier,
+   unresolvedEdges:w.blocked,deadEnds:w.deadEnds,
+   stateBudgetExceeded:w.capacityReached,depthBudgetExceeded:w.depthPruned>0,
+   completeKnownOperatorClosure:w.complete,
+   notProofOfSemanticImpossibility:true
+  };
+  if(includeTopology||recordAtlas){
    // ALL true explored text states, learned action edges, native 5D phase
    // positions and propagated potentials. This is the DATA behind the
    // visualizer, never a decorative static polytope or synthetic demo.
@@ -300,6 +336,18 @@ export class NativeGoalTextMaze {
     notIndependentSemanticWorld:true,
     coordinatesAreOriginalLearned5DTorus:true
    };
+  }
+  if(recordAtlas){
+   result.atlasSequence=this.atlas.append("search",{
+    world:"text",start:result.start,required:goal,found:result.found,
+    initialShape:result.initialShape,actions:result.actions,
+    diagnostic:result.diagnostic,graph:result.graph,
+    fullExploredTopology:result.topology||null,
+    firstPredictionBeforeAction:true,
+    semanticAnswerIndependentlyVerified:false,
+    searchWasTruncated:!w.complete
+   });
+   if(!includeTopology)delete result.topology;
   }
   return result;
  }
@@ -377,7 +425,7 @@ export class NativeGoalTextMaze {
    }
   }
   const endTokens=tokenizeObservation(text);
-  return {attempted:true,firstShape:plan.initialShape.slice(),
+  const finalResult={attempted:true,firstShape:plan.initialShape.slice(),
    solvedInternalGoal:target(endTokens,goal)&&model.structuralSupport(endTokens).consistent,
    predictedBeforeMovement:plan.predicted,executedFinal:text,
    matchedInitialShape:text===plan.predicted,
@@ -388,6 +436,21 @@ export class NativeGoalTextMaze {
    note:"The SAME original maze-shape propagation plans learned text edits, "+
     "but the executor's observations are currently INTERNAL learned text-world "+
     "effects, not independent semantic-world feedback."};
+  if(plan.atlasSequence){
+   finalResult.atlasExecutionSequence=this.atlas.append("execution",{
+    world:"text",searchSequence:plan.atlasSequence,
+    originallyPredicted:plan.predicted,finalText:text,
+    steps:finalResult.actions,solvedInternalGoal:finalResult.solvedInternalGoal,
+    divergences:departures,replans:repairs,frames,
+    semanticAnswerIndependentlyVerified:false
+   });
+  }
+  return finalResult;
  }
+ atlasPage(options){return this.atlas.page(options);}
+ atlasSummary(){return this.atlas.summary();}
+ atlasOperators(options){return this.atlas.operatorCatalog(
+  this.brain.observedTransformations.operators,options);}
+ atlasFlush(){return this.atlas.flush();}
 }
 function persistentWorldBound(n,max){return {bounded:n<=max,limit:max};}
