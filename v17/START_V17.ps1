@@ -81,6 +81,11 @@ if ($Gpu -ne "off") {
   Write-Host "Checking fast native text CUDA index against the exact original index, plus actual TextCard update..."
   & $py (Join-Path $PSScriptRoot "tests\text_index_cuda_selftest.py") $Gpu 2>&1 | Out-Host
   if ($LASTEXITCODE -ne 0) { throw "Exact fast CUDA text learner self-test FAILED; training refused to start instead of corrupting or faking progress." }
+  if ($GpuPoolMB -gt 0) {
+    Write-Host "Checking persistent VRAM future-corpus staging and ORIGINAL native TextCard learning on actual selected NVIDIA card..."
+    & $py (Join-Path $PSScriptRoot "tests\resident_cuda_real_device_selftest.py") $Gpu 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "Real NVIDIA resident VRAM source lookahead / original text learner test FAILED. No fake CPU fallback." }
+  }
   $env:OCTOPUS_PY = $py
   $ErrorActionPreference = "Stop"
 }
