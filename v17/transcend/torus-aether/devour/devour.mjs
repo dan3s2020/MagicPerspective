@@ -41,11 +41,11 @@ if (arg("text")) {
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (!para.trim()) continue; k++;
     if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
   heldPick = async n => Array.from({length: n}, () => heldParas[Math.floor(Math.random() * heldParas.length)]);
-  source = {kind: "text", files, heldSet};
+  source = {kind: "text", files, heldSet, trainRows: k - heldSet.length, datasetRows: k, heldRows: heldSet.length, datasetFiles: files.length};
 } else {
   const root = arg("data", DEFAULT_TEXT_ROOT), ds = await openTextDataset(root);
   for (let k = 0; k < ds.held && evalText.length < evalChars; k++) { const x = await ds.heldOut(k); evalText += "Q: " + x.prompt + "\nA: " + x.answer + "\n\n"; }
-  source = {kind: "parquet", root};
+  source = {kind: "parquet", root, trainRows: ds.trainRows, datasetRows: ds.total, heldRows: ds.held, datasetFiles: ds.files.length};
   heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
@@ -57,7 +57,12 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
 // added with their own arm and worlds. With --start the graphs begin training at once; otherwise they wait for Start.
-const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map(); let started = new Date().toISOString(), stopping = false;
+const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map();
+const realTextStreams = new Map(); // bounded real observed CUDA predictions, not generated demo
+const streamFor = w => {
+  if (!realTextStreams.has(w)) realTextStreams.set(w, {seq: 0, events: [], phase: "pregătire", phaseAt: Date.now()});
+  return realTextStreams.get(w);
+}; let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
 const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
@@ -66,7 +71,7 @@ const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function recordTelemetry(m) {
   let samples=telemetry.get(m.w);if(!samples){samples=[];telemetry.set(m.w,samples);}
   const sample={at:Date.now(),chars:m.chars||0,lived:m.lived||0,
-    exercises:m.exercises||0,nodes:m.nodes?.length||0,edges:m.edges?.length||0,
+    exercises:m.exercises||0,mazePlayed:m.maze?.played||0,transformPlayed:m.transform?.played||0,nodes:m.nodes?.length||0,edges:m.edges?.length||0,
     aligned:m.accAlign??null,sharedStep:m.shared?.training?.step||0,
     sharedLoss:m.shared?.training?.preUpdatePredictionLoss??null,
     updates:m.observedTransformations?.learnedOperators||0,
@@ -84,8 +89,22 @@ function recordTelemetry(m) {
   }
 }
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
+  const stream = streamFor(sl.w), committed = Math.max(g?.exercises || 0, t?.exercises || 0);
+  const shares = Math.max(1, Math.ceil(slots.length / arms.length));
+  const trainTotal = Number.isInteger(source.trainRows) ?
+    Math.max(0, Math.ceil((source.trainRows - sl.share) / shares)) : null;
+  const samples = telemetry.get(sl.w) || [];
+  const newer = samples.at(-1), prior = [...samples].reverse().find(p => newer && newer.at - p.at >= 3000);
+  const dt = prior && newer && newer.at > prior.at ? (newer.at - prior.at) / 1000 : 0;
+  const perSecond = key => dt ? Math.max(0, (newer[key] - prior[key]) / dt) : null;
+  const progress = {done: committed, total: trainTotal,
+    percent: trainTotal ? 100 * Math.min(committed, trainTotal) / trainTotal : null,
+    exercisesPerSec: perSecond("exercises"), charsPerSec: perSecond("chars"),
+    mazeWorldsPerSec: perSecond("mazePlayed"), transformWorldsPerSec: perSecond("transformPlayed"),
+    datasetRows: source.datasetRows ?? null, heldRows: source.heldRows ?? null,
+    lastSampleAt: newer?.at ?? null, phase: stream.phase, phaseAt: stream.phaseAt, streamSeq: stream.seq};
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, progress, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
     nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
     snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
@@ -102,7 +121,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
   }
-  if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
+  if (fresh) { last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); realTextStreams.delete(sl.w); }
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
@@ -111,6 +130,19 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
+    if (m.type === "phase") {
+      const q = streamFor(sl.w); q.phase = String(m.phase || "necunoscut"); q.phaseAt = Date.now();
+      return;
+    }
+    if (m.type === "text-live") {
+      const q = streamFor(sl.w);
+      q.phase = "CUDA: aliniere caractere"; q.phaseAt = Date.now();
+      q.events.push({seq: ++q.seq, at: q.phaseAt, done: m.done, total: m.total,
+        charsCommitted: m.charsCommitted, exercisesCommitted: m.exercisesCommitted,
+        sample: m.sample});
+      if (q.events.length > 260) q.events.splice(0, q.events.length - 260);
+      return;
+    }
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old=graphs.get(sl.w);
@@ -352,6 +384,15 @@ http.createServer((req, res) => {
       shared:graphs.get(w)?.shared||null,
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null});
+  }
+  if (url === "/text-stream") {
+    const w = +(q.get("w") || 0), sl = slots.find(x => x.w === w);
+    if (!sl) return json(res, {error: "Graph not found", w});
+    const stream = streamFor(w), after = Math.max(0, +(q.get("after") || 0));
+    return json(res, {w, status: sl.status, sequence: stream.seq,
+      phase: stream.phase, phaseAt: stream.phaseAt,
+      events: stream.events.filter(e => e.seq > after).slice(-110),
+      committedExercises: Math.max(graphs.get(w)?.exercises || 0, last.get(w)?.exercises || 0)});
   }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
