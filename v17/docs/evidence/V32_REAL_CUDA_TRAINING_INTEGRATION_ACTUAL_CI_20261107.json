@@ -1,0 +1,61 @@
+{
+  "version": "V32",
+  "date": "2026-11-07",
+  "branch": "experiment/V32-REAL-CUDA-TEXT-THROUGHPUT-VRAM-20261107",
+  "source": "GitHub Actions workflow 42357180075",
+  "validation_platforms": [
+    "GitHub Linux CPU Python NumPy Node 22",
+    "GitHub Windows PowerShell",
+    "real headless Chromium with simulated native API payload only"
+  ],
+  "original_reference_parity": {
+    "reference_file": "v17/transcend/torus-aether/gpu/text_gpu.py",
+    "original_blob_sha": "129d19f9e7d7ce25d6ef397e35fd02f175c99f45",
+    "observed_original_characters": 810,
+    "number_of_original_training_outputs": 2,
+    "original_trust_updates_identical": true,
+    "original_predictions_identical": true,
+    "chunk_variants_tested": [
+      128,
+      4096,
+      8192
+    ],
+    "original_suffix_index_progress_reported": true,
+    "actualGPUUsed": false
+  },
+  "native_integration_real": {
+    "source": "v17/docs/TORUS_AETHER_ABC_20261104.md",
+    "train_rows": 120,
+    "heldout_rows": 13,
+    "original_trained_chars": 500,
+    "original_worker_state": "antrenează",
+    "native_graph_nodes": 5,
+    "original_aligned_fraction": 0.38238238238238237,
+    "CUDA_used": false
+  },
+  "chromium_fixture": {
+    "browser_errors": 0,
+    "fixture_aligned": "64.2%",
+    "fixture_native_graph": "61.7%",
+    "fixture_throughput_exercises_per_second": 11.48,
+    "fixture_only": true,
+    "no_hardware_benchmark": true,
+    "original_QA_diff_rendered": true,
+    "maze_initial_path_rendered": true,
+    "original_GPU_control_forwarded": true
+  },
+  "windows": {
+    "V32_powershell_syntax_passed": true,
+    "CUDA_text_selftest_hook_parsed": true,
+    "actualRTX3050Ti_run": false
+  },
+  "hardware_CUDA_unverified": {
+    "CUDA_3090": false,
+    "actual_3050ti_performance_tested": false,
+    "text_GPU_selftest_on_actual_laptop": "MUST_EXECUTE_V32_START_SCRIPT",
+    "actual_VRAM_reservation_bytes": "NOT_MEASURED_YET",
+    "actual_speedup_over_V29": "NOT_MEASURED_YET",
+    "natural_semantic_70_percent": "NOT_PROVEN"
+  },
+  "limits": "A green CPU CI proves math parity and live native HTTP/UI integration, not an RTX 3050 Ti CUDA throughput increase."
+}
