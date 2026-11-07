@@ -389,6 +389,9 @@ function stats() {
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
   $("steps").textContent = (LIVE ? (liveSummary?.chars ?? liveSnap?.chars ?? 0) : t).toLocaleString();
   $("livedSteps").textContent = (LIVE ? (liveSummary?.lived ?? liveSnap?.lived ?? 0) : t).toLocaleString();
+  const liveRate=LIVE?(liveSummary?.rate||liveSnap?.rate):null;
+  $("nativeMBps").textContent=Number.isFinite(liveRate?.megabytesPerSecond)?liveRate.megabytesPerSecond.toFixed(4)+" MB/s":"—";
+  $("nativeExps").textContent=Number.isFinite(liveRate?.exercisesPerSecond)?liveRate.exercisesPerSecond.toFixed(3)+" ex/s":"—";
   const at=liveSummary?.snapshotAt||liveSnap?.snapshotAt;
   $("lastSnapshotAge").textContent=LIVE?(at?((Date.now()-at)/1000).toFixed(1)+" s":"—"):"—";
   $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
