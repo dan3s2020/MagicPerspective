@@ -31,6 +31,9 @@ export class NativeMathGoalField {
     this.observedPairs=0;
     this.observedExecutions=0;
     this.failedExecutions=0;
+    // Only genuinely observed failed physical actions block a context.
+    // Hypothetical test-state edges are never silently treated as walls.
+    this.blockedContexts=new Map();
     this.last=null;
   }
   observePair(before,after){
@@ -96,6 +99,7 @@ export class NativeMathGoalField {
       if(depth[head]>=this.limits.maxSteps)continue;
       const current=states[head],clause=current.slice(source.offset,source.offset+source.width);
       for(const op of operators){
+        if(this.blockedContexts.has(code(clause)+"|"+code([op.primary,op.step])))continue;
         const nextClause=this.induction.apply(clause,op,induced);
         if(!nextClause)continue;
         const key=structure(nextClause)+SEP+code(nextClause);
@@ -190,6 +194,40 @@ export class NativeMathGoalField {
     this.last={solved,steps:trace.length,goalMet};
     return result;
   }
+  // Report only externally witnessed outcomes, never self-certify an imagined
+  // transition. A contradicted/rejected edge becomes resistance in THIS
+  // context alone; all other learned corridors remain intact.
+  recordActionOutcome({beforeDocument,action,afterDocument,accepted,expectedDocument}){
+    if(typeof beforeDocument!=="string"||typeof afterDocument!=="string"||
+       typeof action!=="string"||typeof accepted!=="boolean")
+      throw Error("Independent before/action/after/accepted physical observations required");
+    const first=this.findObservedClause(beforeDocument),
+      second=this.findObservedClause(afterDocument);
+    if(!first.found||!second.found)throw Error("Observed outcome leaves the learned world template");
+    const before=first.source.tokens,after=second.source.tokens;
+    const accurate=accepted&&expectedDocument===afterDocument;
+    this.observedExecutions++;
+    if(!accurate){
+      this.failedExecutions++;
+      const key=code(before)+"|"+action;
+      this.blockedContexts.set(key,(this.blockedContexts.get(key)||0)+1);
+    }else{
+      this.observePair(renderObservation(before),renderObservation(after));
+    }
+    this.last={accurate,accepted,action,
+      observedOutputOrigin:"external afterDocument, NOT predicted output"};
+    return {accurate,accepted,blockedThisContext:!accurate,
+      beforeClause:renderObservation(before),observedClause:renderObservation(after),
+      changedFullDocument:beforeDocument!==afterDocument,
+      source:"external-observed-action-result"};
+  }
+  documentForHop(plan,hop){
+    if(!plan?.source||!plan?.world?.states||!Number.isInteger(hop?.to))
+      throw Error("Frozen original path and hop required");
+    const state=plan.world.states[hop.to];
+    if(!state)throw Error("Unknown original state in path");
+    return printDocument(plan.initialDocument,plan.source,state);
+  }
   // Additive checkpoint content lives inside the ORIGINAL Brain .v8 file.
   // No second Brain, alternate language predictor, or mutable global singleton.
   export(){
@@ -198,7 +236,7 @@ export class NativeMathGoalField {
         observations:this.induction.observations,rejected:this.induction.rejected,
         data:[...this.induction.data]},
       observedPairs:this.observedPairs,observedExecutions:this.observedExecutions,
-      failedExecutions:this.failedExecutions,last:this.last};
+      failedExecutions:this.failedExecutions,blockedContexts:[...this.blockedContexts],last:this.last};
   }
   static restore(saved){
     if(saved?.version!==1||!saved.induction||!Array.isArray(saved.induction.data))
@@ -212,6 +250,7 @@ export class NativeMathGoalField {
     m.observedPairs=saved.observedPairs||0;
     m.observedExecutions=saved.observedExecutions||0;
     m.failedExecutions=saved.failedExecutions||0;
+    m.blockedContexts=new Map(saved.blockedContexts||[]);
     m.last=saved.last||null;
     return m;
   }
@@ -219,7 +258,7 @@ export class NativeMathGoalField {
     return {version:1,observedPairs:this.observedPairs,
       learnedWorldGrammars:this.induction.data.size,
       observedExecutions:this.observedExecutions,
-      failedExecutions:this.failedExecutions,
+      failedExecutions:this.failedExecutions,blockedContexts:this.blockedContexts.size,
       status:this.observedPairs?"OBSERVED_NUMERIC_ACTION_RULES":"NO_OBSERVED_ACTION_EVIDENCE",
       planner:"original V17 Discoverer.shape (goal-conditioned, before any action)",
       generalNaturalLanguageProven:false,last:this.last};
