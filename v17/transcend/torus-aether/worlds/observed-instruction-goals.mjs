@@ -114,3 +114,75 @@ export function inspectInstructionGoals(model){
    actualObservedEpisodeIds:g.evidence.map(e=>e.episodeId)}))
  }));
 }
+
+
+// Optional second-stage experiment: infer an UNSEEN phrasing only from
+// conjunctions of words that occurred in MULTIPLE independently witnessed
+// instruction surfaces for the SAME action effect. This is a finite,
+// conservative lexical-structure hypothesis, not word embeddings or NLP.
+// No new content word can be interpreted without prior evidence.
+export function inferComposedInstructionGoal(model,{
+ instruction,source,minEpisodes=2}={}){
+ const exact=inferObservedInstructionGoal(model,{instruction,source,minEpisodes});
+ if(exact.ok||exact.reason!=='UNSEEN_INSTRUCTION_INTENT')return exact;
+ if(!validText(instruction,240)||!validText(source,131072))
+  return result(false,'INVALID_INSTRUCTION_OR_SOURCE');
+ const current=new Set(tokenizeWorld(normalize(instruction)));
+ if(current.size<1)return result(false,'EMPTY_COMPOSED_DIRECTIVE');
+ const allKnown=[...model.instructionGoalMemory.entries()];
+ const vocabulary=new Set(allKnown.flatMap(([key])=>tokenizeWorld(key)));
+ const unseen=[...current].filter(t=>!vocabulary.has(t));
+ if(unseen.length)return result(false,'UNKNOWN_INSTRUCTION_WORDS',
+  {unknownWords:unseen,unverifiedSemanticGeneralizationRefused:true});
+ const byEffect=new Map();
+ for(const [phrase,groups] of allKnown){
+  for(const g of groups){
+   if(g.evidence.length<minEpisodes)continue;
+   const key=g.signature;let bucket=byEffect.get(key);
+   if(!bucket){bucket={signature:key,from:g.sourceToken,
+     to:g.terminalToken,sequence:g.sequence,phrases:[],episodes:[]};
+    byEffect.set(key,bucket);}
+   bucket.phrases.push({phrase,tokens:new Set(tokenizeWorld(phrase))});
+   bucket.episodes.push(...g.evidence.map(x=>x.episodeId));
+  }
+ }
+ const supported=[...byEffect.values()].filter(x=>x.phrases.length>=2&&
+  new Set(x.phrases.map(y=>y.phrase)).size>=2);
+ if(!supported.length)return result(false,'NO_TWO_WITNESSED_INSTRUCTION_PHRASINGS');
+ // Generic words shared by competing actions have no discriminative value.
+ const groups=supported.map(x=>{
+  let common=new Set(x.phrases[0].tokens);
+  for(const phr of x.phrases.slice(1))
+   common=new Set([...common].filter(t=>phr.tokens.has(t)));
+  const other=new Set(supported.filter(g=>g!==x)
+   .flatMap(g=>g.phrases.flatMap(p=>[...p.tokens])));
+  const discriminative=[...common].filter(t=>!other.has(t));
+  return {...x,discriminative};
+ });
+ const matches=groups.filter(g=>g.discriminative.some(t=>current.has(t)));
+ if(matches.length>1)return result(false,'AMBIGUOUS_COMPOSED_GOAL_AXES',
+  {matchedEffectFamilies:matches.length});
+ if(!matches.length)return result(false,'NO_WITNESSED_DISCRIMINATIVE_INSTRUCTION_ANCHOR');
+ const picked=matches[0],tokens=tokenizeWorld(source);
+ if(tokens.length<1||tokens.length>2048)
+  return result(false,'DESIGN_WALL_2048_INPUT_TOKENS');
+ const slots=tokens.flatMap((v,i)=>v===picked.from?[i]:[]);
+ if(slots.length!==1)return result(false,slots.length?
+  'AMBIGUOUS_SOURCE_TOKEN_POSITIONS':'NO_APPLICABLE_LEARNED_INTENT_EFFECTS');
+ return result(true,null,{
+  source,initialTokens:tokens,
+  goal:{slots:{[slots[0]]:picked.to}},
+  goalWasLearnedBeforeRequest:true,
+  destinationTokenAbsentFromInstruction:!current.has(picked.to),
+  originalObservedIntentKey:null,
+  recognitionMechanism:'COMPOSITION_OF_PREVIOUSLY_WITNESSED_INSTRUCTION_WORDS',
+  lexicalTriggerTokens:picked.discriminative.filter(x=>current.has(x)),
+  knownSourcePhrasings:picked.phrases.map(x=>x.phrase),
+  supportedSequence:picked.sequence,
+  sourceToken:picked.from,terminalToken:picked.to,sourceCoordinate:slots[0],
+  independentContexts:new Set(picked.episodes).size,
+  sourceTrainingEpisodes:picked.episodes.map(episodeId=>({episodeId})),
+  unobservedInstructionPhrase:true,unseenWordInterpretationAttempted:false,
+  freeTextSemanticsNotProven:true,hypothesisAboutUnseenContexts:true
+ });
+}
