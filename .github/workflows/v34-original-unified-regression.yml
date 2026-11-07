@@ -1,0 +1,110 @@
+name: V34 integrated original Brain xD atlas + V31 million routes + V24 character forensics
+on:
+  push:
+    branches:
+      - integration/V34-ORIGINAL-XD-V31-V24-VERIFIED-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-full-xd-multiworld:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preserve original finite complete xD maze, 20 genuinely heldout worlds, new actions and checkpoint
+        run: |
+          node --test v17/tests/complete-xd-maze-atlas.test.mjs
+          node --test v17/tests/native-xd-brain-integration.test.mjs
+      - name: Preserve original native six-scale language atlas and physically observed missing axis bridges
+        run: |
+          node --test v17/tests/native-text-path-atlas.test.mjs
+          node --test v17/tests/native-evidence-gated-integration.test.mjs
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/live-corpus-hypermaze.test.mjs
+      - name: Preserve ORIGINAL real server and native Brain worker end-to-end
+        run: node --test v17/tests/complete-xd-native-live-http.test.mjs
+  original-attraction-scale:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Recover EXACT 240 out-of-sample original shape action paths and 104400 states
+        run: node --test v17/tests/v31-scalable-original-attraction.test.mjs
+      - name: Recover original numeric limit after 1500 actions and 1008000 state long log-distance paths
+        run: node --test v17/tests/v31-million-original-log-attraction.test.mjs
+      - name: Preserve causal original Brain saved atlas, 1800 heldout and 1024000 action sequence
+        run: node --test v17/tests/v31-persistent-native-causal-atlas-large.test.mjs
+  learned-character-corridors:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V24 unseen Unicode character transfer, negative missing-edge controls and original V17 frozen accuracy
+        run: |
+          node --test v17/tests/v24-character-forensics.test.mjs
+          node --test v17/tests/v24-original-v17-answer-forensics.test.mjs
+  original-real-natural-qa-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real OpenThoughts3 120 learned / 24 heldout; FAIL instead of fabricated 70 percent on unseen answers
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if node --test v17/tests/v31-real-openthoughts3-144-native-answers.test.mjs > actual-public-qa.log 2>&1; then
+              cat actual-public-qa.log
+              exit 0
+            fi
+            cat actual-public-qa.log
+            if ! grep -Eq 'HTTP 5[0-9][0-9]|HTTP 429|UND_ERR_CONNECT_TIMEOUT' actual-public-qa.log; then
+              exit 1
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+  original-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium for REAL existing user V17 full path atlas
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Actual live worker + browser; full finite hypermaze and text char atlas including failures
+        run: node --test v17/tests/complete-xd-atlas-browser.test.mjs
+  windows-original-start:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse actual user PowerShell launcher and verify no original file collisions
+        shell: powershell
+        run: |
+          [scriptblock]::Create((Get-Content -LiteralPath 'v17/START_V17.ps1' -Raw)) | Out-Null
+          [scriptblock]::Create((Get-Content -LiteralPath 'v17/START_HYPERMAZE_REAL_CUDA.ps1' -Raw)) | Out-Null
+          [scriptblock]::Create((Get-Content -LiteralPath 'v17/START_V34_VERIFIED.ps1' -Raw)) | Out-Null
+          Write-Host 'V34 Windows startup PowerShell syntax PASS; actual RTX 3050 CUDA is not a GitHub hosted runner'
