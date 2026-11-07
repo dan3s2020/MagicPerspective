@@ -421,7 +421,22 @@ export class LearnedCognitiveMap {
       compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
       maxNodes,maxDepth,transfer,excludedByDesign:[],
       pathSource:"observed local changes + multiple independent world contexts",
-      goalKnownOnlyAsPredicate:true
+      goalKnownOnlyAsPredicate:true,
+      unsupportedTransformationFamilies:[
+        "PORTABLE_INSERTION_NOT_YET_VALIDATED",
+        "PORTABLE_DELETION_NOT_YET_VALIDATED",
+        "PORTABLE_MULTI_TOKEN_SPAN_NOT_YET_VALIDATED",
+        "CROSS_DOMAIN_MAZE_TO_LANGUAGE_ACTION_SEMANTICS_NOT_YET_PROVEN",
+        "AUTONOMOUS_GOAL_EXTRACTION_FROM_ARBITRARY_QUESTION_NOT_AVAILABLE"
+      ],
+      designBoundaries:{
+        sourceRulePositionsAreOriginallyAbsolute:true,
+        singleContextRuleRemainsStrictlyGated:true,
+        transferRequiresAtLeastTwoDistinctContexts:true,
+        transferIsHypotheticalUntilRealActionFeedback:true,
+        fullObservedAtlasJournaledOutsideRAM:true,
+        historicCompactedDataBeforeV23NotRecoverableFromCounters:true
+      }
     };
     for(let head=0;head<queue.length;head++){
       const state=queue[head],currentDepth=depth[head];
