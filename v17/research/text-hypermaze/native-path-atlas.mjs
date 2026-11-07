@@ -26,9 +26,14 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
   if(!Number.isInteger(e.from)||e.from<0||e.from>=N||
      !Number.isInteger(e.to)||e.to<0||e.to>=N)
    throw Error("Original Brain topology contains invalid edge at "+i);
-  const edge={from:e.from,to:e.to,kind:e.kind,
-   key:e.learnedOperatorKey??null,
-   sourceEvidence:e.learnedFrom??null,
+  const edge={from:e.from,to:e.to,kind:e.kind??e.status??null,
+   key:e.learnedOperatorKey??String(e.action??"edge:"+i),
+   sourceEvidence:e.learnedFrom??(e.firstEvidenceEpisode?{
+    episode:e.firstEvidenceEpisode,from:e.fromText,to:e.toText
+   }:null),
+   edgeStatus:e.status||"unclassified-observation",
+   evidenceEpisode:e.firstEvidenceEpisode??null,
+   action:e.action??null,
    observedSupport:e.observedSupport||0,
    fromToken:e.fromToken??null,toToken:e.toToken??null,
    actionIndex:e.actionIndex??null,edgeIndex:i,
@@ -59,6 +64,8 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
  }
  const allPaths=[],deadEnds=[],cycleEdges=new Set(),frontierHits=new Set();
  const goalIds=new Set(topology.nodes.filter(n=>n.goal).map(n=>n.id));
+ const knownTerminals=[...goalIds].map(i=>topology.nodes[i].text);
+ const distinctTerminalGoalTexts=new Set(knownTerminals);
  const frontier=new Map((topology.frontier||[]).map(f=>[f.node,f.reason]));
  const visited=new Set([topology.sourceId??0]);
  let expanded=0,truncated=false,truncationReason=null;
@@ -72,6 +79,8 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    allPaths.push({id:hash(nodes).slice(0,18),nodes,
     actions:route.map(e=>({from:e.from,to:e.to,key:e.key,
      kind:e.kind,fromToken:e.fromToken,toToken:e.toToken,
+     action:e.action,edgeStatus:e.edgeStatus,
+     evidenceEpisode:e.evidenceEpisode,
      sourceEvidence:e.sourceEvidence,observedSupport:e.observedSupport,
      contextFreeTransferHypothesis:e.contextFreeTransferHypothesis,
      independentlyObservedContexts:e.independentlyObservedContexts})),
@@ -96,7 +105,10 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    if(visited.has(edge.to)){
     cycleEdges.add(edge.edgeIndex);continue;
    }
-   if(topology.nodes[edge.to]?.kind===1)continue;
+   // PR72 used kind==1 for an original BLOCKED cell; V30 uses native
+   // KIND.floor==1 for valid corridors. Do not silently erase all floors.
+   // Verified physical walls have already been removed from the topology.
+   if(topology.nodes[edge.to]?.wall===true)continue;
    navigable++;
    visited.add(edge.to);
    traverse(edge.to,[...route,edge]);
@@ -117,6 +129,10 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
   referenceAvailableDuringPlanning:false,
   externalSemanticCorrectnessUnproven:true,
   topology:{states:N,edges:seenEdges.length,goalStates:goalIds.size,
+   nonUniqueTerminalGoal:distinctTerminalGoalTexts.size>1,
+   distinctTerminalGoalTexts:distinctTerminalGoalTexts.size,
+   allKnownGoalTerminalTexts:knownTerminals.slice(0,256),
+   completeRetainedFiniteTopology:topology.complete===true,
    knownOperatorFamilies:operatorMap.size,
    closedUnderLearnedOperators:topology.closedUnderLearnedOperators===true,
    completeNaturalLanguage:false,
@@ -138,7 +154,10 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    truncated:truncated||topology.closedUnderLearnedOperators!==true,
    enumerationTruncationReason:truncationReason,
    graphTruncationReasons:topology.incompleteReasons||[],
-   allFiniteSimplePathsProven:!truncated&&topology.closedUnderLearnedOperators===true},
+   allFiniteSimplePathsProven:!truncated&&topology.closedUnderLearnedOperators===true,
+   allSimplePathsWithinRetainedFiniteSubgraph:
+    !truncated&&topology.complete===true,
+   neverCompleteAllNaturalLanguage:true},
   failureReason:plan.failureReason||null,
   designLimits:plan.designLimits||null,
   possibleDesignBarriers:[
