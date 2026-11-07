@@ -36,22 +36,33 @@ function Assert-FreePort([int]$Port) {
     $listener.Start()
   } catch {
     $owners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess)
-    throw "PORT $Port OCCUPIED (PID $($owners -join ',')). V29 will NOT attach to an old or errored trainer. Stop the old ORIGINAL V17 process manually in its own terminal (Ctrl+C). Never press Reset."
+    throw "PORT $Port OCCUPIED (PID $($owners -join ',')). V32 needs its own ports free; do not stop unrelated processes. Choose other -NativePort/-UIPort."
   } finally {
     try {$listener.Stop()} catch {}
   }
 }
+# Isolation: original V17 processes in DIFFERENT checkpoint folders can
+# coexist; do not alter or stop other experiments, including V24-Characters.
+$ActualOut = [System.IO.Path]::GetFullPath($OriginalOut)
+. (Join-Path $Root "apps\hypermaze-studio-v26\checkpoint-process-scope.ps1")
 $Running = @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object {
   $_.Name -match '^node(\.exe)?$' -and $_.CommandLine -match 'devour[\\/]+devour\.mjs'
 })
-if ($Running.Count -gt 0) {
-  Write-Host "Original V17 processes found (do not duplicate checkpoint writers):" -ForegroundColor Yellow
-  $Running | Select-Object ProcessId,CommandLine | Format-List
-  throw "An original V17 trainer is already running. Close that process in its OWN PowerShell window using Ctrl+C, and retry this script. V29 has not changed the original checkpoint."
+$Scope = Get-MagicPerspectiveTrainerConflicts -Processes $Running -RequestedOut $ActualOut
+if ($Scope.SameCheckpoint.Count -gt 0) {
+  $Scope.SameCheckpoint | Select-Object PID,Out | Format-Table
+  throw "SAME CHECKPOINT ALREADY IN USE: $ActualOut. No process has been stopped."
+}
+if ($Scope.Unresolved.Count -gt 0) {
+  $Scope.Unresolved | Select-Object PID,Out,CommandLine | Format-List
+  throw "Cannot verify another worker's checkpoint directory; refusing uncertain collision. Other processes remain untouched."
+}
+if ($Scope.Independent.Count -gt 0) {
+  Write-Host "OTHER INDEPENDENT EXPERIMENTS LEFT RUNNING:" -ForegroundColor Green
+  $Scope.Independent | Select-Object PID,Out | Format-Table -AutoSize
 }
 Assert-FreePort $NativePort
 Assert-FreePort $UIPort
-$ActualOut = [System.IO.Path]::GetFullPath($OriginalOut)
 $ExpectedSave = Join-Path $ActualOut "brains\brain-0-$Arms.v8"
 if (!(Test-Path -LiteralPath $ExpectedSave -PathType Leaf) -and !$AllowNew) {
   throw "Original checkpoint NOT FOUND: $ExpectedSave. V29 refuses silent restart-from-zero. Supply the correct -OriginalOut directory from your prior V17 run, or explicitly use -AllowNew for a brand-new experiment."
