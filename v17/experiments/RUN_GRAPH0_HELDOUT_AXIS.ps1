@@ -53,6 +53,9 @@ foreach ($k in @("0","0.1","0.25","0.5","0.75","1")) {
    AnswerNLLBits = [math]::Round([double]$normal.meanAnswerNLL,3)
    AnswerBytes = $normal.answerTotal
    FieldCoveragePercent = [math]::Round(100*[double]$normal.fieldCoverageFraction,2)
+   BlockedAnswerTargetsPercent = [math]::Round(100*[double]$normal.answerAlignedTrueByteBlockedFraction,2)
+   GeometryRecoversBlockedTargetsPercent = [math]::Round(100*[double]$normal.answerGeometryRestoresBlockedTargetFraction,2)
+   GeometryExpandsNextStepsPercent = [math]::Round(100*[double]$normal.geometryExpandsSuccessorStepsFraction,2)
  }
 }
 $csv = Join-Path $runDir "heldout-axis-comparison.csv"
