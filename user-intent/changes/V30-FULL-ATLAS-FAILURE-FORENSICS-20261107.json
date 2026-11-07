@@ -15,8 +15,13 @@
   },
   "changed_code_paths": [
     "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/devour/atlas-answer-forensics.mjs",
     "v17/transcend/torus-aether/ui/index.html",
-    "v17/transcend/torus-aether/ui/atlas-explorer.js"
+    "v17/transcend/torus-aether/ui/atlas-explorer.js",
+    ".github/workflows/v30-native-full-atlas.yml",
+    "v17/tests/v30-full-atlas-diagnostics.test.mjs",
+    "v17/tests/v30-native-atlas-http.test.mjs",
+    "v17/tests/v30-answer-forensics.test.mjs"
   ],
   "added_mechanisms": [
     "Read-only paginated atlas routes and UI, preserving underlying actor",
@@ -25,15 +30,20 @@
   "additional_user_authorization_quote": "SI TREBUIE SA VEDEM TOT ATLASUL A TOATE PATH-URILE/TRANSFORMARILE SI TOT CE A FOLOSIT SA AJUNGA LA REZULTATE",
   "authorize_original_algorithm_replacement_quote": null,
   "acceptance_tests": [
-    "node --test v17/tests/v30-full-atlas-diagnostics.test.mjs",
-    "node --test v17/tests/v30-native-atlas-http.test.mjs"
+    "node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs",
+    "node --test v17/tests/v30-native-atlas-http.test.mjs",
+    "node --test v17/tests/v22-long-unseen-shape.test.mjs v17/tests/torus-cognitive-learned-map.test.mjs",
+    "GitHub Actions V30 native full atlas workflow 42356595791"
   ],
-  "actual_observed_results": "NOT_VERIFIED pending native CI",
+  "actual_observed_results": "Native CPU GitHub Actions run 42356161057 verified all 33/33 tests; subsequent real Google Chrome browser against native worker loaded persisted original atlas at run 42356595791 (success). Structured explicit-goal unseen transition reachability improved 0/100 before second independent world to 100/100 after. Native strict frozen Q/A had 0/2 full answers correct and 140 incorrect character positions. All prior original tests passed. No semantic natural text proof, no GPU tested.",
   "limitations": [
-    "No claim of unrestricted text understanding or 100% unseen next-character correctness",
-    "Read-only visualization; no original trained checkpoint mutation",
-    "User-requested broad system remains OPEN until end-to-end validation"
+    "Original V17 2D actor and checkpoint format unchanged; main never modified",
+    "No validated semantic unknown-goal natural-language first answers; strict 2/2 heldout Q/A failed",
+    "Original Q/A output from AligningGraph.write is not causally driven by Discoverer.shape path",
+    "No real local GPU CUDA execution or benchmark",
+    "Atlas cannot retroactively recover events that were never instrumented, and full natural-language state space is not enumerable",
+    "Full historical Verbatim incomplete; issue #25 remains OPEN/BLOCKING"
   ],
-  "verification_status": "NOT_VERIFIED",
+  "verification_status": "NATIVE_CPU_AND_REAL_CHROME_ATLAS_VERIFIED__SEMANTIC_TEXT_AND_CUDA_OPEN",
   "full_verbatim_gate": "BLOCKED"
 }
