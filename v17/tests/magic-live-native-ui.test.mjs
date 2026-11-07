@@ -142,7 +142,7 @@ test("magical UI source is only an extra live view, not a replacement for origin
  const start=fs.readFileSync(path.join(root,"START_V17.ps1"),"utf8");
  assert.match(html,/canvas id="field"/);assert.match(html,/canvas id="paths"/);
  assert.match(js,/shape/i);assert.match(js,/snapshot|state\.graph/);
- assert.match(launcher,/\-Gpu/);assert.match(launcher,/\-MagicUI/);
- assert.match(launcher,/\-Resume/);assert.match(start,/\[switch\]\$MagicUI/);
+ assert.match(launcher,/Gpu=\$Gpu/);assert.match(launcher,/MagicUI=\$true/);
+ assert.match(launcher,/Resume=\$true/);assert.match(start,/\[switch\]\$MagicUI/);
  assert.ok(!js.includes("Math.random("),"There are no simulated path/node transitions");
 });
