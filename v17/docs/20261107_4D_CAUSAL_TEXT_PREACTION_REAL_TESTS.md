@@ -60,3 +60,16 @@ Expected main totals: 192 initial optimal /192, 0 two-dimensional /192, 0 shuffl
 To satisfy the full MagicPerspective request, integrate a **single learned goal-conditioned state/action/next-state model** into the ORIGINAL V17 Brain and CUDA text learner, with noise agency controlling counterfactual branches, real text→state/relations acquisition from OpenThoughts, the predicted multi-step solution shape fed into the actual decoder/action selection BEFORE the first answer symbol, and live graph observability of prediction/act/delta/re-plan. Benchmark frozen unseen long natural Q/A against standard contextual language and retrieval baselines plus permuted state/action and shuffled history controls. Measure actual RTX3050 full-engine throughput, not merely reading speed. All old buttons, native 5D torus, typed/layered organisms, saved brains and worlds must remain. Only then may the full application be described as built and ready.
 
 Related source documentation: `v17/docs/TEXT_HYPERPATH_REQUIREMENT_20261106.md`, `v17/docs/NO_RELEASE_UNTIL_MECHANISMS_COMPLETE_20261106.md`, `v17/docs/ENDOGENOUS_NOISE_PROOF_20261106.md`, `v17/docs/2048_STOCHASTIC_DIRECTIONAL_PATHS_20261107.md`.
+
+## Independent repository verification after local run — GREEN
+
+GitHub Actions run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42341468233
+
+- Full pre-action 4D study: **5/5 tests passed**, 0 failures, compiled source and test, 192/192 unseen initial optimal routes.
+- Independently re-ran all three seeds on the GitHub Linux runner: precisely reproduced aggregate `{worlds:192,full:192,optimal:192,ablate2D:0,shuffledActions:0,withoutLearnedTrust:29,stochasticFixedPlan:48,stochasticFeedbackRepair:192,adversarialReliabilityShift:57,totalDocumentCharacters:22283706}`.
+- Existing V17 stochastic 2048 world regressions: **7/7 passed**.
+- Existing native V17 endogenous noise regressions: **3/3 passed**.
+- Original Brain and worker passed syntax verification unchanged; CI has no RTX GPU, so it does not establish actual CUDA integration.
+- The independent runner stored the complete generated observation JSON as workflow artifact `actual-4d-text-preaction-observations`.
+
+**Total: 15/15 Node tests passed** across the new experiment, previous 2048 model and original noise agency. This verifies the precise bounded result and controls. The original request for 100% general unseen OpenThoughts answers by an integrated V17 hyperdimensional text organism is NOT yet met; this branch remains draft research, not an executable completed replacement.
