@@ -170,6 +170,11 @@ export class ForensicPathAtlas{
    operatorHypotheses:O?.operators.size??0,
    crossWorldRules:X?.rules?.size??0,
    crossWorldObservations:X?.witnesses??0,
+   independentWorldAttempts:X?.atlas?.attempts?.length??0,
+   independentlyVerifiedOutcomes:X?.atlas?.outcomes?.length??0,
+   failedPhysicalOutcomes:X?.atlas?.outcomes?.filter(x=>x.predictionCorrect===false).length??0,
+   discardedWorldAttempts:X?.atlas?.discarded?.attempts??0,
+   discardedWorldOutcomes:X?.atlas?.discarded?.outcomes??0,
    qaLongFormEpisodes:R?.episodes??0,
    qaObservedSequentialEdges:R?.observedRoleTransitions??0,
    qaLongFormAnswerTokens:R?.answerTokens??0,
@@ -182,6 +187,9 @@ export class ForensicPathAtlas{
     originalOperatorLearningComparisons:O?.comparisons??0,
     originalObservationEvictions:O?.evicted??0,
     crossWorldObservations:X?.witnesses??0,
+    crossWorldAtlasAttemptCount:X?.atlas?.attempts?.length??0,
+    crossWorldAtlasOutcomeCount:X?.atlas?.outcomes?.length??0,
+    crossWorldAtlasEventGeneration:X?.atlas?.nextId??0,
     qaEpisodes:R?.episodes??0},
    wholeWorldEverLivedComplete:false,
    retainedMemoryComplete:!!S&&!(S.evictedNodes||S.evictedEdges||O?.evicted),
@@ -229,6 +237,11 @@ export class ForensicPathAtlas{
     leftAnchor:op.left,rightAnchor:op.right,
     observedSupport:op.sourceObservations,evidence:op.evidence,
     status:"INFERRED_EFFECT_REQUIRES_EXTERNAL_ACTION_VERIFICATION"})),
+   attempts:[...(this.brain.crossEpisodeTransformations?.atlas?.attempts||[])].map(r=>({
+    ...r,status:"FROZEN_PREACTION_EXPERIMENT",referenceAnswerProvided:false})),
+   outcomes:[...(this.brain.crossEpisodeTransformations?.atlas?.outcomes||[])].map(r=>({
+    ...r,status:r.predictionCorrect?"EXTERNALLY_VERIFIED_CORRECT_ACTION":
+     "EXTERNALLY_FALSIFIED_ACTION"})),
    crossWorld:[...(this.brain.crossEpisodeTransformations?.rules?.values()||[])].map(r=>({
     action:r.action,kind:r.type,delta:r.delta,from:r.from,to:r.to,
     worlds:[...r.worlds],distinctInputs:r.values.size,
