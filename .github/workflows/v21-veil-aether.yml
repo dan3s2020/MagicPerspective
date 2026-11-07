@@ -31,6 +31,10 @@ jobs:
         run: |
           python3 -m pip install --quiet numpy
           python3 -m unittest discover -s v17/tests -p test_v21_context_window_parity.py -v
+      - name: V21 CRITICAL - original real next-symbol target, no synthetic zero labels
+        run: |
+          python3 -m pip install --quiet numpy
+          python3 -m unittest discover -s v17/tests -p test_v21_true_next_symbol.py -v
       - name: V21 actual dataset consumption and percentage accounting (TXT, Parquet, workers)
         run: node --test v17/tests/veil-aether.dataset-progress.test.mjs
       - name: V21 observed contextual graph, pre-action shape, no-leak and preservation tests
