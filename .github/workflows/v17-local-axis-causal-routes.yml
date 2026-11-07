@@ -25,6 +25,8 @@ jobs:
         run: node --test v17/tests/xd-2048-states-local-language.test.mjs
       - name: Direct native V17 text candidate reranking on frozen unseen text (geometry causal test)
         run: node --test v17/tests/native-geometry-hybrid-text.test.mjs
+      - name: Probe actual native text-context geometry on frozen heldout character predictions
+        run: node --test v17/tests/native-context-axis-geometry.test.mjs
       - name: Baseline regression tests for original V17 are unchanged
         run: |
           node --test v17/tests/observed-text-paths.test.mjs
