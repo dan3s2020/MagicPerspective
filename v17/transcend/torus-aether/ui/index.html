@@ -234,6 +234,18 @@
           <button id="v24AnalyzeOriginalWriter" type="button">V17 ORIGINAL: COMPARA FORMA GHICITA VS RASPUNSUL NEVAZUT (fara CUDA)</button>
         </div>
         <pre id="v24OriginalAnswerForensic" style="white-space:pre-wrap;max-height:460px;overflow:auto;color:#f5d8a6;font:12px ui-monospace,monospace">Nicio evaluare efectuata pe raspunsurile originale. Vor fi afisate pozitiile corecte si gresite, rutele lipsa si doar reparatiile POST-HOC. Scorul original shapeSame nu se schimba prin aceasta inspectie.</pre>
+        <h3>Feedback de caracter din mediul real: zid sau schimbare verificata</h3>
+        <p class="note">Completeaza numai efecte pe care le-ai observat in mediu. O animatie sau o predictie de graf NU confirma efectul. Acest mesaj poate modifica doar harta de caractere din Brain, cu backup checkpoint; original V17 ramane neatins.</p>
+        <div class="row">
+          <label>Inainte <input id="v24CharFeedbackBefore" type="text" placeholder="starea REALA observata"></label>
+          <label>ID actiune <input id="v24CharFeedbackAction" type="text" size="46" placeholder='__CHAR_XWORLD__:["replace",1,"a","o"]'></label>
+        </div>
+        <div class="row">
+          <label>Dupa <input id="v24CharFeedbackAfter" type="text" placeholder="starea REALA dupa actiune"></label>
+          <label><input id="v24CharFeedbackAccepted" type="checkbox"> efect ACCEPTAT de mediu</label>
+          <button id="v24CharFeedbackSubmit" type="button">SALVEAZA FEEDBACK REAL + BACKUP</button>
+        </div>
+        <pre id="v24CharFeedbackResult" style="white-space:pre-wrap;color:#dcb8ff;font:12px ui-monospace,monospace"></pre>
         <label>Vizualizare noduri de la indexul <input id="v24CharOffset" type="number" min="0" value="0" style="width:90px"></label>
         <canvas id="v24CharacterCanvas" width="960" height="450" style="width:100%;height:450px;background:#08141e;border:1px solid #435876;border-radius:8px" aria-label="Graf real de caractere si traseu inghetat original Discoverer.shape"></canvas>
         <p class="note">Auriu = forma pre-actiune; indigo = ipoteza neconfirmata; verde = transformare confirmata prin feedback extern. Fereastra grafica este o proiectie a nodurilor reale; exportul JSONL al atlasului V23/V24 contine toate inregistrarile, inclusiv esecurile.</p>
