@@ -494,6 +494,15 @@ class Server:
             if self.fast_text is None:
                 raise RuntimeError("text_fast_init required before text_fast_status")
             r = self.fast_text.status()
+        elif c == "text_fast_graph":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_graph")
+            r = self.fast_text.unified.graph(max_edges=min(200, max(1, int(m.get("maxEdges", 90)))))
+        elif c == "text_fast_plan":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_plan")
+            r = self.fast_text.unified.plan(str(m.get("start", "")),
+                                            length=min(80, max(1, int(m.get("length", 48)))))
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c in ("shared_load", "shared_train", "shared_eval", "shared_save"):
