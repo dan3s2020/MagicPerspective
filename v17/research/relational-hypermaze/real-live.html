@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ro">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective V24 — Real Corpus Native Shape</title>
+<style>
+:root{color-scheme:dark;--bg:#080f19;--card:#101c2b;--line:#294058;--text:#e9f4ff;--muted:#a5bfd2;--gold:#ffca68;--ok:#65deb2;--warn:#ff8793}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,"Segoe UI",sans-serif}
+header{padding:13px 18px;background:#0d1928;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:18px;margin:0}h2{font-size:15px;margin:0 0 10px;color:var(--gold)}h3{font-size:13px;margin:10px 0}
+small,.muted{color:var(--muted)}main{display:grid;grid-template-columns:minmax(300px,1.1fr) minmax(470px,1fr);height:calc(100vh - 75px)}
+#oldPane{border-right:1px solid var(--line);background:#000;min-height:500px;display:flex;flex-direction:column}
+#oldPane iframe{width:100%;flex:1;min-height:470px;border:0}#newPane{padding:16px;overflow:auto}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 13px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.metric{background:#0b1623;border:1px solid #21394e;border-radius:9px;padding:9px;min-width:0}
+.metric strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.metric small{display:block;font-size:11px}
+.controls{display:flex;flex-wrap:wrap;gap:7px}
+button,input,textarea{font:inherit}button{border:1px solid #44617b;background:#172e42;color:var(--text);border-radius:8px;padding:8px 13px;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}
+button:hover:not(:disabled){border-color:var(--gold)}
+textarea{background:#0b1723;color:var(--text);border:1px solid var(--line);border-radius:8px;width:100%;padding:9px;min-height:68px;resize:vertical}
+progress{width:100%;height:23px;accent-color:var(--ok)}
+pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Consolas,monospace;max-height:280px;overflow:auto;background:#091522;border-radius:8px;padding:12px;color:#b9d8ea}
+#paths{width:100%;height:320px;border:1px solid #2b4761;background:#070f19;border-radius:9px}
+#eventsChart{width:100%;height:130px;background:#081522;border-radius:8px}
+.tag{display:inline-block;border:1px solid #355570;padding:3px 7px;border-radius:6px;margin:2px;color:var(--muted);font-size:12px}
+.warn{color:var(--warn)}.ok{color:var(--ok)}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#oldPane.closed{display:none}main.compact{grid-template-columns:1fr}main.compact #newPane{max-width:1300px;margin:auto;width:100%}
+@media(max-width:1100px){main{display:block;height:auto}#newPane{overflow:visible}#oldPane iframe{height:65vh} .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style></head>
+<body>
+<header><div><h1>MagicPerspective V24 — training real, forma soluției</h1>
+<small>Trasee din <b>Discoverer.shape()</b> original · tranziții Q/A observate · ipotezele sunt separate de fapte</small></div>
+<div class="row"><button id="toggleOld">Ascunde/arată UI original V17</button><span id="connection" class="muted" aria-live="polite">Conectare...</span></div></header>
+<main id="layout">
+<div id="oldPane">
+<div class="row" style="padding:8px 12px"><strong>UI original V17, neschimbat</strong>
+<span class="muted">Necesită pornirea separată a motorului V17 (port 8866)</span></div>
+<iframe id="oldUI" title="MagicPerspective original V17 UI" src="http://127.0.0.1:8866/transcend/torus-aether/ui/index.html?live=1"></iframe>
+</div>
+<div id="newPane">
+<section><h2>Control real al antrenării</h2>
+<div class="controls"><button data-action="start">▶ Start / Reia</button><button data-action="pause">Ⅱ Pauză</button>
+<button data-action="save">Salvează</button><button data-action="evaluate">Testează nevăzute</button><button data-action="stop">■ Oprește cu salvare</button></div>
+<p class="muted">Aceste butoane controlează numai motorul V24. Nu șterg și nu resetează niciun creier V17.</p>
+<progress id="progress" max="100" value="0"></progress><div id="statusText" class="muted">Aștept backend...</div>
+<div class="grid">
+<div class="metric"><small>Dataset consumat</small><strong id="pct">—</strong></div>
+<div class="metric"><small>Rânduri parcurse / total training</small><strong id="rows">—</strong></div>
+<div class="metric"><small>Rânduri nevăzute rezervate</small><strong id="held">—</strong></div>
+<div class="metric"><small>Tranziții Q/A acceptate</small><strong id="accepted">—</strong></div>
+<div class="metric"><small>Stări active în memorie</small><strong id="memory">—</strong></div>
+<div class="metric"><small>Rânduri pe secundă (măsurate)</small><strong id="speed">—</strong></div>
+</div><p class="muted" id="source">—</p><p class="muted" id="save">—</p><p class="warn" id="error"></p>
+</section>
+<section><h2>Predicții efectuate înainte de învățarea rândului curent</h2>
+<div class="grid">
+<div class="metric"><small>Predicții online eșantionate</small><strong id="scored">—</strong></div>
+<div class="metric"><small>Răspuns complet exact (online)</small><strong id="onlineExact">—</strong></div>
+<div class="metric"><small>Media suprapunerii cuvintelor</small><strong id="onlineF1">—</strong></div>
+</div>
+<p class="muted">Online = evaluare înainte de actualizarea rândului curent. Nu reprezintă precizia pe testul înghețat.</p>
+<div id="lastQuestion" class="muted">—</div>
+<div id="prediction" class="muted">—</div>
+</section>
+<section><h2>Labirintul de text — graful și calea reală pre-acțiune</h2>
+<p class="muted">Nodurile sunt stări observate; liniile punctate reprezintă ipoteze de similitudine, liniile continue tranziții de dialog observate. Dispunerea pe ecran este 2D pentru vizualizare, nu dovadă de coordonate 4D învățate.</p>
+<svg id="paths" role="img" aria-label="Graf de trasee, cu intensitatea câmpului V17 și succesiunea aleasă" viewBox="0 0 880 320"></svg>
+<div id="shapeMeta" class="muted">Aștept traseul nativ...</div>
+<details><summary>Traseu pas cu pas, activări și câmpul de atracție</summary><pre id="traceText"></pre></details>
+</section>
+<section><h2>Evaluare înghețată — exemple niciodată antrenate</h2>
+<div class="grid">
+<div class="metric"><small>Întrebări testate</small><strong id="evalN">—</strong></div>
+<div class="metric"><small>Răspunsuri exacte pe held-out</small><strong id="evalExact">—</strong></div>
+<div class="metric"><small>Word-F1 mediu pe held-out</small><strong id="evalF1">—</strong></div>
+</div>
+<p id="evalMeta" class="muted">Proba înghețată păstrează toate răspunsurile din ultimele rânduri în afara antrenării.</p>
+</section>
+<section><h2>Testează o întrebare cu forma soluției înghețată</h2>
+<textarea id="query" placeholder="Scrie o întrebare nouă. Sistemul va căuta doar tranziții observate și va arăta când se abține."></textarea>
+<div class="row"><button id="predict">Prezice înainte de acțiune</button><label class="muted">Noise/temperatură <input id="temperature" type="range" min="0" max="1.5" step=".1" value="0"></label><span id="temperatureLabel">0</span></div>
+<pre id="queryResult">—</pre>
+</section>
+<section><h2>Istoric și progres live măsurat</h2><svg id="eventsChart" viewBox="0 0 880 130" role="img" aria-label="Scoruri reale de evaluare de-a lungul rândurilor"></svg>
+<div class="muted" id="recent">—</div>
+<p class="warn">Limită științifică: răspunsul generat de acest modul este recuperat din Q/A trăite anterior. Similaritatea este o ipoteză; nu s-a demonstrat generarea de răspunsuri semantice noi cu ≥70%. Procesarea de graf V24 se face în Node CPU, nu CUDA.</p></section>
+</div></main>
+<script>
+"use strict";
+const $=s=>document.getElementById(s),fmt=n=>Number(n||0).toLocaleString("ro-RO");
+let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false;
+const SVG="http://www.w3.org/2000/svg";
+function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
+ for(const [k,v] of Object.entries(attrs||{}))n.setAttribute(k,String(v));
+ if(text!==undefined)n.textContent=String(text);parent.appendChild(n);return n;}
+const set=(id,s)=>{$(id).textContent=String(s);};
+const pct=(a,b)=>b?((100*a/b).toFixed(2)+"%"):"—";
+$("toggleOld").onclick=()=>{$("oldPane").classList.toggle("closed");$("layout").classList.toggle("compact");};
+$("temperature").oninput=()=>set("temperatureLabel",$("temperature").value);
+async function json(url,opts){const r=await fetch(url,{cache:"no-store",...opts});
+ const body=await r.json();if(!r.ok)throw Error(body.error||"HTTP "+r.status);return body;}
+async function action(name){if(working)return;working=true;try{
+ const result=await json("/api/control",{method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({action:name})});render(result);}
+ catch(e){set("error",e.message);}finally{working=false;}}
+for(const b of document.querySelectorAll("button[data-action]"))b.onclick=()=>action(b.dataset.action);
+function render(s){
+ set("connection",s.mode==="running"?"● LIVE · antrenează":"● "+s.mode);
+ $("connection").className=s.mode==="error"?"warn":"ok";
+ set("pct",pct(s.progress.cursor,s.progress.trainRows));
+ set("rows",fmt(s.progress.cursor)+" / "+fmt(s.progress.trainRows));
+ set("held",fmt(s.progress.heldOut));set("accepted",fmt(s.atlas.stats.accepted));
+ set("memory",fmt(s.atlas.activeRecords));
+ const now=Date.now(),dt=(now-oldTime)/1000;
+ if(dt>.4){const speed=Math.max(0,(s.progress.cursor-oldCursor)/dt);
+ set("speed",speed.toFixed(1));oldCursor=s.progress.cursor;oldTime=now;}
+ $("progress").value=s.progress.consumedPercent;
+ set("statusText",s.mode+" · rămase: "+fmt(s.progress.remaining)+
+ (s.progress.limitActive?" · LIMITĂ PARȚIALĂ ACTIVĂ":" · întregul set antrenabil"));
+ set("source",s.input.kind+" · "+s.input.root+" · "+fmt(s.input.totalRows)+" rânduri sursă");
+ set("save","Checkpoint: "+s.checkpoint.file+" · cursor salvat "+fmt(s.checkpoint.savedCursor));
+ set("error",s.error||"");
+ set("scored",fmt(s.progress.onlineScored));
+ set("onlineExact",pct(s.progress.onlineExact,s.progress.onlineScored));
+ set("onlineF1",pct(s.progress.onlineF1Sum,s.progress.onlineScored));
+ if(s.lastTrace){set("lastQuestion","Întrebarea din rândul "+s.lastTrace.row+": "+s.lastTrace.question);
+ set("prediction","Forma prezisă: "+(s.lastTrace.found?s.lastTrace.predicted:"ABȚINERE")+
+  " · full exact="+s.lastTrace.exact+" · word-F1="+(s.lastTrace.wordF1*100).toFixed(2)+"%");}
+ if(s.heldout){const e=s.heldout;set("evalN",fmt(e.count));set("evalExact",pct(e.fullExact,e.count));
+ set("evalF1",pct(e.meanWordF1,1));
+ set("evalMeta","Întrebări care nu repetă exact întrebări din memorie: "+e.nonDuplicate+
+  " · răspunsuri exacte în subset: "+e.nonDuplicateExact+
+  " · exemplele sunt rezervate și nu sunt însușite la evaluare.");}
+ if(s.lastTrace?.row!==undefined&&cursor!==s.lastTrace.row){cursor=s.lastTrace.row;trace();}
+}
+function layout(g){const n=g.nodes||[],out=new Map();
+ const byKind={};for(const node of n)(byKind[node.kind] ||= []).push(node);
+ for(const [type,col] of Object.entries({"new-question":0,"hypothesized-perspective":1,
+  "observed-question":2,"observed-answer":3})){
+  const arr=byKind[type]||[];
+  arr.forEach((node,i)=>out.set(node.id,{x:65+col*245,y:35+(i+1)*260/(arr.length+1)}));
+ }
+ for(const node of n)if(!out.has(node.id))out.set(node.id,{x:90+(node.id%4)*230,y:50+(node.id%11)*20});
+ return out;}
+function draw(g){
+ const root=$("paths");root.replaceChildren();if(!g?.nodes?.length){
+  svg("text",{x:25,y:40,fill:"#a5bfd2"},root,"Fără cale observată. Răspunsul nu este inventat.");return;}
+ const xy=layout(g),path=new Set((g.route||[]).map(e=>e.from+":"+e.to));
+ for(const edge of g.edges||[]){
+  const a=xy.get(edge.from),b=xy.get(edge.to);if(!a||!b)continue;
+  const selected=path.has(edge.from+":"+edge.to);
+  svg("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,
+    stroke:selected?"#ffca68":edge.verified?"#65deb2":"#5e83a5",
+    "stroke-width":selected?3:1.3,"stroke-dasharray":edge.verified?"":"5 5",opacity:selected?1:.65},root);
+ }
+ for(const n of g.nodes){
+  const p=xy.get(n.id);if(!p)continue;
+  const chosen=n.id===0||(g.route||[]).some(e=>e.to===n.id);
+  svg("circle",{cx:p.x,cy:p.y,r:chosen?12:8,fill:n.kind==="observed-answer"?"#65deb2":chosen?"#ffca68":"#345773",stroke:"#0c1825","stroke-width":2},root);
+  const v=g.field?.[n.id]||0;
+  svg("text",{x:p.x+14,y:p.y-2,fill:chosen?"#edf5ff":"#a2b7c7","font-size":11},root,
+    n.kind+" #"+n.id);
+  svg("text",{x:p.x+14,y:p.y+11,fill:"#b9a5d7","font-size":10},root,"V="+v.toFixed(4));
+ }
+ set("shapeMeta","Noduri "+(g.totalNodes||g.nodes.length)+" · pași prezis "+
+  (g.route?.length||0)+" · "+(g.found?"ținta găsită":"abținere")+
+  " · etape cu tranziție real observată: "+(g.route||[]).filter(x=>x.verified).length);
+ set("traceText",JSON.stringify({method:g.method,beforeAction:g.beforeAction,route:g.route,
+  field:g.field,learnedContext:g.hypotheses||g.learnedContexts},null,2));
+}
+async function trace(){try{lastTrace=await json("/api/trace");draw(lastTrace);}catch(e){set("shapeMeta","Eroare traseu: "+e.message);}}
+async function history(){try{const list=await json("/api/events");const ev=list.filter(x=>x.type==="prediction");
+ const root=$("eventsChart");root.replaceChildren();
+ const last=ev.slice(-120);if(!last.length)return;
+ for(let i=1;i<last.length;i++){
+  const a=last[i-1],b=last[i],x1=20+(i-1)*835/Math.max(1,last.length-1),
+   x2=20+i*835/Math.max(1,last.length-1);
+  svg("line",{x1,y1:120-a.wordF1*105,x2,y2:120-b.wordF1*105,
+   stroke:"#65deb2","stroke-width":2},root);
+ }
+ set("recent",last.length+" măsurători reale păstrate în memoria de evenimente · ultimul rând "+last.at(-1).row);
+ }catch(e){set("recent",e.message);}}
+$("predict").onclick=async()=>{try{const prompt=$("query").value;
+ const result=await json("/api/predict",{method:"POST",headers:{"content-type":"application/json"},
+ body:JSON.stringify({prompt,temperature:+$("temperature").value})});
+ set("queryResult",result.found?"Răspuns observat anterior:\n"+result.answer+
+ "\n\nTraseu pre-acțiune: "+result.route.map(x=>x.action).join(" -> "):
+ "Fără răspuns inventat: "+result.reason);draw(result);}
+ catch(e){set("queryResult","Eroare: "+e.message);}};
+async function poll(){try{const s=await json("/api/status");render(s);}
+ catch(e){set("connection","● backend offline: "+e.message);$("connection").className="warn";}}
+setInterval(poll,750);setInterval(history,2500);poll();history();
+</script>
+</body></html>
