@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import net from "node:net";
-import {spawn} from "node:child_process";
+import {spawn,spawnSync} from "node:child_process";
 import {fileURLToPath} from "node:url";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 import {playExercise,KIND}
@@ -88,7 +88,7 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.ok(observed.nativeHypermaze.originalNoiseAgency);
   assert.equal(observed.nativeHypermaze.externalSemanticAccuracyProven,false);
   const qp=new URLSearchParams({w:"0",start:"He is calm.",
-   required:"She,calm",execute:"1"});
+   required:"She,calm",execute:"1",topology:"1"});
   const response=await fetch(url+"/native-hypermaze?"+qp,{method:"POST"});
   const result=await response.json();
   assert.equal(response.status,200);
@@ -101,6 +101,13 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.equal(result.body?.frames[0]?.worldActionsExecuted,0);
   assert.equal(result.body?.externalSemanticGoalValidated,false);
   assert.equal(result.exactUnseenLargeAnswerProven,false);
+  assert.ok(result.topology?.nodes?.length>=3,"Actual native learned text-world nodes are missing");
+  assert.ok(result.topology.edges.length>=1,"Actual original observed transformation edges are missing");
+  assert.ok(result.topology.nodes.some(n=>n.position5D?.length===5),
+   "No learned native five-torus positions were exposed for browser rendering");
+  assert.ok(result.topology.initialShapeIds.length>=2);
+  assert.ok(result.topology.nodes.some(n=>n.text==="She is calm."&&n.goal),
+   "The real textual goal state must be an actual topology node");
   // The REAL original V17 native worker must retain Romanian diacritics
   // in the observed world, and infer a completely unseen Unicode goal.
   const unicodeGoal=new URLSearchParams({w:"0",
@@ -126,6 +133,35 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   const old=await(await fetch(url+"/transcend/torus-aether/ui/index.html")).text();
   assert.ok(old.includes("<html")||old.includes("<!doctype"));
   assert.ok(!old.includes('id="nativeHypermazeStart"'));
+  const html=await(await fetch(url+"/transcend/torus-aether/ui/native-hypermaze.html")).text();
+  const js=await(await fetch(url+"/transcend/torus-aether/ui/native-hypermaze.js")).text();
+  assert.ok(html.includes('id="world"')&&html.includes('id="predicted"'));
+  assert.ok(js.includes("/native-hypermaze?")&&js.includes("dataVersion"));
+  const browsers=["google-chrome","chromium","chromium-browser"];
+  const browser=browsers.find(x=>spawnSync("which",[x],{encoding:"utf8"}).status===0);
+  if(browser){
+   // REAL browser makes the original V17 HTTP request, renders actual graph
+   // and DOM before/after state from a task-supplied start and goal.
+   const deep=new URLSearchParams({plan:"1",source:"He is calm.",required:"She,calm"});
+   const ran=spawnSync(browser,[
+    "--headless","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
+    "--dump-dom","--virtual-time-budget=4800",
+    url+"/transcend/torus-aether/ui/native-hypermaze.html?"+deep
+   ],{encoding:"utf8",timeout:25000,maxBuffer:12*1024*1024});
+   assert.equal(ran.status,0,"Native hypermaze Chrome UI not running: "+ran.stderr?.slice(-1200));
+   assert.match(ran.stdout,/data-native-connected="true"/,
+    "Browser's actual V17 worker poll must be connected, not static mock");
+   assert.match(ran.stdout,/data-native-before-action="true"/,
+    "Original Brain must plan globally in browser before first text action");
+   const browserNodes=+(ran.stdout.match(/data-native-node-count="(\d+)"/)?.[1]||0);
+   assert.ok(browserNodes>=3,
+    "Actual native graphical hypermaze was not populated from the original Brain");
+   assert.ok(ran.stdout.includes("She is calm."),
+    "Real browser answer-shape readout did not show original native prediction");
+   console.log("REAL_NATIVE_HYPERMAZE_CHROMIUM",JSON.stringify({
+    browser,connected:true,browserNodes,goal:"She is calm.",
+    noMockData:true,originalUIUntouched:true}));
+  }else console.log("NATIVE_BROWSER_NOT_INSTALLED: real worker/API/static page tested");
   console.log("REAL_ORIGINAL_WORKER_SHARED_HYPERMAZE",JSON.stringify({
    originalBrainSaved:true,checkpointBytes:fs.statSync(save).size,
    realTextCorpusRecords:observed.nativeHypermaze.actualCorpusRows,
