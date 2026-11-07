@@ -1,0 +1,29 @@
+name: V17 evidence: route-area memory, noncommuting text axes and real causal-world local aliasing
+on:
+  push:
+    branches:
+      - experiment/V17-PATH-HOLONOMY-MEMORY-DIMENSION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  holonomy-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax checks
+        run: |
+          node --check v17/research/text-hypermaze/path-holonomy.mjs
+          node --check v17/tests/text-path-holonomy-memory.test.mjs
+      - name: Hypothesis: route-area memory with 200 held-out path ablations + actual V17 world controls
+        run: node --test v17/tests/text-path-holonomy-memory.test.mjs
+      - name: Re-run source text hypermaze nonlinear movement and native V17 edit tests
+        run: |
+          node --test v17/tests/text-hypermaze-state-dependent.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+      - name: Re-run V17 constructed paths original Brain integration tests
+        run: node --test v17/tests/constructed-paths-v17.test.mjs
