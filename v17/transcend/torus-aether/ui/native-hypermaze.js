@@ -112,7 +112,8 @@ $("plan").addEventListener("click",async()=>{
  say("Solicit traseul original Discoverer.shapeGraph de la Brain. Referința nu este transmisă.");
  try{
   const q=new URLSearchParams({w:String(state.worker),start,
-   required:required.join(","),execute:"1",topology:"1",atlas:"1",maxPaths:"256"});
+   required:required.join(","),execute:"1",topology:"1",atlas:"1",maxPaths:"256",
+   maxStates:$("atlasMaxStates").value,maxDepth:$("atlasMaxDepth").value});
   const result=await getJson("/native-hypermaze?"+q.toString(),
    {method:"POST"});
   if(!result.plannedBeforeFirstAction||result.referenceAnswerProvided!==false)
