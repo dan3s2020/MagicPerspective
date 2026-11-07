@@ -1,0 +1,40 @@
+name: V24 native original Brain + grounded original Discoverer acceptance
+on:
+  push:
+    branches:
+      - experiment/V24-NATIVE-BRAIN-V23-GROUNDED-HYPERPATH-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v24-native-brain:
+    name: V17 original worker HTTP, witnessed V23 original shape, 100k-step proofs
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact native old and V24 source parse, UI preserved
+        run: |
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/v23-lab-adapter.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/v23-grounded-live.js
+          node --check v17/transcend/torus-aether/worlds/grounded-temporal-hypermaze.mjs
+          node --check v17/transcend/torus-aether/worlds/multiscale-grounded-hypermaze.mjs
+          node --check v17/transcend/torus-aether/worlds/learned-numeric-causal-shape.mjs
+      - name: Native original Brain/worker HTTP with heldout 384-action answer and same Brain checkpoint
+        run: node --test v17/tests/v24-native-brain-v23-http.test.mjs
+      - name: V23 original Discoverer long-event physics across 100000 actions
+        run: node --test v17/tests/v23-grounded-temporal-hypermaze.test.mjs v17/tests/v23-multiscale-grounded-hypermaze.test.mjs
+      - name: V23 learned numeric causal physics across 300 mixed QAs plus 100000 real verified steps
+        run: node --test v17/tests/v23-learned-numeric-causal-shape.test.mjs
+      - name: V22 and V17 original 2D/linguistic regression suite
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Preserve original V19 native cognitive HTTP and observed-memory tests
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Preserve V21 original shape/corpus boundaries
+        run: node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
