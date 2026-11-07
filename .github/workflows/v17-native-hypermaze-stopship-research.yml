@@ -27,6 +27,8 @@ jobs:
         run: node --test v17/tests/native-hypermaze-goal-text.test.mjs
       - name: Actual original native V17 text corpus process and Brain checkpoint must call new global-shape operator (no fake UI)
         run: node --test v17/tests/native-hypermaze-original-worker-integration.test.mjs
+      - name: Frozen withheld text compositions using SAME original maze shape, geometry and shared-policy ablations
+        run: node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
       - name: Original V17 maze/text/transform learning baseline must remain unchanged
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
