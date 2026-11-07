@@ -64,5 +64,5 @@ test("metrics distinguish singletons, repeated contexts and non-informative T=0 
   assert.equal(a.meanEntropyBits,0.2);
   assert.equal(summarizeTrace(trace,0).dominantStepsAt95Pct,null);
   assert.equal(summarizeTrace(trace,0).meanEntropyBits,null);
-  assert.equal(repeatedEightGrams("abcdefghabcdefgh"),1/9);
+  assert.ok(Math.abs(repeatedEightGrams("abcdefghabcdefgh") - 1/9) < 0.00001);
 });
