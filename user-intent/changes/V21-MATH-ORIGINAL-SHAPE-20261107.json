@@ -1,0 +1,49 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "V21-MATH-ORIGINAL-SHAPE-20261107",
+  "mode": "ISOLATED_ADDITIVE_EXPERIMENT",
+  "source": {
+    "path": "verbatim/2026-11-07-MAGICPERSPECTIVE-MATHEMATICS-USER-TURNS-VERBATIM.md",
+    "exact_user_quote": "Cum putem sa învățăm pe MagicPerspective toată matematica ,regulile ,problemele si etc ?"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape(ret,n,me): original attraction propagation, conductance and first-action path extraction",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/worlds/math.mjs",
+    "v17/transcend/torus-aether/worlds/math-observed.mjs",
+    "v17/tests/math-original-shape.test.mjs",
+    "v17/tests/math-observed-induction.test.mjs",
+    ".github/workflows/math-original-shape-isolated.yml"
+  ],
+  "added_mechanisms": [
+    {
+      "path": "v17/transcend/torus-aether/worlds/math-observed.mjs",
+      "purpose": "standalone exact-rational symbolic-rule induction from observed before/action/after pairs; additive benchmark, never substitutes for the original maze Discoverer.shape",
+      "hypothesis_language": "finite exact-rational expressions over a,b,c, zero and one; depth <=2"
+    }
+  ],
+  "additional_user_authorization_quote": "Si demonstrează . Testează până demonstrezi",
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node --test v17/tests/math-original-shape.test.mjs",
+    "node --test v17/tests/math-observed-induction.test.mjs",
+    "node --test v17/tests/torus-organism.test.mjs"
+  ],
+  "actual_observed_results": "Native CI 42342531891: trained 5 contextual transformations from 320 observed math effects; solved 512/512 holdout affine equations; 0/64 cold and 0/64 indispensable-rule ablation; original native maze tests 7/7. Out-of-distribution extrapolation is NOT VERIFIED until subsequent CI passes.",
+  "limitations": [
+    "Cannot claim all mathematics learned",
+    "Rule hypothesis grammar and factored equation stage structure are provided",
+    "Mathematical transition observation source is a controlled teacher environment",
+    "Separate learned math library is not yet the native single persistent Brain checkpoint",
+    "Mathematical goal cells and routes are projected into a V17 retinal grid before Discoverer.shape()",
+    "No OpenThoughts3 semantic or real Windows CUDA test in this experiment",
+    "Full historical Verbatim remains incomplete"
+  ],
+  "verification_status": "PARTIAL_VERIFIED_NOT_GENERAL_MATH",
+  "full_verbatim_gate": "BLOCKED"
+}
