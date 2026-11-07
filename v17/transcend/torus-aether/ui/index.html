@@ -198,6 +198,17 @@
     </div>
     <h2>Mediu</h2>
     <p class="note" id="corpus">se încarcă…</p>
+    <section id="datasetProgressBox" hidden style="margin:12px 0 18px;padding:14px;border:1px solid #36536a;border-radius:10px;background:#07131f">
+      <h3 style="margin:0 0 8px">Dataset real - progresul antrenarii</h3>
+      <div class="grid">
+        <div class="m"><small>Dataset consumat (antrenare)</small><b id="datasetProgressPct">0.00%</b></div>
+        <div class="m"><small>Exercitii procesate / alocate</small><b id="datasetProgressCount">0 / 0</b></div>
+        <div class="m"><small>Exercitii ramase</small><b id="datasetProgressRemaining">0</b></div>
+        <div class="m"><small>Exercitii pastrate nevazute</small><b id="datasetHeldOut">0</b></div>
+      </div>
+      <progress id="datasetProgressBar" value="0" max="100" aria-label="Progres real al datasetului de antrenare" style="width:100%;height:20px;accent-color:#28d3a0;margin-top:12px"></progress>
+      <p id="datasetProgressInfo" class="note">Progresul vine din randurile reale ale datasetului si contoarele din backend; nu din nodurile desenate. Exemplele tinute pentru test sunt excluse.</p>
+    </section>
     <div class="row"><button id="run">Start</button><button id="reset">Reset la gol</button><button id="eval">Testează pe text nevăzut</button></div>
     <div class="sl"><label for="speed">pași pe cadru</label><input id="speed" type="range" min="1" max="1500" step="1" value="40"><span id="speedOut" class="dim">40</span></div>
 
@@ -205,9 +216,11 @@
     <div class="grid">
       <div class="m"><small>pași trăiți</small><b id="steps">0</b></div>
       <div class="m"><small>legături vii</small><b id="edges">0</b></div>
-      <div class="m"><small>simboluri absorbite</small><b id="symbols">0</b></div>
+      <div class="m"><small title="Simboluri distincte din alfabetul finit al grafului, NU randuri consumate din dataset">simboluri distincte (alfabet)</small><b id="symbols">0</b></div>
       <div class="m"><small>percepții A · perspective C</small><b><span id="aw">0</span> · <span id="cw">0</span></b></div>
     </div>
+
+    <p class="note">Simbolurile distincte pot ramane la 100 deoarece acelasi alfabet ASCII este folosit repetat; nu este un contor de progres al corpusului. Vezi mai sus procentul real de exercitii procesate.</p>
 
     <h2>Cât ghicește (ultimii 1000 de pași)</h2>
     <div class="grid">
