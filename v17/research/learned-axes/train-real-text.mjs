@@ -154,11 +154,21 @@ const selectedTest=evaluateFrozenAxes(model,test,{gating:gate,maxTrace:24});
 if(brain.language.seen!==pre)throw Error("Held-out evaluation changed the trained native V17 model.");
 const chosen=selectedVal.gated.accuracy>selectedVal.native.accuracy?"learned":"native";
 const deployedAccuracy=chosen==="learned"?selectedTest.gated.accuracy:baseline.native.accuracy;
+const kinds={replace:0,insert:0,delete:0};
+const observedActionExamples=[];
+for(const operator of brain.observedTransformations.operators.values()){
+ if(Object.hasOwn(kinds,operator.kind))kinds[operator.kind]++;
+ if(observedActionExamples.length<12&&operator.evidence?.length)
+  observedActionExamples.push({kind:operator.kind,from:operator.from,to:operator.to,
+    contextLeft:operator.left,contextRight:operator.right,
+    evidence:operator.evidence[0],support:operator.sourceObservations});
+}
 const report={
  schema:1,time:new Date().toISOString(),trainingSource:input,evalSource,
  nativeBrain:true,importedCheckpoint:manifest.importedCheckpoint||null,
  trainingRows:manifest.trained,trainingChars:manifest.chars,
  actualObservedTextTokens:pre,observedEditOperators:brain.observedTransformations.operators.size,
+ observedEditKinds:kinds,observedEditExamples:observedActionExamples,
  causalAxes:"context-history lengths learned from corpus; no claim of discovered physical axes",
  gate,validation:{native:selectedVal.native,learned:selectedVal.gated,
   gatingChoiceBeforeTest:chosen},
