@@ -217,6 +217,31 @@ http.createServer((req, res) => {
   // This endpoint is READ-ONLY and paginated. Every row in the atlas came
   // from actual original Brain events, real learned edit evidence, or an
   // actual attempted (including unsuccessful) search. No static visual demo.
+  // Opt-in training-memory action: replay ONLY journaled observed training
+  // worlds on the SAME active V17 Brain. Never use a validation answer, and
+  // never mutate a completed/saved checkpoint implicitly. Frozen planning
+  // through /native-hypermaze remains strictly unmodified.
+  if(req.method==="POST"&&url==="/native-hypermaze-replay"){
+    if(!process.argv.includes("--native-hypermaze"))
+      return json(res,{error:"Original native atlas replay is not enabled"});
+    const sl=slots.find(x=>x.w===Number(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("text"))
+      return json(res,{error:"Choose an original V17 text-world Brain"});
+    if(!sl.wk)
+      return json(res,{error:"Cannot change a completed checkpoint through a read-only request; restart original V17 with --resume --start to rehearse observed training worlds"});
+    const after=Number(q.get("after")||0),limit=Number(q.get("limit")||250);
+    const focusSequence=Number(q.get("focusSequence")||0);
+    if(!Number.isSafeInteger(after)||after<0||
+       !Number.isSafeInteger(focusSequence)||focusSequence<0||
+       !Number.isSafeInteger(limit)||limit<1||limit>250)
+      return json(res,{error:"Replay requires nonnegative genuine journal ID/cursor and limit 1..250"});
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Real V17 worker busy; historical replay was not confirmed"});
+    },30000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({nativeHypermazeReplay:{id,focusSequence,after,limit}});
+    return;
+  }
   if(req.method==="GET"&&url==="/native-hypermaze-atlas"){
     if(!process.argv.includes("--native-hypermaze"))
       return json(res,{error:"Original native atlas research is not enabled"});
