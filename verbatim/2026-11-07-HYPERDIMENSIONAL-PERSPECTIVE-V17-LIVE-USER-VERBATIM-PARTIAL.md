@@ -111,8 +111,7 @@ face tot ce am discutat? cum?
 
 ### U-20 — USER
 \`\`\`text
-Adică ?
-"Aceasta este o transformare concretă, măsurabilă și mult mai apropiată de ceea ce încerci să construiești."
+Adică ? "Aceasta este o transformare concretă, măsurabilă și mult mai apropiată de ceea ce încerci să construiești."
 \`\`\`
 
 ### U-21 — USER
