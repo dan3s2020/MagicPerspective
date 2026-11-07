@@ -31,3 +31,15 @@ jobs:
       - name: Run REAL original native V17 devour worker and evaluate new UI transport (no mocks)
         run: |
           node --test v17/apps/hypermaze-studio-v26/tests/native-real-runtime.test.mjs
+      - name: Real Chromium V26 interface, native V17 metrics, frozen Q/A wrong/correct and screenshot
+        run: |
+          which google-chrome || which chromium
+          node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
+      - name: Preserve real Chrome visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v28-v26-design-native-v17-screenshot
+          path: v28-native-ui-real-chrome.png
+          if-no-files-found: warn
+          retention-days: 7
