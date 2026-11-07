@@ -21,6 +21,7 @@ import {fileURLToPath} from "node:url";
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
 import {NativeCrossEpisodeTransfer} from "./cross-episode-native.mjs";
 import {NativeWorldAtlas} from "./native-world-atlas.mjs";
+import {ingestNativeParquet} from "./native-parquet-ingest.mjs";
 import {makeMaze,seedOf,SEEDS}
  from "../../transcend/torus-aether/worlds/labyrinth.mjs";
 import {playExercise,KIND} from "../../transcend/torus-aether/worlds/exercise.mjs";
@@ -83,6 +84,10 @@ export class NativeAtlasRuntime{
     originalFloorConductance:this.brain.disc.conduct(KIND.floor)
    },
    atlas:r,
+   realOpenThoughtsParquet:this.brain.crossEpisodeTextImport?
+     {...this.brain.crossEpisodeTextImport,
+      datasetFullyConsumed:this.brain.crossEpisodeTextImport.cursor===this.brain.crossEpisodeTextImport.trainRows}:
+     {active:false,corpusNotStarted:true},
    originalNativeText:{
     source:"Existing V17/V29 ObservedTransformations in the SAME Brain",
     observations:this.brain.observedTransformations?.seen||0,
@@ -269,10 +274,23 @@ export async function main(argv=process.argv.slice(2)){
   sourceWorlds:runtime.atlas.summary().sourceWorlds,
   sourceActions:runtime.engine.summary().actionsObserved,
   currentLimits:runtime.status().design}));
- const events=opt("events");
- if(events)runtime.ingest(events).then(v=>
-  console.log("V30_OBSERVED_EVIDENCE_INGESTED",JSON.stringify(v)))
-  .catch(e=>{console.error("V30 world import FAILED:",e.stack||e.message);});
+ const events=opt("events"),parquet=opt("parquet");
+ const saveEveryText=asInt(opt("text-save-every",5000),1,1000000,"text-save-every");
+ const textLimit=asInt(opt("text-limit",0),0,1000000000,"text-limit");
+ if(events||parquet){
+  const ingest=async()=>{
+   if(events)console.log("V30_OBSERVED_EVIDENCE_INGESTED",JSON.stringify(
+    await runtime.ingest(events)));
+   if(parquet)console.log("V30_REAL_PARQUET_IN_SAME_BRAIN",JSON.stringify(
+    await ingestNativeParquet(runtime,parquet,{
+     saveEvery:saveEveryText,maxRows:textLimit
+    })));
+  };
+  ingest().catch(e=>{
+   runtime.state="error";runtime.lastError=e.stack||e.message;
+   console.error("V30 real native training FAILED:",e.stack||e.message);
+  });
+ }
  return {server,runtime};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))
