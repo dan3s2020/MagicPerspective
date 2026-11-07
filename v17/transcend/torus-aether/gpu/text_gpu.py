@@ -169,7 +169,7 @@ def form_of(X, a): return X.where((a >= 48) & (a <= 57), X.zeros(a.shape, np.int
 class TextCard:
     def __init__(self, device, depth=6, form_depth=4, maxK=64, S=64):
         self.X = X(device); self.depth, self.form_depth, self.maxK, self.S = depth, form_depth, maxK, S
-        self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0
+        self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0; self._self = {}  # private per-brain cache, never shared across TextCard instances
     def append(self, exs):
         X = self.X; flat = X.arr(np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]) if exs else np.zeros(0, np.int64))
         self.mem = X.cat([self.mem, flat]); self.fmem = X.cat([self.fmem, form_of(X, flat)])
