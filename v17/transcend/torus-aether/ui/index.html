@@ -348,6 +348,7 @@ Ada keeps tea.</textarea>
         <label>Max tokens <input id="v31PathTokens" type="number" min="1" max="2048" value="512" style="width:85px"></label>
         <label>Max nodes <input id="v31PathNodes" type="number" min="2" max="20000" value="384" style="width:90px"></label>
         <label>Max depth <input id="v31PathDepth" type="number" min="1" max="256" value="8" style="width:70px"></label>
+        <label>Min. confirmări cauzale independente <input id="v31PathCausal" type="number" min="0" max="32" value="0" style="width:65px" title="0 = ipoteze V17/V23 originale; 2 = numai transferuri cu două contexte fizice verificate"></label>
         <button id="v31PathRun" type="button">Generează din calea învățată</button>
       </div>
       <pre id="v31PathStatus" aria-live="polite" style="white-space:pre-wrap;color:#c5deea">Se folosește workerul ales în Atlas. Nu trimite un răspuns corect de referință.</pre>
