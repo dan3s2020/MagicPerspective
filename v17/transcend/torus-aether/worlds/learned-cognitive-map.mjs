@@ -65,6 +65,7 @@ export class LearnedCognitiveMap {
     this.interventions=new Map();this.externalEdges=new Map();this.externalObservations=0;
     this.compactedExternalEdges=0;
     this.sentenceObservations=0;this.compactedExamples=0;this.compactedRules=0;
+    this.instructionGoalMemory=new Map();this.instructionGoalEpisodes=0;
     this.documents=0;this.evaluations=0;
     this.last=null;this.version=1;
     this.onAtlasEvidence=null;this.activeObservation=null; // transient, not part of saved Brain
@@ -541,7 +542,9 @@ export class LearnedCognitiveMap {
     shorterIndex:[...this.shorterIndex],
     rules:[...this.rules],interventions:[...this.interventions],
     externalEdges:[...this.externalEdges],externalObservations:this.externalObservations,
-    compactedExternalEdges:this.compactedExternalEdges,last:this.last};}
+    compactedExternalEdges:this.compactedExternalEdges,last:this.last,
+    instructionGoalMemory:[...this.instructionGoalMemory],
+    instructionGoalEpisodes:this.instructionGoalEpisodes};}
   static restore(data){
     if(data?.version!==1)throw Error('Incompatible cognitive map checkpoint version');
     const m=new LearnedCognitiveMap(data.limits);m.documents=data.documents;
@@ -553,6 +556,8 @@ export class LearnedCognitiveMap {
     m.externalEdges=new Map(data.externalEdges||[]);m.externalObservations=data.externalObservations||0;
     m.compactedExternalEdges=data.compactedExternalEdges||0;
     m.last=data.last||null;
+    m.instructionGoalMemory=new Map(data.instructionGoalMemory||[]);
+    m.instructionGoalEpisodes=data.instructionGoalEpisodes||0;
     return m;
   }
 }
