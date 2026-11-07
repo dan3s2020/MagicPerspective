@@ -305,9 +305,19 @@ class TextCard:
                         for k_, r_, t_ in zip(u, rr, tt): W_right[int(k_)] = W_right.get(int(k_), 0) + int(r_); W_tried[int(k_)] = W_tried.get(int(k_), 0) + int(t_)
                 dig = Sx[:, 48:58]; dz = dig.sum(1); has = dz > 0
                 Sx[:, 48:58] = dig + dmass[:, None] * X.where(has[:, None], dig / X.where(has, dz, dz + 1)[:, None], X.zeros(dig.shape, np.float32))
-                guess = X.tonp(X.argmax1(Sx[:, :128]))
-                ok = ok & ~((guess != real) & (step >= 2))                      # once its imagination left reality (after the first 3), the rest says nothing
-                cn = X.tonp(CX); cn = np.concatenate([guess[:, None], cn[:, :-1]], axis=1); CX = X.arr(cn)
+                guess_on_device = X.argmax1(Sx[:, :128])
+                guess = X.tonp(guess_on_device)
+                ok = ok & ~((guess != real) & (step >= 2))  # preserve original rule exactly
+                if X.t:
+                    # The previous implementation downloaded ALL 64 context
+                    # columns to CPU, prepended the predicted token in NumPy,
+                    # and re-uploaded them to CUDA at EVERY imagination step.
+                    # The new torch.cat produces the identical int64 context
+                    # without that redundant GPU->CPU->GPU round trip.
+                    CX = torch.cat((guess_on_device[:, None], CX[:, :-1]), dim=1)
+                else:
+                    cn = np.concatenate([guess[:, None], CX[:, :-1]], axis=1)
+                    CX = X.arr(cn)
         if progress is not None: progress(len(starts) * K, len(starts) * K, 'imagination')
         return W_right, W_tried
     def _top(self, ys):                          # the most frequent symbol among what followed (the proposal's guess)
