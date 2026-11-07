@@ -13,6 +13,7 @@ param(
  [int]$GpuTextBatch = 2,
  [int]$GpuTextChunk = 128,
  [long]$Every = 50000,
+ [long]$SaveEveryChars = 0,
  [string]$Cuda = "cu126",
  [switch]$SkipDownload,
  [switch]$VerifyOnly
@@ -111,7 +112,7 @@ Write-Host "Progress uses committed training examples, never the unique alphabet
 $launch = @{
  Data=$nativeData;Out=$Out;Port=$Port;Workers=1;Arms="stable+many";Worlds="text,maze,transform"
  Gpu=$Gpu;GpuWorlds=$GpuWorlds;Vram=$Vram;Mem=$Mem
- GpuTextBatch=$GpuTextBatch;GpuTextChunk=$GpuTextChunk;Every=$Every;Cuda=$Cuda
+ GpuTextBatch=$GpuTextBatch;GpuTextChunk=$GpuTextChunk;Every=$Every;SaveEveryChars=$SaveEveryChars;Cuda=$Cuda
 }
 & (Join-Path $PSScriptRoot "START_MAGIC_REAL.ps1") @launch
 if ($LASTEXITCODE -ne 0) { throw "Native V17 launcher exited with code $LASTEXITCODE." }
