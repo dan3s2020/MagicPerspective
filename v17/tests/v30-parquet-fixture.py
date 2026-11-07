@@ -6,6 +6,8 @@ import os,sys
 import pyarrow as pa
 import pyarrow.parquet as pq
 root=os.path.abspath(sys.argv[1] if len(sys.argv)>1 else "v30-parquet-ci")
+count=int(sys.argv[2]) if len(sys.argv)>2 else 82
+if count<82 or count>100000: raise SystemExit("Fixture count must be 82..100000")
 os.makedirs(root,exist_ok=True)
 schema=pa.schema([
     ("conversations",pa.list_(pa.struct([
@@ -13,7 +15,7 @@ schema=pa.schema([
     ])))
 ])
 rows=[]
-for i in range(82):
+for i in range(count):
     if i%4==0:
         question=f"The planet number {i} feels cold."
         answer=f"The planet number {i} feels warm."
@@ -34,4 +36,4 @@ table=pa.Table.from_pylist(rows,schema=schema)
 pq.write_table(table,os.path.join(root,"actual-nested-open-thoughts.parquet"),
  compression="zstd",row_group_size=23)
 print("V30_NESTED_PARQUET_FIXTURE",root,"rows",len(rows),
-      "heldout16",16,"train66",66,"compression","zstd")
+      "heldout16",16,"trainRows",count-16,"compression","zstd")
