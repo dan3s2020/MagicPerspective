@@ -105,9 +105,9 @@ function pathsFromLearnedRules(start,model,maxDepth=4){
   return found.slice(0,2);
 }
 export function makeLearnedMathWorld(a,b,c,model,{mirror=false}={}){
-  if(!Number.isSafeInteger(a)||Math.abs(a)<2||Math.abs(a)>9||
-     !Number.isSafeInteger(b)||b===0||Math.abs(b)>12||
-     !Number.isSafeInteger(c)||Math.abs(c)>80)throw new RangeError("Out of benchmark range");
+  if(!Number.isSafeInteger(a)||Math.abs(a)<2||Math.abs(a)>1000||
+     !Number.isSafeInteger(b)||b===0||Math.abs(b)>1000||
+     !Number.isSafeInteger(c)||Math.abs(c)>200000)throw new RangeError("Out of verified safe-integer range");
   if(!(model instanceof ObservedMathRules)||!model.training)throw new TypeError("Frozen observed math rules required");
   const n=11,start=pos(n,5,5),startState={stage:"factored",a,b,c:rational(c)};
   const ret=new Array(n*n).fill(KIND.wall);
