@@ -389,7 +389,7 @@ parentPort.on("message",m=>{
    // adjacent words or copy-only Q/A chunks.
    const observer=new ForensicPathAtlas(brain);
    const allowed=["nodes","verified","blocked","proposals","textOnly",
-    "operators","observations","qaEpisodes","crossWorld"];
+    "operators","observations","qaEpisodes","crossWorld","attempts","outcomes"];
    if(!allowed.includes(m.section||"nodes"))
     throw Error("Unknown native forensic atlas page section");
    const start=String(m.start||""),required=Array.isArray(m.required)?m.required:[];
@@ -413,7 +413,8 @@ parentPort.on("message",m=>{
     canClaimWholeEverLivedAtlas:false,summary:observer.summary(),
     page,report,originalError,
     allRetainedSections:["nodes","verified","blocked","proposals",
-     "textOnly","operators","observations","qaEpisodes","crossWorld"],
+     "textOnly","operators","observations","qaEpisodes","crossWorld",
+     "attempts","outcomes"],
     caveat:"Retained text evidence is not automatically an executable semantic action."}});
   }
   if(m.cmd==="qa"){
