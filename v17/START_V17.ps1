@@ -23,6 +23,9 @@ param(
   [long]$GpuWorlds = 0,
   [int]$GpuTextBatch = 2,
   [int]$GpuTextChunk = 128,
+  [double]$GpuPoolMB = 0,
+  [int]$GpuPrefetchExercises = 0,
+  [int]$GpuPrefetchBytes = 0,
   [switch]$Start,
   [switch]$TraceTransformations,
   [switch]$EndogenousNoise,
@@ -85,4 +88,7 @@ $heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
 $extraArgs = @()
 if ($CheckpointEvery -gt 0) { $extraArgs += @("--checkpoint-every", [string]$CheckpointEvery) }
 if ($XdAtlasEvery -gt 0) { $extraArgs += @("--xd-atlas-every", [string]$XdAtlasEvery) }
+if ($GpuPoolMB -gt 0) { $extraArgs += @("--gpu-pool-mb", [string]$GpuPoolMB) }
+if ($GpuPrefetchExercises -gt 0) { $extraArgs += @("--gpu-prefetch-exercises", [string]$GpuPrefetchExercises) }
+if ($GpuPrefetchBytes -gt 0) { $extraArgs += @("--gpu-prefetch-bytes", [string]$GpuPrefetchBytes) }
 node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --gpu-text-chunk $GpuTextChunk --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Start) { "--start" }) $(if ($TraceTransformations) { "--trace-transformations" }) $(if ($EndogenousNoise) { "--endogenous-noise" }) @extraArgs
