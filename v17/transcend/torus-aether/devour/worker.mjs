@@ -16,6 +16,7 @@ import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {runV23Lab} from "./v23-lab-adapter.mjs";
+import {runV25StrictLab} from "./v25-strict-adapter.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
@@ -326,6 +327,24 @@ parentPort.on("message", m => {
   // V24 ADDITIVE: same original Brain/checkpoint; no replacement of V17 text,
   // CUDA, world actions or existing controls. Original Discoverer.shape is the
   // sole route propagator inside the witnessed V23 research worlds.
+  // V25 optional strict causal completeness audit, same Brain and original
+  // V17 shape. It never changes the existing V23 or old-world generators.
+  if(m?.v25Strict){
+    const req=m.v25Strict,id=req.id;
+    try{
+      if(!COGNITIVE)throw Error("Native cognitivemap world must be enabled");
+      const result=runV25StrictLab(brain,req);
+      let savedMB=null;
+      if(result.changed){
+        saveCognitive();
+        brain.trace.node("v25:neutral","world","Observed unchanged-state causal evidence");
+        savedMB=saveFile?brain.save(saveFile)/1e6:null;
+        shot(true);
+      }
+      parentPort.postMessage({type:"chat",kind:"v25-strict",id,...result,savedMB});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"v25-strict",id,error:err.message});}
+    return;
+  }
   if(m?.v23Lab){
     const req=m.v23Lab,id=req.id;
     try{
