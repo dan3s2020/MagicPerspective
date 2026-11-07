@@ -163,6 +163,20 @@ export async function launch(options={}){
    }
    // Same actual original Brain worker and same native UI, not a second
    // model, simulated demo endpoint or fabricated path.
+   if(req.method==="GET"&&url.pathname==="/native-motif-archive"){
+    // The full disk index records observed historical lexical motifs, not
+    // novel semantic transitions. This endpoint NEVER touches the gold
+    // heldout answer or creates new path/world states.
+    const digest=url.searchParams.get("id")||"",
+     offset=Number(url.searchParams.get("offset")||0),
+     limit=Number(url.searchParams.get("limit")||50);
+    if((digest&&!/^\\d+:[a-f0-9]{64}$/.test(digest))||
+       !Number.isSafeInteger(offset)||offset<0||
+       !Number.isSafeInteger(limit)||limit<1||limit>200)
+     return response(res,400,{error:"Original motif archive requires exact SHA256 id or valid 1..200 pagination"});
+    const results=await rpc("motifArchive",{digest,offset,limit},30000);
+    return response(res,200,results);
+   }
    if(req.method==="GET"&&url.pathname==="/native-atlas"){
     // Read-only, paginated evidence directly from ONE original Brain
     // checkpoint, not a decorative canvas nor a synthetic maze.
