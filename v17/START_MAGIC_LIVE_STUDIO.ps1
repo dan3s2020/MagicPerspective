@@ -76,7 +76,7 @@ if (-not $StudioOnly) {
   $nativePid = $nativeProc.Id
 }
 Write-Host "Pornesc Magic Studio la 127.0.0.1:$StudioPort" -ForegroundColor Cyan
-$studioArgs = '"' + $studio + '" ' + $StudioPort + ' ' + $NativePort
+$studioArgs = '"' + $studio + '" ' + $StudioPort + ' ' + $NativePort + ' "' + $logDir + '"'
 $studioProc = Start-Process -FilePath $node.Source -ArgumentList $studioArgs -PassThru -RedirectStandardOutput (Join-Path $logDir "studio.out.log") -RedirectStandardError (Join-Path $logDir "studio.err.log")
 $pidRecord = @{
   started = (Get-Date -Format "o")
