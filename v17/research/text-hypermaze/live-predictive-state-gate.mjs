@@ -77,6 +77,30 @@ export class LivePredictiveStateGate{
   this.groups=new Map();this.pairs=0;this.usable=0;this.rejected=0;
   this.last=null;
  }
+ forecastAction(before,primaryTokenIndex,step){
+  // The selected action is supplied by the original frozen V17 math planner;
+  // the dependent numeric answer is NOT supplied.
+  const tokens=tokenizeObservation(String(before)),ids=numeric(tokens);
+  if(ids.length!==3||!ids.slice(0,2).includes(primaryTokenIndex)||
+     !Number.isSafeInteger(step)||!step)return {available:false,reason:"unsupported-goal-action"};
+  const key=template(tokens)+"|p="+primaryTokenIndex+
+   "|step="+step+"|dep="+ids[2];
+  const group=this.groups.get(key);
+  if(!group)return {available:false,reason:"unseen-action-key",key};
+  const contextIndex=ids.find(i=>i!==primaryTokenIndex&&i!==ids[2]);
+  const beforeDependent=Number(tokens[ids[2]]),context=Number(tokens[contextIndex]);
+  const f=forecast(group,context);
+  if(!f)return {available:false,reason:"insufficient-training-data",key};
+  const contextualSelected=select(group)&&f.contextReady;
+  const delta=contextualSelected?f.contextual:f.baseline;
+  return {available:true,actionPrimary:primaryTokenIndex,step,
+    knownContextTokenIndex:contextIndex,observedContext:context,
+    selectedAxis:contextualSelected?"context-axis":"constant-axis",
+    predictedChange:delta,predictedDependent:beforeDependent+delta,
+    validationScored:group.val.n,trainExamples:f.train,
+    referenceAnswerProvided:false,
+    note:"Frozen action effect from past corpus observations; not a correctness oracle or a complete semantic plan"};
+ }
  observePair(before,after,source="real-observed-text"){
   this.pairs++;
   const item=describePair(before,after);
