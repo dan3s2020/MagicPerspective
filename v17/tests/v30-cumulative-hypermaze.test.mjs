@@ -324,3 +324,42 @@ test("historically aliased same-visible-state actions cannot be accepted as one 
   necessaryFutureDiscovery:"additional observable history/context coordinate"
  }));
 });
+
+test("two long LANGUAGE mazes without any identical 96-token segments discover a reusable 5-token bridge across previous episodes",()=>{
+ const b=brain(),n=new NativeGoalTextMaze(b);
+ const phrase="observed bridge transformation anchor between cases";
+ const answer1=phrase+" "+Array.from({length:260},(_,i)=>"alphauniquetoken"+i).join(" ");
+ const answer2=phrase+" "+Array.from({length:260},(_,i)=>"betauniquetoken"+i).join(" ");
+ n.observeQA("Explain the first long independent world outcome.",answer1);
+ const before=n.cumulativeWorldStatus();
+ assert.equal(before.roleEpisodes,1);
+ assert.equal(before.multiScaleSharedAnchors,0);
+ n.observeQA("Explain the second distinct long world outcome.",answer2);
+ const after=n.cumulativeWorldStatus();
+ assert.equal(after.roleEpisodes,2);
+ assert.equal(after.sharedExactChunkAnchors,0,
+  "No 96-token exact cross-episode anchors exist; text mazes are segmented");
+ assert.ok(after.multiScaleSharedAnchors>=1,
+  "The organism must retain a short reusable anchor across different long problems");
+ assert.ok(after.multiScaleObservedMotifs>0);
+ assert.ok(after.multiScaleObservedSourceEdges>0);
+ assert.equal(after.physicallyVerifiedEdges,0,
+  "A repeated phrase is NOT a witnessed semantic transformation");
+ assert.equal(n.planCumulativeWorld({start:phrase,required:["alphauniquetoken259"]}).found,false,
+  "Shared lexical motifs must NOT be converted silently into real physics");
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"mp-v30-anchored-"));
+ try{
+  const file=path.join(dir,"brain.v8");b.save(file);
+  const loaded=new NativeGoalTextMaze(Brain.load(file));
+  assert.equal(loaded.cumulativeWorldStatus().multiScaleSharedAnchors,
+   after.multiScaleSharedAnchors);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
+ console.log("V30_MULTISCALE_CROSS_LANGUAGE_MAZE",JSON.stringify({
+  longProblemEpisodes:2,sharedExact96TokenSegments:after.sharedExactChunkAnchors,
+  newlyDiscoveredSharedShortMotifs:after.multiScaleSharedAnchors,
+  witnessedTextOnlySourceEdges:after.multiScaleObservedSourceEdges,
+  realPhysicalActionsClaimed:after.physicallyVerifiedEdges,
+  originalBrainCheckpointPreserved:true,
+  result:"short reusable lexical bridges, still unverified semantic physics"
+ }));
+});
