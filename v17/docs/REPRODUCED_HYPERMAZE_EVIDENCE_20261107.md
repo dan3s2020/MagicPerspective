@@ -109,3 +109,18 @@ Each task trained on two near-identical long observed sentences (initial token `
 The timings are **single-run exploratory observations**, not an isolated statistically controlled throughput benchmark. Scaling was markedly non-linear. This is an actual falsification of the simplistic idea that merely increasing the constant gives usable megabyte-scale training. Training internally computes long sentence-removal/skeleton indexes and copies token arrays; an appropriate bounded local/segment/graph representation and evidence-preserving action composition must be measured and tested separately. These tasks have only one explicitly constrained local edit; they do not validate the user's 100% long-answer objective.
 
 **No scaling patch was committed, and no launch command is authorized by this experiment.**
+
+### Expanded DIRECT source-executed heldout suite: 3,000 maze seeds, actual shortest-goal verification
+
+Repeated the source-executed V8 experiment with the **same unmodified** blob SHAs `96877ee6537c9ceb34239fc20f85909d0e3237fd` (`labyrinth.mjs`) and `7d2f8c4b536af00b7b66ad984c2b9c7bf563007e` (`exercise.mjs`). Original `Discoverer` learned by `playExercise` for 25 training episodes. Generated 3,000 new seeds from the frozen test stream `seedOf(SEEDS.test,701023+i*131)`, sizes `[7,9,11][i%3]`.
+
+Measured against the original learning motor:
+- **3,000/3,000** ordered full-shape actions from original `D.shape(ret,n,start)` exactly equal to graph-lifted `D.shapeGraph(ret,edges,start,{details:true})`;
+- **3,000/3,000** pre-action planned paths nonempty;
+- physically replaying planned actions using native `nextCell` and the original true wall/goal array reached the actual goal in **3,000/3,000**;
+- route length matched original `w.dist[w.start]` exact shortest-path distance in **3,000/3,000**;
+- elapsed **2,691 ms** inside the test isolate for that loop, **NOT** GPU throughput, training throughput, or browser rendering time.
+
+**Critical qualification:** the planner's graph in this test was built from the entire actual 2D wall map to check ORIGINAL SHAPE OPERATOR EXACTNESS. Its shortest paths do **not** by themselves demonstrate optimal performance under unseen/partially observed wall topology. These measurements test the learned 2D movement/attraction law + exact graph lifting and real step traversal, not natural-language generalization. This is a source-executed independent in-session check, not an extra GitHub CI workflow. No source changes or checkpoint overwrites were made.
+
+This enlarged independent result strengthens the preservation requirement. It does not change the OPEN production text blocker or authorize a user release command.
