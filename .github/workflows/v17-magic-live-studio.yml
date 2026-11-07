@@ -1,0 +1,44 @@
+name: MagicPerspective live studio — REAL V17 integration
+on:
+  push:
+    branches:
+      - feature/V17-MAGIC-LIVE-STUDIO-REAL-TRAINING-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-v17-studio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax of new UI/server (no dependency installation)
+        run: |
+          node --check v17/magic-studio/studio-server.mjs
+          node --check v17/magic-studio/magic-studio.js
+      - name: True native V17 trainer integration, live telemetry, real research tests, proxy security
+        run: node --test v17/tests/magic-live-studio.test.mjs
+      - name: Previously proven learned-axis/word/2048-state xD research is unchanged
+        run: |
+          node --test v17/tests/local-axis-transport-shapes.test.mjs
+          node --test v17/tests/coupled-symbolic-local-axes.test.mjs
+          node --test v17/tests/xd-2048-states-local-language.test.mjs
+  windows-launcher-parse:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell 5.1 launchers without starting CUDA or Windows processes
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('v17/START_MAGIC_LIVE_STUDIO.ps1','v17/START_V17.ps1')) {
+            $tokens=$null
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$errors) | Out-Null
+            if($errors.Count) { $errors | Out-String | Write-Error; throw "PowerShell parse failed $p" }
+            Write-Host "Parsed original/Studio PowerShell: $p"
+          }
