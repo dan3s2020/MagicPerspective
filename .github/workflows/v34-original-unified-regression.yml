@@ -28,6 +28,8 @@ jobs:
           node --test v17/tests/live-corpus-hypermaze.test.mjs
       - name: Preserve ORIGINAL real server and native Brain worker end-to-end
         run: node --test v17/tests/complete-xd-native-live-http.test.mjs
+      - name: REAL same-worker V34 source-backed character hypotheses, V31 numeric witnessed first-shot shape, UI backend and saved native checkpoint
+        run: node --test v17/tests/v34-native-real-live-http.test.mjs
   original-attraction-scale:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
