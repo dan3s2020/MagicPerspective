@@ -110,10 +110,21 @@ export class NativeGoalTextMaze {
      support:originSupport,coordinates5D:originCoords,
      isPreviouslyObserved:model.containsSentence(normalized)}];
    const ids=new Map([[normalized,0]]),edges=[[]];
-   let pending=0,operatorEdges=0,blocked=0;
-   while(pending<nodes.length&&nodes.length<this.maxStates){
+   let pending=0,operatorEdges=0,blocked=0,depthFrontiers=0,budgetFrontiers=0;
+   const frontier=[];
+   while(pending<nodes.length){
+    if(nodes.length>=this.maxStates){
+     budgetFrontiers+=nodes.length-pending;
+     for(let i=pending;i<nodes.length;i++)
+      frontier.push({node:i,reason:"state-budget",depth:nodes[i].depth});
+     break;
+    }
     const at=pending++,cur=nodes[at];
-    if(cur.depth>=this.maxDepth||cur.kind===1)continue;
+    if(cur.kind===1)continue;
+    if(cur.depth>=this.maxDepth){
+     depthFrontiers++;frontier.push({node:at,reason:"depth-budget",depth:cur.depth});
+     continue;
+    }
     const choices=model.neighbors(cur.tokens);
     // Strict bounded expansion; EVERY action was learned from observations.
     for(const choice of choices){
@@ -123,7 +134,10 @@ export class NativeGoalTextMaze {
      if(!allowed)blocked++;
      let next=ids.get(dest);
      if(next===undefined){
-      if(nodes.length>=this.maxStates)break;
+      if(nodes.length>=this.maxStates){
+       budgetFrontiers++;frontier.push({node:at,reason:"state-budget",depth:cur.depth});
+       break;
+      }
       next=nodes.length;ids.set(dest,next);
       const stored=geo.U.get("text-state:"+dest);
       const axis=this.brain.hypermazeLearnedAxes?.get(choice.action.key);
@@ -145,7 +159,8 @@ export class NativeGoalTextMaze {
      operatorEdges++;
     }
    }
-   cached={cacheKey,raw:{nodes,edges,operatorEdges,blocked}};
+   cached={cacheKey,raw:{nodes,edges,operatorEdges,blocked,frontier,
+    depthFrontiers,budgetFrontiers,expanded:pending}};
    this._topologyCache=cached;
   }
   const raw=cached.raw;
@@ -157,6 +172,10 @@ export class NativeGoalTextMaze {
   return {nodes,edges:raw.edges,operatorEdges:raw.operatorEdges,
    blocked:raw.blocked,goalNodes:nodes.filter(x=>x.goal).length,
    topologyCacheHit:!!topologyCacheHit,
+   frontier:raw.frontier,depthFrontiers:raw.depthFrontiers,
+   budgetFrontiers:raw.budgetFrontiers,expanded:raw.expanded,
+   closedUnderLearnedOperators:raw.frontier.length===0,
+   completeNaturalLanguage:false,
    visited:persistentWorldBound(nodes.length,this.maxStates),source:normalized};
  }
  // This is the SAME native Discoverer value-propagation method, lifted to an
@@ -199,6 +218,10 @@ export class NativeGoalTextMaze {
    originalAttraction:b.disc.attract(2),
    originalFloorConductance:b.disc.conduct(0),
    graph:{observedOperatorEdges:w.operatorEdges,states:w.nodes.length,
+    frontierCount:w.frontier.length,frontierByDepth:w.depthFrontiers,
+    frontierByStateBudget:w.budgetFrontiers,
+    closedUnderLearnedOperators:w.closedUnderLearnedOperators,
+    completeNaturalLanguage:false,expanded:w.expanded,
     topologyCacheHit:w.topologyCacheHit,
     blocked:w.blocked,goalNodes:w.goalNodes,
     geometry5DObservedNodes:w.nodes.filter(n=>n.geometryEvidence==="observed").length,
@@ -212,7 +235,12 @@ export class NativeGoalTextMaze {
    resultIsInternalTextWorld:true,
    independentSemanticValidation:false,
    noNextByteSubstitution:true,
-   modelObservationCount:b.observedTransformations.seen
+   modelObservationCount:b.observedTransformations.seen,
+   failureReason:shape?.targetReached?null:
+     w.goalNodes===0?(w.frontier.length?"frontier-unexpanded":"missing-reachable-goal"):
+     b.disc.attract(2)<=.2?"target-attraction-not-learned":
+     b.disc.conduct(0)<.5?"world-conductance-not-learned":
+     "known-goal-no-ascending-shape"
   };
   if(includeTopology){
    // ALL true explored text states, learned action edges, native 5D phase
@@ -230,9 +258,16 @@ export class NativeGoalTextMaze {
     edges:w.edges.flatMap((list,i)=>list.map(e=>({
      from:i,to:e.to,kind:e.action?.kind||"unknown",
      fromToken:e.action?.from??null,toToken:e.action?.to??null,
-     observedSupport:e.observedSupport,actionIndex:e.action?.index??null}))),
+     observedSupport:e.observedSupport,actionIndex:e.action?.index??null,
+     learnedFrom:e.action?.learnedFrom??null,
+     learnedOperatorKey:e.action?.key??null}))),
     initialShapeIds:[0,...route.map(r=>r.to)],
     sourceId:0,source:"exact observed/edit-expanded native hypermaze",
+     frontier:w.frontier.map(f=>({...f,state:w.nodes[f.node]?.id||null})),
+     closedUnderLearnedOperators:w.closedUnderLearnedOperators,
+     incompleteReasons:[...(w.depthFrontiers?["depth-budget"]:[]),
+      ...(w.budgetFrontiers?["state-budget"]:[])],
+     completeNaturalLanguage:false,
     notIndependentSemanticWorld:true,
     coordinatesAreOriginalLearned5DTorus:true
    };
