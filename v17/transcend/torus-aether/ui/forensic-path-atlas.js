@@ -9,7 +9,7 @@
  const S={section:"nodes",offset:0,limit:120,latest:null,analysis:null,
    lastPlan:null,scene:{nodes:[],edges:[]},busy:false,exporting:false};
  const parts=["nodes","verified","blocked","proposals","textOnly",
-  "operators","observations","qaEpisodes","crossWorld"];
+  "operators","observations","qaEpisodes","crossWorld","attempts","outcomes"];
  const color={verified:"#6bdfac",blocked:"#f47d99",
   proposals:"#eec478",textOnly:"#95a6be",operators:"#bf9efa"};
  const short=(v,n=100)=>String(v??"").slice(0,n);
@@ -43,6 +43,8 @@
    atlasNodes:a.retainedNodes,atlasVerified:a.walkableVerifiedEdges,
    atlasBlocked:a.blockedEdges,atlasProposed:a.proposedButUnverifiedEdges,
    atlasSequential:a.chronologicalTextLinksNotWalkable,
+    atlasAttempts:a.independentWorldAttempts,
+    atlasFailed:a.failedPhysicalOutcomes,
    atlasEvicted:(a.designLimits?.causalMemory?.evictedNodes||0)+
      (a.designLimits?.causalMemory?.evictedEdges||0)+
      (a.designLimits?.observationMemory?.evictedStates||0)
@@ -125,42 +127,75 @@
    y:30+(canvas.height-60)*(b/4294967295),original5D:false};
  };
  async function fillScene(){
-  // Only the first page is drawn for quick live visualization, while the
-  // actual full topology is in indexed pages/export. Never fake hidden nodes.
-  const [a,b]=await Promise.all([
+  // The canvas is a SAMPLE of native memory, while ALL retained records
+  // can be paged/exported. Hypothetical endpoints are not actual world nodes.
+  const [nodes,verified,blocked,proposals,textOnly]=await Promise.all([
    fetchPage({section:"nodes",offset:0,limit:250,withGoal:false}),
-   fetchPage({section:"verified",offset:0,limit:500,withGoal:false})
+   fetchPage({section:"verified",offset:0,limit:500,withGoal:false}),
+   fetchPage({section:"blocked",offset:0,limit:250,withGoal:false}),
+   fetchPage({section:"proposals",offset:0,limit:250,withGoal:false}),
+   fetchPage({section:"textOnly",offset:0,limit:250,withGoal:false})
   ]);
-  S.scene.nodes=a.page.items;S.scene.edges=b.page.items;
-  S.scene.nodeMore=a.page.hasMore;S.scene.edgeMore=b.page.hasMore;
+  S.scene.nodes=nodes.page.items;
+  S.scene.relations=[
+   ...verified.page.items.map(e=>({...e,category:"verified"})),
+   ...blocked.page.items.map(e=>({...e,category:"blocked"})),
+   ...proposals.page.items.map(e=>({...e,category:"proposals"})),
+   ...textOnly.page.items.map(e=>({...e,category:"textOnly"}))
+  ];
+  S.scene.truncatedPages=Object.fromEntries([
+   ["nodes",nodes],["verified",verified],["blocked",blocked],
+   ["proposals",proposals],["textOnly",textOnly]
+  ].map(([k,v])=>[k,v.page.hasMore]));
   draw();
  }
  function draw(){
   const w=canvas.width,h=canvas.height,nodes=S.scene.nodes||[],
-    edges=S.scene.edges||[];
+    relations=S.scene.relations||[];
   ctx.clearRect(0,0,w,h);
   ctx.font="12px Consolas";ctx.fillStyle="#c8ddf4";
-  ctx.fillText("VERIFICATE • verde   |   IPOTEZE • portocaliu   |   PEREȚI • roșu",14,18);
-  if(!nodes.length){
-   ctx.fillText("Nu sunt noduri cauzale verificate în memoria reținută. Observațiile text nu sunt acțiuni fizice.",20,60);
+  ctx.fillText("VERIFICAT: verde | PROPUS: galben | REFUZAT: roșu | ORDINE TEXT: gri",14,18);
+  // Only verified model nodes get SOLID dots. Candidate endpoints are
+  // temporary HOLLOW marks; they are NOT inserted into learned world memory.
+  const locations=new Map(nodes.map(x=>[x.text,pos(x.text,x.position5D)]));
+  const hypothetical=new Map(),point=name=>{
+   if(locations.has(name))return locations.get(name);
+   if(!hypothetical.has(name))hypothetical.set(name,pos(name,null));
+   return hypothetical.get(name);
+  };
+  if(!nodes.length&&!relations.length){
+   ctx.fillText("Niciun nod sau muchie în memoria reținută. Nu există un labirint navigabil.",20,60);
    return;
   }
-  const locations=new Map(nodes.map(x=>[x.text,pos(x.text,x.position5D)]));
-  ctx.strokeStyle=color.verified;ctx.globalAlpha=.48;ctx.lineWidth=1.3;
-  for(const e of edges){
-   const f=locations.get(e.from),t=locations.get(e.to);
-   if(!f||!t)continue;
-   ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(t.x,t.y);ctx.stroke();
+  for(const e of relations){
+   const from=point(e.from),to=point(e.to);
+   ctx.strokeStyle=color[e.category]||color.textOnly;
+   ctx.globalAlpha=e.category==="verified"?.55:.8;
+   ctx.lineWidth=e.category==="blocked"?2:1.3;
+   ctx.setLineDash(e.category==="verified"?[]:
+     e.category==="blocked"?[2,5]:e.category==="proposals"?[8,5]:[1,6]);
+   ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();
+   if(e.category==="blocked"){
+    ctx.beginPath();ctx.moveTo(to.x-4,to.y-4);ctx.lineTo(to.x+4,to.y+4);
+    ctx.moveTo(to.x-4,to.y+4);ctx.lineTo(to.x+4,to.y-4);ctx.stroke();
+   }
   }
-  ctx.globalAlpha=1;
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+  for(const [,p] of hypothetical){
+   ctx.strokeStyle=color.proposals;ctx.beginPath();
+   ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.stroke();
+  }
   for(const n of nodes){
    const p=locations.get(n.text);ctx.fillStyle=color.verified;
    ctx.beginPath();ctx.arc(p.x,p.y,3.3,0,Math.PI*2);ctx.fill();
   }
   ctx.fillStyle="#b4c9df";
-  ctx.fillText("PROIECȚIE: coordonate 5D ORIGINALE când există; altfel layout topologic determinist.",14,h-26);
-  ctx.fillText("VIZUALIZATE DOAR PRIMELE PAGINI: "+nodes.length+
-   " noduri, "+edges.length+" muchii. Restul: pagina/export complet.",14,h-10);
+  ctx.fillText("PUNCT PLIN = stare fizică observată; CERC GOL = capăt ipotetic, NICIODATĂ dovadă cauzală.",14,h-26);
+  const capped=Object.entries(S.scene.truncatedPages||{})
+   .filter(([,v])=>v).map(([k])=>k);
+  ctx.fillText("DOAR PRIMELE PAGINI: "+nodes.length+" stări și "+
+   relations.length+" legături; "+hypothetical.size+
+   " capete neverificate. Alte pagini: "+(capped.join(", ")||"nu")+".",14,h-10);
  }
  async function refresh({reset=false}={}){
   if(S.busy)return;
@@ -247,7 +282,10 @@
     verified:x.summary?.walkableVerifiedEdges,
     proposed:x.summary?.proposedButUnverifiedEdges,
     textOnly:x.summary?.chronologicalTextLinksNotWalkable,
-    cross:x.summary?.crossWorldObservations
+    cross:x.summary?.crossWorldObservations,
+     attempts:x.summary?.independentWorldAttempts,
+     outcomes:x.summary?.independentlyVerifiedOutcomes,
+     failed:x.summary?.failedPhysicalOutcomes
    });
    const identity=stamp(initial);
    for(const section of parts){
