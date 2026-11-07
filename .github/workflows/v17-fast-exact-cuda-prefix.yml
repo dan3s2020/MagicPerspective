@@ -34,3 +34,18 @@ jobs:
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --test v17/tests/gpu-stall-watchdog.test.mjs
           node --test v17/tests/live-corpus-hypermaze-http.test.mjs
+
+  real-v17-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium Playwright for ACTUAL native V17 UI acceptance
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Actual original training page still displays real text path and controls
+        run: node --test v17/tests/live-corpus-hypermaze-browser.test.mjs
