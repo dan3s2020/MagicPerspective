@@ -396,6 +396,49 @@
       <div class="row"><label class="dim">Jurnal <select id="atlasLogKind"><option value="text">Limbaj: caractere și cauze</option><option value="xd">Labirinturi xD: căi reușite și ratate</option></select></label><button id="atlasLogMore">Încarcă următoarele episoade reale din jurnal</button></div>
       <pre id="atlasLogText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto;font-size:11px">Jurnalul este adăugat pe disc, în fișierele .path-atlas.jsonl și .xd-atlas.jsonl; aici îl poți parcurge paginat.</pre>
     </div>
+    <section id="v34ResearchPanel" style="margin:14px 0;padding:14px;border:1px solid #507d7a;border-radius:12px;background:#0a1822;color:#e9f7ff" aria-label="V34 un singur Brain - toate transformările verificate">
+      <h2>V34 · ACELAȘI Brain original · xD + 1M V31 + transformări pe caractere</h2>
+      <p class="note">Atlasul xD și jurnalul celor șase grafuri V17 rămân mai sus. Acesta este accesul <strong>direct în workerul original</strong> la memoria operatorilor, motorul numeric V31 și planificatorul Unicode V24. Datele, răspunsurile corecte și acțiunile fizice nu sunt simulate.</p>
+      <div class="row"><button id="v34Refresh">Citește dovezile din Brain</button><button id="v34Save">Salvează Brain-ul original în runtime-ul V34</button><label class="dim">Refresh automat <input type="checkbox" id="v34Auto" checked></label></div>
+      <div id="v34Health" class="note" role="status">Citesc direct workerul original V17, nu o pagină demo...</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:9px 0">
+        <div class="hmmetric"><small>Caractere comise</small><b id="v34Chars">—</b></div>
+        <div class="hmmetric"><small>Exerciții învățate</small><b id="v34Episodes">—</b></div>
+        <div class="hmmetric"><small>Operatori text originali</small><b id="v34Operators">—</b></div>
+        <div class="hmmetric"><small>Coridoare xD trăite</small><b id="v34Xd">—</b></div>
+        <div class="hmmetric"><small>Acțiuni cauzale observate</small><b id="v34Pairs">—</b></div>
+        <div class="hmmetric"><small>Noise real / original</small><b id="v34Noise">—</b></div>
+      </div>
+      <div class="row"><button id="v34CharStatus">Extrage regulile Unicode din corpusul real</button><span id="v34RuleInfo" class="note">Nu se inventează dovezi din lumi inexistente.</span></div>
+      <pre id="v34Rules" style="white-space:pre-wrap;overflow:auto;max-height:210px;font:12px/1.45 Consolas,monospace">Aștept operatorii reali din Brain.</pre>
+      <h2>Labirintul unui caracter · căi observate, căi presupuse, pereți</h2>
+      <div class="row"><label class="dim" style="flex:2">Starea completă de pornire
+        <input id="v34CharStart" type="text" placeholder="Scrie o stare textuală reală" style="width:100%" maxlength="4096"></label>
+        <label class="dim">Coordonata caracterului <input id="v34CharAt" type="number" value="1" min="0" max="4095" style="width:85px"></label>
+        <label class="dim">Caracterul-țintă <input id="v34CharGoal" type="text" maxlength="4" style="width:90px"></label>
+        <button id="v34CharPlan">Prezice ÎNAINTE de acțiune</button>
+      </div>
+      <div class="row"><label class="dim"><input id="v34AllowHypotheses" type="checkbox"> Include contraste de corpus (ipoteze, nu fizică verificată)</label>
+        <label class="dim">Stări maxime <input id="v34Nodes" type="number" value="400" min="2" max="5000" style="width:83px"></label>
+        <label class="dim">Adâncime <input id="v34Depth" type="number" value="6" min="1" max="16" style="width:65px"></label>
+      </div>
+      <p id="v34CharVerdict" role="status" class="note">Nicio predicție fără un labirint real învățat.</p>
+      <canvas id="v34CharMap" width="960" height="355" style="width:100%;height:355px;display:block;border:1px solid #36536b;background:#06121d;border-radius:8px" aria-label="Coridoare reale și ipoteze; traseul inițial înainte de acțiune"></canvas>
+      <div class="row"><label class="dim">Pas de navigare <input id="v34CharScrub" type="range" min="0" max="0" value="0"></label>
+      <button id="v34CharPrev">◀</button><button id="v34CharNext">▶</button><button id="v34CharExport">Exportă TOT graful observat JSON</button></div>
+      <pre id="v34CharDetails" style="white-space:pre-wrap;overflow:auto;max-height:390px;font:12px/1.5 Consolas,monospace">Nodurile, fiecare muchie, transformarea, alternativa, suportul și cauza lipsei unui traseu vor fi afișate aici.</pre>
+      <h2>V31 · transferul numeric între exerciții în același Brain</h2>
+      <p class="note">Acesta este motorul V31 exact, cu forma soluției înainte de acțiune, NUMAI pentru transformări numerice observate în perechi înainte/după. Datele și delta țintei sunt furnizate explicit; nu pretindem că motorul poate deduce singur un răspuns arbitrar din limba naturală.</p>
+      <div class="row"><label class="dim" style="flex:1">ÎNAINTE (observație fizică) <input id="v34Before" type="text" placeholder="3 @ 4 ~ 12" style="width:100%"></label>
+      <label class="dim" style="flex:1">DUPĂ (observație reală) <input id="v34After" type="text" placeholder="4 @ 4 ~ 16" style="width:100%"></label>
+      <button id="v34Witness">Înregistrează efectul observat</button></div>
+      <div class="row"><label class="dim"><input id="v34WitnessTruth" type="checkbox"> Confirm că înainte/după sunt observații reale, nu predicții inventate</label></div>
+      <div class="row"><label class="dim" style="flex:1">Stare numerică completă nouă <input id="v34NumericStart" type="text" placeholder="12 @ 16 ~ 192" style="width:100%"></label>
+      <label class="dim">Delta explicită a țintei <input id="v34Delta" type="number" value="1" step="1" min="-10000" max="10000" style="width:85px"></label>
+      <button id="v34NumericPlan">Planifică forma soluției V31</button></div>
+      <pre id="v34NumericDetails" style="white-space:pre-wrap;overflow:auto;max-height:360px;font:12px/1.5 Consolas,monospace">Încă nu există o observație numerică furnizată aici. Motorul refuză să inventeze acțiuni.</pre>
+      <p class="note" style="color:#facb8c">Limite științifice: 1.008.000 stări în CI sunt un graf simbolic construit din legi învățate și avansuri temporale furnizate, nu dovada unui limbaj natural rezolvat. OpenThoughts3 independent: 0/24 răspunsuri complete. CUDA RTX 3050 Ti trebuie verificat pe hardware-ul tău.</p>
+    </section>
     <div id="agentNoiseBox" hidden style="margin:12px 0;border:1px solid #375354;border-radius:10px;padding:12px">
       <h2>Zgomotul ales de organism · decizii și consecințe reale</h2>
       <p class="note">Politica internă poate alege inclusiv zero: percepție, imaginație, acțiune. Nu este sliderul extern de zgomot și nu afirmă încă transfer universal.</p>
@@ -553,5 +596,6 @@
   <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
+<script type="module" src="v34-research-live.js"></script>
 </body>
 </html>
