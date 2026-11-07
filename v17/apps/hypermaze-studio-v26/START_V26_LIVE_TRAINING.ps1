@@ -14,12 +14,13 @@ if (-not $Node) { throw 'Node.js v22 or later is required and not found in PATH.
 $NodeMajor = [int]((& $Node.Source --version).TrimStart('v').Split('.')[0])
 if ($NodeMajor -lt 22) { throw "Node.js 22+ required, detected $NodeMajor." }
 if ($Port -lt 1024 -or $Port -gt 65535) { throw 'Port must be 1024..65535.' }
+$InvariantNoise = $Noise.ToString([System.Globalization.CultureInfo]::InvariantCulture)
 $ArgsList = @(
   (Join-Path $Root 'server.mjs'),
   '--port', "$Port",
   '--axes', "$Axes",
   '--words', "$Words",
-  '--noise', "$Noise",
+  '--noise', "$InvariantNoise",
   '--batch', "$Batch"
 )
 if ($Corpus) {
