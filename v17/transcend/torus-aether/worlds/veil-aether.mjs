@@ -6,6 +6,7 @@
 // in this SAME checkpointed object, but are NOT invented as text edges.
 // The wavefront is the original V17 mathematical law V=.97 max(neighbor V)
 // on an observed directed graph; it does not call or replace Discoverer.shape().
+import {ObservedCausalField} from "./observed-causal-field.mjs";
 const key = pair => JSON.stringify(pair);
 const clean = x => String(x).normalize("NFC");
 const safeInt = (n,a,b) => Math.max(a,Math.min(b,Math.trunc(Number(n)||0)));
@@ -26,7 +27,7 @@ export class VeilAether {
     this.docs=0;this.transitions=0;this.tokens=0;this.skippedStates=0;this.skippedEdges=0;
     this.predictions=0;this.correct=0;this.singleCorrect=0;this.singleOnContextCovered=0;this.covered=0;
     this.single=new Map();this.domainEvents={maze:0,transform:0,text:0,code:0};
-    this.experiences=new Map();this.last=null;
+    this.experiences=new Map();this.causalField=new ObservedCausalField();this.last=null;
   }
   _ensure(pair){
     const k=key(pair),old=this.index.get(k);
@@ -80,6 +81,7 @@ export class VeilAether {
       {domain,action:type,observed:0,changed:0,unchanged:0};
     old.observed++;old.changed+=+!same;old.unchanged+=+same;
     this.experiences.set(k,old);this.domainEvents[domain]++;
+    this.causalField.observe({domain,before,action: type,after}); // actual observed V17 action/effect, no semantic oracle
     return {domain,action:type,changed:!same,observed:old.observed};
   }
   // The reference goal is a VISIBLE pair, not a secret answer. No future
@@ -224,6 +226,7 @@ export class VeilAether {
       axes:["previous_symbol","current_symbol"],gatingMeaning:
         "History axis is useful where identical current symbols have different observed futures; not 6D physics",
       domainEvents:{...this.domainEvents},externalActions:[...this.experiences.values()].slice(-16),
+      causalField:this.causalField.snapshot({maxNodes:64,maxEdges:160}),
       last:this.last,sample:{nodes,edges},
       semanticGoalVerified:false,originalDiscovererDirectlyReused:false,
       fullCUDAVerified:false};
@@ -238,6 +241,7 @@ export class VeilAether {
       singleOnContextCovered:this.singleOnContextCovered,covered:this.covered,
       single:[...this.single].map(([word,m])=>[word,[...m]]),
       domainEvents:{...this.domainEvents},experiences:[...this.experiences.values()].map(x=>({...x})),
+      causalField:this.causalField.export(),
       last:this.last};
   }
   static restore(data){
@@ -256,6 +260,7 @@ export class VeilAether {
     a.single=new Map((data.single||[]).map(([word,rows])=>[word,new Map(rows)]));
     a.domainEvents={...a.domainEvents,...data.domainEvents};
     a.experiences=new Map((data.experiences||[]).map(x=>[x.domain+"\u001f"+x.action,{...x}]));
+    a.causalField=data.causalField?ObservedCausalField.restore(data.causalField):new ObservedCausalField();
     a.last=data.last||null;return a;
   }
 }
