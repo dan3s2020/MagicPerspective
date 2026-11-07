@@ -6,7 +6,7 @@ A separate, real Python CUDA text learner and localhost UI which trains EXCLUSIV
 
 This experimental GPU learner models actual per-character conditional occurrence statistics for context sizes 1,2,3,4. Orders 3 and 4 use hashed 65536-sized indices, disclosed in UI. It is NOT the full native six-scale V17 AligningGraph, a transformer or an autonomously proven semantic language maze. PyTorch CUDA updates real context counts on the GPU; heldout accuracy represents exact next-character prediction, not story coherence.
 
-The file reader streams the raw 1.92GB train text instead of materializing it in Node RAM, using actual end-of-story separators and durable byte offsets. Count-table model checkpoints are saved atomically and resume via monotone row indices, preventing duplicate updates after restart. Save/pause/test/start are real commands, and UI shows measured characters/s, stories/s, MB/s and data progress only after acknowledged Python training updates. The 128MiB count table is stored in an independent output directory.
+The file reader streams the raw 1.92GB train text instead of materializing it in Node RAM, using actual end-of-story separators and durable byte offsets. Count-table model checkpoints are saved atomically and resume via monotone row indices, preventing duplicate updates after restart. Save/pause/test/start are real commands, and UI shows measured characters/s, stories/s, MB/s and data progress only after acknowledged Python training updates. The 256MiB count table is stored in an independent output directory.
 
 ## Official dataset
 https://huggingface.co/datasets/roneneldan/TinyStories
@@ -42,6 +42,6 @@ This directory is separate from all V17 native checkpoints.
 
 ## Test scope and claims
 
-CI checks the same real Node/Python GPU protocol with NumPy parity mode, local TinyStories-formatted text, web API, 128MiB checkpoint/resume, frozen validation, actual browser, and Windows PowerShell syntax. CI does not provide RTX 3050 Ti hardware. Numeric performance like 100 stories/s or 1MB/s on the real 1.92GB file must be measured on the user's own GPU and cannot be promised before that benchmark.
+CI checks the same real Node/Python GPU protocol with NumPy parity mode, local TinyStories-formatted text, web API, 256MiB checkpoint/resume, frozen validation, actual browser, and Windows PowerShell syntax. CI does not provide RTX 3050 Ti hardware. Numeric performance like 100 stories/s or 1MB/s on the real 1.92GB file must be measured on the user's own GPU and cannot be promised before that benchmark.
 
 Data is generated ONLY for deterministic CI test fixtures, never for the real training mode. Normal training refuses missing files instead of substituting synthetic stories.
