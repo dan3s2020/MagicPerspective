@@ -1,0 +1,95 @@
+{
+  "schema": "magicperspective.experimental-evidence.v1",
+  "date": "2026-11-07",
+  "branch": "experiment/V25-FROZEN-LONGTEXT-SHAPE-EVIDENCE-20261107",
+  "status": "CONSTRAINED_POSITIVE_NOT_UNRESTRICTED_NATURAL_LANGUAGE",
+  "runtime": "ChatGPT isolated JavaScript V8 - actual fetched repo sources evaluated with ESM wrappers and synchronous assertions; NOT a GitHub Actions/Node executable certification",
+  "code_sources": {
+    "labyrinth": "96877ee6537c9ceb34239fc20f85909d0e3237fd",
+    "original_discoverer": "739d6c5cc36e8d43b83dc66f499c5140aca414d3",
+    "immutable_2d_baseline": "e34d787467b7238c7422a0509173b1f785eb2342",
+    "cognitive_map": "ac9b3ed7e7ecc5f8eb1bbaa8b8f39d25caeb5438",
+    "position_independent_axes": "1ac8afb763feecb6572870b5f3f96e49d71954eb",
+    "original_document": "faff3fae8dcbe6b020b920accb4a8df1c362f6d3",
+    "fixed_position_test": "998fc470d219839e39bb938aefb4db7eebaa720a",
+    "shifted_position_noise_test": "2fee7615fe120cfcf1eca330cf1689204f6185ad"
+  },
+  "actual_results": {
+    "native_original_fixed_position_longtext": {
+      "testCount": 120,
+      "exactInitialShape": 120,
+      "exactCompleteExecutedAnswer": 120,
+      "correctLearnedActions": 524,
+      "actualActions": 524
+    },
+    "shifted_position_generalization": {
+      "testCount": 120,
+      "exactInitialFullTextShape": 120,
+      "exactFullTextAfterAction": 120,
+      "actionCoordsShifted": 118,
+      "nativePriorAbsolutePositionBaselineFound": 2,
+      "correctLearnedActions": 524,
+      "actualActions": 524
+    },
+    "causal_negative_controls": {
+      "trials": 60,
+      "untrainedFound": 0,
+      "missingRequiredRuleFound": 0,
+      "scrambledWorldPhysicsExact": 0,
+      "ambiguousDuplicateSourceAbstention": true,
+      "unknownTargetAbstention": true,
+      "checkpointFrozenSeedReproducible": true
+    },
+    "original_maze_regression": {
+      "boards": 84,
+      "exactParity": 84,
+      "temperatureNonzero": 42
+    },
+    "original_noise_multiple_preaction_routes": {
+      "testCount": 200,
+      "reachedGoal": 200,
+      "optimalSixStep": 200,
+      "distinctFullPlans": 166,
+      "distinctInitialActions": 6,
+      "firstActionCounts": {
+        "opaque_action_1": 21,
+        "opaque_action_4": 14,
+        "opaque_action_2": 49,
+        "opaque_action_5": 55,
+        "opaque_action_0": 31,
+        "opaque_action_3": 30
+      }
+    }
+  },
+  "protocol": {
+    "observedActionExamples": 6,
+    "stateSpace": "six independent binary word-edit axes; maximum 64 reached states",
+    "planner": "direct Discoverer.shape from original V17 code; not a next-byte trainer",
+    "textSource": "v17/docs/TORUS_AETHER_ABC_20261104.md",
+    "originalSourceWords": 8437,
+    "trainWordRange": "[0,2048)",
+    "heldoutSourceWordRange": "[4200,8200)",
+    "textLengths": [
+      1024,
+      1536,
+      2048
+    ],
+    "testSeedRange": "0..119",
+    "noiseSeedFormula": "74129+seed*7919",
+    "goal": "explicit target tokens, not withheld complete answer",
+    "correctCompleteOutputComputed": "after initial plan frozen",
+    "physics": "independent action result callback not querying learned predictor"
+  },
+  "limitations": [
+    "Synthetic text-edit facts inserted into genuine long repository documentation; NOT natural-language semantic QA",
+    "Same source document with non-overlapping word ranges, not independent documents or original OpenThoughts dataset",
+    "Original fixed-position baseline struggles with shifted word axes; the new effect-level bias works only for unique source tokens",
+    "No autonomous learnt 5D Noise Space or continuous hyperdimensional geometry; only six binary action axes",
+    "No actual GPU benchmarks or integration into original V17 HTTP UI",
+    "No release command; user-requested unrestricted 70 percent first-try correct answers NOT verified",
+    "GitHub Actions workflow authored, remote success not independently verified"
+  ],
+  "reproduction": [
+    "node --test v17/tests/v25-native-longtext-frozen-shape.test.mjs v17/tests/v25-shifted-longtext-observed-axis.test.mjs"
+  ]
+}
