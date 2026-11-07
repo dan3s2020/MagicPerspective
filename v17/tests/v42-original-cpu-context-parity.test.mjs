@@ -46,6 +46,23 @@ test("V42 same original Brain.live, learned states and exact V8 checkpoint after
   try{
     const f1=path.join(root,"before.v8"),f2=path.join(root,"after.v8");
     ref.save(f1);opt.save(f2);
+    // Baseline control: two independent ORIGINAL V41 Fast implementations,
+    // both restored from the SAME immutable checkpoint. If even those
+    // serialize differently, byte identity is not a valid regression oracle.
+    const originalTwin=Brain.load(initialFile);
+    originalTwin.ctxOf=function(b,i){return originalCtx(b,i,this.CTX)};
+    originalTwin.histOf=function(b,i){return originalHist(b,i)};
+    originalTwin.beginExercise();
+    for(const y of corpus)originalTwin.live(y,false,{old:true});
+    originalTwin.learnConstructedText("What is repeated?","Repeated observed transformation");
+    originalTwin.learnObservedTransformations("alpha -> beta. alpha -> beta.");
+    const twinFile=path.join(root,"original-twin.v8");
+    originalTwin.save(twinFile);
+    const originalTwinBytes=fs.readFileSync(twinFile);
+    console.log("V42_ORIGINAL_ORIGINAL_BASELINE_BINARY_PARITY",JSON.stringify({
+      sameBytes:fs.readFileSync(f1).equals(originalTwinBytes),
+      sameLength:fs.statSync(f1).size===fs.statSync(twinFile).size
+    }));
     const originalBytes=fs.readFileSync(f1),optimizedBytes=fs.readFileSync(f2);
     if(!originalBytes.equals(optimizedBytes)){
       const first=originalBytes.findIndex((byte,index)=>byte!==optimizedBytes[index]);
