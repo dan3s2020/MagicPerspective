@@ -91,7 +91,8 @@ class StreamingFastText:
                 self.rows = int(data["rows"])
                 self.saved_at_chars = self.chars
                 self.loaded = True
-                restored = {k: data[k].copy() for k in data.files if k.startswith("unified_")}
+                restored = {k: data[k].copy() for k in data.files
+                            if k.startswith(("unified_", "worlds_"))}
                 if "cursor_epoch" in data and "cursor_offset" in data:
                     self.cursor_epoch = int(data["cursor_epoch"])
                     self.cursor_offset = int(data["cursor_offset"])
@@ -217,6 +218,10 @@ class StreamingFastText:
                     "actual": bytes(np.asarray(y[:take], dtype=np.uint8)).decode("utf-8", errors="replace"),
                     "predicted": bytes(np.asarray(pred[:take], dtype=np.uint8)).decode("utf-8", errors="replace")})
         new = self.unified.eval(rows)
+        if len(rows) > 1:
+            # Only when user requests held-out validation, not on frequent
+            # pre-update story previews from the running data stream.
+            new["worlds"] = self.unified.worlds.evaluate(cases=12)
         return {"seen": seen, "hits": hits,
                 "accuracy": round(hits / seen, 6) if seen else None,
                 "frozen": True, "algorithm": "observed-hashed-context-1to4",
