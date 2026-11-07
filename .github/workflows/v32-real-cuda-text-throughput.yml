@@ -1,0 +1,71 @@
+name: V32 real CUDA text scheduling, ORIGINAL prediction parity and real V26 UI
+on:
+  push:
+    branches:
+      - experiment/V32-REAL-CUDA-TEXT-THROUGHPUT-VRAM-20261107
+  pull_request:
+    branches:
+      - fix/V29-REAL-START-STATUS-DATASET-PROGRESS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install small CPU reference dependency only
+        run: python -m pip install numpy
+      - name: Check CUDA scheduling syntax and native bridge
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/v32_cuda_text_selftest.py
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/native-app.js
+      - name: Compare ORIGINAL V29 text learning on REAL repo document with V32 across microchunk sizes
+        run: python -u v17/tests/v32_cuda_text_cpu_reference.py
+      - name: ORIGINAL frozen metrics and fatal worker guards
+        run: node --test v17/apps/hypermaze-studio-v26/tests/native-bridge.test.mjs v17/apps/hypermaze-studio-v26/tests/native-v29-status.test.mjs
+      - name: Actual V17 worker starts and learns real text in native transport
+        run: node --test v17/apps/hypermaze-studio-v26/tests/native-real-runtime.test.mjs
+      - name: Actual Chromium new UI original metric/graph/frozen Q-A and GPU memory telemetry
+        run: |
+          which google-chrome || which chromium
+          node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
+      - name: Save actual Chrome browser screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v32-native-V26-UI-original-training
+          path: v28-native-ui-real-chrome.png
+          if-no-files-found: warn
+          retention-days: 7
+  windows-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check V32 Windows source and refuse missing original checkpoint
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $file=Join-Path $pwd 'v17\START_V32_REAL_CUDA_FULL_VRAM.ps1'
+          $original=Join-Path $pwd 'v17\START_V17.ps1'
+          $t0=$null;$e0=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($original,[ref]$t0,[ref]$e0) | Out-Null
+          if($e0.Count) {throw ($e0 | Out-String)}
+          if(!(Select-String -Path $original -Pattern 'MP_V32_TEXT_SELFTEST' -Quiet)) {throw 'Original CUDA TEXT selftest is not wired'}
+          $t=$null;$errs=$null
+          [System.Management.Automation.Language.Parser]::ParseFile($file,[ref]$t,[ref]$errs) | Out-Null
+          if($errs.Count) {throw ($errs | Out-String)}
+          Write-Host 'V32_WINDOWS_POWERSHELL_SYNTAX_VALID'

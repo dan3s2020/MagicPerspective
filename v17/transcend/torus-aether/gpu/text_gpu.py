@@ -83,15 +83,19 @@ class X:                                         # numpy or torch, the same call
         if self.t and str(self.dev).startswith("cuda"): torch.cuda.synchronize()
 
 class Index:                                     # suffix array of the REVERSED memory: a context read backwards is a prefix
-    def __init__(self, X_, mem):                 # mem: int64 array of symbols (on the card)
+    def __init__(self, X_, mem, progress=None): # mem: int64 array of symbols (on the card)
         n = len(mem); self.n = n; X = X_
         R = mem.flip(0) if X.t else mem[::-1].copy(); self.R = R
         rk = X.i64(R) + 1; sa = None; k = 1
+        turns = 0
+        max_turns = max(1, int(np.ceil(np.log2(max(1, n)))) + 1)
         while True:                              # prefix doubling: sort by (rank[i], rank[i+k])
             sec = X.cat([rk[k:], X.zeros(min(k, n), np.int64)]) if n > k else X.zeros(n, np.int64)
             keyv = rk * (max(n, 256) + 2) + sec; sa = X.argsort(keyv); ks = keyv[sa]
             new = X.zeros(n, np.int64); diff = X.i64(ks[1:] != ks[:-1]); csum = diff.cumsum(0) if X.t else np.cumsum(diff)
             new[sa[1:]] = csum + 1; new[sa[0]] = 1; rk = new
+            turns += 1
+            if progress is not None: progress(turns, max_turns, "suffix-index")
             if int(rk.max()) >= n or k >= n: break
             k *= 2
         self.sa = sa
@@ -170,12 +174,17 @@ class TextCard:
     def __init__(self, device, depth=6, form_depth=4, maxK=64, S=64):
         self.X = X(device); self.depth, self.form_depth, self.maxK, self.S = depth, form_depth, maxK, S
         self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0; self._self = {}  # private per-brain cache, never shared across TextCard instances
-    def append(self, exs):
+    def append(self, exs, progress=None):
         X = self.X; flat = X.arr(np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]) if exs else np.zeros(0, np.int64))
         self.mem = X.cat([self.mem, flat]); self.fmem = X.cat([self.fmem, form_of(X, flat)])
         n = len(self.mem)
         if n > self.indexed:                                            # rebuilt after every batch: everything lived is aligned
-            self.big = Index(X, self.mem); self.fbig = Index(X, self.fmem); self.indexed = n
+            if progress is not None: progress(0, 2, "indexing-memory")
+            self.big = Index(X, self.mem, progress=(lambda done, total, phase: progress(done, 2 * total, "indexing-memory")) if progress else None)
+            if progress is not None: progress(1, 2, "indexing-form")
+            self.fbig = Index(X, self.fmem, progress=(lambda done, total, phase: progress(total + done, 2 * total, "indexing-form")) if progress else None)
+            self.indexed = n
+            if progress is not None: progress(2, 2, "indexing-complete")
     def _proposals(self, ctxs, fctxs):
         X = self.X; out = []
         for ix, cx, src, D in ((self.big, ctxs, 0, self.depth), (self.fbig, fctxs, 2, self.form_depth)):
@@ -255,7 +264,7 @@ class TextCard:
         W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress)
         if profile: self.X.sync(); t_imagination = time.perf_counter()
         if progress is not None: progress(0, 1, 'indexing')
-        self.X.sync(); self.append(exs); self._self = {}
+        self.X.sync(); self.append(exs, progress=progress); self._self = {}
         if profile: self.X.sync(); t_reindex = time.perf_counter()
         if progress is not None: progress(1, 1, 'completed')
         result = {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem))}

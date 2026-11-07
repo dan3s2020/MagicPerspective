@@ -201,11 +201,36 @@ function renderNativeDataset(d,m){
   $("nativeProgressFill").title=pct>0&&pct<.5?
     "Progres real "+m.progressPercent+"; segmentul minim de 6px este doar un marker de vizibilitate.":"Progres proporțional "+m.progressPercent;
   $("nativeProgressTrack").setAttribute("aria-valuenow",String(pct??0));
-  const batch=d.graph?.batch||d.graph?.batchNow||d.graph?.gpuBatch||null;
-  const phase=typeof batch==="object"?batch?.phase:batch;
-  value("nativeCudaPhase",phase?"CUDA: "+String(phase).slice(0,110):
+  // Phase and processed microchunk counters come ONLY from the original
+  // V17 GPU worker's real PyTorch progress packets, not from a timer.
+  const phase=m.gpuPhase;
+  const phaseProgress=m.gpuPhaseTotal>0?
+    " "+fmt(m.gpuPhaseDone)+"/"+fmt(m.gpuPhaseTotal):"";
+  const phaseTime=m.gpuPhaseElapsedSeconds!==null?
+    " · "+fmt(m.gpuPhaseElapsedSeconds,1)+"s":"";
+  value("nativeCudaPhase",phase?"CUDA: "+phase+phaseProgress+phaseTime:
     "GPU: "+String(m.nativeDevice||"—")+
     " · "+fmt(m.completedExercisesPerSecond,2)+" ex/s");
+  value("v32GpuPhase",phase?"FAZĂ ACTUALĂ: "+phase+phaseProgress+phaseTime+
+    (m.gpuPhaseWaitingSeconds!==null?
+      " · fără microchunk finalizat de "+fmt(m.gpuPhaseWaitingSeconds,1)+"s":""):
+    "Faza CUDA nu a fost încă raportată.");
+  const budget=m.gpuActualBudgetGB??m.gpuSafeBudgetGB;
+  const used=m.gpuActualPeakReservedGB;
+  const peak=m.gpuActualPeakAllocatedGB;
+  const vrampct=budget!==null&&budget>0&&used!==null?
+    Math.max(0,Math.min(100,100*used/budget)):null;
+  value("v32GpuUsed",used===null?"—":fmt(used,3)+" GB rezervați");
+  value("v32GpuBudget","Buget PyTorch sigur: "+fmt(budget,3)+" GB"+
+    " · fizic "+fmt(m.gpuTotalGB,3)+" GB");
+  value("v32GpuFree","Memorie liberă măsurată: "+fmt(m.gpuActualFreeGB,3)+
+    " GB · peak real alocat "+fmt(peak,3)+" GB");
+  $("v32GpuUsageFill").style.width=vrampct===null?"0%":vrampct+"%";
+  $("v32GpuUsageBar").setAttribute("aria-valuenow",String(vrampct??0));
+  value("v32GpuMicrochunk","PyTorch cu date reale · chunk folosit "+
+    fmt(m.gpuMicrochunkUsed)+" caractere · următorul chunk "+fmt(m.gpuNextMicrochunk)+
+    " · VRAM rezervat/buget: "+(vrampct===null?"—":fmt(vrampct,1)+"%")+
+    " (nu alocăm memorie artificială)");
   value("nativeProgressHeartbeat","Verificat "+new Date().toLocaleTimeString("ro-RO"));
   const connection=$("connection");
   connection.classList.toggle("error",failed);

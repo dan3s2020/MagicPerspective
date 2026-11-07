@@ -46,3 +46,16 @@
 #nativeTrainingState[data-state="eroare"]{color:#ff92ab;border-color:#ae4260;background:#48242e}
 #nativeTrainingState[data-state="pauză"]{color:#f4cd7f;border-color:#977a4d}
 #nativeTrainingState[data-state="oprit"]{color:#b1bdd0}
+
+/* V32 actual PyTorch VRAM utilization by real model tensors, not dummy allocations. */
+.native-cuda-memory{margin:4px 17px 15px;padding:14px 16px;border:1px solid #345f71;
+  border-radius:10px;background:linear-gradient(110deg,#102436,#101a2d)}
+.native-vram-title{color:#8deaca;font-size:10px;font-weight:800;letter-spacing:.1em}
+.native-vram-numbers{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:7px 0 10px}
+.native-vram-numbers strong{font-size:21px;color:#65ebc9;font-variant-numeric:tabular-nums}
+.native-vram-numbers span{font-size:11px;color:#a9bed1}
+.native-vram-track{height:15px;border:1px solid #315164;background:#0c1727;
+  border-radius:20px;overflow:hidden}
+.native-vram-fill{width:0;height:100%;background:linear-gradient(90deg,#388beb,#4fe8cf);
+  transition:width .35s}
+.native-vram-footnote{font-size:11px;color:#acc8d4;padding-top:8px;line-height:1.4}

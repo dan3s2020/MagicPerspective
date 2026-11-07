@@ -339,17 +339,39 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None
+    def __init__(self):
+        self.B = Back("numpy" if not HAVE_TORCH else "cpu")
+        self.util = 100; self.tb = None; self.text = None; self.shared = None
+        self.vram_budget = 0; self.text_chunk = None; self.autotune_text = False
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
         if self.B.torch and dev.startswith("cuda"):
             idx = int(dev.split(":")[1]) if ":" in dev else 0; total = torch.cuda.get_device_properties(idx).total_memory
-            vram = float(m.get("vram", 0)) * 1e9
-            if vram > 0: torch.cuda.set_per_process_memory_fraction(min(1.0, vram / total), idx)
-            info.update(name=torch.cuda.get_device_name(idx), totalGB=round(total / 1e9, 2), vramGB=round(min(vram, total) / 1e9, 2) if vram > 0 else round(total / 1e9, 2))
+            requested = max(0.0, float(m.get("vram", 0))) * 1e9
+            free, _ = torch.cuda.mem_get_info(idx)
+            # Vram=0 means use almost all REAL currently free VRAM, not
+            # reserve meaningless dummy tensors or change any model weights.
+            # Driver/display/headroom is necessary on a 4.29 GB laptop GPU.
+            headroom = max(192 * 1024 * 1024, total * .045)
+            # A live UI GPU reconfiguration keeps real tensors from previous
+            # batches. Account for PyTorch's existing reserved allocation,
+            # otherwise the cap can be lowered BELOW the live original brain.
+            existing = torch.cuda.memory_reserved(idx)
+            capacity = max(256 * 1024 * 1024, free + existing - headroom)
+            vram = min(requested if requested > 0 else capacity, capacity, total)
+            self.vram_budget = vram
+            torch.cuda.set_per_process_memory_fraction(min(.995, vram / total), idx)
+            info.update(name=torch.cuda.get_device_name(idx),
+                        totalGB=round(total / 1e9, 3),
+                        vramGB=round(vram / 1e9, 3),
+                        freeBeforeGB=round(free / 1e9, 3),
+                        requestedVramGB=round(requested / 1e9, 3) if requested > 0 else 0,
+                        safeHeadroomGB=round(headroom / 1e9, 3),
+                        vramPolicy="SAFE_MAX_FREE_FOR_REAL_TRAINING" if requested == 0 else "REQUESTED_BUDGET_CAPPED_BY_FREE")
         # how many worlds fill the memory it may use: one 11x11 labyrinth lived on the card holds ~14 grids of int64/float32
-        budget = (float(m.get("vram", 0)) * 1e9 if float(m.get("vram", 0)) > 0 else (info.get("totalGB", 4) * 1e9 * .9 if self.B.torch else 2e9))
+        budget = self.vram_budget if self.B.torch and dev.startswith("cuda") else (
+            float(m.get("vram", 0)) * 1e9 if float(m.get("vram", 0)) > 0 else 2e9)
         info["autoWorlds"] = int(max(256, min(65536, budget * .8 / (11 * 11 * 14 * 8)))) if self.B.torch else 2048
         info["autoText"] = int(max(64, min(8192, budget * .8 / (1000 * 2 * 64 * 8 * 4)))) if self.B.torch else 256   # exercises per text batch: each position holds 2 x 64 alignment ranges
         return info
@@ -361,12 +383,19 @@ class Server:
         if c == "init": r = self.init(m)
         elif c == "exercise": r = {"worlds": exercise_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))}
         elif c == "exercise_learn": r = exercise_learn_batch(self.B, m["worlds"], m["knows"], m.get("seed", 1))
-        elif c == "text_load":                                  # the brain's whole text memory, when the card (re)starts: nothing lived is missing here
+        elif c == "text_load":                                  # full original text memory; same values/order
             import base64
             from text_gpu import TextCard
-            self.text = TextCard(self.B.device if self.B.torch else "numpy"); raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
-            if len(raw): self.text.append([raw])
-            r = {"memory": int(len(self.text.mem))}
+            self.text = TextCard(self.B.device if self.B.torch else "numpy")
+            raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
+            def load_progress(done, total, phase):
+                if "id" in m:
+                    sys.stdout.write(json.dumps({"id": m["id"], "type": "progress",
+                        "phase": "loading-previous-memory/" + phase,
+                        "done": int(done), "total": int(total)}) + "\n")
+                    sys.stdout.flush()
+            if len(raw): self.text.append([raw], progress=load_progress)
+            r = {"memory": int(len(self.text.mem)), "source": "ORIGINAL_TRAINED_MEMORY"}
         elif c == "text_learn":                                 # text exercises lived on the card; only the totals go back
             if self.text is None:
                 from text_gpu import TextCard
@@ -376,9 +405,23 @@ class Server:
                     sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
                                                  "done": int(done), "total": int(total)}) + "\n")
                     sys.stdout.flush()
+            if self.text_chunk is None:
+                self.text_chunk = max(512, min(32768, int(m.get("chunk", 4096))))
+            self.autotune_text = bool(m.get("autotune", False))
+            used_chunk = self.text_chunk
             r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),
                                m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])],
-                               progress=text_progress)
+                               chunk=used_chunk, progress=text_progress)
+            r["chunkUsed"] = used_chunk
+            # Adaptive only BETWEEN completed batches. The equations, full
+            # documents, corpus order and original scoring are unchanged.
+            if self.autotune_text and self.B.torch and str(self.B.device).startswith("cuda"):
+                peak = torch.cuda.max_memory_reserved()
+                if peak < self.vram_budget * .65 and used_chunk < 16384:
+                    self.text_chunk = min(16384, used_chunk * 2)
+                elif peak > self.vram_budget * .87 and used_chunk > 1024:
+                    self.text_chunk = max(1024, used_chunk // 2)
+            r["nextChunk"] = self.text_chunk
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c in ("shared_load", "shared_train", "shared_eval", "shared_save"):
@@ -395,7 +438,14 @@ class Server:
         elif c == "maze_check": r = {"mazes": [make_maze(s, n) for s, n in m["items"]]}
         else: r = {"error": "unknown command " + c}
         self.B.sync(); busy = time.time() - t0; self.throttle(busy)
-        if self.B.torch and str(self.B.device).startswith("cuda"): r["vramUsedGB"] = round(torch.cuda.max_memory_allocated() / 1e9, 4)
+        if self.B.torch and str(self.B.device).startswith("cuda"):
+            r["vramUsedGB"] = round(torch.cuda.max_memory_allocated() / 1e9, 4)
+            r["vramReservedGB"] = round(torch.cuda.max_memory_reserved() / 1e9, 4)
+            r["vramCurrentAllocatedGB"] = round(torch.cuda.memory_allocated() / 1e9, 4)
+            free, total = torch.cuda.mem_get_info()
+            r["vramFreeGB"] = round(free / 1e9, 4)
+            r["vramBudgetGB"] = round(self.vram_budget / 1e9, 4)
+            r["realVramPeakFraction"] = round(torch.cuda.max_memory_reserved() / max(1, self.vram_budget), 4)
         r["busy"] = round(busy, 4); return r
 
 def selftest(device):                                        # run by START_V17.ps1 before training: does the card really compute?
