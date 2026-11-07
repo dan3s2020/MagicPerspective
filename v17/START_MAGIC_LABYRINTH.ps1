@@ -1,4 +1,4 @@
-# MagicPerspective — Living Labyrinth. Separate, live, OBSERVED training.
+# MagicPerspective - Living Labyrinth. Separate, live, OBSERVED training.
 # Does NOT overwrite original V17 UI/Brain, other agents, or existing checkpoints.
 # Native original V17 CUDA worker remains available via START_V17.ps1.
 param(
@@ -43,7 +43,7 @@ if($Resume){$argv+="--resume"}
 if($Start){$argv+="--start"}
 if(-not $NoBrowser){$argv+="--open"}
 Write-Host ""
-Write-Host "MAGICPERSPECTIVE — THE LIVING LABYRINTH" -ForegroundColor Magenta
+Write-Host "MAGICPERSPECTIVE - THE LIVING LABYRINTH" -ForegroundColor Magenta
 Write-Host "Original V17 source: untouched" -ForegroundColor Cyan
 Write-Host "Actual observations: $source"
 Write-Host "Independent checkpoint: $Out"
