@@ -1,0 +1,76 @@
+name: V40 ORIGINAL xD V24 V31 FAST CUDA text and NEW V26 UI
+on:
+  push:
+    branches:
+      - integration/V40-ALL-VERIFIED-FAST-CUDA-NEW-TRAINING-20261107
+  pull_request:
+    branches:
+      - integration/V34-ORIGINAL-XD-V31-V24-VERIFIED-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-fast-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact Python baseline dependency
+        run: python -m pip install numpy
+      - name: All original CUDA text correctness, O(N squared) bound and six original perspectives
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m unittest discover -s v17/tests -p 'test_v17_full_atlas_cuda_hang.py' -v
+          python -m unittest discover -s v17/tests -p 'text_index_fast_test.py' -v
+          python -m unittest discover -s v17/tests -p 'text_variant_fast_test.py' -v
+      - name: Original native V34 xD V31 char-world and actual worker HTTP
+        run: |
+          node --test v17/tests/v34-incremental-observed-character-rules.test.mjs v17/tests/complete-xd-maze-atlas.test.mjs v17/tests/v34-native-real-live-http.test.mjs
+      - name: Native source / browser syntax
+        run: |
+          node --check v17/apps/hypermaze-studio-v26/native-bridge.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/native-app.js
+          node --test v17/apps/hypermaze-studio-v26/tests/native-v29-status.test.mjs
+      - name: Real Chromium renders new UI and original frozen results
+        run: |
+          which google-chrome || which chromium
+          node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
+      - name: Store real Chromium screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v40-real-original-V26-UI
+          path: v28-native-ui-real-chrome.png
+          if-no-files-found: warn
+  windows-clean-start:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 parser for standalone zero-checkpoint launcher
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          $files=@("v17/START_V40_COMPLETE_FAST.ps1","v17/START_HYPERMAZE_REAL_CUDA.ps1","v17/START_V17.ps1","v17/apps/hypermaze-studio-v26/checkpoint-process-scope.ps1")
+          foreach($file in $files) {
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd $file),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ("Invalid "+$file+": "+($errors|Out-String))}
+          }
+          Write-Host "V40_WINDOWS_PS51_SYNTAX_PASS"
+      - name: Refuse to run with absent corpus instead of inventing a training source
+        shell: pwsh
+        run: |
+          $bad=Join-Path $env:TEMP 'V40-MISSING-NONEXISTENT-OPEN-THOUGHTS'
+          $script=Join-Path $pwd 'v17/START_V40_COMPLETE_FAST.ps1'
+          $output=(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Data $bad -Gpu off 2>&1 | Out-String)
+          if($LASTEXITCODE -eq 0){throw "V40 silently started without real dataset"}
+          if($output -notmatch 'OpenThoughts Parquet directory missing'){throw $output}
+          $global:LASTEXITCODE=0
+          Write-Host "V40_NO_FAKE_TRAINING_PASS"
