@@ -1,0 +1,67 @@
+name: V17 exact accelerated CUDA text alignment and real corpus throughput
+on:
+  push:
+    branches:
+      - perf/V17-CUDA-TEXT-PREFIX-BATCH-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-index-correctness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Native NumPy alignment test dependencies
+        run: python -m pip install numpy
+      - name: Exact source-based reference versus fast-prefix binary search across 1..64 depths
+        run: python -m unittest discover -s v17/tests -p text_index_fast_test.py -v
+      - name: Six native trust variants remain identical when reusing CUDA histograms
+        run: python -m unittest discover -s v17/tests -p text_variant_fast_test.py -v
+  existing-v17-trainer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse original and optimized Windows PowerShell launcher scripts
+        run: |
+          if command -v pwsh >/dev/null 2>&1; then
+            pwsh -NoProfile -Command '
+              $ErrorActionPreference="Stop"
+              foreach($f in @("v17/START_V17.ps1","v17/START_HYPERMAZE_REAL_CUDA.ps1","v17/WATCH_TRAINING_THROUGHPUT.ps1")){
+                $tokens=$null
+                $parseErrors=$null
+                $null=[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f).Path,[ref]$tokens,[ref]$parseErrors)
+                if($parseErrors.Count -gt 0){$parseErrors|Out-String|Write-Error;throw "Invalid PowerShell $f"}
+              }
+              Write-Host "All V17 Windows scripts pass PowerShell AST parsing."
+            '
+          else
+            echo 'PowerShell executable not installed on this CI image: Windows syntax check not run'
+          fi
+      - name: Preserve original V17 backend, GPU timeout watchdog, real corpus learning and checkpoint
+        run: |
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --test v17/tests/gpu-stall-watchdog.test.mjs
+          node --test v17/tests/live-corpus-hypermaze-http.test.mjs
+
+  real-v17-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium Playwright for ACTUAL native V17 UI acceptance
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Actual original training page still displays real text path and controls
+        run: node --test v17/tests/live-corpus-hypermaze-browser.test.mjs

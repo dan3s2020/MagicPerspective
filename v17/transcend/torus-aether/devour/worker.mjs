@@ -14,7 +14,7 @@ import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
-const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
+const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
 // A real text corpus may be Q/A pairs OR free prose. Both contain observed
@@ -44,6 +44,12 @@ async function* stream() {                                                 // th
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
+    const assigned = w < ds.trainRows ? Math.ceil((ds.trainRows-w)/n) : 0;
+    parentPort.postMessage({type:"dataset",w:workerData.gw,
+      totalTrainingRows:ds.trainRows,assignedTrainingRows:assigned,
+      heldOutRows:ds.held,sourceParquetFiles:ds.files.length,
+      sourceKind:"OpenThoughts Parquet",
+      source:"metadata only, not counted as consumed exercises"});
     for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
   } else {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
@@ -189,6 +195,14 @@ const absorbText = row => {
 };
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
+let nextAutoSave=checkpointEvery>0?(brain.chars||0)+checkpointEvery:Infinity;
+const autonomousCheckpoint = () => {
+  if(!saveFile||!Number.isFinite(nextAutoSave)||brain.chars<nextAutoSave)return false;
+  setWorkerPhase("CPU: checkpoint without frozen unseen evaluation");
+  doSave(); // original native Brain saved atomically before other organs
+  nextAutoSave=brain.chars+checkpointEvery;
+  return true;
+};
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
@@ -236,10 +250,20 @@ let batchNow = null;                                                       // wh
 // No invented progress counters: the same original worker emits its own data.
 let workerPhase = "starting", phaseSince = Date.now();
 const setWorkerPhase = label => {workerPhase=label;phaseSince=Date.now();};
+let rateAt=Date.now(),rateChars=brain.chars||0,rateExercises=brain.exercises||0;
 const heartbeat = setInterval(()=>{
-  parentPort.postMessage({type:"heartbeat",w:workerData.gw,at:Date.now(),
-    phase:workerPhase,phaseSince,chars:brain.chars||0,
-    exercises:brain.exercises||0,batch:batchNow,
+  const now=Date.now(),deltaSeconds=Math.max(.001,(now-rateAt)/1000);
+  const committedChars=brain.chars||0,committedExercises=brain.exercises||0;
+  const textMBps=Math.max(0,(committedChars-rateChars)/1e6/deltaSeconds);
+  const exercisesPerSecond=Math.max(0,(committedExercises-rateExercises)/deltaSeconds);
+  rateAt=now;rateChars=committedChars;rateExercises=committedExercises;
+  parentPort.postMessage({type:"heartbeat",w:workerData.gw,at:now,
+    phase:workerPhase,phaseSince,chars:committedChars,
+    exercises:committedExercises,batch:batchNow,
+    textMBps,exercisesPerSecond,
+    throughputIntervalSeconds:deltaSeconds,
+    rawTextMB:committedChars/1e6,
+    throughputDefinition:"COMMITTED text characters in original Brain / wall-clock seconds (NOT Parquet file I/O bytes)",
     activeGpuRpc:gpu?.activeCommand||null,
     gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9});
 },5000);
@@ -283,15 +307,36 @@ const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuS
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   setWorkerPhase("text CUDA: working on real training batch");
-  batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
+  batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot();
   const startChars = brain.chars;
-  await brain.learnTextGPU(gpu, exs, progress => {
+  const observeProgress = progress => {
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
     setWorkerPhase(batchNow.phase);
-    shot();
-  });
+    // Lightweight /health heartbeat records actual Python progress.
+  };
+  try {
+    await brain.learnTextGPU(gpu,exs,observeProgress);
+  } catch (err) {
+    // For a dead / unresponsive Python child, the native Brain has NOT
+    // absorbed the batch: Brain.learnTextGPU mutates it only AFTER receiving
+    // a completed reply. The dead child is discarded and its text memory
+    // reloaded from the unchanged native Brain before replaying this batch.
+    // Never retry errors after the first GPU result was committed.
+    if (!/GPU RPC (idle|hard) timeout|GPU process .*ended|GPU process is not running/i.test(err.message))
+      throw err;
+    parentPort.postMessage({type:"note",w:workerData.gw,text:
+      "CUDA stalled: restarting the dead child and replaying THIS uncommitted text batch exactly once: "+err.message});
+    setWorkerPhase("CUDA: recovering stalled uncommitted text batch");
+    gpu?.close("restart after stalled uncommitted CUDA batch");
+    gpu=null;gpuInfo=null;gpuError=null;sharedLoaded=false;
+    const restarted=await gpuOn();
+    if(!restarted)throw Error("CUDA recovery failed: "+(gpuError||err.message));
+    await brain.learnTextGPU(restarted,exs,observeProgress);
+    parentPort.postMessage({type:"note",w:workerData.gw,text:
+      "CUDA recovered. Native text batch committed once after successful retry."});
+  }
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
-  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
+  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot();
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
   for(const row of meta){absorbHyperMaze(row);absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
@@ -302,9 +347,17 @@ const processGpuText = async (exs, meta) => {
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   batchNow = null;
   setWorkerPhase("completed text batch; preparing next exercises");
-  // Report the first committed batch immediately, not only after 60,000 bytes.
-  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
-  shot(true);
+  // Heavy frozen evaluation and serializing the entire native Brain must
+  // NOT block the very first batch when the user's intent is continuous text
+  // training. It still runs on each configured true-text checkpoint boundary.
+  if (Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
+    setWorkerPhase("CPU: frozen unseen evaluation and atomic checkpoint");
+    report();
+    if(checkpointEvery>0)nextAutoSave=brain.chars+checkpointEvery;
+  }else autonomousCheckpoint();
+  // Limit expensive full-size UI graph snapshots; return counts via /health
+  // every 5 seconds even when the Brain is in a long CUDA batch.
+  shot();
 };
 parentPort.on("message", m => {
   if(m && m.hyperMazeConfig){
@@ -483,6 +536,7 @@ for await (const ex of stream()) {
       await flushShared();
     }
   }
+  if(TEXT) autonomousCheckpoint();
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }

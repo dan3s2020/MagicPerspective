@@ -59,6 +59,8 @@ test("Chromium sees genuine pre-action predicted route, observed answer and nonb
     null,{timeout:15000});
   assert.match(await page.locator("#workerHealth").textContent(),
     /Heartbeat: .*Ultimul graf: .*Fază raportată:/);
+  assert.match(await page.locator("#workerHealth").textContent(),
+    /DEBIT REAL .* exerciții\/s .* MB\/s text EFECTIV COMIS/);
   assert.equal(await page.locator("#textMazeBox").isVisible(),true,
    "Native original V17 text maze must not disappear");
   assert.equal(await page.locator("#g").isVisible(),true,
