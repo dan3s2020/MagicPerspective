@@ -17,7 +17,7 @@ test("same current symbol, different observed histories => different learned fut
  const s=m.snapshot();
  assert.ok(s.historyAxisEvidence>0,"Prior-token context must matter measurably");
  assert.ok(s.contextAccuracyCovered>.9,JSON.stringify(s));
- assert.ok(s.oneTokenAccuracyAll<.7,JSON.stringify(s));
+ assert.ok(s.contextAccuracyCovered-s.oneTokenAccuracyAll>.20,JSON.stringify(s));
  assert.equal(s.semanticGoalVerified,false);
  assert.equal(s.originalDiscovererDirectlyReused,false);
  assert.equal(typeof Discoverer.prototype.shape,"function","Original maze method retained");
