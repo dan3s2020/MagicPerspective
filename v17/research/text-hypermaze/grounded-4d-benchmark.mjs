@@ -28,8 +28,8 @@ export const TEMPLATES=[
  (source,p,claim)=>'For a reader of '+source+', ('+key(p)+') means '+claim+'.',
  (source,p,claim)=>'On the other page is ('+key(p)+'), reported by '+source+'; '+claim+'.'
 ];
-export function train(seed){
- const R=rng(seed),a=new TextWorldNavigator();
+export function train(seed,{agent=new TextWorldNavigator()}={}){
+ const R=rng(seed),a=agent;
  for(let i=0;i<80;i++)for(let k=0;k<8;k++){
   const before=choice(R,N),next=move(before,physics[k]);
   const actual=R()<0.18?move(before,physics[choice(R,8)]):next;
