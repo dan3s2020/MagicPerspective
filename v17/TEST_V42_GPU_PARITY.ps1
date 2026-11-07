@@ -1,9 +1,8 @@
 param(
-  [string]$Python="",
-  [switch]$SkipUnnecessaryWarning
+  [string]$Python=""
 )
 $ErrorActionPreference="Stop"
-$Root=Split-Path -Parent $PSScriptRoot
+$Root=$PSScriptRoot
 $Repo=Split-Path -Parent $Root
 $Script=Join-Path $Root "transcend\torus-aether\gpu\v42_real_cuda_parity.py"
 if(!(Test-Path -LiteralPath $Script -PathType Leaf)){throw "V42 original native CUDA parity script is missing: $Script"}
