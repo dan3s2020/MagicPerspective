@@ -93,6 +93,10 @@ export class NativeGoalTextMaze {
  // navigator. Paginate every retained node, edge and attempt (including
  // failures) and surface why action/path constraints blocked progress.
  cumulativeAtlas(options={}){return this.cumulative.atlas(options);}
+ // Audit ONLY after the heldout scorer has assessed the completed
+ // prediction. The actual reference answer is never supplied or stored.
+ auditFrozenQA(info){return this.cumulative.auditFrozenQA(info);}
+
 
 
  // Experience ONLY actual observed text; no generated answer is inserted.
