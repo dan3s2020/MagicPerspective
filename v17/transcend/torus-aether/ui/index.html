@@ -166,7 +166,15 @@
       <pre id="cognitiveStats" style="white-space:pre-wrap;color:#b8ebf5;font:12px ui-monospace,monospace">Aștept observații.</pre>
       <div class="row"><label>Stare inițială <input id="cognitiveInitial" type="text" value="He is calm." size="30"></label></div>
       <div class="row"><label>Condiții ale țintei (poziție → simbol)<input id="cognitiveGoal" type="text" value='{"0":"She","2":"calm"}' size="40"></label></div>
-      <div class="row"><button id="cognitiveEvaluate" type="button">Testează forma învățată pe o țintă nouă</button></div>
+      <div class="row">
+        <label>Stări maxime <input id="cognitiveMaxNodes" type="number" min="2" max="768" value="384" style="width:75px"></label>
+        <label>Adâncime traseu <input id="cognitiveMaxDepth" type="number" min="1" max="256" value="64" style="width:75px"></label>
+        <button id="cognitiveEvaluate" type="button">Testează forma învățată pe o țintă nouă</button>
+      </div>
+      <p class="note">Traseul și curba de mai jos sunt calculate din câmpul ORIGINAL Discoverer.shape, înaintea primei acțiuni. Proiecția este diagnostică 2D a potențialului pe pașii grafului; nu este o hartă geometrică inventată a dimensiunilor textului.</p>
+      <canvas id="cognitivePathCanvas" width="1000" height="285" style="display:block;width:100%;max-width:1000px;border:1px solid #23505d;border-radius:8px;background:#07121a"></canvas>
+      <div class="row"><label>Inspectează nodul / pasul formei: <input id="cognitivePathScrub" type="range" min="0" max="0" value="0" step="1" style="width:min(450px,60vw)"></label><span id="cognitivePathStep">0 / 0</span></div>
+      <pre id="cognitivePathDetail" style="white-space:pre-wrap;word-break:break-word;max-height:180px;overflow:auto;font:12px ui-monospace,monospace">Nicio formă evaluată.</pre>
       <pre id="cognitiveResult" style="white-space:pre-wrap;overflow:auto;max-height:330px;color:#d3eedb;font:12px ui-monospace,monospace">Nicio evaluare încă.</pre>
       <h3>Feedback real: verificarea unui zid sau a unei transformări</h3>
       <p class="note">Înregistrează numai o acțiune executată efectiv și observația de după. Un traseu dedus din text rămâne o ipoteză până când lumea îi confirmă efectul.</p>
