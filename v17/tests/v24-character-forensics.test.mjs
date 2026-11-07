@@ -134,6 +134,55 @@ test("Unicode, punctuation, insertion/deletion/swap from learned contexts are ch
  assert.deepEqual(parseCharAction(unicode),{op:"replace",at:1,from:"é",to:"e"});
  assert.equal(parseCharAction(charActionId("replace",1,"🧠","🙂"))?.from,"🧠");
 });
+test("exact missing-character evidence: identify disabled a->o, o->u hops and every source count, not merely 'no path'",()=>{
+ const {c}=learn();
+ const goal={charSlots:{1:"u"}};
+ const off=c.formSolution("mat",goal,{transfer:false,maxNodes:80,maxDepth:5});
+ const spot=off.world.diagnostics.exactLocationBlockers.find(x=>x.characterPosition===1);
+ assert.equal(off.found,false);
+ assert.equal(spot.obstacleClassification,"TRANSFER_ABLATED_IN_THIS_RUN");
+ assert.equal(spot.observedCurrentCharacter,"a");
+ assert.equal(spot.targetCharacter,"u");
+ assert.deepEqual(spot.observedEvidenceOnlySymbolChain.map(x=>[x.from,x.to]),[["a","o"],["o","u"]]);
+ assert.ok(spot.observedEvidenceOnlySymbolChain.every(x=>x.independentlyObservedPairs>=2));
+ assert.ok(spot.observedEvidenceOnlySymbolChain.every(x=>x.blockedByAblation));
+ assert.deepEqual(off.world.diagnostics.closestActuallyReachableStates.map(x=>x.actualState),["mat"]);
+ const on=c.formSolution("mat",goal,{transfer:true,maxNodes:80,maxDepth:5});
+ assert.equal(on.found,true);
+ assert.equal(on.world.diagnostics.exactLocationBlockers[0].targetCharacterVisitedInAnActualCandidateState,true);
+ assert.deepEqual(on.firstPrediction.map(e=>e.to),["mot","mut"]);
+});
+test("explain exactly which ORIGINAL world observation is missing before independent-context threshold and after negative action feedback",()=>{
+ const w=new LearnedCognitiveMap(),c=new CharacterHypermaze();
+ w.onAtlasEvidence=e=>c.observeWordContrast(e);
+ w.observeWorld("cat flies.",{id:1});w.observeWorld("cot flies.",{id:2});
+ const single=c.formSolution("mat",{charSlots:{1:"o"}});
+ const gap=single.world.diagnostics.exactLocationBlockers[0];
+ assert.equal(gap.obstacleClassification,"RULE_WITHOUT_SUFFICIENT_INDEPENDENT_CONTEXTS");
+ assert.equal(gap.firstUnderSupportedRule.from,"a");
+ assert.equal(gap.firstUnderSupportedRule.to,"o");
+ assert.equal(gap.firstUnderSupportedRule.independentlyObservedPairs,1);
+ assert.equal(gap.firstUnderSupportedRule.allowedByCurrentTransferPolicy,false);
+ const {c:full}=learn();
+ full.observeIntervention({before:"mat",action:charActionId("replace",1,"a","o"),
+   after:"mat",accepted:false});
+ const result=full.formSolution("mat",{charSlots:{1:"u"}});
+ assert.equal(result.found,false);
+ const blocked=result.world.diagnostics.exactLocationBlockers[0];
+ assert.equal(blocked.obstacleClassification,"REAL_WALL_OBSERVED_AT_THIS_POSITION");
+ assert.equal(blocked.actualWallExamplesAtThisPosition[0].originalState,"mat");
+ assert.equal(blocked.actualWallExamplesAtThisPosition[0].failedAttempts,1);
+ assert.ok(result.world.diagnostics.actualIndependentWorldWalls>=1);
+});
+test("unseen goal symbol outside every learned contrast is reported as missing evidence, not impossible physical language",()=>{
+ const {c}=learn(),r=c.formSolution("mat",{charSlots:{1:"e"}},{maxNodes:60,maxDepth:5});
+ const detail=r.world.diagnostics.exactLocationBlockers[0];
+ assert.equal(r.found,false);
+ assert.equal(detail.obstacleClassification,"NO_OBSERVED_CHARACTER_RULE_CHAIN");
+ assert.equal(detail.observedEvidenceOnlySymbolChain,null);
+ assert.deepEqual(detail.actuallyVisitedCharacterValues.sort(),["a","o","u"].sort());
+ assert.ok(detail.caution.includes("NOT"));
+});
 test("100 genuinely unseen 76-character worlds require the exact same two learned character edits",()=>{
  const {c}=learn();const pre=c.export();let reached=0;
  for(let i=0;i<100;i++){
