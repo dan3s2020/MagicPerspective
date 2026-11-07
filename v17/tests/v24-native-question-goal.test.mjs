@@ -105,7 +105,7 @@ test("original 2D solver parity is immutable for the same retinas, including noi
  for(let seed=1;seed<=30;seed++){
   const n=7+2*(seed%4),retina=new Array(n*n).fill(KIND.floor);
   for(let i=0;i<n*n;i++)if(i%13===seed%13)retina[i]=KIND.wall;
-  retina[0]=KIND.self;retina.at(-1)=KIND.target;
+  retina[0]=KIND.self;retina[retina.length-1]=KIND.target;
   const frozen=new FrozenDiscoverer(seed),current=new CurrentDiscoverer(seed);
   for(const a of [frozen,current]){
    a.pass=[5,1,20,2];a.block=[1,12,1,1];
