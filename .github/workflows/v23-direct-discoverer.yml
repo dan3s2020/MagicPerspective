@@ -1,0 +1,28 @@
+name: V23 Original Discoverer - Non-destructive Regression
+on:
+  push:
+    branches:
+      - experiment/V23-DIRECT-DISCOVERER-OBSERVABILITY-20261107
+  workflow_dispatch:
+jobs:
+  source-and-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V22 exact motor parity and V23 source-level checks
+        run: |
+          set -euo pipefail
+          node --test v17/tests/torus-v23-exact-discoverer.test.mjs
+          node --check v17/transcend/torus-aether/ui/cognitive-graph-live.js
+      - name: Existing native learned worlds and live regression
+        run: |
+          set -euo pipefail
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
+          node --test v17/tests/torus-whole-map-text.test.mjs
+          node --test v17/tests/torus-world-source-regression.test.mjs
+          node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+          node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
