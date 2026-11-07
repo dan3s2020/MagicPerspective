@@ -59,6 +59,9 @@ test("THE ACTUAL original Discoverer maze shape predicts a path in a learned NON
  assert.ok(plan.initialShape.length>=2);
  assert.ok(plan.actions.length>=1);
  assert.ok(plan.graph.observedOperatorEdges>0);
+ assert.ok(plan.graph.shared5DActionAxes>0,"5D transformation axes must be learned from actual observed text changes");
+ assert.ok(plan.graph.geometry5DInferredNodes>0,"At least one UNSEEN text state must receive a 5D position inferred from a learned action");
+ assert.equal(plan.geometricPreferenceUsed,true,"The original maze-shape planner must actually receive causal 5D coordinates");
  assert.equal(brain.observedTransformations.seen,before,
   "Planning must not silently train from heldout data");
  const frozen=adapter.execute(plan,{trainNoise:false,enableNoise:false});
