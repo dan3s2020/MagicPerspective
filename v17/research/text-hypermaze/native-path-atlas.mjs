@@ -127,7 +127,14 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    enumerationTruncationReason:truncationReason,
    graphTruncationReasons:topology.incompleteReasons||[],
    allFiniteSimplePathsProven:!truncated&&topology.closedUnderLearnedOperators===true},
-  failureReason:plan.failureReason||null};
+  failureReason:plan.failureReason||null,
+  designLimits:plan.designLimits||null,
+  possibleDesignBarriers:[
+   ...(plan.designLimits?.rejectedLongObservations>0?["some-observations-exceeded-token-window"]:[]),
+   ...(plan.designLimits?.evictedOldObservations>0?["historical-state-index-evictions"]:[]),
+   ...(plan.designLimits?.droppedNewOperatorFamilies>0?["learned-operator-capacity-exhausted"]:[]),
+   ...(topology.frontier?.length?["world-exploration-budget-reached"]:[])
+  ]};
 }
 
 function changedCharacterAudit(predicted,reference){
@@ -189,6 +196,8 @@ export function auditNativePath({plan,atlas,reference,brain}){
  const predicted=String(plan.predicted??""),referenceHash=hash(reference);
  const exact=predicted===reference;
  const charAudit=changedCharacterAudit(predicted,reference);
+ const referenceWasEnumerated=!!plan.topology?.nodes?.some(x=>x.text===reference);
+ const alternativeRouteToReference=!!atlas?.paths?.some(x=>x.states.at(-1)===reference);
  const operatorGap=missingTokenEdits(predicted,reference,
   brain?.observedTransformations?.operators?.values()||[]);
  const categories=[];
@@ -196,7 +205,11 @@ export function auditNativePath({plan,atlas,reference,brain}){
  if(atlas?.topology?.frontierCount)categories.push("search-frontier-not-fully-explored");
  if(!exact){
   for(const c of Object.keys(operatorGap.gapCategories||{}))categories.push(c);
-  if(plan.found)categories.push("predicted-different-complete-text");
+  if(plan.found){
+   categories.push("predicted-different-complete-text");
+   if(alternativeRouteToReference)categories.push("correct-reference-route-present-but-not-selected");
+   else categories.push("goal-constraints-do-not-uniquely-identify-reference");
+  }
  }
  if(exact)categories.push("first-try-exact-structured-target");
  return {schema:"v17-frozen-postmortem-v1",planId:hash([plan.start,plan.required,plan.initialShape]).slice(0,20),
@@ -206,6 +219,11 @@ export function auditNativePath({plan,atlas,reference,brain}){
   completeTextExactFirstTry:exact,
   scoreIsExternalSemanticAnswer:false,
   charAudit,operatorGap,failureCategories:[...new Set(categories)],
+  referenceWasEnumerated,alternativeRouteToReference,
+  possibleDesignBarriers:atlas?.possibleDesignBarriers||[],
+  // The scorer is an independent observer. It NEVER calls
+  // model.observeSentence(), Brain.live() or policy.learnTransferable().
+  notUsedToTrainOriginalBrain:true,
   graphClosure:atlas?.topology?.closedUnderLearnedOperators===true,
   frontierCount:atlas?.topology?.frontierCount||0,
   originalKnownOperators:brain?.observedTransformations?.operators?.size||0};
