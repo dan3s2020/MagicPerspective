@@ -17,3 +17,5 @@ jobs:
         run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
       - name: V30 independent cross-world paths, denials and native Brain save/load
         run: node --test v17/tests/v30-cross-episode-transfer.test.mjs
+      - name: Complete per-world known graph and missing corridors, frozen atlas and original Brain save-load
+        run: node --test v17/tests/v30-world-atlas.test.mjs
