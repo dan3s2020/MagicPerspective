@@ -14,7 +14,7 @@ import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
-const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
+const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
 // A real text corpus may be Q/A pairs OR free prose. Both contain observed
@@ -195,6 +195,14 @@ const absorbText = row => {
 };
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
+let nextAutoSave=checkpointEvery>0?(brain.chars||0)+checkpointEvery:Infinity;
+const autonomousCheckpoint = () => {
+  if(!saveFile||!Number.isFinite(nextAutoSave)||brain.chars<nextAutoSave)return false;
+  setWorkerPhase("CPU: checkpoint without frozen unseen evaluation");
+  doSave(); // original native Brain saved atomically before other organs
+  nextAutoSave=brain.chars+checkpointEvery;
+  return true;
+};
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
@@ -345,7 +353,8 @@ const processGpuText = async (exs, meta) => {
   if (Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
     setWorkerPhase("CPU: frozen unseen evaluation and atomic checkpoint");
     report();
-  }
+    if(checkpointEvery>0)nextAutoSave=brain.chars+checkpointEvery;
+  }else autonomousCheckpoint();
   // Limit expensive full-size UI graph snapshots; return counts via /health
   // every 5 seconds even when the Brain is in a long CUDA batch.
   shot();
@@ -527,6 +536,7 @@ for await (const ex of stream()) {
       await flushShared();
     }
   }
+  if(TEXT) autonomousCheckpoint();
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
     shot(); if (brain.episodes % (gpu ? 5 : 50) === 0) report(); if (stop) break; }
