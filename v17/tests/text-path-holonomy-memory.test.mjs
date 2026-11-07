@@ -180,3 +180,30 @@ test("original perspective mapping confirms action coordinates must be transform
   learnedFrames:4,rotationRecovered:true,permutedFrameUnchangedGoal:false,
   explanation:"Rotate the goal direction to the body's learned coordinate frame"}));
 });
+
+test("repeating a closed noncommuting loop creates an exactly predictable k² change on the hidden path axis",()=>{
+ const model=train(noncommuting),start="100 @ 100 ~ 10000.";
+ const levels=[1,2,4,8,16,32,64,128],rows=[];
+ for(const k of levels){
+   const actions=[
+     ...Array(k).fill(X),
+     ...Array(k).fill(Y),
+     ...Array(k).fill(negX),
+     ...Array(k).fill(negY)
+   ];
+   const trial=executeLearnedPath(model,start,actions);
+   assert.equal(trial.ready,true,JSON.stringify({k,reason:trial.reason}));
+   assert.equal(trial.matched,true);
+   assert.deepEqual(trial.actual.slice(0,2),[100,100]);
+   assert.equal(trial.expected.signedArea,2*k*k);
+   assert.equal(trial.actual[2],10000+k*k);
+   assert.equal(trial.expected.originalFullHistoryLength,4*k);
+   assert.equal(trial.expected.compressedExtraStateCoordinates,1);
+   rows.push({pathLength:4*k,side:k,signedArea:trial.expected.signedArea,
+     sameVisibleInputs:true,actualHiddenChange:trial.actual[2]-10000,
+     predictedHiddenChange:trial.expected.pathOrderContribution});
+ }
+ console.log("SIGNED_AREA_SECOND_ORDER_COMPOSITION",JSON.stringify({
+   levels:rows,scaling:"noncommuting closed loop area changes as k^2",
+   notPhysicalDimensions:true,notSpontaneousLanguageLearning:true}));
+});
