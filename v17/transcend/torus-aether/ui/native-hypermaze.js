@@ -394,27 +394,34 @@ function atlasSummary(data){
  $("atlasComparison").textContent=
   "Din toate încercările păstrate: găsite "+nfmt(c.foundRetained)+
   ", negăsite "+nfmt(c.failedRetained)+
-  "\\nTrasee compuse doar din acțiuni fizic confirmate: "+
+  "\nTrasee compuse doar din acțiuni fizic confirmate: "+
   nfmt(c.fullyPhysicalRoutes)+
-  "\\nTrasee care conțin transformări propuse: "+
+  "\nTrasee care conțin transformări propuse: "+
   nfmt(c.withInferredEdges)+
-  "\\nTotal istoric (inclusiv ieșite din jurnal): "+
+  "\nTotal istoric (inclusiv ieșite din jurnal): "+
   nfmt(m.attemptsTotal)+
-  "\\nÎncercări ieșite din memoria limitată: "+nfmt(m.attemptsEvicted)+
-  "\\n\\nNu declarăm că sunt cunoscute toate căile posibile.";
+  "\nÎncercări ieșite din memoria limitată: "+nfmt(m.attemptsEvicted)+
+  "\n\nNu declarăm că sunt cunoscute toate căile posibile.";
  $("atlasMissing").textContent=
   (c.reasons||[]).slice(0,22).map(x=>String(x.count)+" × "+x.code+
-   " ["+x.kind+"]\\n  "+x.explanation+
-   "\\n  exemple încercări #"+(x.exampleAttemptIds||[]).join(",")).join("\\n\\n")||
+   " ["+x.kind+"]\n  "+x.explanation+
+   "\n  exemple încercări #"+(x.exampleAttemptIds||[]).join(",")).join("\n\n")||
   "Nu există încă încercări cu motive diagnosticate. Lipsa dovezilor nu este un perete fizic demonstrat.";
+ const gates=data.designGates||{};
+ $("atlasMissing").textContent+="\n\nRESTRICȚII REALE PRIN DESIGN:\n"+
+  Object.entries(gates).map(([key,value])=>key+": "+
+   (typeof value==="object"?JSON.stringify(value):String(value))).join("\n")+
+  "\n\nFiecare restricție explică o posibilă conexiune imposibil de observat/propune în configurația actuală; nu certifică existența ei.";
 }
 function atlasPrintEntry(entry){
  if(Object.hasOwn(entry,"outcome"))
-  return "#"+entry.id+" "+(entry.found?"TRASEU GĂSIT":"TRASEU NEGĂSIT")+
+  return "#"+entry.id+" "+(entry.outcome==="answer-correct"?"RĂSPUNS ÎNTREG CORECT":
+    entry.outcome==="answer-incorrect"?"TRASEU, DAR RĂSPUNS GREȘIT":
+    entry.outcome==="path-missing"?"NU A GĂSIT CALEA":"TRASEU GĂSIT")+
    " · "+entry.kind+" · "+entry.actions+" acțiuni"+
    (entry.inferred?" · CONȚINE IPOTEZE":"")+
-   "\\n"+entry.start+"  →  "+JSON.stringify(entry.goalTerms)+
-   "\\n"+(entry.reason||"dovezi existente în memoria originală");
+   "\n"+entry.start+"  →  "+JSON.stringify(entry.goalTerms)+
+   "\n"+(entry.reason||"dovezi existente în memoria originală");
  if(Object.hasOwn(entry,"status"))
   return String(entry.status)+" · "+String(entry.from??entry.key??entry.id??"")+
    " → "+String(entry.to??"")+
@@ -422,7 +429,7 @@ function atlasPrintEntry(entry){
    (entry.observedSupport?" · suport "+entry.observedSupport:"");
  if(Object.hasOwn(entry,"code"))
   return entry.code+" · "+entry.kind+" · încercarea #"+
-    String(entry.attemptId)+"\\n"+entry.explanation;
+    String(entry.attemptId)+"\n"+entry.explanation;
  return JSON.stringify(entry);
 }
 function atlasDrawHistoricTrace(selected){
@@ -466,19 +473,19 @@ function atlasShowAttempt(attempt){
  atlasUI.selectedId=attempt.id;
  $("atlasSelected").textContent=
   "ÎNCERCARE ORIGINALĂ #"+attempt.id+" · "+attempt.outcome+
-  "\\nSTART:\\n"+attempt.start+
-  "\\nOBIECTIV / INPUTURI: "+JSON.stringify(attempt.goalTerms)+
-  "\\nRAȚIUNE: "+(attempt.reason||"traseu găsit")+
-  "\\n\\nFIECARE TRANSFORMARE (max. 128 păstrate per încercare):\\n"+
+  "\nSTART:\n"+attempt.start+
+  "\nOBIECTIV / INPUTURI: "+JSON.stringify(attempt.goalTerms)+
+  "\nRAȚIUNE: "+(attempt.reason||"traseu găsit")+
+  "\n\nFIECARE TRANSFORMARE (max. 128 păstrate per încercare):\n"+
   (attempt.trace||[]).map(a=>
-   (a.order+1)+". "+a.from+"\\n    "+a.action+" → "+a.to+
-   "\\n    "+a.status+" · observație #"+(a.episode||"fără episod")+
+   (a.order+1)+". "+a.from+"\n    "+a.action+" → "+a.to+
+   "\n    "+a.status+" · observație #"+(a.episode||"fără episod")+
    " · suport "+String(a.observedSupport??"necunoscut")+
-   " · câmp "+String(a.value??"necunoscut")).join("\\n\\n")+
-  "\\n\\nDE CE A FUNCȚIONAT SAU NU:\\n"+
+   " · câmp "+String(a.value??"necunoscut")).join("\n\n")+
+  "\n\nDE CE A FUNCȚIONAT SAU NU:\n"+
   (attempt.diagnostics||[]).map(d=>d.code+
-   " ["+d.kind+"] "+d.explanation).join("\\n")+
-  "\\n\\nNoduri explorate: "+String(attempt.graph?.reachableStates)+
+   " ["+d.kind+"] "+d.explanation).join("\n")+
+  "\n\nNoduri explorate: "+String(attempt.graph?.reachableStates)+
   ", trunchiat la limită: "+String(attempt.graph?.expansionTruncated)+
   ". Traseul păstrat nu este o execuție semantică independent verificată.";
  if(attempt.found)atlasDrawHistoricTrace(attempt);
@@ -501,9 +508,11 @@ function renderAtlasRows(data){
   item.style.padding="9px";item.style.margin="2px 0";
   item.className="atlas-row";
   item.textContent=atlasPrintEntry(entry);
-  if(entry.found===false||String(entry.status).includes("block"))
+  if(entry.outcome==="answer-incorrect"||entry.found===false||
+    String(entry.status).includes("block"))
    item.style.borderLeft="3px solid #f0809a";
-  if(entry.found===true||entry.status==="physically-verified")
+  if((entry.found===true&&entry.outcome!=="answer-incorrect")||
+    entry.status==="physically-verified")
    item.style.borderLeft="3px solid #67deab";
   if(entry.status==="inferred-unverified"||entry.status==="hypothesis")
    item.style.borderLeft="3px dashed #f0c87a";
@@ -511,7 +520,7 @@ function renderAtlasRows(data){
    const id=entry.id??entry.attemptId;
    if(!id||!["attempts","diagnostics"].includes(data.view)){
     $("atlasSelected").textContent=JSON.stringify(entry,null,2)+
-     "\\n\\nAceasta este o dovadă de memorie, nu o cale semantică demonstrată.";
+     "\n\nAceasta este o dovadă de memorie, nu o cale semantică demonstrată.";
     return;
    }
    try{
@@ -566,7 +575,8 @@ $("atlasExport").addEventListener("click",async()=>{
      offset,limit:200});
     if(first){evidence.memory=data.memory;
      evidence.provenance=data.provenance;
-     evidence.comparison=data.comparison;first=false;}
+     evidence.comparison=data.comparison;
+     evidence.designGates=data.designGates;first=false;}
     all.push(...data.rows);
     $("atlasPage").textContent="Export real: "+view+" "+
      all.length+" / "+data.total+" dovezi...";
