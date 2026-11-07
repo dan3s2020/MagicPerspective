@@ -58,8 +58,12 @@ jobs:
         run: |
           $copies = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-results" -Recurse -File -Filter "graph0-checkpoint-copy.v8")
           if ($copies.Count -ne 1) { throw "Expected unique frozen phase1 checkpoint" }
-          & powershell -NoProfile -ExecutionPolicy Bypass -File "v17\experiments\RUN_GRAPH0_PHASE2.ps1" -CheckpointCopy $copies[0].FullName -ResultsRoot "$env:RUNNER_TEMP\graph0-phase2" -Max 80
-          if ($LASTEXITCODE -ne 0) { throw "Phase2 Windows failed" }
+          $phase2Script = Join-Path $env:GITHUB_WORKSPACE "v17\experiments\RUN_GRAPH0_PHASE2.ps1"
+          Push-Location $env:USERPROFILE
+          try {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $phase2Script -CheckpointCopy $copies[0].FullName -ResultsRoot "$env:RUNNER_TEMP\graph0-phase2" -Max 80
+            if ($LASTEXITCODE -ne 0) { throw "Phase2 Windows failed outside repository CWD" }
+          } finally { Pop-Location }
           $csv = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-phase2" -Recurse -File -Filter "phase2-fixed240-comparison.csv")
           if ($csv.Count -ne 1) { throw "Missing phase2 comparison CSV" }
           $rows = @(Import-Csv -LiteralPath $csv[0].FullName)
