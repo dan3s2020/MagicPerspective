@@ -1,0 +1,28 @@
+name: V17 complete finite xD mazes + cross-world learned path atlas
+on:
+  push:
+    branches:
+      - experiment/V17-COMPLETE-XD-MAZE-TRANSFER-ATLAS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  full-world-transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntactic check, no fake/missing maze action route injected
+        run: |
+          node --check v17/transcend/torus-aether/worlds/full-xd-maze-atlas.mjs
+          node --check v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: Test complete FULL physical maps, learned axis transfer, all missed edges and adversarial changed rules
+        run: node --test v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: Native V17 upstream original graph/noise/observed language path regressions
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/live-corpus-hypermaze.test.mjs
