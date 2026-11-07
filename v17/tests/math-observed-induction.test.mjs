@@ -147,3 +147,37 @@ test("corrupted observations cannot synthesize a valid five-rule algebra",()=>{
   assert.ok(w.availableRoutes<2, "inconsistent observations must not yield both correct derivations");
   console.log("MATH_CORRUPTED_EVIDENCE",JSON.stringify({learned:m.rules.size,originalRequired:5,availableRoutes:w.availableRoutes}));
 });
+
+test("1024 complete original-shape trajectories on out-of-distribution coefficient ranges",()=>{
+  const {m}=experience(64);m.fit();
+  const d=trainOriginalDiscoverer(140,11),next=generator(0x44551667);
+  let solved=0,valid=0;
+  for(let i=0;i<1024;i++){
+    const q=next();
+    const a=Math.sign(q.a)*(20+((Math.abs(q.a)*13+i*7)%981));
+    const b=Math.sign(q.b)*(20+((Math.abs(q.b)*17+i*11)%981));
+    const c=(q.c*1891+i*97)%200001;
+    const w=makeLearnedMathWorld(a,b,c,m,{mirror:i%2===1});
+    const result=inspectPredictedMathPath(w,d,verifyMathTransition);
+    valid+=Number(result.valid);solved+=Number(result.solved);
+    assert.ok(result.solved,JSON.stringify({a,b,c,result}));
+    assert.equal(result.steps,2);
+    assert.ok(equalRational(result.trace.at(-1).to.c,rational(c-a*b,a)));
+  }
+  console.log("MATH_OUT_OF_DOMAIN_COMPLETE_SHAPE",JSON.stringify({
+    heldoutProblems:1024,firstActionCorrect:solved,verifiedSolutions:solved,
+    allTraceTransitionsValid:valid,bodySource:"native maze episodes (140)",
+    mathKnowledgeSource:"64 observed equation experiences",cuda:false}));
+  assert.equal(solved,1024);
+});
+test("native original Discoverer must learn the goal; math induction alone is insufficient",()=>{
+  const {m}=experience(64);m.fit();
+  const {Discoverer}=await import("../transcend/torus-aether/worlds/exercise.mjs");
+  const naive=new Discoverer(11);let completed=0;
+  for(let i=0;i<64;i++){
+    const w=makeLearnedMathWorld(2+(i%8),1+(i%12),i-30,m);
+    completed+=Number(inspectPredictedMathPath(w,naive,verifyMathTransition).solved);
+  }
+  console.log("MATH_MAZE_BRAIN_ABLATION",JSON.stringify({withoutNativeExperience:completed,examined:64}));
+  assert.equal(completed,0);
+});
