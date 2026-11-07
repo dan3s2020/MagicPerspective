@@ -243,7 +243,13 @@ export class LearnedCognitiveMap {
     if(r.operation==='span'){
       const unique=countAnchors(b,from).length===1;
       if(r.anchorUniqueAtObservation===undefined)r.anchorUniqueAtObservation=unique;
-      if(!unique){r.anchorUniqueAtObservation=false;r.ambiguous=true;}
+      // A single fixed-position intervention can still be valid with a
+      // repeated or empty source. Only a *generalized* binding must abstain.
+      // Preserve the original fixed-offset behavior for those cases.
+      if(!unique){
+        r.anchorUniqueAtObservation=false;
+        if(r.positionMode==='unique-anchor')r.ambiguous=true;
+      }
     }
     r.observations++;r.accepted++;
     record.accepted++;this.interventions.set(key(b)+'|'+action,record);
