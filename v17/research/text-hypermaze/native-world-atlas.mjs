@@ -4,6 +4,7 @@
 // This is an OBSERVER over the ONE ORIGINAL V17 Brain, not a second learner.
 // The unbounded language world is NEVER claimed to be fully enumerated.
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
+import {renderObservation} from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 
 const clone=x=>structuredClone(x);
 const fit=(v,min,max)=>Number.isSafeInteger(v)&&v>=min&&v<=max;
@@ -147,83 +148,134 @@ export class NativeWorldAtlas{
    if(!fit(v,label.endsWith("Limit")?1:0,max))
     throw Error(label+" invalid for global atlas");
   }
-  const allNodes=new Map(),allEdges=new Map(),
-   witnessed=this.store.witnesses.filter(w=>w.type==="witness"),
-   attempts=this.store.attempts;
-  const node=(text,{observed=false,geometry=null,world=null}={})=>{
-   let v=allNodes.get(text);
-   if(!v){
-    v={id:allNodes.size,text,observedInRealWorld:false,
-     onlyPredicted:false,sourceWorlds:new Set(),attemptIds:new Set(),
-     original5D:null,provenance:[]};
-    allNodes.set(text,v);
+  const observed=this.brain.observedTransformations;
+  const geo=this.brain.trace.geo;
+  // A genuinely large corpus can have 12k active text states and 80k
+  // learned contrast operators. Rebuild ONCE per memory epoch, not for
+  // every 300-node HTTP page (the old UI stalled on repeated scans).
+  const key=[this.store.witnesses.length,this.store.attempts.length,
+   this.store.outcomes.length,observed?.seen||0,
+   observed?.operators?.size||0,observed?.records?.size||0,
+   geo?.n||0].join(":");
+  if(this._globalCache?.key!==key){
+   const allNodes=new Map(),allEdges=new Map(),
+    witnessed=this.store.witnesses.filter(w=>w.type==="witness"),
+    attempts=this.store.attempts;
+   const outcomesByAttempt=new Map(this.store.outcomes.map(x=>[x.attemptId,x]));
+   const node=(text,{physical=false,corpus=false,geometry=null,world=null}={})=>{
+    let v=allNodes.get(text);
+    if(!v){
+     const learned=geo?.U?.get("text-state:"+text);
+     v={id:allNodes.size,text,observedInRealWorld:false,
+      observedInTextCorpus:false,onlyPredicted:true,
+      sourceWorlds:new Set(),attemptIds:new Set(),
+      original5D:Array.isArray(learned)&&learned.length===5?learned:null};
+     allNodes.set(text,v);
+    }
+    if(physical){v.observedInRealWorld=true;if(world)v.sourceWorlds.add(world);}
+    if(corpus)v.observedInTextCorpus=true;
+    if(physical||corpus)v.onlyPredicted=false;
+    if(Array.isArray(geometry)&&geometry.length===5)v.original5D=geometry;
+    return v;
+   };
+   const edge=(from,to,action,status,details={})=>{
+    const key=JSON.stringify([from,to,action,status]);
+    let item=allEdges.get(key);
+    if(!item){
+     item={id:allEdges.size,from,to,action,
+      status,sourceWorlds:new Set(),attemptIds:new Set(),
+      support:0,designBlockingReason:null,verifiedOutcomes:0};
+     allEdges.set(key,item);
+    }
+    if(details.world)item.sourceWorlds.add(details.world);
+    if(details.attemptId)item.attemptIds.add(details.attemptId);
+    if(details.reason)item.designBlockingReason=details.reason;
+    if(details.verified)item.verifiedOutcomes++;
+    item.support+=details.support||1;
+    return item;
+   };
+   // EVERY active original native text state, even if it has no edit edge.
+   // Older windows evicted by V29 cannot be represented as permanently
+   // retained; their operator provenance is preserved separately.
+   for(const r of observed?.records?.values()||[]){
+    if(Array.isArray(r.tokens))node(renderObservation(r.tokens),{corpus:true});
    }
-   if(observed){v.observedInRealWorld=true;if(world)v.sourceWorlds.add(world);}
-   else v.onlyPredicted=!v.observedInRealWorld;
-   if(Array.isArray(geometry)&&geometry.length===5)v.original5D=geometry;
-   return v;
-  };
-  const edge=(from,to,action,status,details={})=>{
-   const key=JSON.stringify([from,to,action,status]);
-   let item=allEdges.get(key);
-   if(!item){
-    item={id:allEdges.size,from,to,action,
-     status,sourceWorlds:new Set(),attemptIds:new Set(),
-     support:0,designBlockingReason:null,verifiedOutcomes:0};
-    allEdges.set(key,item);
-   }
-   if(details.world)item.sourceWorlds.add(details.world);
-   if(details.attemptId)item.attemptIds.add(details.attemptId);
-   if(details.reason)item.designBlockingReason=details.reason;
-   if(details.verified)item.verifiedOutcomes++;
-   item.support++;
-   return item;
-  };
-  for(const ev of witnessed){
-   node(ev.before,{observed:true,world:ev.episodeId});
-   node(ev.after,{observed:true,world:ev.episodeId});
-   edge(ev.before,ev.after,ev.action,"WITNESSED_IN_SOURCE_WORLD",
-    {world:ev.episodeId});
-  }
-  for(const attempt of attempts){
-   const graph=attempt.fullExploredGraph;
-   if(!graph)continue;
-   const expanded=graph.nodes||[];
-   for(const n of expanded){
-    const v=node(n.text,{geometry:n.original5D});
-    v.attemptIds.add(attempt.id);
-   }
-   for(const e of graph.edges||[]){
-    const from=expanded[e.from]?.text,to=expanded[e.to]?.text;
-    if(from==null||to==null)continue;
-    const out=this.store.outcomes.find(x=>x.attemptId===attempt.id);
-    const verified=out?.frames?.some(x=>x.before===from&&x.actual===to&&
-      x.action===e.action.name&&x.predictionCorrect===true)||false;
-    edge(from,to,e.action.name,
-      verified?"PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD":
-       "PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE",
-      {attemptId:attempt.id,verified});
-   }
-   for(const [kind,list] of Object.entries(attempt.blockedFrontier?.possibleNextEdges||{})){
-    if(!Array.isArray(list))continue;
-    for(const cutoff of list){
-     const from=expanded[cutoff.from]?.text,to=cutoff.next;
-     if(from==null||to==null)continue;
-     node(to);
-     edge(from,to,cutoff.action,"BLOCKED_BY_EXPLICIT_SEARCH_BUDGET",
-      {attemptId:attempt.id,reason:cutoff.reason||kind});
+   // Original V17 learns these from differences between real sentences.
+   // Such a contrast is NOT an independently executed physical action;
+   // never silently promote it into a witnessed causal corridor.
+   for(const op of observed?.operators?.values()||[]){
+    for(const sample of op.evidence||[]){
+     if(typeof sample?.from!=="string"||typeof sample?.to!=="string")continue;
+     node(sample.from,{corpus:true});node(sample.to,{corpus:true});
+     edge(sample.from,sample.to,"text-contrast:"+op.key,
+      "TEXT_CONTRAST_OBSERVED_NOT_CAUSAL",
+      {support:Math.max(1,Number(op.sourceObservations)||1)});
     }
    }
-  }
-  const nodes=[...allNodes.values()],edges=[...allEdges.values()];
-  const serial=n=>({...n,sourceWorlds:[...n.sourceWorlds],
+   // Cross-episode physical interventions witnessed in separate worlds.
+   for(const ev of witnessed){
+    node(ev.before,{physical:true,world:ev.episodeId});
+    node(ev.after,{physical:true,world:ev.episodeId});
+    edge(ev.before,ev.after,ev.action,"WITNESSED_IN_SOURCE_WORLD",
+     {world:ev.episodeId});
+   }
+   // Every actually explored state/edge and every known omitted corridor.
+   for(const attempt of attempts){
+    const graph=attempt.fullExploredGraph;if(!graph)continue;
+    const expanded=graph.nodes||[],out=outcomesByAttempt.get(attempt.id);
+    for(const n of expanded){
+     const v=node(n.text,{geometry:n.original5D});
+     v.attemptIds.add(attempt.id);
+    }
+    for(const e of graph.edges||[]){
+     const from=expanded[e.from]?.text,to=expanded[e.to]?.text;
+     if(from==null||to==null)continue;
+     const verified=out?.frames?.some(x=>x.before===from&&
+      x.actual===to&&x.action===e.action.name&&x.predictionCorrect===true)||false;
+     edge(from,to,e.action.name,
+      verified?"PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD":
+       "PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE",
+       {attemptId:attempt.id,verified});
+    }
+    for(const [kind,list] of Object.entries(attempt.blockedFrontier?.possibleNextEdges||{})){
+     if(!Array.isArray(list))continue;
+     for(const cutoff of list){
+      const from=expanded[cutoff.from]?.text,to=cutoff.next;
+      if(from==null||to==null)continue;
+      node(to);
+      edge(from,to,cutoff.action,"BLOCKED_BY_EXPLICIT_SEARCH_BUDGET",
+       {attemptId:attempt.id,reason:cutoff.reason||kind});
+     }
+    }
+   }
+   const serial=n=>({...n,sourceWorlds:[...n.sourceWorlds],
     attemptIds:[...n.attemptIds]});
-  const knownCuts=edges.filter(e=>e.status==="BLOCKED_BY_EXPLICIT_SEARCH_BUDGET").length;
+   const nodes=[...allNodes.values()].map(serial),edges=[...allEdges.values()].map(serial);
+   this._globalCache={key,nodes,edges,
+    witnessedWorlds:new Set(witnessed.map(x=>x.episodeId)).size,
+    corpusActiveStates:observed?.records?.size||0,
+    corpusSeenStates:observed?.seen||0,
+    corpusLearnedContrastRules:observed?.operators?.size||0,
+    corpusEvictedStates:observed?.evicted||0,
+    witnessedPhysicalEdges:edges.filter(e=>e.status==="WITNESSED_IN_SOURCE_WORLD").length,
+    textContrastEdges:edges.filter(e=>e.status==="TEXT_CONTRAST_OBSERVED_NOT_CAUSAL").length,
+    blockedKnownDesignEdges:edges.filter(e=>e.status==="BLOCKED_BY_EXPLICIT_SEARCH_BUDGET").length,
+    recordedWorldPlans:attempts.length};
+  }
+  const cache=this._globalCache,nodes=cache.nodes,edges=cache.edges;
   return {view:"MERGED_ALL_RECORDED_WORLDS",
    totalNodes:nodes.length,totalEdges:edges.length,
-   witnessedWorlds:new Set(witnessed.map(x=>x.episodeId)).size,
-   recordedWorldPlans:attempts.length,
-   blockedKnownDesignEdges:knownCuts,
+   witnessedWorlds:cache.witnessedWorlds,
+   nativeTextWindowsSeen:cache.corpusSeenStates,
+   nativeTextStatesStillActive:cache.corpusActiveStates,
+   nativeTextStatesEvicted:cache.corpusEvictedStates,
+   nativeTextContrastRules:cache.corpusLearnedContrastRules,
+   textContrastEdges:cache.textContrastEdges,
+   witnessedPhysicalEdges:cache.witnessedPhysicalEdges,
+   recordedWorldPlans:cache.recordedWorldPlans,
+   blockedKnownDesignEdges:cache.blockedKnownDesignEdges,
+   noPhysicalClaimsFromCorpusTextContrasts:true,
+   allSourceHistoryPermanent:cache.corpusEvictedStates===0,
    unknownLanguageSpaceNotEnumerated:true,
    notClaimedToBeAllNaturalLanguage:true,
    pagination:{
@@ -231,15 +283,17 @@ export class NativeWorldAtlas{
     nodesMore:nodeOffset+nodeLimit<nodes.length,
     edgesMore:edgeOffset+edgeLimit<edges.length
    },
-   nodes:nodes.slice(nodeOffset,nodeOffset+nodeLimit).map(serial),
-   edges:edges.slice(edgeOffset,edgeOffset+edgeLimit).map(serial),
+   nodes:nodes.slice(nodeOffset,nodeOffset+nodeLimit),
+   edges:edges.slice(edgeOffset,edgeOffset+edgeLimit),
    statusDefinitions:{
-    WITNESSED_IN_SOURCE_WORLD:"Actual before/action/after observation in training world",
+    WITNESSED_IN_SOURCE_WORLD:"Actual before/action/after observation in a known world",
+    TEXT_CONTRAST_OBSERVED_NOT_CAUSAL:"A text-edit difference inferred from corpus sentences; NOT independently executed physics",
     PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE:"Original shapeGraph planned transferred action; no physical test yet",
-    PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD:"Actual independent physical world callback matched the prediction",
-    BLOCKED_BY_EXPLICIT_SEARCH_BUDGET:"Predicted edge that the current design refused to expand"
+    PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD:"Actual independent physics callback matched prediction",
+    BLOCKED_BY_EXPLICIT_SEARCH_BUDGET:"Potential path refused by explicit depth/state design budget"
    }};
  }
+
  detail(id){
   const entry=this.store.attempts.find(x=>x.id===id);
   if(!entry)return null;
