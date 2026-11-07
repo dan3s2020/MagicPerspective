@@ -79,12 +79,26 @@ if(resume&&hyperFile&&fs.existsSync(hyperFile)){
  catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
   text:"Hypermaze checkpoint not loaded: "+err.message});}
 }
+// Exact single original Latin-1 decode for the SAME immutable source row.
+// The V41 Fast CPU consolidation previously rebuilt this 43k-character
+// string independently in four different organs after each CUDA batch.
+// WeakMap does not mutate row objects, checkpoint payloads or learn order.
+const ORIGINAL_TEXT_CACHE = new WeakMap();
+const exactOriginalText = row => {
+  if(!row||!Array.isArray(row.bytes)||!row.bytes.length)return "";
+  let text=ORIGINAL_TEXT_CACHE.get(row);
+  if(text===undefined){
+    text=Buffer.from(row.bytes).toString("latin1");
+    ORIGINAL_TEXT_CACHE.set(row,text);
+  }
+  return text;
+};
 const absorbHyperMaze=row=>{
  if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length)return;
  const observed=typeof row.prompt==="string"&&typeof row.answer==="string"&&
    row.prompt.trim()&&row.answer.trim()?
    {prompt:row.prompt,answer:row.answer,source:"qa"}:
-   splitObservedText(Buffer.from(row.bytes).toString("latin1"));
+   splitObservedText(exactOriginalText(row));
  if(!observed?.prompt||!observed?.answer)return;
  hyperMaze.learn(observed.prompt,observed.answer,
    {episode:row.k,source:observed.source||"prose"});
@@ -166,7 +180,7 @@ const saveText = () => {
 // learned at token/phrase/sentence scales within the SAME Brain and checkpoint.
 const absorbLanguage = row => {
   if(!TEXT || !Array.isArray(row?.bytes) || !row.bytes.length)return;
-  brain.liveLanguage(Buffer.from(row.bytes).toString('latin1'));
+  brain.liveLanguage(exactOriginalText(row));
 };
 const observedPipeline={called:0,accepted:0,unreadable:0,last: null};
 // Actual production 6-scale text path learner, captured BEFORE the
@@ -178,7 +192,7 @@ const previewCurrentLanguageWorld=row=>{
   if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length)return;
   textMazeSeen++;
   if(textMazeSeen>4&&textMazeSeen%8!==0)return;
-  const actual=Buffer.from(row.bytes).toString("latin1");
+  const actual=exactOriginalText(row);
   const prompt=(typeof row.prompt==="string"&&row.prompt.trim()?
     row.prompt:actual.slice(0,160)).trim();
   if(!prompt)return;
@@ -207,7 +221,7 @@ const absorbObservedDifferences = row => {
   if(!row.prompt)previewCurrentLanguageWorld(row);
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
-  const learned=brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
+  const learned=brain.learnObservedTransformations(exactOriginalText(row));
   observedPipeline.accepted+=learned.newSentences;
   observedPipeline.last=learned;
 };

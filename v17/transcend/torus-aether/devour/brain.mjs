@@ -66,8 +66,25 @@ export class Brain {
     this.xdAtlas ||= new LearnedXDActionAtlas(); // first-class cross-world transform memory, saved in SAME Brain
   }
   get CTX() { return this.e.c.cap; }
-  ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
-  histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
+  // Exact original history: same length, order, padding and type; skip
+  // per-character Array.from callbacks in the large post-CUDA CPU replay.
+  // No cache: every prediction still reads the current living history.
+  ctxOf(b, i) {
+    const n = this.CTX, out = new Array(n);
+    for (let j = 0; j < n; j++) {
+      const k = i - j - 1;
+      out[j] = k >= 0 ? b[k] : 32;
+    }
+    return out;
+  }
+  histOf(b, i) {
+    const out = new Array(32);
+    for (let j = 0; j < 32; j++) {
+      const k = i - j - 1;
+      out[j] = k >= 0 ? b[k] : 32;
+    }
+    return out;
+  }
   // text lived on the card: a whole batch of exercises, the aligning graph adds the totals and keeps every exercise
   async learnTextGPU(gpu, exs, onProgress = null) {
     const A = (this.align ||= new AligningGraph()), ask = list => { const p = gpu.call({cmd: "text_learn", exercises: list, trust: A.trustForCard(), g: A.g, formW: A.formW, variants: A.variants(), chunk: gpu.settings?.textChunk || 0}, {onProgress}); p.catch(() => {}); return p; };

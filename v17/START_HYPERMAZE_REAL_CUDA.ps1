@@ -29,7 +29,8 @@ param(
   [int]$GpuTextChunk = 256,
   [int]$GpuUtil = 100,
   [switch]$Fresh,
-  [switch]$TraceTransformations
+  [switch]$TraceTransformations,
+  [switch]$EndogenousNoise
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_V17.ps1"
@@ -114,6 +115,7 @@ $launchParams = @{
   XdAtlasEvery = $XdAtlasEvery
 }
 if ($TraceTransformations) { $launchParams.TraceTransformations = $true }
+if ($EndogenousNoise) { $launchParams.EndogenousNoise = $true }
 $launchParams.Start = $true
 if (-not $Fresh) { $launchParams.Resume = $true }
 & $launcher @launchParams
