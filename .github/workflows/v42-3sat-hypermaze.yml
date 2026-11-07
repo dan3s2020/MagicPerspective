@@ -1,0 +1,19 @@
+name: V42 3-SAT original-shapeGraph hypermaze (explicit full-map baseline)
+on:
+  push:
+    branches:
+      - experiment/V42-3SAT-REAL-HYPERMAZE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-v42-3sat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Actual V42 Discoverer.shapeGraph on SAT and UNSAT hypermazes
+        run: node --test v17/tests/v42_3sat_hypermaze.test.mjs
