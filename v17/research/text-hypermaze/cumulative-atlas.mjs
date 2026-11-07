@@ -1,3 +1,4 @@
+import {enumerateNativePaths} from "./native-path-atlas.mjs";
 // Persistent V17 Brain observability only. No independent pathfinder,
 // no hidden ground truth, and NO shortcut that changes Discoverer.shapeGraph.
 // The atlas records successes AND failures and exposes finite, paginated
@@ -26,7 +27,38 @@ export function recordOriginalHypermazeAttempt(state,plan,query={}){
  const a=atlasState(state),id=a.nextId++;
  a.attemptsTotal++;if(plan.found)a.successesTotal++;
  else a.failuresTotal++;
- const reasons=diagnoseNoPath(state,plan,query);
+ // PR72 discovery: each original frozen path may have other reachable
+ // terminal states. Enumerate ONLY the finite original observed graph,
+ // keeping all inferences and truncation visibly marked, no gold answer.
+ const evidence=plan.topology?.nodes&&plan.topology?.edges?
+  enumerateNativePaths(plan,{
+   maxPaths:32,maxVisits:2400,maxSteps:24,maxDeadEnds:96
+  }):null;
+ const alternatives=evidence?{
+  enumeratedPathCount:evidence.paths.length,
+  goalTerminalsKnownInCurrentGraph:evidence.topology.goalStates,
+  distinctGoalTexts:evidence.topology.distinctTerminalGoalTexts,
+  goalUnderdetermined:evidence.topology.nonUniqueTerminalGoal,
+  enumerationTruncated:evidence.enumeration.truncated,
+  truncatedBecause:evidence.enumeration.enumerationTruncationReason,
+  frontierCount:evidence.topology.frontierCount,
+  graphRetainedFiniteOnly:true,
+  allNaturalLanguagePathsEnumerated:false,
+  originalChosenPath:evidence.paths.find(p=>p.isInitialShape)?.id||null,
+  paths:evidence.paths.map(p=>({
+   id:p.id,states:p.states.slice(0,25).map(x=>sliceText(x,190)),
+   length:p.length,isOriginalChoice:p.isInitialShape,
+   actions:p.actions.slice(0,24).map(a=>({
+    from:a.from,to:a.to,action:a.action,
+    evidenceEpisode:a.evidenceEpisode,edgeStatus:a.edgeStatus,
+    supportingWitness:a.sourceEvidence
+   }))
+  })),
+  deadEnds:evidence.deadEnds.slice(0,64).map(x=>({
+   at:x.at,text:sliceText(x.text),reason:x.reason
+  }))
+ }:null;
+ const reasons=diagnoseNoPath(state,{...plan,alternatives},query);
  const event={id,kind:query.numeric?"numeric-contextual-axes":"text-cross-world",
   outcome:plan.found?"path-found":"path-missing",
   reason:plan.reason||null,
@@ -49,7 +81,7 @@ export function recordOriginalHypermazeAttempt(state,plan,query={}){
    observedSupport:a.observedSupport??a.observedTrainingPairs??null,
    value:Number.isFinite(a.value)?a.value:null
   })),
-  diagnostics:reasons,
+  diagnostics:reasons,alternatives,
   graph:{reachableStates:plan.reachableStates??plan.graph?.nodes??plan.topology?.nodes?.length??null,
    goalNodes:plan.goalNodes??plan.graph?.goalNodes??null,
    expansionTruncated:plan.memory?.expansionTruncated??plan.graph?.truncated??false,
@@ -178,6 +210,14 @@ function diagnoseNoPath(state,plan,query) {
  if(plan.found&&!plan.pathContainsInferredEdges)
   add("REUSED_OBSERVED_PATH","previous-experience",
    "The entire path uses transitions accepted in earlier independent experiences; current execution still needs verification.",true);
+ if(plan.alternatives?.goalUnderdetermined)
+  add("GOAL_CONSTRAINTS_ALLOW_MULTIPLE_VALID_OUTPUTS",
+   "underdetermined-task-target",
+   "The same explicit task goal is satisfied by more than one distinct reachable complete text; the original attraction picks one, but the constraints alone do not uniquely identify the intended answer.",true);
+ if(plan.alternatives?.enumerationTruncated)
+  add("ALTERNATIVE_PATH_ENUMERATION_BOUNDED",
+   "analysis-design-gate",
+   "Alternate-path enumeration reached max paths, visits or steps; unexplored alternatives remain unknown, not impossible.",true);
  if(!issues.length&&!plan.found)
   add("UNRESOLVED_MISSING_CONNECTION","unknown",
    "Insufficient evidence to identify the blocked or missing transformation.",false);

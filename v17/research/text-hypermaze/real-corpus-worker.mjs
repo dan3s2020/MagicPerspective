@@ -17,6 +17,7 @@ import {playExercise,KIND}
 import {makeMaze,seedOf,SEEDS}
  from "../../transcend/torus-aether/worlds/labyrinth.mjs";
 import {NativeGoalTextMaze} from "./goal-conditioned-native.mjs";
+import {openNativeMotifArchive} from "./native-motif-disk-archive.mjs";
 import {rawJSONLLines,parseActualJSONL} from "./openthoughts-jsonl-source.mjs";
 
 const opts=workerData.opts,files=workerData.files,out=workerData.out;
@@ -29,7 +30,7 @@ const transitionEvery=Math.max(1,opts.transitionEvery||128);
 const windowTokens=opts.windowTokens||96;
 const startedAt=performance.now();
 let sessionTrainingBytes=0,sessionRows=0,sessionSourceBytes=0;
-let brain,engine,seq=0,stop=false,paused=!opts.autoStart,saveRequested=false,saving=false,done=false,fatal=false;
+let brain,engine,motifArchive=null,seq=0,stop=false,paused=!opts.autoStart,saveRequested=false,saving=false,done=false,fatal=false;
 const yieldTurn=()=>new Promise(resolve=>setImmediate(resolve));
 const time=()=>performance.now();
 const counters={
@@ -95,6 +96,11 @@ function info(){
   qaLongFormEvictedSequences:brain?.qaRoleEvidence?.longForm?.evictedSequences??0,
   qaLongFormUnretained:brain?.qaRoleEvidence?.longForm?.tooLongToRetainChunks??0,
   qaSemanticCaveat:"Full answers are scored WITHOUT passing heldout answer or target tokens to the original shape planner.",
+  // SQLite disk is a SOURCE-EVIDENCE index, not a semantic action model.
+  qaDiskMotifArchive:motifArchive?.status()||{
+   enabled:false,sourceOnly:true,
+   reason:"Node.js >=22 required or explicitly disabled for this run"
+  },
   // One persistent original Brain graph across training rows and episodes.
   // Distinguish witnessed real operators/observed sequence from validated
   // physical paths; a text-adjacent segment is NOT a semantic wall crossing.
@@ -152,6 +158,25 @@ async function init(){
  sessionSourceBytes=counters.bytesRead;
  sessionRows=counters.trainedRows;
  engine=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
+ // All prior training Q/A motifs remain addressable on DISK even after
+ // bounded active Brain motif memory evicts them at 50k nodes. This store
+ // never sees heldout rows, only actual observeQA() training evidence.
+ if(opts.disableMotifDiskArchive!==true){
+  try{
+   motifArchive=await openNativeMotifArchive(path.join(out,
+    "original-native-long-language-motifs.sqlite"));
+   engine.qaRole.attachMotifArchive(motifArchive);
+   send("note",{text:"Same native original Brain attached durable exact witnessed source motif disk index: "+
+    motifArchive.filename});
+  }catch(error){
+   // The existing released native launcher explicitly supports Node20+.
+   // Older Node20 lacks node:sqlite. Preserve that WORKING legacy training,
+   // but make lost disk coverage VISIBLE, never claim full retention.
+   if(String(error?.message||error).includes("requires Node.js >=22")){
+    send("note",{text:"WARNING: Node20+ legacy V17 training works, but indexed motif DISK memory is unavailable until Node22+. Recurrent source nodes can be evicted from active RAM."});
+   }else throw error;
+  }
+ }else send("note",{text:"EXPLICIT WARNING: long-language motif disk memory disabled by caller; active graph can evict old evidence"});
  done=counters.fileIndex>=files.length;
  publish();
 }
@@ -170,7 +195,12 @@ async function checkpoint(){
    lastSavedAt:new Date().toISOString(),checkpointFile:file,
    savedCheckpointBytes:written};
   const manifest={version:1,seq:next,inputFiles,counters:updated,
-   checkpoint:file,origin:"same-tested-native-hypermaze-no-byte-predictor"};
+   checkpoint:file,origin:"same-tested-native-hypermaze-no-byte-predictor",
+   // Database is distinct from the single Brain weights, never a
+   // substitute trainer. Exact source witness index persists across
+   // original checkpoint generations and can be reattached on resume.
+   sourceMotifDiskArchive:motifArchive?.filename||null,
+   sourceMotifDiskStats:motifArchive?.status()||null};
   const temporary=statePath+".tmp";
   await fsp.writeFile(temporary,JSON.stringify(manifest,null,2),"utf8");
   await fsp.rename(temporary,statePath);
@@ -405,6 +435,29 @@ parentPort.on("message",m=>{
    return send("rpc",{id,result:{...plan,body,originalBrain:true,
     realTrainingCorpus:files.map(x=>x.path),
     withheldAnswerSupplied:false,generalNaturalLanguageAccuracyProven:false}});
+  }
+  if(m.cmd==="motifArchive"){
+   if(!motifArchive)return send("rpc",{id,result:{
+    enabled:false,reason:"exact disk witness archive disabled"
+   }});
+   const digest=String(m.digest||"");
+   if(digest){
+    if(!/^\d+:[a-f0-9]{64}$/.test(digest))
+     throw Error("Motif lookup requires exact original SHA256 motif id");
+    return send("rpc",{id,result:{
+     enabled:true,queryId:digest,
+     exactOriginalWitness:motifArchive.lookupMotif(digest),
+     sourceOnlyNeighbors:motifArchive.related(digest,{
+      limit:Number(m.limit||50)
+     }),
+     physicallyVerifiedSemanticEdges:0,archive:motifArchive.status()
+    }});
+   }
+   return send("rpc",{id,result:{
+    ...motifArchive.inspect({view:"motifs",
+     offset:Number(m.offset||0),limit:Number(m.limit||50)}),
+    archive:motifArchive.status()
+   }});
   }
   if(m.cmd==="atlas"){
    // The atlas is the SAME saved native Brain. It is a read-only factual

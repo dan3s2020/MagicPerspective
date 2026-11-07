@@ -207,6 +207,25 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
    <div id="atlasRows" style="max-height:390px;overflow:auto;border:1px solid var(--line, #334455);border-radius:8px" aria-live="polite">Nu există încă o pagină.</div>
    <label>Traseul selectat: formă, fiecare acțiune, suport, sursă și motivul eșecului</label>
    <pre id="atlasSelected" aria-live="polite">Selectează o încercare din atlas. Graful original 5D de mai jos poate afișa traseul istoric reținut, dacă acesta există.</pre>
+   <div id="atlasDiskMotifs" style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line,#334455)">
+    <h3>Memoria istorică pe disc · ancore din TOATE experiențele păstrate</h3>
+    <p class="muted">Arhiva SQLite este atașată workerului real și indexează dovezile lexicale, inclusiv cele eliminate din RAM. Nu este un al doilea creier, un LLM sau o hartă a transformărilor semantice demonstrate. Indexul poate ocupa spațiu mare pe disc în timpul unui antrenament extins.</p>
+    <div class="cards">
+     <div class="card"><label>Ancore exacte pe disc</label><strong id="diskMotifCount">—</strong></div>
+     <div class="card"><label>Comune între experiențe</label><strong id="diskSharedCount">—</strong></div>
+     <div class="card"><label>Legături de sursă pe disc</label><strong id="diskSourceEdgeCount">—</strong></div>
+     <div class="card"><label>Recuperări din experiențe vechi</label><strong id="diskRecallCount">—</strong></div>
+    </div>
+    <div class="axisbar" style="margin-top:8px">
+     <input id="diskMotifId" placeholder="ID exact 5:SHA256 sau 12:SHA256 pentru proveniență" maxlength="68" autocomplete="off"/>
+     <button id="diskMotifLookup">Caută ancora exactă</button>
+     <button id="diskMotifLoad">Listează memoria de pe disc</button>
+     <button id="diskMotifPrev" disabled>◀</button>
+     <button id="diskMotifNext" disabled>▶</button>
+     <span id="diskMotifPage" class="muted">Nicio pagină citită</span>
+    </div>
+    <pre id="diskMotifResults" aria-live="polite">Aștept memoria originală indexată pe disc. O ancoră recurentă nu este încă o regulă semantică.</pre>
+   </div>
   </div>
  </section>
  <div class="rowmain">

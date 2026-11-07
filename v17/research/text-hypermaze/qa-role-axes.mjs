@@ -26,7 +26,7 @@ const anchorHash=t=>{
  }
  return h>>>0;
 };
-function observeMotifWorld(L,questionTokens,answerTokens,episode){
+function observeMotifWorld(L,questionTokens,answerTokens,episode,archive=null){
  const M=L.motifGraph ||= {
   version:1,maxNodes:50000,maxEdges:90000,
   nodes:new Map(),edges:new Map(),activeSharedAnchors:0,
@@ -39,9 +39,15 @@ function observeMotifWorld(L,questionTokens,answerTokens,episode){
  };
  if(M.version!==1)throw Error("Unsupported long-language motif graph schema");
  M.observedEpisodes++;
+ if(archive)archive.beginEpisode(episode);
+ let sourceEdgeOrdinal=0;
+ try {
  const ensureMotif=(tokens,at,width,role)=>{
   const words=tokens.slice(at,at+width);
   const id=String(width)+":"+digest(JSON.stringify(words));
+  const archiveWitness=archive?.motif({
+   id,width,role,at,example:renderObservation(words)
+  })||null;
   let node=M.nodes.get(id);
   if(!node){
    while(M.nodes.size>=M.maxNodes){
@@ -59,8 +65,16 @@ function observeMotifWorld(L,questionTokens,answerTokens,episode){
     M.nodes.delete(drop);
    }
    node={scale:width,example:renderObservation(words).slice(0,110),
-    roles:new Set([role]),firstEpisode:episode,lastEpisode:episode,
-    episodes:1,occurrences:0};
+    roles:new Set([role]),firstEpisode:archiveWitness?.firstEpisode??episode,
+    lastEpisode:episode,
+    episodes:Math.max(1,archiveWitness?.episodes??1),occurrences:0};
+   // Disk-backed exact match restores an old cross-exercise axis even
+   // if the original 50,000-node active memory evicted the old witness.
+   if(node.episodes>=2){
+    M.activeSharedAnchors++;
+    M.diskRecoveredSharedAnchors=(M.diskRecoveredSharedAnchors||0)+1;
+    if(archive)archive.recallsAfterEviction++;
+   }
    M.nodes.set(id,node);
   }else{
    node.roles.add(role);
@@ -87,6 +101,7 @@ function observeMotifWorld(L,questionTokens,answerTokens,episode){
   }
   e.count++;M.sourceOnlyEdgesObserved++;
   if(e.lastEpisode!==episode){e.episodes++;e.lastEpisode=episode;}
+  archive?.edge({from,to,role,ordinal:sourceEdgeOrdinal++});
  };
  const roleScan=(tokens,role)=>{
   let prev=null,first=null,tail=null,observed=0;
@@ -113,11 +128,15 @@ function observeMotifWorld(L,questionTokens,answerTokens,episode){
   connect(q.last,a.first,"observed-qa-role-boundary");
   M.observedRoleBoundaries++;
  }
+ if(archive)archive.commitEpisode();
  return {multiscaleMotifEvidence:true,
   sourceMotifsSeen:q.observed+a.observed,
   sharedCrossEpisodeAnchors:M.activeSharedAnchors,
+  archiveDiskEnabled:!!archive,
+  archiveDiskRetrievedPriorWitnesses:M.diskRecoveredSharedAnchors||0,
   sourceOnly:true,
   physicallyVerified:false};
+ }catch(err){archive?.rollbackEpisode();throw err;}
 }
 const isWord=s=>/^[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*$/u.test(s);
 const equal=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
@@ -146,6 +165,18 @@ export class QARoleAxes {
  constructor(state=null,{maxExamples=1024}={}){
   if(state&&state.version!==1)throw Error("Unsupported original Q/A evidence version");
   this.state=state||empty(maxExamples);
+  // Runtime-only external disk adapter, NEVER serialized into Brain.v8.
+  // The original evidence state/checkpoint remains the only learning Brain.
+  this.diskMotifArchive=null;
+ }
+ attachMotifArchive(archive){
+  if(archive!==null&&(!archive?.beginEpisode||!archive?.lookupMotif))
+   throw Error("Disk phrase archive must support exact read/write");
+  this.diskMotifArchive=archive;
+  return {enabled:!!archive,originalBrain:true};
+ }
+ lookupPreviouslyObservedMotif(id){
+  return this.diskMotifArchive?.lookupMotif(id)||null;
  }
  observe(question,answer){
   const S=this.state;S.seen++;
@@ -222,7 +253,7 @@ export class QARoleAxes {
   };
   // Memory accumulates across DIFFERENT Q/A episodes; exact 96-token
   // chunk repetition is NOT needed to discover reusable shorter anchors.
-  const multiScale=observeMotifWorld(L,q,a,L.episodes);
+  const multiScale=observeMotifWorld(L,q,a,L.episodes,this.diskMotifArchive);
   L.sequences.push(seq);
   L.activeChunks+=qs.length+as.length;
   while(L.activeChunks>L.maxActiveChunks||L.sequences.length>96){
