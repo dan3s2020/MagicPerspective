@@ -100,7 +100,7 @@ export class ObservedTransformations {
     this.records=new Map(); // actual corpus sentences only
     this.lookup=new Map(); // exact observed strings for O(1) no-memorized-answer check
     this.order=[];
-    this.index=new Map(); // length + token -> recent actual sentences
+    this.index=new Map(); // length + token -> all active observed original states
     this.operators=new Map(); // edit actions inferred from observation differences
     this.operatorIndex=new Map(); // from-token / insertion-anchor -> only relevant possible actions
     this.invariants=new Map(); // learned contextual invariants at each length
@@ -117,39 +117,42 @@ export class ObservedTransformations {
     return unique(tokens).map(x=>tokens.length+"|"+normalized(x));
   }
   _candidateSentences(tokens) {
-    // The index contains UNIQUE token keys. The previous threshold used
-    // tokens.length-2, which counts every repeated word. For a long passage,
-    // "the" appearing 20 times made genuine one-edit neighbors IMPOSSIBLE
-    // to retrieve: zero learned operators despite complete observations.
-    //
-    // Source length differs by at most one for observed insert/delete edits.
-    // The original index prepends the full token length to each key; probe
-    // all three possible lengths and use the count of UNIQUE shared tokens
-    // rather than the raw token count. The exact oneEdit() below still
-    // verifies ordering, position and source; this only fixes candidate
-    // discovery, not the learned transition semantics.
-    const keys=this._indexKeys(tokens);
-    const words=keys.map(k=>k.slice(k.indexOf("|")+1));
+    // Exact oneEdit() verifies all transitions from actual BEFORE/AFTER.
+    // Last-80/96 postings previously forgot rare axes after hundreds of
+    // sentences. Common words repeated >2 also invalidated length-based
+    // thresholds. Full active postings + rare context anchors fix BOTH.
+    const lengths=[tokens.length-1,tokens.length,tokens.length+1]
+      .filter(n=>n>0);
+    const words=[...new Set(this._indexKeys(tokens)
+      .map(k=>k.slice(k.indexOf("|")+1)))];
+    const picks=words.map(word=>{
+      const postings=lengths.map(n=>this.index.get(n+"|"+word)||[]);
+      return {word,postings,size:postings.reduce((n,a)=>n+a.length,0)};
+    }).sort((a,b)=>a.size-b.size||a.word.localeCompare(b.word))
+      .slice(0,Math.min(12,words.length));
     const scores=new Map();
-    for(let offset=-1;offset<=1;offset++){
-      const length=tokens.length+offset;
-      if(length<1)continue;
-      for(const word of words){
-        const ids=this.index.get(length+"|"+word)||[];
-        for(let i=Math.max(0,ids.length-80);i<ids.length;i++){
-          const id=ids[i];
-          if(this.records.has(id))scores.set(id,(scores.get(id)||0)+1);
-        }
+    for(const anchor of picks)for(const ids of anchor.postings){
+      for(const id of ids){
+        if(this.records.has(id))scores.set(id,(scores.get(id)||0)+1);
       }
     }
-    return [...scores].filter(([id,count])=>{
-      const record=this.records.get(id);
-      if(!record||Math.abs(record.tokens.length-tokens.length)>1)return false;
-      const sharedRequired=Math.max(1,
-        Math.min(words.length,this._indexKeys(record.tokens).length)-1);
-      return count>=sharedRequired;
-    }).sort((a,b)=>b[1]-a[1]||b[0]-a[0])
+    // One exact one-token edit removes at most ONE selected shared anchor.
+    // The actual order, change position, and effect are checked by oneEdit.
+    const required=Math.max(1,picks.length-1);
+    const ranked=[...scores].filter(([id,count])=>
+      count>=required&&
+      Math.abs(this.records.get(id).tokens.length-tokens.length)<=1)
+      .sort((a,b)=>b[1]-a[1]||b[0]-a[0])
       .slice(0,this.maxCandidatePairs).map(([id])=>this.records.get(id));
+    if(ranked.length||this.records.size===0)return ranked;
+    // Short utterances may share no lexical anchors after a real edit.
+    // Limited fallback still must pass exact oneEdit before training.
+    const back=[];
+    for(let i=this.order.length-1;i>=0&&back.length<32;i--){
+      const row=this.records.get(this.order[i]);
+      if(row&&Math.abs(row.tokens.length-tokens.length)<=1)back.push(row);
+    }
+    return back;
   }
   _operatorBucket(action){
     return action.kind==="insert" ?
@@ -232,7 +235,13 @@ export class ObservedTransformations {
       let arr=this.index.get(k);
       if(!arr){arr=[];this.index.set(k,arr);}
       arr.push(id);
-      if(arr.length>96)arr.shift();
+      // Retain all active observed worlds up to maxObserved. Only obsolete
+      // references are compacted; an infrequent earlier axis is NEVER
+      // excluded just because 96 newer passages share common anchor words.
+      if(arr.length>2*this.maxObserved){
+        const live=arr.filter(v=>this.records.has(v));
+        arr.splice(0,arr.length,...live);
+      }
     }
     if(this.order.length>this.maxObserved){
       const old=this.order.shift(),record=this.records.get(old);
