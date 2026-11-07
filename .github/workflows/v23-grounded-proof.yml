@@ -1,0 +1,30 @@
+name: V23 grounded original Discoverer goal-blind text evidence
+on:
+  push:
+    branches:
+      - experiment/V23-GROUNDED-TEMPORAL-PREACTION-SHAPE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  grounded-native-node:
+    name: Original V22 operator + V23 heldout whole-answer gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original engine source untouched, V23 source syntax, actual Node integration
+        run: |
+          node --check v17/transcend/torus-aether/worlds/grounded-temporal-hypermaze.mjs
+          node --check v17/tests/v23-grounded-temporal-hypermaze.test.mjs
+      - name: Independent heldout full-answer 300-case test and 100k-token long-context test
+        run: node --test v17/tests/v23-grounded-temporal-hypermaze.test.mjs
+      - name: Original V17 2D noise/source parity and V22 direct text shape
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Original V19 cognitive memory and actual world-physics tests
+        run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Original V21 shape boundary regression
+        run: node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
