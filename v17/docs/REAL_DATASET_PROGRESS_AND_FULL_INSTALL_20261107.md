@@ -50,3 +50,29 @@ Official GitHub Actions run: https://github.com/dan3s2020/MagicPerspective/actio
 
 ## Resume safety
 The installer safely rechecks/uses previously downloaded official Parquet shards, and START_MAGIC_REAL.ps1 uses Resume=true for the same output. Reusing the same destination without deleting it is appropriate; however the sample clone command above contains a no-overwrite guard and is only for fresh clones. For repeated bootstrap, verify the checked-out branch and git pull --ff-only rather than cloning into an existing folder. Do NOT press Reset on the native UI if resuming.
+
+## Real Windows installation failure and VERIFIED repair (2026-11-07)
+
+Actual user installation: 120/120 official Parquet shards (28.2 GB) successfully downloaded, but launcher then failed BEFORE CUDA startup with SyntaxError: Unexpected identifier 'node'.
+The previous PowerShell 5.1 installer transmitted a multi-line JS here-string to node -e; native Windows process argument handling removed JavaScript quote marks, turning a valid import into invalid text.
+
+Repair in this SAME branch:
+1. New v17/VERIFY_FULL_DATASET.mjs is executed as an actual Node source FILE, not -e.
+2. The verifier validates the official Hugging Face manifest and exactly those 120 data/*.parquet files, checks metadata using the original V17 loader, and requires at least a million real rows.
+3. The native trainer receives the official data/ directory, not its parent. This avoids double counting an old, duplicate root-level Parquet shard seen in the user's screenshot.
+4. -SkipDownload reuses the 28.2 GB that already exists. It checks all metadata, with NO pip installation.
+5. Future downloads install Hugging Face Hub in a dedicated .hf-dataset-download-venv, instead of modifying the user's Python installation inside Hermes. This prevents further conflicts with datasets, tokenizers and transformers. Already altered user packages are not silently changed.
+6. -VerifyOnly validates the data and exits without starting CUDA or creating checkpoints.
+
+Actual Windows CI acceptance: https://github.com/dan3s2020/MagicPerspective/actions/runs/42334285735
+The Windows job generated 120 GENUINE Parquet files with 10,000 rows per file, plus one stray root-level duplicate, and ran the exact real installer with -SkipDownload -VerifyOnly.
+Verified result: 120 Parquet shards, 1,200,000 rows, 1,199,984 training, 16 reserved for test; CUDA was not started in CI. Linux native corpus/UI regression also passed.
+
+Windows resume after download (PowerShell):
+
+    $dest = "D:\MagicPerspective-Full"
+    $branch = "feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107"
+    git -C $dest pull --ff-only origin $branch
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$dest\v17\INSTALL_FULL_AND_TRAIN.ps1" -SkipDownload -Data "D:\training\OpenThoughts3-1.2M" -Out "D:\MagicPerspective-Full-Training" -Port 8894 -Gpu "cuda:0" -GpuWorlds 16 -Vram 2.6 -Mem 3 -GpuTextBatch 2 -GpuTextChunk 128 -Every 50000
+
+CUDA on the user's RTX3050 Ti is not part of Windows CI; the on-hardware outcome still requires observing the actual live worker logs.
