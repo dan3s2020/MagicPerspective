@@ -104,7 +104,7 @@ $running=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-O
 })
 $scope=Get-MagicPerspectiveTrainerConflicts -Processes $running -RequestedOut $sourceOut
 if($scope.SameCheckpoint.Count -gt 0){
-  throw "V41 Fast still writes to SOURCE checkpoint. No copies or processes modified. Save/stop its training normally, then rerun this SAME command to import a coherent saved snapshot."
+  Write-Warning "V41 Fast source still trains. Importing ONLY the last saved, hash-verified Brain and sidecars, not unsaved live weights. V41 Fast keeps running untouched."
 }
 if($scope.Unresolved.Count -gt 0){
   Write-Warning "Some other trainer output paths cannot be resolved; only the selected V41 saved checkpoint will be read."
@@ -132,6 +132,22 @@ try{
       throw "Original saved checkpoint changed during read: $($file.FullName); no V42 training started"
     }
     $records+=@{file=$file.Name;sha256=$originalHash;bytes=$file.Length}
+  }
+  # The complete source folder is rechecked AFTER the entire copy, not just
+  # one file at a time. Reject partial V41 Fast saves if a source file changed
+  # while the original training process was updating its sidecar state.
+  $afterList=@(Get-ChildItem -LiteralPath $sourceBrains -File -ErrorAction Stop | Where-Object {
+    $_.Name -like 'brain-0-winner.v8*' -and $_.Name -notlike '*.tmp'
+  })
+  if($afterList.Count -ne $records.Count){
+    throw "V41 Fast saved checkpoint file set changed during import, refusing inconsistent snapshot"
+  }
+  foreach($record in $records){
+    $existing=Join-Path $sourceBrains $record.file
+    if(!(Test-Path -LiteralPath $existing -PathType Leaf) -or
+      (Get-FileHash -LiteralPath $existing -Algorithm SHA256).Hash -ne $record.sha256){
+      throw "V41 Fast changed a checkpoint sidecar during import: $($record.file). Refusing inconsistent snapshot."
+    }
   }
   # Verify native v8 can be loaded before making the NEW runtime visible.
   $nodeCheck=Join-Path $Root "tests\v42-check-original-checkpoint.mjs"
