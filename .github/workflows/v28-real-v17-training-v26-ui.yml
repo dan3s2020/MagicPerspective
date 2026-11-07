@@ -1,0 +1,30 @@
+name: V28 V26 DESIGN with REAL ORIGINAL V17 TRAINING AND METRIC PARITY
+on:
+  push:
+    branches:
+      - fix/V28-V26-UI-REAL-V17-TRAINING-METRIC-PARITY-20261107
+  pull_request:
+    branches:
+      - experiment/V26-NEW-LIVE-TEXT-HYPERMAZE-TRAINING-20261107
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-trainer-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of the real native V17 to V26 visual bridge
+        run: |
+          node --check v17/apps/hypermaze-studio-v26/native-bridge.mjs
+          node --check v17/apps/hypermaze-studio-v26/native-metrics.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/native-app.js
+      - name: Actual bridge HTTP with exact original native payload, original /eval and original SHA protections
+        run: |
+          node --test v17/apps/hypermaze-studio-v26/tests/native-bridge.test.mjs
