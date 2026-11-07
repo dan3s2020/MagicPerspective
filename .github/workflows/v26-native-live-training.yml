@@ -32,3 +32,15 @@ jobs:
       - name: Original native frozen hypermaze and complete HTTP live UI acceptance
         run: |
           node --test v17/apps/hypermaze-studio-v26/tests/engine.test.mjs v17/apps/hypermaze-studio-v26/tests/session-server.test.mjs
+      - name: Actual Chromium browser live canvas and controls acceptance
+        run: |
+          which google-chrome || which chromium
+          node --test v17/apps/hypermaze-studio-v26/tests/browser-ui.test.mjs
+      - name: Archive real browser UI screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v26-real-browser-ui
+          path: v26-real-browser-ui.png
+          if-no-files-found: warn
+          retention-days: 7
