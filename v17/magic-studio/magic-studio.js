@@ -258,8 +258,86 @@ function createPathGraph(d){
  }
  return {nodes:[],links:[],steps:[]};
 }
+function replayFrames(d){
+ if(!d)return [];
+ if(d.results?.[0]?.trace)return d.results[0].trace;
+ if(d.body?.frames)return d.body.frames;
+ if(Array.isArray(d.frames))return d.frames;
+ if(Array.isArray(d.steps))return d.steps;
+ return [];
+}
+function prepareReplay(d){
+ clearInterval(state.playTimer);state.playTimer=null;state.playStep=0;
+ const frames=replayFrames(d);
+ $("pathStep").max=String(frames.length);$("pathStep").value="0";
+ set("pathStepLabel","0 / "+frames.length);
+ $("playPath").textContent="▶ Replay real";
+ renderPathCanvas();
+}
+function drawMazeEvidence(ctx,w,h,d,step){
+ const episode=d?.results?.[0];
+ if(!episode?.n||!Array.isArray(episode.initialBelief)||!Array.isArray(episode.trace))return false;
+ const n=episode.n,ref=d.completeViewComparisons?.[0]||{};
+ const showTruth=$("showEvaluatorWalls").checked&&Array.isArray(ref.referenceWall);
+ const truth=ref.referenceWall||[];
+ const initial=episode.initialBelief,final=episode.finalBelief||initial;
+ const margin=25,tile=Math.max(1,Math.min((w-2*margin)/n,(h-2*margin)/n));
+ const originX=(w-tile*n)/2,originY=(h-tile*n)/2,frames=episode.trace;
+ const index=Math.min(step,frames.length);
+ const map=index===frames.length?final:initial;
+ ctx.fillStyle="#829daf";ctx.font="10px system-ui";ctx.textAlign="left";
+ ctx.fillText(showTruth?"HARTĂ EVALUATOR (nu era cunoscută organismului)":
+   index===frames.length?"HARTA OBSERVATĂ LA FINAL":"HARTA PARȚIAL OBSERVATĂ ÎNAINTEA PRIMEI ACȚIUNI",12,13);
+ for(let i=0;i<n*n;i++){
+   const x=originX+(i%n)*tile,y=originY+Math.floor(i/n)*tile,v=map[i];
+   const wall=showTruth?truth[i]:v===1;
+   ctx.fillStyle=wall?"#395066":v===-1?"#08141e":"#152e35";
+   ctx.fillRect(x+1,y+1,tile-2,tile-2);
+   if(!showTruth&&v===-1&&tile>13){
+     ctx.fillStyle="#345369";ctx.font="9px system-ui";ctx.textAlign="center";ctx.fillText("?",x+tile/2,y+tile*.7);
+   }
+ }
+ const center=id=>({x:originX+(id%n+.5)*tile,y:originY+(Math.floor(id/n)+.5)*tile});
+ const route=episode.plannedInitial||[];
+ ctx.lineWidth=Math.max(2,tile*.11);ctx.setLineDash([Math.max(3,tile*.19),Math.max(3,tile*.13)]);
+ ctx.strokeStyle="#edd19b";
+ for(const edge of route){
+   if(edge.from==null||edge.to==null)continue;
+   const a=center(edge.from),b=center(edge.to);
+   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+ }
+ ctx.setLineDash([]);
+ const traversed=frames.slice(0,index);
+ ctx.strokeStyle="#73e7c4";ctx.lineWidth=Math.max(2.5,tile*.13);
+ for(const row of traversed){
+   if(row.from===row.to)continue;
+   const a=center(row.from),b=center(row.to);
+   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+ }
+ const start=ref.start??episode.path?.[0];
+ const goal=ref.goal;
+ if(start!=null){const a=center(start);ctx.fillStyle="#deb86e";ctx.beginPath();ctx.arc(a.x,a.y,tile*.25,0,Math.PI*2);ctx.fill();}
+ if(goal!=null){const a=center(goal);ctx.strokeStyle="#72ecc5";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(a.x,a.y,tile*.31,0,Math.PI*2);ctx.stroke();}
+ const current=index?frames[index-1].to:start;
+ if(current!=null){const a=center(current);ctx.fillStyle="#ffffff";ctx.beginPath();ctx.arc(a.x,a.y,tile*.14,0,Math.PI*2);ctx.fill();}
+ const event=index?frames[index-1]:null;
+ if(event&&!event.moved){
+   const a=center(event.from);ctx.strokeStyle="#f59c9c";ctx.lineWidth=3;
+   ctx.beginPath();ctx.moveTo(a.x-tile*.25,a.y-tile*.25);ctx.lineTo(a.x+tile*.25,a.y+tile*.25);
+   ctx.moveTo(a.x+tile*.25,a.y-tile*.25);ctx.lineTo(a.x-tile*.25,a.y+tile*.25);ctx.stroke();
+ }
+ if(event?.proposed?.to!=null&&event.proposed.to!==event.to){
+   const p=center(event.proposed.to);ctx.strokeStyle="#dfa27c";ctx.lineWidth=2;
+   ctx.strokeRect(p.x-tile*.3,p.y-tile*.3,tile*.6,tile*.6);
+ }
+ return true;
+}
 function renderPathCanvas(){
  const c=$("pathCanvas"),{ctx,w,h}=resizeCanvas(c);ctx.clearRect(0,0,w,h);
+ const source=state.lastEvaluation||state.graph?.textMaze||{};
+ const frames=replayFrames(source);
+ const step=Math.min(state.playStep||0,frames.length);
+ if(drawMazeEvidence(ctx,w,h,source,step))return;
  const p=state.pathData||createPathGraph(state.graph?.textMaze||{}),N=p.nodes.length;
  if(!N){ctx.fillStyle="#7f9eae";ctx.font="12px system-ui";ctx.textAlign="center";
    ctx.fillText("Forma și ramificațiile vor apărea din evaluarea reală…",w/2,h/2);return;}
@@ -306,7 +384,7 @@ function consumeLivePath(d){
    " · "+(d.oracleAnswerUsed?"cu referință":"fără răspuns-referință la predicție")+".");
  const steps=stepsFor(d);
  $("pathSteps").innerHTML=steps.slice(0,35).map((s,i)=>'<span class="step-chip">'+(i+1)+": "+escapeHtml(text(s.name,55))+'</span>').join("");
- set("rawEval",JSON.stringify(d,null,2).slice(0,90000));
+ set("rawEval",JSON.stringify(d,null,2).slice(0,90000));prepareReplay(d);
 }
 function presentEvaluation(result,source){
  state.lastEvaluation=result;state.pathData=createPathGraph(result);
@@ -321,7 +399,7 @@ function presentEvaluation(result,source){
  set("pathSummary",details.join(" · ")||"Rezultat nativ primit. Deschide datele brute pentru câmpurile complete.");
  $("pathSteps").innerHTML=stepsFor(result).map((s,i)=>'<span class="step-chip '+(s.matched?"":"wrong")+'" title="'+escapeHtml(s.why)+'">'+
    (i+1)+": "+escapeHtml(text(s.name,75))+'</span>').join("");
- set("rawEval",JSON.stringify(result,null,2).slice(0,110000));renderPathCanvas();
+ set("rawEval",JSON.stringify(result,null,2).slice(0,110000));prepareReplay(result);
 }
 async function action(route,success){
  try{const r=await api(route,{method:"POST"});show(success||"Acțiunea a fost acceptată de backend.");
@@ -441,6 +519,29 @@ function bind(){
  $("runSelfChallenge").addEventListener("click",()=>languageMaze(true));
  document.querySelectorAll("[data-eval]").forEach(el=>el.addEventListener("click",()=>evaluate(el.dataset.eval)));
  $("chartMetric").addEventListener("change",renderChart);
+ $("playPath").addEventListener("click",()=>{
+  if(state.playTimer){clearInterval(state.playTimer);state.playTimer=null;$("playPath").textContent="▶ Replay real";return;}
+  const frames=replayFrames(state.lastEvaluation||state.graph?.textMaze);
+  if(!frames.length)return show("Ultima evaluare nu include pași de replay.",true);
+  if(state.playStep>=frames.length)state.playStep=0;
+  const update=()=>{
+    state.playStep=Math.min(frames.length,state.playStep+1);
+    $("pathStep").value=String(state.playStep);
+    set("pathStepLabel",state.playStep+" / "+frames.length);
+    renderPathCanvas();
+    if(state.playStep>=frames.length){clearInterval(state.playTimer);state.playTimer=null;
+      $("playPath").textContent="↺ Reia traseul";}
+  };
+  $("playPath").textContent="Ⅱ Pauză replay";update();
+  if(state.playStep<frames.length)state.playTimer=setInterval(update,420);
+ });
+ $("pathStep").addEventListener("input",e=>{
+  clearInterval(state.playTimer);state.playTimer=null;
+  state.playStep=+e.target.value;set("pathStepLabel",state.playStep+" / "+e.target.max);
+  $("playPath").textContent="▶ Replay real";renderPathCanvas();
+ });
+ $("showEvaluatorWalls").addEventListener("change",renderPathCanvas);
+
  $("graphCanvas").addEventListener("click",e=>{
   const rect=e.currentTarget.getBoundingClientRect();
   const x=e.clientX-rect.left,y=e.clientY-rect.top;
