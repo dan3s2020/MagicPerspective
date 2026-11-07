@@ -66,6 +66,12 @@ class Index:                                     # suffix array of the REVERSED 
         nxt = X.zeros(n, np.int64) - 1; pos = sa; ok = pos > 0; nxt[ok] = R[pos[ok] - 1]; self.nxt = nxt   # what followed each aligned past
     def align(self, X, ctx, maxK):
         """ctx: (Q, maxK) symbols read backwards (-2 = beyond the start). Returns lo, hi: (Q, maxK) ranges (empty = lo==hi)."""
+        # All original depths, sorted suffixes and confidence logic retained.
+        # Fused bounds eliminate repeated CUDA->CPU bool(.any()) sync points.
+        # The NumPy and CPU Torch reference stays exactly as before.
+        if X.t and str(X.dev).startswith("cuda"):
+            from exact_prefix_search import exact_prefix_ranges
+            return exact_prefix_ranges(self, ctx, maxK)
         Q = ctx.shape[0]; n = self.n; lo = X.zeros(Q, np.int64); hi = X.zeros(Q, np.int64) + n
         LO = X.zeros((Q, maxK), np.int64); HI = X.zeros((Q, maxK), np.int64); R = self.R; sa = self.sa
         steps = max(1, int(np.ceil(np.log2(n + 1))) + 1)
