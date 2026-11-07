@@ -458,6 +458,26 @@ const processGpuText = async (exs, meta) => {
 parentPort.on("message", m => {
   // On-demand PAGE through the ORIGINAL persistent six-scale graph. No
   // static 220-edge cap, no answer generated and no native memory update.
+  if(m?.gpuFutureProbe){
+    const {id,context=""}=m.gpuFutureProbe;
+    (async()=>{
+      const raw=Buffer.from(String(context),"utf8");
+      if(!raw.length||raw.length>64||raw.some(b=>b>=128))
+        throw Error("Future VRAM probe requires 1..64 ORIGINAL ASCII bytes; no Unicode normalization or truncation");
+      if(!gpuSet)throw Error("CUDA pool inactive. This probe requires an original selected GPU process.");
+      const G=await gpuOn();
+      if(!G)throw Error("Native GPU process unavailable: "+(gpuError||"not initialized"));
+      return await G.call({cmd:"text_pool_probe",
+        b64:raw.toString("base64"),maxHits:64});
+    })().then(result=>{
+      parentPort.postMessage({type:"chat",id,gpuFutureProbe:true,
+        result,fromUncommittedFutureTrainingRows:true,
+        trulyUnseenHeldout:false,originalNativeBrainTrustUntouched:true});
+    },err=>{
+      parentPort.postMessage({type:"chat",id,gpuFutureProbe:true,error:err.message});
+    });
+    return;
+  }
   if(m?.evidenceGatedText){
     const {id,start="",required=[],maxSteps=8,maxExpanded=6000}=m.evidenceGatedText;
     try{
