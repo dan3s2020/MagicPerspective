@@ -28,3 +28,37 @@ jobs:
         run: |
           node --test v17/tests/v22-long-unseen-shape.test.mjs
           node --test v17/tests/torus-cognitive-learned-map.test.mjs
+  windows-real-launcher-preflight:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse PowerShell and exercise no-overwrite guards, without CUDA or fake training
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path ".\v17\START_V30_REAL_TRAINING.ps1"), [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) { throw ($parseErrors | Out-String) }
+          git switch -C "experiment/V30-FULL-ATLAS-FAILURE-FORENSICS-20261107"
+          $sample = Join-Path $env:RUNNER_TEMP "v30-preflight-only-placeholder"
+          $runtime = Join-Path $env:RUNNER_TEMP "v30-preflight-runtime"
+          New-Item -ItemType Directory -Path $sample -Force | Out-Null
+          Set-Content -LiteralPath (Join-Path $sample "fixture.parquet") -Value "invalid-placeholder-not-consumed" -Encoding ASCII
+          & .\v17\START_V30_REAL_TRAINING.ps1 -Data $sample -Out $runtime -ValidateOnly
+          if ($LASTEXITCODE -ne 0) { throw "Preflight returned failure" }
+          $brains = Join-Path $runtime "brains"
+          New-Item -ItemType Directory -Path $brains -Force | Out-Null
+          $saved = Join-Path $brains "brain-0-stable+many.v8"
+          Set-Content -LiteralPath $saved -Value "protected-checkpoint-sentinel" -Encoding ASCII
+          $rejected = $false
+          try { & .\v17\START_V30_REAL_TRAINING.ps1 -Data $sample -Out $runtime -ValidateOnly }
+          catch { $rejected = $_.Exception.Message -match "Existing original checkpoint" }
+          if (-not $rejected) { throw "The launcher did not reject an existing original checkpoint" }
+          if ((Get-Content -LiteralPath $saved -Raw).Trim() -ne "protected-checkpoint-sentinel") {
+            throw "An original checkpoint changed during preflight"
+          }
+          Write-Host "V30 launcher: PowerShell parsed; branch/data guard passed; checkpoint overwrite refused. CUDA and actual corpus were NOT used."
