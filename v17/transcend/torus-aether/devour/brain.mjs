@@ -50,11 +50,27 @@ export class Brain {
   histOf(b, i) { return Array.from({length: 32}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
   // text lived on the card: a whole batch of exercises, the aligning graph adds the totals and keeps every exercise
   async learnTextGPU(gpu, exs, onProgress = null) {
-    const A = (this.align ||= new AligningGraph()), ask = list => { const p = gpu.call({cmd: "text_learn", exercises: list, trust: A.trustForCard(), g: A.g, formW: A.formW, variants: A.variants()}, {onProgress}); p.catch(() => {}); return p; };
-    if (SYNCED.get(gpu) !== this) { await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(0, A.mem.n)).toString("base64")}); SYNCED.set(gpu, this); }   // the card starts with everything this brain has lived
+    // V32: the SAME original PyTorch alignment/imagination equations, but
+    // choose a larger memory-backed CUDA microchunk after observing actual VRAM.
+    // Never split a document into a different training exercise or leak heldout.
+    const desiredChunk = Math.max(512, Math.min(32768,
+      Math.trunc(Number(process.env.MP_GPU_TEXT_CHUNK) || 4096)));
+    const autotune = process.env.MP_GPU_TEXT_AUTOTUNE === "1";
+    const A = (this.align ||= new AligningGraph()), ask = list => { const p = gpu.call({cmd: "text_learn", exercises: list, trust: A.trustForCard(), g: A.g, formW: A.formW, variants: A.variants(), chunk:desiredChunk, autotune}, {onProgress}); p.catch(() => {}); return p; };
+    if (SYNCED.get(gpu) !== this) {
+      if(onProgress)onProgress({phase:"loading-original-brain-memory",done:0,total:A.mem.n});
+      await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(0, A.mem.n)).toString("base64")}, {onProgress});
+      SYNCED.set(gpu, this);
+      if(onProgress)onProgress({phase:"original-memory-loaded-on-GPU",done:A.mem.n,total:A.mem.n});
+    }   // the card starts with everything this brain has lived
     const t0 = performance.now(), R = await ask(exs), t1 = performance.now(); A.absorb(R, exs);
     const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;
-    this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, phaseMs: R.phaseMs ?? null, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null};
+    this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, phaseMs: R.phaseMs ?? null,
+      vramUsedGB:R.vramUsedGB??null,vramReservedGB:R.vramReservedGB??null,
+      vramCurrentAllocatedGB:R.vramCurrentAllocatedGB??null,vramFreeGB:R.vramFreeGB??null,
+      vramBudgetGB:R.vramBudgetGB??null,realVramPeakFraction:R.realVramPeakFraction??null,
+      cudaChunkUsed:R.chunkUsed??null,nextCudaChunk:R.nextChunk??null,
+      acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null};
     return this.textGpu; }
   live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
