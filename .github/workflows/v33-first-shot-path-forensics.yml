@@ -39,3 +39,21 @@ jobs:
           node-version: '22'
       - name: Authentic official OpenThoughts3 24 sampled rows, 4 genuinely held-out full answers
         run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
+  authentic-six-scale-historical-v17-character-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Authentic official OpenThoughts3 frozen first-shot historical character maze, full missing-edge forensics and native maze transfer ablation
+        env:
+          V33_AUTHENTIC_PATH_FORENSICS_FILE: ${{ runner.temp }}/v33-authentic-open-thoughts-original-six-scale-first-shot.json
+        run: node --test v17/tests/v33-authentic-original-first-shot-paths.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v33-authentic-original-v17-first-shot-path-errors-and-ablation
+          path: ${{ runner.temp }}/v33-authentic-open-thoughts-original-six-scale-first-shot.json
+          if-no-files-found: warn
