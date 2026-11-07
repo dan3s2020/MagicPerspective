@@ -1,0 +1,38 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "MP-REG-2026-11-07-REAL-HYPERMAZE-STOPSHIP",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-07-HYPERMAZE-REGRESSION-STOPSHIP-USER-VERBATIM.txt",
+    "exact_user_quote": "TREBUIE SA GHICEASCA RASPUNSUL DIN PRIMA,FORMA SOLUTIEI DIN PRIMA CU 100% CA LA LABIRINTE DUPA CATEVA LUMI TRAITE !AI DEJA TOTUL IN REPO NENOROCITULE ! SA NU TE PRIND CA OMITI VREUN BYTE"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape(ret,n,me): original attraction/conductance value propagation and path-climbing BEFORE first action, with Discoverer.learnStep and NoiseAgency",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/devour/brain.mjs",
+    "v17/research/text-hypermaze/goal-conditioned-native.mjs"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "v17/tests/native-hypermaze-shape-parity.test.mjs",
+    "v17/tests/native-hypermaze-goal-text.test.mjs",
+    "v17/tests/hypermaze-stopship-release.test.mjs"
+  ],
+  "actual_observed_results": "NOT_VERIFIED: user requests 100% exact unseen long first-try answers; legacy TinyStories 64.43% is teacher-forced next-byte prediction only.",
+  "limitations": [
+    "Full historical Verbatim is incomplete; current exact user turn is archived, original earlier images may be inaccessible",
+    "No unconditional evidence exists that exact arbitrary unseen large text answers are identifiable from prompts",
+    "Cannot claim completed CUDA GPU hardware throughput using GitHub CI NumPy parity",
+    "Original GPU pretrained TinyStories model must not be overwritten by experimental hypermaze adapter"
+  ],
+  "verification_status": "NOT_VERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
