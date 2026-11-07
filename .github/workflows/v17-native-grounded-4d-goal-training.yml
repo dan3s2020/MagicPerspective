@@ -1,0 +1,54 @@
+name: Native V17 learned 4D text-world goal shape — heldout syntax, checkpoint, chance
+on:
+  push:
+    branches:
+      - experiment/V17-GROUNDED-4D-TEXT-GOAL-BRAIN-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-goal-text-training:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check actual native Brain, goal model, benchmark and test syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/goal-text-navigator.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/research/text-hypermaze/grounded-4d-benchmark.mjs
+          node --check v17/tests/goal-text-4d-native-brain.test.mjs
+          node --check v17/tests/native-text-world-endogenous-noise.test.mjs
+      - name: Actual original Brain owns, trains, freezes and checkpoints 4D action/text-world model
+        run: node --test v17/tests/goal-text-4d-native-brain.test.mjs
+      - name: Original organism-owned endogenous NoiseAgency chooses real text-world perspectives and learns outcomes
+        run: node --test v17/tests/native-text-world-endogenous-noise.test.mjs
+      - name: Reproduce exact heldout linguistic-syntax/OOD/noise results and save true observation
+        run: |
+          node v17/research/text-hypermaze/grounded-4d-benchmark.mjs > observed-grounded-4d.json
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const x=JSON.parse(fs.readFileSync("observed-grounded-4d.json","utf8"));
+            const a=x.aggregate;
+            if(a.worlds!==192||a.correctInitial!==192||a.optimal!==192||
+              a.rank2!==0||a.chanceFixed!==35||a.chanceRepair<190||
+              a.shiftedSource!==65||a.unknownLexicon!==0||
+              a.totalDocumentCharacters!==22921076||!a.frozen)
+             throw Error("Independent run differs from locally measured proof: "+JSON.stringify(a));
+            console.log("VERIFIED_REAL_NATIVE_TEXT_GOAL",JSON.stringify(a));
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: actual-native-text-goal-4d-heldout-20261107
+          path: observed-grounded-4d.json
+      - name: Original V17 other features and noise must remain live
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+          node --test v17/tests/goal-text-original-brain-baseline.test.mjs
+      - name: Verify prior independent long structured-text world experiment unaffected
+        run: node --test v17/research/text-hypermaze/causal-text-4d-study.test.mjs

@@ -20,9 +20,10 @@ import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/const
 import {ObservedTransformations} from "../worlds/observed-transformations.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
+import {TextWorldNavigator,LearnedClaim} from "../worlds/goal-text-navigator.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,TextWorldNavigator,LearnedClaim};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -40,7 +41,7 @@ export class Brain {
   observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.textGoal = new TextWorldNavigator(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -61,6 +62,7 @@ export class Brain {
     this.language ||= new TextPerspectives({maxStates:85000});
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
     this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
+    this.textGoal ||= new TextWorldNavigator(); // additive native 4D text-world learner; old V17 checkpoints stay readable
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
@@ -155,6 +157,72 @@ export class Brain {
       fieldPrediction:held.evaluate(text,{useField:true,limit:maxTokens}),
       preActionShape:held.navigate(prefix,{steps:32,useField:true}),
       perspective:held.report(),frozen:true,seed};
+  }
+  // Real goal-conditioned navigable TEXT world in the same native Brain.
+  // Ground facts and actions from lived labeled evidence before frozen tests.
+  // The ORIGINAL CUDA TextCard, old graph, maze and NoiseAgency are untouched.
+  // This API does not claim to infer such labels from arbitrary OpenThoughts.
+  learnTextWorldAction(before,action,after) {
+    this.textGoal.observeAction(before,action,after);
+    return this.textGoal.transitions;
+  }
+  learnTextWorldClaim(statement,claim) {
+    this.textGoal.learnClaim(statement,claim);
+    return this.textGoal.claims;
+  }
+  learnTextWorldReliability(source,claim,truth) {
+    this.textGoal.observeReliability(source,claim,truth);
+    return this.textGoal.reliabilitySeen;
+  }
+  predictTextWorldShape(document,start,goal,{rank=4,seed=0}={}) {
+    // Prediction is produced using only FROZEN observations; the desired
+    // goal is known, but no reference path or unseen simulator map is read.
+    const fingerprint=this.textGoal.frozenFingerprint();
+    const shape=this.textGoal.predictShape(document,start,goal,{rank,seed});
+    if(this.textGoal.frozenFingerprint()!==fingerprint)
+      throw Error("Before-action solution shape accidentally trained on test document");
+    return {...shape,source:"original-v17-brain-goal-conditioned-text-world",
+      frozen:true,actionsLearned:this.textGoal.transitions,
+      lexicalExamples:this.textGoal.claims,sourceReliabilityExamples:this.textGoal.reliabilitySeen};
+  }
+  // The ORIGINAL organism-owned NoiseAgency chooses a genuine intervention
+  // into the goal-conditioned 4D plan. Only copied internal beliefs change;
+  // hidden world physics, observed texts and learned weights are untouched.
+  // A frozen examination MUST NOT call observeTextWorldOutcome(...,train=true).
+  planTextWorldWithNoise(document,start,goal,{allowNoise=true}={}) {
+    const base=this.predictTextWorldShape(document,start,goal);
+    if(!allowNoise||!this.noiseAgent)return {...base,noiseDecision:null,noiseApplied:false};
+    const decision=this.noiseAgent.decide({
+      domain:"text",known:this.textGoal.transitions>=32,planned:!!base.shape
+    });
+    const internalMap=base.map.slice();
+    let perturbed=0;
+    if(decision.site==="perception"&&base.conflicts.length){
+      const available=base.conflicts.filter(p=>p!==start&&p!==goal);
+      const n=Math.min(available.length,Math.max(1,Math.ceil(available.length*decision.strength*.08)));
+      for(let i=0;i<n;i++){
+        const j=this.noiseAgent.int(available.length);
+        const p=available.splice(j,1)[0];
+        internalMap[p]^=1;perturbed++;
+      }
+    }
+    const noiseSeed=decision.site==="imagination"
+      ? 1+this.noiseAgent.int(0x7fffffff):0;
+    const shape=this.textGoal.path(start,goal,internalMap,{seed:noiseSeed});
+    return {...base,map:internalMap,shape,initialActions:shape?.map(x=>x.action)||[],
+      noiseDecision:decision,noiseApplied:perturbed>0||noiseSeed>0,
+      noisePerturbedCells:perturbed,noiseImaginationSeed:noiseSeed,
+      noisePolicyOwnedByOriginalBrain:true};
+  }
+  observeTextWorldOutcome(decision,before,after,solved,{train=true}={}) {
+    // Real physical before/after; NO ideal path or hidden map is accepted.
+    if(!train)return {trained:false};
+    if(!this.noiseAgent)throw Error("Enable the original NoiseAgency first");
+    if(!Number.isInteger(before)||!Number.isInteger(after))
+      throw Error("Observed before/after world states required");
+    return this.noiseAgent.learn(decision,{
+      before:[before],after:[after],solved:!!solved
+    });
   }
   // what the brain expects next, after everything it has lived (the graph's own distribution over the next symbol)
   predict(past = this.past) { const i = past.length; return this.chain.play(this.e, this.ctxOf(past, i), this.histOf(past, i)).out; }
