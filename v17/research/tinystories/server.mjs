@@ -110,7 +110,7 @@ export class TinyStoriesTrainer{
   if(t-(this.lastPreviewAt||0)<1500||!batch.length)return;
   this.lastPreviewAt=t;
   const first=batch[0];
-  const data=await this.gpu.call({cmd:"text_fast_eval",rows:[first.bytes.slice(0,350)]});
+  const data=await this.gpu.call({cmd:"text_fast_eval",rows:[Array.from(first.bytes.subarray(0,350))]});
   this.state.preview={index:first.index,source:"REAL training item; prediction BEFORE GPU update",
    actual:first.text.slice(0,1000),preUpdate: data.examples?.[0]||null,
    correct:data.hits,total:data.seen,accuracy:data.accuracy,
@@ -134,7 +134,7 @@ export class TinyStoriesTrainer{
    offset:this.state.bytesRead};
   await this.preview(batch);
   const result=await this.gpu.call({cmd:"text_fast_train",
-   rows:batch.map(({index,bytes})=>({index,bytes}))});
+   rows:batch.map(({index,bytes})=>({index,b64:bytes.toString("base64")}))});
   // Only report committed REAL updates. Python reports cumulative counts
   // and lastIndex, so duplicate retries cannot double-count learning.
   this.state.stories=result.totalRows;this.state.chars=result.totalChars;
@@ -169,7 +169,7 @@ export class TinyStoriesTrainer{
      await rest(90);
     }
     if(this.stopRequested)break;
-    batch.push({index:index++,bytes:Array.from(item.ascii),text:item.text});
+    batch.push({index:index++,bytes:item.ascii,text:item.text});
     bytes+=item.ascii.length;endOffset=item.endOffset;
     if(bytes>=this.batchBytes||batch.length>=this.batchStories){
      await this.trainBatch(batch,endOffset);
