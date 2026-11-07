@@ -128,7 +128,9 @@ export class RealTrainer{
      this.trace={row:row.index,beforeAction:plan.beforeAction,method:plan.method,
        question:row.prompt.slice(0,5000),predicted:plan.answer.slice(0,5000),
        actual:row.answer.slice(0,2000),
-       found:plan.found,exact:score.exact,wordF1:score.wordF1,route:plan.route,
+       found:plan.found,exact:score.exact,wordF1:score.wordF1,
+       dimensions:plan.dimensions,axisLabels:plan.axisLabels,
+       reason:plan.reason,route:plan.route,
        nodes:plan.nodes,edges:plan.edges,field:plan.field,
        hypotheses:plan.learnedContexts,
        note:"PRE-UPDATE sampled online score, not frozen held-out accuracy"};
@@ -219,7 +221,14 @@ export async function makeHTTP(trainer,{port=8899,host="127.0.0.1"}={}){
     res.end(html);return;
    }
    if(req.method==="GET"&&u.pathname==="/api/status")return send(res,200,trainer.status());
-   if(req.method==="GET"&&u.pathname==="/api/trace")return send(res,200,trainer.trace||{});
+   if(req.method==="GET"&&u.pathname==="/api/trace"){
+    const row=u.searchParams.get("row");
+    const selected=row==null?trainer.trace:trainer.traceHistory.find(t=>t.row===Number(row));
+    return send(res,200,selected||{reason:"NO_SAMPLED_PREACTION_TRACE"});
+   }
+   if(req.method==="GET"&&u.pathname==="/api/trace-history")return send(res,200,
+    trainer.traceHistory.map(t=>({row:t.row,found:t.found,exact:t.exact,wordF1:t.wordF1,
+      steps:t.route?.length||0,question:t.question.slice(0,120)})));
    if(req.method==="GET"&&u.pathname==="/api/events")return send(res,200,trainer.events);
    if(req.method==="GET"&&u.pathname==="/api/health")return send(res,200,{ok:trainer.mode!=="error",mode:trainer.mode});
    if(req.method==="POST"){
