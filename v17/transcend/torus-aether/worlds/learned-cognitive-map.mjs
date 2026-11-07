@@ -46,11 +46,19 @@ function originalDiscovererOnText(world,disc,{seed=74129,temperature=null}={}){
   const conduct=k=>k===KIND.wall?0:
     k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1;
   const attract=k=>k===KIND.target?1:0;
-  let values=[];
-  const path=actor.shape(kinds,0,world.start,{
-    neighbors:world.neighbors,conduct,attract,
-    onField:observed=>{values=observed;}
-  })||[];
+  // V34 compatibility across original V17 full-retina and original V31
+  // non-grid topology. Keep V17 shape(ret,n,me) UNCHANGED. The graph
+  // field is exactly original Discoverer conductance/attraction, with the
+  // explicitly checkable source-world goal, never a hidden answer oracle.
+  actor.attract=attract;actor.conduct=conduct;
+  const shaped=actor.shapeGraph(kinds,world.neighbors,world.start,{details:true});
+  const values=shaped?.values||[];
+  const path=(shaped?.path||[]).map(step=>{
+    const edge=world.neighbors[step.from].find(e=>
+      e.to===step.to&&e.action===step.action);
+    return {...step,transformation:edge?.transformation??null,
+      verified:!!edge?.verified};
+  });
   return {path,nodes:[world.start,...path.map(h=>h.to)],values,
     reason:path.length?'SHAPE_PROPAGATED':'NO_ASCENDING_PATH',
     propagation:'DIRECT_ORIGINAL_DISCOVERER_SHAPE',
