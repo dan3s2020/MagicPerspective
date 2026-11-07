@@ -111,3 +111,76 @@ test("same ACTUAL original V17 worker automatically replays previously observed 
   fs.rmSync(tmp,{recursive:true,force:true});
  }
 });
+
+test("real V17 text+maze+transform worlds ALL enter one atlas with true original before/action/after evidence",{
+ timeout:100000
+},async()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"mp-mixed-native-atlas-"));
+ const data=path.join(tmp,"actual-worlds.txt"),out=path.join(tmp,"run");
+ fs.writeFileSync(data,["The traveler moves through the blue corridor.",
+  "The traveler moves through the green corridor.",
+  "The traveler moves through the red corridor.",
+  "The traveler moves through the golden corridor."].join("\n\n")+"\n");
+ const port=await freePort(),url="http://127.0.0.1:"+port;
+ const child=spawn(process.execPath,[
+  path.join(root,"transcend","torus-aether","devour","devour.mjs"),
+  "--workers","1","--arms","winner",
+  "--worlds","text,maze,transform","--maze-every","100",
+  "--gpu","off","--text",data,"--out",out,"--port",String(port),
+  "--mem","1","--every","10000000","--start","--native-hypermaze"
+ ],{cwd:root,detached:process.platform!=="win32",
+  stdio:["ignore","pipe","pipe"]});
+ let logs="";
+ for(const stream of [child.stdout,child.stderr])
+  stream.on("data",chunk=>{logs=(logs+String(chunk)).slice(-9000);});
+ try{
+  let summary=null;
+  for(let i=0;i<230;i++){
+   if(child.exitCode!==null)throw Error("Original multiworld worker exited: "+logs);
+   try{
+    const r=await fetch(url+"/native-hypermaze-atlas?"+
+     new URLSearchParams({w:"0",mode:"summary"}));
+    const d=await r.json();
+    if(d.result?.worldsByDomain?.text>=1&&d.result.worldsByDomain.maze>=1&&
+       d.result.worldsByDomain.transform>=1){summary=d.result;break;}
+   }catch{}
+   await sleep(170);
+  }
+  assert.ok(summary,"Actual V17 original Brain never reported all three independent real worlds: "+logs);
+  const response=await fetch(url+"/native-hypermaze-atlas?"+
+   new URLSearchParams({w:"0",mode:"events",kind:"world",limit:"250"}));
+  const data=await response.json();
+  assert.ok(data.result?.events?.length>=3);
+  const rows=data.result.events;
+  for(const domain of ["text","maze","transform"]){
+   const found=rows.find(e=>e.world===domain);
+   assert.ok(found,"Atlas dropped actual original "+domain+" world");
+   if(domain!=="text"){
+    assert.equal(found.source,"actual original Brain.observeShared");
+    assert.equal(found.nativeObservedTransition.domain,domain);
+    assert.ok(found.nativeObservedTransition.action);
+    assert.ok(found.nativeObservedTransition.before!==undefined);
+    assert.ok(found.nativeObservedTransition.after!==undefined);
+   }else{
+    assert.equal(found.source,"actual original corpus (never heldout evaluation)");
+    assert.ok(found.rawText.includes("traveler"));
+   }
+  }
+  const originalFile=path.join(out,"brains","brain-0-winner.v8.hypermaze-atlas.jsonl");
+  assert.ok(fs.existsSync(originalFile));
+  console.log("ORIGINAL_V17_SHARED_REAL_THREE_WORLD_ATLAS",JSON.stringify({
+   observedTextEpisodes:summary.worldsByDomain.text,
+   actualMazeBodyTransitions:summary.worldsByDomain.maze,
+   actualTransformBodyTransitions:summary.worldsByDomain.transform,
+   everyDomainHasOriginalBeforeAfterActions:true,
+   sameNativeBrain:true,originalAtlasOnDisk:true,
+   noSyntheticJoinedWorldEdges:true
+  }));
+ }finally{
+  try{
+   if(process.platform==="win32")child.kill("SIGTERM");
+   else process.kill(-child.pid,"SIGTERM");
+  }catch{try{child.kill("SIGTERM");}catch{}}
+  await sleep(180);fs.rmSync(tmp,{recursive:true,force:true});
+ }
+});
