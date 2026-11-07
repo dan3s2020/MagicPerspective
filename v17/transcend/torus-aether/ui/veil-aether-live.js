@@ -23,7 +23,8 @@ function draw(){
  ctx.fillStyle="#071019";ctx.fillRect(0,0,W,H);
  ctx.fillStyle="#91b9d2";ctx.font="12px monospace";
  ctx.fillText("V21 · CONTEXTUAL STATES / OBSERVED TRANSITIONS · 5 MEASURED LAYOUT FEATURES",12,20);
- const nodes=data?.sample?.nodes||[];
+ const nodes=[...new Map([...(data?.sample?.nodes||[]),...(planned?.routeNodes||[])]
+    .map(n=>[n.id,n])).values()];
  if(!nodes.length){ctx.fillText("Aștept observații din antrenarea reală...",18,H/2);return;}
  const coordsByLabel=new Map(nodes.map(n=>[n.label,coords(n,W,H)]));
  const coordsById=new Map([...coordsByLabel.values()].map(n=>[n.id,n]));
@@ -34,10 +35,12 @@ function draw(){
  }
  const predicted=planned?.found?planned.path:(data.last?.initialShape||[]);
  const actual=(data.last?.actual||[]).slice(0,frame+1);
+ const repaired=data.last?.frames?.[Math.max(0,frame-1)]?.remainingShape||[];
  path(predicted,coordsByLabel,"#ffcb57",3.5);
+ path(repaired,coordsByLabel,"#bb91ff",2.5);
  path(actual,coordsByLabel,"#50cbf7",3);
  const current=actual.at(-1),goal=planned?.found?planned.goal?.join(" "):data.last?.goal?.join(" ");
- const focus=new Set([predicted[0],predicted.at(-1),current,goal]);
+ const focus=new Set([predicted[0],predicted.at(-1),repaired.at(-1),current,goal]);
  for(const n of nodes){
   const p=coordsByLabel.get(n.label);if(!p)continue;
   const isCurrent=n.label===current,isGoal=n.label===goal,inPlan=predicted.includes(n.label);
@@ -49,7 +52,7 @@ function draw(){
  ctx.fillStyle="#ddecff";ctx.font="12px sans-serif";
  for(const label of focus){const p=coordsByLabel.get(label);if(p)ctx.fillText(String(label).slice(0,27),Math.min(W-165,p.x+8),p.y-8);}
  ctx.fillStyle="#b4d0df";ctx.font="12px monospace";
- ctx.fillText("AURIU: predicție ÎNAINTE de document | ALBASTRU: succesiune observată",12,H-17);
+ ctx.fillText("AURIU: forma inițială | MOV: forma recalculată | ALBASTRU: parcurs real",12,H-17);
 }
 function render(){
  if(!data){draw();return;}
