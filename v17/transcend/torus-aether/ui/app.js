@@ -384,6 +384,7 @@ function write(mapField = false) {
     `<div class="gen">${String.fromCharCode(...gen.slice(0, 420)).replace(/</g, "&lt;").replace(/\n/g, " ")}</div>`;
 }
 
+const trainingPctText = v => !Number.isFinite(v)?"—":v>0&&v<0.01?v.toFixed(6)+"%":v<1?v.toFixed(4)+"%":v.toFixed(2)+"%";
 function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
@@ -398,7 +399,7 @@ function stats() {
   const D=LIVE?(liveSummary?.dataset||liveSnap?.dataset):null;
   $("trainingExercises").textContent=D?.trainingTotal!=null?
     D.processed.toLocaleString("ro-RO")+" / "+D.trainingTotal.toLocaleString("ro-RO"):"—";
-  $("trainingDatasetPct").textContent=D?.percent!=null?D.percent.toFixed(2)+"%":"—";
+  $("trainingDatasetPct").textContent=D?.percent!=null?trainingPctText(D.percent):"—";
   $("trainingRemaining").textContent=D?.remaining!=null?D.remaining.toLocaleString("ro-RO"):"—";
   $("trainingFilesHeld").textContent=D?
     (D.fileCount??"—")+" fișiere · "+(D.heldOutRows??"—")+" exemple rezervate":"—";
