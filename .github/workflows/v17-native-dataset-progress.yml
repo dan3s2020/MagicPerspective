@@ -41,6 +41,27 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PyArrow for an ACTUAL 120-shard Parquet metadata fixture
+        run: python -m pip install pyarrow
+      - name: Build real 1.2M-row metadata fixture, including a legacy root duplicate
+        shell: powershell
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "open-thoughts-verification-fixture"
+          python v17/tests/generate-verifier-parquet-fixture.py $root
+          if ($LASTEXITCODE -ne 0) { throw "Could not create 120 real Parquet shards" }
+          echo "MP_FULL_DATASET_ROOT=$root" >> $env:GITHUB_ENV
+      - name: Run EXACT Windows PowerShell installer on already downloaded data (NO node -e, NO GPU)
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/INSTALL_FULL_AND_TRAIN.ps1" -Data $env:MP_FULL_DATASET_ROOT -Out (Join-Path $env:RUNNER_TEMP "not-run-training") -SkipDownload -VerifyOnly
+          if ($LASTEXITCODE -ne 0) { throw "Real Windows verification failed" }
+          if (Test-Path (Join-Path $env:RUNNER_TEMP "not-run-training")) { throw "VerifyOnly must not start training or create checkpoints" }
       - name: Check original launchers and complete dataset installer syntax without executing any GPU mock
         shell: powershell
         run: |
