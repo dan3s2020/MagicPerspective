@@ -94,3 +94,48 @@ export function parseActualJSONL(raw,{maxLineBytes=16777216}={}){
  const text=textsFromRealJSON(row);
  return {text,empty:!text.length};
 }
+
+
+// A real OpenThoughts training example is a causally ordered user QUESTION
+// followed by an actual assistant ANSWER. Existing textsFromRealJSON() is
+// kept byte-identical in behavior; the new role-aware stream never guesses
+// answers from arbitrary message text or passes withheld outputs to a planner.
+const roleText=message=>{
+ const out=[];
+ if(!message||typeof message!=="object")return "";
+ const data=message.content??message.value??message.text??null;
+ collectText(data,out);
+ return out.join("\n").trim();
+};
+export function qaPairsFromRealJSON(row){
+ if(!row||typeof row!=="object")return [];
+ const messages=Array.isArray(row)?row:
+  row.conversations??row.messages??row.conversation??row.turns;
+ const pairs=[];
+ if(Array.isArray(messages)){
+  let pending=null;
+  for(const m of messages){
+   const role=String(m?.role??m?.from??m?.speaker??"").toLowerCase();
+   const value=roleText(m);
+   if(role==="user"||role==="human"){
+    pending=value||null;continue;
+   }
+   if(role==="assistant"||role==="gpt"){
+    if(pending&&value)pairs.push({question:pending,answer:value});
+    pending=null;continue;
+   }
+   // Do not pair across system/tool/unknown intervening messages.
+   pending=null;
+  }
+  return pairs;
+ }
+ const q=row.question??row.prompt??row.problem??row.instruction;
+ const a=row.answer??row.response??row.solution??row.output??row.completion;
+ if(q===undefined||a===undefined)return [];
+ const read=v=>{
+  if(typeof v==="string")return v.trim();
+  const arr=[];collectText(v,arr);return arr.join("\n").trim();
+ };
+ const question=read(q),answer=read(a);
+ return question&&answer?[{question,answer}]:[];
+}
