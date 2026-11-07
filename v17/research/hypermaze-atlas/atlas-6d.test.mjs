@@ -1,4 +1,4 @@
-import test from "node:test";import assert from "node:assert/strict";
+import test from "node:test";import assert from "node:assert/strict";import fs from "node:fs";
 import {CrossWorldAtlas,PRNG,tuple,advance} from "./atlas-engine.mjs";
 const dims=6,side=3,N=side**dims,ACTIONS=Array.from({length:12},(_,i)=>"operation-"+i);
 function step(n,action){const i=ACTIONS.indexOf(action),d=Math.floor(i/2),x=tuple(n,dims,side),delta=Array(dims).fill(0);
@@ -26,7 +26,7 @@ test("genuine SIX-dimensional state-dependent transformations are learned from f
  assert.equal(model.sourceWorlds,24);assert.equal(model.states,729);
  assert.equal(model.discoveredConditionalRules,10);
  const flat=CrossWorldAtlas.restore({...atlas.saveJSON(),allowContext:false});
- let success=0,flatSuccess=0;
+ let success=0,flatSuccess=0;const attempts=[];
  for(let seed=0;seed<80;seed++){
   const R=PRNG(11111+seed),cells=Uint8Array.from({length:N},()=>+(R()>.16));
   let start,goal;
@@ -36,13 +36,22 @@ test("genuine SIX-dimensional state-dependent transformations are learned from f
   }
   assert.ok(Number.isInteger(start));
   const predicted=atlas.plan(start,goal,cells),naive=flat.plan(start,goal,cells);
-  if(predicted.found&&atlas.evaluate(predicted,step,cells).success)success++;
-  if(naive.found&&flat.evaluate(naive,step,cells).success)flatSuccess++;
+  const actual=atlas.evaluate(predicted,step,cells),baselineActual=flat.evaluate(naive,step,cells);
+  if(predicted.found&&actual.success)success++;
+  if(naive.found&&baselineActual.success)flatSuccess++;
+  attempts.push({seed,start,goal,conditionalRoute:predicted.solutionShape||[],actualCorrect:actual.success,
+   baselineRoute:naive.solutionShape||[],baselineCorrect:baselineActual.success,
+   firstWrongAction:baselineActual.firstMismatch?.action||null});
  }
  const graph=atlas.completeAtlas(new Uint8Array(N).fill(1));
  assert.equal(graph.edges.length,729*12);
  assert.equal(success,80);
  assert.equal(flatSuccess,18);
+ if(process.env.MP_EXPORT_6D){
+  fs.mkdirSync(process.env.MP_EXPORT_6D,{recursive:true});
+  fs.writeFileSync(process.env.MP_EXPORT_6D+"/atlas-6d.json",JSON.stringify({
+   summary:model,graph,training:atlas.saveJSON(),attempts},null,2));
+ }
  console.log("SIX_DIMENSIONAL_COMPLETE_ATLAS",JSON.stringify({
    states:729,edges:8748,crossWorldTextEvents:2400,conditionalRules:10,
    heldoutWorlds:80,correct:success,flat:flatSuccess}));
