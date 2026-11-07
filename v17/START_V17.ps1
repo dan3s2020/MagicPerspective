@@ -10,6 +10,7 @@ param(
   [string]$Arms = "winner",
   [double]$Mem = 3,
   [int]$Every = 200000,
+  [int]$CheckpointEvery = 0,  # 0 keeps original behavior; >0 saves native Brain without running frozen exam
   [long]$Chars = 0,
   [string]$Data = "D:\training\OpenThoughts3-1.2M",
   [string]$Out = "runtime-devour",
@@ -77,4 +78,6 @@ if ($Gpu -ne "off") {
   $ErrorActionPreference = "Stop"
 }
 $heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
-node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --gpu-text-chunk $GpuTextChunk --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Start) { "--start" }) $(if ($TraceTransformations) { "--trace-transformations" }) $(if ($EndogenousNoise) { "--endogenous-noise" })
+$extraArgs = @()
+if ($CheckpointEvery -gt 0) { $extraArgs += @("--checkpoint-every", [string]$CheckpointEvery) }
+node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --gpu-text-chunk $GpuTextChunk --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Start) { "--start" }) $(if ($TraceTransformations) { "--trace-transformations" }) $(if ($EndogenousNoise) { "--endogenous-noise" }) @extraArgs
