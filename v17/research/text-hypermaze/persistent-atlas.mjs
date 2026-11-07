@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const natural=(x,fallback=0)=>Number.isSafeInteger(x)&&x>=0?x:fallback;
-const knownKinds=["world","operator","search","execution","baseline","replay","graph-shard","graph-commit","note"];
+const knownKinds=["world","operator","search","execution","baseline","replay","graph-shard","graph-commit","source-replay","note"];
 const safeKinds=a=>Array.isArray(a)?a.filter(x=>knownKinds.includes(x)):[];
 const countTo=(obj,key)=>{obj[key]=(obj[key]||0)+1;};
 export class PersistentHypermazeAtlas {
@@ -37,6 +37,8 @@ export class PersistentHypermazeAtlas {
   this.lastTextWorldSequence=0;
   this.graphShardIds=new Map();
   this.graphCommits=new Map();
+  this.sourceEpisodeIdentity=new Map();
+  this.sourceIdentityMismatches=0;
   this.records=[]; // ONLY used when there is no on-disk journal
   this.last=null;
   this.bytes=0;
@@ -57,6 +59,17 @@ export class PersistentHypermazeAtlas {
     this.lastTextWorldSequence=entry.seq;
   }
   if(entry.type==="replay")this.lastReplayCursor=entry.nextCursor||0;
+  if(entry.type==="note"&&entry.sourceIdentityRejected)this.sourceIdentityMismatches++;
+  if(entry.type==="world"&&entry.world==="text"&&
+     entry.sourceEpisodeKey!==null&&entry.sourceEpisodeKey!==undefined){
+   const key=String(entry.sourceEpisodeKey),sha=entry.sourceSHA256;
+   if(!/^[a-f0-9]{64}$/.test(sha))
+    throw Error("Original world atlas is missing its exact source SHA256");
+   const old=this.sourceEpisodeIdentity.get(key);
+   if(old&&old.sha!==sha)
+    throw Error("SOURCE_REPLAY_IDENTITY_MISMATCH: incompatible source content in journal episode "+key);
+   if(!old)this.sourceEpisodeIdentity.set(key,{sha,seq:entry.seq});
+  }
   if(entry.type==="graph-shard"){
    const list=this.graphShardIds.get(entry.searchSequence)||[];
    list.push(entry.seq);this.graphShardIds.set(entry.searchSequence,list);
@@ -125,6 +138,23 @@ export class PersistentHypermazeAtlas {
      " — fail closed rather than silently drop a path");
    this.bytes=size;
   }finally{fs.closeSync(fd);}
+ }
+ // V32 source integrity: never merge a changed dataset row with an older
+ // original Brain checkpoint under the same episode ID.
+ sourceEpisodeStatus(key,sha){
+  if(key===null||key===undefined)return {tracked:false,duplicate:false};
+  if(!Number.isSafeInteger(key)||key<0||!/^[a-f0-9]{64}$/.test(sha))
+   throw Error("Original dataset episode requires nonnegative row and SHA256");
+  const old=this.sourceEpisodeIdentity.get(String(key));
+  if(old&&old.sha!==sha){
+   this.append("note",{sourceIdentityRejected:true,sourceEpisodeKey:key,
+    oldSourceSHA256:old.sha,newSourceSHA256:sha,
+    originalTrainingAndOperatorsUnchanged:true,
+    reason:"SOURCE_REPLAY_IDENTITY_MISMATCH"});
+   throw Error("SOURCE_REPLAY_IDENTITY_MISMATCH: original dataset row "+key+
+     " changed after checkpoint; refusing to merge incompatible source paths");
+  }
+  return {tracked:true,duplicate:!!old,originalSeq:old?.seq??null,sha};
  }
  append(type,data={}){
   if(!knownKinds.includes(type))throw Error("Unsupported atlas event type");
@@ -254,6 +284,9 @@ export class PersistentHypermazeAtlas {
    persisted:!!this.file,recoveredExisting:this.recoveredExisting,
    totalWorlds:this.counts.world||0,worldsByDomain:{...this.worldsByDomain},
    learnedOperatorEvents:this.counts.operator||0,
+   sourceReplayEvents:this.counts["source-replay"]||0,
+   rejectedChangedDatasetRowReplays:this.sourceIdentityMismatches,
+   verifiedOriginalSourceEpisodes:this.sourceEpisodeIdentity.size,
    graphShardEvents:this.counts["graph-shard"]||0,
    committedLargeGraphSearches:this.counts["graph-commit"]||0,
    legacyOperatorBaselineEvents:this.counts.baseline||0,
