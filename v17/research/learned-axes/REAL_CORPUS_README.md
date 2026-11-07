@@ -61,3 +61,17 @@ These are TWO independently saved learners. The new gate is not secretly applied
 GitHub Actions ran original Brain with REAL existing MagicPerspective project documentation, trained 10 rows, resumed to 18, evaluated untouched held-out texts, and imported another genuine native save read-only. Test accuracy was 22.43% for the existing V17 perspective selector vs 22.65% with validation-selected gating: not sufficient to claim an improvement, status correctly NOT_YET_DEMONSTRATED. These are tiny smoke-test documents, NOT the user's OpenThoughts3 corpus.
 
 For true language xD traversal we still need a model that learns non-conservative semantic transformations, anticipates the goal solution shape before writing, and proves independent correctness on completely unseen math/text tasks. The earlier six-axis synthetic-permutation test proves none of these properties on real language.
+
+
+## Larger actual-project-text acceptance run (after resuming through entire available training partition)
+
+- 167 actual repository-document paragraphs trained in a native Brain;
+- 12,549 observed text tokens;
+- 162 learned contextual edit operators (from real observed comparisons, not synthetic permutations);
+- final frozen test: 905 tokens;
+- original native perspective accuracy 26.1878%;
+- one-token baseline 21.6575%;
+- validation-gated perspective accuracy 26.6298%;
+- new gate advantage +0.442 percentage points, which does NOT meet the 1pp proof threshold.
+
+This is an increased, verified smoke test only. It establishes real text ingestion and observable contextual transformations, NOT successful OpenThoughts3 training on the user's own disk or general solution-shape navigation.
