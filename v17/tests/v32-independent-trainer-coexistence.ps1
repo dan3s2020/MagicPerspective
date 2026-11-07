@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-. (Join-Path $root "v17\apps\hypermaze-studio-v26\checkpoint-process-scope.ps1")
+. (Join-Path $root "apps\hypermaze-studio-v26\checkpoint-process-scope.ps1")
 function Assert([bool]$ok,[string]$message) {if (!$ok) {throw "TEST FAILED: $message"}}
 $v24 = [pscustomobject]@{
   Name="node.exe";ProcessId=22564
