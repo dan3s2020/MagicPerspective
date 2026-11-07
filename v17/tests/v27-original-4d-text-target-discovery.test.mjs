@@ -251,3 +251,38 @@ test("V27 negative semantic counterevidence: learn from outcomes that a same-nam
  const checkpoint=LearnedTargetReference.restore(JSON.parse(JSON.stringify(ref.export())));
  assert.deepEqual(checkpoint.resolve(documentWith(w,id,w.goal,[negative]),q),safe);
 });
+
+test("semantic distribution shifts remain falsifiable even with true original attraction",()=>{
+ const brain=new Brain({rules,seed:21});
+ const agent=train(17,{agent:brain.textGoal}),ref=trainedReference();
+ const independent=worldState=>{
+  const id="disjoint_lexical_reference_"+worldState.seed,doc=documentWith(worldState,id);
+  const p=brain.predictOriginal4DShapeFromQuestion?.(doc,query(id),worldState.start);
+  // Use the exact same learned state and reference across all regimes,
+  // without requiring the optional native Brain API in this audit.
+  const result=planOriginal4DFromText({navigator:agent,disc:brain.disc,
+   reference:ref,document:doc,question:query(id),start:worldState.start});
+  let pos=worldState.start;
+  if(!result.found)return false;
+  for(const hop of result.path){
+   const next=perform(pos,hop.action);
+   if(next!==hop.to||!worldState.cells[next])return false;
+   pos=next;
+  }
+  return pos===worldState.goal;
+ };
+ let normal=0,shiftedSource=0,unknownLexicon=0;
+ for(let i=0;i<16;i++){
+  const seed=6000+i*41;
+  normal+=Number(independent(world(seed)));
+  shiftedSource+=Number(independent(world(seed,{adversarial:true})));
+  unknownLexicon+=Number(independent(world(seed,{outOfVocabulary:true})));
+ }
+ assert.equal(normal,16);
+ assert.ok(shiftedSource<normal||unknownLexicon<normal,
+  "The test must not pretend out-of-distribution language is understood");
+ console.log("V27_TEXT_OOD_ABLATION",JSON.stringify({
+  totalPerRegime:16,normal,shiftedSource,unknownLexicon,
+  lesson:"correct original field cannot compensate for incorrect learned evidence or unseen lexical meanings"
+ }));
+});
