@@ -15,6 +15,7 @@ import {SelfCodeWorld} from "../worlds/self-code.mjs";
 import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
@@ -394,6 +395,7 @@ parentPort.on("message", m => {
         law:plan.planningLaw||null,
         directOriginalMethod:plan.directOriginalMethod||null,noiseTemperature:plan.noise??null,
         preActionShape:plan.field?.nodes?.slice(0,192)||[],
+        topology:frozenTextShapeTopology(plan),
         truncated:plan.world?.truncated||false};
       if(JSON.stringify(pre)!==JSON.stringify(cognitive.report()))throw Error("Frozen evaluation changed learning state");
       parentPort.postMessage(reply);
