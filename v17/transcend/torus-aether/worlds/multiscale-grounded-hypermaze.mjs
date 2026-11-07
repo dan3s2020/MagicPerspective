@@ -36,7 +36,8 @@ export class MultiscaleGroundedHypermaze {
     const frozen=JSON.stringify(this.model.export());
     const levels=[],allActions=[];
     const shapeRange=(lo,hi,depth)=>{
-      const len=hi-lo,size=len<=this.chunkSize?1:Math.ceil(len/this.chunkSize);
+      const len=hi-lo; let size=1;
+      while(Math.ceil(len/size)>this.chunkSize)size*=this.chunkSize;
       const groups=[];
       for(let a=lo;a<hi;a+=size)groups.push({lo:a,hi:Math.min(hi,a+size)});
       const count=groups.length;
