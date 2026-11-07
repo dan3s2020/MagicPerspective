@@ -60,6 +60,96 @@ export class Discoverer {
       if (best < 0) break; path.push(best); p = nextStep(n, p, best); seen.add(p); if (att[ret[p]] > .2) break; }
     return path.length ? path : null;
   }
+  // EXACT ORIGINAL SHAPE OPERATOR, lifted from the n*n retina to any
+  // OBSERVED state-transition topology. No next-byte predictor is substituted.
+  // The retina's 4 learned kinds (conductance/attraction) and the same value
+  // propagation, ascent rule and .97 discount are retained without alteration
+  // to shape(). A graph node may be an entire textual state in 5D, not a grid.
+  // geometryWeight=0 is the strictly parity-preserving default; optional
+  // geometric tie-breaking requires separate causal ablation and heldout proof.
+  shapeGraph(kinds, neighbors, me, {geometry=null, geometryWeight=0, details=false}={}) {
+    if(!Array.isArray(kinds)||!Array.isArray(neighbors)||kinds.length!==neighbors.length||
+       !Number.isInteger(me)||me<0||me>=kinds.length||
+       kinds.some(k=>!Number.isInteger(k)||k<0||k>3))
+      throw Error("Original shape graph needs validated observed state kinds, adjacency and self");
+    if(!Number.isFinite(geometryWeight)||geometryWeight<0||geometryWeight>1)
+      throw Error("Geometry influence must be finite and between 0 and 1");
+    const N=kinds.length;
+    const att=[0,1,2,3].map(k=>this.attract(k));
+    const cond=[0,1,2,3].map(k=>this.conduct(k));
+    const V=new Float64Array(N);
+    let any=false;
+    for(let i=0;i<N;i++)if(att[kinds[i]]>.2&&i!==me){
+      V[i]=att[kinds[i]];any=true;
+    }
+    if(!any)return null;
+    for(let it=0;it<2*N;it++){
+      let changed=false;
+      for(let i=0;i<N;i++){
+        const k=kinds[i];
+        if(att[k]>.2&&i!==me)continue;
+        const c=i===me?1:cond[k];
+        if(c<.5)continue;
+        let best=0;
+        for(const e of neighbors[i]){
+          const j=typeof e==="number"?e:e.to;
+          if(!Number.isInteger(j)||j<0||j>=N)throw Error("Invalid learned graph edge");
+          if(V[j]>best)best=V[j];
+        }
+        const v=.97*c*best;
+        if(v>V[i]+1e-12){V[i]=v;changed=true;}
+      }
+      if(!changed)break;
+    }
+    const torusDist=(a,b)=>{
+      if(!Array.isArray(a)||!Array.isArray(b)||a.length!==b.length||!a.length)return null;
+      let sq=0;
+      for(let d=0;d<a.length;d++){
+        if(!Number.isFinite(a[d])||!Number.isFinite(b[d]))return null;
+        const dx=Math.abs(a[d]-b[d]),w=Math.min(dx,1-dx);
+        sq+=w*w;
+      }
+      return Math.sqrt(sq);
+    };
+    const targets=[];
+    if(geometry&&geometryWeight){
+      for(let i=0;i<N;i++)if(att[kinds[i]]>.2&&i!==me&&Array.isArray(geometry[i]))
+        targets.push(geometry[i]);
+    }
+    const path=[],visited=new Set([me]);let p=me;
+    for(let k=0;k<N;k++){
+      let best=null,bv=V[p],bestScore=-Infinity;
+      const options=[];
+      for(const e0 of neighbors[p]){
+        const edge=typeof e0==="number"?{to:e0,action:null}:e0;
+        const j=edge.to;
+        if(visited.has(j)||V[j]<=V[p])continue;
+        let score=V[j];
+        if(targets.length&&geometryWeight&&Array.isArray(geometry[j])){
+          const dd=targets.map(target=>torusDist(geometry[j],target))
+            .filter(Number.isFinite);
+          if(dd.length)score-=geometryWeight*Math.min(...dd);
+        }
+        options.push({to:j,value:V[j],score,action:edge.action??null});
+        // For geometryWeight=0, identical >= strict and first-action ordering
+        // to the ORIGINAL Discoverer.shape() retina's [up,right,down,left].
+        if(score>bestScore+1e-15){
+          bestScore=score;bv=V[j];best=edge;
+        }
+      }
+      if(!best)break;
+      const next=best.to;
+      path.push({from:p,to:next,action:best.action??null,value:V[next],
+        options:details?options:undefined});
+      p=next;visited.add(p);
+      if(att[kinds[p]]>.2)break;
+    }
+    if(!path.length)return null;
+    return details?{path,values:Array.from(V),targetReached:att[kinds[p]]>.2,
+       firstPredictionBeforeAction:true,sharedOriginalAlgorithm:true,
+       geometricPreferenceUsed:targets.length>0&&geometryWeight>0}:
+      path.map(e=>e.action);
+  }
   // ---- choosing what to emit ----
   choose(ret, n, me, visits, plan) {
     if (this.noise && this.r.next() < this.noise) return {o: this.r.int(8), how: "noise"};   // the person's noise: sometimes it acts at random
