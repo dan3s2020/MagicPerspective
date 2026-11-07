@@ -108,6 +108,49 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
    <pre id="qaPrediction" aria-live="polite">Aștept transformările Q/A observate din datele reale. Dacă nu există suficiente dovezi, motorul trebuie să refuze.</pre>
   </div>
  </section>
+ <section class="panel" id="cumulativeMaze" style="margin-bottom:14px">
+  <div class="panelHead"><h2>Memoria cumulativă · toate labirinturile văzute de același Brain</h2>
+   <small>Stări și căi păstrate între exerciții · câmp de atracție V17 original · fără grafic decorativ</small></div>
+  <div class="panelBody">
+   <div class="cards" style="margin-bottom:10px">
+    <div class="card"><label>Lumi/exerciții cu efect fizic observat</label><strong id="cumEpisodes">—</strong></div>
+    <div class="card"><label>Muchii fizice confirmate</label><strong id="cumVerified">—</strong></div>
+    <div class="card"><label>Noduri persistent memorate</label><strong id="cumNodes">—</strong></div>
+    <div class="card"><label>Legături propuse, neverificate</label><strong id="cumProposed">—</strong></div>
+    <div class="card"><label>Ancore exacte comune în experiențe</label><strong id="cumShared">—</strong></div>
+    <div class="card"><label>Acțiuni respinse / pereți învățați</label><strong id="cumWalls">—</strong></div>
+   </div>
+   <p class="muted" style="font-size:11px">
+    Muchiile dintre observații fizice confirmate rămân navigabile în exercițiile următoare. Legăturile candidate construite din operatorii lingvistici și axele contextuale sunt afișate separat și trebuie validate prin acțiune. Segmentele vecine dintr-un răspuns OpenThoughts sunt doar succesiune textuală, nu transformări semantice verificate.
+   </p>
+   <label class="formlabel" for="cumMode">Ce căi construiește organismul din experiențele acumulate?</label>
+   <select id="cumMode">
+    <option value="verified">Doar tranziții fizic confirmate din lumi anterioare</option>
+    <option value="inferred">Tranziții confirmate + ipoteze din operatori și axe contextuale învățate</option>
+    <option value="numeric">Câmp numeric dependent de stare, descoperit din efectele observate în alte lumi</option>
+   </select>
+   <label class="formlabel" for="cumStart">Starea curentă / textul de plecare</label>
+   <textarea id="cumStart" placeholder="Starea din care dorești să construiești rețeaua accesibilă; fără răspunsul de referință."></textarea>
+   <label class="formlabel" for="cumRequired">Condiția obiectivului, fără răspuns complet (mod text)</label>
+   <input id="cumRequired" placeholder="Tokeni ceruți în starea finală, separați prin virgulă" autocomplete="off">
+   <label class="formlabel" for="cumNumericInputs">Numai variabilele de intrare dorite (mod numeric)</label>
+   <input id="cumNumericInputs" placeholder="Ex.: 0:8,2:7 pentru 8 × 7, fără produsul 56" autocomplete="off">
+   <div class="axisbar">
+    <label for="cumDepth">Adâncime ipoteze</label>
+    <select id="cumDepth" style="max-width:90px">
+     <option value="8">8</option><option value="12" selected>12</option>
+     <option value="18">18</option><option value="24">24</option>
+    </select>
+    <label for="cumBudget">Noduri accesibile</label>
+    <select id="cumBudget" style="max-width:105px">
+     <option value="500">500</option><option value="1500">1.500</option>
+     <option value="2200" selected>2.200</option><option value="4000">4.000</option>
+    </select>
+    <button id="cumPlan" class="primary">◈ Construiește graful cumulativ și traseul original</button>
+   </div>
+   <pre id="cumEvidence" aria-live="polite">Aștept observațiile originale ale organismului. Dacă o conexiune lipsește, sistemul va indica lipsa ei, nu o va inventa.</pre>
+  </div>
+ </section>
  <div class="rowmain">
   <section class="panel">
    <div class="panelHead"><h2>Topologie reală · proiecție 5D</h2><div class="legend"><span style="--c:#f0c87a">Forma globală</span><span style="--c:#66cce7">Execuție</span><span style="--c:#67deab">Obiectiv</span><span style="--c:#f0809a">Abatere</span></div></div>
