@@ -21,6 +21,7 @@ align.mem.ready(true);align.fmem.ready(true);
 brain.align=align;
 // Include observed 5D symbol positions so the geometry causal control is testable.
 for(let i=1;i<text.length;i++)brain.trace.geo.learn(text.charCodeAt(i-1),text.charCodeAt(i));
+for(const c of text)brain.field.live(c.charCodeAt(0),brain.place);
 const target=path.join(out,"brain-0-stable+many.v8");
 brain.save(target);
 console.log(JSON.stringify({fixture:target,bytes:fs.statSync(target).size,synthetic:true}));
