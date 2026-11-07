@@ -228,7 +228,14 @@ export class NativeGoalTextMaze {
     geometry5DInferredNodes:w.nodes.filter(n=>n.geometryEvidence==="learned-action-axis").length,
     shared5DActionAxes:b.hypermazeLearnedAxes?.size||0},
    initialShape:[w.source,...route.map(r=>w.nodes[r.to].id)],
-   actions:route.map(e=>({...e.action,from:w.nodes[e.from].id,
+   actions:route.map(e=>({...e.action,
+    // Existing `from` represented the whole source state; preserve this
+    // old API while exposing the ORIGINAL action token separately. Without
+    // this, provenance and causal ablations compared a sentence with a
+    // token, falsely reporting that the learned axis was absent.
+    from:w.nodes[e.from].id,sourceState:w.nodes[e.from].id,
+    targetState:w.nodes[e.to].id,
+    operatorFrom:e.action?.from??null,operatorTo:e.action?.to??null,
     predictedNext:w.nodes[e.to].id,observedSupport:e.observedSupport})),
    predicted:route.length?w.nodes[route.at(-1).to].id:null,
    values:shape?.values||null,
