@@ -110,6 +110,28 @@
    $("v24CharBefore").textContent="Nicio predictie certificata pentru aceasta cerere.";
   }finally{button.disabled=false;}
  };
+ $("v24CharFeedbackSubmit").onclick=async()=>{
+   const button=$("v24CharFeedbackSubmit"),out=$("v24CharFeedbackResult");
+   const before=$("v24CharFeedbackBefore").value,after=$("v24CharFeedbackAfter").value,
+     action=$("v24CharFeedbackAction").value,accepted=$("v24CharFeedbackAccepted").checked;
+   if(!before||!after||!action){
+     out.textContent="Trebuie furnizate INAINTE + ACTIUNE + DUPA din experienta REALA. Nu se folosesc predicții drept feedback.";return;
+   }
+   button.disabled=true;out.textContent="Verific si salvez rezultatul observat in originalul Brain (backup la checkpoint oprit)...";
+   try{
+     const r=await fetch("/character-observe",{method:"POST",
+       headers:{"content-type":"application/json"},
+       body:JSON.stringify({w:Number($("v23AtlasWorker")?.value)||0,
+         before,after,action,accepted})});
+     const data=await r.json();if(data.error)throw Error(data.error);
+     out.textContent="OBSERVAT REAL (declarat de utilizator): "+JSON.stringify(data.result,null,2)+
+       "\nCheckpoint (MB): "+data.savedMB+
+       "\nBackup pre-feedback: "+(data.backup||"worker live, salvare originala")+
+       "\nReevalueaza traseul, deoarece un zid poate bloca planul anterior.";
+     status(data.atlas);
+   }catch(err){out.textContent="EROARE: "+err.message;}
+   finally{button.disabled=false;}
+ };
  $("v24CharOffset").onchange=draw;
  $("v24AnalyzeOriginalWriter").onclick=()=>{
    const button=$("cpuExactEvaluate");
