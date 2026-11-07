@@ -19,6 +19,8 @@ jobs:
         run: |
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
           node --check v17/research/text-hypermaze/goal-conditioned-native.mjs
+          node --check v17/transcend/torus-aether/ui/native-hypermaze.js
+          test -s v17/transcend/torus-aether/ui/native-hypermaze.html
           node --check v17/tests/native-hypermaze-shape-parity.test.mjs
           node --check v17/tests/native-hypermaze-goal-text.test.mjs
       - name: Original maze behavior must be EXACTLY identical on unseen layouts
