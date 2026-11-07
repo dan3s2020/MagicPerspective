@@ -166,4 +166,3 @@ test("original MagicPerspective Brain and frozen original text generator are not
  console.log("UNMODIFIED_NATIVE_V17",JSON.stringify({brainObservations:before,nativeOperators:beforeNative,
   geometryDimensions:a.trace.geo.D,independentResearch:true}));
 });
-});
