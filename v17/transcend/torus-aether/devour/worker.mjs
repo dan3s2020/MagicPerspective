@@ -688,9 +688,16 @@ for await (const ex of stream()) {
       firstSymbolDiagnosed=true;
       parentPort.postMessage({type:"note",w:workerData.gw,
         text:"V34_STARTUP_DIAG: first Brain.live symbol COMMITTED; chars="+brain.chars});
-      shot(true);
+      // Do NOT force the entire graph/geometry snapshot after only one
+      // symbol: on real Windows the synchronous snapshot can freeze the
+      // training worker before it can answer the first UI request.
+      // The original periodic shot() still runs unmodified below.
     }
     if (brain.chars % 2000 === 0) shot();
+    if(startedAtChars===0 && brain.chars===32)
+      parentPort.postMessage({type:"note",w:workerData.gw,
+        text:"V34_STARTUP_DIAG: first 32 source characters committed WITHOUT a full graph snapshot"});
+
     if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); shot(); }
     if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } report(); }
     if (brain.chars >= maxChars || stop) break;
