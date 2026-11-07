@@ -427,6 +427,7 @@ parentPort.on("message",m=>{
     maxGraphNodes:Number(m.maxGraphNodes||2200),
     includeTopology:!!m.topology
    });
+   publish(); // refresh live atlas totals after original V17 path/refusal
    return send("rpc",{id,result:{...plan,originalBrain:true,
     trainedRealOperators:brain.observedTransformations.operators.size,
     noProvidedReferenceAnswer:true,
@@ -441,6 +442,7 @@ parentPort.on("message",m=>{
     maxExpansionDepth:Number(m.maxExpansionDepth||18),
     includeTopology:!!m.topology
    });
+   publish(); // include question-only attempt in same live atlas
    return send("rpc",{id,result:{...prediction,
     originalBrain:true,goalFromPreviousQuestionExamples:true,
     fullGoldAnswerNotPassed:true,
@@ -458,6 +460,7 @@ parentPort.on("message",m=>{
     maxGraphNodes:Number(m.maxGraphNodes||2200),
     includeTopology:!!m.topology
    });
+   publish(); // include inferred numeric attempt in same atlas
    return send("rpc",{id,result:{...plan,
     originalBrain:true,noProvidedDependentAnswer:true,
     everyPredictedNumericalStepMustBePhysicallyVerified:true}});
