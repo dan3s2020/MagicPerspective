@@ -42,7 +42,8 @@ export function planNumericOnCumulativeMemory(graph,{start,numericGoals,
  let validObservations=0;
  for(const edge of S.edges.values()){
   if(edge.status!=="physically-verified"||
-   S.blocked.has(JSON.stringify([edge.before,edge.action,edge.after])))continue;
+   S.blocked.has(JSON.stringify([edge.before,edge.action,edge.after]))||
+   S.ambiguousActions?.has(JSON.stringify([edge.before,edge.action])))continue;
   const observed=learner.observePair(edge.before,edge.after);
   validObservations+=Number(!!observed.learned);
  }
