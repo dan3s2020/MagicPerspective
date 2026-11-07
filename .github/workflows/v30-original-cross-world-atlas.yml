@@ -1,0 +1,19 @@
+name: V30 original native Brain cross-world hypermaze and atlas
+on:
+  push:
+    branches:
+      - experiment/V30-CROSS-EPISODE-TRANSFER-NATIVE-BRAIN-20261107
+  workflow_dispatch:
+jobs:
+  native-original-shape-transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V22 source and maze prediction parity
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: V30 independent cross-world paths, denials and native Brain save/load
+        run: node --test v17/tests/v30-cross-episode-transfer.test.mjs
