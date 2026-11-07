@@ -48,3 +48,76 @@ jobs:
           node --test v17/tests/torus-cognitive-learned-map.test.mjs
           node --test v17/tests/torus-world-source-regression.test.mjs
           node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+
+  preserved-discovery-controls:
+    name: Frozen original-branch discoveries (NOT proof of native integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-LEARNED-AXES-PERSPECTIVE-GATING-20261107
+          path: evidence/learned-axes
+      - name: Native original research — learned high-dimensional axis gating and noised paths
+        run: node --test evidence/learned-axes/v17/tests/learned-axis-gating.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-LEARNED-LOCAL-AXES-CAUSAL-ROUTES-20261107
+          path: evidence/local-axes
+      - name: Native original research — local frames, affine word effects, negative heldout text control
+        run: |
+          node --test evidence/local-axes/v17/tests/local-axis-transport-shapes.test.mjs
+          node --test evidence/local-axes/v17/tests/math-language-transformation-shapes.test.mjs
+          node --test evidence/local-axes/v17/tests/coupled-symbolic-local-axes.test.mjs
+          node --test evidence/local-axes/v17/tests/native-context-axis-geometry.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-PATH-HOLONOMY-MEMORY-DIMENSION-20261107
+          path: evidence/holonomy
+      - name: Native original research — path-dependent signed-area holonomy
+        run: node --test evidence/holonomy/v17/tests/text-path-holonomy-memory.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-TEXT-MAZE-COUPLED-AXES-20261107
+          path: evidence/coupled
+      - name: Native original research — coupled numerical text transformations and replanning
+        run: node --test evidence/coupled/v17/tests/text-hypermaze-coupled-axes.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-2048-HIERARCHICAL-MERGE-20261107
+          path: evidence/stochastic-2048
+      - name: Native original research — stochastic 2048 exact chance branches
+        run: node --test evidence/stochastic-2048/v17/tests/2048-stochastic-world.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-XD-SCALE-INVARIANT-TRANSFORMS-20261107
+          path: evidence/xd
+      - name: Native original research — geometric xD invariance, saturation and negative baselines
+        run: |
+          node --test evidence/xd/v17/tests/xd-gauge-collapse.test.mjs
+          node --test evidence/xd/v17/tests/xd-predictive-operator-rank.test.mjs
+          node --test evidence/xd/v17/tests/xd-scale-normalization.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-ONE-SHARED-TRANSFORMATION-CORE-20261107
+          path: evidence/shared
+      - name: Native original research — shared world action policy and HTTP persistence
+        run: |
+          node --test evidence/shared/v17/tests/shared-world-core-v17.test.mjs
+          node --test evidence/shared/v17/tests/shared-world-core-http.test.mjs
+
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V17-REAL-CORPUS-AXIS-GATING-20261107
+          path: evidence/real-gating
+      - name: Native original research — real-document gating and negative/positive frozen controls
+        run: node --test evidence/real-gating/v17/tests/real-corpus-axis-gating.test.mjs
