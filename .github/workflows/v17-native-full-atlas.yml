@@ -25,6 +25,8 @@ jobs:
         run: node --test v17/tests/native-hypermaze-persistent-atlas.test.mjs
       - name: Causal original operator deletion, ambiguous goal paths, 256-token design ceiling and complete multilingual UTF-8 ledger pagination
         run: node --test v17/tests/native-hypermaze-operator-causality.test.mjs
+      - name: Learn new cross-context original V17 axes from two independent lived mazes; frozen unseen third context and causal ablation
+        run: node --test v17/tests/native-hypermaze-cross-context-axis.test.mjs
       - name: Previous exact unseen 2D shape parity remains unchanged
         run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
       - name: Original short compositional hidden text cases and actual native noise checkpoint remain unchanged
