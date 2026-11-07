@@ -4,6 +4,7 @@
 // 1-4-character conditional model with hashed deeper contexts.
 // No fake throughput. No OpenThoughts, no generated training samples.
 import http from "node:http";
+import {exec} from "node:child_process";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -176,10 +177,9 @@ export class TinyStoriesTrainer{
     }
    }
    if(batch.length&&!this.stopRequested)await this.trainBatch(batch,endOffset);
-   if(!this.stopRequested&&endOffset===this.trainMeta.size){
-    this.finished=true;this.paused=true;this.state.phase="complete";
-   }
+   const allProcessed=!this.stopRequested&&endOffset===this.trainMeta.size;
    await this.commit();
+   if(allProcessed){this.finished=true;this.paused=true;this.state.phase="complete";}
   }catch(e){
    this.state.error=message(e);this.state.phase="error";this.paused=true;
   }finally{
@@ -264,6 +264,10 @@ export async function launch(opts){
  });
  console.log("TINYSTORIES_AETHER_LISTEN "+JSON.stringify({port:app.port,train:app.train,
   valid:app.valid,device:app.device,checkpoint:app.checkpoint}));
+ if(opts.autoOpen&&process.platform==="win32"){
+  const address="http://127.0.0.1:"+app.port+"/";
+  exec('start "" "'+address+'"',()=>{});
+ }
  if(opts.autoStart)app.start();
  let shutting=false;
  const terminate=async()=>{
@@ -280,5 +284,5 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  launch({train,valid,out,device:arg("device","cuda:0"),port:arg("port","8897"),
   batchKB:arg("batch-kb","128"),batchStories:arg("batch-stories","180"),
   saveSeconds:arg("save-seconds","45"),resume:!flag("fresh"),
-  autoStart:flag("start")}).catch(e=>{console.error("TINYSTORIES_START_ERROR",message(e));process.exitCode=1;});
+  autoStart:flag("start"),autoOpen:flag("open")}).catch(e=>{console.error("TINYSTORIES_START_ERROR",message(e));process.exitCode=1;});
 }
