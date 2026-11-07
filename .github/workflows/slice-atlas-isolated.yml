@@ -1,0 +1,20 @@
+name: Slice Atlas isolated native Discoverer ablation
+on:
+  push:
+    branches:
+      - experiment/SLICE-ATLAS-NAVIGATION-ABLATION-20261107
+  workflow_dispatch:
+jobs:
+  slice-atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source integrity and isolated native shape test
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/worlds/slice-atlas-ablations.test.mjs
+          node v17/transcend/torus-aether/worlds/slice-atlas-ablations.test.mjs
