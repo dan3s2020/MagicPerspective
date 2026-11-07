@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective V30 — Atlasul tuturor lumilor și căilor cunoscute</title>
+<style>
+:root{color-scheme:dark;--bg:#070c15;--panel:#111d2d;--edge:#2d435e;--light:#e9f4fb;--mute:#acc1d6;--ok:#6ae2b4;--bad:#fd8395;--gold:#ffc870;--unk:#7ea5d4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--light);font:14px/1.5 system-ui,Segoe UI,sans-serif}
+header{background:#0d1725;border-bottom:1px solid var(--edge);padding:12px 18px}
+h1{font-size:20px;margin:0}h2{font-size:16px;margin:0 0 12px;color:var(--gold)}h3{font-size:14px;margin:12px 0 6px}
+small,.muted{color:var(--mute)}main{max-width:1700px;margin:auto;padding:13px;display:grid;grid-template-columns:minmax(500px,1.5fr) minmax(350px,.8fr);gap:14px}
+section{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:13px;margin:0 0 12px}
+.full{grid-column:1 / -1}.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,select,input,textarea{font:inherit;color:var(--light);background:#0b1525;border:1px solid #36506b;border-radius:7px;padding:7px}
+button{cursor:pointer;background:#1b334b}button:hover{border-color:var(--gold)}
+input,textarea{max-width:100%}textarea{width:100%;resize:vertical;min-height:65px}
+label{display:flex;flex-direction:column;gap:3px;color:var(--mute);font-size:12px}
+label input,label select{font-size:14px;min-width:90px}.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.metric{background:#0a1524;border:1px solid #243c57;border-radius:8px;padding:9px}.metric strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.metric small{display:block;font-size:11px}#graph{width:100%;height:560px;background:#080f19;border:1px solid #29415e;border-radius:8px}
+#atlasTable{border-collapse:collapse;width:100%;font-size:12px}#atlasTable th,#atlasTable td{text-align:left;border-bottom:1px solid #304258;padding:8px;vertical-align:top;overflow-wrap:anywhere}
+#atlasTable tr[data-id]{cursor:pointer}#atlasTable tr[data-id]:hover{background:#23394d}
+#atlasTable th{color:#d6b778}pre{white-space:pre-wrap;overflow:auto;word-break:break-word;padding:11px;background:#091524;border-radius:8px;max-height:500px;font:12px/1.5 ui-monospace,Consolas,monospace}
+#detail{height:360px}.note{color:#edb9c0}.ok{color:var(--ok)}.status{font-size:12px}
+#legend{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;color:var(--mute);font-size:12px}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px}
+#graphInfo{color:var(--mute);padding:7px 0}
+table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;padding:9px;margin:8px 0}
+@media(max-width:1050px){main{grid-template-columns:1fr}.grid{grid-template-columns:repeat(3,1fr)}#graph{height:480px}}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+<header><div class="controls" style="justify-content:space-between">
+<div><h1>MagicPerspective V30 — atlasul labirintului între lumi</h1>
+<small>Toate transformările observate, toate coridoarele generate până la frontiera explicită, ce a reușit și ce lipsește</small></div>
+<strong id="live" class="muted">Se conectează...</strong>
+</div></header>
+<main>
+<section class="full">
+<h2>Măsurători reale din același Brain V17</h2>
+<div class="grid">
+<div class="metric"><small>Lumi de origine</small><strong id="worlds">—</strong></div>
+<div class="metric"><small>Tranziții fizice observate</small><strong id="witnesses">—</strong></div>
+<div class="metric"><small>Reguli reutilizabile</small><strong id="rules">—</strong></div>
+<div class="metric"><small>Trasee anticipate</small><strong id="plans">—</strong></div>
+<div class="metric"><small>Rezolvări fizic verificate</small><strong id="success">—</strong></div>
+<div class="metric"><small>Trasee lipsă / eșecuri</small><strong id="failed">—</strong></div>
+</div>
+<div class="controls" style="margin-top:10px">
+<span class="muted" id="shapeState">—</span><span class="muted" id="native5D">—</span><span class="muted" id="noise">—</span>
+</div>
+<p class="note">„Tot atlasul” înseamnă toate stările și acțiunile **cunoscute și explorate**. Limitele de adâncime, număr de stări și regulile nevăzute sunt afișate, nu ascunse. Acest modul nu prezice încă fiecare caracter din OpenThoughts3.</p>
+</section>
+<section>
+<h2>Atlas global — toate lumile, toate coridoarele înregistrate</h2>
+<div class="controls">
+<button id="showGlobal">Atlasul tuturor lumilor</button>
+<button id="loadMore">Mai încarcă noduri și muchii</button>
+<button id="loadAll">Încarcă întregul atlas salvat</button>
+<label>Proiecție X
+<select id="axisX"><option value="topology">Adâncimea reală în graf</option>
+<option value="0">5D original, axa 0</option><option value="1">5D original, axa 1</option>
+<option value="2">5D original, axa 2</option><option value="3">5D original, axa 3</option>
+<option value="4">5D original, axa 4</option></select></label>
+<label>Proiecție Y
+<select id="axisY"><option value="topology">Ordine topologică</option>
+<option value="0">5D original, axa 0</option><option value="1">5D original, axa 1</option>
+<option value="2">5D original, axa 2</option><option value="3">5D original, axa 3</option>
+<option value="4">5D original, axa 4</option></select></label>
+<label>Rotație <input type="range" id="rotation" min="-180" max="180" value="0" step="5"></label>
+</div>
+<div id="legend">
+<span><i class="swatch" style="background:#6ae2b4"></i>Observat efectiv într-o lume</span>
+<span><i class="swatch" style="background:#7ea5d4"></i>Prezise prin transfer (încă neverificate aici)</span>
+<span><i class="swatch" style="background:#ffc870"></i>Traseul anticipat de originalul Discoverer</span>
+<span><i class="swatch" style="background:#fd8395"></i>Cale cunoscută blocată de design</span>
+</div>
+<svg id="graph" role="img" viewBox="0 0 1300 560" aria-label="Toate coridoarele de transformare ale labirinturilor observate"></svg>
+<div id="graphInfo">Aștept atlasul...</div>
+<details><summary>De ce o axă sau un nod nu are coordonate 5D?</summary>
+<p>Pozițiile 5D apar numai dacă originalul V17 le-a învățat și le-a înregistrat. În absența lor, desenul folosește o așezare topologică 2D. Nu inventăm coordonate 5D și nu confundăm desenul cu un spațiu semantic demonstrat.</p></details>
+</section>
+<section>
+<h2>Inspectarea unui traseu, caracterelor schimbate și a câmpului soluției</h2>
+<p id="selectedMeta" class="muted">Selectează o încercare din tabel pentru întregul graf explorat.</p>
+<pre id="detail">Aștept un traseu real...</pre>
+<h3>De ce a eșuat? Ce transformări lipseau?</h3>
+<pre id="diagnostic">Selectează o încercare.</pre>
+<div class="controls">
+<button id="save">Salvează întregul Brain și atlasul</button>
+<span id="saved" class="muted">—</span></div>
+</section>
+<section>
+<h2>Toate observațiile, regulile, lumile și încercările</h2>
+<div class="controls"><label>Secțiune
+<select id="section">
+<option value="attempts">Toate traseele prezise</option>
+<option value="failures">Eșecuri și coridoare lipsă</option>
+<option value="worlds">Toate lumile observate</option>
+<option value="rules">Toate transformările învățate</option>
+<option value="witnesses">Fiecare observație originală</option>
+<option value="outcomes">Fiecare rezultat fizic verificat</option>
+</select></label>
+<button id="previous">Pagina anterioară</button><button id="next">Pagina următoare</button>
+<span id="pageInfo" class="muted">—</span></div>
+<div style="overflow:auto;max-height:560px"><table id="atlasTable"><thead><tr><th>ID / lume</th><th>Regulă / traseu</th><th>Rezultat</th><th>Dovadă / blocaj</th></tr></thead><tbody id="tableRows"></tbody></table></div>
+</section>
+<section>
+<h2>Traseu către un obiectiv necunoscut — înainte de prima acțiune</h2>
+<p class="muted">Introduce numai starea actuală și condiția țintei, nu răspunsul complet. Folosește global toate transformările învățate în celelalte lumi. Coridoarele rămân ipoteze până când sunt executate într-o lume fizică.</p>
+<label>Lume / exercițiu <input id="episode" value="world-new" placeholder="world-..." maxlength="128"></label>
+<label>Starea textului <textarea id="start" placeholder="Ava has 17 marbles."></textarea></label>
+<div class="controls">
+<label>Tipul țintei <select id="goalType"><option value="numericEquals">Cantitate numerică</option><option value="containsToken">Conține un token</option></select></label>
+<label>Condiția țintei <input id="goalValue" placeholder="21"></label>
+</div>
+<label>Opțional: acțiuni permise, separate prin virgulă <input id="allowed" placeholder="lasă gol pentru toate"></label>
+<div class="controls"><button id="predict">Calculează forma soluției înainte de acțiune</button><span id="predictStatus" class="muted">—</span></div>
+</section>
+<section>
+<h2>Adaugă o transformare observată într-o altă lume</h2>
+<p class="muted">Acceptă exclusiv o observație reală înainte/acțiune/după. O pereche întrebare–răspuns nu este automat o tranziție fizică demonstrată.</p>
+<label>Lume care a observat efectul <input id="wEpisode" placeholder="world-001"></label>
+<label>Acțiunea executată <input id="wAction" placeholder="increase-two"></label>
+<label>Starea înainte <textarea id="wBefore"></textarea></label>
+<label>Starea după acțiune <textarea id="wAfter"></textarea></label>
+<button id="observe">Înregistrează experiența în Brain</button>
+<pre id="observeResult">—</pre>
+</section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const num=n=>Number(n||0).toLocaleString("ro-RO");
+const SVG="http://www.w3.org/2000/svg";
+let atlasNodes=[],atlasEdges=[],totals={nodes:0,edges:0},current=null,attemptId=null;
+let offset=0,section="attempts",state=null,fetching=false;
+const show=(id,txt)=>{$(id).textContent=String(txt)};
+async function get(url){const r=await fetch(url,{cache:"no-store"}),v=await r.json();
+ if(!r.ok)throw Error(v.error||"HTTP "+r.status);return v;}
+async function post(url,data={}){const r=await fetch(url,{method:"POST",
+ headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+ const v=await r.json();if(!r.ok)throw Error(v.error||"HTTP "+r.status);return v;}
+const svg=(tag,attr,parent,text)=>{const el=document.createElementNS(SVG,tag);
+ for(const [k,v] of Object.entries(attr||{}))el.setAttribute(k,String(v));
+ if(text!==undefined)el.textContent=String(text);
+ parent.appendChild(el);return el;};
+async function status(){
+ try{const s=await get("/api/status");state=s;
+  show("live",s.mode==="running"?"● ÎNVAȚĂ DIN LUMI":"● "+s.mode);
+  show("worlds",num(s.training.independentSourceWorlds));
+  show("witnesses",num(s.training.witnessedTransformations));
+  show("rules",num(s.training.transferableRules)+" / "+num(s.training.rules));
+  show("plans",num(s.atlas.recordedFrozenPlans));
+  show("success",num(s.atlas.physicallyValidatedSuccesses));
+  show("failed",num(s.atlas.unplannedBlockedWorlds+s.atlas.physicallyValidatedFailures));
+  show("shapeState","V17: țintă "+s.training.originalTargetAttraction.toFixed(3)+
+    ", conductanță "+s.training.originalFloorConductance.toFixed(3));
+  show("native5D","Axe originale: "+s.geometry.originalLearnedDimensions+
+    " · stări geometrice văzute: "+num(s.geometry.observedCoordinates));
+  show("noise","Noise în traseele V30: NU · politica V17: "+
+    (s.noise.originalAgency?"prezentă, dar nefolosită":"neactivată"));
+  show("saved","Checkpoint: "+s.checkpoint.file+" · "+(s.checkpoint.savedAt||"nesalvat"));
+ }catch(e){show("live","● Server indisponibil: "+e.message);}
+}
+function tableCell(row,text){const el=document.createElement("td");el.textContent=String(text??"");
+ row.appendChild(el);}
+async function loadPage(){
+ try{
+  const result=await get("/api/atlas?section="+encodeURIComponent(section)+
+    "&offset="+offset+"&limit=50");
+  const body=$("tableRows");body.replaceChildren();
+  for(const x of result.items){
+   const tr=document.createElement("tr");
+   const id=x.id??x.episodeId??x.attemptId??x.action??"—";
+   if(x.id&&["attempts","failures"].includes(section))tr.dataset.id=String(x.id);
+   tableCell(tr,id);
+   const name=x.action??x.predicted??x.start??x.episodeId??x.attemptId??"—";
+   tableCell(tr,typeof name==="string"?name.slice(0,180):JSON.stringify(name));
+   tableCell(tr,x.outcome===true||x.completeExact===true?"REUȘIT":
+    x.found===false?"FĂRĂ CALE":x.outcome===false||x.completeExact===false?"GREȘIT":
+    x.ready===true?"UTILIZABIL":x.type||"NEVERIFICAT");
+   const reason=x.reason??x.planFailure??x.designRestriction??
+    x.blockedReasonCounts??x.frontier??x.independentWorlds??"—";
+   tableCell(tr,typeof reason==="object"?JSON.stringify(reason):reason);
+   if(tr.dataset.id)tr.onclick=()=>chooseAttempt(Number(tr.dataset.id));
+   body.appendChild(tr);
+  }
+  show("pageInfo",num(result.offset+1)+"–"+num(Math.min(result.offset+result.items.length,result.total))+
+    " din "+num(result.total)+" înregistrări — nimic omis în paginare");
+ }catch(e){show("pageInfo","Eroare: "+e.message);}
+}
+$("section").onchange=()=>{section=$("section").value;offset=0;loadPage();};
+$("next").onclick=()=>{offset+=50;loadPage();};
+$("previous").onclick=()=>{offset=Math.max(0,offset-50);loadPage();};
+async function loadGlobal(reset=false,all=false){
+ if(fetching)return;fetching=true;
+ try{
+  if(reset){atlasNodes=[];atlasEdges=[];current=null;}
+  let loops=0,more=true;
+  while(more){
+   const result=await get("/api/global-topology?nodeOffset="+atlasNodes.length+
+    "&nodeLimit=250&edgeOffset="+atlasEdges.length+"&edgeLimit=500");
+   atlasNodes.push(...result.nodes);
+   atlasEdges.push(...result.edges);
+   totals={nodes:result.totalNodes,edges:result.totalEdges};
+   more=result.pagination.nodesMore||result.pagination.edgesMore;
+   loops++;
+   if(!all||loops>=250)break;
+  }
+  if(loops>=250&&more)show("graphInfo","Volume foarte mare: încă există pagini; continuă să încarci.");
+  current={view:"global",nodes:atlasNodes,edges:atlasEdges,
+   totalNodes:totals.nodes,totalEdges:totals.edges};
+  draw(current);
+ }catch(e){show("graphInfo","Nu pot încărca atlasul: "+e.message);}
+ finally{fetching=false;}
+}
+$("showGlobal").onclick=()=>loadGlobal(true,false);
+$("loadMore").onclick=()=>loadGlobal(false,false);
+$("loadAll").onclick=()=>loadGlobal(true,true);
+for(const id of ["axisX","axisY","rotation"])
+ $(id).oninput=()=>{if(current)draw(current);};
+function geometry(node){
+ const p=node.original5D;
+ return Array.isArray(p)&&p.length===5&&p.every(Number.isFinite)?p:null;
+}
+function layout(nodes,edges){
+ // Topological BFS distance is calculated only from ACTUAL graph edges.
+ const adjacency=new Map(),incoming=new Map();
+ for(const n of nodes){adjacency.set(n.text,[]);incoming.set(n.text,0);}
+ for(const e of edges){
+  if(!adjacency.has(e.from)||!incoming.has(e.to))continue;
+  adjacency.get(e.from).push(e.to);
+  incoming.set(e.to,incoming.get(e.to)+1);
+ }
+ const roots=nodes.filter(n=>incoming.get(n.text)===0).map(n=>n.text);
+ if(!roots.length&&nodes.length)roots.push(nodes[0].text);
+ const dist=new Map(),Q=[];
+ for(const k of roots){dist.set(k,0);Q.push(k);}
+ for(let i=0;i<Q.length;i++){
+  const k=Q[i],next=Math.min(60,(dist.get(k)||0)+1);
+  for(const dest of adjacency.get(k)||[])if(!dist.has(dest)){
+   dist.set(dest,next);Q.push(dest);}
+ }
+ for(const n of nodes)if(!dist.has(n.text))dist.set(n.text,0);
+ const groups=new Map();
+ for(const n of nodes){
+  const d=dist.get(n.text)||0,values=groups.get(d)||[];
+  values.push(n.text);groups.set(d,values);
+ }
+ const point=new Map();
+ for(const [d,list] of groups){
+  for(let i=0;i<list.length;i++){
+   const n=nodes.find(x=>x.text===list[i]),p=geometry(n);
+   const a=$("axisX").value,b=$("axisY").value,
+    rot=Number($("rotation").value)*Math.PI/180;
+   const x=a==="topology"?d/Math.max(1,...groups.keys()):
+    (p?p[Number(a)]:null);
+   const y=b==="topology"?(i+.5)/list.length:(p?p[Number(b)]:null);
+   const xx=(x??0.5)*2-1,yy=(y??0.5)*2-1;
+   point.set(n.text,{x:650+480*(xx*Math.cos(rot)-yy*Math.sin(rot)),
+    y:280+215*(xx*Math.sin(rot)+yy*Math.cos(rot)),
+    actual5D:p!==null,depth:d});
+  }
+ }
+ return point;
+}
+function draw(g){
+ const root=$("graph");root.replaceChildren();
+ if(!g?.nodes?.length){
+  svg("text",{x:25,y:46,fill:"#b5c8dd"},root,"Atlas gol: sunt necesare experiențe reale înainte/acțiune/după.");
+  show("graphInfo","0 noduri observate. Nicio cale nu este inventată.");
+  return;
+ }
+ const isGlobal=g.view==="global";
+ const nodes=isGlobal?g.nodes:g.nodes.map(n=>({...n,
+  text:n.text,original5D:n.original5D})),edges=isGlobal?g.edges:
+  (g.edges||[]).map(e=>({from:g.nodes[e.from]?.text,to:g.nodes[e.to]?.text,
+   action:e.action?.name||e.action,status:"PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE"}));
+ const xy=layout(nodes,edges);
+ const selected=new Set(!isGlobal?(g.selectedPath||[]).map((x,i,a)=>i?
+  a[i-1]+"|"+x:"").filter(Boolean):[]);
+ for(const e of edges){
+  const a=xy.get(e.from),b=xy.get(e.to);if(!a||!b)continue;
+  const active=selected.has(e.from+"|"+e.to);
+  const blocked=String(e.status).includes("BLOCKED");
+  const physical=String(e.status).includes("PHYSICALLY_VERIFIED");
+  const seen=String(e.status).includes("WITNESSED");
+  svg("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,
+   stroke:active?"#ffc870":blocked?"#fd8395":physical||seen?"#6ae2b4":"#7ea5d4",
+   "stroke-width":active?3.7:1.5,
+   "stroke-dasharray":seen||physical?"":"6 4",opacity:active?1:.55},root);
+ }
+ for(const n of nodes){
+  const p=xy.get(n.text);if(!p)continue;
+  const c=svg("circle",{cx:p.x,cy:p.y,r:n.goal?11:6,
+   fill:n.observedInRealWorld?"#6ae2b4":n.goal?"#ffc870":"#709fd1",
+   opacity:.92,stroke:"#162638","stroke-width":1.6},root);
+  const title=document.createElementNS(SVG,"title");
+  title.textContent=n.text+" | Original V17 5D: "+
+   (p.actual5D?JSON.stringify(n.original5D):"NU AU FOST ÎNVĂȚATE COORDONATE PENTRU ACEST NOD");
+  c.appendChild(title);
+  c.addEventListener("click",()=>show("detail",JSON.stringify({
+   text:n.text,depth:p.depth,original5D:geometry(n),observedInOriginalWorld:n.observedInRealWorld??null,
+   goal:n.goal??null,potential:n.potential??null,sourceWorlds:n.sourceWorlds??[],
+   otherNodeMetadata:n},null,2)));
+ }
+ show("graphInfo",(isGlobal?"ATLAS GLOBAL":"LABIRINTUL EXPANDAT AL ÎNCERCĂRII")+" · "+
+  num(nodes.length)+" / "+num(g.totalNodes||nodes.length)+" noduri încărcate · "+
+  num(edges.length)+" / "+num(g.totalEdges||edges.length)+" muchii încărcate · "+
+  nodes.filter(n=>!geometry(n)).length+" noduri fără 5D învățat de V17"+
+  (isGlobal?" · toate celelalte pagini rămân accesibile":" · frontiera lipsă este vizibilă în diagnostic"));
+}
+async function chooseAttempt(id){
+ try{
+  attemptId=id;const d=await get("/api/attempt?id="+id);
+  const a=d.attempt,graph=a.fullExploredGraph;
+  current={view:"local",nodes:graph.nodes,edges:graph.edges,
+   selectedPath:a.path,totalNodes:graph.nodes.length,totalEdges:graph.edges.length};
+  draw(current);
+  show("selectedMeta","Încercarea #"+id+" · "+a.episodeId+" · "+
+    (a.found?"traseu găsit":"FĂRĂ TRASEU")+" · "+(a.predicted||"nicio destinație")+
+    " · fizic verificat: "+(d.outcome?.completeExact===true?"DA":
+      d.outcome?.completeExact===false?"GREȘIT":"NU ÎNCĂ"));
+  show("detail",JSON.stringify({predictedBeforeAction:a.predicted,
+   wholeFirstShape:a.path,steps:a.actions,originalMethod:a.originalNativeMethod,
+   visibleGoal:a.goal,actualExecution:d.outcome?.frames||null,
+   originalNativeGoalPotentials:graph.originalV17AttractionField,
+   originalDimensions:graph.originalV17GeometryDimensions,
+   topologyStatus:d.graphSemantics},null,2));
+  const compare=await get("/api/compare?id="+id);
+  show("diagnostic",JSON.stringify(compare,null,2));
+ }catch(e){show("detail","Nu pot deschide încercarea: "+e.message);}
+}
+$("predict").onclick=async()=>{
+ try{
+  const type=$("goalType").value,value=$("goalValue").value.trim();
+  const goal=type==="numericEquals"?{numericEquals:Number(value)}:
+   {containsToken:value};
+  const actionText=$("allowed").value.trim();
+  const request={startText:$("start").value,goal,
+   episodeId:$("episode").value.trim()||"query"};
+  if(actionText)request.allowedActions=actionText.split(",").map(x=>x.trim()).filter(Boolean);
+  const p=await post("/api/plan",request);
+  show("predictStatus",p.found?"PLAN PREDICTIV: "+p.predicted:
+   "FĂRĂ TRASEU: "+p.reason);
+  await chooseAttempt(p.id);await status();await loadPage();
+ }catch(e){show("predictStatus","Eroare: "+e.message);}
+};
+$("observe").onclick=async()=>{
+ try{
+  const values={episodeId:$("wEpisode").value,action:$("wAction").value,
+   before:$("wBefore").value,after:$("wAfter").value,accepted:true};
+  const r=await post("/api/observe",values);
+  show("observeResult",JSON.stringify(r,null,2));
+  await status();await loadGlobal(true,false);await loadPage();
+ }catch(e){show("observeResult","Eroare: "+e.message);}
+};
+$("save").onclick=async()=>{
+ try{const s=await post("/api/save");show("saved","Salvat: "+s.checkpoint+
+  " · "+num(s.bytes)+" bytes");}
+ catch(e){show("saved","Nu s-a salvat: "+e.message);}
+};
+status();loadPage();loadGlobal(true,false);
+setInterval(status,2500);
+</script>
+</body></html>
