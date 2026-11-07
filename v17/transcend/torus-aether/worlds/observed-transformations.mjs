@@ -9,6 +9,13 @@
 // EXECUTE: apply chosen operators, verify predicted/actual state changes.
 // Frozen planning never writes to any learned weights or observations.
 
+// Runtime-only observer; never serialized into existing V17 Brain checkpoints.
+const EFFECT_HOOKS=new WeakMap();
+export function setObservedOperatorHook(model,observer){
+  if(observer===null)EFFECT_HOOKS.delete(model);
+  else if(typeof observer==='function')EFFECT_HOOKS.set(model,observer);
+  else throw Error('Observed effect hook must be a function or null');
+}
 const TOKEN = /[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*|[^\s]/gu;
 const closePunctuation = /^[.,!?;:%)\]}]$/u;
 const openPunctuation = /^[(\[{]$/u;
@@ -153,6 +160,10 @@ export class ObservedTransformations {
       this.operatorIndex.get(bucket).add(k);
     }
     op.sourceObservations++;
+    // Only REAL corpus differences reach the shared learned transformation
+    // core. This does not run during frozen planning or evaluation.
+    EFFECT_HOOKS.get(this)?.({before:before.slice(),after:after.slice(),
+      action:{...op},observedSupport:op.sourceObservations});
     if(op.evidence.length<4 &&
         !op.evidence.some(x=>x.from===sample.from&&x.to===sample.to))op.evidence.push(sample);
   }
@@ -280,7 +291,7 @@ export class ObservedTransformations {
     return required.every(t=>tokens.includes(t));
   }
   plan({required,start=null,maxDepth=4,maxExpanded=6000,
-    recordSearch=false,maxRecordedStates=240,allowUnseenStart=false}={}) {
+    recordSearch=false,maxRecordedStates=240,allowUnseenStart=false,worldCore=null}={}) {
     if(!Array.isArray(required)||!required.length||
       required.some(x=>typeof x!=="string"||!x.trim()))throw Error("Goal must list required observed tokens");
     const req=unique(required.map(x=>x.trim()));
@@ -323,6 +334,8 @@ export class ObservedTransformations {
       mark(text,0,true,"origin");
     }
     let expanded=0;
+    const sharedRanking={candidateEdgesScored:0,nonzeroScores:0,
+      candidateOrderChanges:0,meanAbsScore:0};
     while(q.length&&expanded<budget) {
       const current=q.shift();expanded++;
       const currentText=renderObservation(current.tokens);
@@ -337,6 +350,8 @@ export class ObservedTransformations {
           return {found:true,start:startText,predicted:answer,
             unseen:this.containsSentence(answer)===false,
             goal:{required:req},steps:current.steps,expanded,
+            sharedRanking:{...sharedRanking,meanAbsScore:sharedRanking.candidateEdgesScored?
+              sharedRanking.meanAbsScore/sharedRanking.candidateEdgesScored:0},
             initialShape:current.states,search,
             structure:support,
             plannedBeforeAnswer:true,referenceProvided:false,
@@ -344,7 +359,23 @@ export class ObservedTransformations {
         }
       }
       if(current.steps.length>=depth)continue;
-      for(const next of this.neighbors(current.tokens)){
+      const edges=this.neighbors(current.tokens);
+      // One shared effect learner ranks the EXACT SAME learned-operator edges
+      // as the baseline; it cannot invent operators or inspect an answer.
+      if(worldCore&&edges.length>1){
+        const originalOrder=edges.map(x=>freezeKey(x.tokens));
+        for(const candidate of edges){
+          candidate.sharedScore=worldCore.scoreText(current.tokens,candidate.tokens,
+            candidate.action,req);
+          sharedRanking.candidateEdgesScored++;
+          sharedRanking.nonzeroScores+=Number(Math.abs(candidate.sharedScore)>1e-8);
+          sharedRanking.meanAbsScore+=Math.abs(candidate.sharedScore);
+        }
+        edges.sort((a,b)=>b.sharedScore-a.sharedScore);
+        sharedRanking.candidateOrderChanges+=Number(edges.some((v,i)=>
+          freezeKey(v.tokens)!==originalOrder[i]));
+      }
+      for(const next of edges){
         const key=freezeKey(next.tokens),name=renderObservation(next.tokens);
         const prior=visited.has(key);
         const support=this.structuralSupport(next.tokens);
@@ -367,7 +398,9 @@ export class ObservedTransformations {
     }
     if(search)search.expanded=expanded;
     return {found:false,reason:"no-learned-path-satisfies-goal",goal:{required:req},
-      expanded,search,observed:this.records.size,operators:this.operators.size};
+      expanded,search,observed:this.records.size,operators:this.operators.size,
+      sharedRanking:{...sharedRanking,meanAbsScore:sharedRanking.candidateEdgesScored?
+        sharedRanking.meanAbsScore/sharedRanking.candidateEdgesScored:0}};
   }
   // A bounded SELF-PROBE chooses goal CONSTRAINTS from actual operations
   // that the original organism learned. This is NOT an independent language
@@ -422,7 +455,7 @@ export class ObservedTransformations {
   // The local controller can take a different route, then rediscover a plan.
   // Crucially, the textual world model's action effects are NOT an independent
   // external semantic judge: they are the operations induced from training.
-  embody(plan,{maxSteps=40,noiseAgent=null,localPolicy=true}={}) {
+  embody(plan,{maxSteps=40,noiseAgent=null,localPolicy=true,worldCore=null}={}) {
     if(!plan?.found)return {attempted:false,reason:plan?.reason||"no-shape"};
     const required=plan.goal.required;
     const start=tokenizeObservation(plan.start);
@@ -446,17 +479,19 @@ export class ObservedTransformations {
       const ranked=candidates.map(next=>{
         const key=freezeKey(next.tokens),seen=visits.get(key)||0;
         const newGoal=required.filter(t=>next.tokens.includes(t)).length;
+        const sharedContribution=worldCore?
+          worldCore.scoreText(tokens,next.tokens,next.action,required):0;
         const score=(newGoal-oldGoal)*1.4+
           Math.log1p(next.action.observedSupport||0)*.18-
-          seen*.85;
-        return {...next,score,seen,progress:newGoal-oldGoal};
+          seen*.85+sharedContribution;
+        return {...next,score,seen,progress:newGoal-oldGoal,sharedContribution};
       }).sort((a,b)=>b.score-a.score||
         b.action.observedSupport-a.action.observedSupport||
         renderObservation(a.tokens).localeCompare(renderObservation(b.tokens)));
       if(!currentPlan.found||currentPlan.initialShape?.[0]!==state){
         currentPlan=this.plan({required,start:state,allowUnseenStart:true,
           maxDepth:Math.min(8,Math.max(4,maxSafe(maxSteps-k,1,8))),
-          maxExpanded:2500});
+          maxExpanded:2500,worldCore});
         position=0;corrections++;
       }
       const intended=currentPlan.initialShape?.[1]||null;
@@ -495,7 +530,7 @@ export class ObservedTransformations {
       if(!matched){
         updated=this.plan({required,start:after,allowUnseenStart:true,
           maxDepth:Math.min(8,Math.max(4,maxSafe(maxSteps-k-1,1,8))),
-          maxExpanded:2500});
+          maxExpanded:2500,worldCore});
         currentPlan=updated;corrections++;position=0;
       } else {
         const tail=currentPlan.initialShape?.slice(1)||[after];
@@ -506,11 +541,13 @@ export class ObservedTransformations {
       const completed=this._goal(actual,required)&&support.consistent;
       frames.push({index:k+1,stage:"after-action",before:state,state:after,
         plannedNext:intended,chosen:choice.action,selectedIndex:choiceIndex,
+        sharedPolicyContribution:choice.sharedContribution||0,
         after,worldModelExpected:renderObservation(choice.tokens),
         predictionMatched:matched,causalEffectMatched:after===renderObservation(choice.tokens),
         alternativePath:!matched,localCandidateCount:ranked.length,
         alternatives:ranked.slice(0,8).map(x=>({state:renderObservation(x.tokens),
-          score:+x.score.toFixed(5),observedSupport:x.action.observedSupport,
+          score:+x.score.toFixed(5),sharedPolicyContribution:x.sharedContribution||0,
+          observedSupport:x.action.observedSupport,
           action:x.action})),why,noise,
         goalReached:completed,remainingShape:currentPlan.initialShape||null,
         correctedShape:updated?.found?updated.initialShape:null,
