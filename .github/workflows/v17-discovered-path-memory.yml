@@ -19,10 +19,14 @@ jobs:
         run: |
           node --check v17/research/path-memory/learned-path-memory.mjs
           node --check v17/tests/discovered-path-memory.test.mjs
+          node --check v17/research/path-memory/magic-live.mjs
+          node --check v17/tests/magic-live-server.test.mjs
           git fetch --no-tags --depth=1 origin 26054133e0812b321e05adac093bff57c46be73f
           git diff --exit-code 26054133e0812b321e05adac093bff57c46be73f -- v17/transcend/torus-aether/devour/brain.mjs v17/transcend/torus-aether/align.mjs v17/transcend/torus-aether/concepts.mjs
       - name: Learn hidden path-state without hardcoded area or hidden-world oracle
         run: node --test v17/tests/discovered-path-memory.test.mjs
+      - name: Magical interface must show REAL observed data, action-memory training, HTTP/SSE, frozen tests and persistent saves
+        run: node --test v17/tests/magic-live-server.test.mjs
       - name: Native V17 observed transforms, constructed paths, text path and original real-corpus smoke test
         run: |
           node --test v17/tests/observed-transformations-v17.test.mjs
