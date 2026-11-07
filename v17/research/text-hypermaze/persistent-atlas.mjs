@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const natural=(x,fallback=0)=>Number.isSafeInteger(x)&&x>=0?x:fallback;
-const knownKinds=["world","operator","search","execution","baseline","replay","note"];
+const knownKinds=["world","operator","search","execution","baseline","replay","graph-shard","graph-commit","note"];
 const safeKinds=a=>Array.isArray(a)?a.filter(x=>knownKinds.includes(x)):[];
 const countTo=(obj,key)=>{obj[key]=(obj[key]||0)+1;};
 export class PersistentHypermazeAtlas {
@@ -35,6 +35,8 @@ export class PersistentHypermazeAtlas {
   this.worldsByDomain=Object.create(null);
   this.lastReplayCursor=0;
   this.lastTextWorldSequence=0;
+  this.graphShardIds=new Map();
+  this.graphCommits=new Map();
   this.records=[]; // ONLY used when there is no on-disk journal
   this.last=null;
   this.bytes=0;
@@ -55,6 +57,12 @@ export class PersistentHypermazeAtlas {
     this.lastTextWorldSequence=entry.seq;
   }
   if(entry.type==="replay")this.lastReplayCursor=entry.nextCursor||0;
+  if(entry.type==="graph-shard"){
+   const list=this.graphShardIds.get(entry.searchSequence)||[];
+   list.push(entry.seq);this.graphShardIds.set(entry.searchSequence,list);
+  }
+  if(entry.type==="graph-commit")
+   this.graphCommits.set(entry.searchSequence,entry);
   if(entry.type==="search"){
    if(!entry.found)countTo(this.failedReasons,entry.diagnostic?.reason||"unknown");
    const used=entry.actions||[];
@@ -64,11 +72,13 @@ export class PersistentHypermazeAtlas {
    const edges=topology?.edges||[],nodes=topology?.nodes||[];
    // One count per observed operator per original search, regardless of
    // how many copies of the learned edge appear in visited graph states.
-   const considered=new Set(edges.map(e=>e.operatorKey).filter(Boolean));
+   const considered=new Set(entry.exploredOperatorKeys||
+    edges.map(e=>e.operatorKey).filter(Boolean));
    const where=entry.found?this.consideredOnSuccess:this.consideredOnFailure;
    for(const k of considered)where.set(k,(where.get(k)||0)+1);
-   const blocked=new Set(edges.filter(e=>nodes[e.to]?.kind===1)
-    .map(e=>e.operatorKey).filter(Boolean));
+   const blocked=new Set(entry.blockedOperatorKeys||
+    edges.filter(e=>nodes[e.to]?.kind===1)
+     .map(e=>e.operatorKey).filter(Boolean));
    for(const k of blocked)
     this.blockedByInvariant.set(k,(this.blockedByInvariant.get(k)||0)+1);
   }
@@ -139,6 +149,64 @@ export class PersistentHypermazeAtlas {
   this.bytes+=buf.length;
   return entry.seq;
  }
+ // Small graphs retain their existing inline original format. Large graphs
+ // are saved in consecutively indexed append-only node/edge/frontier events
+ // with a final COMMIT, so no original visited state is silently omitted.
+ appendSearch(data,{shardAtBytes=524288}={}){
+  const graph=data.fullExploredTopology;
+  if(!graph)return this.append("search",data);
+  const nodes=graph.nodes||[],edges=graph.edges||[],frontier=graph.unresolvedFrontier||[];
+  const approx=nodes.reduce((n,x)=>n+String(x.text||"").length*3+200,0)+
+   edges.length*180+frontier.reduce((n,x)=>n+String(x.text||"").length*3+80,0);
+  if(approx<shardAtBytes)return this.append("search",data);
+  const parts=[["nodes",nodes,64],["edges",edges,384],["frontier",frontier,128]];
+  const expectedShards=parts.reduce((n,[,a,step])=>n+Math.ceil(a.length/step),0);
+  const exploredOperatorKeys=[...new Set(edges.map(x=>x.operatorKey).filter(Boolean))];
+  const blockedOperatorKeys=[...new Set(edges.filter(x=>nodes[x.to]?.kind===1)
+   .map(x=>x.operatorKey).filter(Boolean))];
+  const {fullExploredTopology,...header}=data;
+  const seq=this.append("search",{...header,fullExploredTopology:null,
+   graphSharded:true,graphMeta:{
+    complete:graph.complete,sourceId:graph.sourceId,
+    initialShapeIds:graph.initialShapeIds||[],source:graph.source,
+    originalNativeV17Graph:graph.originalNativeV17Graph,
+    coordinatesAreOriginalLearned5DTorus:graph.coordinatesAreOriginalLearned5DTorus},
+   graphNodeCount:nodes.length,graphEdgeCount:edges.length,
+   graphFrontierCount:frontier.length,expectedShards,
+   exploredOperatorKeys,blockedOperatorKeys});
+  for(const [part,items,step] of parts)
+   for(let offset=0;offset<items.length;offset+=step)
+    this.append("graph-shard",{searchSequence:seq,part,offset,
+     items:items.slice(offset,offset+step)});
+  this.append("graph-commit",{searchSequence:seq,
+   expectedShards,nodes:nodes.length,edges:edges.length,frontier:frontier.length,
+   allRecordedGraphPartsCommitted:true});
+  return seq;
+ }
+ graphPage({searchSequence,after=0,limit=30}={}){
+  if(!Number.isSafeInteger(searchSequence)||searchSequence<1)
+   throw Error("Atlas graph needs an actual search journal ID");
+  const search=this.read(searchSequence);
+  if(!search||search.type!=="search)
+   throw Error("The requested graph was not explored in any recorded search");
+  if(!search.graphSharded)
+   return {searchSequence,sharded:false,inlineTopology:search.fullExploredTopology,
+    totalParts:0,parts:[],hasMore:false,complete:true};
+  const list=this.graphShardIds.get(searchSequence)||[];
+  const expected=search.expectedShards||0,commit=this.graphCommits.get(searchSequence);
+  if(!commit||!commit.allRecordedGraphPartsCommitted||
+     commit.expectedShards!==expected||list.length!==expected)
+   throw Error("Incomplete original atlas graph: missing shard/commit; cannot claim full topology");
+  const cursor=Math.min(natural(Number(after)),list.length);
+  const pageSize=Math.min(100,Math.max(1,natural(Number(limit),30)));
+  const parts=list.slice(cursor,cursor+pageSize).map(seq=>this.read(seq));
+  return {searchSequence,sharded:true,after:cursor,
+   nextCursor:cursor+parts.length,totalParts:list.length,
+   hasMore:cursor+parts.length<list.length,parts,
+   graphMeta:search.graphMeta,nodeCount:search.graphNodeCount,
+   edgeCount:search.graphEdgeCount,frontierCount:search.graphFrontierCount,
+   complete:true,originalSourceJournal:true};
+ }
  flush(){
   if(!this.file||!fs.existsSync(this.file))return;
   const fd=fs.openSync(this.file,"r");
@@ -186,6 +254,8 @@ export class PersistentHypermazeAtlas {
    persisted:!!this.file,recoveredExisting:this.recoveredExisting,
    totalWorlds:this.counts.world||0,worldsByDomain:{...this.worldsByDomain},
    learnedOperatorEvents:this.counts.operator||0,
+   graphShardEvents:this.counts["graph-shard"]||0,
+   committedLargeGraphSearches:this.counts["graph-commit"]||0,
    legacyOperatorBaselineEvents:this.counts.baseline||0,
    historicalReplayEvents:this.counts.replay||0,
    lastReplayCursor:this.lastReplayCursor,
