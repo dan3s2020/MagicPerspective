@@ -597,17 +597,54 @@ async function pullSelectedGraph() {
     return false;
   }
 }
+// Corpus progress is the number of ACTUAL training exercises committed or observed.
+// Distinct symbols in the finite ASCII graph are a different measurement entirely.
+function renderDatasetProgress(gr, corpusInfo) {
+  const box = $("datasetProgressBox");
+  if (!box) return;
+  const p = gr?.progress;
+  if (!p || !Number.isFinite(p.total) || !Number.isFinite(p.trained)) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  const pct = Math.max(0, Math.min(100, p.percent));
+  const nf = n => Math.max(0, Math.trunc(n)).toLocaleString("ro-RO");
+  $("datasetProgressPct").textContent = pct.toFixed(2) + "%";
+  $("datasetProgressCount").textContent = nf(p.trained) + " / " + nf(p.total);
+  $("datasetProgressRemaining").textContent = nf(p.remaining);
+  $("datasetHeldOut").textContent = nf(p.heldOut);
+  $("datasetProgressBar").value = pct;
+  const shard = p.shards > 1 ?
+    "Progres pentru partitia acestui graf (#" + p.shardIndex + " din " + p.shards +
+    "); intregul dataset de antrenare are " + nf(p.datasetTrainRows) + " randuri. " :
+    "Progres pentru intregul dataset de antrenare. ";
+  const state = gr?.status === "gata" && !p.complete ?
+    "Procesul s-a oprit inainte de 100% (sau a atins o limita configurata). " :
+    gr?.status === "eroare" ? "Trainerul a raportat o eroare: progresul este inghetat. " :
+    "Contorul se actualizeaza dupa batch-urile procesate efectiv. ";
+  const mode = p.mode === "native-text" ?
+    "exercitii invatate de motorul text V17" :
+    "documente absorbite de graful contextual V20/V21 (fara invatare de caractere V17)";
+  $("datasetProgressInfo").textContent = shard + state +
+    "Sursa: " + mode + "; " + nf(p.heldOut) +
+    " exercitii tinute separat si neincluse in numitor. " +
+    (p.overflow ? "ATENTIE: contorul depaseste dimensiunea partitiei; verifica reluarea checkpointului. " : "") +
+    "Nu confunda aceste cifre cu simbolurile distincte.";
+}
+
 async function livePull() {
   await pullSelectedGraph();
   try { const L = await (await fetch("/graphs", {cache: "no-store"})).json(); const p2 = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     const visible = chooseVisibleGraph(L.graphs, liveW, liveSelectionLocked);
     if (visible !== liveW) { liveW = visible; clearLive(); await pullSelectedGraph(); }
     $("corpus").textContent = `lumea pe care o devorează: ${L.world}`;
+    renderDatasetProgress(L.graphs.find(gr => gr.w === liveW), L.corpus);
     // one card per graph: its own score in every world it lives, its state, and its own controls
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("liveList").innerHTML = L.graphs.map(gr => `<div class="lgc${gr.w === liveW ? " on" : ""}" data-w="${gr.w}">
       <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span>${gr.error ? ` · <span style="color:#ff4d6d">${String(gr.error).replace(/</g,"&lt;")}</span>` : ""} · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
-      <div class="sc">${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
+      <div class="sc">${gr.progress ? `<span>Dataset</span><span><b>${gr.progress.percent.toFixed(2)}%</b> · ${gr.progress.trained.toLocaleString("ro-RO")}/${gr.progress.total.toLocaleString("ro-RO")} exercitii procesate${gr.progress.shards > 1 ? " (partitia grafului)" : ""}</span>` : ""}${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
