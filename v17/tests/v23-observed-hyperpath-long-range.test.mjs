@@ -177,3 +177,45 @@ test("real-world contradictory outcome invalidates the 48-step unseen plan",()=>
     {maxNodes:100,maxDepth:64});
   assert.equal(invalid.found,false,"Conflicting transformation cannot be assumed traversable");
 });
+
+test("320-action branching observed hypermaze uses original V17 attraction and seeded noise",()=>{
+  const layers=160, m=new LearnedCognitiveMap();
+  for(let i=0;i<layers;i++){
+    const hub=["HUB",String(i)],next=["HUB",String(i+1)];
+    for(const side of ["LEFT","RIGHT"]){
+      const mid=[side,String(i)];
+      m.observeExternalTransition({domain:"text",before:hub,
+        action:"branch-"+side+"-"+i,after:mid});
+      m.observeExternalTransition({domain:"text",before:mid,
+        action:"merge-"+side+"-"+i,after:next});
+    }
+  }
+  const goal={slots:{0:"HUB",1:String(layers)}};
+  const kwargs={maxNodes:layers*3+4};
+  const make=(seed,temperature)=>m.formObservedWorld("text",["HUB","0"],goal,
+    {...kwargs,disc:{temp:temperature},maxNodes:layers*3+4});
+  const deterministic=make(21,0);
+  assert.equal(deterministic.found,true);
+  assert.equal(deterministic.path.length,2*layers);
+  assert.equal(deterministic.directOriginalMethod,"Discoverer.shape");
+  assert.equal(deterministic.plannedBeforeAction,true);
+  assert.ok(deterministic.path.every(h=>typeof h.action==="string"));
+  // The existing formObservedWorld API does not expose a seed argument.
+  // Its actor receives a fixed seed; same temperature MUST replay the same noise.
+  const stochasticA=make(21,.8),stochasticB=make(21,.8);
+  assert.equal(stochasticA.found,true);
+  assert.deepEqual(stochasticA.path,stochasticB.path);
+  assert.equal(stochasticA.path.length,2*layers);
+  const choices=stochasticA.path.filter(h=>h.action.startsWith("branch-"));
+  assert.equal(choices.length,layers);
+  assert.ok(choices.some(h=>h.action.startsWith("branch-LEFT")));
+  assert.ok(choices.some(h=>h.action.startsWith("branch-RIGHT")),
+    "Noise must be able to choose between two equally valid observed paths");
+  console.log("V23_OBSERVED_BRANCHING_NOISE",JSON.stringify({
+    layers,actions:deterministic.path.length,
+    branchingChoices:choices.length,seededReproducible:true,
+    left:choices.filter(h=>h.action.startsWith("branch-LEFT")).length,
+    right:choices.filter(h=>h.action.startsWith("branch-RIGHT")).length,
+    originalMethod:stochasticA.directOriginalMethod
+  }));
+});
