@@ -56,6 +56,8 @@ const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restor
 // resume, replay original corpus into the native AligningGraph from exercise 0
 // while avoiding duplicate V20/V21 observations of those first 200 documents.
 // The original shape model is NOT replaced or reset.
+const previouslyObservedCognitive = cognitive?.documents || 0;
+const previouslyObservedHyper = hypermaze?.documents || 0;
 let cognitiveReplayCursor = skip;
 
 brain.setSharedObserver(sample => {
@@ -69,17 +71,25 @@ const saveCognitive = () => {
 };
 const absorbCognitive = row => {
   if(!cognitive && !hypermaze)return null;
-  if(TEXT && resume && cognitiveReplayCursor++ < cognitionStart) return null; // preexisting V20/V21 data already learned
-
   if(typeof row?.worldText !== "string")throw Error("Cognitive world requires complete original text, not ASCII token predictions");
+  // Each native learned world retains its OWN observed-document count.
+  // On an old hypertext-only checkpoint, newly enabled V19 cognitive rules
+  // MUST learn original documents, but V20/V21 graphs MUST NOT absorb them twice.
+  const observedIndex = TEXT ? cognitiveReplayCursor++ : null;
+  const takeCognitive = cognitive && !(TEXT && resume && observedIndex < previouslyObservedCognitive);
+  const takeHyper = hypermaze && !(TEXT && resume && observedIndex < previouslyObservedHyper);
+  if(!takeCognitive && !takeHyper) return null;
   const before=cognitive?.rules.size||0;
-  const result=cognitive?.observeWorld(row.worldText,{id:row.k})||null;
-  // Freeze predictions, plan against PREVIOUS graph, then absorb the actual document.
-  // No answer or future transitions are supplied to the planner.
-  if(hypermaze)hypermaze.observeWorld(row.worldText,{id:row.k});
-  brain.cognitiveDocuments=(brain.cognitiveDocuments||0)+1;
-  brain.cognitiveCharacters=(brain.cognitiveCharacters||0)+row.worldText.length;
-  if(cognitive && cognitive.rules.size>before){
+  const result=takeCognitive?cognitive.observeWorld(row.worldText,{id:row.k}):null;
+  // Freeze prediction on previous graph, then learn only NEW V20/V21 documents.
+  if(takeHyper)hypermaze.observeWorld(row.worldText,{id:row.k});
+  // This original aggregate counter counts unique corpus documents, not
+  // duplicate ingestion by an additional native world during resumption.
+  if(!(TEXT && resume && observedIndex < cognitionStart)){
+    brain.cognitiveDocuments=(brain.cognitiveDocuments||0)+1;
+    brain.cognitiveCharacters=(brain.cognitiveCharacters||0)+row.worldText.length;
+  }
+  if(takeCognitive && cognitive.rules.size>before){
     brain.trace.node("cognitive:world","world","Learned language transformation atlas");
     const rules=[...cognitive.rules.values()].slice(-Math.min(5,cognitive.rules.size-before));
     for(const rule of rules){
