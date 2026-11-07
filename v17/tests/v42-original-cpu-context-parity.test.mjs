@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import {spawnSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 
 const rules={depth:1,off:["R2","R4"],budEvery:100,empty:true,maxWires:32,fold:false};
@@ -73,8 +75,30 @@ test("V42 same original Brain.live, learned states and exact V8 checkpoint after
         newNear:Array.from(optimizedBytes.subarray(Math.max(0,first-12),first+25))
       }));
     }
-    assert.deepEqual(originalBytes,optimizedBytes,
-      "Semantic regression: exact old/new native Brain.v8 differed");
+    // Original-to-original binary equality is impossible within this
+    // SAME JS process: the original V41 runtime uses process-global dynamic
+    // identifiers. Compare independent ORIGINAL worker processes instead.
+    // This verifies native checkpoint bytes under production process layout.
+    const runner=path.join(path.dirname(fileURLToPath(import.meta.url)),
+      "v42-original-process-replay.mjs");
+    const run=(mode,file)=>{
+      const p=spawnSync(process.execPath,[runner,mode,initialFile,file],
+        {encoding:"utf8",timeout:45000});
+      assert.equal(p.status,0,"Native process replay failed: "+p.stdout+"\n"+p.stderr);
+      return fs.readFileSync(file);
+    };
+    const processOriginal=run("original",path.join(root,"process-original.v8"));
+    const processOptimized=run("optimized",path.join(root,"process-optimized.v8"));
+    const controlOriginal=run("original",path.join(root,"process-old-control.v8"));
+    const baselineDeterministic=processOriginal.equals(controlOriginal);
+    console.log("V42_ORIGINAL_PROCESS_DETERMINISM",JSON.stringify({
+      twoOriginalWorkerByteIdentical:baselineDeterministic,
+      optimizedBytesIdentical:processOriginal.equals(processOptimized)
+    }));
+    assert.deepEqual(processOriginal,processOptimized,
+      "Actual independent worker checkpoint differs under original vs V42 context");
+    assert.deepEqual(processOriginal,controlOriginal,
+      "Two identical original worker processes diverge: baseline is nondeterministic");
     const revived=Brain.load(f2);
     assert.equal(revived.lived,ref.lived);
     assert.equal(revived.constructedPaths.textRows,ref.constructedPaths.textRows);
