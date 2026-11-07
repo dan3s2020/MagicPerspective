@@ -11,6 +11,7 @@ param(
   [ValidateSet("off","cpu","cuda:0","cuda:1")][string]$Gpu = "off",
   [int]$GpuWorlds = 64,
   [double]$Vram = 3,
+  [switch]$IncludeCognitive,
   [switch]$Resume
 )
 $ErrorActionPreference = "Stop"
@@ -32,13 +33,15 @@ Write-Host "Original native V17 Maze and Transform + real V20 Hypertext observat
 Write-Host "NEW contextual Veil graph is CPU Node; CUDA optional for native V17 worlds, not all model operations." -ForegroundColor Yellow
 Write-Host "LIVE original UI: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "Isolated save location: $Out"
+$selectedWorlds = if ($IncludeCognitive) { "hypertext,cognitivemap,maze,transform" } else { "hypertext,maze,transform" }
+Write-Host "Selected real worlds: $selectedWorlds"
 $heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
 $argsNative = @(
   "--max-old-space-size=$heap", $runner,
   "--workers", "$Workers", "--arms", "stable+many",
   "--mem", "$Mem", "--every", "50000",
   "--out", $Out, "--port", "$Port",
-  "--worlds", "hypertext,maze,transform",
+  "--worlds", $selectedWorlds,
   "--gpu", $Gpu, "--gpu-worlds", "$GpuWorlds",
   "--vram", "$Vram", "--start"
 ) + $src
