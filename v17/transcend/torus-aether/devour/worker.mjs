@@ -757,4 +757,15 @@ if(xdAtlasLog)await new Promise((resolve,reject)=>{
   xdAtlasLog.once("error",reject);xdAtlasLog.end(resolve);
 });
 await selfcode?.close();
-parentPort.close();
+// A finite source may finish before a user opens the real learned graph UI.
+// Keep the original native Brain in this SAME worker for read-only frozen
+// language and xD atlas queries after "DONE", instead of closing the port
+// and making the visible UI time out. Ctrl+C still closes immediately.
+// This is NOT continuing training or silently using new exercises.
+if(stop) parentPort.close();
+else {
+  setWorkerPhase("Corpus complete: original Brain and all saved paths remain queryable");
+  parentPort.on("message",m=>{
+    if(m==="stop")parentPort.close();
+  });
+}
