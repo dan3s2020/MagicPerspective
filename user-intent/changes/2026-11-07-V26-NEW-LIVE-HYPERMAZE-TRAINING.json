@@ -1,0 +1,35 @@
+{
+  "contract_id": "V26-FRESH-LIVE-CORPUS-TRAINER-UI-20261107",
+  "user_source": "verbatim/2026-11-07-V26-NEW-TRAINING-UI-USER-TURNS.txt",
+  "exact_user_quotes": [
+    "HAI! DA-MI-L PE TRAINING ,FA UI NOU ,NU MAI REFOLOSII NIMIC,SCALEAZA DIRECT DIN DEMO",
+    "FARA SA OMITI NIMIC DIN CE ITI TREBUIE"
+  ],
+  "directive_priority": "USER",
+  "original_mechanism": "original V17 Discoverer.shape() with learned action/state transitions from V25; no next-character surrogate",
+  "baseline_paths": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/research/text-hypermaze/v25-observed-axis-world.mjs"
+  ],
+  "new_isolated_path": "v17/apps/hypermaze-studio-v26/",
+  "scope": "Completely new HTML/CSS/JS UI; new runtime, corpus loader, scalable sparse state navigator, live server, frozen evaluation, checkpoint, replay, tests. No old UI files copied or modified.",
+  "constraints": [
+    "All existing files preserved; no writes to main; new isolated runtime",
+    "User wants actual training, not read-only demo; use real changed action results and corpus tokens, show counts",
+    "Preserve distinction controlled token transformations vs unrestricted semantic natural language",
+    "Never claim CUDA if only native CPU version tested; run hardware-specific validation before claiming"
+  ],
+  "acceptance": [
+    "Start server and live training from real text corpus",
+    "Graph and actual preaction solution path render in new browser UI",
+    "Pause/resume/step/save/load/test/reset and corpus load functional",
+    "Frozen train/test split; negative controls; truthful reported measured accuracy",
+    "Original 2D parity unaffected; no checkpoint regression"
+  ],
+  "known_unverified": [
+    "real Windows PowerShell end-to-end launch",
+    "real RTX 3050 Ti CUDA acceleration",
+    "general-language >=70% unseen OpenThoughts answers"
+  ],
+  "status": "IMPLEMENTATION_IN_PROGRESS"
+}
