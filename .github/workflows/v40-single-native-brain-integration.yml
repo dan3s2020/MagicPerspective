@@ -27,3 +27,13 @@ jobs:
         run: |
           node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
           node --test v17/tests/v31-million-original-log-attraction.test.mjs
+  v40-authentic-9000-human-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine SQuAD1.1 train+dev SHA checked, shared V34 Brain V36 and V39, 9000 train and 650 blind questions
+        run: node --test v17/tests/v40-real-9000-qa-shared-brain.test.mjs
