@@ -31,8 +31,10 @@ test("Original Discoverer.shape plans on unseen V19 hypotheses, not a surrogate 
   assert.equal(p.originalDiscovererDirectlyUsed,true);
   assert.equal(p.noHiddenAnswerOracle,true);
   assert.equal(p.path.length,2);
-  assert.equal(p.learnedTransformationHypotheses,2);
-  assert.equal(p.field.math.inferredHypothesisSteps,2);
+  // The first training-state action was witnessed; the second transition is
+  // inferred in the novel state. Do NOT mislabel BOTH as unobserved.
+  assert.equal(p.learnedTransformationHypotheses,1);
+  assert.equal(p.field.math.inferredHypothesisSteps,1);
   assert.equal(p.field.math.noUnobservedEdges,false);
   assert.ok(p.field.math.maxBellmanResidual<1e-12);
   const result=m.execute(p,{step:physics,observe:false});
