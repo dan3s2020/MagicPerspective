@@ -106,7 +106,7 @@ export class StateDependentTextAxes {
    // A heldout goal must NOT be predicted from a local field contradicted by
    // training observations. This outlier-tolerant gate abstains for
    // unsupported function families instead of showing a confident wrong path.
-   if(!model.operators?.length || model.operators.some(op=>op.trainingPairs<4 ||
+   if(!model.operators?.length || model.operators.some(op=>
      !Number.isFinite(op.verifiedFraction) || op.verifiedFraction<0.9))
      return {found:false,reason:"inconsistent-local-field-evidence",
        weakestVerifiedFraction:Math.min(...(model.operators||[]).map(op=>op.verifiedFraction)),
