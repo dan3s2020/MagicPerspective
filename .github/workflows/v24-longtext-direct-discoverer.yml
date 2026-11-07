@@ -29,6 +29,9 @@ jobs:
         run: |
           node --test v17/tests/torus-v23-exact-discoverer.test.mjs
           node --check v17/transcend/torus-aether/ui/cognitive-graph-live.js
+          node --check v17/transcend/torus-aether/ui/native-math-live.js
+          node --check v17/transcend/torus-aether/worlds/native-math-route-snapshot.mjs
+          node --check v17/research/goal-path-field/native-math-graph.mjs
           node --check v17/transcend/torus-aether/worlds/cognitive-route-snapshot.mjs
       - name: Native V19 worker and heldout live HTTP
         run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
