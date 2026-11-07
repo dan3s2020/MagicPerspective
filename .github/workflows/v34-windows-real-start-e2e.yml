@@ -65,7 +65,7 @@ jobs:
           $launcher=(Resolve-Path -LiteralPath 'v17/START_V34_VERIFIED.ps1').Path
           $stdout=Join-Path $root 'native stdout.txt'
           $stderr=Join-Path $root 'native stderr.txt'
-          $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $launcher + '"'),'-Data',('"' + $data + '"'),'-OriginalOut',('"' + $original + '"'),'-Out',('"' + $dest + '"'),'-Port','18997','-Workers','1','-Gpu','off','-GpuWorlds','0','-Worlds','text','-Mem','1.2','-Every','250000','-CheckpointEvery','100000','-XdAtlasEvery','16000')
+          $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $launcher + '"'),'-Data',('"' + $data + '"'),'-OriginalOut',('"' + $original + '"'),'-Out',('"' + $dest + '"'),'-Port','18997','-Workers','1','-Gpu','off','-GpuWorlds','0','-Worlds','text,maze,transform','-Mem','1.2','-Every','250000','-CheckpointEvery','100000','-XdAtlasEvery','16000')
           $proc=Start-Process -FilePath powershell.exe -ArgumentList $args -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
           try {
             $base='http://127.0.0.1:18997'
