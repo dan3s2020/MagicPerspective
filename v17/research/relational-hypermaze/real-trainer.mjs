@@ -8,7 +8,8 @@ import crypto from "node:crypto";
 import {setImmediate as yieldLoop} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
 import {openRealSource} from "./real-data-source.mjs";
-import {RealTextAtlas,normalize,scoreAnswer} from "./real-corpus-core.mjs";
+import {RealTextAtlas,normalize,scoreAnswer,terms} from "./real-corpus-core.mjs";
+import {projectObservedWorld} from "./real-hypergeometry.mjs";
 import {readManifest,writeManifest,manifestName,legacyName} from "./real-checkpoint-store.mjs";
 
 const dirname=path.dirname(fileURLToPath(import.meta.url));
@@ -49,6 +50,16 @@ export class RealTrainer{
    const saved=await readManifest(this.out,this.source,this.options,this.targetRows);
    this.model=saved.model;this.progress=saved.progress;
    this.heldout=saved.heldout||null;this.trace=saved.trace||null;
+   // Reproject the user's intact pre-V24.1 historical frozen path from the
+   // ORIGINAL observed records. Old data is only inspected, never fabricated.
+   if(this.trace?.nodes?.length&&!this.trace.nodes.some(n=>Array.isArray(n.axes))){
+     const geometry=projectObservedWorld(this.trace.nodes,this.trace.field,
+       this.model.records,this.model.nextId,terms);
+     this.trace.nodes=geometry.nodes;
+     this.trace.dimensions=geometry.dimensions;
+     this.trace.axisLabels=geometry.axisLabels;
+     this.trace.geometryReconstructedFromLegacy=true;
+   }
    this.traceHistory=(saved.traceHistory||[]).slice(-16);
    if(this.trace&&!this.traceHistory.some(t=>t.row===this.trace.row))
      this.traceHistory.push(this.trace);
