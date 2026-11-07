@@ -1,0 +1,33 @@
+name: V35 original Brain real document evidence-paths / actual SQuAD acceptance
+on:
+  push:
+    branches:
+      - experiment/V35-REAL-SQUAD-EVIDENCE-PATHS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-squad-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real SQuAD train-v1.1 2400 witnessed Q&A training cases and dev-v1.1 450 blind genuine QA paths
+        run: node --test v17/tests/v35-real-squad-evidence-paths.test.mjs
+  original-motors-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native original Discoverer parity, million-state original-equation, original Brain Q&A survival
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --test v17/tests/v31-scalable-original-attraction.test.mjs
+          node --test v17/tests/v31-million-original-log-attraction.test.mjs
+          node --test v17/tests/v29-real-qa-closed-loop.test.mjs
