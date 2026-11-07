@@ -189,6 +189,25 @@ export function originalHypermazeAtlas(brain,{view="attempts",offset=0,limit=50,
   total:rows.length,offset:from,limit:count,
   nextOffset:from+count<rows.length?from+count:null,
   rows:rows.slice(from,from+count),selectedAttempt:selected,
+  comparison:{
+   foundRetained:a.events.filter(x=>x.found).length,
+   failedRetained:a.events.filter(x=>!x.found).length,
+   withInferredEdges:a.events.filter(x=>x.found&&x.inferred).length,
+   fullyPhysicalRoutes:a.events.filter(x=>x.found&&!x.inferred).length,
+   reasons:[...a.events.reduce((map,event)=>{
+    for(const issue of event.diagnostics){
+     const prev=map.get(issue.code)||{code:issue.code,count:0,
+      kind:issue.kind,explanation:issue.explanation,
+      exampleAttemptIds:[]};
+     prev.count++;
+     if(prev.exampleAttemptIds.length<6)prev.exampleAttemptIds.push(event.id);
+     map.set(issue.code,prev);
+    }
+    return map;
+   },new Map()).values()].sort((x,y)=>y.count-x.count||
+    x.code.localeCompare(y.code)),
+   limitations:"Reasons inferred ONLY from available recorded observations, not oracle knowledge of unknown walls or absent semantic laws"
+  },
   memory:{
    originalNativeBrain:true,version:state.version,
    attemptsTotal:a.attemptsTotal,successesTotal:a.successesTotal,
