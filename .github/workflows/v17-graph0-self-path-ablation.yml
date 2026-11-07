@@ -24,12 +24,16 @@ jobs:
           node --check v17/experiments/create-graph0-fixture.mjs
           node --check v17/experiments/graph0-phase2.mjs
           node --check v17/experiments/graph0-phase2.test.mjs
+          node --check v17/experiments/graph0-geometry-wall-audit.mjs
+          node --check v17/experiments/graph0-geometry-wall-audit.test.mjs
       - name: Native AligningGraph no-training ablation tests
         run: node --test v17/experiments/graph0-ablation-core.test.mjs
       - name: Native Brain.save Brain.load comparison across original and filtered policies
         run: node --test v17/experiments/graph0-ablation-end-to-end.test.mjs
       - name: Phase2 fixed-length no-fself and half-strength native fixture tests
         run: node --test v17/experiments/graph0-phase2.test.mjs
+      - name: Native 5D policy wall causal audit from any working directory
+        run: node --test v17/experiments/graph0-geometry-wall-audit.test.mjs
   windows-launcher-smoke:
     runs-on: windows-2022
     timeout-minutes: 12
@@ -69,3 +73,8 @@ jobs:
           $rows = @(Import-Csv -LiteralPath $csv[0].FullName)
           if ($rows.Count -ne 24) { throw "Phase2 expected 24 comparisons; got $($rows.Count)" }
           Write-Host "WINDOWS_PHASE2_PASS: $($rows.Count) fixed-length rows from six isolated arms"
+          $wall = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-phase2" -Recurse -File -Filter "graph0-geometry-policy-wall-audit.json")
+          if ($wall.Count -ne 1) { throw "Expected 5D wall report alongside phase2 CSV" }
+          $report = Get-Content -LiteralPath $wall[0].FullName -Raw | ConvertFrom-Json
+          if (-not $report.invariantTextAllPrompts -or -not $report.geometryChangeVisible) { throw "5D wall audit invariance failed" }
+          Write-Host "WINDOWS_GEOMETRY_POLICY_WALL_PASS: native text unchanged after changing actual 5D geometry"
