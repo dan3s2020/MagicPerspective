@@ -45,3 +45,63 @@ jobs:
           node --check v17/research/relational-hypermaze/real-corpus-core.mjs
           node --check v17/research/relational-hypermaze/real-data-source.mjs
           node --check v17/research/relational-hypermaze/real-trainer.mjs
+
+  windows-ps51:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: PowerShell 5.1 parse and exact launch script
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Get-Content -LiteralPath 'v17/START_V24_REAL_TRAINING.ps1' -Raw
+          [scriptblock]::Create($script) | Out-Null
+          if ($script -match '[^\x00-\x7F]') { throw "Launcher must be ASCII-safe for Windows PowerShell 5.1" }
+      - name: Real Windows Q/A training from source to live HTTP and persisted checkpoint
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $txt = Join-Path $env:RUNNER_TEMP 'real qa corpus.txt'
+          $lines = New-Object 'System.Collections.Generic.List[string]'
+          for ($i=0; $i -lt 24; $i++) {
+            $lines.Add("Q: What actual entity number $i is documented?")
+            $lines.Add("A: The observed entity number $i is recorded in this world.")
+          }
+          [IO.File]::WriteAllLines($txt, $lines.ToArray(), [Text.Encoding]::UTF8)
+          $launcher = (Resolve-Path 'v17/START_V24_REAL_TRAINING.ps1').Path
+          $out = Join-Path $env:RUNNER_TEMP 'v24 checkpoint with spaces'
+          $stdout = Join-Path $env:RUNNER_TEMP 'v24-output.txt'
+          $stderr = Join-Path $env:RUNNER_TEMP 'v24-error.txt'
+          $argsList = @('-NoProfile','-ExecutionPolicy','Bypass','-File',
+            ('"' + $launcher + '"'),'-QaTxt',('"' + $txt + '"'),
+            '-Out',('"' + $out + '"'),'-Port','18999',
+            '-HeldOut','4','-SaveEvery','2','-OnlineEvery','1')
+          $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList $argsList -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $done = $false
+            for ($j=0; $j -lt 100; $j++) {
+              try {
+                $status = Invoke-RestMethod -Uri 'http://127.0.0.1:18999/api/status' -TimeoutSec 2
+                if ($status.mode -eq 'error') { throw "V24 backend error: $($status.error)" }
+                if ($status.mode -eq 'finished') { $done = $true; break }
+              } catch {
+                if ($proc.HasExited) { throw "PowerShell V24 process exited early: $($proc.ExitCode)" }
+              }
+              Start-Sleep -Milliseconds 400
+            }
+            if (-not $done) { throw "Windows V24 trainer did not finish its real corpus" }
+            if ($status.progress.cursor -ne 20 -or $status.progress.heldOut -ne 4) { throw "Wrong real split or cursor" }
+            if ($status.atlas.stats.experienced -ne 20) { throw "Training observations missing" }
+            $trace = Invoke-RestMethod -Uri 'http://127.0.0.1:18999/api/trace' -TimeoutSec 5
+            if ($trace.row -lt 0) { throw "No real pre-action trace" }
+            if (-not (Test-Path -LiteralPath (Join-Path $out 'atlas-v24.json'))) { throw "Checkpoint missing on Windows" }
+            Write-Host "WINDOWS_V24_REAL_LIVE_PASS: $($status.progress.cursor) training / $($status.progress.heldOut) frozen heldout"
+          } finally {
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
+            Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue
+            Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue
+          }
