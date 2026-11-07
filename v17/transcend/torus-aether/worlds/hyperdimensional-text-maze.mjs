@@ -63,7 +63,7 @@ function noiseFromAgency(agency,seed,known,requested){
  let best=-Infinity,ids=[];
  for(let i=0;i<5;i++){
   const a=table[i],value=a?.n?a.total/a.n:0;
-  const score=value+.45*Math.sqrt(Math.log(total+2)/((a?.n||0)+1))+(!a?.n?.valueOf()?0.15:0);
+  const score=value+.45*Math.sqrt(Math.log(total+2)/((a?.n||0)+1))+((a?.n||0)===0?0.15:0);
   if(score>best+1e-12){best=score;ids=[i];}
   else if(Math.abs(score-best)<1e-12)ids.push(i);
  }
@@ -231,7 +231,7 @@ export class HyperdimensionalTextMaze{
    dimensions:38,axes:{symbolTorus:5,learnedGoal:32,time:1},
    target:{predicted5:goal5?compactCoordinates(goal5):null,
     predicted32:goal32.map(x=>+x.toFixed(6)),expectedWords:expected,
-    5Dlearned:this.geometryRows>0},
+    geometryLearned5D:this.geometryRows>0},
    start:initial,initialShape:best.actions.map(a=>a.action),
    predictedText:normText(best.tokens),initialFullPath:best.actions,
    predictedFinal:final,goalDistance32:final.distance32,
