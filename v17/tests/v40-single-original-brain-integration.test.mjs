@@ -114,6 +114,42 @@ test('V40 original Brain owns V36 learned goal, V39 real QA and V32 exact durabl
    source:'Ada keeps tea.'});
   assert.equal(refused.found,false);
   assert.equal(again.answer({kind:'arbitrary-semantic-question',question:'What is life?'}).found,false);
+
+  // Three independent frozen perturbations on COPIES of one Brain show
+  // what is actually causal. Co-residence does not equal semantic fusion.
+  const lostGoalBrain=Brain.load(checkpoint);
+  lostGoalBrain.v40UnifiedEvidence.instructionGoalEntries=[];
+  lostGoalBrain.v40UnifiedEvidence.instructionGoalEpisodes=0;
+  const withoutGoal=new V40OriginalBrainEvidence(lostGoalBrain);
+  const noIntent=withoutGoal.answer({kind:'instruction-goal',
+    instruction:'Brew the refreshment',source:'Ada keeps tea.'});
+  assert.equal(noIntent.found,false);
+  assert.equal(noIntent.reason,'UNSEEN_INSTRUCTION_INTENT');
+  const independentQA=withoutGoal.answer({kind:'human-extractive',
+    question:'Which city hosted the meeting?',
+    context:'The meeting was hosted in Rome yesterday.',weightMode:'average'});
+  assert.equal(independentQA.predicted,qarestored.predicted,
+    'Removing finite V36 intent MUST NOT be credited with improving independent V39 human QA');
+  const lostQAbrain=Brain.load(checkpoint);
+  lostQAbrain.realEvidencePathMemory.averagedWeights=new Map();
+  const withoutRanking=new V40OriginalBrainEvidence(lostQAbrain);
+  assert.equal(withoutRanking.qa.memory.averagedWeights.size,0);
+  const independentIntent=withoutRanking.answer({kind:'instruction-goal',
+    instruction:'Brew the refreshment',source:'Ada keeps tea.'});
+  assert.equal(independentIntent.answer,observed.answer,
+    'Deleting learned human span preference does not invent/remove independent instruction physics');
+  const withoutSource=Brain.load(checkpoint);
+  delete withoutSource.v40UnifiedEvidence.sourceArchiveManifest;
+  const noWitnessArchive=new V40OriginalBrainEvidence(withoutSource);
+  assert.equal(noWitnessArchive.answer({kind:'instruction-goal',
+    instruction:'Brew the refreshment',source:'Ada keeps tea.'}).answer,observed.answer,
+    'Lexical source index is not falsely credited as a semantic causal action');
+  assert.equal(noWitnessArchive.answer({kind:'human-extractive',
+    question:'Which city hosted the meeting?',
+    context:'The meeting was hosted in Rome yesterday.',weightMode:'average'}).predicted,
+    qarestored.predicted,
+    'The V39 ranker does not yet use V32 source history for ranking');
+
   console.log('V40_SINGLE_ORIGINAL_BRAIN_PROOF',JSON.stringify({
    checkpointBytes:size,realMazeExperiences:before.originalMazeEpisodes,
    witnessedTaskEpisodes:2,humanQALearnedFeatures:before.learnedHumanQAFeatures,
