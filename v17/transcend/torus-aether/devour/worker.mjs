@@ -57,6 +57,7 @@ async function* stream() {                                                 // th
 let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
+if(workerData.unifiedWorld)brain.enableUnifiedWorldLearning();
 if (workerData.endogenousNoise) brain.enableEndogenousNoise(); // policy is saved with the original Brain
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
@@ -146,6 +147,8 @@ const absorbObservedDifferences = row => {
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
   const learned=brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
+  // Operator-effects are streamed by the existing learner's real observation
+  // hook directly into Brain.worldCore, with no separate Q/A phrase atlas.
   observedPipeline.accepted+=learned.newSentences;
   observedPipeline.last=learned;
 };
@@ -180,7 +183,8 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
+    shared: shared.status(), worldCore: brain.unifiedEnabled?brain.worldCore.report():null,
+    constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
@@ -194,7 +198,9 @@ const report = (final = false) => {
   stage(final ? "antrenament terminat" : "continuă următorul lot");
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 1100) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
-  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
+  parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(),
+    worldCore: brain.unifiedEnabled?brain.worldCore.report():null,
+    constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
@@ -300,7 +306,7 @@ const processGpuText = async (exs, meta) => {
 };
 parentPort.on("message", m => {
   if(m && m.languageMaze){
-    const {id,required,start,maxDepth=4,localPolicy=true,auto=false}=m.languageMaze;
+    const {id,required,start,maxDepth=4,localPolicy=true,auto=false,useUnified=true,compare=false}=m.languageMaze;
     try{
       const selfGoal=auto?brain.observedTransformations?.selfSelectedChallenge():null;
       if(auto&&!selfGoal){
@@ -311,8 +317,24 @@ parentPort.on("message", m => {
       const actualGoal=selfGoal?{required:selfGoal.required,start:selfGoal.start,maxDepth}:
         {required,start,maxDepth};
       const result=brain.planObservedTransformation(actualGoal,
-        {trace:true,embodied:true,localPolicy});
-      parentPort.postMessage({type:"chat",id,languageMaze:true,...result,
+        {trace:true,embodied:true,localPolicy,useUnified});
+      const control=compare&&brain.unifiedEnabled?
+        brain.planObservedTransformation(actualGoal,{trace:false,embodied:true,
+          localPolicy,useUnified:false}):null;
+      const comparison=control?{
+        actuallyCompared:true,sameStartAndGoal:true,
+        withoutShared:{found:control.found,steps:control.steps?.length??0,
+          predicted:control.predicted??null,bodySteps:control.body?.executed??0,
+          bodySuccess:control.body?.success??false},
+        withShared:{found:result.found,steps:result.steps?.length??0,
+          predicted:result.predicted??null,bodySteps:result.body?.executed??0,
+          bodySuccess:result.body?.success??false},
+        changedInitialRoute:JSON.stringify(control.initialShape)!==JSON.stringify(result.initialShape),
+        changedLocalExecution:JSON.stringify(control.body?.frames?.map(x=>x.chosen))!==
+          JSON.stringify(result.body?.frames?.map(x=>x.chosen)),
+        caution:"Structural internal goal, not independently verified natural-language semantics"
+      }:null;
+      parentPort.postMessage({type:"chat",id,languageMaze:true,...result,comparison,
         selfProbe:!!selfGoal,selfGoal:selfGoal||null,
         perspectivePair:{global:"initial frozen plan + alternative search",
           local:"actually selected learned text actions + fresh plan when diverging"}});
