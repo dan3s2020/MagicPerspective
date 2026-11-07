@@ -24,6 +24,8 @@ jobs:
         run: node --test v17/tests/v23-grounded-temporal-hypermaze.test.mjs
       - name: Recursive native Discoverer on 100000 real observed events, independent physics and numeric extinction regression
         run: node --test v17/tests/v23-multiscale-grounded-hypermaze.test.mjs
+      - name: Learned 5 numerical physics laws, 300 answer-blind numeric QAs and 100000-step proof
+        run: node --test v17/tests/v23-learned-numeric-causal-shape.test.mjs
       - name: Original V17 2D noise/source parity and V22 direct text shape
         run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
       - name: Original V19 cognitive memory and actual world-physics tests
