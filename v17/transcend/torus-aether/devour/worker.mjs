@@ -59,6 +59,8 @@ const cognitive = COGNITIVE ?
 const nativeMath = COGNITIVE ?
   (brain.nativeMathField ? NativeMathGoalField.restore(brain.nativeMathField)
     : new NativeMathGoalField()) : null;
+// Runtime cursor only; learned evidence itself persists inside original Brain.
+let mathLivePlan=null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
 const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 // A V21 hypertext-only checkpoint can have 200 observed documents but ZERO
@@ -379,9 +381,80 @@ parentPort.on("message", m => {
       const plan=nativeMath.formSolution(document,goals,{seed,temperature});
       if(pre!==JSON.stringify(nativeMath.export()))
         throw Error("Frozen native action planning modified learned evidence");
+      // Save the frozen route for LATER external feedback; never self-execute it
+      // or claim a displayed cursor animation is a true physical action.
+      mathLivePlan=plan.found?{planId:id,plan,stepIndex:0,
+        currentDocument:document,trace:[],seed,temperature}:null;
       parentPort.postMessage({type:"chat",kind:"native-math-eval",id,
+        planId:mathLivePlan?.planId??null,
         ...nativeMathRouteSnapshot(plan),nativeBrain:true});
     }catch(err){parentPort.postMessage({type:"chat",kind:"native-math-eval",id,error:err.message});}
+    return;
+  }
+  // Separate actual physical outcome from PREACTION predicted state.
+  // The independent world / user supplies the outcome; the organism may
+  // observe surprise, learn a contextual wall, and recompute the whole path.
+  if(m?.nativeMathStep){
+    const {id,planId,afterDocument,accepted}=m.nativeMathStep;
+    try{
+      const run=mathLivePlan;
+      if(!nativeMath||!run||planId!==run.planId||!run.plan?.found)
+        throw Error("No matching live frozen plan. Re-evaluate before reporting a physical action.");
+      if(typeof afterDocument!=="string"||typeof accepted!=="boolean"||
+         !afterDocument.length||afterDocument.length>110000)
+        throw Error("Independent complete document AFTER action and accepted flag are required");
+      const hop=run.plan.path[run.stepIndex];
+      if(!hop)throw Error("Original predicted shape has no remaining action");
+      const expected=nativeMath.documentForHop(run.plan,hop);
+      const beforeDocument=run.currentDocument;
+      const change=nativeMath.recordActionOutcome({
+        beforeDocument,action:hop.action,afterDocument,accepted,
+        expectedDocument:expected
+      });
+      // Actual outcome joins the same original Brain's lived transitions.
+      brain.observeShared({domain:"text",
+        before:change.beforeClause,after:change.observedClause??afterDocument,
+        action:hop.action,context:"native-math-external-physical-feedback"});
+      const step={index:run.stepIndex,action:hop.action,from:hop.from,to:hop.to,
+        accepted,accurate:change.accurate,
+        predictedClause:run.plan.world.states[hop.to].slice(
+          run.plan.source.offset,run.plan.source.offset+run.plan.source.width).join(" "),
+        observedClause:change.observedClause,
+        physicallyReported:true,source:change.source,
+        worldDeviation:expected!==afterDocument,
+        blockedThisContext:change.blockedThisContext};
+      run.trace.push(step);run.currentDocument=afterDocument;
+      if(change.accurate)run.stepIndex++;
+      let replanned=null,completed=false;
+      if(!change.accurate){
+        const next=nativeMath.formSolution(afterDocument,run.plan.goals,
+          {seed:run.seed,temperature:run.temperature});
+        // Replacement plan is always computed AFTER seeing the deviation,
+        // not retroactively inserted into the first frozen prediction.
+        if(next.found){
+          run.planId=id;run.plan=next;run.stepIndex=0;
+          replanned={...nativeMathRouteSnapshot(next),planId:id,
+            reasonForReplan:"ACTUAL_PHYSICAL_OUTCOME_DIFFERED_FROM_PREACTION_SHAPE"};
+        }else{
+          replanned={found:false,reason:next.reason||"NO_REPAIRED_ROUTE",
+            originalMethod:"Discoverer.shape",afterUnexpectedPhysicalAction:true};
+          mathLivePlan=null;
+        }
+      }else if(run.stepIndex>=run.plan.path.length){
+        completed=true;
+        mathLivePlan=null;
+      }
+      saveCognitive();
+      const savedMB=saveFile?brain.save(saveFile)/1e6:null;
+      shot(true);
+      parentPort.postMessage({type:"chat",kind:"native-math-feedback",id,
+        planId:mathLivePlan?.planId??null,completed,accurate:change.accurate,
+        measuredSteps:run.trace.length,trace:run.trace.slice(-32),
+        replanned,checkpointMB:savedMB,
+        evidenceStatus:"USER_OR_EXTERNAL_WORLD_SUPPLIED_ACTUAL_OUTCOME_NOT_SELF_EXECUTED",
+        fullOutcomeMatchedPrediction:completed&&run.trace.every(x=>x.accurate),
+        nextExpectedAction:mathLivePlan?.plan.path[mathLivePlan.stepIndex]?.action??null});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"native-math-feedback",id,error:err.message});}
     return;
   }
   if(m?.nativeMathObserve){
@@ -390,6 +463,8 @@ parentPort.on("message", m => {
       if(!nativeMath)throw Error("Enable existing cognitivemap on original Brain");
       const observation=nativeMath.observePair(before,after);
       if(!observation.learned)throw Error("Observed input pair is outside this measurable action family: "+observation.reason);
+      // New learned evidence can change a cached field; don't reuse old route.
+      mathLivePlan=null;
       saveCognitive();
       const savedMB=saveFile?brain.save(saveFile)/1e6:null;
       shot(true);
