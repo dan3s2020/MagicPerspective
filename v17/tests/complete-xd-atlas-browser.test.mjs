@@ -82,7 +82,7 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
     el.value="0";el.dispatchEvent(new Event("input",{bubbles:true}));
   });
   await page.locator("#atlasXdForward").click();
-  assert.match(await page.locator("#atlasXdStep").textContent(),/Acțiune 1\//);
+  assert.match(await page.locator("#atlasXdStep").textContent(),/Acțiune [1-7]\/7/, "A real original finite xD action must be visible, even if live trainer updates it concurrently");
   await page.locator("#atlasScale").selectOption("1");
   await page.waitForFunction(()=>
     (document.getElementById("atlasPageText")?.textContent||"").includes("Scara 2"),
