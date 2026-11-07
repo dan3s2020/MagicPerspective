@@ -8,6 +8,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
+import {ConstructedPathLearner}
+ from "../transcend/torus-aether/worlds/constructed-paths.mjs";
 import {makeMaze,seedOf,SEEDS} from "../transcend/torus-aether/worlds/labyrinth.mjs";
 import {qaPairsFromRealJSON} from "../research/text-hypermaze/openthoughts-jsonl-source.mjs";
 const repo="open-thoughts/OpenThoughts3-1.2M";
@@ -64,15 +66,29 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
  assert.ok(train.every(x=>!goldenHashes.has(hash(x.answer))));
  const original=new Brain({rules:originalRules,seed:11});
  const paired=new Brain({rules:originalRules,seed:11});
+ const gateReleased=new Brain({rules:originalRules,seed:11});
+ // Isolated controlled NEGATIVE ablation: release question-key gating on ALL
+ // long-scale context edges. It deliberately removes source-world safeguards
+ // and must never be mistaken for independently verified context bridges.
+ // The same unmodified original V17 learner class still makes every decision.
+ gateReleased.constructedPaths=new ConstructedPathLearner({seed:gateReleased.seed});
+ const originalState=gateReleased.constructedPaths.textState;
+ gateReleased.constructedPaths.textState=function(question,history,scale){
+  return originalState.call(this,"all source worlds combined",history,scale);
+ };
  // Identical training source, identical answer prefix, identical train order;
  // the second model only additionally sees complete-versus-masked training
  // mazes to learn original cross-world path-ranking coefficients.
  for(const [i,row] of train.entries()){
-  for(const b of [original,paired]){
+  for(const b of [original,paired,gateReleased]){
    const r=b.learnConstructedText(row.question,row.answer.slice(0,trainCap));
    assert.equal(r.trained,true,"Native historical Brain failed to consume authentic row "+i);
   }
  }
+ const originalKeys=new Set(train.map(x=>
+  ConstructedPathLearner.qkey(x.question)));
+ const heldoutKeys=holdout.map(x=>ConstructedPathLearner.qkey(x.question));
+ const absentQuestionAnchorCount=heldoutKeys.filter(k=>!originalKeys.has(k)).length;
  for(let i=0;i<8;i++)
   paired.trainConstructedMaze(makeMaze(seedOf(SEEDS.train,700+i),7),true);
  const firstAnswers=train.map(x=>x.answer);
@@ -87,10 +103,12 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
  });
  assert.equal(sourceSig(original),sourceSig(paired),
   "Different factual text evidence must not confound maze transfer ablation");
- const copyBefore=[sourceSig(original),sourceSig(paired)];
+ const copyBefore=[sourceSig(original),sourceSig(paired),sourceSig(gateReleased)];
  const results=[];
  for(const row of holdout){
-  const item={rowIndex:row.rowIndex,
+  const qkey=ConstructedPathLearner.qkey(row.question);
+  const item={rowIndex:row.rowIndex,questionSourceAnchor:qkey,
+   questionSourceAnchorWasObserved:originalKeys.has(qkey),
    questionPreview:row.question.slice(0,180),
    questionSHA256:hash(row.question),answerSHA256:hash(row.answer),
    referenceTotalCodepoints:Array.from(row.answer).length,
@@ -100,7 +118,8 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    ["originalTextOnly",original,3,4],
    ["originalGreedySameWorld",original,1,1],
    ["originalWideBeamSameWorld",original,6,8],
-   ["sameTextPlusMazePaired",paired,3,4]
+   ["sameTextPlusMazePaired",paired,3,4],
+   ["allLongContextsUngatedResearchOnly",gateReleased,3,4]
   ]){
    const m=b.constructedPaths;
    // Important: at this exact point the answer string is NOT available to
@@ -122,8 +141,21 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   const gold=row.answer;
   item.answerPreviewAfterFrozenScoring=gold.slice(0,160);
   for(const [label,pred] of predicted){
-   const m=(label.startsWith("original")?original:paired).constructedPaths;
+   const m=(label.startsWith("original")?original:
+      label==="allLongContextsUngatedResearchOnly"?gateReleased:paired).constructedPaths;
+   const pretrainedContextEdgesAtAnswerStart=m.byScale.map((scale,k)=>
+    m.scales[k].choices(m.textState(row.question,"",scale))
+      .reduce((n,r)=>n+r.total,0));
+   const pretrainedContextEdgesAtFirstKnownThink=m.byScale.map((scale,k)=>
+    m.scales[k].choices(m.textState(row.question,"<think> ",scale))
+      .reduce((n,r)=>n+r.total,0));
    const scoring=computeScore(pred,gold);
+   scoring.scaleWitnessesAtAnswerStart=pretrainedContextEdgesAtAnswerStart;
+   scoring.scaleWitnessesAtPrefix=pretrainedContextEdgesAtFirstKnownThink;
+   scoring.longScaleContextAbsentAtQuestionStart=
+    pretrainedContextEdgesAtAnswerStart.slice(3).every(n=>n===0);
+   scoring.longScaleContextAbsentAtPrefix=
+    pretrainedContextEdgesAtFirstKnownThink.slice(3).every(n=>n===0);
    const predictedChars=Array.from(pred),truthChars=Array.from(gold);
    const postPrefixMatch=truthChars.slice(genericPrefixChars,cap)
     .reduce((n,c,i)=>n+Number(predictedChars[genericPrefixChars+i]===c),0);
@@ -151,7 +183,8 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   }
   results.push(item);
  }
- assert.deepEqual([sourceSig(original),sourceSig(paired)],copyBefore,
+ assert.deepEqual([sourceSig(original),sourceSig(paired),sourceSig(gateReleased)],
+  copyBefore,
   "Heldout generation must be entirely frozen: no training on secret answers");
  const aggregate=key=>{
   const variants=results.map(x=>x.variants[key]);
@@ -190,7 +223,16 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    originalTextOnly:aggregate("originalTextOnly"),
    originalGreedySameWorld:aggregate("originalGreedySameWorld"),
    originalWideBeamSameWorld:aggregate("originalWideBeamSameWorld"),
-   sameTextPlusMazePaired:aggregate("sameTextPlusMazePaired")
+   sameTextPlusMazePaired:aggregate("sameTextPlusMazePaired"),
+   allLongContextsUngatedResearchOnly:aggregate("allLongContextsUngatedResearchOnly")
+  },
+  sourceQuestionKeyEvidence:{
+   trainedDistinctQuestionContextKeys:originalKeys.size,
+   heldoutMissingExactQuestionAnchors:absentQuestionAnchorCount,
+   heldoutCount:holdout.length,
+   originalLongScaleRequiresExactQuestionWordSignature:true,
+   researchOnlyUngatedLongScalesTreatAllQuestionsAsSameWorld:true,
+   evenIfUngatingImprovesCharacterMetricsItIsNotEvidenceOfCausalSemanticEquivalence:true
   },
   independentWorldAblation:{
    identicalRealTextObservations:true,
@@ -213,6 +255,8 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   originalGreedySameWorld:report.results.originalGreedySameWorld,
   originalWideBeamSameWorld:report.results.originalWideBeamSameWorld,
   sourceOnlySharedTrainingPrefix:sharedTrainPrefix,
+  previouslyBlockedExactQuestionAnchors:absentQuestionAnchorCount,
+  researchOnlyAllLongContextsUngated:report.results.allLongContextsUngatedResearchOnly,
   examples:results.slice(0,4).map(x=>({
    index:x.rowIndex,question:x.questionPreview,
    reference:x.answerPreviewAfterFrozenScoring,
