@@ -418,6 +418,11 @@ export class LearnedCognitiveMap {
       const state=queue[head],currentDepth=depth[head];
       if(currentDepth>=maxDepth){depthLimited++;continue;}
       for(const r of this.rules.values()){
+        // A portable action promoted to a local span rule must obey the same
+        // optional independent-physical-evidence gate as projected edges.
+        const portableAction=parsePortableId(r.id);
+        if(minVerifiedContexts>0&&portableAction&&
+           !admittedIds.has(JSON.stringify([portableAction.at,portableAction.from,portableAction.to])))continue;
         const next=this.predict(state,r.id);if(!next)continue;
         const nextKey=key(next),prior=this.interventions.get(key(state)+'|'+r.id);
         if(prior?.blocked>prior?.accepted){rejected++;continue;}
