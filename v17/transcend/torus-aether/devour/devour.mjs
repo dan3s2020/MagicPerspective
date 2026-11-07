@@ -22,6 +22,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
 const workers = +arg("workers", Math.max(1, os.cpus().length - 1)), every = +arg("every", 200000), maxChars = +arg("chars", 0) || Infinity;
 const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), evalChars = +arg("eval", 4000);
+const saveEveryChars = Math.max(0,Math.trunc(+arg("save-every",0))); // optional checkpoint without expensive unseen evaluation
 // worlds the same brains live: text (the corpus) and/or maze (the 2D maps); brains are saved in <out>/brains and
 // --resume continues every brain from its save; /reset (the page's button) starts every brain again from nothing
 // many worlds at once on the GPU (gpu/worlds_gpu.py): --gpu cuda:0|cuda:1|cpu|off, --gpu-worlds N (no limit here),
@@ -116,7 +117,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
+    worlds: sl.worlds, mazeEvery, saveEveryChars, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
     mathAxes: process.argv.includes("--math-axes")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
