@@ -54,6 +54,15 @@ test("REAL original V17 Node worker + genuine repository corpus, live telemetry 
      return r.graphs?.length===1?r:null;
    });
    assert.equal(status.graphs.length,1);
+   // Independent worker watchdog health must be visible BEFORE training
+   // and must never mistake an old graph snapshot for new work.
+   const initialHealth=await json(base+"/health?w=0");
+   assert.equal(initialHealth.w,0);
+   assert.equal(initialHealth.health.workerResponsive,true);
+   assert.equal(initialHealth.canResume,false);
+   assert.ok(initialHealth.health.state==="running"||
+     initialHealth.health.state==="paused");
+   assert.ok(status.graphs[0].health);
    const empty=await poll(async()=>{
      const r=await json(base+"/graph?w=0");
      return r.hypermaze?.enabled?r:null;
@@ -75,6 +84,11 @@ test("REAL original V17 Node worker + genuine repository corpus, live telemetry 
      return r.hypermaze?.rows>=1?r:null;
    },{timeout:65000});
    assert.ok(trained.hypermaze.observedTokens>=1);
+   const liveHealth=await json(base+"/health?w=0");
+   assert.ok(liveHealth.health);
+   assert.ok(typeof liveHealth.health.snapshotAgeMs==="number");
+   assert.ok(liveHealth.health.snapshotAgeMs>=0);
+   assert.ok(liveHealth.health.state!=="unresponsive");
    assert.ok(trained.hypermaze.learnedEdges>0);
    assert.equal(trained.hypermaze.last.answerShownToModelBeforePrediction,false);
    assert.ok(Array.isArray(trained.hypermaze.last.frames));
