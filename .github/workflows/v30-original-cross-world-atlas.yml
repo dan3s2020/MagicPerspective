@@ -21,6 +21,8 @@ jobs:
         run: node --test v17/tests/v30-world-atlas.test.mjs
       - name: Real native world-event JSONL, full global atlas, original Brain HTTP and missing-path provenance
         run: node --test v17/tests/v30-native-atlas-http.test.mjs
+      - name: Real V17 native text contrast operators, corpus memory, eviction truth and merge with world atlas
+        run: node --test v17/tests/v30-native-corpus-atlas.test.mjs
       - name: Actual Chrome display of world atlas and missing paths
         run: |
           npm install --no-save --no-package-lock playwright-core@1.56.1
