@@ -137,6 +137,109 @@ export class NativeWorldAtlas{
    more:offset+limit<all.length,items:clone(all.slice(offset,offset+limit)),
    allEventsStored:true,modelMutatedByInspection:false};
  }
+ // The atlas is more than a last-goal sample. Merge EVERY real witnessed
+ // corridor, every PREACTION searched corridor, and every cutoff frontier
+ // from ALL past text worlds. Pagination is explicit: no hidden node cap.
+ globalTopology({nodeOffset=0,nodeLimit=300,edgeOffset=0,edgeLimit=600}={}){
+  for(const [v,label,max] of [[nodeOffset,"nodeOffset",Number.MAX_SAFE_INTEGER],
+   [nodeLimit,"nodeLimit",1000],[edgeOffset,"edgeOffset",Number.MAX_SAFE_INTEGER],
+   [edgeLimit,"edgeLimit",2000]]){
+   if(!fit(v,label.endsWith("Limit")?1:0,max))
+    throw Error(label+" invalid for global atlas");
+  }
+  const allNodes=new Map(),allEdges=new Map(),
+   witnessed=this.store.witnesses.filter(w=>w.type==="witness"),
+   attempts=this.store.attempts;
+  const node=(text,{observed=false,geometry=null,world=null}={})=>{
+   let v=allNodes.get(text);
+   if(!v){
+    v={id:allNodes.size,text,observedInRealWorld:false,
+     onlyPredicted:false,sourceWorlds:new Set(),attemptIds:new Set(),
+     original5D:null,provenance:[]};
+    allNodes.set(text,v);
+   }
+   if(observed){v.observedInRealWorld=true;if(world)v.sourceWorlds.add(world);}
+   else v.onlyPredicted=!v.observedInRealWorld;
+   if(Array.isArray(geometry)&&geometry.length===5)v.original5D=geometry;
+   return v;
+  };
+  const edge=(from,to,action,status,details={})=>{
+   const key=JSON.stringify([from,to,action,status]);
+   let item=allEdges.get(key);
+   if(!item){
+    item={id:allEdges.size,from,to,action,
+     status,sourceWorlds:new Set(),attemptIds:new Set(),
+     support:0,designBlockingReason:null,verifiedOutcomes:0};
+    allEdges.set(key,item);
+   }
+   if(details.world)item.sourceWorlds.add(details.world);
+   if(details.attemptId)item.attemptIds.add(details.attemptId);
+   if(details.reason)item.designBlockingReason=details.reason;
+   if(details.verified)item.verifiedOutcomes++;
+   item.support++;
+   return item;
+  };
+  for(const ev of witnessed){
+   node(ev.before,{observed:true,world:ev.episodeId});
+   node(ev.after,{observed:true,world:ev.episodeId});
+   edge(ev.before,ev.after,ev.action,"WITNESSED_IN_SOURCE_WORLD",
+    {world:ev.episodeId});
+  }
+  for(const attempt of attempts){
+   const graph=attempt.fullExploredGraph;
+   if(!graph)continue;
+   const expanded=graph.nodes||[];
+   for(const n of expanded){
+    const v=node(n.text,{geometry:n.original5D});
+    v.attemptIds.add(attempt.id);
+   }
+   for(const e of graph.edges||[]){
+    const from=expanded[e.from]?.text,to=expanded[e.to]?.text;
+    if(from==null||to==null)continue;
+    const out=this.store.outcomes.find(x=>x.attemptId===attempt.id);
+    const verified=out?.frames?.some(x=>x.before===from&&x.actual===to&&
+      x.action===e.action.name&&x.predictionCorrect===true)||false;
+    edge(from,to,e.action.name,
+      verified?"PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD":
+       "PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE",
+      {attemptId:attempt.id,verified});
+   }
+   for(const [kind,list] of Object.entries(attempt.blockedFrontier?.possibleNextEdges||{})){
+    if(!Array.isArray(list))continue;
+    for(const cutoff of list){
+     const from=expanded[cutoff.from]?.text,to=cutoff.next;
+     if(from==null||to==null)continue;
+     node(to);
+     edge(from,to,cutoff.action,"BLOCKED_BY_EXPLICIT_SEARCH_BUDGET",
+      {attemptId:attempt.id,reason:cutoff.reason||kind});
+    }
+   }
+  }
+  const nodes=[...allNodes.values()],edges=[...allEdges.values()];
+  const serial=n=>({...n,sourceWorlds:[...n.sourceWorlds],
+    attemptIds:[...n.attemptIds]});
+  const knownCuts=edges.filter(e=>e.status==="BLOCKED_BY_EXPLICIT_SEARCH_BUDGET").length;
+  return {view:"MERGED_ALL_RECORDED_WORLDS",
+   totalNodes:nodes.length,totalEdges:edges.length,
+   witnessedWorlds:new Set(witnessed.map(x=>x.episodeId)).size,
+   recordedWorldPlans:attempts.length,
+   blockedKnownDesignEdges:knownCuts,
+   unknownLanguageSpaceNotEnumerated:true,
+   notClaimedToBeAllNaturalLanguage:true,
+   pagination:{
+    nodeOffset,nodeLimit,edgeOffset,edgeLimit,
+    nodesMore:nodeOffset+nodeLimit<nodes.length,
+    edgesMore:edgeOffset+edgeLimit<edges.length
+   },
+   nodes:nodes.slice(nodeOffset,nodeOffset+nodeLimit).map(serial),
+   edges:edges.slice(edgeOffset,edgeOffset+edgeLimit).map(serial),
+   statusDefinitions:{
+    WITNESSED_IN_SOURCE_WORLD:"Actual before/action/after observation in training world",
+    PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE:"Original shapeGraph planned transferred action; no physical test yet",
+    PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD:"Actual independent physical world callback matched the prediction",
+    BLOCKED_BY_EXPLICIT_SEARCH_BUDGET:"Predicted edge that the current design refused to expand"
+   }};
+ }
  detail(id){
   const entry=this.store.attempts.find(x=>x.id===id);
   if(!entry)return null;
