@@ -6,6 +6,7 @@
 // participates in planning. Unknown grammar/physics => abstention.
 import {KIND} from "../../transcend/torus-aether/worlds/exercise.mjs";
 import {createHash} from "node:crypto";
+import {selectAnchors} from "./winnow-token-anchors.mjs";
 import {tokenizeObservation,renderObservation}
  from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 
@@ -105,19 +106,23 @@ function observeMotifWorld(L,questionTokens,answerTokens,episode,archive=null){
  };
  const roleScan=(tokens,role)=>{
   let prev=null,first=null,tail=null,observed=0;
-  for(let i=0;i+5<=tokens.length;i++){
-   if(i!==0&&(anchorHash(tokens[i])&31)!==0)continue;
-   // Two learned scale-views of the SAME authentic observed words.
-   // A five-token anchor may recur across unrelated 96-token passages;
-   // a twelve-token motif carries more specificity but is often rare.
-   for(const width of [5,12]){
-    if(i+width>tokens.length)continue;
-    const id=ensureMotif(tokens,i,width,role);
-    if(!first)first=id;
-    connect(prev,id,role+"-source-order");
-    prev=id;tail=id;observed++;
-   }
+  // Content-defined winnowing, proved by direct counterexample tests.
+  // A shared substring of >=width+16-1 tokens has a repeated exact
+  // fingerprint even if the two independent problems have different
+  // prefix lengths, while a one-in-32 token lottery may miss all.
+  // Preserve real first/last source anchors for V31 checkpoint compatibility.
+  const anchors=[5,12].flatMap(width=>
+   selectAnchors(tokens,{width,window:16,includeBoundary:true}));
+  anchors.sort((a,b)=>a.at-b.at||a.width-b.width);
+  for(const {at,width} of anchors){
+   const id=ensureMotif(tokens,at,width,role);
+   if(!first)first=id;
+   connect(prev,id,role+"-source-order");
+   prev=id;tail=id;observed++;
   }
+  M.samplingMethod="content-defined-winnow-rightmost-minimum";
+  M.guaranteedSharedSubstringByWidth={fiveToken:20,twelveToken:27};
+  M.samplesSelected=(M.samplesSelected||0)+anchors.length;
   return {first,last:tail,observed};
  };
  const q=roleScan(questionTokens,"question");
