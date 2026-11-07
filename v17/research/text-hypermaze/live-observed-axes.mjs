@@ -109,11 +109,19 @@ export class LiveObservedMathAxes {
    holonomy={ready:!!h.ready,reason:h.reason||null,commutator:h.commutator||null,
     ...("compressedExtraStateCoordinates" in h?{compressedExtraStateCoordinates:h.compressedExtraStateCoordinates}:{})};
   }catch(e){holonomy={ready:false,reason:e.message};}
+  // Predict the first movement of the EXISTING frozen goal path using the
+  // earlier empirically selected context-axis, before any goal execution.
+  let preActionEffect={available:false,reason:"no-observed-state-dependent-first-action"};
+  if(plan?.found&&field==="state-dependent"&&plan.actions?.length){
+   const op=plan.actions[0],indices=plan.model?.numericTokenIndices;
+   if(Array.isArray(indices)&&Number.isInteger(op.primary))
+    preActionEffect=this.predictiveState.forecastAction(start,indices[op.primary],op.step);
+  }
   const unchanged=JSON.stringify(counts)===JSON.stringify({
    rows:this.rows,extracted:this.extracted,accepted:this.coupledAccepted,
    nonlinear:this.conditionalAccepted});
   if(!unchanged)throw Error("Frozen math planning unexpectedly modified learner evidence");
-  return {found:!!plan?.found,field,plan,holonomy,training:counts,
+  return {found:!!plan?.found,field,plan,holonomy,preActionEffect,training:counts,
    input:start,goals,referenceAnswerProvided:false,
    actualWorldExecution:false,
    independentSemanticVerifier:false,
