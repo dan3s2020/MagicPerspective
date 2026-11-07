@@ -17,6 +17,7 @@ param(
   [int]$Workers = 1,
   [int]$Every = 250000,
   [int]$CheckpointEvery = 100000,
+  [int]$XdAtlasEvery = 16000,
   [string]$Arms = "winner",
   [int]$MazeEvery = 4000,
   [double]$Mem = 2,
@@ -43,6 +44,7 @@ if ($GpuWorlds -lt 0) { throw "GpuWorlds must be nonnegative" }
 if ($Mem -lt 0.5) { throw "Mem must be at least 0.5 GB" }
 if ($Every -lt 1000) { throw "Every must be at least 1000" }
 if ($CheckpointEvery -lt 0) { throw "CheckpointEvery cannot be negative" }
+if ($XdAtlasEvery -lt 0) { throw "XdAtlasEvery cannot be negative" }
 if ($Fresh -and $ResumeFrom) { throw "-Fresh cannot be combined with -ResumeFrom. Refusing to lose checkpoints." }
 # Unlike the original V17 server which prints a listen error and may keep
 # training without a reachable UI, refuse to launch on an occupied port.
@@ -83,6 +85,7 @@ Write-Host "Original CPU JavaScript Graph + CPU text maze sidecar remain CPU: 10
 Write-Host "No demo: actual source rows train the original V17 Brain, with live pre-update text-route observations."
 Write-Host "CUDA throughput: text batch $GpuTextBatch, chunk $GpuTextChunk, world batch $GpuWorlds, VRAM budget $Vram GB."
 Write-Host "Expensive frozen evaluation every $Every committed text chars; independent Brain checkpoint every $CheckpointEvery committed chars."
+Write-Host "Complete finite xD world + unseen holdout every $XdAtlasEvery committed chars; real learned physics stored in ORIGINAL Brain."
 Write-Host "Real status endpoint: http://127.0.0.1:$Port/health?w=0" -ForegroundColor Cyan
 Write-Host ""
 # Checkpoints belong to THIS isolated folder. Existing checkpoints are
@@ -104,6 +107,7 @@ $launchParams = @{
   GpuUtil = $GpuUtil
   Every = $Every
   CheckpointEvery = $CheckpointEvery
+  XdAtlasEvery = $XdAtlasEvery
 }
 if ($TraceTransformations) { $launchParams.TraceTransformations = $true }
 $launchParams.Start = $true
