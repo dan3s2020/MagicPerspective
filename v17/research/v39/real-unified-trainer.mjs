@@ -37,7 +37,7 @@ function loadSquad(filename,{requireOfficial=true,expectedSha=null}={}){
  const raw=JSON.parse(bytes.toString("utf8"));
  if(String(raw.version)!=="1.1"||!Array.isArray(raw.data))
   throw Error("Expected authentic SQuAD 1.1 JSON article structure");
- const articles=[],rows=[];
+ const articles=[],rows=[];let invalidGoldOffsets=0,unicodeOffsetCorrected=0;
  for(const article of raw.data){
   if(typeof article.title!=="string"||!Array.isArray(article.paragraphs))
    throw Error("Malformed SQuAD article");
@@ -49,16 +49,31 @@ function loadSquad(filename,{requireOfficial=true,expectedSha=null}={}){
     // SQuAD offset contract: TRAIN source substring must equal ground truth
     // before the model may observe the supervised training pair.
     if(typeof qa.question!=="string"||typeof paragraph.context!=="string"||
-       typeof gold.answer_start!=="number"||typeof gold.text!=="string"||
-       paragraph.context.slice(gold.answer_start,gold.answer_start+gold.text.length)!==gold.text)
-     throw Error("Incorrect SQuAD supervised source/offset for question "+qa.id);
+       !Number.isSafeInteger(gold.answer_start)||gold.answer_start<0||
+       typeof gold.text!=="string")
+     throw Error("Malformed SQuAD field types for question "+qa.id);
+    let offset=gold.answer_start;
+    let verified=paragraph.context.slice(offset,offset+gold.text.length)===gold.text;
+    // Official annotators can use Unicode codepoint offsets while JS
+    // indexes UTF-16. Accept only EXACT source-matched labels, not guesses.
+    if(!verified){
+     const cpPrefix=Array.from(paragraph.context).slice(0,gold.answer_start).join("");
+     const corrected=cpPrefix.length;
+     if(corrected!==offset&&
+        paragraph.context.slice(corrected,corrected+gold.text.length)===gold.text){
+      offset=corrected;verified=true;unicodeOffsetCorrected++;
+     }
+    }
+    if(!verified)invalidGoldOffsets++;
     rows.push({id:qa.id,article:article.title,context:paragraph.context,
-     question:qa.question,answer:gold.text,answerStart:gold.answer_start,
+     question:qa.question,answer:gold.text,answerStart:offset,
+     sourceGoldVerified:verified,
      referenceAnswers:qa.answers.map(x=>x.text)});
    }
   }
  }
- return {sha,articles,rows,filename:path.resolve(filename),sizeBytes:bytes.length};
+ return {sha,articles,rows,filename:path.resolve(filename),sizeBytes:bytes.length,
+  invalidGoldOffsets,unicodeOffsetCorrected};
 }
 function assertIsolatedFolder(out,manifest,original){
  fs.mkdirSync(out,{recursive:true});
@@ -232,7 +247,7 @@ export async function runOriginalV39(config){
   throw Error("Insufficient independent SQuAD articles for real training/calibration/DEV");
  const selectedTrain=new Set(sourceTrain.articles.slice(0,divide)),
   selectedCalib=new Set(sourceTrain.articles.slice(divide));
- const allTrain=sourceTrain.rows.filter(x=>selectedTrain.has(x.article)),
+ const allTrain=sourceTrain.rows.filter(x=>selectedTrain.has(x.article)&&x.sourceGoldVerified),
   allCalibration=sourceTrain.rows.filter(x=>selectedCalib.has(x.article));
  if(!allTrain.length||!allCalibration.length)
   throw Error("SQuAD article split contains an empty role");
@@ -246,6 +261,8 @@ export async function runOriginalV39(config){
   storyFile:config.tiny?path.resolve(config.tiny):null,
   storySize:sourceStory?.size||0,storyMtimeMs:sourceStory?.mtimeMs||null,
   trainArticleCount:selectedTrain.size,calibrationArticleCount:selectedCalib.size,
+  originalTrainInvalidGoldOffsets:sourceTrain.invalidGoldOffsets,
+  originalTrainUnicodeOffsetCorrections:sourceTrain.unicodeOffsetCorrected,
   devArticleCount:"unknown-until-frozen-policy-selection",
   trainIdsSha:digest(Buffer.from(JSON.stringify(training.map(x=>x.id))))};
  const identity={source,trainSamples:training.length,calibrationSamples:calibration.length,
