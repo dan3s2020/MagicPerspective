@@ -748,6 +748,51 @@ $("gpuApply").onclick = async () => {
   } catch (err) { alert("Nu pot aplica setările GPU: " + err.message); }
   livePull();
 };
+// Native V17 cognitive shape: frozen learned topology, real observed field values.
+// X is route step (NOT a fictitious spatial axis); Y is log goal attraction.
+// No movement is claimed by scrubbing. Each full state is retained for inspection.
+let cognitiveFrozenPlan = null;
+function drawFrozenCognitivePath() {
+  const cv=$("cognitivePathCanvas"), out=$("cognitivePathDetail"), scrub=$("cognitivePathScrub");
+  if(!cv||!out||!scrub)return;
+  const g=cv.getContext("2d"),width=cv.width,height=cv.height;
+  g.clearRect(0,0,width,height);g.fillStyle="#07121a";g.fillRect(0,0,width,height);
+  const result=cognitiveFrozenPlan,p=result?.plannedPath||[],F=result?.shapeField||[];
+  const selected=Math.max(0,Math.min(p.length,Number(scrub.value)||0));
+  $("cognitivePathStep").textContent=selected+" / "+p.length;
+  if(!result||!p.length){
+    g.fillStyle="#a4c2d4";g.font="14px system-ui";
+    g.fillText(result?.found?"Ținta deja atinsă (0 acțiuni).":"Nicio cale completă confirmată în graful curent.",18,42);
+    out.textContent=result?.reason||"Aștept forma reală din trainer.";
+    return;
+  }
+  const nodes=[p[0]?.from??0,...p.map(e=>e.to)];
+  const val=nodes.map(id=>Number(F[id])||0);
+  const log=val.map(x=>Math.log10(Math.max(x,1e-15)));
+  const min=Math.min(...log),max=Math.max(...log),span=Math.max(.000001,max-min);
+  const left=45,right=width-22,top=23,bottom=height-43;
+  const X=i=>left+(right-left)*i/Math.max(1,p.length);
+  const Y=i=>bottom-(bottom-top)*(log[i]-min)/span;
+  g.lineWidth=1;g.strokeStyle="#29404d";
+  for(let k=0;k<=4;k++){const yy=top+(bottom-top)*k/4;
+    g.beginPath();g.moveTo(left,yy);g.lineTo(right,yy);g.stroke();}
+  g.beginPath();g.lineWidth=2.6;g.strokeStyle="#4dda9f";
+  for(let i=0;i<val.length;i++){if(i)g.lineTo(X(i),Y(i));else g.moveTo(X(i),Y(i));}g.stroke();
+  const cx=X(selected),cy=Y(selected);
+  g.beginPath();g.arc(cx,cy,7,0,Math.PI*2);g.fillStyle="#ffca64";g.fill();
+  g.strokeStyle="#ffca64";g.lineWidth=1;g.beginPath();g.moveTo(cx,top);g.lineTo(cx,bottom);g.stroke();
+  g.font="13px system-ui";g.fillStyle="#bfdfe9";
+  g.fillText("ORIGINAL V17 goal-attraction V[node], log10 scale; steps from frozen path",14,height-12);
+  g.fillText("start: "+val[0].toExponential(2)+" · goal: "+val.at(-1).toExponential(2),14,16);
+  const current=selected?p[selected-1]:null;
+  out.textContent="TRASEU PREZIS ÎNAINTEA ACȚIUNII · FROZEN, NU EXECUȚIE LIVE"+
+    "\nPas: "+selected+" / "+p.length+" | nod: "+nodes[selected]+
+    "\nAtracție reală V[nod]: "+val[selected]+
+    "\n"+(current?"Acțiune prezisă: "+current.action+"\nStarea întreagă prevăzută: "+current.after:
+       "Starea inițială întreagă: "+result.start)+
+    "\nNiciun rezultat fizic/semantic extern nu este presupus confirmat de acest grafic.";
+}
+$("cognitivePathScrub").oninput=drawFrozenCognitivePath;
 $("cognitiveEvaluate").onclick = async () => {
   const output=$("cognitiveResult"),button=$("cognitiveEvaluate");
   let slots;
@@ -760,9 +805,15 @@ $("cognitiveEvaluate").onclick = async () => {
     const response=await fetch("/cognitive-eval",{method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify({w:liveW,initial:$("cognitiveInitial").value,
-        goal:{slots},maxNodes:384,maxDepth:8})});
+        goal:{slots},
+        maxNodes:Math.max(2,Math.min(768,Number($("cognitiveMaxNodes").value)||384)),
+        maxDepth:Math.max(1,Math.min(256,Number($("cognitiveMaxDepth").value)||64))})});
     const result=await response.json();
-    if(result.error){output.textContent="EROARE: "+result.error;return;}
+    if(result.error){cognitiveFrozenPlan=null;drawFrozenCognitivePath();output.textContent="EROARE: "+result.error;return;}
+    cognitiveFrozenPlan=result;
+    $("cognitivePathScrub").max=String(result.plannedPath?.length||0);
+    $("cognitivePathScrub").value="0";
+    drawFrozenCognitivePath();
     output.textContent="ORGANISM: "+(result.found?"CALE CANDIDATĂ DESCOPERITĂ":"NU A GĂSIT O CALE")+
       "\nReguli deduse: "+result.rules+
       " | Propoziții observate: "+result.observedSentences+
