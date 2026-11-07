@@ -1,5 +1,8 @@
 # MagicPerspective V21 — arhivă de descoperiri, regresii, reparații și dovezi
 
+> **V22 OPEN / BLOCKING — actual original V17 Discoverer.shape pe lume de actiuni text:** [regresia literala 2026-11-07](../REGRESSION_USER_DIRECTIVE_2026-11-07-V22-NO-SUBSTITUTION.md), [arhiva V22 cu audit byte-for-byte, rezultate si limitari](https://github.com/dan3s2020/MagicPerspective/blob/experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107/v17/docs/V22_EXACT_ORIGINAL_DISCOVERER_EVIDENCE_20261107.md), [registrul JSON al hash-urilor sursei V21 si tuturor conditiilor](https://github.com/dan3s2020/MagicPerspective/blob/experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107/v17/docs/V22_EXACT_SOURCE_AND_SCIENTIFIC_ACCEPTANCE_LEDGER_20261107.json). **Niciun cod V22 nu a fost fuzionat in main.** 100/100 pe teste structurate de schimbare a primului token **NU** valideaza 100% semantica OpenThoughts3, iar Issue #25 ramane deschis.
+
+
 **Data:** 2026-11-07. **Intrare documentară pe `main` — fără transfer de cod experimental către `main`.**
 
 ## Unde este documentată cercetarea
