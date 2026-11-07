@@ -198,7 +198,7 @@ export class Brain {
       // Normalization removes trailing whitespace only (line endings), not
       // missing words, altered punctuation or incorrect characters.
       const predictedAnswer = a0 >= 0 ? String.fromCharCode(...shape).trimEnd() : null;
-      const hiddenAnswer = a0 >= 0 ? String.fromCharCode(...ex.slice(a0)).trimEnd() : null;
+      const hiddenAnswer = a0 >= 0 ? Buffer.from(ex.slice(a0)).toString("latin1").trimEnd() : null;
       const firstAnswerExact = an && predictedAnswer !== null ?
         (predictedAnswer === hiddenAnswer ? true : false) : null;
       out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows, firstAnswerExact,
