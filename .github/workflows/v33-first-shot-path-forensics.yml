@@ -1,0 +1,29 @@
+name: V33 original V17 first-shot text missing paths forensic reproduction
+on:
+  push:
+    branches:
+      - experiment/V33-FIRST-SHOT-TEXT-PATH-FORENSICS-20261107
+  workflow_dispatch:
+jobs:
+  real-original-brain-red-green:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source-native V31 forensic atlas and original V17 2D/graph parity
+        run: |
+          node --test v17/tests/v31-forensic-path-atlas.test.mjs
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+      - name: Exact before-vs-after original text world, independent blocked bridge, character output
+        env:
+          V33_EVIDENCE_FILE: ${{ runner.temp }}/v33-first-shot-forensic-evidence.json
+        run: node --test v17/tests/v33-first-shot-path-forensics.test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v33-first-shot-original-v17-actual-forensic-evidence
+          path: ${{ runner.temp }}/v33-first-shot-forensic-evidence.json
+          if-no-files-found: warn
