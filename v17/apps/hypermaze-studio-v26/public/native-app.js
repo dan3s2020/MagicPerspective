@@ -42,7 +42,7 @@ async function action(operation,body={}){
 }
 
 // Browser-only history of native measurements. Does not affect V17 training.
-let nativeHistory=[],historyWorker=null;
+let nativeHistory=[],historyWorker=null,lastNativeError=null;
 const chartMetrics=new Set(["aligned","live","together","C","mazeShape",
   "completedExercisesPerSecond","sustainedCharactersPerSecond"]);
 const rateMetric=k=>k==="completedExercisesPerSecond"||
@@ -229,6 +229,19 @@ function liveIdentity(d){
     " · "+fmt(m.chars)+" caractere trăite");
   value("runSummary","ORIGINAL V17 / "+String(m.status||"—")+
     " / "+fmt(errors)+" erori UI");
+  if(m.status==="eroare"){
+    const problem=d.nativeCudaError||gr?.error||gr?.gpu?.error||
+      "Original V17 worker stopped with an error";
+    value("iState","EROARE: "+String(problem).slice(0,160));
+    value("nativeGpuStatus","EROARE CUDA: "+String(problem).slice(0,180));
+    value("nativeFrozenStatus","EROARE TRAINER ORIGINAL: "+String(problem).slice(0,300)+
+      " · Restart the ORIGINAL V17 process after verifying the dedicated PyTorch CUDA environment.");
+    if(lastNativeError!==problem){
+      lastNativeError=problem;
+      appendLog("error","ORIGINAL V17: "+problem);
+      notice("Training stopped: "+String(problem).slice(0,300),true);
+    }
+  }else lastNativeError=null;
   value("rulesCount","Măsurători originale");
   $("effectsList").innerHTML=[
     ["ALIGNED",formatPct(m.aligned)],
@@ -494,7 +507,14 @@ async function poll(){
     }
   }finally{polling=false;}
 }
-$("startBtn").addEventListener("click",()=>action("control",{action:"start",worker}).then(poll).catch(()=>{}));
+$("startBtn").addEventListener("click",()=>{
+  if(state?.nativeCudaError){
+    notice("CUDA failure: workerul original trebuie repornit cu START_V17.ps1 -Gpu cuda:0 -Resume și același -Out. Nu folosi Hermes Python.",true);
+    appendLog("error",state.nativeCudaError);
+    return;
+  }
+  action("control",{action:"start",worker}).then(poll).catch(()=>{});
+});
 $("pauseBtn").addEventListener("click",()=>action("control",{action:"pause",worker}).then(poll).catch(()=>{}));
 $("saveBtn").addEventListener("click",()=>action("control",{action:"save",worker}).then(()=>
   notice("Checkpoint nativ salvat în directorul ORIGINAL -Out / brains")).catch(()=>{}));
