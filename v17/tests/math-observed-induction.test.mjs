@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {makeMathWorld, applyMathRule, verifyMathTransition, rational, equalRational} from "../transcend/torus-aether/worlds/math.mjs";
 import {ObservedMathRules, makeLearnedMathWorld, inspectPredictedMathPath} from "../transcend/torus-aether/worlds/math-observed.mjs";
 import {trainOriginalDiscoverer} from "../transcend/torus-aether/worlds/math.mjs";
+import {Discoverer} from "../transcend/torus-aether/worlds/exercise.mjs";
 
 function generator(seed=0x2112ac1d) {
   let s=seed>>>0;
@@ -172,7 +173,6 @@ test("1024 complete original-shape trajectories on out-of-distribution coefficie
 });
 test("native original Discoverer must learn the goal; math induction alone is insufficient",()=>{
   const {m}=experience(64);m.fit();
-  const {Discoverer}=await import("../transcend/torus-aether/worlds/exercise.mjs");
   const naive=new Discoverer(11);let completed=0;
   for(let i=0;i<64;i++){
     const w=makeLearnedMathWorld(2+(i%8),1+(i%12),i-30,m);
