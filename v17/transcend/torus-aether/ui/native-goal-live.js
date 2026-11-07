@@ -6,11 +6,44 @@ export function mountNativeGoalPanel({getGraph}){
   const panel=$("nativeGoalRoutePane"),button=$("nativeGoalAsk"),
     question=$("nativeGoalQuestion"),caption=$("nativeGoalPrediction"),
     trace=$("nativeGoalRouteTrace"),canvas=$("nativeGoalRouteCanvas"),
-    stats=$("nativeGoalLearnedStats");
-  if(!panel||!button||!question||!caption||!trace||!canvas||!stats)
+    stats=$("nativeGoalLearnedStats"),observed=$("nativeGoalObservedLive");
+  if(!panel||!button||!question||!caption||!trace||!canvas||!stats||!observed)
     throw Error("Original native V17 goal-route view missing an expected element");
   const fmt=n=>Number.isFinite(n)?n.toLocaleString("ro-RO"):"—";
+  let streamGraph=null,lastSeq=0,busy=false;
+  async function pullActualBlindTraining(){
+    if(busy)return;
+    const w=getGraph();
+    if(streamGraph!==w){
+      streamGraph=w;lastSeq=0;
+      observed.textContent="Aștept predicții reale, făcute ÎNAINTE ca organismul să observe răspunsurile curente...";
+    }
+    busy=true;
+    try{
+      const response=await fetch("/goal-stream?w="+w+"&after="+lastSeq,{cache:"no-store"});
+      if(!response.ok)throw Error("HTTP "+response.status);
+      const batch=await response.json();
+      if(w!==getGraph())return;
+      const fresh=(batch.events||[]).filter(x=>x.seq>lastSeq);
+      if(!fresh.length)return;
+      lastSeq=Math.max(lastSeq,...fresh.map(x=>x.seq));
+      observed.textContent=fresh.slice(-4).map(x=>
+        "EXERCIȚIUL REAL #"+x.exercise+" · proba înaintea observației · "+x.observedBytes+" bytes\n"+
+        "ÎNTREBARE: "+x.question+"\n"+
+        "FORMA PREDICTĂ DIN PRIMA: "+(x.predictedBeforeObserved||"(niciun traseu)")+"\n"+
+        "RĂSPUNSUL REAL (VERIFICAT ABIA DUPĂ PLANIFICARE): "+x.actualAfterPlanning+"\n"+
+        "REZULTAT: "+(x.exact?"EXACT":"INCORECT / REFUZAT")+
+        " · pași: "+x.stepCount+
+        " · fără predictor de caractere: "+x.noNextCharacterFallback
+      ).join("\n\n────────────\n\n");
+      const last=fresh.at(-1);
+      if(last?.frozenRoute)draw(last.frozenRoute);
+    }catch(err){
+      observed.textContent="Fluxul real de antrenare nu poate fi citit: "+err.message;
+    }finally{busy=false;}
+  }
   function renderTraining(g){
+    void pullActualBlindTraining();
     const n=g?.nativeGoalField,p=g?.goalHyperpath;
     if(!n){
       stats.textContent="Aștept observațiile reale ale modelului de transformări, fără rezultate inventate.";
