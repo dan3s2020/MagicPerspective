@@ -188,8 +188,8 @@ class StreamingFastText:
             if len(examples) < 3:
                 take = min(int(preview), len(y))
                 examples.append({
-                    "actual": bytes(y[:take]).decode("ascii", errors="replace"),
-                    "predicted": bytes(pred[:take]).decode("ascii", errors="replace")})
+                    "actual": bytes(np.asarray(y[:take], dtype=np.uint8)).decode("ascii", errors="replace"),
+                    "predicted": bytes(np.asarray(pred[:take], dtype=np.uint8)).decode("ascii", errors="replace")})
         return {"seen": seen, "hits": hits,
                 "accuracy": round(hits / seen, 6) if seen else None,
                 "frozen": True, "algorithm": "observed-hashed-context-1to4",
