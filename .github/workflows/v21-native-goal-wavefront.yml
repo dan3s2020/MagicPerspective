@@ -45,6 +45,10 @@ jobs:
           node --test v17/tests/torus-aether.test.mjs
           node --test v17/tests/veil-aether.test.mjs
           node --test v17/tests/veil-aether.observed-action-field.test.mjs
+      - name: Second hypothesis - original native Disc over V19 learned novel text transformations
+        run: |
+          node --test v17/tests/native-cognitive-goal.test.mjs
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
       - name: Real worker, original UI, native endpoint, checkpoint persistence
         run: node --test v17/tests/native-goal-http.test.mjs
       - name: Existing V21 original HTTP checkpoint and corpus split regression
@@ -56,6 +60,7 @@ jobs:
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
           node --check v17/transcend/torus-aether/worlds/goal-wavefront.mjs
           node --check v17/transcend/torus-aether/worlds/veil-aether.mjs
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/native-goal-live.js
