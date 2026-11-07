@@ -17,6 +17,8 @@ import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
 import {NativeGoalTextMaze} from "../../../research/text-hypermaze/goal-conditioned-native.mjs";
+import {enumerateNativePaths,auditNativePath,appendNativeAtlasLedger,readNativeAtlasLedger}
+ from "../../../research/text-hypermaze/native-path-atlas.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -85,6 +87,9 @@ function recordTelemetry(m) {
     samples.push(sample);if(samples.length>360)samples.splice(0,samples.length-360);
   }
 }
+const savedNativeAtlasPlans=new Map();
+let savedAtlasSequence=0;
+const atlasFile=sl=>saveOf(sl)+".hypermaze-atlas.jsonl";
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
@@ -226,7 +231,9 @@ http.createServer((req, res) => {
        required.some(x=>!x||x.length>120))
       return json(res,{error:"Need an observed starting state and explicit goal constraints, NEVER a heldout answer"});
     const execute=q.get("execute")==="1";
-    const topology=q.get("topology")==="1";
+    const atlas=q.get("atlas")==="1";
+    const maxPaths=Math.min(1000,Math.max(1,Math.trunc(Number(q.get("maxPaths"))||256)));
+    const topology=q.get("topology")==="1"||atlas;
     // A paused or completed original Brain is read from the saved checkpoint
     // with no 60-second inter-worker bottleneck or fabricated fresh state.
     if(!sl.wk){
@@ -235,9 +242,19 @@ http.createServer((req, res) => {
       try{
         const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
         const plan=native.plan({start,required,includeTopology:topology});
+        const allPaths=atlas?enumerateNativePaths(plan,{maxPaths}):null;
         const body=execute&&plan.found?
           native.execute(plan,{enableNoise:true,trainNoise:false}):null;
-        return json(res,{...plan,body,w:sl.w,fromSavedBrain:true,
+        let planId=null;
+        if(atlas){
+          planId="saved:"+sl.w+":"+(++savedAtlasSequence);
+          savedNativeAtlasPlans.set(planId,{plan,atlas:allPaths,brain,body,sl});
+          if(savedNativeAtlasPlans.size>128)
+            savedNativeAtlasPlans.delete(savedNativeAtlasPlans.keys().next().value);
+          appendNativeAtlasLedger(atlasFile(sl),{event:"preaction",planId,
+            plan,atlas:allPaths,body,referenceSeenBeforePlanning:false,fromSavedBrain:true});
+        }
+        return json(res,{...plan,body,atlas:allPaths,planId,w:sl.w,fromSavedBrain:true,
           verifiedLongUnseenSemanticAnswers:false,
           exactUnseenLargeAnswerProven:false});
       }catch(err){return json(res,{error:err.message});}
@@ -246,7 +263,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Original Brain worker busy; cannot claim timely hypermaze path"});
     },30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,trainNoise:false}});
+    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,atlas,maxPaths,trainNoise:false}});
     return;
   }
   if(req.method==="POST"&&url==="/language-maze"){
