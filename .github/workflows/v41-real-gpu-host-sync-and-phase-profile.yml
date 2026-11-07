@@ -1,0 +1,59 @@
+name: V41 exact CUDA no host sync and real per-stage throughput
+on:
+  push:
+    branches:
+      - perf/V41-ELIMINATE-CUDA-HOST-SYNC-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-learner-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install NumPy reference
+        run: python -m pip install numpy
+      - name: Validate syntax and original exact bounded text tests
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/v41_gpu_sync_benchmark.py
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          python -m unittest discover -s v17/tests -p 'test_v17_full_atlas_cuda_hang.py' -v
+          python -m unittest discover -s v17/tests -p 'text_index_fast_test.py' -v
+          python -m unittest discover -s v17/tests -p 'text_variant_fast_test.py' -v
+      - name: Original xD V34 full worker and exact native API
+        run: |
+          node --test v17/tests/v34-incremental-observed-character-rules.test.mjs v17/tests/complete-xd-maze-atlas.test.mjs v17/tests/v34-native-real-live-http.test.mjs
+      - name: New V26 UI original worker source status
+        run: |
+          node --test v17/apps/hypermaze-studio-v26/tests/native-v29-status.test.mjs
+          node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
+      - name: Explicitly state that standard CI does not benchmark an RTX
+        run: |
+          echo 'V41_CPU_CI_PASS: original native text predictions unchanged in CPU references'
+          echo 'V41_ACTUAL_CUDA_SPEEDUP: NOT TESTED ON THIS RUNNER'
+  windows-native-parse:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate standalone V40 launcher and source integrity
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $files=@("v17/START_V40_COMPLETE_FAST.ps1","v17/START_V17.ps1","v17/START_HYPERMAZE_REAL_CUDA.ps1")
+          foreach($file in $files){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd $file),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($errors|Out-String)}
+          }
+          Write-Host 'V41_WINDOWS_ORIGINAL_LAUNCHER_PARSE_PASS'
