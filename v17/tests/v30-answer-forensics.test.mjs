@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {answerForensics} from '../transcend/torus-aether/devour/atlas-answer-forensics.mjs';
 const ex=s=>[...Buffer.from(s,'latin1')];
-const a=ex('Q: Name?\nA: cat\n\n'),b=ex('Q: Animal plural?\nA: dogs\n\n');
+const a=ex('Q: Name?\nA:cat\n\n'),b=ex('Q: Animal plural?\nA:dogs\n\n');
 const boundary=x=>x.indexOf(10)+3;
 test('strict frozen answer characters: first mismatch, all errors and exact whole-answer metrics, independently of field path',()=>{
  const src=[b,a],result={heldoutAnswerComplete:true,strictFullAnswer:true,
@@ -27,12 +27,12 @@ test('strict frozen answer characters: first mismatch, all errors and exact whol
    noFalseHypermazeAttribution:true}));
 });
 test('missing and extra generated characters are distinct; nothing silently omitted',()=>{
- const src=[ex('Q: x\nA: abc\n\n')],row={heldoutAnswerComplete:true,strictFullAnswer:true,
-  exercises:[{a0:6,shape:'ab',firstAnswerExact:false}]};
+ const src=[ex('Q: x\nA:abc\n\n')],row={heldoutAnswerComplete:true,strictFullAnswer:true,
+  exercises:[{a0:7,shape:'ab',firstAnswerExact:false}]};
  const r=answerForensics(row,src);
  assert.equal(r[0].expectedAnswer,'abc');
  assert.deepEqual(r[0].differences,[{index:2,predicted:null,expected:'c',kind:'MISSING_OUTPUT_CHARACTER'}]);
- const extra=answerForensics({...row,exercises:[{a0:6,shape:'abcd',firstAnswerExact:false}]},src);
+ const extra=answerForensics({...row,exercises:[{a0:7,shape:'abcd',firstAnswerExact:false}]},src);
  assert.deepEqual(extra[0].differences,[{index:3,predicted:'d',expected:null,kind:'EXTRA_OUTPUT_CHARACTER'}]);
 });
 test('a partially evaluated or non-heldout exercise cannot be mislabeled as strict',()=>{
