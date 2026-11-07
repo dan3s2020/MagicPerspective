@@ -87,6 +87,27 @@ test("V24 native actual CPU 5-world training builds persistent unicode character
   assert.ok(original.characterAtlas);
   const restored=CharacterHypermaze.restore(original.characterAtlas);
   assert.ok(restored.transferable().length>=2);
+  // The actual frozen V17 AligningGraph.write must produce the answer
+  // BEFORE the hidden reference is used for post-hoc per-character paths.
+  const frozenOriginal=await post("/eval",{
+    w:0,kind:"text",opts:{count:2,max:0,maxOutput:128,T:0,noise:0,
+      strictHeldout:true,forensic:true,maxExplained:30}
+  });
+  assert.ok(!frozenOriginal.error,"Original frozen answer evaluation failed: "+JSON.stringify(frozenOriginal.error));
+  assert.ok(Array.isArray(frozenOriginal.forensics));
+  assert.equal(frozenOriginal.forensics.length,2);
+  assert.equal(frozenOriginal.heldoutAnswerComplete,true);
+  assert.ok(frozenOriginal.forensicSummary.originalMeanShapeSame>=0);
+  assert.ok(frozenOriginal.forensicSummary.originalMeanShapeSame<=1);
+  assert.equal(frozenOriginal.forensicSummary.characterAnswersNotAutoCorrected,true);
+  for(let i=0;i<frozenOriginal.forensics.length;i++){
+    const forensic=frozenOriginal.forensics[i];
+    assert.equal(forensic.originalScore,frozenOriginal.exercises[i].shapeSame);
+    assert.equal(forensic.originalGeneratedBeforeReference,frozenOriginal.exercises[i].shape);
+    assert.equal(forensic.genuineImprovementInFirstTryScore,null);
+    assert.equal(forensic.hiddenAnswerWasUsedOnlyForPostHocDiagnostic,true);
+    assert.ok(forensic.examples.every(x=>x.postHocOnly));
+  }
   const files=readdirSync(dir).filter(x=>x.endsWith(".atlas.jsonl"));
   assert.equal(files.length,1);
   const exported=await fetch(base+"/atlas-export?w=0");
@@ -95,6 +116,7 @@ test("V24 native actual CPU 5-world training builds persistent unicode character
   assert.equal(full,readFileSync(path.join(dir,files[0]),"utf8"));
   const parsed=full.trim().split("\n").map(x=>JSON.parse(x));
   assert.ok(parsed.some(x=>x.type==="character-rule-evidence"));
+  assert.equal(parsed.filter(x=>x.type==="frozen-v17-answer-forensic").length,2);
   const attempts=parsed.filter(x=>x.type==="character-planning-attempt");
   assert.ok(attempts.some(x=>!x.found&&x.reason==="NO_INDEPENDENT_CHARACTER_TRANSFORM_EVIDENCE"));
   assert.ok(attempts.some(x=>x.found&&x.completePredictedPath?.length===2));
@@ -111,6 +133,9 @@ test("V24 native actual CPU 5-world training builds persistent unicode character
       path:r.after.predictedActions.map(x=>({from:x.from,action:parseCharAction(x.action),to:x.to}))},
     missingPath:{found:miss.after.found,missing:miss.after.diagnostics.missingGoalCharacterPaths},
     fullAtlasDiskBytes:full.length,exactArchiveExport:true,
+    originalV17HeldoutAnswerShapeSame:frozenOriginal.forensicSummary.originalMeanShapeSame,
+    originalV17WholeCorrectCount:frozenOriginal.firstAnswerExactCorrect,
+    postHocCharacterErrorPositions:frozenOriginal.forensicSummary.totalMispositions,
     userRequested70percentSemanticQA:"NOT_PROVEN"
   }));
  }finally{
