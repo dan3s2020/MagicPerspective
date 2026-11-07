@@ -96,6 +96,18 @@ jobs:
             if($health.dataset.completedTrainingRows -ne 32){
               throw "Original source rows lost: $($health.dataset.completedTrainingRows)"
             }
+            # Native complete graph must remain readable from the EXACT
+            # original saved Brain AFTER ALL training rows finish.
+            # The old browser could hang forever when the worker exited.
+            $page=Invoke-RestMethod -Uri "$base/atlas-graph?w=0&scale=0&offset=0&limit=70" -TimeoutSec 20
+            if($page.error -or $page.totalStates -le 0 -or -not $page.fromOriginalSavedBrain){
+              throw "Post-training original native graph inaccessible: $($page.error)"
+            }
+            $edits=Invoke-RestMethod -Uri "$base/atlas-graph?w=0&family=edits&offset=0&limit=70" -TimeoutSec 20
+            if($edits.error -or $edits.totalOperators -le 0 -or -not $edits.fromOriginalSavedBrain){
+              throw "Post-training original text transformation atlas inaccessible: $($edits.error)"
+            }
+            Write-Host "V34_WIN_POST_TRAINING_ORIGINAL_ATLAS_PASS nativeStates=$($page.totalStates) textOperators=$($edits.totalOperators) sourceSavedBrain=true"
             Start-Sleep -Milliseconds 800
             try {
               $char=Invoke-RestMethod -Uri "$base/v34/research?w=0" -Method Post -ContentType 'application/json' -Body '{"type":"character-status"}' -TimeoutSec 35
