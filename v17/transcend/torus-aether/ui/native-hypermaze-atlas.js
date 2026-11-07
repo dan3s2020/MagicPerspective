@@ -7,7 +7,7 @@ const fmt=x=>typeof x==="number"&&Number.isFinite(x)?
 const colors={gold:"#ffcf80",green:"#70d7b0",red:"#ed8ba0",
  cyan:"#7acfe4",gray:"#6489a2"};
 const state={w:0,mode:"search",after:0,stack:[],
- page:null,selected:null,summary:null,lastIndex:null,
+ page:null,selected:null,summary:null,lastIndex:null,graphRequestId:0,
  offset:[0,0],angle:0,zoom:1,pointer:null};
 function info(message,error=false){
  $("status").textContent=message;
@@ -130,8 +130,55 @@ function diagnostic(entry){
   "\nExemple: "+JSON.stringify(d.sampleUnavailableOperators||[],null,2)+
   "\nNu putem deduce «imposibil» dintr-o căutare trunchiată.";
 }
+async function loadCompleteGraphFromJournal(entry,requestId){
+ try{
+  const g={...(entry.graphMeta||{}),nodes:[],edges:[],unresolvedFrontier:[]};
+  let after=0,read=0;
+  for(;;){
+   if(requestId!==state.graphRequestId)return;
+   const page=await api({w:state.w,mode:"graph",
+    searchSequence:entry.seq,after,limit:75});
+   if(requestId!==state.graphRequestId)return;
+   if(!page.complete||!page.sharded)
+    throw Error("Atlas graph completeness was not confirmed by original JSONL commit");
+   for(const shard of page.parts||[]){
+    if(shard.part==="nodes"){
+     if(shard.offset!==g.nodes.length)throw Error("Original graph-node shard missing/out of order");
+     g.nodes.push(...shard.items);
+    }else if(shard.part==="edges"){
+     if(shard.offset!==g.edges.length)throw Error("Original graph-edge shard missing/out of order");
+     g.edges.push(...shard.items);
+    }else if(shard.part==="frontier"){
+     if(shard.offset!==g.unresolvedFrontier.length)throw Error("Original graph-frontier shard missing/out of order");
+     g.unresolvedFrontier.push(...shard.items);
+    }else throw Error("Unknown original atlas graph shard type");
+    read++;
+   }
+   $("graphStatus").textContent="Se citesc toate căile observate: "+read+
+    "/"+page.totalParts+" fragmente de graf…";
+   if(!page.hasMore)break;
+   if(page.nextCursor<=after)throw Error("Atlas graph cursor did not advance");
+   after=page.nextCursor;
+  }
+  if(g.nodes.length!==entry.graphNodeCount||
+     g.edges.length!==entry.graphEdgeCount||
+     g.unresolvedFrontier.length!==entry.graphFrontierCount)
+   throw Error("ATLAS INCOMPLET: numărul efectiv de noduri, muchii sau frontiere diferă de jurnal");
+  if(requestId!==state.graphRequestId)return;
+  state.selected={...entry,fullExploredTopology:g};
+  document.documentElement.dataset.atlasGraphAllShardsLoaded="true";
+  draw();
+ }catch(e){
+  if(requestId!==state.graphRequestId)return;
+  document.documentElement.dataset.atlasGraphAllShardsLoaded="false";
+  $("graphStatus").textContent="ATLAS INCOMPLET: "+e.message;
+  info("Nu voi inventa sau ascunde muchiile lipsă: "+e.message,true);
+ }
+}
 function select(entry){
  state.selected=entry;
+ const requestId=++state.graphRequestId;
+ document.documentElement.dataset.atlasGraphAllShardsLoaded=String(!entry.graphSharded);
  document.documentElement.dataset.atlasSelectedKind=kindOf(entry);
  $("detail").textContent=detailOf(entry);
  diagnostic(entry);
@@ -139,6 +186,8 @@ function select(entry){
  for(const b of buttons)b.classList.toggle("selected",
   b.dataset.seq===String(entry.seq??entry.key));
  draw();
+ if(entry.type==="search"&&entry.graphSharded)
+  void loadCompleteGraphFromJournal(entry,requestId);
 }
 function renderList(){
  const box=$("items");box.replaceChildren();
