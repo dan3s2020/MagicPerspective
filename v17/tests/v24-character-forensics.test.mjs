@@ -35,8 +35,8 @@ test("V24 forensic: old word-only V23 cannot walk in this new word; CHAR portal 
  assert.deepEqual(after.world.states[after.path.at(-1).to],["m","u","t"]);
  assert.ok(after.world.neighbors.flat().some(e=>e.characterLevel&&e.hypothesis));
  assert.equal(after.world.diagnostics.nodeLimitReached,false);
- assert.equal(after.world.diagnostics.depthLimitReached,true,
-   "Depth-constrained complete atlas must mark depth boundary honestly");
+ assert.equal(after.world.diagnostics.depthLimitReached,false,
+   "This finite four-state reachable character world must truthfully report a COMPLETE learned map");
  assert.ok(raw.some(e=>e.type==="character-rule-evidence"));
  const learnedBefore=c.export();
  const actual=c.execute(after,{step:(before,action)=>{
