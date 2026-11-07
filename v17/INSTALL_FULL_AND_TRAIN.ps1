@@ -14,7 +14,8 @@ param(
  [int]$GpuTextChunk = 128,
  [long]$Every = 50000,
  [string]$Cuda = "cu126",
- [switch]$SkipDownload
+ [switch]$SkipDownload,
+ [switch]$VerifyOnly
 )
 $ErrorActionPreference = "Stop"
 $node = Get-Command node -ErrorAction SilentlyContinue
@@ -36,9 +37,17 @@ if (-not (Test-Path -LiteralPath $Data)) {
 $env:MP_FULL_DATASET_ROOT = $Data
 
 if (-not $SkipDownload) {
- Write-Host "Installing official Hugging Face dataset downloader..." -ForegroundColor Cyan
- & $python.Source -m pip install --upgrade huggingface_hub
- if ($LASTEXITCODE -ne 0) { throw "huggingface_hub installation failed." }
+ Write-Host "Installing Hugging Face downloader in an ISOLATED environment..." -ForegroundColor Cyan
+ # NEVER pip install into whichever Python 'python' resolves to. The user's
+ # global interpreter may belong to Hermes/transformers and has constraints.
+ $downloadEnv = Join-Path $PSScriptRoot ".hf-dataset-download-venv"
+ $downloadPython = Join-Path $downloadEnv "Scripts\python.exe"
+ if (-not (Test-Path -LiteralPath $downloadPython)) {
+  & $python.Source -m venv $downloadEnv
+  if ($LASTEXITCODE -ne 0) { throw "Dedicated download venv creation failed." }
+ }
+ & $downloadPython -m pip install --upgrade "huggingface_hub>=1.5,<2.0"
+ if ($LASTEXITCODE -ne 0) { throw "Isolated huggingface_hub installation failed." }
 
  $download = @'
 import json, os, pathlib
@@ -63,7 +72,7 @@ if missing:
                 "verifiedLocalFileCount": len(files)}, indent=2), encoding="utf8")
 print(f"DOWNLOAD VERIFIED: {len(files)} complete Parquet files", flush=True)
 '@
- $download | & $python.Source -
+ $download | & $downloadPython -
  if ($LASTEXITCODE -ne 0) {
   throw "Dataset incomplete; re-running safely resumes/downloads missing files."
  }
@@ -74,33 +83,25 @@ print(f"DOWNLOAD VERIFIED: {len(files)} complete Parquet files", flush=True)
 }
 
 Write-Host "Checking the ACTUAL parquet rows using the original V17 loader..." -ForegroundColor Cyan
-$check = @'
-import fs from "node:fs";
-import path from "node:path";
-import {openTextDataset} from "./transcend/torus-aether/data/text-dataset.mjs";
-
-const root=process.env.MP_FULL_DATASET_ROOT;
-const manifest=JSON.parse(fs.readFileSync(path.join(root,".magicperspective-full-source.json"),"utf8"));
-const ds=await openTextDataset(root);
-if(ds.files.length!==manifest.parquetFiles.length)
-  throw Error("V17 sees "+ds.files.length+" files vs "+manifest.parquetFiles.length+" verified files");
-if(ds.total<1000000)
-  throw Error("Only "+ds.total+" examples found; full 1.2M corpus expected, refusing incomplete training.");
-if(ds.trainRows+ds.held!==ds.total)
-  throw Error("Held-out train/test partition does not add up.");
-console.log("REAL DATASET VERIFIED:",JSON.stringify({
- allExamples:ds.total,trainExamples:ds.trainRows,
- heldOutNeverTrained:ds.held,parquetFiles:ds.files.length
-}));
-'@
-Push-Location $PSScriptRoot
-try {
- & $node.Source --input-type=module -e $check
- if ($LASTEXITCODE -ne 0) { throw "V17 did not verify the complete Parquet dataset." }
-} finally { Pop-Location }
+# Native source-file execution avoids PowerShell 5.1 stripping quotes from
+# JavaScript strings passed via 'node --input-type=module -e $check'.
+$verifier = Join-Path $PSScriptRoot "VERIFY_FULL_DATASET.mjs"
+if (-not (Test-Path -LiteralPath $verifier -PathType Leaf)) {
+ throw "Original V17 dataset verifier missing: $verifier"
+}
+& $node.Source $verifier
+if ($LASTEXITCODE -ne 0) { throw "V17 did not verify the complete Parquet dataset." }
+if ($VerifyOnly) {
+ Write-Host "Verified all official Parquet rows. -VerifyOnly requested; CUDA launcher not started." -ForegroundColor Green
+ return
+}
+# Crucial: source the official data/ only, NOT the parent root. The parent can
+# contain old standalone Parquet shards and partial .crdownload files.
+$nativeData = Join-Path $Data "data"
 
 Write-Host "STARTING ORIGINAL REAL CUDA V17 TRAINING" -ForegroundColor Green
-Write-Host "Dataset: $Data"
+Write-Host "Dataset root: $Data"
+Write-Host "Native V17 Parquet directory: $nativeData"
 Write-Host "Checkpoint/output: $Out"
 Write-Host "GPU: $Gpu; worlds per batch: $GpuWorlds; VRAM cap: $Vram GB"
 Write-Host "Live Magic UI: http://127.0.0.1:$Port/transcend/torus-aether/ui/magic.html?live=1"
@@ -108,7 +109,7 @@ Write-Host "Original V17 UI: http://127.0.0.1:$Port/transcend/torus-aether/ui/in
 Write-Host "Progress uses committed training examples, never the unique alphabet." -ForegroundColor Cyan
 
 $launch = @{
- Data=$Data;Out=$Out;Port=$Port;Workers=1;Arms="stable+many";Worlds="text,maze,transform"
+ Data=$nativeData;Out=$Out;Port=$Port;Workers=1;Arms="stable+many";Worlds="text,maze,transform"
  Gpu=$Gpu;GpuWorlds=$GpuWorlds;Vram=$Vram;Mem=$Mem
  GpuTextBatch=$GpuTextBatch;GpuTextChunk=$GpuTextChunk;Every=$Every;Cuda=$Cuda
 }
