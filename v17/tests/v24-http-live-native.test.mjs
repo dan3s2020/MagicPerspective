@@ -109,7 +109,7 @@ else test("real V24 native Parquet worker + original 2D unaffected + UI + checkp
    originalDiscoverer:response.originalOperator,
    plannedBeforeFirstAction:response.predictedBeforeFirstMovement,
    realGraphEdges:map.externalEdges.size,
-   5DActive:response.dimensions===38,heldoutExact:frozen.exact,heldoutN:frozen.total,
+   geometry5DActive:response.dimensions===38,heldoutExact:frozen.exact,heldoutN:frozen.total,
    noLabelLeak:frozen.referenceAnswerOnlyInHTTPParent
   }));
  }finally{
