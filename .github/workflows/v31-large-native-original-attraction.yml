@@ -1,0 +1,23 @@
+name: V31 large-scale native original attraction and real-language acceptance
+on:
+  push:
+    branches:
+      - experiment/V31-MILLION-STATE-ORIGINAL-ATTRACTION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-scalability:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: 240 exact parity tasks and 104400-state learned transformation graph using original attraction
+        run: node --test v17/tests/v31-scalable-original-attraction.test.mjs
+      - name: Original native 2D maze parity and V29 checkpoint/Q&A acceptance
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --test v17/tests/v29-real-qa-closed-loop.test.mjs
