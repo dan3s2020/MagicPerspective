@@ -51,6 +51,8 @@ export async function readManifest(out,source,opts,target){
  checkSource(saved,source,opts,target);
  const active=new Map();
  let maxPersistedId=-1;
+ const activeStart=saved.activeStartId;
+ if(!Number.isSafeInteger(activeStart)||activeStart<0)throw Error("Invalid active-record boundary");
  for(const entry of saved.segments){
   safeFile(entry.name);
   const src=path.join(out,entry.name),hash=sha256();
@@ -63,13 +65,15 @@ export async function readManifest(out,source,opts,target){
    if(!Number.isSafeInteger(record.id)||record.id<0||record.id<=maxPersistedId||
       typeof record.prompt!=="string"||typeof record.answer!=="string"||
       !Array.isArray(record.terms))throw Error("Invalid or nonmonotonic persisted record");
-   maxPersistedId=record.id;active.set(record.id,record);count++;
-   if(active.size>opts.maxRecords){const old=active.keys().next().value;active.delete(old);}
+   maxPersistedId=record.id;count++;
+   if(record.id>=activeStart)active.set(record.id,record);
   }
   const actual=hash.digest("hex");
   if(actual!==entry.sha256||count!==entry.count)
    throw Error("Checkpoint segment failed SHA256/count validation: "+entry.name);
  }
+ if(active.size!==saved.activeRecordCount||active.size>opts.maxRecords)
+  throw Error("Restored active record set does not match committed manifest");
  const model=RealTextAtlas.restore({version:1,config:saved.modelConfig,
    stats:saved.modelStats,nextId:saved.modelNextId,records:[...active.values()]});
  if(saved.modelNextId<=maxPersistedId)throw Error("Checkpoint nextId regression");
@@ -119,6 +123,8 @@ export async function writeManifest({out,source,options,progress,model,trace,tra
   options,progress:{...progress,lastSavedCursor:progress.cursor},
   modelConfig:model.config,modelStats:{...model.stats},
   modelNextId:nowId,segments,
+  activeStartId:model.records.keys().next().value??nowId,
+  activeRecordCount:model.records.size,
   trace:trace||null,traceHistory:(traceHistory||[]).slice(-16),
   events:(events||[]).slice(-120),heldout:heldout||null,
   savedAt:new Date().toISOString()
