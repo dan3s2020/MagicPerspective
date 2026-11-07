@@ -1,0 +1,39 @@
+{
+  "id": "V21-AETHER-VEIL-20261107",
+  "user_quote": "I allow you to do it",
+  "source": "user-intent/2026-11-07-current-chat-authorization.md",
+  "scope": "Additive and isolated V21 experiment on V20 base; not an authorized merge or replacement of original V17 algorithm.",
+  "original_baseline": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs: Discoverer.shape (unaltered)",
+    "v17/transcend/torus-aether/worlds/text-hypermaze.mjs: existing known-goal V20 wavefront",
+    "v17/transcend/torus-aether/devour/worker.mjs: original training worker and save",
+    "v17/transcend/torus-aether/devour/devour.mjs: HTTP server",
+    "v17/transcend/torus-aether/ui/index.html: existing native controls"
+  ],
+  "planned_changes": [
+    "v17/transcend/torus-aether/worlds/veil-aether.mjs",
+    "v17/transcend/torus-aether/worlds/text-hypermaze.mjs (additive persistence/telemetry only)",
+    "v17/transcend/torus-aether/devour/worker.mjs (observe actual events and frozen plan)",
+    "v17/transcend/torus-aether/devour/devour.mjs (frozen route endpoint)",
+    "v17/transcend/torus-aether/ui/index.html (append panel + script)",
+    "v17/transcend/torus-aether/ui/veil-aether-live.js",
+    "v17/START_V21_AETHER_VEIL.ps1",
+    "v17/tests/veil-aether.test.mjs",
+    ".github/workflows/v21-veil-aether.yml",
+    "v17/docs/V21_VEIL_AETHER_EVIDENCE.md"
+  ],
+  "minimum_mechanism": "Learn contextual observed transitions using two-token states and empirical futures; reuse V17 goal-attraction 0.97 max-neighbor mathematical field on observed directed graph; retain original V17 Discoverer.shape unchanged. Expose online surprise, path replay and per-domain experience counters. No hidden target oracle; known-goal path frozen.",
+  "no_unauthorized_substitution": true,
+  "extras": "Everything added as an independently identifiable, opt-in experiment; semantic actions, continuous xD frames, learned noncommuting fields and all-CUDA are NOT claimed. These hypotheses remain separate from measured implementation.",
+  "tests": [
+    "node --test v17/tests/veil-aether.test.mjs",
+    "node --test v17/tests/torus-text-hypermaze.test.mjs"
+  ],
+  "status": "IN_PROGRESS — scientific and user-authority regression #25 remains OPEN",
+  "limitations": [
+    "Contextual next-symbol transitions are not general semantic action physics",
+    "No proof of original Discoverer.shape() being directly reused on language states",
+    "Sparse graph trained in Node CPU; not full CUDA",
+    "No user-hardware evaluation yet"
+  ]
+}
