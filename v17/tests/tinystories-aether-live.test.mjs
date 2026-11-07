@@ -62,7 +62,7 @@ test("real independent TinyStories Python GPU protocol: train, LIVE UI, frozen v
  let primary=null,secondary=null;
  try{
   primary=await launch({train,valid,out,device:"numpy",port:p,batchKB:4,batchStories:7,
-   saveSeconds:2,resume:true,autoStart:true,autoOpen:false});
+   saveSeconds:2,resume:true,autoStart:true,autoOpen:false,nativeWorlds:false});
   const html=await fetch(url+"/");
   assert.equal(html.status,200);
   const body=await html.text();
@@ -139,7 +139,7 @@ test("real independent TinyStories Python GPU protocol: train, LIVE UI, frozen v
   await primary.close();primary=null;
   const p2=await port();
   secondary=await launch({train,valid,out,device:"numpy",port:p2,batchKB:4,
-   batchStories:7,saveSeconds:2,resume:true,autoStart:false});
+   batchStories:7,saveSeconds:2,resume:true,autoStart:false,nativeWorlds:false});
   const recovered=secondary.app.readStatus();
   assert.equal(recovered.stories,120);
   assert.equal(recovered.chars,status.chars);

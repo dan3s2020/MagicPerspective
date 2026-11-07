@@ -11,6 +11,9 @@ param(
  [int]$BatchKB = 128,
  [int]$BatchStories = 180,
  [int]$SaveSeconds = 45,
+ [int]$NativeTextEvery = 16,
+ [int]$NativeTextBytes = 48,
+ [int]$NativeWorldEvery = 32,
  [string]$Cuda = "cu126",
  [string]$PythonExe = "",
  [switch]$Download
@@ -117,8 +120,12 @@ Write-Host "Isolated model: $Out"
 Write-Host "Device: $Gpu - only TinyStories text, no OpenThoughts/maze/transform"
 Write-Host "Live TinyStories UI: http://127.0.0.1:$Port/" -ForegroundColor Green
 Write-Host "Batch: $BatchKB KB or $BatchStories real stories; checkpoint every $SaveSeconds seconds."
+Write-Host "The ORIGINAL full V17 Brain learns concurrently on a separate CPU worker:" -ForegroundColor Cyan
+Write-Host "language, constructed text paths, 5D graph, maze, perspective, causal transformations, noise and self-code."
+Write-Host "Native graph sampling 1/$NativeTextEvery stories x $NativeTextBytes bytes; one maze + transform + selfcode per $NativeWorldEvery stories."
+Write-Host "Two separate dataset percentages and independent heldout scores are visible in UI."
 Write-Host "Ctrl+C requests an atomic model checkpoint. Restart the same command to resume."
 Write-Host ""
 $env:OCTOPUS_PY = $py
-& node $server --train $Train --valid $Valid --out $Out --port $Port --device $Gpu --batch-kb $BatchKB --batch-stories $BatchStories --save-seconds $SaveSeconds --start --open
+& node $server --train $Train --valid $Valid --out $Out --port $Port --device $Gpu --batch-kb $BatchKB --batch-stories $BatchStories --save-seconds $SaveSeconds --native-text-every $NativeTextEvery --native-text-bytes $NativeTextBytes --native-world-every $NativeWorldEvery --start --open
 if ($LASTEXITCODE -ne 0) { throw "TinyStories real trainer exited with code $LASTEXITCODE" }

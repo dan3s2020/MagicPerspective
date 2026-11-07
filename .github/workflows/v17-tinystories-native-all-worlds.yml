@@ -1,0 +1,48 @@
+name: TinyStories Aether - fast GPU text plus ORIGINAL V17 native all worlds and real UI
+on:
+  push:
+    branches:
+      - feature/TINYSTORIES-ALL-NATIVE-WORLDS-LIVE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dual-real-workers-with-unseen-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install actual NumPy parity for original GPU protocol (no pretend NVIDIA)
+        run: python3 -m pip install "numpy>=2,<3"
+      - name: Syntax and real model files
+        run: |
+          node --check v17/research/tinystories/native-worlds-worker.mjs
+          node --check v17/research/tinystories/server.mjs
+          node --check v17/research/tinystories/ui/native-ui.js
+          node --check v17/research/tinystories/ui/app.js
+          node --check v17/tests/tinystories-native-all-worlds.test.mjs
+          python3 -m py_compile v17/transcend/torus-aether/gpu/fast_text.py
+      - name: Real original V17 Brain combined with real fast learner, independent progress, native maze/transform/graph, frozen tests and checkpoint
+        run: node --test v17/tests/tinystories-native-all-worlds.test.mjs
+      - name: Previous fast-only TinyStories protocol must remain correct, including browser and save resume
+        run: node --test v17/tests/tinystories-aether-live.test.mjs
+  windows-launchers:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse new TinyStories PowerShell and original V17 PowerShell on Windows
+        shell: powershell
+        run: |
+          foreach ($file in @("v17/START_TINYSTORIES.ps1","v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1")) {
+            $tokens=$null; $errs=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path,[ref]$tokens,[ref]$errs) | Out-Null
+            if($errs.Count -gt 0){throw ("PowerShell syntax failed in " + $file + ": " + ($errs | Out-String))}
+            Write-Host "WINDOWS_TINYSTORIES_ALL_WORLDS_PARSE_PASS $file"
+          }
