@@ -26,6 +26,21 @@ export class CrossWorldAtlas {
    label:key(delta),provenance:provenance||'world:'+world+'/observation:'+this.events.length};
   this.events.push(e);this.worlds.add(e.world);this.revision++;return e;
  }
+ ingestTextDocument(document,{world="unknown"}={}){
+  if(typeof document!=="string")throw Error("Training document must be text");
+  let accepted=0,ignored=0;const evidenceIds=[];
+  const pattern=new RegExp("\\(\\s*(\\d+(?:\\s*,\\s*\\d+){"+(this.dims-1)+"})\\s*\\)","g");
+  for(const [index,line]of document.split("\n").entries()){
+   const found=[...line.matchAll(pattern)].map(x=>x[1].split(",").map(Number));
+   const labels=this.actions.filter(a=>new RegExp("\\b"+a.replace(/[^a-z0-9_-]/gi,"")+"\\b","i").test(line));
+   if(found.length!==2||labels.length!==1){if(line.trim())ignored++;continue}
+   if(found.some(v=>v.length!==this.dims||v.some(x=>x<0||x>=this.side))){ignored++;continue}
+   const event=this.observe({world,from:code(found[0],this.side),action:labels[0],to:code(found[1],this.side),
+    provenance:"document:"+world+"/line:"+index});
+   evidenceIds.push(event.id);accepted++;
+  }
+  return{accepted,ignored,evidenceIds,world:String(world)};
+ }
  fit({allowContext=true}={}){
   this.models=new Map();this.allowContext=allowContext;
   const tests=conditions(this.dims,this.side);
