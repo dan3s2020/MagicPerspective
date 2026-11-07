@@ -315,8 +315,8 @@
       <p class="note">Numai evenimentele persistate de organismul original, fără trasee simulate. Graful de mai jos conține TOATE muchiile candidate ale încercării selectate; auriu = traseul prezis înainte de acțiune, mov = transfer ipotetic, turcoaz = tranziție confirmată, roșu în diagnostic = blocaj sau limită. Proiecția 2D este o vedere topologică, nu o dovadă a unor coordonate 4D învățate.</p>
       <div class="row">
         <label>Worker <input id="v30AtlasWorker" type="number" min="0" step="1" value="0" style="width:60px"></label>
-        <label>Tip <select id="v30AtlasKind"><option value="">Toate dovezile</option><option value="planning-attempt">Planificări (tot graful)</option><option value="rule-evidence">Transformări învățate</option><option value="observed-action">Acțiuni observate</option><option value="observed-external-transition">Alte lumi</option></select></label>
-        <label>Rezultat <select id="v30AtlasResult"><option value="">Toate</option><option value="found">Cu traseu</option><option value="missing">Fără traseu</option><option value="blocked">Pereți și limite</option><option value="evidence">Dovezi transformări</option></select></label>
+        <label>Tip <select id="v30AtlasKind"><option value="">Toate dovezile</option><option value="planning-attempt">Planificări (tot graful)</option><option value="rule-evidence">Transformări învățate</option><option value="observed-action">Acțiuni observate</option><option value="observed-external-transition">Alte lumi</option><option value="answer-evaluation">Predicții de caractere (holdout)</option></select></label>
+        <label>Rezultat <select id="v30AtlasResult"><option value="">Toate</option><option value="found">Cu traseu</option><option value="missing">Fără traseu</option><option value="blocked">Pereți și limite</option><option value="evidence">Dovezi transformări</option><option value="chars">Răspunsuri/Caractere greșite</option></select></label>
       </div>
       <div class="row" style="margin:8px 0">
         <button id="v30AtlasLoad" type="button">Citește următoarele 50 evenimente</button>
