@@ -1,0 +1,157 @@
+{
+  "schema": 1,
+  "generated_date": "2026-11-07",
+  "title": "MagicPerspective V17-V21 observed results, regression provenance, and missing transfer evidence",
+  "origin": {
+    "repo": "dan3s2020/MagicPerspective",
+    "branch": "experiment/V21-AETHER-VEIL-PREDICTIVE-PERSPECTIVE-20261107",
+    "base_branch": "experiment/V20-OBSERVED-TEXT-HYPERMAZE-LIVE-20261107",
+    "base_commit": "b6a5d3aba4784fe7643509f03906ec4bb1752199",
+    "main_unchanged_by_this_experiment": true,
+    "blocking_issue": "https://github.com/dan3s2020/MagicPerspective/issues/25",
+    "blocking_issue_state": "OPEN"
+  },
+  "source_truth": {
+    "direct_user_verbatim": "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md",
+    "earlier_regression_source": "user-intent/2026-11-07-V21-REGRESSION-DIRECTIVE-verbatim.md",
+    "complete_original_conversation": false,
+    "assistant_turns_byte_exact_preserved": false,
+    "screenshots_original_bytes_in_git": false,
+    "historical_release_gate": "BLOCKED"
+  },
+  "documented_files": [
+    "v17/docs/V21_CONSOLIDATED_RESEARCH_REGRESSION_TRANSFER_ARCHIVE_20261107.md",
+    "v17/docs/V21_REGRESSION_DISCOVERY_TRANSFER_AUDIT_20261107.md",
+    "v17/docs/V21_VEIL_AETHER_EVIDENCE.md",
+    "v17/docs/V21_WINDOWS_POWERSHELL51_POSTMORTEM_20261107.md",
+    "user-intent/changes/V21-AETHER-VEIL-20261107.json",
+    "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md"
+  ],
+  "measurements": [
+    {
+      "id": "V21-ORIGINAL-FROZEN-QA-RESCUE",
+      "metric": "AligningGraph.write() frozen heldout answer character-position shapeSame",
+      "value": 0.17647058823529413,
+      "unit": "fraction",
+      "train_characters": 5633,
+      "train_exercises": 64,
+      "corpus": "CI synthetic 71 Q/A examples, not user OpenThoughts3",
+      "checkpoint_migration": true,
+      "v20_documents_before": 64,
+      "v20_documents_after": 64,
+      "v20_edges_before": 143,
+      "v20_edges_after": 143,
+      "min_required_by_test": 0.1,
+      "evidence": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42324536831",
+      "status": "PASSED_SYNTHETIC_ONLY"
+    },
+    {
+      "id": "V21-ANSWER-MARKER-CLIP",
+      "metric": "shapeSame when 'A:' absent in evaluated prefix",
+      "value": null,
+      "short_prefix_chars": 200,
+      "full_chars": 273,
+      "answer_marker_offset": 266,
+      "full_shapeSame": 0.14285714285714285,
+      "incorrect_prior_value": 0,
+      "source": "v17/tests/veil-aether.shape-boundary-regression.test.mjs",
+      "status": "PASSED_FROZEN_UNIT"
+    },
+    {
+      "id": "V21-CUDA-CPU-PYTHON-FAILCLOSED",
+      "metric": "requested CUDA with deliberately invalid Python yields fatal before ingesting corpus",
+      "passed": true,
+      "false_checkpoint_written": false,
+      "source": "v17/tests/veil-aether.cuda-failclosed.test.mjs",
+      "status": "PASSED_LINUX_CI_NOT_WINDOWS_GPU"
+    },
+    {
+      "id": "V21-CONTEXT-GRAPH",
+      "metric": "actual observed contextual next-symbol routes and original V17 action telemetry",
+      "source": "v17/tests/veil-aether.test.mjs",
+      "status": "PASSED_SYNTHETIC_AND_NATIVE_WORKER"
+    },
+    {
+      "id": "V21-NATIVE-TESTS",
+      "metric": "all native Node + Linux pwsh tests",
+      "passed": 42,
+      "total": 42,
+      "evidence": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42324536831",
+      "status": "PASSED"
+    },
+    {
+      "id": "V21-HISTORICAL-DISCOVERIES",
+      "metric": "separately checked out historic branches passed original tests",
+      "evidence": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42324536831",
+      "status": "PASSED_HISTORICAL_NOT_ALL_INTEGRATED"
+    },
+    {
+      "id": "V21-USER-WINDOWS-PARSER-ERROR",
+      "metric": "Windows PowerShell 5.1 UTF8-without-BOM misdecoding a U+2014 em dash at launcher line 92",
+      "offending_line": 92,
+      "reported_line": 120,
+      "offending_character_codepoint": "U+2014",
+      "source": "v17/START_V21_AETHER_VEIL.ps1",
+      "status": "SOURCE_FIXED_PENDING_WINDOWS_CI_VERIFICATION"
+    },
+    {
+      "id": "V21-USER-RTX3050TI-OPENTHOUGHTS3",
+      "metric": "full real GPU training and frozen heldout open-loop result",
+      "value": null,
+      "source": "user Windows 10k exercises 16 heldout, not independently repeated",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "native_components": [
+    {
+      "path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+      "component": "original maze Discoverer.shape",
+      "status": "PRESERVED_AND_ACTIVE_IN_MAZE"
+    },
+    {
+      "path": "v17/transcend/torus-aether/devour/brain.mjs",
+      "component": "original AligningGraph.write in Brain.evalTextExercises and frozen boundary fix",
+      "status": "ACTIVE_NATIVE"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+      "component": "original V19 learned cognitive transformations",
+      "status": "OPT_IN_NATIVE"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/text-hypermaze.mjs",
+      "component": "V20 unique-token observed graph and original route UI",
+      "status": "ACTIVE_NATIVE"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/veil-aether.mjs",
+      "component": "V21 pair-context observed graph and frozen math field",
+      "status": "ACTIVE_NATIVE_AUXILIARY"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/observed-causal-field.mjs",
+      "component": "V21 empirically learned action-conditioned effects, changed-index axes, branching and observed AB!=BA",
+      "status": "ACTIVE_NATIVE_OBSERVATION_NOT_TEXT_POLICY"
+    }
+  ],
+  "historically_reproduced_not_unified": [
+    "experiment/V17-LEARNED-AXES-PERSPECTIVE-GATING-20261107",
+    "experiment/V17-LEARNED-LOCAL-AXES-CAUSAL-ROUTES-20261107",
+    "experiment/V17-PATH-HOLONOMY-MEMORY-DIMENSION-20261107",
+    "experiment/V17-TEXT-MAZE-COUPLED-AXES-20261107",
+    "experiment/V17-2048-HIERARCHICAL-MERGE-20261107",
+    "experiment/V17-XD-SCALE-INVARIANT-TRANSFORMS-20261107",
+    "experiment/V17-ONE-SHARED-TRANSFORMATION-CORE-20261107",
+    "experiment/V17-REAL-CORPUS-AXIS-GATING-20261107"
+  ],
+  "hard_acceptance_missing": [
+    "Direct use of original Discoverer.shape on a semantically navigable language-world state/action graph",
+    "Independent semantic goal and feedback prior to knowing final answer",
+    "Transfer of true calibrated signed local frames, signed-area holonomy and stochastic chance policy into a single real text inference policy",
+    "Matched baseline and ablation tests on the same unseen OpenThoughts3 exercises for fixed training chars and seeds",
+    "Windows RTX 3050 Ti CUDA end-to-end performance and NVML utilization measurements",
+    "Complete original chronological transcript, assistant replies and screenshot binaries",
+    "Explicit user approval to close blocking issue 25 and merge into main"
+  ],
+  "machine_readable_verdict": "PARTIAL_WITH_VERIFIED_NATIVE_REGRESSION_REPAIR_AND_INDEPENDENT_HISTORICAL_TESTS"
+}
