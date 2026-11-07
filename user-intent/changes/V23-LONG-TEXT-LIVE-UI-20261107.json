@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_WITH_TESTED_PARTIAL_MECHANISM_ONLY",
+  "source_quotes": [
+    {
+      "source": "verbatim/2026-11-06-TEXT-HYPERMAZE-VISUAL-REAL-TRACE.md",
+      "literal": "si unde vad in ui tot traseul asta si ce se intampla la fiecare pas? unde vad si traseele reprezentate vizual??"
+    },
+    {
+      "source": "user message in current turn 2026-11-07",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI"
+    }
+  ],
+  "source_baseline": "experiment/V23-OBSERVED-HYPERPATH-LONG-RANGE-20261107@8d56bfe7be9ba8a512c3876f8baf97ce0067bf48",
+  "original_mechanism": "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+  "preserved_originals": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/devour/brain.mjs",
+    "v17/transcend/torus-aether/ui/view5.mjs",
+    "v17/START_V21_AETHER_VEIL.ps1"
+  ],
+  "changed_files": [
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/ui/app.js",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/tests/v23-cognitive-native-long-http.test.mjs",
+    ".github/workflows/v23-observed-hyperpath-long-range.yml"
+  ],
+  "minimum_scope": "Raise 1024-char/12-step native frozen cognitive-plan service caps with bounded memory for >2K token input; add strictly measured original path/attraction canvas in existing V17 UI without removing any control. No synthetic replay claimed as actual movement.",
+  "authorizations": "User requested original large-text solution shape and visual route inside existing real UI; preserve full native parser, memory, UI and checkpoints.",
+  "acceptance_tests": [
+    "2K-token frozen long plan via actual native HTTP endpoint on restored real checkpoint",
+    "Original UI and all controls still present",
+    "Original V17 frozen source untouched, one brain training semantics unchanged",
+    "Attraction curve and selected path nodes from server values, no invented 5D coordinates",
+    "Full original V19/V21 HTTP regression tests"
+  ],
+  "observed_results": "Not tested until CI reports exact logs",
+  "limitations_open": [
+    "Does not certify natural language semantic goal inference",
+    "Causal action physical validation required; hypothesis is not guaranteed",
+    "No full OpenThoughts 100% heldout",
+    "No user hardware CUDA run",
+    "Issue #25 OPEN"
+  ]
+}
