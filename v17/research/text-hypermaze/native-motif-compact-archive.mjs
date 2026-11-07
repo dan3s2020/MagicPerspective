@@ -32,7 +32,7 @@ export async function openCompactNativeMotifArchive(filename){
   throw Error("Compact native original Brain disk index requires absolute file");
  let DatabaseSync;
  try{({DatabaseSync}=await import("node:sqlite"))}
- catch(error){throw Error("Compact native original source index requires Node 22+ node:sqlite "+error.message)}
+ catch(error){throw Error("Native indexed phrase-memory disk archive requires Node.js >=22 with node:sqlite. "+error.message)}
  fs.mkdirSync(path.dirname(filename),{recursive:true});
  const db=new DatabaseSync(filename);
  try{
