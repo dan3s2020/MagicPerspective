@@ -48,11 +48,11 @@ if (!worldsArg.includes("text") && !worldsArg.includes("cognitivemap") && !world
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (para.trim().length < 20) continue; k++;
     if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
   heldPick = async n => Array.from({length: n}, () => heldParas[Math.floor(Math.random() * heldParas.length)]);
-  source = {kind: "text", files, heldSet};
+  source = {kind: "text", files, heldSet, totalRows: k, trainRows: k - heldSet.length, heldRows: heldSet.length};
 } else {
   const root = arg("data", DEFAULT_TEXT_ROOT), ds = await openTextDataset(root);
   for (let k = 0; k < ds.held && evalText.length < evalChars; k++) { const x = await ds.heldOut(k); evalText += "Q: " + x.prompt + "\nA: " + x.answer + "\n\n"; }
-  source = {kind: "parquet", root};
+  source = {kind: "parquet", root, totalRows: ds.total, trainRows: ds.trainRows, heldRows: ds.held};
   heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
@@ -74,7 +74,7 @@ const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} :
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
-  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, cognitive: g?.cognitive || t?.cognitive || null, code: g?.selfCode || t?.selfCode || null, wholeMap: g?.wholeMap || t?.wholeMap || null, final: !!t?.final}; }
+  return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, progress: g?.progress || t?.progress || null, error: sl.lastError || null, gpu: G, chars: g?.chars || t?.chars || 0, test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, cognitive: g?.cognitive || t?.cognitive || null, code: g?.selfCode || t?.selfCode || null, wholeMap: g?.wholeMap || t?.wholeMap || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
@@ -427,7 +427,7 @@ http.createServer((req, res) => {
       return json(res, {w: sl.w, ...evaluateWholeMapBaseline({count,seed})});
     } catch (err) { return json(res, {error: err.message}); }
   }
-  if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
+  if (url === "/graphs") return json(res, {world, every, corpus: source.kind === "none" ? null : {kind: source.kind, totalRows: source.totalRows, trainRows: source.trainRows, heldOut: source.heldRows}, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
     return res.end(g ? JSON.stringify({...g, test: last.get(w)?.test || null, world}) : "{}"); }
