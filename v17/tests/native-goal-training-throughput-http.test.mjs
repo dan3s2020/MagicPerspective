@@ -83,11 +83,19 @@ test("actual V17 goal-training consumes complete real Q/A rows, streams whole-an
     const final=await json("/graphs");
     assert.equal(final.graphs[0].goalTraining,true);
     assert.equal(final.graphs[0].nativeGoalField.observedNumericQAPairs,450);
+    const phases=final.graphs[0].goalPipeline?.phases||{};
+    for(const stage of ["language-perspectives","constructed-path-and-coupled-axes",
+      "observed-text-transformations","causal-actions-shared-experience"])
+      assert.equal(phases[stage]?.calls,450,"Missing actual learned stage: "+stage);
+    assert.equal(final.graphs[0].goalPipeline?.sourceRows,450);
+    assert.ok(final.graphs[0].goalPipeline?.measuredRowsPerSecond>0);
     console.log("REAL_NATIVE_GOAL_TRAINING_THROUGHPUT "+JSON.stringify({
       sourceRows:500,trainingRows:450,heldoutRows:50,
       trainedRows:450,wallSeconds:+wallSec.toFixed(3),
       measuredRowsPerSecond:+rate.toFixed(2),correlatedEffects:snapshot.nativeGoalField.correlatedTransitions,
       blindProbes:live.events.length,firstBlind:!!first.frozenRoute,
+      workerMeasuredRate:final.graphs[0].goalPipeline?.measuredRowsPerSecond,
+      sourceStageTimings:phases,
       unseenCompleteAnswer:answer.text,legacyCharacterMode:false,
       caveat:"Short structured Q/A fixture; NOT user's OpenThoughts or RTX CUDA benchmark"
     }));
