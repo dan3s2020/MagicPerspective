@@ -171,7 +171,8 @@ async function loadPage(){
   for(const x of result.items){
    const tr=document.createElement("tr");
    const id=x.id??x.episodeId??x.attemptId??x.action??"—";
-   if(x.id&&["attempts","failures"].includes(section))tr.dataset.id=String(x.id);
+   if((x.id||x.attemptId)&&["attempts","failures"].includes(section))
+    tr.dataset.id=String(x.id||x.attemptId);
    tableCell(tr,id);
    const name=x.action??x.predicted??x.start??x.episodeId??x.attemptId??"—";
    tableCell(tr,typeof name==="string"?name.slice(0,180):JSON.stringify(name));
