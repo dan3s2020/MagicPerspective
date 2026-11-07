@@ -74,7 +74,8 @@ test("V24: genuine streaming, freeze-before-observation, checkpoint resume and h
  const completed=await new RealTrainer({source:src,out,maxRecords:40,resume:true}).initialize();
  assert.equal(completed.mode,"finished");
  assert.equal(completed.heldout.count,3);
- assert.ok(completed.trace&&completed.trace.beforeAction!==false);
+ assert.ok(completed.trace&&completed.trace.beforeAction===true);
+ assert.equal(completed.trace.method,"Discoverer.shape");
  assert.ok(completed.events.length>0);
  assert.throws(()=>completed.start(),/already reached/);
  for(const x of hold)assert.ok(![...second.model.records.values()].some(r=>r.prompt===x.prompt));
