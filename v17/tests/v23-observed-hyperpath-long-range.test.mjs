@@ -192,9 +192,9 @@ test("320-action branching observed hypermaze uses original V17 attraction and s
   }
   const goal={slots:{0:"HUB",1:String(layers)}};
   const kwargs={maxNodes:layers*3+4};
-  const make=(seed,temperature)=>m.formObservedWorld("text",["HUB","0"],goal,
+  const make=temperature=>m.formObservedWorld("text",["HUB","0"],goal,
     {...kwargs,disc:{temp:temperature},maxNodes:layers*3+4});
-  const deterministic=make(21,0);
+  const deterministic=make(0);
   assert.equal(deterministic.found,true);
   assert.equal(deterministic.path.length,2*layers);
   assert.equal(deterministic.directOriginalMethod,"Discoverer.shape");
@@ -202,7 +202,7 @@ test("320-action branching observed hypermaze uses original V17 attraction and s
   assert.ok(deterministic.path.every(h=>typeof h.action==="string"));
   // The existing formObservedWorld API does not expose a seed argument.
   // Its actor receives a fixed seed; same temperature MUST replay the same noise.
-  const stochasticA=make(21,.8),stochasticB=make(21,.8);
+  const stochasticA=make(.8),stochasticB=make(.8);
   assert.equal(stochasticA.found,true);
   assert.deepEqual(stochasticA.path,stochasticB.path);
   assert.equal(stochasticA.path.length,2*layers);
