@@ -340,6 +340,10 @@ export class Brain {
     M.gpu = {batch: N, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, differ}; return M.gpu;
   }
   async playTransformsGPU(gpu, N, tick = async () => {}) {
+    // Exactly as learnMazesGPU: CLI --gpu-worlds 0 means AUTO, never an empty batch.
+    // The GPU init has already measured the available VRAM and supplied autoWorlds.
+    if (N === 0 || N === "auto" || N === undefined || N === null) N = gpu.info?.autoWorlds || 256;
+    if (!Number.isSafeInteger(N) || N < 1) throw Error("Invalid GPU transformation world count: " + N);
     this.tWorld(); const T = this.trans, kinds = [["object"], ["self"], ["door"]], levels = [];
     while (levels.length < N) { const L = makeLevel(TSEEDS.train + T.index * 7919, {goals: kinds[T.index % 3]}); T.index++; if (L) levels.push(L); if (L && levels.length % 32 === 0) await tick("transformări: lumi generate", levels.length, N); }
     const frozen = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); frozen.r = Object.assign(Object.create(RNG.prototype), frozen.r);
