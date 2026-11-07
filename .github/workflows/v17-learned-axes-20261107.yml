@@ -1,0 +1,28 @@
+name: MagicPerspective V17 learned xD axes and solution-path tests
+on:
+  push:
+    branches:
+      - experiment/V17-LEARNED-AXES-PERSPECTIVE-GATING-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  discovered-axes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Exact source checks
+        run: |
+          node --check v17/research/learned-axes/axis-navigator.mjs
+          node --check v17/research/learned-axes/hidden-world.mjs
+          node --check v17/tests/learned-axis-gating.test.mjs
+      - name: Recover functional axes from up to 2048 noisy channels and solve unseen paths
+        run: node --test v17/tests/learned-axis-gating.test.mjs
+      - name: Existing V17 constructed routes and read-only 5D geometry regressions
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
