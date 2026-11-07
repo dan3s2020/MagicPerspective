@@ -92,7 +92,8 @@ export function parseActualJSONL(raw,{maxLineBytes=16777216}={}){
  try{row=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(raw).replace(/^\uFEFF/,""));}
  catch(err){throw Error("Invalid real JSONL syntax: "+err.message);}
  const text=textsFromRealJSON(row);
- return {text,empty:!text.length};
+ const qaPairs=qaPairsFromRealJSON(row);
+ return {text,qaPairs,empty:!text.length};
 }
 
 
