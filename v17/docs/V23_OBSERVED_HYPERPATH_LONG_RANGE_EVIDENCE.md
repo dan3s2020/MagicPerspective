@@ -61,3 +61,17 @@ https://github.com/dan3s2020/MagicPerspective/actions/runs/42340826171
 ## Future acceptance (not claimed done)
 
 One **native single-organism**, frozen end-to-end run must observe actual large text Q/A corpora and real semantics; learn state/action/feedback topology without access to withheld answers; predict the whole target-conditioned form before answer output; execute predicted actions with live per-step graph and delta, while proving the graph causally determines native answer; measure independent heldout unseen long responses against controls, ablations, repeatable noise, throughput, CUDA, checkpoints and preserved original UI. Preserve all old code and record failures. A CI green check on closed observed graphs never substitutes this proof.
+
+## Additional measured evidence — native HTTP, held-out symbolic physics and branch/noise
+
+The earlier line "one existing source file" remains literally true for modified runtime paths, but this same file subsequently gained a bounded **confirmedActionPhysics** flag for `formSolution`: when every modeled action has positive independent physical experience and no contradiction, the existing original V17 field uses passability conductance `1` on the imagined application graph. The target remains a checkable predicate; the full execution is independently validated against a real `step()` callback. A learned transformation may still be wrong on genuinely unseen contexts; the test therefore does NOT prove natural-language semantics.
+
+**Green end-to-end native HTTP and checkpoint run:** https://github.com/dan3s2020/MagicPerspective/actions/runs/42341102423
+
+- **2,048-element held-out text-state composition**: 48 observed phase transformations, a whole frozen 48-action form before output, independent environment step verification and all 2,048 output elements matching. This is **symbolic identity + phase transition**, NOT independent recovery of arbitrary semantic Q/A answers. Reference log: `V23_UNSEEN_LONG_COMPOSITION`. The 48 underlying action rules were each taught from a short single-step example; the 2,048-element input itself was not in training.
+- Causal ablation deleting action `advance:23` causes `formSolution` to fail; a contradictory action outcome also invalidates the plan rather than overclaiming.
+- Native V19 corpus-trained HTTP server held-out unseen composition test **PASS**; native V17/V20/V21 multiworld HTTP, old UI and checkpoint test **PASS**; Q/A text training resurrection and resume from original V21 checkpoint **PASS** (CPU CI environment, no CUDA performance claim).
+- **160-layer branching observed action topology**: native original method constructed a complete **320-action route** before movement, with seeded stochastic choices across two legitimate learned branches at each level: **85 left, 75 right**. Re-running with the same seed and temperature produced the exact same action path. Reference: `V23_OBSERVED_BRANCHING_NOISE`.
+- **Latest completed all-green branch/noise run at this audit:** https://github.com/dan3s2020/MagicPerspective/actions/runs/42341109961 ; 9/9 V23 tests, 19/19 V19 cognitive, 2/2 V21 boundary, 5/5 observed action, V19 HTTP and two V21 native HTTP/migration tests, plus Windows PowerShell 5.1 parse.
+- No new screenshot or HTML hypergraph UI is claimed. No natural open-ended answer precision on OpenThoughts3 is measured. No release status changed. Full historical byte completeness remains explicitly unverified.
+
