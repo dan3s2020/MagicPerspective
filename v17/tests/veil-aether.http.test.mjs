@@ -80,7 +80,22 @@ test("NATIVE V17 V20 V21 multiworld: live frames + frozen route + original UI + 
   assert.match(html,/id="veilCanvas"/);
   assert.match(html,/id="veilScrub"/);
   assert.match(html,/id="veilActionCanvas"/);
-  assert.match(html,/id="datasetProgressPct"/);
+  // User requires ALL dataset progress counters IN the same "Ce s-a nascut"
+  // metrics group as the old steps / symbols cards, not above it in "Mediu".
+  const born=html.indexOf("<h2>Ce s-a născut</h2>");
+  const stepsAt=html.indexOf('id="steps"',born);
+  const symbolsAt=html.indexOf('id="symbols"',born);
+  const panelAt=html.indexOf('id="datasetProgressBox"',born);
+  const gridClose=html.indexOf("</div>",html.indexOf("</section>",panelAt));
+  const accuracyAt=html.indexOf("<h2>Cât ghicește",born);
+  const mediuAt=html.indexOf("<h2>Mediu</h2>");
+  assert.ok(mediuAt<born && born<stepsAt && stepsAt<symbolsAt &&
+     symbolsAt<panelAt && panelAt<gridClose && gridClose<accuracyAt,
+     "Regression: dataset progress must be embedded in the SAME born-metrics grid after original symbols, before accuracy");
+  assert.doesNotMatch(html.slice(mediuAt,born),/id="datasetProgressBox"/,
+     "Regression: dataset progress must not live in Mediu again");
+  assert.match(html.slice(panelAt,gridClose),/id="datasetProgressBar"/);
+    assert.match(html,/id="datasetProgressPct"/);
   assert.match(html,/id="datasetProgressBar"/);
   assert.match(html,/id="datasetProgressCount"/);
   assert.match(html,/id="datasetHeldOut"/);
