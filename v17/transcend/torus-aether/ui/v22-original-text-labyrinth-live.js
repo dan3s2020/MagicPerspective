@@ -7,7 +7,7 @@
  const caption=document.getElementById("v22OriginalShapeCaption");
  if(!canvas||!caption)return;
  const cx=canvas.getContext("2d");
- let topology=null,coords=[],lastFeedback=null,started=0;
+ let topology=null,coords=[],lastFeedback=null,started=0,layoutWidth=0,layoutHeight=0;
  const color={bg:"#07131c",edge:"#28516b",visited:"#5b82a2",
    path:"#eaba42",goal:"#22d5a0",start:"#e7f4ff",failure:"#f37f88"};
  const finite=x=>Number.isFinite(Number(x))?Number(x):0;
@@ -60,7 +60,9 @@
      cx.fillText("Nu se afiseaza un graf de demonstratie.",18,66);
      requestAnimationFrame(frame);return;
    }
-   coords=layout(topology,w,h);
+   if(coords.length!==topology.nodes.length||layoutWidth!==w||layoutHeight!==h){
+     coords=layout(topology,w,h);layoutWidth=w;layoutHeight=h;
+   }
    const route=Array.isArray(topology.predictedRoute)?topology.predictedRoute:[];
    const routes=new Set();
    for(let i=1;i<route.length;i++)routes.add(route[i-1]+":"+route[i]);
@@ -104,6 +106,7 @@
  }
  window.addEventListener("v22-original-shape",ev=>{
    const r=ev.detail||{};topology=r.topology||null;started=performance.now();
+   coords=[];layoutWidth=0;layoutHeight=0;
    lastFeedback=null;
    if(!topology){
      caption.textContent="Nu exista topologie invatata pentru aceasta tinta. Nu este un raspuns gresit inventat.";
