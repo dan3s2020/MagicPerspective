@@ -17,6 +17,24 @@ jobs:
         run: node --test v17/tests/veil-aether.test.mjs
       - name: V21 actual multiworld worker, live UI and HTTP evidence
         run: node --test v17/tests/veil-aether.http.test.mjs
+      - name: V21 preserve native V17 Q/A shape learning after legacy checkpoint resume
+        run: node --test v17/tests/veil-aether.text-migration.test.mjs
+      - name: Parse real Windows PowerShell launchers and assert all native worlds enabled
+        shell: pwsh
+        run: |
+          foreach ($file in @('v17/START_V21_AETHER_VEIL.ps1', 'v17/ENSURE_V21_CUDA.ps1')) {
+            $tokens = $null
+            $errorsFound = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path, [ref]$tokens, [ref]$errorsFound)
+            if ($errorsFound.Count -gt 0) {
+              $errorsFound | ForEach-Object { Write-Error $_.Message }
+              throw "PowerShell syntax invalid: $file"
+            }
+          }
+          $launcher = Get-Content -Raw v17/START_V21_AETHER_VEIL.ps1
+          if ($launcher -notmatch 'text,hypertext,maze,transform') {
+            throw "Native V17 text world not selected with V20/V21"
+          }
       - name: V21 requested CUDA must fail closed if Python does not have CUDA
         run: node --test v17/tests/veil-aether.cuda-failclosed.test.mjs
       - name: V21 client JavaScript syntax
