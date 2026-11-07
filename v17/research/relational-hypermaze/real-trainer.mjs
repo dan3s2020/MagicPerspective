@@ -9,6 +9,7 @@ import {setImmediate as yieldLoop} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
 import {openRealSource} from "./real-data-source.mjs";
 import {RealTextAtlas,normalize,scoreAnswer} from "./real-corpus-core.mjs";
+import {readManifest,writeManifest,manifestName,legacyName} from "./real-checkpoint-store.mjs";
 
 const dirname=path.dirname(fileURLToPath(import.meta.url));
 const send=(res,status,payload)=>{res.writeHead(status,{"content-type":"application/json; charset=utf-8",
@@ -22,7 +23,9 @@ export class RealTrainer{
   onlineEvery=25,limit=0,resume=false}={}){
   if(!source?.trainingFrom||!source?.heldOut)throw Error("Real corpus source required");
   this.source=source;this.out=path.resolve(out||path.join(dirname,"runtime-v24-real"));
-  this.checkpoint=path.join(this.out,"atlas-v24.json");
+  this.checkpoint=path.join(this.out,manifestName);
+  this.legacyCheckpoint=path.join(this.out,legacyName);
+  this.savedSegments=[];this.savedNextId=0;
   this.options={maxRecords:int(maxRecords,10,500000,"maxRecords"),
     maxAnswerChars:int(maxAnswerChars,256,1000000,"maxAnswerChars"),
     saveEvery:int(saveEvery,1,1000000,"saveEvery"),
@@ -33,33 +36,33 @@ export class RealTrainer{
   this.progress={cursor:0,onlineScored:0,onlineAnswerFound:0,onlineExact:0,
     onlineF1Sum:0,onlineExactQuestionRepeat:0,lastSavedCursor:0,
     startedAt:null,doneAt:null,evals:0};
-  this.mode="idle";this.error=null;this.trace=null;this.heldout=null;
+  this.mode="idle";this.error=null;this.trace=null;this.traceHistory=[];this.heldout=null;
   this.events=[];this.loop=null;this.waiter=null;this.stopFlag=false;
-  this.saveQueue=Promise.resolve();this.startedWall=0;
+  this.saveQueue=Promise.resolve();this.startedWall=0;this.startedAtRow=0;
  }
  async initialize(){
   await fsp.mkdir(this.out,{recursive:true});
-  const exists=fs.existsSync(this.checkpoint);
-  if(exists&&!this.resume)throw Error("Existing checkpoint; pass --resume to preserve and continue: "+this.checkpoint);
-  if(this.resume&&!exists)throw Error("--resume requested but no V24 checkpoint exists: "+this.checkpoint);
+  const exists=fs.existsSync(this.checkpoint)||fs.existsSync(this.legacyCheckpoint);
+  if(exists&&!this.resume)throw Error("Existing V24 checkpoint (index or legacy); use --resume. No overwrite.");
+  if(this.resume&&!exists)throw Error("--resume requested but no V24 checkpoint exists in "+this.out);
   if(exists){
-   const saved=JSON.parse(await fsp.readFile(this.checkpoint,"utf8"));
-   if(saved.version!==1||saved.sourceFingerprint!==this.source.fingerprint)
-    throw Error("Checkpoint source changed: refusing to mix training/held-out partitions");
-   if(saved.sourceTrainRows!==this.source.trainRows||saved.sourceHeldRows!==this.source.heldRows)
-    throw Error("Checkpoint split differs; refusing resume");
-   if(saved.options.maxRecords!==this.options.maxRecords||
-      saved.options.maxAnswerChars!==this.options.maxAnswerChars)
-    throw Error("Memory configuration changed; choose matching limits for resume");
-   if(saved.progress.cursor>this.targetRows)
-    throw Error("Requested target limit is below saved cursor");
-   this.model=RealTextAtlas.restore(saved.model);
-   this.progress=saved.progress;
-   this.heldout=saved.heldout||null;
-   this.trace=saved.trace||null;
+   const saved=await readManifest(this.out,this.source,this.options,this.targetRows);
+   this.model=saved.model;this.progress=saved.progress;
+   this.heldout=saved.heldout||null;this.trace=saved.trace||null;
+   this.traceHistory=(saved.traceHistory||[]).slice(-16);
+   if(this.trace&&!this.traceHistory.some(t=>t.row===this.trace.row))
+     this.traceHistory.push(this.trace);
    this.events=[...(saved.events||[]).slice(-119),
      {type:"resume",cursor:this.progress.cursor,time:Date.now()}];
+   this.savedSegments=saved.segments||[];
+   this.savedNextId=saved.lastSavedNextId||0;
    this.mode=this.progress.cursor>=this.targetRows?"finished":"paused";
+   if(saved.format===1){
+     // Before training further, atomically publish a new compact manifest.
+     // atlas-v24.json is preserved byte-for-byte as a recovery copy.
+     await this.save();
+     this.events.push({type:"migration",cursor:this.progress.cursor,time:Date.now()});
+   }
   }
   return this;
  }
@@ -73,6 +76,8 @@ export class RealTrainer{
       remaining:denom-this.progress.cursor,limitActive:this.targetRows<denom,
       datasetFullyConsumed:this.progress.cursor===denom},
     atlas:this.model.summary(),heldout:this.heldout,
+    traceHistory:this.traceHistory.map(t=>({row:t.row,found:t.found,exact:t.exact,
+      wordF1:t.wordF1,steps:t.route?.length||0,question:t.question.slice(0,160)})),
     lastTrace:this.trace?{row:this.trace.row,question:this.trace.question,
       predicted:this.trace.predicted,found:this.trace.found,exact:this.trace.exact,
       wordF1:this.trace.wordF1,beforeAction:true,routeSteps:this.trace.route?.length||0}:null,
@@ -80,7 +85,12 @@ export class RealTrainer{
       trainRows:this.source.trainRows,heldRows:this.source.heldRows,files:this.source.files},
     backend:{graph:"Node.js CPU",cudaTextShapeVerified:false,
       note:"Original V17 CUDA worlds are separate; do not report this graph as CUDA training"},
-    checkpoint:{file:this.checkpoint,savedCursor:this.progress.lastSavedCursor}};
+    checkpoint:{file:this.checkpoint,legacyFile:this.legacyCheckpoint,
+      legacyRetained:fs.existsSync(this.legacyCheckpoint),savedCursor:this.progress.lastSavedCursor,
+      segmentCount:this.savedSegments.length},
+    throughput:{rowsPerSecond:this.startedWall>0&&this.mode==="running"?
+      (this.progress.cursor-this.startedAtRow)*1000/Math.max(1,Date.now()-this.startedWall):0,
+      totalProcessed:this.progress.cursor}};
  }
  _release(){if(this.waiter){const wake=this.waiter;this.waiter=null;wake();}}
  start(){
@@ -88,6 +98,7 @@ export class RealTrainer{
   if(this.mode==="finished"||this.progress.cursor>=this.targetRows)throw Error("Training target already reached");
   if(this.loop){this.mode="running";this._release();return;}
   this.stopFlag=false;this.mode="running";this.startedWall=Date.now();
+  this.startedAtRow=this.progress.cursor;
   this.progress.startedAt||=new Date().toISOString();
   this.loop=this._pump().catch(e=>{this.error=e.stack||e.message;this.mode="error";
     this.events.push({type:"fatal",message:e.message,time:Date.now()});}).finally(()=>{this.loop=null;});
@@ -116,10 +127,12 @@ export class RealTrainer{
      this.progress.onlineExactQuestionRepeat+=Number(exactOld);
      this.trace={row:row.index,beforeAction:plan.beforeAction,method:plan.method,
        question:row.prompt.slice(0,5000),predicted:plan.answer.slice(0,5000),
+       actual:row.answer.slice(0,2000),
        found:plan.found,exact:score.exact,wordF1:score.wordF1,route:plan.route,
        nodes:plan.nodes,edges:plan.edges,field:plan.field,
        hypotheses:plan.learnedContexts,
        note:"PRE-UPDATE sampled online score, not frozen held-out accuracy"};
+     this.traceHistory.push(this.trace);if(this.traceHistory.length>16)this.traceHistory.shift();
      this.events.push({type:"prediction",row:row.index,found:plan.found,
        exact:score.exact,wordF1:score.wordF1,time:Date.now()});
      if(this.events.length>120)this.events.shift();
@@ -127,6 +140,12 @@ export class RealTrainer{
     this.model.observe(row.prompt,row.answer,{sourceRow:row.index});
     this.progress.cursor=row.index+1;
     if(this.progress.cursor%this.options.saveEvery===0)await this.save();
+    if(this.progress.cursor%1000===0)console.log("V24_REAL_PROGRESS",JSON.stringify({
+      cursor:this.progress.cursor,trained:this.model.stats.accepted,
+      evaluated:this.progress.onlineScored,correct:this.progress.onlineExact,
+      exactPercent:this.progress.onlineScored?100*this.progress.onlineExact/this.progress.onlineScored:0,
+      wordF1Percent:this.progress.onlineScored?100*this.progress.onlineF1Sum/this.progress.onlineScored:0,
+      saved:this.progress.lastSavedCursor}));
     if(this.progress.cursor%32===0)await yieldLoop();
    }
    if(this.progress.cursor>=this.targetRows){
@@ -166,20 +185,23 @@ export class RealTrainer{
  }
  save(){
   const task=this.saveQueue.then(async()=>{
-   const payload={version:1,sourceFingerprint:this.source.fingerprint,
-    sourceTrainRows:this.source.trainRows,sourceHeldRows:this.source.heldRows,
-    options:this.options,progress:{...this.progress,lastSavedCursor:this.progress.cursor},
-    model:this.model.snapshot(),heldout:this.heldout,trace:this.trace,
-    events:this.events.slice(-120),savedAt:new Date().toISOString()};
-   const tmp=this.checkpoint+".tmp-"+process.pid;
-   try{await fsp.writeFile(tmp,JSON.stringify(payload),"utf8");
-    await fsp.rename(tmp,this.checkpoint);
-    this.progress.lastSavedCursor=this.progress.cursor;}
-   finally{await fsp.rm(tmp,{force:true}).catch(()=>{});}
-   return {saved:true,cursor:this.progress.cursor,file:this.checkpoint};
+   const saved=await writeManifest({
+    out:this.out,source:this.source,options:this.options,
+    progress:this.progress,model:this.model,trace:this.trace,
+    traceHistory:this.traceHistory,events:this.events,
+    heldout:this.heldout,previousSegments:this.savedSegments,
+    lastSavedNextId:this.savedNextId
+   });
+   this.savedSegments=saved.segments;
+   this.savedNextId=saved.lastSavedNextId;
+   this.progress.lastSavedCursor=this.progress.cursor;
+   return {saved:true,cursor:this.progress.cursor,file:saved.manifest,
+     segmentCount:saved.segments.length};
   });
-  this.saveQueue=task.catch(()=>{});return task;
+  this.saveQueue=task.catch(()=>{});
+  return task;
  }
+
 }
 export async function makeHTTP(trainer,{port=8899,host="127.0.0.1"}={}){
  const html=await fsp.readFile(path.join(dirname,"real-live.html"),"utf8");
