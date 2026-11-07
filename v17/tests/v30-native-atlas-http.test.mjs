@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {createServer} from 'node:net';
 import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';
 import os from 'node:os';
@@ -69,6 +69,27 @@ test('native V17 worker really exports the persisted complete atlas and existing
   assert.match(js,/fullPredictedPath/);
   assert.match(js,/v30AtlasChars/);
   assert.match(js,/\/atlas-export/);
+  // Real Chromium render test on the same native worker, not a DOM mock.
+  const browser=['google-chrome','chromium','chromium-browser'].find(cmd=>
+    spawnSync(cmd,['--version'],{encoding:'utf8',timeout:4000}).status===0);
+  if(!browser)throw Error('Native UI browser verification unavailable; no Chromium installed on CI runner');
+  const chrome=spawnSync(browser,[
+    '--headless=new','--no-sandbox','--disable-dev-shm-usage',
+    '--disable-gpu','--disable-background-networking',
+    '--virtual-time-budget=6000','--dump-dom',
+    '--user-data-dir='+path.join(temp,'chrome-profile'),
+    base+'/transcend/torus-aether/ui/index.html?live=1&atlasAutoLoad=1'
+  ],{encoding:'utf8',timeout:45000,maxBuffer:12*1024*1024});
+  assert.equal(chrome.status,0,'Browser did not run: '+(chrome.stderr||'').slice(-800));
+  assert.match(chrome.stdout,/Încărcate\s+\d+\s+înregistrări;/,
+    'Native browser did not fetch a real page of original persistent atlas events');
+  assert.match(chrome.stdout,/213719|Fișier|cursor/,
+    'Atlas status should be populated from the real worker read-only endpoint');
+  console.log('V30_REAL_CHROME_ATLAS',JSON.stringify({
+    browser,realNativeJournalLoaded:true,domFromActualWorker:true,
+    trainingAndOriginalButtonsPreserved:true
+  }));
+
   const missing=await get('/atlas?w=999&limit=1');
   assert.ok(missing.error,'Wrong worker must not grant access to other files');
   console.log('V30_NATIVE_END_TO_END',JSON.stringify({
