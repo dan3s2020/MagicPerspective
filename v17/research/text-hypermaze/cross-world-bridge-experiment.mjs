@@ -14,6 +14,22 @@ const safeEpisode=s=>{
   throw Error("An independent target-world episode ID is required");
  return s;
 };
+const remember=(memory,section,entry)=>{
+ const atlas=memory?.atlas;
+ if(!atlas||!Array.isArray(atlas[section]))throw Error("Missing native V30 cross-world evidence atlas");
+ // Bounded retention is explicit. A discarded entry must never be counted
+ // as if it were still in the original Brain active evidence.
+ const max=10000;
+ atlas.discarded ||= {attempts:0,outcomes:0};
+ if(atlas[section].length>=max){
+  atlas[section].shift();
+  atlas.discarded[section]=(atlas.discarded[section]||0)+1;
+ }
+ const event={id:atlas.nextId++,time:new Date().toISOString(),
+  source:"INDEPENDENT_EXTERNAL_TARGET_WORLD",...entry};
+ atlas[section].push(event);
+ return event.id;
+};
 export class CrossWorldBridgeExperiment{
  constructor(brain){
   if(!(brain instanceof Brain))throw Error("The SAME original native Brain is required");
@@ -52,6 +68,15 @@ export class CrossWorldBridgeExperiment{
    throw Error("Partial visible goal tokens must have been known before the experiment");
   const auditBefore=this.atlas.analyse({start:plan.start,required});
   const baseline=this.memory.plan({start:plan.start,required});
+  const attemptId=remember(this.brain.crossEpisodeTransformations,"attempts",{
+   episode,kind:"FROZEN_BEFORE_EXECUTION",
+   taskStart:plan.start,partialVisibleGoal:required.slice(),
+   predictedWholePath:plan.initialShape.slice(),predictedFinal:plan.predicted,
+   actionCount:plan.actions.length,
+   beforeOriginalBrainHadVerifiedRoute:baseline.found,
+   referenceAnswerProvided:false,
+   originalPlanner:"Discoverer.shapeGraph"
+  });
   const feedback=this.transfer.execute(plan,({text,action,step})=>
    physicalStep({text,action,step}),{learnFeedback:false});
   if(!feedback.attempted)throw Error("Physical evaluator did not execute original preaction path");
@@ -76,6 +101,19 @@ export class CrossWorldBridgeExperiment{
     sourceEvidence:plan.actions?.[frame.step-1]?.trainingWorldCount??null,
     memoryEvent:record,
     updatedTransferWitness:transfer.learned};
+   trace.atlasOutcomeEventId=remember(
+    this.brain.crossEpisodeTransformations,"outcomes",{
+     attemptId,episode,step:frame.step,
+     before:frame.before,action:frame.action,
+     predictedBeforePhysicalAction:frame.originallyPredicted,
+     externallyObservedAfter:frame.actual,
+     predictionCorrect:match,walkableAfterFeedback:!!(match&&record.walkable),
+     firstWrongExpected:match?null:frame.originallyPredicted,
+     firstWrongObserved:match?null:frame.actual,
+     nativeCumulativeEvidenceEvent:record.observedEdge||null,
+     nativeCumulativeBlocker:match?null:record.expectedAfter||frame.originallyPredicted,
+     sourceIndependentWorlds:trace.sourceEvidence
+    });
    observed.push(trace);
    if(!match)failures.push(trace);
    if(!match)break;
@@ -85,7 +123,9 @@ export class CrossWorldBridgeExperiment{
   const after=this.atlas.analyse({start:plan.start,required,nativePlan:selected});
   return {
    kind:"observed-target-world-feedback-opens-or-blocks-cumulative-path",
-   attempted:true,originalBrain:true,
+   attempted:true,originalBrain:true,attemptId,
+   nativeAtlasAttemptLogged:true,
+   nativeAtlasOutcomesLogged:observed.length,
    frozenPredictionBeforeAction:true,referenceAnswerProvided:false,
    originalPlanner:"Discoverer.shapeGraph",
    trainedViaIndependentObservedEffectsOnly:true,
