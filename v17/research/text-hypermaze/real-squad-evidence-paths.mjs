@@ -201,6 +201,23 @@ export class NativeRealTextEvidencePaths {
   totals.updates=this.memory.updates;totals.features=this.memory.weights.size;
   return totals;
  }
+ // A strict control: choose the SAME trained candidate score directly,
+ // WITHOUT running original Discoverer.shapeGraph. If both outputs agree,
+ // the native route is faithfully executable but not yet causally necessary
+ // for semantic selection on this 2-hop extractive task.
+ rankDirectly({question,context}={}){
+  const {q,tokens,sentence,candidates}=buildExamples({question,context});
+  let best=-Infinity,chosen=-1;
+  for(let i=0;i<candidates.length;i++){
+   const z=sparseScore(features(q,tokens,sentence,candidates[i]),this.memory.weights);
+   if(z>best){best=z;chosen=i;}
+  }
+  return chosen<0?{found:false,reason:"no-observed-source-span"}:
+   {found:true,predicted:candidates[chosen].text,
+    selectedSourceSpan:{start:candidates[chosen].start,end:candidates[chosen].end},
+    sourceGoalCandidateCount:candidates.length,score:best,
+    originalDiscovererNotInvoked:true};
+ }
  // Original native action field: a complete observed passage is converted into
  // sentence nodes and evidenced candidate text-span terminals. Every goal is
  // a possible text span; no oracle answer ID is passed to the attraction field.
