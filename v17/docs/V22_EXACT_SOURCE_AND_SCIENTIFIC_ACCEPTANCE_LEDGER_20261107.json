@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "release_status": "BLOCKED_NOT_PROVEN_FOR_GENERAL_HELDOUT_NATURAL_LANGUAGE",
+  "date": "2026-11-07",
+  "original_source": "v17/transcend/torus-aether/worlds/exercise.mjs",
+  "ancestor_v21_commit_sha": "f06d845d6c3e54772ec13933147d478cdfd2b748",
+  "baseline_tag": "experiment/V21-AETHER-VEIL-PREDICTIVE-PERSPECTIVE-20261107",
+  "experiment_branch": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107",
+  "original_2d_full_source": {
+    "path_in_preserved_branch": "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "git_blob_sha": "e34d787467b7238c7422a0509173b1f785eb2342",
+    "utf8_decoded_characters": 13947,
+    "identical_full_original_blob": true,
+    "original_2d_behavior_tested_with_noise_and_temp": true,
+    "number_of_2d_maze_episodes": 84
+  },
+  "original_v21_files_modified": [
+    {
+      "path": "v17/tests/torus-v19-cognitive-runtime.test.mjs",
+      "old_sha": "282372cb903ed8bf02145576ff639e1c65a92b6e",
+      "new_sha_at_audited_commit": "8a50d39bd1a789dc658cdaec47aacc24644582b7",
+      "old_chars": 3884,
+      "additive_native_tests": true
+    },
+    {
+      "path": "v17/transcend/torus-aether/devour/devour.mjs",
+      "old_sha": "c03307181340a37c088b7b01e13ce49d180ef3f5",
+      "new_sha_at_audited_commit": "0d4455c0e4c1811e07b02021cfedea6ff7740391",
+      "old_chars": 40517,
+      "role": "add original shape evidence and bounded actual topology to native endpoint"
+    },
+    {
+      "path": "v17/transcend/torus-aether/devour/worker.mjs",
+      "old_sha": "5856fc5151f3b5612706b341048885ba3697e5f2",
+      "new_sha_at_audited_commit": "bfb8bd9a36143af1352c8faef6b1f57bf676dbe9",
+      "old_chars": 36878,
+      "role": "add actual method evidence/field and frozen topology to live result"
+    },
+    {
+      "path": "v17/transcend/torus-aether/ui/app.js",
+      "old_sha": "680896211b75074ab6047546f8ea45a4b0e35b8c",
+      "new_sha_at_audited_commit": "a0171fcdf6d0bfb8feff30feb270a2e5b0b0b13c",
+      "old_chars": 93787,
+      "role": "append exact-original shape status and events to existing controls"
+    },
+    {
+      "path": "v17/transcend/torus-aether/ui/index.html",
+      "old_sha": "8f315490a6d9b277dfa787f10fea81022b2cd043",
+      "old_chars": 36897,
+      "role": "retain UI and add isolated true text-world graph canvas plus permanent issue warning"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+      "old_sha": "e34d787467b7238c7422a0509173b1f785eb2342",
+      "new_sha_at_audited_commit": "739d6c5cc36e8d43b83dc66f499c5140aca414d3",
+      "old_chars": 13947,
+      "role": "ONLY original Discoverer.shape method extended to observed arbitrary N-D action adjacency; full old source copied byte-identically"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+      "old_sha": "d6aba4588e571d1d68f8cd09b61bd7930661c11b",
+      "new_sha_at_audited_commit": "b32c6d9a8329b10fdf7a2f772793d0e29c466820",
+      "old_chars": 24414,
+      "role": "use actual imported original class shape instead of duplicate planner in text action world"
+    }
+  ],
+  "exact_architectural_acceptance": [
+    {
+      "gate": "all_original_tracked_v21_paths_retained_and_v21_base_commit_in_ancestry",
+      "status": "CI_GATE_ADDED",
+      "test": ".github/workflows/v22-exact-original-discoverer.yml"
+    },
+    {
+      "gate": "original_v17_source_blob_byte_identical",
+      "status": "PASS_GIT_SHA_AND_TEST"
+    },
+    {
+      "gate": "2d_v17_behavior_noise_temperature_and_actions",
+      "status": "PASS_84_EPISODES"
+    },
+    {
+      "gate": "same_original_function_called_on_observed_text_action_world",
+      "status": "PASS_STRUCTURED_ACTION_WORLD"
+    },
+    {
+      "gate": "100/100_80_token_unseen_compositions_with_explicit_slot_goal",
+      "status": "PASS_STRUCTURED_NOT_SEMANTIC_QA",
+      "scope": "all 100 answers differ by replacing token 0, goal identity explicitly specified, other tokens are present in input; no novel semantic answer inferred"
+    },
+    {
+      "gate": "seeded_noise_explores_actual_alternative_paths",
+      "status": "PASS_SEE_RUN_42340802143"
+    },
+    {
+      "gate": "negative_controls_rejected_action_and_unknown_goal",
+      "status": "PASS"
+    },
+    {
+      "gate": "native_ui_frozen_actual_learned_topology",
+      "status": "PASS_SEE_RUN_42341252772"
+    },
+    {
+      "gate": "original_main_v17_and_v21_no_new_code_merge",
+      "status": "PASS_GIT_COMPARE_NO_FILE_DELETIONS"
+    },
+    {
+      "gate": "full_long_unseen_open_thoughts_answers_100_percent_exact_first_try",
+      "status": "NOT_PROVEN_OR_IMPLEMENTED"
+    },
+    {
+      "gate": "autonomously_inferred_semantic_goal_from_arbitrary_questions",
+      "status": "NOT_PROVEN_OR_IMPLEMENTED"
+    },
+    {
+      "gate": "entire_cuda_text_trainer_uses_original_navigator_and_noise_as_default",
+      "status": "NOT_IMPLEMENTED_CUDA_TEXT_LIVES_AS_SEPARATE_ORIGINAL_AUXILIARY"
+    },
+    {
+      "gate": "end_to_end_gpu_user_laptop_replay_and_100_complete_exercises_per_sec",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "gate": "full_byte_exact_all_historical_conversation_media",
+      "status": "NOT_AVAILABLE_IN_THIS_TURN"
+    },
+    {
+      "gate": "user_confirmation_to_close_original_issue25",
+      "status": "REQUIRED_NOT_OBTAINED"
+    }
+  ],
+  "ci_urls": [
+    "https://github.com/dan3s2020/MagicPerspective/actions/runs/42340802143",
+    "https://github.com/dan3s2020/MagicPerspective/actions/runs/42341252772"
+  ],
+  "open_blocking_issue": "https://github.com/dan3s2020/MagicPerspective/issues/25",
+  "command_delivery_gate": "DO_NOT_ISSUE_LAUNCH_COMMAND_UNTIL_FULL_USER_ACCEPTANCE_MET",
+  "scientific_note": "There is no evidence that arbitrary novel long-form answers can be known with 100% certainty from a handful of observed worlds. A fixed constraint such as goal.slots[0]='Alice' supplies part of the target explicitly; do not confuse its success with learning novel semantic answers."
+}
