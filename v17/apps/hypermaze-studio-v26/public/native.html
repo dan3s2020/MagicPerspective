@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="dark">
   <title>MagicPerspective V28 · Original V17 Training · V26 Visual Design</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/native-extra.css">
   <script type="module" src="/native-app.js"></script>
 </head>
 <body>
@@ -42,6 +43,12 @@
         <article class="stat-card"><span class="stat-label">TEXT NEVĂZUT · GRAF LIVE</span><strong id="mLearned">—</strong><small id="mLearnedSub">test.live · original, nu editări de cuvinte</small></article>
         <article class="stat-card"><span class="stat-label">VITEZĂ TRAINING ORIGINAL</span><strong id="mThroughput">—</strong><small id="mTotal">Exerciții/sec complete · CUDA nativ dacă e activ</small></article>
         <article class="stat-card"><span class="stat-label">GRAF NATIV V17</span><strong id="mStates">—</strong><small id="mEdges">Noduri și muchii observate, nu 2^axe sintetice</small></article>
+      </section>
+      <section class="panel native-history-panel" aria-label="Istoric de măsurători originale">
+        <div class="panel-header"><div><span class="eyebrow">LIVE / ORIGINAL V17 METRIC HISTORY</span><h2>ALIGNED, graf, together, C și viteză reală <span class="panel-sub">/ date înregistrate fără recalculare</span></h2></div>
+          <label>Metrică: <select id="nativeMetricView"><option value="aligned">ALIGNED · original</option><option value="live">GRAF · original</option><option value="together">TOGETHER · original</option><option value="C">C · original</option><option value="mazeShape">Labirinte · forma inițială</option><option value="completedExercisesPerSecond">Exerciții/s · native</option><option value="sustainedCharactersPerSecond">Caractere/s · native</option></select></label></div>
+        <div class="native-chart-area"><canvas id="nativeHistoryCanvas" aria-label="Graf de istoric, numai valorile originalului V17" width="1400" height="215"></canvas></div>
+        <div class="native-chart-note" id="nativeHistoryInfo">Istoricul începe când este conectat motorul original; nu creează date de antrenare.</div>
       </section>
       <div class="workspace">
         <section class="panel graph-panel" aria-label="Graf hiperdimensional cauzal">
@@ -120,7 +127,19 @@
             <label class="slider-control"><span>Noise graf V17 <output id="batchVal">0.30</output></span><input id="batch" type="range" min="0" max="2" step=".05" value=".3"></label>
             <label class="slider-control"><span>Temperatură la test V17 <output id="recordEveryVal">0.40</output></span><input id="recordEvery" type="range" min="0" max="1.5" step=".05" value=".4"></label>
           </div>
-          <button class="action-btn block" id="applyBtn">Aplică parametrii</button>
+          <button class="action-btn block" id="applyBtn">Aplică parametrii originali V17</button>
+          <div class="dataset-section" id="nativeGpuPanel">
+            <div class="panel-title-inline"><h3>GPU original V17 · setări reale</h3><small id="nativeGpuStatus">Fără măsurare</small></div>
+            <div class="native-gpu-grid">
+              <label>Dispozitiv <select id="nativeGpuDevice"><option value="off">CPU / off</option><option value="cuda:0">CUDA 0</option><option value="cuda:1">CUDA 1</option><option value="cpu">CPU explicit</option></select></label>
+              <label>Lumi pe GPU <input type="number" id="nativeGpuWorlds" min="0" max="100000" value="0"></label>
+              <label>Texte / lot GPU <input type="number" id="nativeGpuTextBatch" min="1" max="128" value="8"></label>
+              <label>VRAM maxim (GB) <input type="number" id="nativeGpuVram" min="0" max="128" step=".5" value="0"></label>
+              <label>Utilizare GPU % <input type="number" id="nativeGpuUtil" min="5" max="100" value="100"></label>
+            </div>
+            <button class="action-btn block" id="nativeGpuApply">Aplică GPU original · fără motor sintetic</button>
+            <small>Hardware-ul poate raporta erori. Numai V17 decide dacă CUDA rulează; UI nu inventează accelerație.</small>
+          </div>
           <div class="dataset-section">
             <div class="panel-title-inline"><h3>Corpus nativ V17</h3><small>PARQUET ORIGINAL · FĂRĂ CONVERSIE</small></div>
             <div class="dataset-path" id="datasetInfo">Așteptare încărcare…</div>
@@ -145,6 +164,7 @@
            <span id="nativeFrozenStatus">Nu a rulat încă testul înghețat.</span>
         </div>
         <div id="nativeResultsTable" style="padding:0 18px 16px;max-height:300px;overflow:auto;font-size:12px"></div>
+        <div class="native-maze-box" id="nativeMazeBox" hidden><h3>Labirint original · forma prezisă (auriu) vs. traseu executat (albastru)</h3><canvas id="nativeMazeCanvas" width="600" height="600" aria-label="Labirintul original, forma din prima și mișcările reale"></canvas></div>
       </section>
       <section class="panel journal">
         <div class="panel-header"><div><span class="eyebrow">05 / AUDIT ÎN TIMP REAL</span><h2>Jurnal, dovezi și erori</h2></div><span id="runSummary" class="chip">Trasee originale · nicio lume sintetică</span></div>
