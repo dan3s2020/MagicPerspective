@@ -37,9 +37,18 @@ jobs:
           })
           pq.write_table(table,out,compression="NONE",row_group_size=19)
           print("Generated",out,len(table))
+          nested_dir=os.path.join(os.environ["RUNNER_TEMP"],"v24-open-thoughts-conversations")
+          os.makedirs(nested_dir,exist_ok=True)
+          nested=pa.table({"conversations":[
+              [{"from":"human","value":f"nested human question {i}: observe relations"},
+               {"from":"gpt","value":f"nested gpt answer {i}: derived from experience"}]
+              for i in range(85)]})
+          pq.write_table(nested,os.path.join(nested_dir,"conversations.parquet"),
+                         compression="NONE",row_group_size=17)
+          print("Generated nested conversation fixture",len(nested))
           PY
       - name: Native V17 Parquet reader and exact V24 heldout split
-        run: MP_V24_PARQUET_FIXTURE="$RUNNER_TEMP/v24-open-thoughts-parquet" node --test v17/tests/v24-real-native-training.test.mjs
+        run: MP_V24_PARQUET_FIXTURE="$RUNNER_TEMP/v24-open-thoughts-parquet" MP_V24_PARQUET_CONVERSATION_FIXTURE="$RUNNER_TEMP/v24-open-thoughts-conversations" node --test v17/tests/v24-real-native-training.test.mjs
       - name: Node syntax validation
         run: |
           node --check v17/research/relational-hypermaze/real-corpus-core.mjs
