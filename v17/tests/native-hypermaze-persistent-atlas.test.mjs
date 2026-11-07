@@ -364,3 +364,86 @@ test("original Unicode long-world corpus >256 tokens yields actual reusable long
   }));
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 });
+
+test("committed sharded hypermaze stores EVERY original explored node, edge and frontier across append-only JSONL restart; missing commit must FAIL CLOSED",()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"mp-huge-full-graph-"));
+ try{
+  const journal=path.join(tmp,"actual-original-graph.jsonl");
+  const atlas=new PersistentHypermazeAtlas({file:journal});
+  const nodes=Array.from({length:603},(_,id)=>({
+   id,kind:id%13===0?1:id===602?2:0,
+   text:"traseu-lung-Știință-"+id+" "+"legături-văzute ".repeat(63),
+   position5D:[(id%5)/5,.1,.2,.3,.4],
+   depth:id%12,goal:id===602
+  }));
+  const edges=Array.from({length:987},(_,i)=>({
+   from:i%603,to:(i*17+3)%603,
+   kind:"replace",fromToken:"veche",toToken:"nouă",
+   operatorKey:"observed-edit-key-"+(i%5),
+   observedSupport:4,actionIndex:i%10
+  }));
+  const unresolvedFrontier=Array.from({length:111},(_,i)=>({
+   id:120+i,text:"frontier "+i,depth:12,reason:"depth-limit"}));
+  const original={complete:false,nodes,edges,unresolvedFrontier,
+   initialShapeIds:[0,2,602],sourceId:0,source:"actual-original-learner",
+   originalNativeV17Graph:true,coordinatesAreOriginalLearned5DTorus:true};
+  const seq=atlas.appendSearch({world:"text",start:nodes[0].text,
+   required:["nouă"],found:false,actions:[],
+   diagnostic:{reason:"state-budget-exhausted"},
+   graph:{states:nodes.length},fullExploredTopology:original,
+   firstPredictionBeforeAction:true,semanticAnswerIndependentlyVerified:false},
+   {shardAtBytes:1024});
+  const header=atlas.read(seq);
+  assert.equal(header.graphSharded,true);
+  assert.equal(header.fullExploredTopology,null);
+  assert.ok(header.expectedShards>=10);
+  assert.equal(header.graphNodeCount,nodes.length);
+  assert.equal(header.graphEdgeCount,edges.length);
+  const all={nodes:[],edges:[],frontier:[]};
+  let cursor=0,partsRead=0;
+  while(true){
+   const page=atlas.graphPage({searchSequence:seq,after:cursor,limit:7});
+   assert.equal(page.complete,true);
+   for(const part of page.parts){
+    assert.equal(part.offset,all[part.part].length);
+    all[part.part].push(...part.items);partsRead++;
+   }
+   if(!page.hasMore)break;
+   assert.ok(page.nextCursor>cursor);
+   cursor=page.nextCursor;
+  }
+  assert.equal(partsRead,header.expectedShards);
+  assert.deepEqual(all.nodes,nodes);
+  assert.deepEqual(all.edges,edges);
+  assert.deepEqual(all.frontier,unresolvedFrontier);
+  assert.ok(atlas.summary().graphShardEvents>=10);
+  assert.equal(atlas.summary().committedLargeGraphSearches,1);
+  assert.ok(atlas.summary().exploredInFailedSearchesByOperator["observed-edit-key-2"]>0);
+  atlas.flush();
+  const exactBefore=fs.readFileSync(journal);
+  const resumed=new PersistentHypermazeAtlas({file:journal});
+  assert.equal(resumed.summary().graphShardEvents,atlas.summary().graphShardEvents);
+  assert.deepEqual(resumed.graphPage({searchSequence:seq,after:0,limit:7}),
+    atlas.graphPage({searchSequence:seq,after:0,limit:7}));
+  assert.deepEqual(resumed.graphPage({searchSequence:seq,after:partsRead-1}).parts.at(-1),
+    atlas.graphPage({searchSequence:seq,after:partsRead-1}).parts.at(-1));
+  assert.ok(fs.readFileSync(journal).equals(exactBefore));
+  // A crash after part 1 but BEFORE graph-commit must be exposed as
+  // INCOMPLETE, not interpreted as a full known maze with no more edges.
+  const torn=new PersistentHypermazeAtlas({file:path.join(tmp,"torn.jsonl")});
+  const broken=torn.append("search",{found:false,actions:[],
+   diagnostic:{reason:"state-budget-exhausted"},
+   graphSharded:true,expectedShards:2,graphNodeCount:1,graphEdgeCount:1,
+   fullExploredTopology:null,exploredOperatorKeys:["observed-edit-key"]});
+  torn.append("graph-shard",{searchSequence:broken,part:"nodes",
+   offset:0,items:[nodes[0]]});
+  assert.throws(()=>torn.graphPage({searchSequence:broken}),/Incomplete original atlas graph/);
+  console.log("NATIVE_LOSSLESS_LARGE_GRAPH_SHARDS",JSON.stringify({
+   originalNodes:nodes.length,originalEdges:edges.length,
+   originalFrontier:unresolvedFrontier.length,persistedJournalParts:partsRead,
+   originalGraphVerifiedAfterRestart:true,
+   failedSearchOperatorEvidenceRetained:true,
+   missingCommittedShardDetected:true,noSilentGraphTruncation:true
+  }));
+ }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});
