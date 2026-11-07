@@ -114,3 +114,35 @@ test("deterministic random state, independent 2D original parity and native rout
  console.log("V26_PARITY_NOISE",JSON.stringify({original2DBoards:parity,
    stochasticSeeds:128,distinctNativeCompletePaths:paths.size}));
 });
+
+
+test("scale native learned topology to full 10-axis graph over actual 8192-word long state without cloning text in nodes",()=>{
+ const {learner,before,fx,physical}=world(10,8192);
+ const target={requires:fx.map(x=>x.to)};
+ const start=Date.now();
+ const plan=planShape(learner,before,target,{seed:74129,
+   noise:.5,maxAxes:10,includeGraph:true});
+ assert.equal(plan.nativeMethod,"Discoverer.shape");
+ assert.equal(plan.found,true);
+ assert.equal(plan.completeBeforeAction,true);
+ assert.equal(plan.worldNodes,1024);
+ assert.equal(plan.worldEdges,5120);
+ assert.equal(plan.path.length,10);
+ assert.equal(plan.final.length,8192);
+ assert.equal(plan.graph.nodes.length,1024);
+ assert.equal(plan.graph.edges.length,5120);
+ assert.equal(plan.graph.axes.length,10);
+ assert.ok(plan.graph.nodes.every(n=>!Array.isArray(n.fullText)),
+   "Must not duplicate 8,192 words inside each graph node");
+ const output=executeShape(plan,before,physical);
+ assert.equal(output.exactFullShape,true);
+ assert.equal(output.trace.length,10);
+ const rawGraphBytes=Buffer.byteLength(JSON.stringify(plan.graph));
+ assert.ok(rawGraphBytes<2_000_000,"Sparse graph should stay under 2MB");
+ console.log("V26_TEN_AXIS_SPARSE_SCALE",JSON.stringify({
+   dimensions:10,stateNodes:plan.worldNodes,edges:plan.worldEdges,
+   textWords:plan.final.length,fullPreactionPathLength:plan.path.length,
+   exactExecuted:output.exactFullShape,
+   serializedGraphBytes:rawGraphBytes,elapsedMs:Date.now()-start,
+   scope:"controlled observed ten-axis corpus edit physics"}));
+});
