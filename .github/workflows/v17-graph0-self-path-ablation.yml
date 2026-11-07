@@ -20,5 +20,8 @@ jobs:
           node --check v17/experiments/graph0-ablation-core.mjs
           node --check v17/experiments/graph0-self-path-ablation.mjs
           node --check v17/experiments/graph0-ablation-core.test.mjs
+          node --check v17/experiments/graph0-ablation-end-to-end.test.mjs
       - name: Native AligningGraph no-training ablation tests
         run: node --test v17/experiments/graph0-ablation-core.test.mjs
+      - name: Native Brain.save Brain.load comparison across original and filtered policies
+        run: node --test v17/experiments/graph0-ablation-end-to-end.test.mjs
