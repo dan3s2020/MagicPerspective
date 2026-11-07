@@ -121,6 +121,45 @@ test("REAL original Brain V17 HTTP: train witnessed numerical effects, freeze an
   // Frozen evaluation is read-only on the model, including checkpointed law values.
   const after=Brain.load(save);
   assert.deepEqual(after.v23Numeric,previous.v23Numeric,"Frozen planning mutated training memory");
+  // Native integration stress: no trimmed source, no dummy index, answer absent
+  // from every input byte. The reply is paginated (100k actions stay in the
+  // native original-shape frozen cache, not copied to a fabricated UI).
+  const nLong=100000,longStart=712345,longEntity="heldout_native_long";
+  const longLines=["Account "+longEntity+" begins with "+longStart+" credits."];
+  let longExpected=longStart;
+  for(let i=0;i<nLong;i++){
+    const quantity=1+i%9;
+    longLines.push("Account "+longEntity+" received "+quantity+" credits.");
+    longExpected+=quantity;
+  }
+  const longDoc=longLines.join("\n"),longQuestion="After the full report, what is the balance of "+longEntity+"?";
+  assert.ok(longDoc.length>4500000,"Long native input was accidentally shortened");
+  assert.equal(longDoc.includes(String(longExpected)),false);
+  assert.equal(longQuestion.includes(String(longExpected)),false);
+  const longPlan=await json(base+"/v23-lab",{
+    w:0,kind:"numeric",command:"plan",document:longDoc,question:longQuestion,
+    offset:0,limit:100,seed:74129
+  });
+  assert.equal(longPlan.found,true,JSON.stringify(longPlan).slice(0,250));
+  assert.equal(longPlan.plannedBeforeAction,true);
+  assert.equal(longPlan.goal.answerProvided,false);
+  assert.equal(longPlan.originalMethod,"Discoverer.shape");
+  assert.equal(longPlan.answer,longExpected);
+  assert.equal(longPlan.path.total,nLong);
+  assert.equal(longPlan.path.steps.length,100);
+  assert.ok(longPlan.originalShapeCalls<1000);
+  assert.ok(longPlan.maxLocalNodes<=129);
+  const afterLong=Brain.load(save);
+  assert.deepEqual(afterLong.v23Numeric,previous.v23Numeric,
+    "100k real native HTTP answer planning changed original learned memory");
+  console.log("V24_NATIVE_LONG_HTTP",JSON.stringify({
+    fullOriginalNodeHttpRequest:true,sourceCharacters:longDoc.length,
+    predictedActions:nLong,answer:longExpected,
+    answerNotInSource:true,frozenPreaction:true,
+    originalShapeCalls:longPlan.originalShapeCalls,
+    maxNodesPerCall:longPlan.maxLocalNodes,
+    learnedBrainCheckpointUnchanged:true,CUDATraining:"NOT_TESTED"
+  }));
   const ui=readFileSync(uiPath,"utf8");
   for(const id of ["allStart","allSave","gpuApply","textMazeCanvas","cognitiveEvaluate",
     "v23LabBox","v23PathCanvas","v23Plan","v23Scrub"])
