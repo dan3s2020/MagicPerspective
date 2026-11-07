@@ -37,7 +37,13 @@
     "v17/tests/v24-real-native-training.test.mjs",
     ".github/workflows/v24-real-corpus-native-shape.yml",
     "v17/docs/V24_REAL_CORPUS_INTEGRATION_EVIDENCE_20261107.md",
-    "user-intent/changes/V24-REAL-CORPUS-NATIVE-SHAPE-20261107.json"
+    "user-intent/changes/V24-REAL-CORPUS-NATIVE-SHAPE-20261107.json",
+    "v17/research/relational-hypermaze/real-checkpoint-store.mjs",
+    "v17/research/relational-hypermaze/real-hypergeometry.mjs",
+    "v17/tests/v24-checkpoint-recovery.test.mjs",
+    "v17/tests/v24-hypergeometry-live.test.mjs",
+    "v17/tests/v24-browser-live-smoke.mjs",
+    "v17/docs/V24_CRITICAL_15K_SAVE_AND_HYPERPATH_OBSERVABILITY_FIX_20261107.md"
   ],
   "exactly_preserved": "Existing original V17/V22/V23 source code and old checkpoints unchanged; new worker uses separate runtime-v24-real",
   "mechanism": {
@@ -84,5 +90,34 @@
     "UI original iframe and V24 model remain separate, not one physically unified brain",
     "original blocking regression issue #25 remains OPEN"
   ],
-  "note": "User contract written after tested experimental changes; order is not retroactively falsified; all changes remain isolated, with no merge into main."
+  "note": "User contract written after tested experimental changes; order is not retroactively falsified; all changes remain isolated, with no merge into main.",
+  "user_reported_regression_20261107": {
+    "source": "User screenshot in this conversation, not simulated",
+    "observedCursor": 15000,
+    "validSavedCursor": 10000,
+    "trainTotal": 1209984,
+    "exactError": "RangeError: Invalid string length at JSON.stringify at real-trainer.mjs:175:37",
+    "observedPredictionSamples": 600,
+    "observedExactPercent": 0,
+    "observedWordF1Percent": 56.59,
+    "missingOriginalUI": "V17 not serving 127.0.0.1:8866; unrelated to V24 graph",
+    "invisiblePaths": "Original V24 only exposed latest path as a below-the-fold 2D chart",
+    "recoveryPolicy": "Never overwrite atlas-v24.json; reprocess from last valid 10000 on -Resume",
+    "remedies": [
+      "streamed immutable JSONL save segments, SHA256 verification and atomic index",
+      "exact legacy checkpoint conversion with old bytes retained",
+      "16-dimensional computed observational graph projection with rotation and slices, exact original V17 attraction",
+      "explicit QA-before-update exact and Word-F1 history, selected frozen traces",
+      "actual learned Q/A graph atlas distinct from predictions",
+      "offline-safe original V17 iframe and port discovery"
+    ],
+    "tests": [
+      "v17/tests/v24-checkpoint-recovery.test.mjs",
+      "v17/tests/v24-hypergeometry-live.test.mjs",
+      "v17/tests/v24-browser-live-smoke.mjs",
+      "v17/research/relational-hypermaze/real-throughput-probe.mjs"
+    ],
+    "proof": "GitHub Actions Linux + Windows, real Chrome smoke and 16000-row synthetic source stream; not an OpenThoughts3/RTX CUDA proof",
+    "unresolved": "Open-domain 70% first-try semantic answers, native CUDA/whole-brain union and real 4D topology discovery remain OPEN"
+  }
 }
