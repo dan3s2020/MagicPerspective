@@ -168,7 +168,9 @@ export class CumulativeHyperMaze {
  _originalSourceRoleStats(){
   const l=this.brain.qaRoleEvidence?.longForm;
   if(!l)return {roleEpisodes:0,observedChunks:0,
-   observedSequentialEdges:0,sharedExactChunkAnchors:0};
+   observedSequentialEdges:0,sharedExactChunkAnchors:0,
+   multiScaleSharedAnchors:0,multiScaleObservedMotifs:0,
+   multiScaleObservedSourceEdges:0,multiScaleActiveNodes:0};
   const counts=new Map();
   for(const seq of l.sequences||[]){
    const once=new Set([...(seq.questionChunks||[]),...(seq.answerChunks||[])]);
@@ -178,7 +180,17 @@ export class CumulativeHyperMaze {
    observedChunks:(l.questionChunks||0)+(l.answerChunks||0),
    observedSequentialEdges:l.observedRoleTransitions||0,
    sharedExactChunkAnchors:[...counts.values()].filter(n=>n>=2).length,
-   sharedAnchorScope:"exact SHA256 chunk in at least 2 retained episodes, not a semantic causal action"};
+   multiScaleSharedAnchors:l.motifGraph?.activeSharedAnchors??0,
+   multiScaleSharedAnchorsEver:l.motifGraph?.sharedAnchorsEver??0,
+   multiScaleObservedMotifs:l.motifGraph?.seenMotifs??0,
+   multiScaleActiveNodes:l.motifGraph?.nodes?.size??0,
+   multiScaleObservedSourceEdges:l.motifGraph?.sourceOnlyEdgesObserved??0,
+   multiScaleActiveSourceEdges:l.motifGraph?.edges?.size??0,
+   multiScaleRoleBoundaryExamples:l.motifGraph?.observedRoleBoundaries??0,
+   multiScaleEvictedSingletons:l.motifGraph?.evictedSingletons??0,
+   multiScaleEvictedRepeated:l.motifGraph?.evictedRepeated??0,
+   multiScaleVerifiedPhysicalActions:l.motifGraph?.physicallyVerifiedActions??0,
+   sharedAnchorScope:"exact multi-scale phrase across distinct source episodes, structural evidence ONLY; no semantic action inferred"};
  }
  audit(){
   const S=this.state;
