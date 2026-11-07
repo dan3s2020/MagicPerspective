@@ -107,7 +107,7 @@ const nativePort=Number(new URLSearchParams(location.search).get("nativePort")||
 if(Number.isInteger(nativePort)&&nativePort>=1024&&nativePort<=65535){
  $("oldUI").dataset.nativeUrl="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
 }
-let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false;
+let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false,historySignature="";
 let pathTimer=null,playbackPaused=false,currentGraph=null,historySelection=""; // predicted route, not actual execution
 const SVG="http://www.w3.org/2000/svg";
 function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
@@ -136,9 +136,14 @@ function render(s){
  set("rows",fmt(s.progress.cursor)+" / "+fmt(s.progress.trainRows));
  set("held",fmt(s.progress.heldOut));set("accepted",fmt(s.atlas.stats.accepted));
  set("memory",fmt(s.atlas.activeRecords));
+ set("foundBefore",fmt(s.progress.onlineAnswerFound)+" / "+fmt(s.progress.onlineScored));
+ set("exactBefore",fmt(s.progress.onlineExact)+" / "+fmt(s.progress.onlineScored));
+ set("segments",fmt(s.checkpoint.segmentCount));
  const now=Date.now(),dt=(now-oldTime)/1000;
  if(dt>.4){const speed=Math.max(0,(s.progress.cursor-oldCursor)/dt);
- set("speed",speed.toFixed(1));oldCursor=s.progress.cursor;oldTime=now;}
+ set("speed",s.mode==="running"?(s.throughput?.rowsPerSecond??speed).toFixed(1):
+  (s.mode==="error"?"OPRIT - EROARE":"0.0"));
+ oldCursor=s.progress.cursor;oldTime=now;}
  $("progress").value=s.progress.consumedPercent;
  set("statusText",s.mode+" · rămase: "+fmt(s.progress.remaining)+
  (s.progress.limitActive?" · LIMITĂ PARȚIALĂ ACTIVĂ":" · întregul set antrenabil"));
@@ -156,7 +161,27 @@ function render(s){
  set("evalMeta","Întrebări care nu repetă exact întrebări din memorie: "+e.nonDuplicate+
   " · răspunsuri exacte în subset: "+e.nonDuplicateExact+
   " · exemplele sunt rezervate și nu sunt însușite la evaluare.");}
- if(s.lastTrace?.row!==undefined&&cursor!==s.lastTrace.row){cursor=s.lastTrace.row;trace();}
+ const histories=s.traceHistory||[];
+ const signature=histories.map(t=>t.row).join(",");
+ if(signature!==historySignature){
+  historySignature=signature;
+  const sel=$("traceChoice");
+  const wanted=historySelection;
+  sel.replaceChildren();
+  const latest=document.createElement("option");latest.value="";
+  latest.textContent="Ultimul traseu; urmărește trainingul";sel.appendChild(latest);
+  for(const row of histories.slice().reverse()){
+   const option=document.createElement("option");option.value=String(row.row);
+   option.textContent="#"+row.row+" "+(row.exact?"CORECT":
+     row.found?"GREȘIT":"ABȚINERE")+" · "+row.steps+" pași";
+   sel.appendChild(option);
+  }
+  if(wanted&&histories.some(t=>String(t.row)===wanted))sel.value=wanted;
+  else{historySelection="";sel.value="";}
+ }
+ if(!historySelection&&s.lastTrace?.row!==undefined&&cursor!==s.lastTrace.row){
+  cursor=s.lastTrace.row;trace();
+ }
 }
 const AXES=Array.from({length:16},(_,i)=>i<12?"Text features "+String(i+1).padStart(2,"0"):
   ["World-state role","Evidence","Experience time","Original goal field"][i-12]);
@@ -256,7 +281,7 @@ function draw(g){
    },650);
   }
  }
- set("shapeMeta",(g.dimensions||16)+" axe măsurate · "+
+ set("shapeMeta","PLAYBACK AL PREDICȚIEI, nu execuție fizică · "+(g.dimensions||16)+" axe măsurate · "+
    (g.totalNodes||g.nodes.length)+" noduri · "+(g.route?.length||0)+" pași prezis · "+
    (g.found?"răspuns observat găsit":"ABȚINERE")+
    " · "+(g.route||[]).filter(e=>e.verified).length+" tranziții martor · "+
@@ -265,7 +290,18 @@ function draw(g){
    dimensions:g.dimensions,axisLabels:g.axisLabels,route:g.route,
    field:g.field,hypotheses:g.hypotheses||g.learnedContexts},null,2));
 }
-async function trace(){try{lastTrace=await json("/api/trace");draw(lastTrace);}catch(e){set("shapeMeta","Eroare traseu: "+e.message);}}
+async function trace(){try{
+  const url=historySelection?"/api/trace?row="+encodeURIComponent(historySelection):"/api/trace";
+  lastTrace=await json(url);draw(lastTrace);
+  if(lastTrace?.row!==undefined){
+   set("actualAnswer","EXEMPLUL #"+lastTrace.row+"\n"+
+    "REZULTAT: "+(lastTrace.exact?"CORECT":lastTrace.found?"GREȘIT":"ABȚINERE")+
+    " | Word-F1: "+(100*(lastTrace.wordF1||0)).toFixed(2)+"%\n\n"+
+    "PREZIS ÎNAINTE DE ANTRENARE:\n"+(lastTrace.predicted||"(niciun răspuns)")+
+    "\n\nRĂSPUNS REAL FOLOSIT EXCLUSIV LA SCORARE:\n"+(lastTrace.actual||"(indisponibil în checkpointul vechi)")+
+    "\n\nPAȘI REALI ÎN GRAF: "+(lastTrace.route||[]).map(x=>x.action).join(" -> "));
+  }
+ }catch(e){set("shapeMeta","Eroare traseu: "+e.message);}}
 async function history(){try{const list=await json("/api/events");const ev=list.filter(x=>x.type==="prediction");
  const root=$("eventsChart");root.replaceChildren();
  const last=ev.slice(-120);if(!last.length)return;
