@@ -1,0 +1,31 @@
+name: V38 native Brain time-averaged human evidence and strict train-only policy selection
+on:
+  push:
+    branches:
+      - experiment/V38-AVERAGED-REAL-TEXT-SEMANTIC-ATTRACTION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  averaged-real-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original Brain time-averaged real source QA, internal article-disjoint validation and 650 unseen Stanford DEV QA
+        run: node --test v17/tests/v38-real-averaged-evidence-validation.test.mjs
+  original-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unmodified V35 original real SQuAD baseline plus native original maze field parity
+        run: |
+          node --test v17/tests/v35-real-squad-evidence-paths.test.mjs
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
