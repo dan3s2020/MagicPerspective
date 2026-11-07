@@ -187,4 +187,38 @@ export class NativeMathGoalField {
     this.last={solved,steps:trace.length,goalMet};
     return result;
   }
+  // Additive checkpoint content lives inside the ORIGINAL Brain .v8 file.
+  // No second Brain, alternate language predictor, or mutable global singleton.
+  export(){
+    return {version:1,limits:{...this.limits,maxValue:this.induction.maxValue},
+      induction:{maxValue:this.induction.maxValue,maxExpanded:this.induction.maxExpanded,
+        observations:this.induction.observations,rejected:this.induction.rejected,
+        data:[...this.induction.data]},
+      observedPairs:this.observedPairs,observedExecutions:this.observedExecutions,
+      failedExecutions:this.failedExecutions,last:this.last};
+  }
+  static restore(saved){
+    if(saved?.version!==1||!saved.induction||!Array.isArray(saved.induction.data))
+      throw Error("Unsupported native math field checkpoint");
+    const m=new NativeMathGoalField(saved.limits);
+    const d=saved.induction;
+    m.induction.maxExpanded=d.maxExpanded;
+    m.induction.observations=d.observations||0;
+    m.induction.rejected=d.rejected||0;
+    m.induction.data=new Map(d.data);
+    m.observedPairs=saved.observedPairs||0;
+    m.observedExecutions=saved.observedExecutions||0;
+    m.failedExecutions=saved.failedExecutions||0;
+    m.last=saved.last||null;
+    return m;
+  }
+  report(){
+    return {version:1,observedPairs:this.observedPairs,
+      learnedWorldGrammars:this.induction.data.size,
+      observedExecutions:this.observedExecutions,
+      failedExecutions:this.failedExecutions,
+      status:this.observedPairs?"OBSERVED_NUMERIC_ACTION_RULES":"NO_OBSERVED_ACTION_EVIDENCE",
+      planner:"original V17 Discoverer.shape (goal-conditioned, before any action)",
+      generalNaturalLanguageProven:false,last:this.last};
+  }
 }
