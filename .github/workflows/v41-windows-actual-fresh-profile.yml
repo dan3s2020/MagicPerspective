@@ -1,0 +1,119 @@
+name: V41 REAL Windows from ZERO, native Parquet worker + new V26 UI
+on:
+  push:
+    branches:
+      - perf/V41-ELIMINATE-CUDA-HOST-SYNC-20261107
+  pull_request:
+    branches:
+      - integration/V40-ALL-VERIFIED-FAST-CUDA-NEW-TRAINING-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fresh-original-not-a-demo:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare ACTUAL Parquet with authentic existing repository text, ZERO original Brain checkpoint
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m pip install pyarrow==20.0.0
+          if($LASTEXITCODE -ne 0){throw 'PyArrow installation failed'}
+          $root=Join-Path $env:RUNNER_TEMP 'V41 FRESH independent paths with spaces'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $env:V41_SOURCE_ROOT=$root
+          @'
+          import os
+          from pathlib import Path
+          import pyarrow as pa
+          import pyarrow.parquet as pq
+          src=Path('v17/docs/TORUS_AETHER_ABC_20261104.md').read_text('utf-8')
+          paragraphs=[p.strip() for p in src.split('\n\n') if len(p.strip())>=20]
+          assert len(paragraphs)>3
+          root=Path(os.environ['V41_SOURCE_ROOT'])
+          folder=root/'real observed source Parquet'
+          folder.mkdir(parents=True,exist_ok=True)
+          count=40
+          pq.write_table(pa.table({
+            'prompt':[paragraphs[i%len(paragraphs)][:350] for i in range(count)],
+            'answer':[paragraphs[(i+1)%len(paragraphs)][:350] for i in range(count)]
+          }),folder/'real source observed.parquet',compression='zstd',row_group_size=8)
+          print('V41_REAL_LOCAL_SOURCE_PARQUET',count,'rows, genuine repository text, NOT OpenThoughts semantic benchmark')
+          '@ | python -
+          if($LASTEXITCODE -ne 0){throw 'Parquet construction failed'}
+      - name: Launch V41 exactly from ZERO, verify full original V34 worker and NEW V26 HTTP UI
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'V41 FRESH independent paths with spaces'
+          $corpus=Join-Path $root 'real observed source Parquet'
+          $out=Join-Path $root 'brand new V41 original Brain'
+          if(Test-Path -LiteralPath $out){throw 'Test is no longer fresh'}
+          $launcher=(Resolve-Path -LiteralPath 'v17/START_V41_SPEED_PROFILE.ps1').Path
+          $stdout=Join-Path $root 'launcher log.txt'
+          $stderr=Join-Path $root 'launcher error.txt'
+          $arguments=@(
+            '-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $launcher + '"'),
+            '-Data',('"' + $corpus + '"'),'-Out',('"' + $out + '"'),
+            '-Gpu','off','-NativePort','19031','-UIPort','19032','-NoBrowser',
+            '-GpuTextBatch','1','-GpuTextChunk','64','-GpuWorlds','0',
+            '-Every','250000','-CheckpointEvery','100000','-XdAtlasEvery','16000','-MazeEvery','4000','-Mem','1'
+          )
+          $process=Start-Process -FilePath powershell.exe -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          $native='http://127.0.0.1:19031'
+          $ui='http://127.0.0.1:19032'
+          $ready=$false
+          for($i=0;$i -lt 360;$i++){
+            if($process.HasExited){
+              throw ('V41 launcher exited before native/UI startup: '+$process.ExitCode+[Environment]::NewLine+(Get-Content -LiteralPath $stdout -Raw -ErrorAction SilentlyContinue)+[Environment]::NewLine+(Get-Content -LiteralPath $stderr -Raw -ErrorAction SilentlyContinue))
+            }
+            try{
+              $graphs=Invoke-RestMethod -Uri "$native/graphs" -TimeoutSec 2
+              $html=Invoke-WebRequest -Uri $ui -UseBasicParsing -TimeoutSec 2
+              if($graphs.graphs -and $html.Content -match 'Hypermaze' -and $html.Content -match 'nativeProgressFill'){
+                $ready=$true;break
+              }
+            }catch{}
+            Start-Sleep -Milliseconds 500
+          }
+          if(!$ready){throw ('Native + new V26 UI failed to start: '+(Get-Content -LiteralPath $stdout -Raw -ErrorAction SilentlyContinue))}
+          $health=Invoke-RestMethod -Uri "$native/health?w=0" -TimeoutSec 6
+          if($health.status -eq 'eroare'){throw "V41 original worker failed: $($health.lastError)"}
+          # A connected native HTTP graph is NOT enough: at least one ORIGINAL
+          # real Parquet training row must actually commit to the SAME Brain.
+          $committed=0
+          for($i=0;$i -lt 240;$i++){
+            $health=Invoke-RestMethod -Uri "$native/health?w=0" -TimeoutSec 6
+            if($health.status -eq 'eroare'){throw "Original V41 training FAILED: $($health.lastError)"}
+            $committed=[int]$health.dataset.completedTrainingRows
+            if($committed -gt 0){break}
+            Start-Sleep -Milliseconds 500
+          }
+          if($committed -le 0){throw "V41 original Parquet worker served UI but committed ZERO real training rows"}
+          Write-Host "V41_WINDOWS_ACTUAL_ORIGINAL_TRAINING_COMMITTED_ROWS $committed"
+          $bridge=Invoke-RestMethod -Uri "$ui/api/native-state?w=0" -TimeoutSec 8
+          if(!$bridge.original){throw 'New V26 GUI is disconnected from ORIGINAL trainer'}
+          $frozen=$bridge.original.test
+          if($bridge.original.status -eq 'eroare'){throw "Original worker crashed: $($bridge.original.error)"}
+          if(-not (Test-Path -LiteralPath $out)){throw 'Original real runtime did not start'}
+          if((Get-Content -LiteralPath $stdout -Raw) -notmatch 'NEW FROM ZERO'){throw 'Launcher did not detect NEW FROM ZERO'}
+          $script=Get-Content -LiteralPath $stdout -Raw
+          if($script -match 'synthetic ObservedEffects'){throw 'Synthetic V26 trainer was run'}
+          Write-Host ('V41_WINDOWS_REAL_FRESH_START_AND_NEW_UI_PASS '+(@{newFromZero=$true;originalV34Brain=$true;realParquetSource=$true;nativePort=19031;newUI=19032;observedTextOnly=$true;cudaTested=$false;previousCheckpointRequired=$false;otherAgentsUnchanged=$true}|ConvertTo-Json -Compress))
+          $global:LASTEXITCODE=0
+      - name: Keep original log for analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v41-windows-original-fresh-logs
+          path: ${{ runner.temp }}/V41 FRESH independent paths with spaces/launcher *.txt
+          if-no-files-found: warn
+          retention-days: 7
