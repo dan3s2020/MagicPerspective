@@ -60,7 +60,7 @@ jobs:
           node --check v17/research/relational-hypermaze/real-trainer.mjs
       - name: Load stability beyond failing 15000-row checkpoint boundary
         run: node v17/research/relational-hypermaze/real-throughput-probe.mjs
-      - name: Actual Chromium browser: hypergraph, prediction history, real metrics and offline V17 UI
+      - name: "Actual Chromium browser - hypergraph, prediction history, real metrics and offline V17 UI"
         run: |
           npm install --no-save --no-package-lock playwright-core@1.56.1
           node v17/tests/v24-browser-live-smoke.mjs
