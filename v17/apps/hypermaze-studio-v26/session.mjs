@@ -3,6 +3,7 @@
 // Both train and eval use real corpus spans, explicit controlled action physics.
 import fs from "node:fs/promises";
 import path from "node:path";
+import {fileURLToPath} from "node:url";
 import {EventEmitter} from "node:events";
 import {ObservedEffects,planShape,executeShape,seeded,clamp} from "./engine.mjs";
 import {loadCorpus,DEFAULT_CORPUS,chooseAxisPhysics,makeTask,
@@ -36,7 +37,7 @@ const stats0=()=>({
 });
 const logError=e=>String(e?.stack||e).slice(0,400);
 export class StudioSession extends EventEmitter {
-  constructor({corpusPath=DEFAULT_CORPUS,checkpointDir=path.resolve("V26_CHECKPOINTS"),
+  constructor({corpusPath=DEFAULT_CORPUS,checkpointDir=fileURLToPath(new URL("./V26_CHECKPOINTS",import.meta.url)),
     config={}}={}){
     super();this.config=bounded({...defaults,...config});
     this.corpusPath=corpusPath;this.checkpointDir=checkpointDir;
