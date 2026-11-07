@@ -7,9 +7,9 @@ export class ResidentCudaExerciseQueue {
   constructor({maxExercises=48,maxBytes=12_000_000,warmExercises=8,
       maxRpcBytes=2_000_000}={}){
     this.maxExercises=Math.max(1,Math.min(256,Math.trunc(maxExercises)));
-    this.maxBytes=Math.max(4096,Math.trunc(maxBytes));
+    this.maxBytes=Math.max(256,Math.trunc(maxBytes));
     this.warmExercises=Math.max(1,Math.min(this.maxExercises,Math.trunc(warmExercises)));
-    this.maxRpcBytes=Math.max(4096,Math.trunc(maxRpcBytes));
+    this.maxRpcBytes=Math.max(64,Math.trunc(maxRpcBytes));
     this.loaded = new WeakMap();
     this.stats = null;
     this.queued = 0;
