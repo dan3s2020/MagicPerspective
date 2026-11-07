@@ -34,6 +34,8 @@ jobs:
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/observed-transformations-v17.test.mjs
           node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: Production exact long-heldout semantics + actual native RTX must remain STOPSHIP until independently proven
+        run: node --test v17/tests/hypermaze-stopship-release.test.mjs
       - name: Explicit release blocker must remain documented
         run: |
           test -s REGRESSION_STOPSHIP_HYPERMAZE_20261107.md
