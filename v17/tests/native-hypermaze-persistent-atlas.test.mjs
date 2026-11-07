@@ -75,6 +75,17 @@ test("Atlas distinguishes genuinely missing cross-exercise operators from known 
   reference:"She is calm.",brain});
  assert.equal(auditSuccess.completeTextExactFirstTry,true);
  assert.equal(auditSuccess.charAudit.accuracy,1);
+ assert.equal(auditSuccess.characterAttributionAvailable,true);
+ assert.equal(auditSuccess.charAudit.predictedCharacterOrigins.length,
+  Array.from("She is calm.").length);
+ assert.equal(auditSuccess.charAudit.predictedCharacterOrigins[0].kind,
+  "learned-text-transformation");
+ assert.equal(auditSuccess.charAudit.predictedCharacterOrigins[0].operatorFrom,"He");
+ assert.equal(auditSuccess.charAudit.predictedCharacterOrigins[0].operatorTo,"She");
+ assert.ok(auditSuccess.charAudit.predictedCharacterOrigins[0].evidence?.from,
+  "The exact first predicted character must retain a real prior-world source example");
+ assert.ok(auditSuccess.charAudit.predictedCharacterOrigins.some(x=>x.kind==="observed-start"),
+  "Unmodified characters must be credited to the initial observed text, not invented transformations");
  assert.equal(auditSuccess.operatorGap.minimumTokenEditDistance,0);
  const body=M.execute(unlocked,{maxSteps:10,trainNoise:false,enableNoise:false});
  assert.equal(body.solvedInternalGoal,true);
@@ -148,6 +159,9 @@ test("Atlas audits all Unicode codepoints after a frozen plan; identical text is
  const bad=auditNativePath({plan,atlas,brain,reference:"Știința este incorectă."});
  assert.equal(bad.completeTextExactFirstTry,false);
  assert.ok(bad.charAudit.incorrectCharacters.length>0);
+ assert.equal(bad.characterAttributionAvailable,true);
+ assert.ok(bad.charAudit.incorrectCharacters.some(x=>x.originalPathSource?.kind),
+  "Every wrong character must be linked to the actual original route or a known absent generated character");
  assert.ok(bad.operatorGap.minimumTokenEditDistance>=1);
  assert.equal(brain.observedTransformations.containsSentence("Știința este incorectă."),false);
 });
