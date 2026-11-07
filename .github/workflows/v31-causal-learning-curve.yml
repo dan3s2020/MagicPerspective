@@ -1,0 +1,36 @@
+name: V31 original Discoverer causal answer and measured learning curve
+on:
+  push:
+    branches:
+      - experiment/V31-CAUSAL-PATH-TO-ANSWER-LEARNING-CURVE-20261107
+  workflow_dispatch:
+jobs:
+  causal-real-original-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/path-answer-writer.mjs
+          node --check v17/experiments/v31-causal-learning-curve.mjs
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+      - name: Measure exact first answers after 0 to 36 complete observed worlds (3 seeds), heldout & negative controls
+        env:
+          MP_V31_CURVE_JSON: v17/artifacts/v31-learning-curve.json
+        run: node v17/experiments/v31-causal-learning-curve.mjs
+      - name: Upload exact answer-attempt atlas (successes, failures and all wrong chars)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v31-causal-learning-curve-logs
+          path: v17/artifacts/v31-learning-curve*
+          if-no-files-found: warn
+      - name: Original V30, V22 and V19 regression tests remain intact
+        run: |
+          node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs
+          node --test v17/tests/v22-long-unseen-shape.test.mjs v17/tests/torus-cognitive-learned-map.test.mjs
