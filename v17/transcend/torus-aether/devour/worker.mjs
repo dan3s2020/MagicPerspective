@@ -326,7 +326,9 @@ const processGpuText = async (exs, meta) => {
   // Snapshot REAL observed numeric axes after a completed input batch, before
   // potentially long frozen exams. External route planning reads this file
   // without blocking the original live training thread; save is atomic.
-  liveMathAxes?.save();
+  try{liveMathAxes?.save();}
+  catch(error){parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"Real math axes snapshot save failed (already committed GPU batch remains valid): "+error.message});}
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   progressAt=Date.now();
   await flushShared();
