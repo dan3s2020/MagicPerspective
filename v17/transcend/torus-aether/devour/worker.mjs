@@ -210,6 +210,17 @@ const gpuOn = async () => {
     try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
     catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
+let progressAt=Date.now();
+const heartbeat=setInterval(()=>{
+  // This heartbeat neither updates the model nor invents completed text.
+  if(!batchNow||paused||stop)return;
+  parentPort.postMessage({type:"heartbeat",w:workerData.gw,
+    chars:brain.chars,exercises:brain.exercises||0,
+    phase:batchNow.phase,done:batchNow.done,total:batchNow.total,
+    noProgressSeconds:Math.round((Date.now()-progressAt)/1000),
+    at:Date.now()});
+},2500);
+heartbeat.unref();
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
   if (!gpuSet) { shared.error = "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
@@ -249,20 +260,64 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
   const startChars = brain.chars;
   await brain.learnTextGPU(gpu, exs, progress => {
+    progressAt=Date.now();
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
     shot();
   });
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
-  // The original V17 trace sees the first actual exercise, exactly once.
-  if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
-  for(const row of meta){absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
-  for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  // Original V17: replay EVERY symbol of the first actual CUDA exercise.
+  // Preserve every legacy Brain.live operation, but yield periodically so
+  // 50K-char exercises cannot make the interface appear frozen.
+  const replayStarted=performance.now();
+  if(exs.length){
+    const actual=exs[0];
+    for(let i=0;i<actual.length;i++){
+      brain.live(actual[i],brain.lived % 50 === 0,{old:true});
+      if(((i+1)%256)===0||i===actual.length-1){
+        batchNow={phase:"text: integrare original V17 grafic + organe CPU",
+          done:i+1,total:actual.length};
+        progressAt=Date.now();shot();
+        if(((i+1)%1024)===0){
+          if(paused||saveNow)await hold();
+          await new Promise(resolve=>setImmediate(resolve));
+        }
+      }
+    }
+  }
+  if(brain.textGpu)brain.textGpu.graphReplayMs=
+    +(performance.now()-replayStarted).toFixed(1);
+  const observersStarted=performance.now();
+  batchNow={phase:"text: limba, labirinte N-D, transformari observate",done:0,total:meta.length};
+  progressAt=Date.now();shot();
+  for(let i=0;i<meta.length;i++){
+    const row=meta[i];
+    absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);
+    batchNow.done=i+1;progressAt=Date.now();shot();
+    await new Promise(resolve=>setImmediate(resolve));
+  }
+  for(let j=0;j<meta.length;j+=Math.max(1,Math.floor(meta.length/8))){
+    absorbText(meta[j]);
+    progressAt=Date.now();shot();
+    await new Promise(resolve=>setImmediate(resolve));
+  }
+  if(brain.textGpu)brain.textGpu.sideObserversMs=
+    +(performance.now()-observersStarted).toFixed(1);
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
+  progressAt=Date.now();
   await flushShared();
-  if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+  if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) {
+    nextMaze = brain.chars + mazeEvery;
+    batchNow={phase:"CUDA: labirinte + transformari reale",done:0,total:gpuSet?.worlds||0};
+    progressAt=Date.now();shot(true);
+    await worldsOnce(false);
+  }
   batchNow = null;
   // Report the first committed batch immediately, not only after 60,000 bytes.
-  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
+  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
+    batchNow={phase:"evaluare si checkpoint original V17",done:0,total:1};
+    progressAt=Date.now();shot(true);
+    report();batchNow=null;
+  }
   shot(true);
 };
 parentPort.on("message", m => {
@@ -437,6 +492,7 @@ if (TEXT && gpuSet && !stop && textBatch.length) {
 }
 report(stop ? false : true);
 shot(true); // publish ALL final learned transformations, graph, text and noise even for small corpora and no-noise organisms
+clearInterval(heartbeat);
 if (gpu) gpu.close();
 await selfcode?.close();
 parentPort.close();
