@@ -315,6 +315,21 @@ function displayMetrics(){
  document.documentElement.dataset.magicObservedChars=String(S?.chars??G?.chars??0);
  const language=G?.language||S?.language||{},op=G?.observedTransformations||S?.observedTransformations||{};
  $("mChars").textContent=fmt(S?.chars??G?.chars);
+ const D=S?.dataset||G?.dataset||null;
+ $("mExercises").textContent=D?.trainingTotal!=null?
+  fmt(D.processed)+" / "+fmt(D.trainingTotal):fmt(S?.exercises??G?.exercises);
+ $("mDatasetPct").textContent=D?.percent!=null?D.percent.toFixed(2)+"%":"—";
+ $("datasetProgressBar").value=D?.percent!=null?clamp(D.percent,0,100):0;
+ $("datasetProgressBar").setAttribute("aria-valuetext",D?.percent!=null?
+  D.percent.toFixed(2)+"% din datasetul de antrenare":"Totalul exercițiilor nu este disponibil");
+ $("datasetProgressDetail").textContent=D?
+  "Procesate "+fmt(D.processed)+" din "+fmt(D.trainingTotal)+
+  " exemple pentru acest creier · rămase "+fmt(D.remaining)+
+  " · fișiere "+fmt(D.fileCount)+
+  " · exemple în întregul dataset "+fmt(D.datasetRows)+
+  " · rezervate evaluării (NU antrenate) "+fmt(D.heldOutRows)+
+  " · simbolurile unice ale grafului sunt alt indicator":
+  "Aștept metadata reală a datasetului din /graphs. Nu estimez procentul din numărul nodurilor.";
  $("mTokens").textContent=fmt(language.observedTokens);
  $("mStates").textContent=fmt(language.states);
  $("mOps").textContent=fmt(op.learnedOperators);
@@ -337,7 +352,9 @@ function displayMetrics(){
   " · ultimul snapshot "+(G?.snapshotAt?new Date(G.snapshotAt).toLocaleTimeString("ro-RO"):"încă nu există"));
  $("workerInfo").textContent="Stare: "+status+
   "\nLumi: "+(S?.worlds?.join(" / ")||"—")+
-  "\nExerciții: "+fmt(S?.exercises)+
+  "\nExerciții consumate: "+fmt(D?.processed??S?.exercises)+
+  " / "+fmt(D?.trainingTotal)+" · corpus: "+(D?.percent!=null?D.percent.toFixed(2)+"%":"—")+
+  " · rămase "+fmt(D?.remaining)+
   "\nNoduri: "+fmt(S?.nodeCount)+
   "\nMuchii: "+fmt(S?.edgeCount);
  if(G?.controls&&finite(G.controls.gnoise)&&!state.selected){

@@ -54,6 +54,11 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   }
   assert.ok(status,"The REAL V17 server did not bind: "+logs);
   assert.equal(status.graphs.length,1);
+  assert.equal(status.dataset.rows,15);
+  assert.equal(status.dataset.trainRows,14);
+  assert.equal(status.dataset.heldOutRows,1);
+  assert.equal(status.dataset.files,1);
+  assert.equal(status.graphs[0].dataset.trainingTotal,14);
   assert.deepEqual(status.graphs[0].worlds,["text","maze","transform"]);
   const rootResponse=await fetch(url+"/",{redirect:"manual"});
   assert.equal(rootResponse.status,302);
@@ -67,7 +72,8 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   assert.match(htmlResponse.headers.get("content-type"),/text\/html/);
   const html=await htmlResponse.text();
   for(const id of ["field","paths","chart","mChars","mTokens","mStates","mOps",
-   "mAccuracy","worker","start","pause","save","noise","applyNoise",
+   "mAccuracy","mExercises","mDatasetPct","datasetProgressBar","datasetProgressDetail",
+   "worker","start","pause","save","noise","applyNoise",
    "autoProbe","probe","ops","stream","gpu","pathStep","axisX","axisY","axisZ","predictiveState"])
    assert.ok(html.includes('id="'+id+'"'),"Missing real MAGIC UI control: "+id);
   const js=await fetch(url+"/transcend/torus-aether/ui/magic.js");
@@ -77,7 +83,8 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   assert.match(code,/\/telemetry\?w=/);assert.match(code,/\/language-maze\?w=/);
   assert.doesNotMatch(code,/setInterval\(\s*fake|mockGraph|demoWorld|Math\.random\(\)/);
   const original=await(await fetch(url+"/transcend/torus-aether/ui/index.html?live=1")).text();
-  for(const id of ["g","languageMazeCv","textMazeBox","textMazeCv","tabTrain","tabLanguageMaze"])
+  for(const id of ["g","languageMazeCv","textMazeBox","textMazeCv","tabTrain","tabLanguageMaze",
+   "trainingExercises","trainingDatasetPct","trainingRemaining","trainingFilesHeld","trainingDatasetBar","trainingDatasetDetail"])
    assert.ok(original.includes('id="'+id+'"'),"Old V17 UI control has been removed: "+id);
   // Original user controls must really be connected, not UI-only dummy buttons.
   const noise=await(await fetch(url+"/controls?w=0&gnoise=4",{method:"POST"})).json();
@@ -98,6 +105,10 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   }
   assert.ok(trained,"No nonempty LIVE ORIGINAL GraphTrace after training: "+logs);
   assert.ok(trained.chars>100);
+  assert.equal(trained.dataset.trainingTotal,14);
+  assert.ok(trained.dataset.processed>0);
+  assert.equal(trained.dataset.trainingTotal+trained.dataset.heldOutRows,15);
+  assert.ok(trained.dataset.percent>0&&trained.dataset.percent<=100);
   assert.ok(trained.U.length>0,"No native learned toroidal geometry");
   assert.ok(trained.edges.length>0,"No actual learned edges");
   assert.ok(trained.language?.observedTokens>0,"Real language model did not train");
@@ -114,6 +125,10 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   assert.ok(telemetry.points.length>0,"Native sample telemetry missing");
   const graphs=await(await fetch(url+"/graphs")).json();
   assert.ok(graphs.graphs[0].chars>100);
+  assert.ok(graphs.graphs[0].dataset.processed>0);
+  assert.equal(graphs.graphs[0].dataset.trainingTotal,14);
+  assert.ok(graphs.dataset.processed.processed>0);
+  assert.equal(graphs.dataset.processed.total,14);
   assert.ok(graphs.graphs[0].language.observedTokens>0);
   let learnedMath=null;
   for(let i=0;i<140;i++){
@@ -154,6 +169,10 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    ],{encoding:"utf8",timeout:20000,maxBuffer:10*1024*1024});
    assert.equal(result.status,0,"Chromium runtime failed to render magic UI: "+result.stderr?.slice(-2500));
    assert.match(result.stdout, /id="mChars"/);
+   assert.match(result.stdout, /id="datasetProgressBar"/);
+   assert.match(result.stdout, /id="mDatasetPct"/);
+   assert.match(result.stdout, /exemple pentru acest creier/,
+    "Rendered browser must show real dataset progress, not placeholder");
    assert.match(result.stdout, /Perechi observate:/,
     "Predictive-state panel did not render measurements from actual V17 worker graph");
    assert.match(result.stdout,/Where the solution takes shape/);

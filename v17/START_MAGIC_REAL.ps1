@@ -21,7 +21,8 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_V17.ps1"
-$branchTag = "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107"
+$branchTag = "feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107"
+$compatibleBranches = @($branchTag, "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107")
 if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
  throw "Original complete CUDA V17 launcher missing: $launcher"
 }
@@ -44,7 +45,7 @@ if (Test-Path -LiteralPath $Out) {
  if (Test-Path -LiteralPath $marker) {
   $existing = Get-Content -LiteralPath $marker -Raw | ConvertFrom-Json
   if ($existing.kind -ne "magic-native-v17") { throw "Output directory does not contain a native MagicPerspective marker." }
-  if ($existing.branch -and $existing.branch -ne $branchTag) {
+  if ($existing.branch -and $existing.branch -notin $compatibleBranches) {
    throw "Refusing to resume a DIFFERENT MagicPerspective branch in the same output folder. Use a NEW -Out directory."
   }
   if ($existing.corpus -ne [System.IO.Path]::GetFullPath($Data)) {

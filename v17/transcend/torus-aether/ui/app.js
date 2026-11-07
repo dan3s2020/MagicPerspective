@@ -392,6 +392,22 @@ function stats() {
   const at=liveSummary?.snapshotAt||liveSnap?.snapshotAt;
   $("lastSnapshotAge").textContent=LIVE?(at?((Date.now()-at)/1000).toFixed(1)+" s":"—"):"—";
   $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
+  const D=LIVE?(liveSummary?.dataset||liveSnap?.dataset):null;
+  $("trainingExercises").textContent=D?.trainingTotal!=null?
+    D.processed.toLocaleString("ro-RO")+" / "+D.trainingTotal.toLocaleString("ro-RO"):"—";
+  $("trainingDatasetPct").textContent=D?.percent!=null?D.percent.toFixed(2)+"%":"—";
+  $("trainingRemaining").textContent=D?.remaining!=null?D.remaining.toLocaleString("ro-RO"):"—";
+  $("trainingFilesHeld").textContent=D?
+    (D.fileCount??"—")+" fișiere · "+(D.heldOutRows??"—")+" exemple rezervate":"—";
+  $("trainingDatasetBar").value=D?.percent!=null?Math.min(100,Math.max(0,D.percent)):0;
+  $("trainingDatasetBar").setAttribute("aria-valuetext",D?.percent!=null?
+    D.percent.toFixed(2)+"% din rândurile alocate antrenării":"Total dataset indisponibil");
+  $("trainingDatasetDetail").textContent=D?
+    "Caractere consumate: "+(liveSummary?.chars??liveSnap?.chars??0).toLocaleString("ro-RO")+
+    " · exerciții alocate "+(D.trainingTotal??"—")+
+    " · dataset "+(D.datasetRows??"—")+" rânduri"+
+    " · procentul este calculat din EXERCIȚII finalizate, nu din alfabet.":
+    "Procentul real apare numai când serverul livrează totalul din dataset.";
   $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
       `<br>cum citește acum: urmează alinierile de încredere cu ascuțimea <b>${M.g}</b>, forma cântărește <b>${M.form}</b>` +
@@ -878,7 +894,7 @@ async function livePull() {
     // one card per graph: its own score in every world it lives, its state, and its own controls
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("liveList").innerHTML = L.graphs.map(gr => `<div class="lgc${gr.w === liveW ? " on" : ""}" data-w="${gr.w}">
-      <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span>${gr.error ? ` · <span style="color:#ff4d6d">${String(gr.error).replace(/</g,"&lt;")}</span>` : ""} · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
+      <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span>${gr.error ? ` · <span style="color:#ff4d6d">${String(gr.error).replace(/</g,"&lt;")}</span>` : ""} · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"} caractere · ${gr.dataset?.percent!=null?gr.dataset.percent.toFixed(2)+"% dataset · "+gr.dataset.processed+"/"+gr.dataset.trainingTotal+" ex":"exerciții: total necunoscut"}</div>
       <div class="sc">${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}

@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
+import {datasetProgress, overallDatasetProgress} from "./dataset-progress.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
 
@@ -42,11 +43,13 @@ if (arg("text")) {
   for (const f of files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) { if (!para.trim()) continue; k++;
     if (k % 10 === 0) { heldSet.push(k); heldParas.push(para + "\n\n"); if (evalText.length < evalChars) evalText += para + "\n\n"; } }
   heldPick = async n => Array.from({length: n}, () => heldParas[Math.floor(Math.random() * heldParas.length)]);
-  source = {kind: "text", files, heldSet};
+  source = {kind: "text", files, heldSet, totalRows:k,
+    trainRows:k-heldSet.length,heldRows:heldSet.length,fileCount:files.length};
 } else {
   const root = arg("data", DEFAULT_TEXT_ROOT), ds = await openTextDataset(root);
   for (let k = 0; k < ds.held && evalText.length < evalChars; k++) { const x = await ds.heldOut(k); evalText += "Q: " + x.prompt + "\nA: " + x.answer + "\n\n"; }
-  source = {kind: "parquet", root};
+  source = {kind: "parquet", root, totalRows:ds.total,
+    trainRows:ds.trainRows,heldRows:ds.held,fileCount:ds.files.length};
   heldPick = async n => { const o = []; for (let j = 0; j < n; j++) { const x = await ds.heldOut(Math.floor(Math.random() * ds.held)); o.push("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"); } return o; };
   console.log(`world: ${root} · ${ds.total.toLocaleString()} exercises in ${ds.files.length} files · ${ds.held} kept unseen for the test`);
 }
@@ -86,7 +89,12 @@ function recordTelemetry(m) {
 }
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
+  const shares = Math.max(1, Math.ceil(slots.length / arms.length));
+  const progress = sl.worlds.includes("text")
+    ? datasetProgress(source, sl.share, shares, Math.max(g?.exercises||0,t?.exercises||0))
+    : null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
+    exercises:Math.max(g?.exercises||0,t?.exercises||0),dataset:progress,
     nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
     snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
@@ -124,9 +132,15 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
     if (m.final) sl.status = "gata";
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
+    const dProgress=slotInfo(sl).dataset;
+    const corpusLine=dProgress?.percent!=null?
+      " | dataset "+dProgress.percent.toFixed(2)+"% · "+
+      dProgress.processed.toLocaleString()+"/"+
+      dProgress.trainingTotal.toLocaleString()+" exerciții · rămase "+
+      dProgress.remaining.toLocaleString():" | dataset: total necunoscut";
     console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
-      (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
+      (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + corpusLine + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
@@ -144,10 +158,18 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
+const datasetInfo = () => ({
+  kind:source.kind,rows:source.totalRows??null,trainRows:source.trainRows??null,
+  heldOutRows:source.heldRows??null,files:source.fileCount??null,
+  processed:overallDatasetProgress(source,
+    slots.map(sl=>({...sl,committedExercises:Math.max(
+      graphs.get(sl.w)?.exercises||0,last.get(sl.w)?.exercises||0)})),
+    Math.max(1,Math.ceil(slots.length/arms.length)))
+});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
-  if (url === "/state") return json(res, {world, worlds: worldsArg, workers: slots.length, arms: arms.map(a => a.name), every, memGB, started, stopping,
+  if (url === "/state") return json(res, {world, dataset:datasetInfo(), worlds: worldsArg, workers: slots.length, arms: arms.map(a => a.name), every, memGB, started, stopping,
     graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent})), last: h.at(-1)}))});
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
@@ -378,10 +400,11 @@ http.createServer((req, res) => {
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null});
   }
-  if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
+  if (url === "/graphs") return json(res, {world, dataset:datasetInfo(), every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
-    return res.end(g ? JSON.stringify({...g, test: last.get(w)?.test || null, world}) : "{}"); }
+    return res.end(g ? JSON.stringify({...g, test: last.get(w)?.test || null, world,
+      dataset: slotInfo(slots.find(sl=>sl.w===w))?.dataset??null}) : "{}"); }
   const types = {".html": "text/html; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".js": "text/javascript; charset=utf-8"};
   const abs = path.resolve(root, url.replace(/^\/+/, ""));
   if (abs.startsWith(path.join(root, "transcend")) && fs.existsSync(abs) && fs.statSync(abs).isFile()) {
