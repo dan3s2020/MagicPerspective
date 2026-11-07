@@ -53,12 +53,20 @@ test("REAL original V17 JSONL worker serves read-only complete paged atlas, miss
   const html=await (await fetch(app.base+"/transcend/torus-aether/ui/native-hypermaze.html")).text();
   assert.match(html,/id="forensicAtlas"/);
   assert.match(html,/id="atlasCanvas"/);
+  assert.match(html,/id="atlasAttempts"/);
+  assert.match(html,/id="atlasFailed"/);
+  assert.match(html,/value="attempts"/);
+  assert.match(html,/value="outcomes"/);
   assert.match(html,/id="realBar"/);
   assert.match(html,/src=".\/native-hypermaze.js"/);
   assert.match(html,/src=".\/forensic-path-atlas.js"/);
   const script=await (await fetch(app.base+"/transcend/torus-aether/ui/forensic-path-atlas.js")).text();
   assert.match(script,/firstWrongExpected|firstWrongPredicted|firstMismatch|firstWrongReason|Primul caracter greșit/);
   assert.ok(!script.includes('q.set("reference"'),"Never send correct hidden text to worker");
+  assert.match(script,/section:"blocked"/);
+  assert.match(script,/section:"proposals"/);
+  assert.match(script,/section:"textOnly"/);
+  assert.match(script,/ctx.setLineDash/);
   const page=await request(app.base+"/api/path-atlas?section=observations&offset=0&limit=4");
   assert.equal(page.originalBrain,true);
   assert.equal(page.referenceAnswerSupplied,false);
@@ -72,6 +80,10 @@ test("REAL original V17 JSONL worker serves read-only complete paged atlas, miss
   const all=await request(app.base+"/api/path-atlas?section=observations&offset=4&limit=250");
   assert.equal(page.page.total,all.page.total);
   assert.ok(all.page.items.some(x=>x.rawText.includes("Știința")));
+  const attempts=await request(app.base+"/api/path-atlas?section=attempts&offset=0&limit=50");
+  const outcomes=await request(app.base+"/api/path-atlas?section=outcomes&offset=0&limit=50");
+  assert.equal(attempts.page.total,0,"Corpus text alone supplies no verified external attempts");
+  assert.equal(outcomes.page.total,0,"Corpus text alone supplies no externally verified action outcomes");
   const controls=await request(app.base+"/api/path-atlas?section=operators&offset=0&limit=50");
   assert.ok(controls.page.total>0);
   assert.equal(controls.page.items.every(x=>x.status===
