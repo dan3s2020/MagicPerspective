@@ -80,6 +80,27 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
    <div class="muted" style="font-size:11px;margin-top:5px">„Dataset consumat” înseamnă octeții JSONL citiți; fiecare token textual este reprezentat în observații, dar stările individuale au o memorie activă limitată. Procentul de predicție locală pe holdout nu este acuratețe semantică sau IQ.</div>
   </div>
  </section>
+ <section class="panel" id="realQA" style="margin-bottom:14px">
+  <div class="panelHead"><h2>OpenThoughts · răspuns întreg nevăzut, din transformări învățate</h2>
+   <small>Un singur Brain V17 · fără răspuns sau tokeni ai răspunsului furnizați la planificare</small></div>
+  <div class="panelBody">
+   <div class="cards" style="margin-bottom:10px">
+    <div class="card"><label>Perechi Q/A reale învățate</label><strong id="qaLearned">—</strong></div>
+    <div class="card"><label>Axe Q/A observate</label><strong id="qaAxes">—</strong></div>
+    <div class="card"><label>Întrebări ascunse evaluate</label><strong id="qaHeldout">—</strong></div>
+    <div class="card"><label>Răspuns întreg EXACT</label><strong id="qaExact">—</strong></div>
+    <div class="card"><label>Răspuns exact normalizat</label><strong id="qaCanonical">—</strong></div>
+    <div class="card"><label>Traseu găsit pe Q/A ascunse</label><strong id="qaCoverage">—</strong></div>
+   </div>
+   <p class="muted">Numitorul include toate întrebările rezervate, inclusiv când organismul nu poate construi un traseu. Cele două metrici EXACT și normalizată sunt distincte. Nu sunt scoruri de predicție a caracterului următor.</p>
+   <label class="formlabel" for="qaQuestion">O întrebare nouă pentru același creier care antrenează OpenThoughts</label>
+   <textarea id="qaQuestion" placeholder="Întrebarea este transmisă singură; nu introduce răspunsul și nici obiectivul." aria-label="Întrebarea nouă pentru motorul Q/A"></textarea>
+   <div class="controls" style="margin-top:8px">
+    <button id="qaPlan" class="primary">◈ Prezice răspunsul întreg și traseul</button>
+   </div>
+   <pre id="qaPrediction" aria-live="polite">Aștept transformările Q/A observate din datele reale. Dacă nu există suficiente dovezi, motorul trebuie să refuze.</pre>
+  </div>
+ </section>
  <div class="rowmain">
   <section class="panel">
    <div class="panelHead"><h2>Topologie reală · proiecție 5D</h2><div class="legend"><span style="--c:#f0c87a">Forma globală</span><span style="--c:#66cce7">Execuție</span><span style="--c:#67deab">Obiectiv</span><span style="--c:#f0809a">Abatere</span></div></div>
