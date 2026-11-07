@@ -78,7 +78,7 @@ test("real research results are from EXECUTED Node tests, never hardcoded front-
  },{time:35000});
  assert.equal(result.status,"passed",result.stderr?.slice(-2400));
  assert.equal(result.exitCode,0);
- assert.ok(result.stdout.includes("LEARNED_LOCAL_AXES_HELDOUT_ROUTES"));
+ assert.ok(result.stdout.includes("LEARNED_LOCAL_AXES_HELDOUT_ROUTES"),JSON.stringify({stdout:result.stdout.slice(0,4500),stderr:result.stderr.slice(0,3000),metrics:result.metrics,status:result.status,source:result.source}));
  assert.ok(result.metrics.some(x=>x.name==="LEARNED_LOCAL_AXES_HELDOUT_ROUTES"));
  assert.ok(result.metrics.some(x=>x.name==="NOISY_LOCAL_AXES_RECOVERY"));
  assert.ok(result.metrics.find(x=>x.name==="LEARNED_LOCAL_AXES_HELDOUT_ROUTES").data.some(x=>x.D===5&&x.exactRoutes>0));
