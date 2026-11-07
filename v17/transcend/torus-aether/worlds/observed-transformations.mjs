@@ -112,16 +112,38 @@ export class ObservedTransformations {
     return unique(tokens).map(x=>tokens.length+"|"+normalized(x));
   }
   _candidateSentences(tokens) {
+    // The index contains UNIQUE token keys. The previous threshold used
+    // tokens.length-2, which counts every repeated word. For a long passage,
+    // "the" appearing 20 times made genuine one-edit neighbors IMPOSSIBLE
+    // to retrieve: zero learned operators despite complete observations.
+    //
+    // Source length differs by at most one for observed insert/delete edits.
+    // The original index prepends the full token length to each key; probe
+    // all three possible lengths and use the count of UNIQUE shared tokens
+    // rather than the raw token count. The exact oneEdit() below still
+    // verifies ordering, position and source; this only fixes candidate
+    // discovery, not the learned transition semantics.
+    const keys=this._indexKeys(tokens);
+    const words=keys.map(k=>k.slice(k.indexOf("|")+1));
     const scores=new Map();
-    for(const key of this._indexKeys(tokens)){
-      const ids=this.index.get(key)||[];
-      for(let i=Math.max(0,ids.length-80);i<ids.length;i++){
-        const id=ids[i];
-        if(this.records.has(id)) scores.set(id,(scores.get(id)||0)+1);
+    for(let offset=-1;offset<=1;offset++){
+      const length=tokens.length+offset;
+      if(length<1)continue;
+      for(const word of words){
+        const ids=this.index.get(length+"|"+word)||[];
+        for(let i=Math.max(0,ids.length-80);i<ids.length;i++){
+          const id=ids[i];
+          if(this.records.has(id))scores.set(id,(scores.get(id)||0)+1);
+        }
       }
     }
-    return [...scores].filter(([,count])=>count>=Math.max(1,tokens.length-2))
-      .sort((a,b)=>b[1]-a[1]||b[0]-a[0])
+    return [...scores].filter(([id,count])=>{
+      const record=this.records.get(id);
+      if(!record||Math.abs(record.tokens.length-tokens.length)>1)return false;
+      const sharedRequired=Math.max(1,
+        Math.min(words.length,this._indexKeys(record.tokens).length)-1);
+      return count>=sharedRequired;
+    }).sort((a,b)=>b[1]-a[1]||b[0]-a[0])
       .slice(0,this.maxCandidatePairs).map(([id])=>this.records.get(id));
   }
   _operatorBucket(action){
