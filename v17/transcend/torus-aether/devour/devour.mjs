@@ -87,10 +87,40 @@ function recordTelemetry(m) {
     samples.push(sample);if(samples.length>360)samples.splice(0,samples.length-360);
   }
 }
+function workerHealth(sl, graph = graphs.get(sl.w)) {
+  const now = Date.now(),heartbeatAgeMs = sl.lastHeartbeatAt != null ?
+    now-sl.lastHeartbeatAt : null;
+  const snapshotAgeMs = graph?.snapshotAt ? now-graph.snapshotAt : null;
+  const startingAgeMs = sl.launchedAt ? now-sl.launchedAt : null;
+  const referenceAge = heartbeatAgeMs ?? startingAgeMs;
+  const noHeartbeat = sl.status === "antrenează" &&
+    referenceAge != null && referenceAge > 45000;
+  const snapshotStale = sl.status === "antrenează" &&
+    snapshotAgeMs != null && snapshotAgeMs > 90000;
+  const phase=sl.lastHeartbeat?.phase ?? "starting";
+  const gpuRequest=sl.lastHeartbeat?.activeGpuRpc??null;
+  return {
+    state:sl.status==="eroare"?"error":noHeartbeat?"unresponsive":
+      snapshotStale?"stale-snapshot":sl.status==="pauză"?"paused":
+      sl.status==="gata"?"completed":sl.status==="oprit"?"stopped":"running",
+    heartbeatAgeMs,snapshotAgeMs,phase,phaseSince:sl.lastHeartbeat?.phaseSince??null,
+    gpuRequest,batch:sl.lastHeartbeat?.batch??null,
+    lastReportedChars:sl.lastHeartbeat?.chars??0,
+    lastReportedExercises:sl.lastHeartbeat?.exercises??0,
+    workerResponsive:!noHeartbeat,
+    staleSnapshot:snapshotStale,
+    message:sl.status==="eroare"?sl.lastError:
+      noHeartbeat?"Worker JS event loop unresponsive for >45s; no new real heartbeat.":
+      snapshotStale?"Graph snapshot >90s old. Worker phase: "+phase+
+        (gpuRequest?" / CUDA RPC: "+gpuRequest.cmd:""):
+      sl.status==="pauză"?"Training paused":phase
+  };
+}
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
     nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
+    health:workerHealth(sl,g),
     snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
@@ -99,7 +129,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     language: g?.language || t?.language || null, hypermaze:g?.hypermaze || t?.hypermaze || null,
     endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
-  sl.lastError = null;
+  sl.lastError = null;sl.launchedAt=Date.now();sl.lastHeartbeatAt=null;sl.lastHeartbeat=null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
   if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".hypermaze.json"]) {
@@ -116,21 +146,43 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
-    if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
+    if (m.type === "note") {sl.lastNote=m.text;return console.log(`#${sl.w} ${m.text}`);}
+    if (m.type === "heartbeat") {
+      sl.lastHeartbeatAt=Date.now();sl.lastHeartbeat=m;return;
+    }
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old=graphs.get(sl.w);
       if(!m.text&&old?.text)m.text=old.text;
-      m.snapshotAt=Date.now();graphs.set(sl.w,m);recordTelemetry(m);return; }   // its living graph
+      m.snapshotAt=Date.now();sl.lastGraphAt=m.snapshotAt;
+      graphs.set(sl.w,m);recordTelemetry(m);return; }   // its living graph
     if (m.type === "chat") { const cb = chats.get(m.id); if (cb) { chats.delete(m.id); cb(m); } return; }
     if (m.type === "saved") { sl.savedMB = m.MB; for (const f of sl.onSaved?.splice(0) || []) f(); return console.log(`#${sl.w} saved ${m.MB.toFixed(0)} MB → ${saveOf(sl)}`); }
-    last.set(sl.w, m); if (!history.has(sl.w)) history.set(sl.w, []); history.get(sl.w).push(m); log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
+    last.set(sl.w, m);
+    if (!history.has(sl.w)) history.set(sl.w, []);
+    // Real long-running training must not retain every massive evaluation
+    // snapshot forever. Disk log.jsonl is still append-only; UI keeps 240.
+    const hist=history.get(sl.w);hist.push(m);
+    if(hist.length>240)hist.splice(0,hist.length-240);
+    log.write(JSON.stringify({time: new Date().toISOString(), ...m}) + "\n");
     if (m.final) sl.status = "gata";
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
     console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
       (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
-  wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
-  wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
+  wk.on("error", err => {
+    sl.lastError="Worker crashed: "+err.message;sl.status="eroare";
+    console.error(`#${sl.w} error:`,err.message);
+  });
+  wk.on("exit", code => {
+    for (const f of sl.onSaved?.splice(0) || []) f();
+    if(gen===sl.gen){
+      sl.wk=null;
+      if(code!==0 && sl.status!=="eroare"){
+        sl.lastError="Worker exited unexpectedly with code "+code;
+        sl.status="eroare";
+      }else if(sl.status!=="gata"&&sl.status!=="eroare")sl.status="oprit";
+    }
+  });
 }
 function gpuFor() { const share = Math.max(1, slots.filter(x => x.worlds.some(w => w !== "text")).length); return gpuSettings.device === "off" ? null : {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0}; }
 function addSlot(armName, worlds) { const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
@@ -382,6 +434,16 @@ http.createServer((req, res) => {
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null,
       hypermaze:graphs.get(w)?.hypermaze||null});
+  }
+  if (url === "/health") {
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl)return json(res,{error:"Graph not found",w});
+    return json(res,{w,status:sl.status,health:workerHealth(sl),
+      canResume:fs.existsSync(saveOf(sl)),
+      checkpoint:saveOf(sl),lastError:sl.lastError||null,
+      lastNote:sl.lastNote||null,
+      snapshotAt:graphs.get(w)?.snapshotAt||null,
+      lastGraphChars:graphs.get(w)?.chars??null});
   }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);

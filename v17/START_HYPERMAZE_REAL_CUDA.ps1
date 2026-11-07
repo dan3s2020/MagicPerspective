@@ -12,16 +12,17 @@
 param(
   [string]$Data = "D:\training\OpenThoughts3-1.2M",
   [string]$Out = "",
+  [string]$ResumeFrom = "",
   [int]$Port = 8877,
   [int]$Workers = 1,
   [string]$Arms = "winner",
   [int]$MazeEvery = 4000,
   [double]$Mem = 2,
   [string]$Gpu = "cuda:0",
-  [double]$Vram = 2.5,
-  [int]$GpuWorlds = 8,
-  [int]$GpuTextBatch = 2,
-  [int]$GpuTextChunk = 128,
+  [double]$Vram = 2.2,
+  [int]$GpuWorlds = 4,
+  [int]$GpuTextBatch = 1,
+  [int]$GpuTextChunk = 64,
   [int]$GpuUtil = 100,
   [switch]$Fresh,
   [switch]$TraceTransformations
@@ -38,11 +39,34 @@ if ($Port -lt 1024 -or $Port -gt 65535) { throw "Port must be 1024..65535" }
 if ($Workers -lt 1 -or $Workers -gt 16) { throw "Workers must be 1..16" }
 if ($GpuWorlds -lt 0) { throw "GpuWorlds must be nonnegative" }
 if ($Mem -lt 0.5) { throw "Mem must be at least 0.5 GB" }
+if ($Fresh -and $ResumeFrom) { throw "-Fresh cannot be combined with -ResumeFrom. Refusing to lose checkpoints." }
+# Unlike the original V17 server which prints a listen error and may keep
+# training without a reachable UI, refuse to launch on an occupied port.
+if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
+  $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+  if ($listeners.Count -gt 0) {
+    $owners = ($listeners | Select-Object -ExpandProperty OwningProcess -Unique) -join ", "
+    throw "Port $Port is already occupied by PID(s) $owners. Stop the previous V17 process or specify -Port before starting. No checkpoint was touched."
+  }
+}
 if ([string]::IsNullOrWhiteSpace($Out)) {
   $Out = Join-Path $PSScriptRoot "runtime-hypermaze-real"
 }
 $Out = [System.IO.Path]::GetFullPath($Out)
 $null = New-Item -ItemType Directory -Force -Path $Out
+if (-not [string]::IsNullOrWhiteSpace($ResumeFrom)) {
+  $previousOut = [System.IO.Path]::GetFullPath($ResumeFrom)
+  $previousBrains = Join-Path $previousOut "brains"
+  $newBrains = Join-Path $Out "brains"
+  if (-not (Test-Path -LiteralPath $previousBrains -PathType Container)) {
+    throw "No previous checkpoint folder: $previousBrains"
+  }
+  if (Test-Path -LiteralPath $newBrains) {
+    throw "Target already has a brains folder: $newBrains. Refusing to overwrite. Omit -ResumeFrom to continue existing target checkpoints."
+  }
+  Copy-Item -LiteralPath $previousBrains -Destination $newBrains -Recurse
+  Write-Host "Copied existing checkpoints into the NEW isolated runtime; previous saved model remains unchanged." -ForegroundColor Green
+}
 Write-Host ""
 Write-Host "MAGICPERSPECTIVE V17 / REAL TEXT HYPERMAZE" -ForegroundColor Cyan
 Write-Host "Original Brain: $launcher"
@@ -53,6 +77,8 @@ Write-Host "http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "CUDA: $Gpu, world batch: $GpuWorlds, VRAM budget: $Vram GB, GPU utilization target: $GpuUtil %."
 Write-Host "Original CPU JavaScript Graph + CPU text maze sidecar remain CPU: 100% of all code on CUDA is NOT asserted." -ForegroundColor Yellow
 Write-Host "No demo: actual source rows train the original V17 Brain, with live pre-update text-route observations."
+Write-Host "Stability profile for 4GB VRAM: text batch $GpuTextBatch, CUDA chunk $GpuTextChunk, world batch $GpuWorlds, reserved budget $Vram GB."
+Write-Host "Real status endpoint: http://127.0.0.1:$Port/health?w=0" -ForegroundColor Cyan
 Write-Host ""
 # Checkpoints belong to THIS isolated folder. Existing checkpoints are
 # resumed instead of deleted, unless -Fresh was explicitly requested.

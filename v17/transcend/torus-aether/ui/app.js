@@ -851,6 +851,38 @@ function drawTrans() {
   for (let i = 0; i < n * n; i++) { g2.fillStyle = hue(F.b[i]); g2.fillRect(ox + (i % n) * s2 + 1, (i / n | 0) * s2 + 1, s2 - 2, s2 - 2); }
   for (let i = 0; i < n * n; i++) if (L.goal[i] !== 17) { g2.strokeStyle = hue(L.goal[i]); g2.lineWidth = 3; g2.setLineDash([4, 3]); g2.strokeRect(ox + (i % n) * s2 + 3, (i / n | 0) * s2 + 3, s2 - 6, s2 - 6); g2.setLineDash([]); }
 }
+const sec = ms => ms == null ? "—" : (ms/1000).toFixed(1)+" s";
+const safeStatus = s => String(s??"—").replace(/[<>]/g,"");
+function renderWorkerHealth(summary,error=null) {
+  const target=$("workerHealth");if(!target)return;
+  if(!summary){target.textContent=error?
+    "SERVERUL NU RĂSPUNDE: "+error+" · verifică fereastra PowerShell; ultimul grafic nu confirmă activitate.":
+    "Așteaptă primul status al workerului...";return;}
+  const H=summary.health||{},status=H.state||summary.status;
+  const heartbeat="Heartbeat: "+sec(H.heartbeatAgeMs);
+  const snapshot="Ultimul graf: "+sec(H.snapshotAgeMs);
+  const task="Fază raportată: "+safeStatus(H.phase);
+  const rpc=H.gpuRequest?" · CUDA "+safeStatus(H.gpuRequest.cmd)+
+    " "+sec(Date.now()-(H.gpuRequest.startedAt||Date.now())):"";
+  const warning=status==="error"?"EROARE CONFIRMATĂ. "+
+    safeStatus(summary.error||H.message)+" · folosește ▶ pentru reluare din ultimul save, NU Reset.":
+    status==="unresponsive"?"BLOCAT: workerul nu mai trimite nici heartbeat. Verifică /health și logul PowerShell; NU apăsa Reset.":
+    status==="stale-snapshot"?"GRAFUL NU SE ACTUALIZEAZĂ, deși workerul mai răspunde. "+
+      "Verifică operația CUDA și numărătorile, nu considera instantaneul vechi drept progres.":
+    status==="paused"?"PAUZĂ — modelul nu se antrenează acum.":
+    status==="completed"?"GATA — datele au fost procesate.":"Worker monitorizat separat de grafic.";
+  target.textContent=warning+"\n"+heartbeat+" · "+snapshot+" · "+task+rpc;
+  target.style.borderColor=status==="error"||status==="unresponsive"?"#e65b6c":
+    status==="stale-snapshot"?"#d49b43":"#30485f";
+}
+async function fetchLiveJSON(url, timeoutMs=12000) {
+  const ctrl=new AbortController(), timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+  try {
+    const response=await fetch(url,{cache:"no-store",signal:ctrl.signal});
+    if(!response.ok)throw Error("HTTP "+response.status);
+    return await response.json();
+  } finally {clearTimeout(timer);}
+}
 async function livePull() {
   // Never overlap three large graph snapshots from multiple polling timers.
   // Capture the selected identity: a delayed response from #0 may NOT reset
@@ -860,19 +892,15 @@ async function livePull() {
   const requestedW=liveW;
   let selectedSnap=null,selectedSummary=null,selectedTelemetry=null,pullError=null;
   try {
-    const r=await fetch("/graph?w="+requestedW,{cache:"no-store"});
-    if(r.ok){
-      const gs=await r.json();
-      if(Array.isArray(gs.nodes)&&requestedW===liveW){selectedSnap=gs;applySnap(gs);}
-    }else pullError="snapshot HTTP "+r.status;
+    const gs=await fetchLiveJSON("/graph?w="+requestedW);
+    if(Array.isArray(gs.nodes)&&requestedW===liveW){selectedSnap=gs;applySnap(gs);}
   }catch(err){pullError="snapshot: "+err.message;}
   try {
-    const response=await fetch("/graphs",{cache:"no-store"});
-    if(!response.ok)throw Error("HTTP "+response.status);
-    const L=await response.json();
+    const L=await fetchLiveJSON("/graphs");
     if(requestedW===liveW){
       selectedSummary=L.graphs?.find(x=>x.w===requestedW)||null;
       liveSummary=selectedSummary;
+      renderWorkerHealth(selectedSummary,pullError);
       inlineTextMaze?.update(selectedSnap||liveSnap,
         !!selectedSummary?.worlds?.includes("text"));
     }
@@ -908,13 +936,12 @@ async function livePull() {
   }catch(err){
     pullError=(pullError?pullError+" · ":"")+"graphs: "+err.message;
     $("corpus").textContent="trainerul nu răspunde: "+err.message;
+    if(requestedW===liveW)renderWorkerHealth(selectedSummary,pullError);
   }
   if(requestedW===liveW&&observatory){
     try{
-      const r=await fetch("/telemetry?w="+requestedW+
-        "&after="+observatory.since(),{cache:"no-store"});
-      if(!r.ok)throw Error("HTTP "+r.status);
-      selectedTelemetry=await r.json();
+      selectedTelemetry=await fetchLiveJSON("/telemetry?w="+requestedW+
+        "&after="+observatory.since());
       if(selectedTelemetry.error)throw Error(selectedTelemetry.error);
     }catch(err){pullError=(pullError?pullError+" · ":"")+
       "telemetrie: "+err.message;}

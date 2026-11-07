@@ -1,0 +1,47 @@
+name: V17 CUDA RPC deadlock recovery and honest real-time worker health
+on:
+  push:
+    branches:
+      - fix/V17-GPU-STALL-WATCHDOG-RESUME-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gpu-watchdog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Static checks — actual GPU RPC, V17 worker, server and browser UI
+        run: |
+          node --check v17/transcend/torus-aether/gpu/client.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/tests/gpu-stall-watchdog.test.mjs
+      - name: Simulate silent CUDA process, continuous progress, hard timeout, invalid init — no Nvidia required
+        run: node --test v17/tests/gpu-stall-watchdog.test.mjs
+      - name: Actual original V17 server processes REAL corpus and exposes measured /health, checkpoint
+        run: node --test v17/tests/live-corpus-hypermaze-http.test.mjs
+      - name: Original native V17 streaming regression tests
+        run: |
+          node --test v17/tests/live-corpus-hypermaze.test.mjs
+          node --test v17/tests/inline-language-maze-native.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+  real-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium browser testing dependencies
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Original full V17 browser UI still works, real text paths visible and health status shown
+        run: node --test v17/tests/live-corpus-hypermaze-browser.test.mjs
