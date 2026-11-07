@@ -82,6 +82,12 @@ test("original V17 Q/A learning resumes ON TOP OF intact V20 and V21 hypermaze e
   assert.ok(graph.chars>1500,"Original text learner did not consume actual Q/A characters");
   assert.ok(graph.exercises>20,"V17 original exercise counter must advance");
   assert.equal(graph.hypermaze.documents,cognitive,"V20 documents reabsorbed during recovery");
+  assert.equal(graph.progress.mode,"native-text","Progress must switch from observed-only to actual V17 text exercises");
+  assert.equal(graph.progress.total,64,"Original TXT corpus excludes held-out 7 of 71 documents");
+  assert.equal(graph.progress.heldOut,7);
+  assert.ok(graph.progress.trained>20 && graph.progress.trained<=64);
+  assert.ok(graph.progress.percent>0&&graph.progress.percent<=100);
+
   assert.ok(graph.hypermaze.veil.documents>0,"V21 contextual state must survive resume");
   await worker.until(g=>g.final||g.exercises>=63,60000);
   for(let k=0;k<90&&!existsSync(saved);k++)await sleep(100);
