@@ -60,8 +60,8 @@ test("REAL original V17 Node worker + genuine repository corpus, live telemetry 
    assert.equal(initialHealth.w,0);
    assert.equal(initialHealth.health.workerResponsive,true);
    assert.equal(initialHealth.canResume,false);
-   assert.ok(initialHealth.health.state==="running"||
-     initialHealth.health.state==="paused");
+   assert.ok(["running","paused","stopped"].includes(initialHealth.health.state),
+     "Before pressing Start a worker may exist but intentionally be stopped");
    assert.ok(status.graphs[0].health);
    const empty=await poll(async()=>{
      const r=await json(base+"/graph?w=0");
