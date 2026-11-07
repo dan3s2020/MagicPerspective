@@ -21,6 +21,7 @@ export class LearnedTargetReference {
  constructor(){
   this.exampleCount=0;
   this.positive=[0,0,0,0,0];this.negative=[0,0,0,0,0];
+  this.positiveCue=new Map();this.negativeCue=new Map();
  }
  // Prior physically verified task outcomes supply supervision. This is NOT
  // zero-shot semantic goal discovery. Heldout tests never call this method.
@@ -30,6 +31,16 @@ export class LearnedTargetReference {
   if(!QUAD.test(statement))throw Error('Goal-reference observation requires a witnessed coordinate claim');
   const n=shared(question,statement);
   (isGoal?this.positive:this.negative)[n]++;
+  // Only an independently witnessed statement that references the SAME
+  // queried entity can teach whether its wording means a real target or
+  // a false target claim. Different-entity decoys cannot teach negation.
+  if(n>0){
+   const q=wordSet(question),cues=isGoal?this.positiveCue:this.negativeCue;
+   for(const token of wordSet(statement)){
+    if(q.has(token)||token.length<3)continue;
+    cues.set(token,(cues.get(token)||0)+1);
+   }
+  }
   this.exampleCount++;
   return {learned:true,overlap:n,observations:this.exampleCount};
  }
@@ -64,6 +75,13 @@ export class LearnedTargetReference {
    // A previously unobserved identifier with no distinct document mention
    // is not a navigable target, even if generic words accidentally overlap.
    if(!rare.length)continue;
+   // A repeated negative witness to this SAME-REFERENT wording is a real
+   // obstacle: do not treat "not a goal" as an additional target.
+   // No words such as "not", "denies" or "never" are hardcoded here.
+   if([...e.words].some(token=>{
+    const no=this.negativeCue.get(token)||0,yes=this.positiveCue.get(token)||0;
+    return no>=4&&no>4*yes;
+   }))continue;
    const score=this.posterior(Math.min(4,rare.length));
    if(score<=.55)continue;
    const position=e.tuple.split(',').map(x=>Number(x.trim()));
@@ -85,7 +103,8 @@ export class LearnedTargetReference {
    interpretation:'goal index inferred from learned question/note cooccurrence feedback, not from hidden test answer'};
  }
  export(){return {version:1,exampleCount:this.exampleCount,
-  positive:this.positive.slice(),negative:this.negative.slice()}}
+  positive:this.positive.slice(),negative:this.negative.slice(),
+  positiveCue:[...this.positiveCue],negativeCue:[...this.negativeCue]}}
  static restore(data){
   if(data?.version!==1||!Number.isInteger(data.exampleCount)||
    !Array.isArray(data.positive)||!Array.isArray(data.negative)||
@@ -94,6 +113,8 @@ export class LearnedTargetReference {
   const p=new LearnedTargetReference();
   p.exampleCount=data.exampleCount;
   p.positive=data.positive.slice();p.negative=data.negative.slice();
+  p.positiveCue=new Map(data.positiveCue||[]);
+  p.negativeCue=new Map(data.negativeCue||[]);
   return p;
  }
 }
