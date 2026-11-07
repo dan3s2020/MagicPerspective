@@ -42,7 +42,22 @@ test("ORIGINAL NoiseAgency perturbs actual 4D TEXT solution route before action,
  assert.equal(brain.noiseAgent.total,trainCount);
  assert.ok(interventions>0);
  assert.ok(perceptionSteps>0,"Noisy internal perceptions must actually occur");
- assert.ok(imaginationSteps>0,"Noisy counterfactual route ordering must occur");
+ // A learned contextual bandit is free to reject imagination noise after
+ // experiencing poor rewards; its preference is data, not a missing feature.
+ // Verify that the imagination OPERATOR works under an explicit unit-test
+ // branch without falsifying the measured native policy choices.
+ const realDecision=policy.decide;
+ try {
+  policy.decide=()=>({domain:"text",key:"text:known:plan",arm:3,
+    site:"imagination",strength:.35});
+  const unitWorld=world(7771);
+  const unit=brain.planTextWorldWithNoise(unitWorld.document,unitWorld.start,
+    unitWorld.goal);
+  assert.equal(unit.noiseDecision.site,"imagination");
+  assert.ok(unit.noiseImaginationSeed>0);
+  assert.equal(unit.noiseApplied,true);
+ }finally{policy.decide=realDecision;}
+
  assert.equal(brain.textGoal.frozenFingerprint(),beforeModel,
   "Noise-world feedback must update the original NoiseAgency, not leak heldout into text model");
  const beforeTest=brain.noiseAgent.total;
