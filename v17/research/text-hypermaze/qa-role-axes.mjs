@@ -40,7 +40,15 @@ function observeMotifWorld(L,questionTokens,answerTokens,episode,archive=null){
  };
  if(M.version!==1)throw Error("Unsupported long-language motif graph schema");
  M.observedEpisodes++;
- if(archive)archive.beginEpisode(episode);
+ if(archive){
+  // The complete canonically observed training Q/A pair, NOT an
+  // approximate phrase fingerprint, binds this ordinal on disk.
+  // Exact same source after a checkpoint rewind is idempotent.
+  // Different source at the same old ordinal is rejected atomically.
+  archive.beginEpisode(episode,digest(JSON.stringify([
+   questionTokens,answerTokens
+  ])));
+ }
  let sourceEdgeOrdinal=0;
  try {
  const ensureMotif=(tokens,at,width,role)=>{
