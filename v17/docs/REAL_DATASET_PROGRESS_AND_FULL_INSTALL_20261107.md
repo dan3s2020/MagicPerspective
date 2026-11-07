@@ -40,3 +40,13 @@ A separate PyArrow-generated ACTUAL two-file Parquet dataset is used to verify e
 Hosted Actions run Node on CPU; neither the full HuggingFace download nor a physical NVIDIA 3050Ti CUDA run occurs on hosted CI. The user must execute the installer to verify on their GPU and see real progress with full corpus.
 
 **IMPORTANT:** These metrics prove actual corpus traversal and observed updates; they do not prove general-language maze navigation or autonomous discovery of arbitrary dimensions.
+## Automated acceptance VERIFIED
+Official GitHub Actions run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42330924950
+- All Node tests passed: 1 real 2-file Parquet worker-to-completion test + 6 progress unit tests + 2 real browser/native worker tests + 7 previous prequential math gate regressions = 16/16.
+- Two original Python-generated Parquet files contained 40 actual rows; original dataset rule reserved 8 for test and the real V17 worker processed 32/32 training examples, reporting 100% and 3820 characters. Neither test examples nor unique alphabet nodes were incorrectly counted as consumed training.
+- Windows runner successfully parsed the original START_MAGIC_REAL.ps1, START_V17.ps1 and new INSTALL_FULL_AND_TRAIN.ps1.
+- Chromium real browser observed nonzero progress from native /graph; all original Magic controls remained present.
+- A complete 1.2M external dataset download and the user's physical RTX 3050 Ti CUDA run were NOT exercised by CI and are pending local execution.
+
+## Resume safety
+The installer safely rechecks/uses previously downloaded official Parquet shards, and START_MAGIC_REAL.ps1 uses Resume=true for the same output. Reusing the same destination without deleting it is appropriate; however the sample clone command above contains a no-overwrite guard and is only for fresh clones. For repeated bootstrap, verify the checked-out branch and git pull --ff-only rather than cloning into an existing folder. Do NOT press Reset on the native UI if resuming.
