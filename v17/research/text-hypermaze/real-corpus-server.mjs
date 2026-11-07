@@ -120,11 +120,27 @@ export async function launch(options={}){
      "text/javascript; charset=utf-8":"text/html; charset=utf-8",
      "cache-control":"no-store"});res.end(data);return;
    }
-   if(req.method==="GET"&&url.pathname==="/api/status")
-    return response(res,200,{ready:started,error:workerError,status:latest,
+   if(req.method==="GET"&&url.pathname==="/api/status"){
+    // Completion is idle: query the SAME native Brain for its authoritative
+    // current counters. A worker can publish a new path/atlas snapshot just
+    // after the HTTP server cached the previous one. Never show "0 attempts"
+    // when the persisted atlas already recorded four. While the corpus is
+    // actively training, keep the existing non-blocking streaming snapshot.
+    let status=latest;
+    if(latest?.completed&&!workerError&&!closed){
+     try{
+      status=await rpc("status",{},6000);
+      latest=status;
+     }catch(error){
+      // Expose the last actual worker snapshot, not an invented response.
+      if(!status)return response(res,503,{error:"Native worker status unavailable: "+error.message});
+     }
+    }
+    return response(res,200,{ready:started,error:workerError,status,
      originalModel:"NativeGoalTextMaze + original Discoverer.shapeGraph",
      trainingSource:files.map(x=>({path:x.path,bytes:x.size})),
      noLegacyBytePredictor:true,usesGPU:false});
+   }
    if(req.method==="GET"&&url.pathname==="/graphs")
     return response(res,200,{graphs:[{
      w:0,arm:"verified-native-hypermaze",status:workerError?"error":latest?.phase||"starting",
