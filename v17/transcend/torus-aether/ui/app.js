@@ -918,6 +918,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
     $("tabEval").click();
     $("evKind").value="text";$("evKind").onchange();
     $("evNum").value="16";
+    $("evTextIn").value=""; // source-heldout only, never user-supplied reference
     $("evMax").value="0";   // 0 means FULL Q/A, not a cropped prefix.
     $("evT").value="0";$("evTOut").textContent="0";
     $("evNoise").value="0";$("evNoiseOut").textContent="0";
