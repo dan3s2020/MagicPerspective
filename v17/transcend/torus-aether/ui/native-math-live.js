@@ -43,8 +43,23 @@ if(host){
  timeline.textContent="Aici apare fiecare pas prezis, în ordine; executarea fizică este separată.";
  const fullLabel=document.createElement("h4");fullLabel.textContent="Răspunsul COMPLET prezis înainte de emitere";
  const answer=document.createElement("textarea");answer.readOnly=true;answer.rows=8;answer.style.cssText="display:block;width:100%;box-sizing:border-box;background:#07121c;color:#e4eef7;border:1px solid #395c78";
- section.append(h,disclaimer,grid,canvas,timeline,fullLabel,answer);host.append(section);
- let active=0,plan=null,frame=0,phase=0,last=0;
+ section.append(h,disclaimer,grid,canvas,timeline,fullLabel,answer);
+ const realTitle=document.createElement("h4");
+ realTitle.textContent="3. MĂSURAREA acțiunii reale (separată de predicție)";
+ const realHint=document.createElement("p");realHint.className="note";
+ realHint.textContent="Execută efectiv următoarea acțiune în mediul real și inserează starea completă observată DUPĂ ea. Nu completa automat din predicție: altfel nu există probă independentă. Dacă mișcarea a fost blocată, lasă textul observat neschimbat și debifează acceptarea.";
+ const realAfter=addInput(section,"Documentul COMPLET observat după mișcare",{
+   rows:5,placeholder:"Lipește aici exact starea raportată de mediul real, nu rezultatul prezis de organism."});
+ const acceptedLabel=document.createElement("label");
+ const accepted=document.createElement("input");accepted.type="checkbox";accepted.checked=true;
+ acceptedLabel.append(accepted,document.createTextNode(" Mediul a ACCEPTAT acțiunea"));
+ const reportBtn=document.createElement("button");
+ reportBtn.textContent="Confirmă consecința reală; compară cu forma și replanifică la eroare";
+ const realStatus=document.createElement("pre");
+ realStatus.style.cssText="white-space:pre-wrap;overflow:auto;font:12px ui-monospace,monospace";
+ realStatus.textContent="Nu există încă o mișcare fizică raportată. Linia aurie rămâne o predicție.";
+ section.append(realTitle,realHint,acceptedLabel,reportBtn,realStatus);host.append(section);
+ let active=0,plan=null,planId=null,frame=0,phase=0,last=0;
  const send=async(uri,payload)=>{
    const r=await fetch(uri,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload),cache:"no-store"});
    if(!r.ok)throw Error("HTTP "+r.status);
@@ -52,7 +67,7 @@ if(host){
  };
  window.MPNativeMath={
    setActiveGraph:w=>{active=Number.isInteger(w)?w:active;},
-   showFrozenResult:x=>{plan=x;frame=0;phase=0;last=0;draw();}
+   showFrozenResult:x=>{plan=x;planId=x?.planId??null;frame=0;phase=0;last=0;draw();}
  };
  learn.onclick=async()=>{
    learn.disabled=true;learnStatus.textContent="Trimit doar observații reale în singurul Brain V17...";
@@ -87,6 +102,33 @@ if(host){
        (step.verified?"DA":"NU, ipoteză")).join("\n");
    }catch(e){plan=null;status.textContent="EVALUARE BLOCATĂ: "+e.message;answer.value="";timeline.textContent="";draw();}
    finally{evalBtn.disabled=false;}
+ };
+ reportBtn.onclick=async()=>{
+   if(!Number.isSafeInteger(planId)){
+     realStatus.textContent="Mai întâi calculează o formă COMPLETĂ, apoi execută efectiv o acțiune.";
+     return;
+   }
+   reportBtn.disabled=true;
+   realStatus.textContent="Compar observația EXTERNĂ cu pasul prezis ÎNAINTE de acțiune...";
+   try{
+     const r=await send("/native-math-step",{w:active,planId,
+       afterDocument:realAfter.value,accepted:accepted.checked});
+     realStatus.textContent="ACȚIUNI REALE RAPORTATE: "+r.measuredSteps+
+       "\nMediu: "+r.evidenceStatus+
+       "\nUltima comparație: "+(r.accurate?"CORECT, rezultat fizic egal cu predicția":"NECONCORDANȚĂ — învățare din surpriză")+
+       "\nCheckpoint V17: "+(r.checkpointMB??"—")+" MB"+
+       "\nTraseu final verificat? "+r.fullOutcomeMatchedPrediction+
+       "\nUrmătoarea acțiune: "+(r.nextExpectedAction??"—")+
+       "\nObservații exacte vs anticipate:\n"+JSON.stringify(r.trace||[],null,2);
+     if(r.replanned?.found)window.MPNativeMath.showFrozenResult(r.replanned);
+     else if(r.replanned) {
+       planId=null;
+       realStatus.textContent+="\nREPLANIFICAREA A EȘUAT CORECT: "+r.replanned.reason;
+     }
+     else if(r.completed){planId=null;realStatus.textContent+="\nToți pașii au fost raportați. Nu există execuție fictivă.";}
+     else planId=r.planId??planId;
+   }catch(e){realStatus.textContent="Consecință neverificată: "+e.message;}
+   finally{reportBtn.disabled=false;}
  };
  function draw(){
    const ctx=canvas.getContext("2d"),W=canvas.width,H=canvas.height;
