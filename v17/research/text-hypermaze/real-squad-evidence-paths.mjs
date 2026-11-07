@@ -169,21 +169,24 @@ export class NativeRealTextEvidencePaths {
   const gold=targetIndex(candidates,answer,answerStart);
   this.memory.sourceTokenPairs+=tokens.length;
   if(gold<0){this.memory.unrepresentable++;return {trained:false,reason:"gold-outside-finite-extractive-candidate-space"};}
-  let top=-Infinity,argmax=-1;
-  const W=this.memory.weights,all=[];
+  let top=-Infinity,argmax=-1,goldFeatures=null,winnerFeatures=null;
+  const W=this.memory.weights;
   for(let i=0;i<candidates.length;i++){
-   const F=features(q,tokens,sentence,candidates[i]);all.push(F);
+   // Exactly the same feature extraction and scoring as V35; retain ONLY
+   // the gold and current winning feature vectors for the eventual update.
+   const F=features(q,tokens,sentence,candidates[i]);
+   if(i===gold)goldFeatures=F;
    const score=sparseScore(F,W);
-   if(score>top){top=score;argmax=i;}
+   if(score>top){top=score;argmax=i;winnerFeatures=F;}
   }
   if(argmax!==gold){
-   applyUpdate(all[gold],W,1);
-   if(argmax>=0)applyUpdate(all[argmax],W,-1);
+   applyUpdate(goldFeatures,W,1);
+   if(argmax>=0)applyUpdate(winnerFeatures,W,-1);
    this.memory.updates++;
   }
   this.memory.acceptedPairs++;
   return {trained:true,correctBeforeUpdate:argmax===gold,
-   featureCount:all[gold].length,observedSourceStart:answerStart};
+   featureCount:goldFeatures.length,observedSourceStart:answerStart};
  }
  train(samples,{epochs=2}={}){
   if(!Array.isArray(samples)||epochs<1||epochs>6)throw Error("Fixed supervised source training required");
