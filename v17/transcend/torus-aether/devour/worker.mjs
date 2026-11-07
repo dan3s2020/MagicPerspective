@@ -62,7 +62,10 @@ let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 if (workerData.endogenousNoise || workerData.nativeHypermaze) brain.enableEndogenousNoise(); // SAME original native NoiseAgency, persisted in Brain.v8
-const nativeHypermaze=workerData.nativeHypermaze?new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6}):null;
+const nativeHypermaze=workerData.nativeHypermaze?new NativeGoalTextMaze(brain,{
+ maxStates:1500,maxDepth:6,
+ atlasFile:saveFile?saveFile+".hypermaze-atlas.jsonl":null
+}):null;
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
@@ -73,6 +76,12 @@ let traceBytes = traceFile && fs.existsSync(traceFile) ? fs.statSync(traceFile).
 // reference, with a bounded file size and a group ID for episode-disjoint tests.
 brain.setSharedObserver(sample => {
   const item = shared.observe(sample);
+  // Actual original Brain world/body effects, not simulated hypothetical paths.
+  if(nativeHypermaze&&["maze","transform","text"].includes(item.domain))
+   nativeHypermaze.atlas.append("world",{
+    world:item.domain,source:"actual original Brain.observeShared",
+    nativeObservedTransition:item,physicalOutcomeFromOriginalWorld:true
+   });
   if (traceFile && traced < 50000 && traceBytes < 64 * 1024 * 1024) {
     const i = item.domain === "maze" ? brain.mazes.index : item.domain === "transform" ? brain.trans?.index : brain.exercises;
     const episode = item.domain + ":" + String(i ?? 0);
@@ -201,6 +210,16 @@ const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
+const atlasStats=()=>{
+ if(!nativeHypermaze)return null;
+ const s=nativeHypermaze.atlasSummary();
+ return {journalEvents:s.journalEvents,journalBytes:s.journalBytes,
+  worldsByDomain:s.worldsByDomain,learnedOperators:s.learnedOperatorEvents,
+  searchesFound:s.searchesFound,searchesFailed:s.searchesFailed,
+  failuresByReason:s.failuresByReason,originalBrainSidecar:s.persisted,
+  historicalCorpusBeforeAtlasNotReplayed:true,
+  allObservedEventsRetained:true,theoreticalWholeLanguageEnumerated:false};
+};
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
 const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
@@ -212,12 +231,13 @@ const report = (final = false) => {
     realMathAxes: liveMathAxes?.report() || null,
     nativeHypermaze: nativeHypermaze?{mode:"original-Discoverer-shapeGraph",
       actualCorpusRows:nativeHypermaze.livedTexts,observedGeometryPairs:nativeHypermaze.livedGraphTransitions,
+      atlas:atlasStats(),
       originalNativeBrain:true,originalNoiseAgency:!!brain.noiseAgent,
       externalSemanticAccuracyProven:false}:null,
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
-  if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
+  if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; nativeHypermaze?.atlasFlush(); saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 1100) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
@@ -227,6 +247,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     realMathAxes: liveMathAxes?.report() || null,
     nativeHypermaze: nativeHypermaze?{mode:"original-Discoverer-shapeGraph",
       actualCorpusRows:nativeHypermaze.livedTexts,observedGeometryPairs:nativeHypermaze.livedGraphTransitions,
+      atlas:atlasStats(),
       originalNativeBrain:true,originalNoiseAgency:!!brain.noiseAgent,
       externalSemanticAccuracyProven:false}:null,
     textMaze: textMazeLive,
@@ -308,11 +329,28 @@ parentPort.on("message", m => {
     }catch(err){parentPort.postMessage({type:"chat",id,realMathGoal:true,error:err.message});}
     return;
   }
+  if(m && m.nativeHypermazeAtlas){
+    const {id,mode="events",after=0,limit=60,kinds=null,
+      onlyFailed=false,onlyUnused=false}=m.nativeHypermazeAtlas;
+    try{
+      if(!nativeHypermaze)throw Error("No original native hypermaze atlas");
+      const result=mode==="operators"?
+        nativeHypermaze.atlasOperators({after,limit,onlyUnused}):
+        mode==="summary"?nativeHypermaze.atlasSummary():
+        nativeHypermaze.atlasPage({after,limit,kinds,onlyFailed});
+      parentPort.postMessage({type:"chat",id,nativeHypermazeAtlas:true,
+       mode,result,originalBrain:true,fullHistoryAvailable:true});
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,nativeHypermazeAtlas:true,error:err.message});
+    }
+    return;
+  }
   if(m && m.nativeHypermazeGoal){
-    const {id,start,required,execute=false,trainNoise=false,topology=false}=m.nativeHypermazeGoal;
+    const {id,start,required,execute=false,trainNoise=false,topology=false,maxStates=1500,maxDepth=6}=m.nativeHypermazeGoal;
     try{
       if(!nativeHypermaze)throw Error("Original native hypermaze experiment was not activated");
-      const initial=nativeHypermaze.plan({start,required,includeTopology:!!topology});
+      const initial=nativeHypermaze.plan({start,required,includeTopology:!!topology,
+       maxStates,maxDepth,recordAtlas:true});
       const body=execute&&initial.found?
         nativeHypermaze.execute(initial,{trainNoise:!!trainNoise,enableNoise:true}):null;
       parentPort.postMessage({type:"chat",id,nativeHypermazeGoal:true,...initial,
