@@ -113,7 +113,7 @@ export async function writeManifest({out,source,options,progress,model,trace,tra
    [...model.records.values()].filter(x=>x.id>=lastSavedNextId);
  if(delta.length){
   const first=delta[0].id,last=delta.at(-1).id;
-  const name="atlas-v24-"+String(progress.cursor).padStart(10,"0")+"-"+first+"-"+last+".records.jsonl";
+  const name="atlas-v24-"+String(progress.cursor).padStart(10,"0")+"-"+first+"-"+last+"-"+crypto.randomBytes(6).toString("hex")+".records.jsonl";
   const entry=await writeRecords(out,name,delta);
   segments.push(entry);
  }
