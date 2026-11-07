@@ -1,0 +1,40 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "contract_id": "V25-FROZEN-LONGTEXT-OBSERVED-AXES-20261107",
+  "source": {
+    "path": "verbatim/2026-11-07-V25-70-PERCENT-SHAPE-USER-VERBATIM.txt",
+    "exact_user_quote": "PANA NU FACI LABIRINTUL HYPERDIMENASIONAL DE TEXT SA PREZICA 70+% FORMA SOLUTIEI DIN PRIMA NU TE OPRESTI",
+    "priority": "USER_EXACT_WORDS"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "method": "Discoverer.shape",
+    "preserve": true,
+    "original_2d_parity_test": "v17/tests/v25-shifted-longtext-observed-axis.test.mjs"
+  },
+  "changed_code_paths": [
+    "v17/research/text-hypermaze/v25-observed-axis-world.mjs"
+  ],
+  "tests": [
+    "v17/tests/v25-native-longtext-frozen-shape.test.mjs",
+    "v17/tests/v25-shifted-longtext-observed-axis.test.mjs"
+  ],
+  "evidence": "v17/docs/V25_FROZEN_LONGTEXT_SHAPE_EVIDENCE_20261107.md",
+  "scientific_status": "CONSTRAINED_POSITIVE_NOT_GENERAL_LANGUAGE_PROVEN",
+  "observed_results": {
+    "restricted_long_text": "120/120 exact complete predicted shapes prior to action (1k-2k tokens)",
+    "shifted_position": "120/120 exact versus 2/120 positional baseline",
+    "causal_controls": "0/60 no-training, 0/60 missing required action, 0/60 wrong-physics exact",
+    "original_2d_regression": "84/84 parity",
+    "arbitrary_language_qa": "NOT_TESTED",
+    "actual_CUDA": "NOT_TESTED",
+    "original_user_UI_integration": "NOT_IMPLEMENTED"
+  },
+  "limits": [
+    "Six explicit observed single-token action rules; no general semantic understanding",
+    "Six binary independent edit axes; not a learned 5D/6D continuous manifold",
+    "Heldout document positions use disjoint word ranges from same file, not distinct corpora",
+    "Original original V17 main/UI/weights remain unchanged",
+    "Release gate remains BLOCKED until real large unseen natural-language QA and GPU/UI acceptance"
+  ]
+}
