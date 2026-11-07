@@ -96,6 +96,11 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   assert.equal(measured.trainedRows,20);
   assert.equal(measured.heldoutRows,4);
   assert.equal(measured.qaFrozenHeldoutQuestions,4);
+  // V30 atlas MUST show the REAL failures, not only paths drawn from
+  // pre-provided partial synthetic goals. Gold answers are never stored.
+  assert.equal(measured.atlasTotals?.qaEvaluationsTotal,4);
+  assert.equal(measured.atlasTotals?.qaExactWholeAnswersTotal,0);
+  assert.equal(measured.atlasTotals?.failuresTotal,4);
   assert.equal(measured.qaTrainingPairs,20);
   // Long-form replies are NOW physically observed in a bounded original
   // Brain sequential hypermaze rather than rejected above 128 tokens.
@@ -139,6 +144,12 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   const progress=JSON.parse(fs.readFileSync(path.join(out,
    "native-hypermaze-progress.json"),"utf8"));
   const loaded=Brain.load(path.join(out,progress.checkpoint));
+  assert.equal(loaded.hypermazeCumulativeExperience.atlas.attemptsTotal,4);
+  assert.equal(loaded.hypermazeCumulativeExperience.atlas.events.filter(
+   e=>e.kind==="frozen-real-natural-language-qa").length,4);
+  assert.ok(loaded.hypermazeCumulativeExperience.atlas.events.every(
+   e=>e.withheldGoldAnswerNotPersisted===true),
+   "Original Brain atlas must never train on or store heldout answer strings");
   assert.equal(loaded.qaRoleEvidence.longForm.episodes,20);
   assert.ok(loaded.qaRoleEvidence.longForm.sequences.length>0);
   assert.equal(loaded.qaRoleEvidence.longForm.sequences.length<=96,true);
