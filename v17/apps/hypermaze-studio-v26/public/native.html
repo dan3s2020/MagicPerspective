@@ -44,6 +44,26 @@
         <article class="stat-card"><span class="stat-label">VITEZĂ TRAINING ORIGINAL</span><strong id="mThroughput">—</strong><small id="mTotal">Exerciții/sec complete · CUDA nativ dacă e activ</small></article>
         <article class="stat-card"><span class="stat-label">GRAF NATIV V17</span><strong id="mStates">—</strong><small id="mEdges">Noduri și muchii observate, nu 2^axe sintetice</small></article>
       </section>
+      <section class="panel native-progress-panel" id="nativeDatasetPanel" aria-label="Progres real OpenThoughts original">
+        <div class="panel-header"><div><span class="eyebrow">ORIGINAL PARQUET TRAINING · CONTROL LIVE</span><h2>Dataset consumat <span class="panel-sub">/ 1:1 cu contorul original, fără reset</span></h2></div>
+          <div class="chip" id="nativeTrainingState">Se verifică workerul...</div></div>
+        <div class="native-progress-values">
+          <strong id="nativeProgressPct">—</strong>
+          <span id="nativeProgressCounts">Aștept primul contor original...</span>
+          <span id="nativeProgressChars">Caractere procesate: —</span>
+        </div>
+        <div class="native-progress-track" role="progressbar" id="nativeProgressTrack"
+          aria-label="Progres original OpenThoughts" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="native-progress-fill" id="nativeProgressFill"></div>
+        </div>
+        <div class="native-progress-footer">
+          <span id="nativeProgressHeldout">Exerciții rezervate nevăzute: —</span>
+          <span id="nativeCudaPhase">Faza CUDA: —</span>
+          <span id="nativeProgressHeartbeat">Stare verificată la: —</span>
+        </div>
+        <div class="native-fatal" id="nativeFatal" role="alert" hidden></div>
+        <div class="native-progress-message" id="nativeProgressMessage">Nu afișăm antrenare activă fără confirmarea workerului original.</div>
+      </section>
       <section class="panel native-history-panel" aria-label="Istoric de măsurători originale">
         <div class="panel-header"><div><span class="eyebrow">LIVE / ORIGINAL V17 METRIC HISTORY</span><h2>ALIGNED, graf, together, C și viteză reală <span class="panel-sub">/ date înregistrate fără recalculare</span></h2></div>
           <label>Metrică: <select id="nativeMetricView"><option value="aligned">ALIGNED · original</option><option value="live">GRAF · original</option><option value="together">TOGETHER · original</option><option value="C">C · original</option><option value="mazeShape">Labirinte · forma inițială</option><option value="completedExercisesPerSecond">Exerciții/s · native</option><option value="sustainedCharactersPerSecond">Caractere/s · native</option></select></label></div>
