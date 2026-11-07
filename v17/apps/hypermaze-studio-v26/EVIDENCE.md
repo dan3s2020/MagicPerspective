@@ -1,8 +1,8 @@
 # V26 actual source, execution and acceptance evidence — 2026-11-07
 
 **STATUS: REAL TRAINING UI WORKS IN CI / SEMANTIC Q&A TARGET OPEN.**  
-**Native test CI SHA:** b1ac36a371f260304e50d5f2733645bce0351c59 (the commit which triggered the final acceptance run).  
-**GitHub Actions run ID:** 42344117032.  
+**Native test CI SHA:** 2a10a08a2fcccc29712459b4ac64297edf88a8d1 (the actual source commit for the latest all-green run).  
+**GitHub Actions run ID:** 42344313014.  
 **Workflow:** .github/workflows/v26-native-live-training.yml.  
 **Browser proof:** v26-real-browser-ui screenshot artifact included in this run.  
 **Isolated PR:** #61, draft; target V25 experimental branch, not main.
@@ -19,7 +19,7 @@ Node 22 GitHub Actions Ubuntu:
 
 REAL Chrome/Chromium browser run:
 - Headless Chrome opened the **new UI**, connected to the real server's live SSE updates and actually drew its 6-axis state graph in a nonzero-size canvas.
-- 2,491 training worlds processed by native Node during that browser test, actual graph slice selector with six model dimensions, four actual route steps displayed, frozen evaluation 72 worlds counted, no browser JS exceptions.
+- 2,215 training worlds processed by native Node during that browser test, actual graph slice selector with six model dimensions, three actual route steps displayed, frozen evaluation 65 worlds counted, no browser JS exceptions.
 - Browser clicks successfully paused training, stepped a world, applied a noise setting, changed graph projection and triggered frozen holdout. The PNG screenshot was captured using Chrome DevTools Protocol and uploaded as the run's v26-real-browser-ui artifact.
 
 REAL Windows runner:
@@ -28,7 +28,7 @@ REAL Windows runner:
 - 4,640 corpus train tokens were available, text-world length=512 and axes=6.
 - Locale-safe PowerShell decimal argument **0.37** arrived exactly as 0.37 in Node.
 
-All tests, the browser test, and the Windows launcher passed in the SAME 2026-11-07 workflow run ID 42344117032; no screenshot rendering substitutes or mock backend metrics were counted as end-to-end UI tests.
+All tests, the browser test, and the Windows launcher passed in the SAME 2026-11-07 workflow run ID 42344313014; no screenshot rendering substitutes or mock backend metrics were counted as end-to-end UI tests.
 
 ## Reproduce this run
 
@@ -51,3 +51,5 @@ The studied learning process uses a genuinely loaded real text source and learns
 Other unverified requirements: all computation on the user's laptop CUDA GPU; unrestricted graph/physical world self-discovery; 4D torus as a causally active native language representation; pretrained checkpoint migration into this independent app; 70+% exact semantic reasoning on large natural questions; full high-dimensional natural-language target discovery without supplied goal words. These remain **OPEN**, no false success claimed.
 
 The original V17 code and main branch remain untouched. New UI file contents were authored independently; the original V17 Discoverer.shape law was intentionally preserved, not replaced.
+
+All-green most recent run includes **6/6 Node tests**, **1/1 true Chromium browser test**, and **Windows PowerShell startup passing**. Browser startup was made deterministic by opening Chrome before starting the high-throughput training loop, and cleaning up temporary profile files after child process exit. Real browser startup no longer competes with a saturated Node trainer.
