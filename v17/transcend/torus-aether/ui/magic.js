@@ -258,6 +258,37 @@ function drawChart(){
  label(ctx,"Timp →",left,bottom+17,"#99aec5","10px Segoe UI");
  label(ctx,fmt(points.at(-1)?.chars)+" caractere",right-160,bottom+17,COLORS.cyan,"10px Segoe UI");
 }
+function drawMath(){
+ const c=$("mathPath"),{ctx,w,h}=sizeCanvas(c),plan=state.mathResult?.plan;
+ ctx.clearRect(0,0,w,h);
+ if(!plan?.found||!Array.isArray(plan.states)||!plan.states.length){
+  label(ctx,"Traseu numeric nedemonstrat",18,35,COLORS.gold,"16px Georgia");
+  label(ctx,"Aștept observații numerice reale din corpus / obiectiv.",18,60,"#9eb3c5","12px Segoe UI");
+  return;
+ }
+ const rows=plan.states,n=rows.length;
+ const numbers=rows.map(s=>[...String(s).matchAll(/\d+/gu)].map(x=>Number(x[0])));
+ const vals=numbers.map(x=>x.at(-1)).filter(finite);
+ const min=Math.min(...vals),max=Math.max(...vals),normal=v=>max===min?0:(v-min)/(max-min);
+ const pts=rows.map((s,i)=>({x:22+(w-44)*(n<2?0:i/(n-1)),y:h-38-70*normal(numbers[i].at(-1))}));
+ for(let i=1;i<pts.length;i++)line(ctx,pts[i-1],pts[i],COLORS.gold,2.5);
+ pts.forEach((p,i)=>{dot(ctx,p.x,p.y,i===pts.length-1?COLORS.mint:COLORS.gold,4);
+  label(ctx,(i+1)+": "+String(rows[i]).slice(0,23),p.x+5,p.y-9,i===pts.length-1?COLORS.mint:"#b2cbdd","10px Consolas");
+ });
+ label(ctx,"Poziții derivate din ultima valoare numerică observată / prezisă",16,h-13,"#8ba8bc","10px Segoe UI");
+}
+function renderLiveMath(){
+ const x=state.graph?.realMathAxes||state.summary?.realMathAxes;
+ if(!x){$("mathStats").textContent="Cercetarea axelor numerice nu este activă în worker (pornește cu START_MAGIC_REAL.ps1).";return;}
+ $("mathStats").textContent=
+  "Rânduri reale observate: "+fmt(x.rows)+
+  " · perechi numerice extrase: "+fmt(x.candidatePairs)+
+  " · axe cuplate acceptate: "+fmt(x.coupledPairs)+
+  " · câmpuri dependente de stare: "+fmt(x.stateDependentPairs)+
+  " · structuri cunoscute: "+fmt(x.templatesCoupled)+
+  " · axe în ultima structură: "+fmt(x.axes?.transformationRank)+
+  ". \n"+(x.lastExample?"Ultima dovadă: "+x.lastExample.before+" → "+x.lastExample.after:"Nu există încă perechi acceptate; nu afișez rezultate inventate.");
+}
 function displayMetrics(){
  const G=state.graph,S=state.summary;
  const language=G?.language||S?.language||{},op=G?.observedTransformations||S?.observedTransformations||{};
@@ -291,6 +322,12 @@ function displayMetrics(){
   $("noise").value=String(clamp(G.controls.gnoise,0,12));
  }
  $("noiseOut").textContent=G?.controls?.gnoise!=null?fmt(G.controls.gnoise):"—";
+ const observedScales=Array.isArray(language.trust)?language.trust:[];
+ $("scaleTrust").textContent=observedScales.length?
+  observedScales.map(x=>x.scale+" tokeni: "+pct(x.accuracy)+" · "+fmt(x.seen)+" observații").join("\n")+
+  "\nAceste valori sunt estimări DIN ANTRENARE, nu note de examen pe date nevăzute.":
+  "Nu există încă suficiente observații de context pentru activarea perspectivelor.";
+ renderLiveMath();
 }
 function mergeWorkers(list){
  const selected=$("worker"),value=String(state.w),old=[...selected.options].map(o=>o.value);
@@ -302,7 +339,7 @@ function mergeWorkers(list){
 }
 function setSelected(w){
  state.w=w;state.summary=null;state.graph=null;state.telemetry=[];state.lastAt=0;
- state.episode=null;state.episodeKey="";state.frame=0;state.playing=true;
+ state.episode=null;state.episodeKey="";state.frame=0;state.playing=true;state.mathResult=null;
  state.dx=0;state.dy=0;state.zoom=1;state.rotation=0;state.selected=false;
  seenGraph=null;geoCache=null;$("ops").replaceChildren(el("p","Aștept datele noului creier…","dim"));
  showFrame();displayMetrics();
@@ -342,7 +379,7 @@ function frame(t){
   if(state.frame<(epi.frames?.length||1)-1){state.frame++;showFrame();}
   else state.playing=false;
  }
- field();paths();drawChart();
+ field();paths();drawMath();drawChart();
  requestAnimationFrame(frame);
 }
 const sync=()=>poll();
@@ -370,6 +407,30 @@ $("pathPlay").onclick=()=>{const max=(getEpisode()?.frames?.length||1)-1;
 };
 $("pathStep").oninput=e=>{state.playing=false;state.frame=+e.target.value;showFrame();};
 $("recenter").onclick=()=>{state.dx=state.dy=state.rotation=0;state.zoom=1;};
+$("mathPlan").onclick=async()=>{
+ $("mathOut").textContent="Caută în transformările numerice observate…";
+ try{
+  const request="/real-math-plan?w="+state.w+
+   "&start="+encodeURIComponent($("mathStart").value)+
+   "&index="+encodeURIComponent($("mathIndex").value)+
+   "&value="+encodeURIComponent($("mathValue").value);
+  const found=await requestJson(request,"POST");
+  if(found.error)throw Error(found.error);
+  state.mathResult=found;
+  $("mathOut").textContent=JSON.stringify({
+   source:found.explanation||"same native observed text worker",
+   found:found.found,field:found.field,goal:found.goals,
+   initial:found.input,states:found.plan?.states||[],
+   actions:found.plan?.actions||[],expanded:found.plan?.expanded||0,
+   holonomy:found.holonomy,
+   readOnly:found.frozen,semanticVerifier:found.independentSemanticVerifier,
+   reason:found.plan?.reason||null
+  },null,2);
+ }catch(e){
+  state.mathResult=null;
+  $("mathOut").textContent="Modelul n-a demonstrat încă această cale: "+e.message;
+ }
+};
 $("autoProbe").onclick=async()=>{
  $("probeStatus").textContent="Căutare pe creierul real…";
  try{
