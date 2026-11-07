@@ -22,10 +22,14 @@ jobs:
           node --check v17/experiments/graph0-ablation-core.test.mjs
           node --check v17/experiments/graph0-ablation-end-to-end.test.mjs
           node --check v17/experiments/create-graph0-fixture.mjs
+          node --check v17/experiments/graph0-phase2.mjs
+          node --check v17/experiments/graph0-phase2.test.mjs
       - name: Native AligningGraph no-training ablation tests
         run: node --test v17/experiments/graph0-ablation-core.test.mjs
       - name: Native Brain.save Brain.load comparison across original and filtered policies
         run: node --test v17/experiments/graph0-ablation-end-to-end.test.mjs
+      - name: Phase2 fixed-length no-fself and half-strength native fixture tests
+        run: node --test v17/experiments/graph0-phase2.test.mjs
   windows-launcher-smoke:
     runs-on: windows-2022
     timeout-minutes: 12
@@ -49,3 +53,15 @@ jobs:
           $rows = @(Import-Csv -LiteralPath $matches[0].FullName)
           if ($rows.Count -ne 12) { throw "Expected 12 T=0.6 comparison rows; found $($rows.Count)" }
           Write-Host "WINDOWS_NATIVE_ABLATION_PASS: $($rows.Count) comparison rows"
+      - name: Exact Windows PowerShell Phase 2 on the same synthetic checkpoint
+        shell: pwsh
+        run: |
+          $copies = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-results" -Recurse -File -Filter "graph0-checkpoint-copy.v8")
+          if ($copies.Count -ne 1) { throw "Expected unique frozen phase1 checkpoint" }
+          & powershell -NoProfile -ExecutionPolicy Bypass -File "v17\experiments\RUN_GRAPH0_PHASE2.ps1" -CheckpointCopy $copies[0].FullName -ResultsRoot "$env:RUNNER_TEMP\graph0-phase2" -Max 80
+          if ($LASTEXITCODE -ne 0) { throw "Phase2 Windows failed" }
+          $csv = @(Get-ChildItem -LiteralPath "$env:RUNNER_TEMP\graph0-phase2" -Recurse -File -Filter "phase2-fixed240-comparison.csv")
+          if ($csv.Count -ne 1) { throw "Missing phase2 comparison CSV" }
+          $rows = @(Import-Csv -LiteralPath $csv[0].FullName)
+          if ($rows.Count -ne 24) { throw "Phase2 expected 24 comparisons; got $($rows.Count)" }
+          Write-Host "WINDOWS_PHASE2_PASS: $($rows.Count) fixed-length rows from six isolated arms"
