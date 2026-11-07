@@ -54,8 +54,12 @@ export class RealTrainer{
    if(saved.progress.cursor>this.targetRows)
     throw Error("Requested target limit is below saved cursor");
    this.model=RealTextAtlas.restore(saved.model);
-   this.progress=saved.progress;this.mode="paused";
-   this.events=[{type:"resume",cursor:this.progress.cursor,time:Date.now()}];
+   this.progress=saved.progress;
+   this.heldout=saved.heldout||null;
+   this.trace=saved.trace||null;
+   this.events=[...(saved.events||[]).slice(-119),
+     {type:"resume",cursor:this.progress.cursor,time:Date.now()}];
+   this.mode=this.progress.cursor>=this.targetRows?"finished":"paused";
   }
   return this;
  }
@@ -80,6 +84,7 @@ export class RealTrainer{
  }
  _release(){if(this.waiter){const wake=this.waiter;this.waiter=null;wake();}}
  start(){
+  if(this.mode==="error")throw Error("Previous training failure; repair and resume from saved checkpoint");
   if(this.mode==="finished"||this.progress.cursor>=this.targetRows)throw Error("Training target already reached");
   if(this.loop){this.mode="running";this._release();return;}
   this.stopFlag=false;this.mode="running";this.startedWall=Date.now();
@@ -163,7 +168,8 @@ export class RealTrainer{
    const payload={version:1,sourceFingerprint:this.source.fingerprint,
     sourceTrainRows:this.source.trainRows,sourceHeldRows:this.source.heldRows,
     options:this.options,progress:{...this.progress,lastSavedCursor:this.progress.cursor},
-    model:this.model.snapshot(),heldout:this.heldout,savedAt:new Date().toISOString()};
+    model:this.model.snapshot(),heldout:this.heldout,trace:this.trace,
+    events:this.events.slice(-120),savedAt:new Date().toISOString()};
    const tmp=this.checkpoint+".tmp-"+process.pid;
    try{await fsp.writeFile(tmp,JSON.stringify(payload),"utf8");
     await fsp.rename(tmp,this.checkpoint);
