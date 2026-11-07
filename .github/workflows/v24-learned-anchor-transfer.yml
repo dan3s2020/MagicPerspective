@@ -38,6 +38,8 @@ jobs:
         run: node --test v17/tests/v23-cognitive-native-long-http.test.mjs
       - name: V24 actual native V17 HTTP checkpoint and heldout multi-position composition
         run: node --test v17/tests/v24-native-anchor-http.test.mjs
+      - name: Native original writer 12 blind natural-language factual Q/A and causal ablation
+        run: node --test v17/tests/v24-blind-natural-qa-native-audit.test.mjs
       - name: Native JS syntax and existing UI
         run: |
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
