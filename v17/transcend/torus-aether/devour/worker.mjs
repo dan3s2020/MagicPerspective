@@ -438,7 +438,9 @@ parentPort.on("message", m => {
   if(m?.nativeAtlasPage){
     const {id,scale=0,offset=0,limit=80}=m.nativeAtlasPage;
     try{
-      const page=nativeAtlas.page(brain.constructedPaths,{scale,offset,limit});
+      const page=m.nativeAtlasPage.family==="edits"?
+        nativeAtlas.operatorPage(brain.observedTransformations,{offset,limit}):
+        nativeAtlas.page(brain.constructedPaths,{scale,offset,limit});
       parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,...page});
     }catch(err){parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,error:err.message});}
     return;
