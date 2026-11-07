@@ -309,10 +309,10 @@ parentPort.on("message", m => {
     return;
   }
   if(m && m.nativeHypermazeGoal){
-    const {id,start,required,execute=false,trainNoise=false}=m.nativeHypermazeGoal;
+    const {id,start,required,execute=false,trainNoise=false,topology=false}=m.nativeHypermazeGoal;
     try{
       if(!nativeHypermaze)throw Error("Original native hypermaze experiment was not activated");
-      const initial=nativeHypermaze.plan({start,required});
+      const initial=nativeHypermaze.plan({start,required,includeTopology:!!topology});
       const body=execute&&initial.found?
         nativeHypermaze.execute(initial,{trainNoise:!!trainNoise,enableNoise:true}):null;
       parentPort.postMessage({type:"chat",id,nativeHypermazeGoal:true,...initial,
