@@ -154,3 +154,27 @@ test("the six permutations of 432 form a genuine 2D hexagonal plane in 3D coordi
  console.log("PERMUTATION_HEXAGON",JSON.stringify({points:pts,center,affineDimension:2,
    exampleOpposites:[[4,3,2],[2,3,4]]}));
 });
+
+test("observed live trace exposes true predicted solution-shape, stochastic branches and repairs",()=>{
+ const s=setup(64,107,.2),{learner,world,heldout}=s;
+ let withSurprise=null;
+ for(let seed=1;seed<=40;seed++){
+  const random=rng(seed*491+11);
+  const start=world.create(heldout[seed%heldout.length],random);
+  const goal=world.create(heldout[(seed*17+73)%heldout.length],random);
+  const prediction=learner.observeExecution((current,action)=>world.transition(current,action,random),
+   start,goal,{limit:14,chanceAware:false});
+  if(prediction.surprises>0 && prediction.history.length>0){withSurprise=prediction;break;}
+ }
+ assert.ok(withSurprise,"at least one actual random event must differ from predicted deterministic shape");
+ assert.ok(withSurprise.initialShape.length>0);
+ assert.ok(withSurprise.solved,"frozen learner must replan toward unseen target");
+ assert.ok(withSurprise.history.some(x=>x.surprise));
+ assert.ok(withSurprise.history.every(x=>x.probabilityOfObserved>0 && x.possibleWorlds.length>=2));
+ console.log("ACTUAL_PREDICTED_VS_OBSERVED_TRACE",JSON.stringify({
+  relevantAxes:withSurprise.axes,target:withSurprise.target,initialState:withSurprise.start,
+  beforeActionShape:withSurprise.initialShape,solved:withSurprise.solved,
+  executedSteps:withSurprise.steps,unexpectedTransformations:withSurprise.surprises,
+  firstSteps:withSurprise.history.slice(0,6)
+ }));
+});
