@@ -24,14 +24,22 @@ function eligibleBrain(brain){
   throw Error("Atlas requires the same original native V17 Brain Discoverer.shapeGraph");
  return brain;
 }
-function referenceAudit(predicted,truth,{knownStates=[],reachableStates=[]}={}){
+function referenceAudit(predicted,truth,{knownStates=[],reachableStates=[],frozenTopology=null}={}){
  const P=codepoints(predicted),T=codepoints(truth);
  const matched=P.reduce((n,c,i)=>n+Number(i<T.length&&c===T[i]),0);
  let mismatch=0;while(mismatch<P.length&&mismatch<T.length&&P[mismatch]===T[mismatch])mismatch++;
- const allKnownChars=new Set(knownStates.flatMap(s=>codepoints(s)));
- const reachableChars=new Set(reachableStates.flatMap(s=>codepoints(s)));
+ const allKnownChars=frozenTopology?
+   new Set(frozenTopology.knownCodepoints):
+   new Set(knownStates.flatMap(s=>codepoints(s)));
+ const reachableChars=frozenTopology?
+   new Set(frozenTopology.reachableCodepoints):
+   new Set(reachableStates.flatMap(s=>codepoints(s)));
  const correct=mismatch<T.length?T[mismatch]:null,chosen=mismatch<P.length?P[mismatch]:null;
- const known=knownStates.includes(norm(truth)),reach=reachableStates.includes(norm(truth));
+ const hash=digest(norm(truth));
+ const known=frozenTopology?frozenTopology.knownStateHashes.includes(hash):
+   knownStates.includes(norm(truth));
+ const reach=frozenTopology?frozenTopology.reachableStateHashes.includes(hash):
+   reachableStates.includes(norm(truth));
  const reason=P.length===T.length&&matched===T.length?"EXACT":
   correct===null?"ANSWER_TOO_LONG_OR_INSERTION":
   !allKnownChars.has(correct)?"CORRECT_CHARACTER_ABSENT_FROM_RETAINED_STATES":
@@ -51,6 +59,8 @@ function referenceAudit(predicted,truth,{knownStates=[],reachableStates=[]}={}){
  return {
   exact:P.length===T.length&&matched===T.length,
   comparedAfterFrozenPrediction:true,referenceNeverSentToPlanner:true,
+  scoredAgainstPreActionFrozenGraph:!!frozenTopology,
+  frozenScoringStateCount:frozenTopology?.knownStateHashes.length??null,
   predictedCodePoints:P.length,referenceCodePoints:T.length,
   matchedAtSamePosition:matched,
   positionalAccuracy:matched/Math.max(1,T.length),
@@ -347,6 +357,19 @@ export class ForensicPathAtlas{
    predictedBeforeAction:nativePlan?.predicted??null,
    selectedPathEvidenceComplete:nativePlan?.actions?.every(x=>
     x.edgeStatus==="physically-verified")??null,
+   // Freeze EXACTLY the known/reachable topology AT PREDICTION TIME,
+   // but do not pass heldout reference text, the answer, or labels into
+   // this read-only original V17 solver.
+   frozenScoringTopology:{
+    version:1,recordedBeforeHeldoutReference:true,
+    knownCodepoints:unique(nodes.flatMap(codepoints)),
+    reachableCodepoints:unique([...forward.keys()].flatMap(codepoints)),
+    knownStateHashes:nodes.map(digest),
+    reachableStateHashes:[...forward.keys()].map(digest),
+    knownStateCount:nodes.length,reachableStateCount:forward.size,
+    confirmedWalkableEdges:verified.length,
+    graphEvidenceOnly:true
+   },
    atlas:this.summary(),diagnosis,
    topology:{
     totalRetainedNodes:nodes.length,retainedVerifiedEdges:verified.length,
@@ -386,15 +409,13 @@ export class ForensicPathAtlas{
  compareAfterFrozenPlan({atlasResult,reference}={}){
   if(!atlasResult||typeof reference!=="string")
    throw Error("Need a completed frozen atlas and withheld reference for AFTER-only scoring");
-  const A=this._all(),source=atlasResult.start;
-  const adjacency=new Map();
-  for(const e of A.verified){
-   if(!adjacency.has(e.before))adjacency.set(e.before,[]);
-   adjacency.get(e.before).push(e);
-  }
-  const reachable=[...bfs(A.nodes.has(source)?source:null,adjacency).keys()];
+  const frozen=atlasResult.frozenScoringTopology;
+  if(!frozen?.recordedBeforeHeldoutReference||
+     frozen.version!==1||!Array.isArray(frozen.knownStateHashes)||
+     !Array.isArray(frozen.reachableStateHashes))
+   throw Error("Cannot score past prediction using UPDATED graph: frozen preaction topology proof is missing");
   return {atlasDiagnosis:atlasResult.diagnosis,...referenceAudit(
    atlasResult.predictedBeforeAction??"",reference,
-   {knownStates:[...A.nodes.keys()],reachableStates:reachable})};
+   {frozenTopology:frozen})};
  }
 }
