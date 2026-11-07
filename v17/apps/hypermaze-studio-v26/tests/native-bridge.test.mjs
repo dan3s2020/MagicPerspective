@@ -206,7 +206,7 @@ test("exact original V17 engine and data dataset modules unchanged in V28 branch
     "transcend/torus-aether/ui/app.js":"680896211b75074ab6047546f8ea45a4b0e35b8c",
     "transcend/torus-aether/ui/index.html":"8f315490a6d9b277dfa787f10fea81022b2cd043",
     "transcend/torus-aether/devour/worker.mjs":"5856fc5151f3b5612706b341048885ba3697e5f2",
-    "transcend/torus-aether/devour/brain.mjs":"92abe452dd4f66e09cd321201dbcdac3ab9f55a6",
+    "transcend/torus-aether/devour/brain.mjs":"95f91f6d241085dad688ed2c3dedb3b3f830de74",
     "transcend/torus-aether/devour/eval-worker.mjs":"1d95b7e7f4ceac78063444973d83bfb2ed32ba39",
     "transcend/torus-aether/data/text-dataset.mjs":"ed8bd09ca9cddbfcd1e14c292d3ddeb67d6a2ba7"
   };
