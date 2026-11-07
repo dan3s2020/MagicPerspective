@@ -93,3 +93,26 @@ jobs:
             Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue
             Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue
           }
+
+  actual-openthoughts-parquet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Parquet fixture generator only in CI
+        run: python -m pip install --disable-pip-version-check pyarrow==22.0.0
+      - name: Generate genuine ZSTD nested human/gpt Parquet
+        run: python v17/tests/v30-parquet-fixture.py "$RUNNER_TEMP/v30-real-nested-parquet"
+      - name: Real original V17 brain reads nested ZSTD Parquet, trains text and restarts without heldout leakage
+        env:
+          V30_TEST_PARQUET: /tmp/v30-real-nested-parquet
+        run: |
+          mkdir -p "$V30_TEST_PARQUET"
+          python v17/tests/v30-parquet-fixture.py "$V30_TEST_PARQUET"
+          node --test v17/tests/v30-real-parquet-resume.test.mjs
