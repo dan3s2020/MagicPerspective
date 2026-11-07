@@ -25,6 +25,15 @@
 - To prevent a 20,000-character prefix falsely passing as a whole answer, the original eval worker **refuses to certify** `firstAnswerExactRate` unless full original exercises were requested with `max=0`. This is enforced by the native HTTP server, not a user-supplied client label.
 - In the existing UI's `Ce s-a nascut` section, button **TESTEAZA 16 RASPUNSURI INTREGI NEVAZUTE (CPU)** switches to the Eval tab, sets `T=0`, `noise=0`, `max=0`, `count=16`, and invokes the **real frozen** `POST /eval` against checkpoint. If there are only two heldout examples, only two can be sampled; user should use the full 1.21M OpenThoughts corpus which reserves 16 untouched examples.
 
+## 2026-11-07 strengthening of the strict unseen-answer gate
+
+- **No duplicates:** original Parquet heldout `ds.heldOut(0..15)` and TXT paragraph holdouts are read **without replacement**. If there are only 2 original heldout rows, `count=16` evaluates exactly 2, not the same 2 eight times. Standard random/sampling with replacement remains unchanged for non-strict evaluations.
+- **No user-supplied target:** the strict button empties the custom text input. Native HTTP server rejects certification for `opts.own` and requires its internal `verifiedUniqueHeldout` flag derived from the known source split.
+- **No answer-length oracle:** the strict output generation budget (default `4096` characters; editable `1..200000` in the original UI) is **fixed for the entire set BEFORE** reading target-answer lengths and passed to the original `AligningGraph.write()`. The formerly existing `max=Math.min(3000,ex.length-a0+40)` length-dependent budget is not used for strict scoring. A very long answer beyond the selected cap counts as incorrect, never omitted as convenient.
+- **Full original input:** `max=0` evaluates complete Q/A row. Truncated requests report `firstAnswerExactRate=null` and cannot claim to have passed.
+- **No contamination:** evaluator receives a frozen copy of the native original checkpoint and reads reference answers only after generating predictions from question prefixes.
+- **No fabricated 70%:** 7/10 in the isolated metric unit test is **a controlled fake align.write used only to validate the 70% threshold calculation**; it is not a model accuracy result. Native real-model integration previously scored **0/2 exact answers** on 2 distinct tiny holdouts. Real OpenThoughts 16-row holdout accuracy remains unmeasured.
+
 ## Actual CI evidence and failure to reach user target
 
 - [GitHub Actions 42343111094](https://github.com/dan3s2020/MagicPerspective/actions/runs/42343111094): both CPU native integration and Windows PowerShell 5.1 passed.
