@@ -89,41 +89,45 @@ const absorbCognitive = row => {
   const takeCognitive = cognitive && !(TEXT && resume && observedIndex < previouslyObservedCognitive);
   const takeHyper = hypermaze && !(TEXT && resume && observedIndex < previouslyObservedHyper);
   if(!takeCognitive && !takeHyper) return null;
+  // PREQUENTIAL INFORMATION BOUNDARY:
+  // The current answer has not entered ANY learner when we construct the
+  // predicted initial route. Its answer is not passed to plan/execute.
+  const realQA=questionGoal&&takeCognitive&&
+    typeof row.prompt==="string"&&typeof row.answer==="string"&&
+    row.prompt.trim()&&row.answer.trim();
+  let predicted=null;
+  if(realQA&&questionGoal.rows&&
+      (questionGoal.rows<4||questionGoal.rows%20===0)){
+    const planned=questionGoal.plan(row.prompt,{map:cognitive,
+      geometry:brain.trace.geo,disc:brain.disc,maxNodes:1000,maxCandidates:4});
+    const movement=planned.ready?questionGoal.execute(planned,{map:cognitive}):null;
+    predicted={ready:planned.ready,
+      predictedBeforeLearning:true,fullAnswerNotSuppliedToPlanner:true,
+      guessed:planned.ready?planned.predictedText:"",originalMethod:planned.originalOperator||null,
+      plan:planned.ready?planned.initialFullRoute.slice(0,160):[],
+      steps:planned.plannedSteps||0,execution:movement?.frames?.slice(0,160)||[],
+      reason:planned.reason,sourceRow:row.k,
+      source:"pre-ingest real training row, NOT held-out accuracy"};
+  }
   const before=cognitive?.rules.size||0;
   const result=takeCognitive?cognitive.observeWorld(row.worldText,{id:row.k}):null;
   // Freeze prediction on previous graph, then learn only NEW V20/V21 documents.
   if(takeHyper)hypermaze.observeWorld(row.worldText,{id:row.k});
-  if(questionGoal && takeCognitive && typeof row.prompt==="string" &&
-      typeof row.answer==="string" && row.prompt.trim() && row.answer.trim()){
-    // Plan the *entire* candidate solution before this observed training answer
-    // is absorbed. Every new pair then contributes its actual observed text
-    // transitions, 32D goal evidence and native learned 5D symbol locations.
-    const q=row.prompt,a=row.answer;
-    let predicted=null;
-    if(questionGoal.rows && (questionGoal.rows<4 || questionGoal.rows%20===0)){
-      const planned=questionGoal.plan(q,{map:cognitive,geometry:brain.trace.geo,
-        disc:brain.disc,maxNodes:1000,maxCandidates:4});
-      const movement=planned.ready?questionGoal.execute(planned,{map:cognitive}):null;
-      // The answer is consulted only AFTER full planning.
-      const actual=String(a).normalize("NFC").trim();
-      predicted={ready:planned.ready,
-        predictedBeforeLearning:true,fullAnswerNotSuppliedToPlanner:true,
-        guessed:planned.ready?planned.predictedText:"",originalMethod:planned.originalOperator||null,
-        plan:planned.ready?planned.initialFullRoute.slice(0,160):[],
-        steps:planned.plannedSteps||0,execution:movement?.frames?.slice(0,160)||[],
-        exactMatch:planned.ready&&planned.predictedText.normalize("NFC").trim()===actual,
-        observedReferenceChars:actual.length,reason:planned.reason,
-        sourceRow:row.k,source:"pre-ingest real training row, NOT held-out accuracy"};
-    }
-    // Each UTF-16 code unit is an actual observed symbol in the original
-    // V17 Geometry.learn state. No fabricated coordinates or label oracle.
+  if(realQA){
+    // Only AFTER prediction: consume the current observed training answer
+    // and measure how it differs from the earlier unmodified route.
     let prev=32;
     for(let i=0;i<row.worldText.length;i++){
       const next=row.worldText.charCodeAt(i);
       brain.trace.geo.learn(prev,next);prev=next;questionGoalGeoChars++;
     }
-    const learned=questionGoal.learn(q,a,{map:cognitive,geometry:brain.trace.geo});
-    questionGoalLatest={...predicted,trainedRows:questionGoal.rows,
+    const learned=questionGoal.learn(row.prompt,row.answer,
+      {map:cognitive,geometry:brain.trace.geo});
+    const scored=predicted?{...predicted,
+      exactMatch:predicted.ready&&predicted.guessed.normalize("NFC").trim()===
+        row.answer.normalize("NFC").trim(),
+      observedReferenceChars:row.answer.length}:questionGoalLatest;
+    questionGoalLatest={...scored,trainedRows:questionGoal.rows,
       geometryCharacters:questionGoalGeoChars,goalUpdates:questionGoal.latent.updates,
       originalMazeMethod:"Discoverer.shape",learning:learned};
   }
