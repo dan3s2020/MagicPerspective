@@ -98,7 +98,7 @@ export class CompactNativeMotifArchive{
   this.addEdge=db.prepare("INSERT INTO motif_edge(from_id,to_id,role,first_episode,last_episode,distinct_episodes,occurrences) VALUES(?,?,?,?,?,1,1)");
   this.updateEdge=db.prepare("UPDATE motif_edge SET distinct_episodes=distinct_episodes+CASE WHEN last_episode<>? THEN 1 ELSE 0 END,last_episode=?,occurrences=occurrences+1 WHERE from_id=? AND to_id=? AND role=?");
   this.insertEdgeOccurrence=db.prepare("INSERT OR IGNORE INTO motif_edge_occurrence(episode,role,edge_ordinal,from_id,to_id) VALUES(?,?,?,?,?)");
-  this.byFrom=db.prepare("SELECT e.from_id AS source,e.to_id AS target,r.label AS role,e.distinct_episodes AS episodes,e.occurrences,e.last_episode AS lastEpisode FROM motif_edge e JOIN source_role r ON r.id=e.role WHERE e.from_id=? ORDER BY e.distinct_episodes DESC,e.to_id LIMIT ?");
+  this.byFrom=db.prepare("SELECT e.from_id AS source,e.to_id AS target,r.label AS role,e.distinct_episodes AS episodes,e.occurrences,e.last_episode AS lastEpisode FROM motif_edge e JOIN source_role r ON r.id=e.role WHERE e.from_id=?");
   this.page=db.prepare("SELECT id,width,example,first_episode AS firstEpisode,last_episode AS lastEpisode,distinct_episodes AS episodes,occurrences FROM motif ORDER BY first_episode,id LIMIT ? OFFSET ?");
   this.size=db.prepare("SELECT COUNT(*) AS n FROM motif");
   this.shared=db.prepare("SELECT COUNT(*) AS n FROM motif WHERE distinct_episodes>=2");
@@ -184,7 +184,11 @@ export class CompactNativeMotifArchive{
  related(id,{limit=100}={}){
   if(typeof id!=="string"||!id.trim())return [];
   const n=Math.min(200,Math.max(1,pageNum(limit,100,200)));
-  return this.byFrom.all(keyOf(id),n).map(mapEdge);
+  // The prior TEXT index sorts "12:..." before "5:..." lexically.
+  // Binary SQLite BLOB ordering is different; restore EXACT old API order
+  // after retrieving this ONE indexed node's outgoing link list.
+  return this.byFrom.all(keyOf(id)).map(mapEdge).sort((a,b)=>
+   b.episodes-a.episodes||(a.target<b.target?-1:a.target>b.target?1:0)).slice(0,n);
  }
  inspect({view="motifs",offset=0,limit=50}={}){
   const n=Math.min(200,Math.max(1,pageNum(limit,50,200)));
