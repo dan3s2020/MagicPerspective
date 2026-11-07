@@ -108,6 +108,7 @@ export class ObservedTransformations {
     this.nextId=1;
     this.seen=0;this.newObservations=0;this.comparisons=0;this.matchingComparisons=0;
     this.rejectedLong=0;this.evicted=0;this.droppedOperators=0;
+    this.historicalReplays=0;
     this.executed=0;this.correctEffects=0;this.failedEffects=0;
     this.lastPlan=null;
   }
@@ -213,10 +214,11 @@ export class ObservedTransformations {
       }
     }
   }
-  observeSentence(sentence){
+  observeSentence(sentence,{historicalReplay=false}={}){
     const tokens=tokenizeObservation(sentence);
     if(tokens.length<2)return {learned:false,reason:"too-short"};
-    this.seen++;
+    if(historicalReplay)this.historicalReplays=(this.historicalReplays||0)+1;
+    else this.seen++;
     if(tokens.length>this.maxTokens){this.rejectedLong++;return {learned:false,reason:"max-tokens"};}
     const key=freezeKey(tokens);
     const already=this.lookup.get(key);
@@ -248,7 +250,16 @@ export class ObservedTransformations {
       if(record)this.lookup.delete(freezeKey(record.tokens));
       this.records.delete(old);this.evicted++;
     }
-    return {learned:true,matched:candidates.length,operators:this.operators.size};
+    return {learned:true,matched:candidates.length,operators:this.operators.size,
+      historicalReplay:!!historicalReplay};
+  }
+  // Re-activate a previously OBSERVED full sentence from the append-only
+  // atlas. This is genuine episodic rehearsal across otherwise disconnected
+  // worlds. It may reveal a new exact one-edit pair with current states;
+  // it does NOT increment the real training-corpus observation count and
+  // cannot accept an unobserved heldout answer.
+  revisitArchivedSentence(sentence){
+    return this.observeSentence(sentence,{historicalReplay:true});
   }
   observeText(text){
     if(typeof text!=="string")throw Error("Corpus observation must be text");
