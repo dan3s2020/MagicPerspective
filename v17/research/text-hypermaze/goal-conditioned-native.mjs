@@ -40,6 +40,7 @@ export class NativeGoalTextMaze {
   this.geometryWeight=geometryWeight;
   this.sharedPolicyWeight=sharedPolicyWeight;
   this.atlas=new PersistentHypermazeAtlas({file:atlasFile});
+  this.lastWorldSequence=this.atlas.summary().lastTextWorldSequence||0;
   this.livedTexts=this.atlas.summary().worldsByDomain.text||0;
   this.livedGraphTransitions=this.atlas.summary().learnedOperatorEvents;
   // Existing .v8 checkpoints may predate the atlas. Snapshot their actual
