@@ -36,6 +36,7 @@ jobs:
           node --test v17/tests/magic-live-native-ui.test.mjs
           node --test v17/tests/torus-gpu-text-progress.test.mjs
           node --test v17/tests/v17-native-multiple-text-batches.test.mjs
+          node --test v17/tests/frozen-eval-async-parity.test.mjs
           node --test v17/tests/gpu-request-inactivity-watchdog.test.mjs
           node --test v17/tests/live-predictive-state-gate.test.mjs
   windows-original-launchers:
