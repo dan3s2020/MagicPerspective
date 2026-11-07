@@ -184,6 +184,45 @@ test('Two independent observed three-state trajectories allow an unseen TWO-acti
   [{from:'tea',to:'coffee'},{from:'coffee',to:'water'}]);
  assert.equal(answer.firstShapeFrozenBeforeAnswer,true);
  assert.equal(answer.referenceAnswerProvided,false);
+ const frozen=JSON.stringify(m.export());
+ // Independent controlled world applies its own state transition function.
+ // It NEVER consults the planned answer, expected terminal state, or
+ // model.predict(). The entire first path is frozen before step zero.
+ const physics=new Map([['tea','coffee'],['coffee','water']]);
+ const verified=answerFromObservedInstructionPath(m,{instruction,source:start},{
+  maxDepth:8,maxNodes:384,
+  externalStep:({before})=>{
+   const at=before.findIndex(x=>physics.has(x));
+   assert.ok(at>=0);
+   const after=before.slice();after[at]=physics.get(before[at]);
+   return {after,accepted:true};
+  }});
+ assert.equal(verified.answer,ref);
+ assert.equal(verified.externallyConfirmedFirstShape,true);
+ assert.equal(verified.externallyExecuted.length,2);
+ assert.ok(verified.externallyExecuted.every(x=>x.accurate));
+ const wall=answerFromObservedInstructionPath(m,{instruction,source:start},{
+  externalStep:({before,stepIndex})=>{
+   if(stepIndex===1)return {after:before.slice(),accepted:false};
+   const at=before.findIndex(x=>physics.has(x));
+   const after=before.slice();after[at]=physics.get(before[at]);
+   return {after,accepted:true};
+  }});
+ assert.equal(wall.found,false);
+ assert.equal(wall.answer,null);
+ assert.equal(wall.reason,'EXTERNAL_WALL_REJECTED_FROZEN_PATH');
+ assert.equal(wall.externallyExecuted.length,2);
+ const wrongPhysics=answerFromObservedInstructionPath(m,{instruction,source:start},{
+  externalStep:({before})=>{
+   const at=before.indexOf('tea');
+   const after=before.slice();after[at]='water';
+   return {after,accepted:true};
+  }});
+ assert.equal(wrongPhysics.found,false);
+ assert.equal(wrongPhysics.answer,null);
+ assert.equal(wrongPhysics.reason,'EXTERNAL_ACTION_EFFECT_DIFFERS_FROM_FROZEN_PATH');
+ assert.equal(JSON.stringify(m.export()),frozen,
+  'Independent external wall and effect tests MUST NOT mutate the frozen original Brain');
  assert.ok(answer.fullAtlas.states.length>=3);
  assert.equal(LearnedCognitiveMap.restore(m.export()).instructionGoalMemory.size,1);
  console.log('V36_TWO_HOP_INFERRED_GOAL',JSON.stringify({
