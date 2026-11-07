@@ -226,6 +226,7 @@ http.createServer((req, res) => {
        required.some(x=>!x||x.length>120))
       return json(res,{error:"Need an observed starting state and explicit goal constraints, NEVER a heldout answer"});
     const execute=q.get("execute")==="1";
+    const topology=q.get("topology")==="1";
     // A paused or completed original Brain is read from the saved checkpoint
     // with no 60-second inter-worker bottleneck or fabricated fresh state.
     if(!sl.wk){
@@ -233,7 +234,7 @@ http.createServer((req, res) => {
       if(!fs.existsSync(f))return json(res,{error:"Original Brain checkpoint absent"});
       try{
         const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
-        const plan=native.plan({start,required});
+        const plan=native.plan({start,required,includeTopology:topology});
         const body=execute&&plan.found?
           native.execute(plan,{enableNoise:true,trainNoise:false}):null;
         return json(res,{...plan,body,w:sl.w,fromSavedBrain:true,
@@ -245,7 +246,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Original Brain worker busy; cannot claim timely hypermaze path"});
     },30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,trainNoise:false}});
+    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,trainNoise:false}});
     return;
   }
   if(req.method==="POST"&&url==="/language-maze"){
