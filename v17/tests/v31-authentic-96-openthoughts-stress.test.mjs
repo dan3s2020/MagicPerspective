@@ -156,12 +156,24 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
   assert.equal(byID.exactOriginalWitness?.id,archiveHTTP.rows[0].id);
   assert.ok(Array.isArray(byID.sourceOnlyNeighbors));
   assert.equal(byID.physicallyVerifiedSemanticEdges,0);
-  assert.ok(fs.existsSync(path.join(out,"original-native-long-language-motifs.sqlite")));
-  const dbfile=path.join(out,"original-native-long-language-motifs.sqlite");
+  // This NEW isolated training directory must select the lossless binary
+  // compact format only after previous parity/disk-capacity tests passed.
+  // The separate original legacy SQLite file is NEVER silently overwritten.
+  const dbfile=path.resolve(measured.qaDiskMotifArchive.databaseFile);
+  assert.equal(dbfile,
+   path.resolve(out,"original-native-long-language-motifs-compact.sqlite"));
+  assert.ok(fs.existsSync(dbfile));
+  assert.equal(fs.existsSync(path.resolve(out,
+   "original-native-long-language-motifs.sqlite")),false);
   const durableArchiveBytes=[dbfile,dbfile+"-wal"].reduce((sum,file)=>
    sum+(fs.existsSync(file)?fs.statSync(file).size:0),0);
-  assert.ok(durableArchiveBytes>0,
-   "Actual historical index must occupy persistent bytes outside Brain V8");
+  assert.ok(durableArchiveBytes>0);
+  // This is the SAME 96 authentic records under the V31 long-form
+  // content-defined source-anchor experiment, not an invented baseline.
+  const oldSameCorpusArchiveBytes=353705488;
+  assert.ok(durableArchiveBytes<oldSameCorpusArchiveBytes*.80,
+   "Compact native durable source archive has not reduced cost by >=20% without losing observed witnesses: "+
+   durableArchiveBytes+" vs "+oldSameCorpusArchiveBytes);
   // Never assume or invent how many tokens a real corpus has.
   // This EXACT check uses the original model tokenizer and the genuine
   // training-only row split, no approximate duplicate regex.
@@ -248,6 +260,10 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
    shortSharedAnchors:measured.crossMazeMemory.multiScaleSharedAnchors,
    originalOperatorDrops:measured.operatorsDropped,
    diskArchiveActualBytes:durableArchiveBytes,
+   diskSpaceComparedToSame96RowLegacyRatio:
+    Number((durableArchiveBytes/353705488).toFixed(4)),
+   compactNewIndependentDatabaseUsed:true,
+   historicalLegacyFilesUntouched:true,
    durableArchivedMotifCount:measured.qaDiskMotifArchive.indexedExactMotifs,
    durableArchivedSharedMotifs:measured.qaDiskMotifArchive.sharedExactMotifsAcrossEpisodes,
    durableArchivedSourceEdgeTypes:measured.qaDiskMotifArchive.observedSourceOnlyEdgeTypes,

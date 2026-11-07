@@ -1,0 +1,41 @@
+name: V32 original one-Brain cross-world winnowing, source replay integrity and authentic OpenThoughts tests
+on:
+  push:
+    branches:
+      - experiment/V32-WINNOWED-CROSSWORLD-REPLAY-INTEGRITY-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-v32:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Reproducible cross-world missed anchors + out-of-context replay protection (must turn RED then GREEN)
+        run: node --test v17/tests/v32-winnowed-crossworld-replay.test.mjs
+      - name: Lossless original motif/edge/episode archive parity versus 2x less disk target (research gate before enabling)
+        run: node --test v17/tests/v32-compact-motif-archive.test.mjs
+      - name: Real original HTTP/Brain integration protects existing V31 archive while clean V32 uses compact evidence and identical QA outcomes
+        run: node --test v17/tests/v32-native-archive-format-selection.test.mjs
+      - name: Original full source motiffing and checkpoint/HTTP UI regression
+        run: |
+          node --test v17/tests/v31-motif-disk-memory.test.mjs
+          node --test v17/tests/v31-original-alternate-paths.test.mjs
+          node --test v17/tests/v30-cumulative-hypermaze.test.mjs
+          node --test v17/tests/v30-real-corpus-cumulative-http.test.mjs
+      - name: Actual public 96 OpenThoughts records with no artificial answer fallback
+        run: node --test v17/tests/v31-authentic-96-openthoughts-stress.test.mjs
+  legacy-original-node20:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Previously working one native Brain original HTTP and Windows-era Node20 compatibility
+        run: node --test v17/tests/v30-real-corpus-cumulative-http.test.mjs

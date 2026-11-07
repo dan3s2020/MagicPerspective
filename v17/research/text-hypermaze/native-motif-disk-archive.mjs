@@ -26,6 +26,13 @@ export async function openNativeMotifArchive(filename){
   db.exec(`
    PRAGMA journal_mode=WAL;
    PRAGMA synchronous=FULL;
+   -- Independent source-episode identity is mandatory for safe CHECKPOINT
+   -- replay. Reusing an episode ordinal for different source data is a
+   -- corpus integrity error, not a new parallel branch of the maze.
+   CREATE TABLE IF NOT EXISTS source_episode(
+    episode INTEGER PRIMARY KEY,
+    source_sha256 TEXT NOT NULL
+   );
    CREATE TABLE IF NOT EXISTS motif(
     id TEXT PRIMARY KEY,
     width INTEGER NOT NULL,
@@ -77,6 +84,12 @@ export class NativeMotifArchive{
   this.size=db.prepare("SELECT COUNT(*) AS n FROM motif");
   this.shared=db.prepare("SELECT COUNT(*) AS n FROM motif WHERE distinct_episodes>=2");
   this.edges=db.prepare("SELECT COUNT(*) AS n FROM motif_edge");
+  this.getSourceEpisode=db.prepare("SELECT source_sha256 AS sourceSHA256 FROM source_episode WHERE episode=?");
+  this.addSourceEpisode=db.prepare("INSERT INTO source_episode(episode,source_sha256) VALUES(?,?)");
+  this.oldUnfingerprintedEpisode=db.prepare("SELECT EXISTS(SELECT 1 FROM motif_occurrence WHERE episode=? LIMIT 1) AS wasObserved");
+  this.totalSourceEpisodes=db.prepare("SELECT COUNT(*) AS n FROM source_episode");
+  this.rejectedDifferentSourceReplays=0;
+  this.unverifiedLegacyEpisodesBlocked=0;
   this.episode=null;
   this.recallsAfterEviction=0;
   this.insertedMotifs=0;
@@ -84,10 +97,39 @@ export class NativeMotifArchive{
   this.edgeObservations=0;
   this.closed=false;
  }
- beginEpisode(episode){
+ beginEpisode(episode,sourceSHA256=null){
   if(this.episode!==null||this.closed)throw Error("Motif disk transaction already open or closed");
   if(!Number.isSafeInteger(episode)||episode<1)throw Error("Real original Q/A episode ordinal required");
-  this.db.exec("BEGIN IMMEDIATE");this.episode=episode;
+  // The legacy direct unit-test API provided no whole-source digest; keep
+  // its deterministic legacy identity but NEVER claim it authenticates raw
+  // training data. Actual native OpenThoughts training always supplies
+  // a full canonical Q+A SHA256 from its existing real source parser.
+  const identity=sourceSHA256===null?"legacy-unit-test-episode:"+episode:sourceSHA256;
+  if(sourceSHA256!==null&&!/^[a-f0-9]{64}$/.test(sourceSHA256))
+   throw Error("Real Q/A source episode identity must be canonical SHA256");
+  this.db.exec("BEGIN IMMEDIATE");
+  try{
+   const old=this.getSourceEpisode.get(episode);
+   if(old&&old.sourceSHA256!==identity){
+    this.rejectedDifferentSourceReplays++;
+    throw Error("SOURCE_REPLAY_IDENTITY_MISMATCH: same original Q/A episode ordinal belongs to a different source payload; refusing to corrupt cumulative evidence");
+   }
+   if(!old){
+    // The pre-V32 archive may already contain source witnesses without
+    // immutable source fingerprints. A resumed earlier checkpoint cannot
+    // safely reuse their episode number. Explicitly fail rather than
+    // fabricating a matching history from unknown previous input.
+    if(this.oldUnfingerprintedEpisode.get(episode)?.wasObserved){
+     this.unverifiedLegacyEpisodesBlocked++;
+     throw Error("UNVERIFIED_LEGACY_SOURCE_REPLAY: pre-V32 disk evidence exists for episode without a source SHA256. Do not reuse this ordinal; reconcile old checkpoint/archive manually.");
+    }
+    this.addSourceEpisode.run(episode,identity);
+   }
+   this.episode=episode;
+  }catch(error){
+   this.db.exec("ROLLBACK");
+   throw error;
+  }
  }
  motif({id,width,role,at,example}={}){
   if(this.episode===null)throw Error("Disk motif cannot be observed outside training episode");
@@ -158,6 +200,9 @@ export class NativeMotifArchive{
    observedSourceOnlyEdgeTypes:this.edges.get().n,
    reencounteredExactSourceMotifs:this.recallsAfterEviction,
    duplicateSourceRowsSkipped:this.duplicateOccurrencesSkipped,
+   verifiedSourceEpisodeIdentities:this.totalSourceEpisodes.get().n,
+   rejectedDifferentSourceReplays:this.rejectedDifferentSourceReplays,
+   unverifiedLegacyEpisodesBlocked:this.unverifiedLegacyEpisodesBlocked,
    sourceOnlyNoSemanticPhysics:true,
    activeTransaction:this.episode!==null};
  }
