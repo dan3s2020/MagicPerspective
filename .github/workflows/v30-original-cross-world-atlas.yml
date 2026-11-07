@@ -29,3 +29,67 @@ jobs:
           node v17/tests/v30-native-atlas-browser.test.mjs
       - name: Real segmented text contrast transfer through native original shape, positive and falsifying physical worlds
         run: node --test v17/tests/v30-segmented-native-corpus-transfer.test.mjs
+
+  windows-native-powershell:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse actual Windows PowerShell 5.1 launcher
+        shell: powershell
+        run: |
+          $code = Get-Content -LiteralPath 'v17/START_V30_NATIVE_ATLAS.ps1' -Raw
+          [scriptblock]::Create($code) | Out-Null
+          if ($code -match '[^\x00-\x7F]') { throw 'Launcher must be ASCII compatible' }
+      - name: Produce witnessed source worlds and trained original V17 Brain
+        shell: powershell
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP 'original brain test with spaces'
+          node v17/tests/v30-windows-fixture.mjs $folder
+      - name: Start real atlas via PowerShell and validate original checkpoint protection
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $folder = Join-Path $env:RUNNER_TEMP 'original brain test with spaces'
+          $brain = Join-Path $folder 'trained original V17.v8'
+          $events = Join-Path $folder 'world witnesses with spaces.jsonl'
+          $out = Join-Path $folder 'new isolated atlas with spaces'
+          $launcher = (Resolve-Path 'v17/START_V30_NATIVE_ATLAS.ps1').Path
+          $hashBefore = (Get-FileHash -LiteralPath $brain -Algorithm SHA256).Hash
+          $stdout = Join-Path $env:RUNNER_TEMP 'v30-powershell-out.txt'
+          $stderr = Join-Path $env:RUNNER_TEMP 'v30-powershell-err.txt'
+          $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $launcher + '"'),'-OriginalBrain',('"' + $brain + '"'),'-Events',('"' + $events + '"'),'-Out',('"' + $out + '"'),'-Port','18901','-MaxStates','64','-MaxDepth','6','-SaveEvery','2')
+          $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $ok = $false
+            for ($i=0; $i -lt 120; $i++) {
+              try {
+                $status = Invoke-RestMethod -Uri 'http://127.0.0.1:18901/api/status' -TimeoutSec 2
+                if ($status.mode -eq 'error') { throw "Backend error $($status.error)" }
+                if ($status.mode -eq 'finished') { $ok = $true; break }
+              } catch {
+                if ($proc.HasExited) { throw "Launcher exited early with $($proc.ExitCode)" }
+              }
+              Start-Sleep -Milliseconds 400
+            }
+            if (-not $ok) { throw 'Native V30 world-event training did not finish' }
+            if ($status.training.witnessedTransformations -ne 4) { throw 'Wrong witnessed observations' }
+            if ($status.training.transferableRules -ne 2) { throw 'Crossworld transfer rules missing' }
+            if ($status.atlas.sourceWorlds -ne 4) { throw 'Source worlds missing' }
+            $payload = @{ episodeId='windows-new-world';startText='Ava has 17 marbles.';goal=@{numericEquals=21} } | ConvertTo-Json -Depth 5
+            $plan = Invoke-RestMethod -Uri 'http://127.0.0.1:18901/api/plan' -Method Post -ContentType 'application/json' -Body $payload -TimeoutSec 20
+            if (-not $plan.found -or $plan.predicted -ne 'Ava has 21 marbles.') { throw "Frozen V17 prediction failed: $($plan.reason)" }
+            $graph = Invoke-RestMethod -Uri 'http://127.0.0.1:18901/api/global-topology' -TimeoutSec 20
+            if ($graph.totalNodes -lt 8 -or $graph.totalEdges -lt 5) { throw 'Empty global graph' }
+            if (-not (Test-Path -LiteralPath (Join-Path $out 'original-brain-v30.v8'))) { throw 'Isolated V30 checkpoint missing' }
+            $hashAfter = (Get-FileHash -LiteralPath $brain -Algorithm SHA256).Hash
+            if ($hashBefore -ne $hashAfter) { throw 'Original V17 Brain checkpoint modified' }
+            Write-Host "V30_REAL_WINDOWS_POWERSHELL_ATLAS_PASS: worlds=$($status.atlas.sourceWorlds) witnesses=$($status.training.witnessedTransformations) predicted=$($plan.predicted)"
+          } finally {
+            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
+            Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue
+            Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue
+          }
