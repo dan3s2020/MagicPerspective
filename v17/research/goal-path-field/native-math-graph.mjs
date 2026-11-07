@@ -8,7 +8,10 @@ import {Discoverer,KIND} from "../../transcend/torus-aether/worlds/exercise.mjs"
 import {tokenizeObservation,renderObservation} from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {StateDependentTextAxes} from "../text-hypermaze/state-dependent-axes.mjs";
 
-const TOKEN = /[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*|[^\s]/gu;
+// Exact document-state identifier granularity: underscores belong to the
+// token (as in original cognitive tokenizeWorld), not seven fake words.
+// The proven observed-action tokenizer itself remains BYTE-IDENTICAL.
+const TOKEN = /[\p{L}\p{M}\p{N}_]+(?:['’][\p{L}\p{M}\p{N}_]+)*|[^\s]/gu;
 const SEP = "\u001f";
 const numeric = s => /^\d+$/u.test(s);
 const structure = t => t.map(x => numeric(x) ? "#" : x).join(SEP);
