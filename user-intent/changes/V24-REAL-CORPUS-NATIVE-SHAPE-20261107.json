@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "NATIVE_REAL_DATA_TRAINER_IMPLEMENTED_AND_CI_VALIDATED; ORIGINAL_FULL_SEMANTIC_OBJECTIVE_OPEN",
+  "source_quotes": [
+    {
+      "source": "User current turn, 2026-11-07",
+      "literal": "HAI ! IMPLEMENTEAZA COMPLET PANA E GATA DE TRAINING REAL COMPLET"
+    },
+    {
+      "source": "User preceding 2026-11-07 prompt",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI . testezi TOT,IPOTEZE,INCERCARI,TOT,PANA NU FACI LABIRINTUL HYPERDIMENASIONAL DE TEXT SA PREZICA 70+% FORMA SOLUTIEI DIN PRIMA NU TE OPRESTI"
+    },
+    {
+      "source": "Earlier user correction, 2026-11-07",
+      "literal": "REZULTATELE TREBUIE SA FIE CLARE ! NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "priority": "User literal requirements outrank any assistant interpretation; do not confuse this retriever with a completed self-discovered language world",
+  "exact_originals": [
+    "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/data/text-dataset.mjs",
+    "v17/transcend/torus-aether/devour/brain.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/ui/index.html"
+  ],
+  "base_commit": "2357f406e10ca090a1ea02f8986d1018c6279fa4",
+  "experimental_branch": "experiment/V24-REAL-CORPUS-NATIVE-SHAPE-20261107",
+  "changed_paths": [
+    "v17/research/relational-hypermaze/real-corpus-core.mjs",
+    "v17/research/relational-hypermaze/real-data-source.mjs",
+    "v17/research/relational-hypermaze/real-trainer.mjs",
+    "v17/research/relational-hypermaze/real-live.html",
+    "v17/research/relational-hypermaze/real-throughput-probe.mjs",
+    "v17/START_V24_REAL_TRAINING.ps1",
+    "v17/tests/v24-real-native-training.test.mjs",
+    ".github/workflows/v24-real-corpus-native-shape.yml",
+    "v17/docs/V24_REAL_CORPUS_INTEGRATION_EVIDENCE_20261107.md",
+    "user-intent/changes/V24-REAL-CORPUS-NATIVE-SHAPE-20261107.json"
+  ],
+  "exactly_preserved": "Existing original V17/V22/V23 source code and old checkpoints unchanged; new worker uses separate runtime-v24-real",
+  "mechanism": {
+    "witnessed": "Observed human question -> assistant answer dialogue edge from actual Q/A rows",
+    "inferred": "New question similarity -> previously observed question is only HYPOTHESIS, visibly unverified",
+    "method": "Direct import and invocation of original V17 Discoverer.shape() over those state/action edges",
+    "output": "First-action entire path to a previously observed answer; no next-character prediction",
+    "notProven": "Novel unknown answer semantics and 4D/5D noise manifold discovery are NOT established"
+  },
+  "real_data_support": [
+    "Existing V17 OpenThoughts3 Parquet reader without edits",
+    "Nested human/gpt conversations verified in CI",
+    "Streaming JSONL with Q/A",
+    "Q:/A: TXT with BOM support",
+    "Frozen last-16 parquet held-out preserved",
+    "Safe dataset fingerprint-bound checkpoint and resume"
+  ],
+  "runtime": {
+    "localHTTP": "127.0.0.1:8899",
+    "controls": [
+      "start",
+      "pause",
+      "resume",
+      "save",
+      "stop",
+      "evaluate",
+      "frozen predict"
+    ],
+    "graphics": "new graph with actual nodes, edges, field, predicted path, sampled online metrics and heldout; old V17 UI embedded read-only by iframe if already running",
+    "persistence": "atlas-v24.json atomic replacement; source fingerprint verified; resume restores trace, heldout and event history",
+    "backend": "Node.js CPU for V24 text; no assertion of CUDA or user RTX 3050 Ti run"
+  },
+  "measured_CI": {
+    "earlierOriginalV22": "84/84 original maze parity",
+    "V23": "300/300 synthetic structured world routes; not natural Q/A",
+    "V24": "native Linux source tests, real Parquet reader, generated nested OpenThoughts schema, Windows 5.1 launcher and live HTTP/checkpoint",
+    "stress": "12000 QA rows + 16 heldout, 8,743,482 input characters, 0.834 sec, 14,383.54 rows/s, 174.6 MB RSS on Linux CI; generated load data"
+  },
+  "blockingOpen": [
+    "70+% first-prediction semantic answers on genuinely unseen OpenThoughts3 not measured or achieved",
+    "V24 language engine is witnessed Q/A retrieval with hypothesis edges, not free answer discovery",
+    "native V17 whole-brain integrated live policy and original CUDA text all-GPU training not implemented",
+    "full user's D:\\training\\OpenThoughts3-1.2M not accessible in this environment, so full user dataset run not independently checked",
+    "UI original iframe and V24 model remain separate, not one physically unified brain",
+    "original blocking regression issue #25 remains OPEN"
+  ],
+  "note": "User contract written after tested experimental changes; order is not retroactively falsified; all changes remain isolated, with no merge into main."
+}
