@@ -177,3 +177,29 @@ export function evaluateOnUnseen(decision,test,{scrambleSeed=179}={}) {
    conditionalOnSelectedHistory:!!decision.selectedFeature
  };
 }
+
+
+// The empirically selected path coordinate can be maintained ONLINE.
+// It does not require retaining/replaying the full action history:
+// current dx,dy and ONE auxiliary accumulator suffice for these features.
+// The learner chooses the feature; this update rule is the inductive bias.
+export function incrementalPathMemory(actions,selectedFeature){
+ if(selectedFeature!==null&&!ORDERED_FEATURES.includes(selectedFeature))
+   throw Error("Only observed pair-order candidates are supported");
+ let dx=0,dy=0,auxiliary=0,steps=0;
+ for(const action of actions) {
+   const ax=action.primary===0?action.step:0,
+         ay=action.primary===1?action.step:0;
+   if(![-1,1].includes(action.step)||((ax===0)===(ay===0)))
+     throw Error("Invalid signed unit axis");
+   if(selectedFeature==="ordered_0_0")auxiliary+=dx*ax;
+   if(selectedFeature==="ordered_0_1")auxiliary+=dx*ay;
+   if(selectedFeature==="ordered_1_0")auxiliary+=dy*ax;
+   if(selectedFeature==="ordered_1_1")auxiliary+=dy*ay;
+   dx+=ax;dy+=ay;steps++;
+ }
+ return {dx,dy,extraCoordinate:selectedFeature?auxiliary:null,
+   addedDimensions:selectedFeature?1:0,steps,
+   retainedHistoryEntries:0,
+   onlineStateCoordinateCount:2+(selectedFeature?1:0)};
+}
