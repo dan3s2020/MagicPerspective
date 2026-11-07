@@ -18,7 +18,7 @@ const bytes=s=>Array.from(s).map(c=>c.charCodeAt(0));
 test("exact full Q/A scoring counts COMPLETE first guesses, never individual-character success; 70% threshold is strict",()=>{
  const brain=Object.create(Brain.prototype);
  brain.e={};brain.chain={play:()=>({out:[1,0,0,0]})};brain.ctxOf=()=>[];brain.histOf=()=>[];
- let decoded=[];
+ let decoded=[],budgets=[];
  brain.align={
    readFrozen:(ex,cb)=>{for(let i=0;i<ex.length;i++)cb(i,ex[i],ex[i],[]);},
    write:q=>{
