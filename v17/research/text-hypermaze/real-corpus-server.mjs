@@ -15,6 +15,7 @@ const allowedPages=new Map([
  ["/","native-hypermaze.html"],
  ["/index.html","native-hypermaze.html"],
  ["/transcend/torus-aether/ui/native-hypermaze.html","native-hypermaze.html"],
+ ["/transcend/torus-aether/ui/forensic-path-atlas.js","forensic-path-atlas.js"],
  ["/transcend/torus-aether/ui/native-hypermaze.js","native-hypermaze.js"]
 ]);
 const parseArgs=(argv=process.argv.slice(2))=>{
@@ -152,6 +153,25 @@ export async function launch(options={}){
     const data=await rpc("qa",{question,
      execute:url.searchParams.get("execute")==="1"},30000);
     return response(res,200,data);
+   }
+   if(req.method==="GET"&&url.pathname==="/api/path-atlas"){
+    // Explicitly no reference/answer argument. If supplied, reject: no
+    // correctness label may reach the same Brain during pre-action planning.
+    if(url.searchParams.has("reference")||url.searchParams.has("answer")||
+       url.searchParams.has("expected")||url.searchParams.has("targetText"))
+      return response(res,400,{error:"Correct full output must not enter path planning; compare locally AFTER prediction"});
+    const q=url.searchParams;
+    const start=q.get("start")||"",required=(q.get("required")||"").split(",")
+      .map(x=>x.trim()).filter(Boolean);
+    if(start.length>4000||required.length>16)
+      return response(res,400,{error:"Invalid bounded start/explicit goal"});
+    const limit=Math.min(500,Math.max(1,Math.trunc(Number(q.get("limit"))||120))),
+      offset=Math.max(0,Math.min(2000000,Math.trunc(Number(q.get("offset"))||0)));
+    const result=await rpc("atlas",{start,required,
+     section:q.get("section")||"nodes",offset,limit,
+     maxRoutes:Math.min(40,Math.max(1,Math.trunc(Number(q.get("maxRoutes"))||20))),
+     maxDepth:Math.min(96,Math.max(1,Math.trunc(Number(q.get("maxDepth"))||24)))},45000);
+    return response(res,200,result);
    }
    if(req.method==="POST"&&url.pathname==="/native-hypermaze"){
     const required=(url.searchParams.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean);
