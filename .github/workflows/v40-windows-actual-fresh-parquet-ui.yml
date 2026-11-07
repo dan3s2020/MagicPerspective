@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - integration/V40-ALL-VERIFIED-FAST-CUDA-NEW-TRAINING-20261107
+  pull_request:
+    branches:
+      - integration/V34-ORIGINAL-XD-V31-V24-VERIFIED-20261107
   workflow_dispatch:
 permissions:
   contents: read
