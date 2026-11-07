@@ -111,6 +111,8 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
+    nativeGoalField: t?.final ? t.nativeGoalField : g?.nativeGoalField || t?.nativeGoalField || null,
+    goalHyperpath: t?.final ? t.goalHyperpath : g?.goalHyperpath || t?.goalHyperpath || null,
     worldCore: t?.final?t.worldCore:g?.worldCore||t?.worldCore||null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
