@@ -86,6 +86,15 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
   assert.equal(verified.found,false);
   assert.equal(verified.reason,"START_STATE_NOT_YET_WITNESSED",
    "Training source-only text cannot invent physically accepted world edges");
+  const questionOnly=await call(app.base+"/native-cumulative-question?"+
+   new URLSearchParams({question:"Compute 8 times 7.",
+    depth:"18",budget:"500",topology:"1"}),"POST");
+  assert.equal(questionOnly.found,false,
+   "No physically witnessed multiplication world and no QA grammar: must abstain");
+  assert.equal(questionOnly.originalPlanner,"Discoverer.shapeGraph");
+  assert.equal(questionOnly.referenceAnswerProvided,false);
+  assert.equal(questionOnly.plannedBeforeFirstAction,true);
+  assert.equal(questionOnly.fullGoldAnswerNotPassed,true);
   const math=await call(app.base+"/native-cumulative-numeric?"+new URLSearchParams({
    start:"5 * 6 = 30.",inputs:"0:8,2:7",depth:"10",budget:"300",
    topology:"1"
@@ -98,6 +107,7 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
   assert.match(html,/id="cumulativeMaze"/);
   assert.match(html,/id="cumVerified"/);
   assert.match(html,/id="cumMode"/);
+  assert.match(html,/value="question"/);
   assert.match(html,/id="qaExact"/);
   assert.match(html,/id="realBar"/);
   assert.match(html,/id="start"/);
@@ -106,6 +116,7 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
   const js=await(await fetch(app.base+
    "/transcend/torus-aether/ui/native-hypermaze.js")).text();
   assert.match(js,/native-cumulative-numeric/);
+  assert.match(js,/native-cumulative-question/);
   assert.match(js,/crossMazeMemory/);
   assert.match(js,/ctx\.setLineDash/);
   const progress=JSON.parse(fs.readFileSync(path.join(out,
