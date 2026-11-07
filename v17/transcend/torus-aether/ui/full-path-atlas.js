@@ -34,7 +34,7 @@ export class NativeFullPathAtlasView{
   this.playing=true;this.lastTick=0;this.lastWorld="";
   this.page=null;this.pageHistory=[];this.scale=0;this.pageOffset=0;
   this.logOffset={text:0,xd:0};this.logRecent={text:[],xd:[]};this.pending=false;
-  this.activeXDEval=false;
+  this.activeXDEval=false;this.gated=null;
   this.setup();
  }
  setup(){
@@ -46,6 +46,7 @@ export class NativeFullPathAtlasView{
   click("atlasXdReset",()=>{this.xdFrame=0;this.playing=true;this.draw();});
   by("atlasXdScrub")?.addEventListener("input",e=>{this.playing=false;this.xdFrame=+e.target.value;this.draw();});
   click("atlasXdEval",()=>this.testXD());
+  click("atlasGatedGo",()=>this.testGatedText());
   click("atlasPageNext",()=>this.loadPage(this.page?.nextOffset??0));
   click("atlasPagePrev",()=>this.loadPage(this.pageHistory.pop()??0,false));
   by("atlasScale")?.addEventListener("change",e=>{this.scale=e.target.value==="edits"?"edits":+e.target.value;this.pageHistory=[];
@@ -134,6 +135,7 @@ export class NativeFullPathAtlasView{
   this.drawXD();
   this.drawText();
   this.drawNativePage();
+  this.drawGatedText();
  }
  drawXD(){
   const cvs=canvas("atlasXdCanvas");if(!cvs)return;
@@ -393,6 +395,69 @@ export class NativeFullPathAtlasView{
         " · muchii lipsă "+x.missingEdges+" · clasare greșită "+x.wrongRanking)
     ].join("\n\n");
   }catch(err){if(out)out.textContent="Evaluarea nativă a eșuat: "+err.message;}
+ }
+ async testGatedText(){
+  const w=this.getWorker(),start=by("atlasGatedStart")?.value?.trim(),
+    goal=by("atlasGatedGoal")?.value?.trim();
+  if(!start||!goal){
+    setText("atlasGatedResult","Cerință: propoziție observată + condiții de țintă (nu întregul răspuns).");
+    return;
+  }
+  setText("atlasGatedResult","Analizează operatorii originali, ancorele stricte și dovezile de independență...");
+  try{
+    const u="/evidence-gated-text-path?w="+w+"&start="+encodeURIComponent(start)+
+      "&required="+encodeURIComponent(goal);
+    const response=await fetch(u,{method:"POST"});
+    const result=await response.json();
+    if(result.error)throw Error(result.error);
+    if(w!==this.getWorker())return;
+    const r=result.result;
+    this.gated=r;this.drawGatedText();
+    const notes=(r.everyExecutedInternalStep||[]).map((e,i)=>
+      "#"+i+" "+crop(e.from,80)+" → "+crop(e.to,80)+
+      "\n  "+(e.strictOriginalPermitted?"PERMIS de V17":"INTERZIS de V17, dar SUSȚINUT de bridge observat")+
+      " · suport real "+e.originalOperatorSupport+
+      " · sursă "+JSON.stringify(e.observedEvidence)).join("\n");
+    setText("atlasGatedResult",
+      "STRICT original: "+(r.strictFound?"CALE GĂSITĂ":"NU EXISTĂ CALE PERMISĂ")+
+      " · EXPANSIUNE CU DOVEZI: "+(r.found?"CALE GĂSITĂ":"NU A FOST GĂSITĂ")+
+      "\nMotiv: "+r.reason+
+      "\nCoordonate/axe acceptate: "+JSON.stringify(r.evidenceAxes)+
+      "\nConexiuni nou accesibile de la START: "+
+        JSON.stringify(r.previouslyForbiddenFromStart)+
+      "\nProbă fizică/observațională propusă (NEVERIFICATĂ): "+
+        JSON.stringify(r.bridgeProbeSuggestion)+
+      "\nPlan inițial ÎNAINTE de acțiune: "+
+        JSON.stringify(r.gated?.states||[])+
+      "\n\n"+notes+
+      "\nAtenție: succesul navigării în modelul intern nu demonstrează corectitudine semantică.");
+  }catch(err){setText("atlasGatedResult","EROARE verificare: "+err.message);}
+ }
+ drawGatedText(){
+  const d=canvas("atlasGatedCanvas");if(!d)return;
+  const {ctx:c,w,h}=d,r=this.gated,steps=r?.everyExecutedInternalStep||[];
+  c.fillStyle=cc.text;c.font="12px monospace";
+  c.fillText("CONDIȚIILE CELE MAI STRÂNSE vs. AXELE PERMISE DE DOVEZI",12,19);
+  if(!r){c.fillStyle=cc.muted;c.fillText("Nu există încă o comparație făcută pe modelul V17.",12,43);return;}
+  if(!steps.length){
+    c.fillStyle=cc.red;c.fillText(r.found?
+      "Ținta este deja satisfăcută. Nicio acțiune necesară.":"NU EXISTĂ TRASEU VALID în modelul actual.",12,52);
+    c.fillStyle=cc.muted;c.fillText("Pentru a debloca o cale, sunt necesare noi tranziții OBSERVATE.",12,77);return;
+  }
+  const n=steps.length,margin=40,dx=(w-2*margin)/n;
+  for(let i=0;i<n;i++){
+    const e=steps[i],x=margin+i*dx,y=h/2,
+      col=e.strictOriginalPermitted?cc.green:cc.violet;
+    dash(c,x,y,x+dx,y,col,e.strictOriginalPermitted?3:4,!e.strictOriginalPermitted);
+    circle(c,x,y,5,col);
+    c.fillStyle=cc.text;c.font="10px monospace";
+    c.fillText(crop(e.action?.to??e.to,12),x+3,y-16);
+    c.fillStyle=cc.muted;
+    c.fillText("obs "+e.originalOperatorSupport,x+4,y+24);
+  }
+  circle(c,margin+n*dx,h/2,6,cc.gold);
+  c.fillStyle=cc.muted;c.font="11px monospace";
+  c.fillText("VERDE = nativ permis · VIOLET PUNCTAT = permis doar după bridge observat · ROȘU = nu poate naviga",12,h-14);
  }
  async testXD(){
   const dim=+by("atlasDimension")?.value||1024,
