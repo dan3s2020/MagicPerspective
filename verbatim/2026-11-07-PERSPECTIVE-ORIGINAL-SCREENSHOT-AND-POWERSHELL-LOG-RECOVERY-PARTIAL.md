@@ -4,15 +4,15 @@ This file preserves additional visible source material from the same MagicPerspe
 
 ## Initial user question accompanying Grassmann / attention screenshots — USER (prior to ledger U-01)
 
-\`\`\`text
+```text
 Ce e asta și cum funcționează 
-\`\`\`
+```
 
-Media supplied in this USER turn: four YouTube Shorts screenshots discussing “attention”, “Grassmann”, \`L × L attention\`, model names GPT/Claude/Gemini; a slide with “The paper 10–15%”, “Elliot Arledge 22.6%”, “Transformer 198.2 · Grassmann 242.9”; and a description screen containing \`https://arxiv.org/abs/2512.19428\`. **Original four image binaries MISSING**; this description is not verbatim image transcription or verification of the underlying science.
+Media supplied in this USER turn: four YouTube Shorts screenshots discussing “attention”, “Grassmann”, `L × L attention`, model names GPT/Claude/Gemini; a slide with “The paper 10–15%”, “Elliot Arledge 22.6%”, “Transformer 198.2 · Grassmann 242.9”; and a description screen containing `https://arxiv.org/abs/2512.19428`. **Original four image binaries MISSING**; this description is not verbatim image transcription or verification of the underlying science.
 
 ## Windows PowerShell / NoiseSpace launcher failure — original user-pasted console log (PARTIAL: chat-escaped rendering)
 
-\`\`\`text
+```text
 PS C:\Users\DSV>\
 PS C:\Users\DSV> $ErrorActionPreference = "Stop"\
 PS C:\Users\DSV>\
@@ -110,13 +110,13 @@ At line:2 char:5\
     + FullyQualifiedErrorId : Pornirea a esuat.\
 \
 PS C:\Users\DSV>
-\`\`\`
+```
 
 **Provenance note:** the original chat's rendering escaped pipes, backslashes and PowerShell lines. This preserves the available displayed text, NOT certified byte-identical native shell stdout. Do not run the pasted escaped text as a script.
 
 ## CUDA / PyTorch package corruption (user-pasted console log)
 
-\`\`\`text
+```text
 From https://github.com/dan3s2020/MagicPerspective
  * branch            experiment/NOISE-SPACE-HYPERDIMENSIONAL-ISOLATED-20261105 -> FETCH_HEAD
 Already up to date.
@@ -135,7 +135,7 @@ At line:57 char:9
     + FullyQualifiedErrorId : CUDA not available. Rerun SETUP_CUDA_WINDOWS.ps1.
 
 PS C:\Users\DSV>
-\`\`\`
+```
 
 **Scientific/regression implication:** These were **observed errors**, not results proving CUDA was working. The former launcher suffered a PowerShell scope/parsing problem and Node argument quote stripping; the latter PyTorch virtual environment was corrupted/incomplete. The 2026-11-07 V17 live CI tests do not establish that these historical user's machine failures have been repaired in place.
 
