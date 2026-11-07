@@ -536,6 +536,7 @@ async function pullSelectedGraph() {
     const gs = await r.json();
     if (!Array.isArray(gs.nodes)) return false;
     applySnap(gs);
+    if(gs.characterAtlas) window.dispatchEvent(new CustomEvent("v24-character-status",{detail:gs.characterAtlas}));
     const L = gs.cognitive, lbox = $("cognitiveBox");
     if(lbox){
       lbox.hidden = !L;
