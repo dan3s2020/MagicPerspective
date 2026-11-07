@@ -1,0 +1,58 @@
+name: V17 cross-world COMPLETE 4D transformation atlas and failure provenance
+on:
+  push:
+    branches:
+      - experiment/V17-CROSS-WORLD-CONDITIONAL-HYPERMAZE-ATLAS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  atlas-all-seeds-and-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check actual learner, simulator, atlas UI and tests
+        run: |
+          node --check v17/research/hypermaze-atlas/atlas-engine.mjs
+          node --check v17/research/hypermaze-atlas/atlas-benchmark.mjs
+          node --check v17/research/hypermaze-atlas/atlas-view.mjs
+          node --check v17/research/hypermaze-atlas/atlas-engine.test.mjs
+      - name: Test all 288 heldout 4D worlds, support provenance, 2048-edge graph, OOD physics, noise and learning curve
+        run: node --test v17/research/hypermaze-atlas/atlas-engine.test.mjs
+      - name: Export full genuine atlas, every training observation and ALL 96 task failure traces per seed
+        run: |
+          node --input-type=module -e '
+            import {saveBenchmark} from "./v17/research/hypermaze-atlas/atlas-benchmark.mjs";
+            import {writeAtlasHTML} from "./v17/research/hypermaze-atlas/atlas-view.mjs";
+            import fs from "node:fs";
+            for(const seed of [1181,3837,7731]){
+              const dir="atlas-artifacts/seed-"+seed;
+              const r=saveBenchmark(dir,{seed,worlds:96});
+              if(r.transfer.correct!==96||r.transfer.optimal!==96||
+                 r.oneWorld.correct!==0||r.attempts.length!==96)
+                throw Error("Atlas regression for seed "+seed);
+              const html=writeAtlasHTML(dir);
+              if(!fs.statSync(html).size||r.trainingEvents!==2432)
+                throw Error("Atlas evidence or offline HTML empty");
+              console.log("COMPLETE_ATLAS_REPLAY",JSON.stringify({
+                seed,unseen:r.worlds,correct:r.transfer.correct,flat:r.baseline.correct,
+                sourceWorlds:r.trainingWorlds,observations:r.trainingEvents,
+                heldoutChars:r.textCharacters,paths:r.attempts.length,
+                fullAtlasBytes:fs.statSync(dir+"/atlas.json").size,
+                fullHTMLBytes:fs.statSync(html).size
+              }));
+            }
+          '
+      - name: Upload complete, real atlas for all 3 seeds (4D nodes, edges, source observations, paths)
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-cross-world-4d-atlas-all-paths-and-failures
+          path: atlas-artifacts/
+      - name: Preserve previous V17 native Brain / noise / text atlas functionality
+        run: |
+          node --test v17/tests/goal-text-4d-native-brain.test.mjs
+          node --test v17/tests/native-text-world-endogenous-noise.test.mjs
