@@ -77,6 +77,8 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 <label>Grosime secțiune <input id="sliceWidth" type="range" min="0.05" max="2" value="2" step="0.05"></label>
 <label>Traseu real din predicții <select id="traceChoice"><option value="">Ultimul traseu</option></select></label>
 <button id="togglePlayback">Oprește animația traseului</button>
+<button id="showAtlas">Atlasul observat: 60 perechi Q/A</button>
+<button id="showPredictedRoute">Revenire la traseul prezis</button>
 </div>
 <svg id="paths" role="img" aria-label="Proiecția N-dimensională a traseelor și câmpului original V17" viewBox="0 0 880 440"></svg>
 <pre id="axisDetail">Selectează un nod pentru toate cele 16 coordonate măsurate.</pre>
@@ -108,7 +110,7 @@ if(Number.isInteger(nativePort)&&nativePort>=1024&&nativePort<=65535){
  $("oldUI").dataset.nativeUrl="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
 }
 let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false,historySignature="";
-let pathTimer=null,playbackPaused=false,currentGraph=null,historySelection="",nativeOnline=false; // predicted route, not actual execution
+let pathTimer=null,playbackPaused=false,currentGraph=null,historySelection="",nativeOnline=false,viewMode="trace"; // predicted route, not actual execution
 const SVG="http://www.w3.org/2000/svg";
 function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
  for(const [k,v] of Object.entries(attrs||{}))n.setAttribute(k,String(v));
@@ -203,7 +205,7 @@ function render(s){
   if(wanted&&histories.some(t=>String(t.row)===wanted))sel.value=wanted;
   else{historySelection="";sel.value="";}
  }
- if(!historySelection&&s.lastTrace?.row!==undefined&&cursor!==s.lastTrace.row){
+ if(viewMode==="trace"&&!historySelection&&s.lastTrace?.row!==undefined&&cursor!==s.lastTrace.row){
   cursor=s.lastTrace.row;trace();
  }
 }
@@ -224,7 +226,13 @@ $("togglePlayback").onclick=()=>{
  $("togglePlayback").textContent=playbackPaused?"Pornește animația traseului":"Oprește animația traseului";
  if(currentGraph)draw(currentGraph);
 };
-$("traceChoice").onchange=()=>{historySelection=$("traceChoice").value;trace();};
+$("traceChoice").onchange=()=>{viewMode="trace";historySelection=$("traceChoice").value;trace();};
+$("showAtlas").onclick=async()=>{
+ viewMode="atlas";
+ try{const atlas=await json("/api/atlas?count=60");draw(atlas);}
+ catch(e){set("shapeMeta","Atlasul real nu poate fi citit: "+e.message);}
+};
+$("showPredictedRoute").onclick=()=>{viewMode="trace";trace();};
 function coordinate(g,n){
  const a=n.axes||[];
  const x=a[selectedAxes.x]??0,y=a[selectedAxes.y]??0,
@@ -305,12 +313,12 @@ function draw(g){
    },650);
   }
  }
- set("shapeMeta","PLAYBACK AL PREDICȚIEI, nu execuție fizică · "+(g.dimensions||16)+" axe măsurate · "+
+ set("shapeMeta",(g.view==="observed-atlas"?"ATLAS OBSERVAT, fără planificare către o țintă · ":"PLAYBACK AL PREDICȚIEI, nu execuție fizică · ")+(g.dimensions||16)+" axe măsurate · "+
    (g.totalNodes||g.nodes.length)+" noduri · "+(g.route?.length||0)+" pași prezis · "+
    (g.found?"răspuns observat găsit":"ABȚINERE")+
    " · "+(g.route||[]).filter(e=>e.verified).length+" tranziții martor · "+
    "galben = traseul original Discoverer.shape(), verde = fapt observat, albastru punctat = ipoteză.");
- set("traceText",JSON.stringify({method:g.method,beforeAction:g.beforeAction,
+ set("traceText",JSON.stringify({view:g.view,method:g.method,beforeAction:g.beforeAction,
    dimensions:g.dimensions,axisLabels:g.axisLabels,route:g.route,
    field:g.field,hypotheses:g.hypotheses||g.learnedContexts},null,2));
 }
@@ -337,7 +345,7 @@ async function history(){try{const list=await json("/api/events");const ev=list.
  }
  set("recent",last.length+" măsurători reale păstrate în memoria de evenimente · ultimul rând "+last.at(-1).row);
  }catch(e){set("recent",e.message);}}
-$("predict").onclick=async()=>{try{const prompt=$("query").value;
+$("predict").onclick=async()=>{try{viewMode="trace";const prompt=$("query").value;
  const result=await json("/api/predict",{method:"POST",headers:{"content-type":"application/json"},
  body:JSON.stringify({prompt,temperature:+$("temperature").value})});
  set("queryResult",result.found?"Răspuns observat anterior:\n"+result.answer+
