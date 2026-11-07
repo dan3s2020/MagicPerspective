@@ -1,0 +1,41 @@
+name: V29 REAL OpenThoughts native Q/A closed-loop training and original frozen shape
+on:
+  push:
+    branches:
+      - experiment/V29-REAL-OPENTHOUGHTS-QA-GOAL-CLOSED-LOOP-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-real-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Same original native Brain learns witnessed Q/A axes, plans entire heldout answer before output, checkpoint
+        run: node --test v17/tests/v29-real-qa-closed-loop.test.mjs
+      - name: Real OpenThoughts source stream, complete original worker, checkpoint, browser and CPU throughput
+        run: node --test v17/tests/hypermaze-real-openthoughts-stream.test.mjs
+      - name: Exact original Discoverer 2D maze parity and existing compositional long text shape
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
+          node --test v17/tests/native-hypermaze-long-multistep-heldout.test.mjs
+      - name: No false full release without 70% unseen semantic answers
+        run: node --test v17/tests/hypermaze-stopship-release.test.mjs
+  windows-native-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Original production-safe OpenThoughts PowerShell parsing unchanged
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'v17/START_REAL_OPENTHOUGHTS_HYPERMAZE.ps1').Path,
+            [ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){throw ($errors|Out-String)}
