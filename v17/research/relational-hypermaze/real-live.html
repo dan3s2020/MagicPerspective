@@ -21,7 +21,7 @@ button:hover:not(:disabled){border-color:var(--gold)}
 textarea{background:#0b1723;color:var(--text);border:1px solid var(--line);border-radius:8px;width:100%;padding:9px;min-height:68px;resize:vertical}
 progress{width:100%;height:23px;accent-color:var(--ok)}
 pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Consolas,monospace;max-height:280px;overflow:auto;background:#091522;border-radius:8px;padding:12px;color:#b9d8ea}
-#paths{width:100%;height:320px;border:1px solid #2b4761;background:#070f19;border-radius:9px}
+#paths{width:100%;height:440px;border:1px solid #2b4761;background:#070f19;border-radius:9px}
 #eventsChart{width:100%;height:130px;background:#081522;border-radius:8px}
 .tag{display:inline-block;border:1px solid #355570;padding:3px 7px;border-radius:6px;margin:2px;color:var(--muted);font-size:12px}
 .warn{color:var(--warn)}.ok{color:var(--ok)}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
@@ -32,11 +32,11 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 <header><div><h1>MagicPerspective V24 — training real, forma soluției</h1>
 <small>Trasee din <b>Discoverer.shape()</b> original · tranziții Q/A observate · ipotezele sunt separate de fapte</small></div>
 <div class="row"><button id="toggleOld">Ascunde/arată UI original V17</button><span id="connection" class="muted" aria-live="polite">Conectare...</span></div></header>
-<main id="layout">
-<div id="oldPane">
+<main id="layout" class="compact">
+<div id="oldPane" class="closed">
 <div class="row" style="padding:8px 12px"><strong>UI original V17, neschimbat</strong>
 <span class="muted">Necesită pornirea separată a motorului V17 (port 8866)</span></div>
-<iframe id="oldUI" title="MagicPerspective original V17 UI" src="http://127.0.0.1:8866/transcend/torus-aether/ui/index.html?live=1"></iframe>
+<iframe id="oldUI" title="MagicPerspective original V17 UI" src="about:blank"></iframe>
 </div>
 <div id="newPane">
 <section><h2>Control real al antrenării</h2>
@@ -51,6 +51,9 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 <div class="metric"><small>Tranziții Q/A acceptate</small><strong id="accepted">—</strong></div>
 <div class="metric"><small>Stări active în memorie</small><strong id="memory">—</strong></div>
 <div class="metric"><small>Rânduri pe secundă (măsurate)</small><strong id="speed">—</strong></div>
+<div class="metric"><small>Răspunsuri găsite înainte de învățare</small><strong id="foundBefore">—</strong></div>
+<div class="metric"><small>Predicții complet corecte</small><strong id="exactBefore">—</strong></div>
+<div class="metric"><small>Checkpointuri segmentate</small><strong id="segments">—</strong></div>
 </div><p class="muted" id="source">—</p><p class="muted" id="save">—</p><p class="warn" id="error"></p>
 </section>
 <section><h2>Predicții efectuate înainte de învățarea rândului curent</h2>
@@ -62,10 +65,21 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 <p class="muted">Online = evaluare înainte de actualizarea rândului curent. Nu reprezintă precizia pe testul înghețat.</p>
 <div id="lastQuestion" class="muted">—</div>
 <div id="prediction" class="muted">—</div>
+<details open><summary>Răspunsul adevărat vs ce a prezis</summary><pre id="actualAnswer">Nicio predicție disponibilă încă.</pre></details>
 </section>
 <section><h2>Labirintul de text — graful și calea reală pre-acțiune</h2>
-<p class="muted">Nodurile sunt stări observate; liniile punctate reprezintă ipoteze de similitudine, liniile continue tranziții de dialog observate. Dispunerea pe ecran este 2D pentru vizualizare, nu dovadă de coordonate 4D învățate.</p>
-<svg id="paths" role="img" aria-label="Graf de trasee, cu intensitatea câmpului V17 și succesiunea aleasă" viewBox="0 0 880 320"></svg>
+<p class="muted">16 axe reale calculate din termenii observați, roluri, dovezi, timp și atracția produsă de Discoverer.shape(). Alege secțiunile și rotațiile. Aceasta este o proiecție a datelor învățate, NU un spațiu fizic 4D descoperit.</p>
+<div class="row" id="hyperControls" style="margin-bottom:12px;gap:12px;align-items:center;flex-wrap:wrap">
+<label>X <select id="axisX"></select></label><label>Y <select id="axisY"></select></label><label>Z <select id="axisZ"></select></label><label>W <select id="axisW"></select></label>
+<label>Rotație XY <input id="rotationXY" type="range" min="-180" max="180" value="0" step="5"></label>
+<label>Rotație ZW <input id="rotationZW" type="range" min="-180" max="180" value="0" step="5"></label>
+<label>Secțiune W <input id="sliceW" type="range" min="-1" max="1" value="0" step="0.05"></label>
+<label>Grosime secțiune <input id="sliceWidth" type="range" min="0.05" max="2" value="2" step="0.05"></label>
+<label>Traseu real din predicții <select id="traceChoice"><option value="">Ultimul traseu</option></select></label>
+<button id="togglePlayback">Oprește animația traseului</button>
+</div>
+<svg id="paths" role="img" aria-label="Proiecția N-dimensională a traseelor și câmpului original V17" viewBox="0 0 880 440"></svg>
+<pre id="axisDetail">Selectează un nod pentru toate cele 16 coordonate măsurate.</pre>
 <div id="shapeMeta" class="muted">Aștept traseul nativ...</div>
 <details><summary>Traseu pas cu pas, activări și câmpul de atracție</summary><pre id="traceText"></pre></details>
 </section>
@@ -91,17 +105,22 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 const $=s=>document.getElementById(s),fmt=n=>Number(n||0).toLocaleString("ro-RO");
 const nativePort=Number(new URLSearchParams(location.search).get("nativePort")||8866);
 if(Number.isInteger(nativePort)&&nativePort>=1024&&nativePort<=65535){
- $("oldUI").src="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
+ $("oldUI").dataset.nativeUrl="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
 }
 let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false;
-let pathTimer=null; // Playback of the frozen predicted route, never invented physical execution.
+let pathTimer=null,playbackPaused=false,currentGraph=null,historySelection=""; // predicted route, not actual execution
 const SVG="http://www.w3.org/2000/svg";
 function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
  for(const [k,v] of Object.entries(attrs||{}))n.setAttribute(k,String(v));
  if(text!==undefined)n.textContent=String(text);parent.appendChild(n);return n;}
 const set=(id,s)=>{$(id).textContent=String(s);};
 const pct=(a,b)=>b?((100*a/b).toFixed(2)+"%"):"—";
-$("toggleOld").onclick=()=>{$("oldPane").classList.toggle("closed");$("layout").classList.toggle("compact");};
+$("toggleOld").onclick=()=>{const shown=$("oldPane").classList.toggle("closed")===false;
+ $("layout").classList.toggle("compact",!shown);
+ if(shown&&$("oldUI").src==="about:blank")$("oldUI").src=$("oldUI").dataset.nativeUrl;
+};
+// Place the actually computed hypergraph above the fold, not below the statistics.
+$("newPane").insertBefore($("paths").closest("section"),$("newPane").firstElementChild);
 $("temperature").oninput=()=>set("temperatureLabel",$("temperature").value);
 async function json(url,opts){const r=await fetch(url,{cache:"no-store",...opts});
  const body=await r.json();if(!r.ok)throw Error(body.error||"HTTP "+r.status);return body;}
