@@ -6,7 +6,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import crypto from "node:crypto";
-import {openTextDataset,exerciseOf} from "../../transcend/torus-aether/data/text-dataset.mjs";
+import {openTextDataset,exerciseOf,HELD_OUT} from "../../transcend/torus-aether/data/text-dataset.mjs";
 
 export async function* jsonlRows(file){
  const lines=readline.createInterface({input:fs.createReadStream(file,{encoding:"utf8"}),crlfDelay:Infinity});
@@ -57,6 +57,7 @@ export async function openRealSource({data=null,jsonl=null,qaTxt=null,held=16}={
  if(selected.length!==1)throw Error("Exactly one of --data, --jsonl or --qa-txt is required");
  if(!Number.isInteger(held)||held<1||held>1000)throw Error("Held-out count must be 1..1000");
  if(data){
+  if(held!==HELD_OUT)throw Error("Parquet held-out partition is fixed at "+HELD_OUT+" by the original V17 reader; do not silently change it");
   const ds=await openTextDataset(data);
   if(ds.held<1)throw Error("Not enough parquet rows for a real held-out evaluation");
   const inv=await inventory(data,ds.files.map(x=>x.path));
