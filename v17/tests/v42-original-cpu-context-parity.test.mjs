@@ -46,7 +46,17 @@ test("V42 same original Brain.live, learned states and exact V8 checkpoint after
   try{
     const f1=path.join(root,"before.v8"),f2=path.join(root,"after.v8");
     ref.save(f1);opt.save(f2);
-    assert.deepEqual(fs.readFileSync(f1),fs.readFileSync(f2),
+    const originalBytes=fs.readFileSync(f1),optimizedBytes=fs.readFileSync(f2);
+    if(!originalBytes.equals(optimizedBytes)){
+      const first=originalBytes.findIndex((byte,index)=>byte!==optimizedBytes[index]);
+      console.log("V42_BINARY_CHECKPOINT_DIAGNOSTIC",JSON.stringify({
+        oldLength:originalBytes.length,newLength:optimizedBytes.length,
+        firstByteMismatch:first,
+        oldNear:Array.from(originalBytes.subarray(Math.max(0,first-12),first+25)),
+        newNear:Array.from(optimizedBytes.subarray(Math.max(0,first-12),first+25))
+      }));
+    }
+    assert.deepEqual(originalBytes,optimizedBytes,
       "Semantic regression: exact old/new native Brain.v8 differed");
     const revived=Brain.load(f2);
     assert.equal(revived.lived,ref.lived);
