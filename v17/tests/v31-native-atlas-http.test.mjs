@@ -14,7 +14,7 @@ const freePort=()=>new Promise((resolve,reject)=>{
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 async function request(url,{status=200,method="GET"}={}){
  const r=await fetch(url,{method,signal:AbortSignal.timeout(20000)});
- assert.equal(r.status,status,await r.text().catch(()=>"<unavailable>"));
+ if(r.status!==status)throw Error("Unexpected HTTP "+r.status+": "+(await r.text()).slice(0,800));
  return r.json();
 }
 test("REAL original V17 JSONL worker serves read-only complete paged atlas, missing physical causal paths and no reference leak",{
