@@ -36,7 +36,7 @@ function fit(rows){
    for(let j=c;j<=k;j++)M[r][j]-=f*M[c][j];
   }
  }
- const coef=M.map(row=>row[k]).map(v=>Math.abs(v-Math.round(v))<1e-8?Math.round(v):v);
+ const coef=M.map(row=>row[k]).map(v=>{const a=Math.abs(v-Math.round(v))<1e-8?Math.round(v):v;return Object.is(a,-0)?0:a;});
  if(!rows.every(([x,q,y])=>Math.abs(coef.reduce((sum,v,i)=>sum+v*features(x,q)[i],0)-y)<1e-6))return null;
  return coef;
 }
