@@ -112,6 +112,15 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   assert.equal(measured.qaLongFormQuestionTokens,expectedTrainQuestionTokens);
   assert.ok(measured.qaLongFormSequentialEdges>0);
   assert.ok(measured.qaLongFormActiveChunkDigests>0);
+  // Real HTML and script must show precisely these factual counters,
+  // not a decorative static canvas or numbers from unrelated simulated tasks.
+  const actualHTML=await(await fetch(app.base+"/")).text();
+  assert.match(actualHTML,/id="qaLongTokens"/);
+  assert.match(actualHTML,/id="qaLongEdges"/);
+  const actualJS=await(await fetch(app.base+
+   "/transcend/torus-aether/ui/native-hypermaze.js")).text();
+  assert.match(actualJS,/qaLongFormAnswerTokens/);
+  assert.match(actualJS,/qaLongFormSequentialEdges/);
   assert.equal(measured.qaLongFormUnretained,0);
   assert.ok(measured.qaFrozenWholeRawExact>=0&&
    measured.qaFrozenWholeRawExact<=4);
