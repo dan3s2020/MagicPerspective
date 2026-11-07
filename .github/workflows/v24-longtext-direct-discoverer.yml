@@ -23,6 +23,11 @@ jobs:
         run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
       - name: Existing cognitive world and heldout outcomes
         run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Proven V23 exact original field, live graph snapshot and noise reproducibility
+        run: |
+          node --test v17/tests/torus-v23-exact-discoverer.test.mjs
+          node --check v17/transcend/torus-aether/ui/cognitive-graph-live.js
+          node --check v17/transcend/torus-aether/worlds/cognitive-route-snapshot.mjs
       - name: Native V19 worker and heldout live HTTP
         run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
       - name: Native V21 original action and QA checkpoint regressions
