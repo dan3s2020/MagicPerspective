@@ -415,6 +415,15 @@ parentPort.on("message", m => {
           potentialBefore:e.potentialBefore,potentialAfter:e.potentialAfter,
           observedSupport:e.support})),
         math:plan.field?.math??null,law:plan.planningLaw||null,
+        // Real generated V19 candidate graph, not an invented display. Full
+        // original solution path is always returned even when edges are sampled.
+        graph:plan.world?{
+          nodes:plan.world.states.map((state,i)=>({id:i,label:state.join(" ")})),
+          edges:plan.world.neighbors.flatMap((out,from)=>out.map(e=>({
+            from,to:e.to,action:e.action,support:e.support,verified:!!e.verified}))).slice(0,4096),
+          totalEdges:plan.world.neighbors.reduce((sum,row)=>sum+row.length,0),
+          sampledMaxEdges:4096
+        }:null,
         truncated:plan.world?.truncated||false});
     }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-native",id,error:err.message});}
     return;
