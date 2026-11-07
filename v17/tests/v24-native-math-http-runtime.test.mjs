@@ -77,6 +77,18 @@ test("one ORIGINAL V17 Brain: actual observed nonlinear actions -> saved checkpo
   const portNo=await port(),base="http://127.0.0.1:"+portNo;
   srv=start(base,out,corpus,portNo);
   const graph=await ready(srv,base);
+  // Real native original UI must serve the new controls IN ADDITION to all
+  // existing V17 controls; no separate demo web server or synthetic graph.
+  const html=await fetch(base+"/transcend/torus-aether/ui/index.html",{signal:AbortSignal.timeout(6000)});
+  assert.equal(html.status,200);
+  const page=await html.text();
+  assert.match(page,/native-math-live\.js/);
+  for(const old of ['id="cognitiveBox"','id="cognitiveEvaluate"','id="run"','id="reset"','id="eval"']){
+    assert.ok(page.includes(old),"Original UI control was removed: "+old);
+  }
+  const script=await fetch(base+"/transcend/torus-aether/ui/native-math-live.js",{signal:AbortSignal.timeout(6000)});
+  assert.equal(script.status,200);
+  assert.match(await script.text(),/native-math-eval/);
   assert.equal(graph.graphs.length,1);
   assert.deepEqual(graph.graphs[0].worlds,["cognitivemap"]);
   // Control: BEFORE action observations, the original Brain must abstain,
