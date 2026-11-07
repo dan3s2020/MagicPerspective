@@ -26,7 +26,7 @@ test('original Brain xD: simultaneous constraint target, transform ablations, ge
      const compatible=D%8===0;
      if(compatible){compatibleTotal++;compatibleSolved+=Number(x.solved);}
      else {incompatibleTotal++;incompatibleSolved+=Number(x.solved);}
-     allCorrect+=x.correct;allPredicted+=x.attempted;
+     allCorrect+=(x.correct??0);allPredicted+=x.attempted;
      if(world.vertices.length!==128||world.axes!==7)dimensionIndependentFiniteStates=false;
      rows.push({seed:world.seed,solved:x.solved,found:p.found,
        plannedSteps:p.pathLength,optimal:p.evaluatorPhysicalShortestPath,
