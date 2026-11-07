@@ -9,7 +9,7 @@ import { LearnedCognitiveMap, tokenizeWorld } from '../transcend/torus-aether/wo
 
 test('original V17 source snapshot matches the historical Git blob byte-for-byte',()=>{
  const bytes=readFileSync(new URL('../transcend/torus-aether/worlds/exercise-v17-EXACT-ORIGINAL-SNAPSHOT.mjs',import.meta.url));
- const blob=createHash('sha1').update(Buffer.from('blob '+bytes.length+'\\0'.replace('\\0','\\x00'))).update(bytes).digest('hex');
+ const blob=createHash('sha1').update(Buffer.from('blob '+bytes.length+String.fromCharCode(0))).update(bytes).digest('hex');
  assert.equal(blob,'df194ecb6999cce36c15fb9f4f94d3a36ae22fcb');
 });
 
