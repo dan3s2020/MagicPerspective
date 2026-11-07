@@ -58,5 +58,6 @@ jobs:
             $output=(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script -Data $env:TEMP -OriginalOut $env:TEMP -NativePort 8908 -UIPort 8909 -Gpu off 2>&1 | Out-String)
             if($LASTEXITCODE -eq 0){throw 'V29 silently accepted occupied port'}
             if($output -notmatch 'PORT 8908 OCCUPIED') {throw ('Wrong error: '+$output)}
+            $global:LASTEXITCODE=0
             Write-Host 'V29_WINDOWS_FAIL_CLOSED: original checkpoint unchanged; occupied native port prevented duplicate trainer'
           } finally {$listener.Stop()}
