@@ -15,6 +15,7 @@ import {LanguageMazeViewer} from "./language-maze-view.js";
 import {drawSharedWorldCore} from "./shared-world-view.mjs";
 import {InlineTextMaze} from "./inline-text-maze.js";
 import {ObservedTextPathMap} from "./observed-text-path-map.js";
+import {mountNativeGoalPanel} from "./native-goal-live.js";
 import {distC} from "../torus.mjs";
 import {EmergentChain, argmax} from "../emergent.mjs";
 import {PLANES, rotation, applyT, prepare, images, plan, wrap1, wrapD} from "./view5.mjs";
@@ -451,6 +452,7 @@ $("wtemp").addEventListener("change", () => { if (t) write(); });
 const LIVE = new URLSearchParams(location.search).has("live");
 const textPathMap = new ObservedTextPathMap($("textPathCanvas"), $("textPathStats"), $("textPathDetail"));
 let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null, liveSummary = null;
+const nativeGoalPanel=LIVE?mountNativeGoalPanel({getGraph:()=>liveW}):null;
 let livePulling=false;
 let realTextSeq=0, realTextGraph=null, realTextSegments=[];
 const fmtReal=v=>Number.isFinite(v)?v.toLocaleString("ro-RO"):"—";
@@ -942,6 +944,7 @@ async function livePull() {
       selectedSummary=L.graphs?.find(x=>x.w===requestedW)||null;
       liveSummary=selectedSummary;
       renderRealProgress(selectedSummary);
+      nativeGoalPanel?.renderTraining(selectedSummary);
       inlineTextMaze?.update(selectedSnap||liveSnap,
         !!selectedSummary?.worlds?.includes("text"));
     }
@@ -1030,11 +1033,11 @@ fetch("/corpus").then(r => r.json()).then(c => {
   $("chatForm").onsubmit = async ev => { ev.preventDefault(); const text = $("chatIn").value.trim(); if (!text) return;
     $("chatIn").value = ""; $("chatW").textContent = "#" + liveW; add("you", esc(text)); talk.push(["you", text]);
     if (!LIVE) { add("err", "Chat-ul vorbește cu grafurile din trainer: pornește START_V17.ps1 și deschide pagina lui."); return; }
-    const opts = {T: +$("cTemp").value, max: +$("cMax").value, stopBlank: $("cStop").checked, learn: $("cLearn").checked}, keep = +$("cHist").value;
+    const opts = {mode:$("cAnswerMode").value,T: +$("cTemp").value, max: +$("cMax").value, stopBlank: $("cStop").checked, learn: $("cLearn").checked}, keep = +$("cHist").value;
     const wait = add("him", "<span class='dim'>scrie…</span>"); $("chatSend").disabled = true;
     try { const r = await (await fetch("/chat", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, history: talk.slice(-(2 * keep + 1)), opts})})).json();
       if (r.error) { wait.className = "msg err"; wait.textContent = r.error; talk.pop(); }
-      else { wait.innerHTML = esc(r.text || "(nimic)") + `<small>graful #${liveW} · T ${r.T} · ${r.text.length} simboluri${r.fromSave ? " · oprit: răspunde din ultimul save" : opts.learn ? " · a trăit conversația" : ""}</small>`; talk.push(["him", r.text]); } }
+      else { wait.innerHTML = esc(r.text || "(nicio cale învățată)") + `<small>graful #${liveW} · motor ${r.mode||opts.mode} · ${(r.text||"").length} simboluri${r.fromSave ? " · răspuns din ultimul save" : ""}</small>`; if(r.mode==="goal-path")nativeGoalPanel?.draw(r); if(r.ready)talk.push(["him", r.text]); } }
     catch (err) { wait.className = "msg err"; wait.textContent = "nu am putut ajunge la trainer: " + err.message; talk.pop(); }
     $("chatSend").disabled = false; };
 }

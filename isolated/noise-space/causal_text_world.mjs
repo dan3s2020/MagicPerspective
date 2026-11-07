@@ -180,15 +180,17 @@ export class CausalTextAgent {
   }
   // The learned value field and candidate evidence are the ONLY navigation heuristics.
   // No target answer, environment law, or oracle path is read by this routine.
-  rank(observation,pathHead,{top=10}={}){
+  rank(observation,pathHead,{top=10,goalVector=null}={}){
     const candidates=this.choices(observation,pathHead,{limit:6}),prefix=observation.tokens;
     const observedProposals=new Map((pathHead?.propose(observation.prompt,prefix,8)||[]).map(x=>[x.token,x]));
-    const draft=text(prefix),goal=this.latent.goal(observation.prompt),beforeField=this.latent.distance(prefix,goal);
+    const draft=text(prefix),goal=goalVector??this.latent.goal(observation.prompt),beforeField=this.latent.distance(prefix,goal);
+    const memo=new Map();
+    const projected=tokens=>{const k=JSON.stringify(tokens);if(!memo.has(k))memo.set(k,this.latent.distance(tokens,goal));return memo.get(k);};
     return candidates.map(a=>{
       const p=this.dynamics.predict(observation,a),delta=this.value.predict(observation.prompt,a,draft);
       const evidence=observedProposals.get(a.token);
       const matched=p.available&&!exactSame(p.tokens,prefix);
-      const projectedField=p.available?this.latent.distance(p.tokens,goal):beforeField;
+      const projectedField=p.available?projected(p.tokens):beforeField;
       const fieldGain=this.latent.updates>=3?(beforeField-projectedField)*.9:0;
       const generic=(evidence?.score??-6)*.025;
       const penalty=(prefix.length/MAX_DRAFT)*.025;
@@ -212,14 +214,15 @@ export class CausalTextAgent {
     // The language world's action laws stay fixed for this brain. The episode seed affects only exploration.
     const world=new LanguageWorld({prompt,reference:answer,seed:this.seed}),r=rng((seed^this.seed^this.episodes)>>>0),events=[];
     let best=-Infinity;
+    const frozenGoal=this.latent.goal(prompt); // fixed until fit() after the entire episode
     for(let t=0;t<clip(maxActions,1,256);t++){
-      const before=world.observe(),opts=this.rank(before,pathHead,{top:12}),random=this.choices(before,pathHead);
+      const before=world.observe(),opts=this.rank(before,pathHead,{top:12,goalVector:frozenGoal}),random=this.choices(before,pathHead);
       const choice=r()<exploration?random[Math.floor(r()*random.length)]:opts[0];
       if(!choice)break;
       const pre=this.dynamics.predict(before,choice),out=world.act(choice),d=out.feedback?.delta||0;
       const model=this.dynamics.observe(before,choice,out.observation);
       this.value.observe(prompt,choice,text(before.tokens),d);
-      const goal=this.latent.goal(prompt);
+      const goal=frozenGoal;
       const event={...out.event,model,confidence:pre.confidence,
        latentBefore:this.latent.target(text(before.tokens)),latentAfter:this.latent.target(text(out.observation.tokens)),
        fieldDelta:this.latent.distance(before.tokens,goal)-this.latent.distance(out.observation.tokens,goal)};
@@ -236,15 +239,15 @@ export class CausalTextAgent {
   // A frozen test: held-out reference is NOT provided until after .navigate returns.
   navigate(prompt,pathHead,{steps=64,seed=11}={}){
     const world=new LanguageWorld({prompt,seed:this.seed}),events=[];
-    const intendedLength=this.goalLength(prompt);
+    const intendedLength=this.goalLength(prompt),frozenGoal=this.latent.goal(prompt);
     for(let i=0;i<clip(steps,1,256);i++){
       if(world.tokens.length>=intendedLength)break;
-      const before=world.observe(),ranked=this.rank(before,pathHead,{top:7});
+      const before=world.observe(),ranked=this.rank(before,pathHead,{top:7,goalVector:frozenGoal});
       // No reward call or parameter update on frozen evaluation.
       let chosen=ranked.find(x=>x.expected&&!exactSame(x.expected,before.tokens));
       if(!chosen)break;
       const out=world.act(chosen),model=this.dynamics.predict(before,chosen);
-      const goal=this.latent.goal(prompt);
+      const goal=frozenGoal;
       events.push({...out.event,predicted:chosen.expected,confidence:chosen.confidence,
         latentBefore:this.latent.target(text(before.tokens)),latentAfter:this.latent.target(text(out.observation.tokens)),
         fieldDelta:this.latent.distance(before.tokens,goal)-this.latent.distance(out.observation.tokens,goal),

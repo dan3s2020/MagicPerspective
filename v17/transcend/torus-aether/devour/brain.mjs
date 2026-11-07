@@ -20,11 +20,13 @@ import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/const
 import {ObservedTransformations,setObservedOperatorHook} from "../worlds/observed-transformations.mjs";
 import {SharedTransformationCore} from "../worlds/shared-transformation-core.mjs";
 import {GoalConditionedHyperpath} from "../worlds/goal-conditioned-hyperpath.mjs";
+import {NativeCoupledGoalField} from "../worlds/native-coupled-goal-field.mjs";
+import {StateDependentTextAxes} from "../../../research/text-hypermaze/state-dependent-axes.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore,GoalConditionedHyperpath};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore,GoalConditionedHyperpath,NativeCoupledGoalField,StateDependentTextAxes};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -69,7 +71,7 @@ export class Brain {
   }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.goalPaths = new GoalConditionedHyperpath(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.goalPaths = new GoalConditionedHyperpath(); this.numericGoalField = new NativeCoupledGoalField(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -91,6 +93,7 @@ export class Brain {
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
     this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
     this.goalPaths ||= new GoalConditionedHyperpath(); // legacy checkpoints regain learned goal path capacity
+    this.numericGoalField ||= new NativeCoupledGoalField(); // original checkpoint remains readable
     this.worldCore ||= new SharedTransformationCore();
     if(this.unifiedEnabled)this.enableUnifiedWorldLearning();
     else {this.constructedPaths.worldCore=null;setObservedOperatorHook(this.observedTransformations,null);}
@@ -129,7 +132,7 @@ export class Brain {
   // learn = it also lives the words it is told (and its own answer), like any other world; otherwise it only answers.
   chat(history, {T = .6, max = 400, stopBlank = true, learn = false, observePath = false,
     scanTemperatures = null, seed = (Math.random() * 2 ** 32) >>> 0,
-    mode = "legacy-character", required = null, start = null, maxDepth = 5,
+    mode = "goal-path", required = null, start = null, maxDepth = 5,
     ablateAxes = false} = {}) {
     // A real native goal-plan can now produce the COMPLETE planned answer
     // before the first output; it NEVER calls AligningGraph.write().
@@ -275,10 +278,29 @@ export class Brain {
   // Brain. No frozen heldout answer enters the model, and no char predictor
   // decides the goal-directed output of answerByGoalPath().
   learnGoalPathPair(question,answer) {
-    return (this.goalPaths ||= new GoalConditionedHyperpath()).observePair(question,answer);
+    const lexical=(this.goalPaths ||= new GoalConditionedHyperpath()).observePair(question,answer);
+    const coupled=(this.numericGoalField ||= new NativeCoupledGoalField()).observe(question,answer);
+    return {lexical,coupled};
   }
   answerByGoalPath(question,{required=null,start=null,maxDepth=5,ablateAxes=false,
     useUnified=true}={}) {
+    // The coupled local field is trained from actual paired text observations
+    // and predicts the COMPLETE output state without calling AligningGraph.
+    const numeric=this.numericGoalField ||=new NativeCoupledGoalField();
+    const frozenNumeric=numeric.plan(String(question),{ablateAxes});
+    if(frozenNumeric.ready){
+      const executed=numeric.executeFrozen(frozenNumeric);
+      return {text:executed.actual,mode:"goal-path",ready:executed.internalMatch,
+        predictedFullAnswerBeforeFirstCharacter:frozenNumeric.fullShape,
+        initialShape:frozenNumeric.states,stepAxes:frozenNumeric.axisMapping,
+        planSteps:frozenNumeric.actions,execution:executed,
+        learnedStateCount:numeric.report().observedNumericQAPairs,
+        learnedOperatorCount:numeric.report().correlatedTransitions,
+        plannedBeforeFirstAction:true,noNextCharacterFallback:true,
+        verifiedAgainstLearnedActionWorld:executed.internalMatch,
+        externallySemanticallyVerified:false,referenceAnswerUsed:false,
+        modelCoverage:numeric.report(),nativeGoalField:"coupled-state-dependent-axes"};
+    }
     const M=this.observedTransformations ||=new ObservedTransformations();
     const model=this.goalPaths ||=new GoalConditionedHyperpath();
     const shared=useUnified&&this.unifiedEnabled?this.worldCore:null;
@@ -497,10 +519,15 @@ export class Brain {
     const rand = rngFrom(seed), out = [];
     for (const ex of list.slice().sort((a, b) => a.length - b.length)) {
       let a0 = 0; for (let i = 0; i < ex.length - 2; i++) if (ex[i] === 10 && ex[i + 1] === 65 && ex[i + 2] === 58) { a0 = i + 3; break; }
+      // The complete NATIVE goal shape must be predicted from QUESTION ALONE,
+      // before ANY frozen teacher-forced evaluation sees the heldout answer.
+      const holdoutQuestion = a0 ? String.fromCharCode(...ex.slice(0,a0))
+        .replace(/^\s*Q:\s*/,'').replace(/\nA:\s*$/,'').trim() : null;
+      const nativePlan = holdoutQuestion ? this.answerByGoalPath(holdoutQuestion) : null;
       const rows = []; let ok = 0, aok = 0, an = 0, top = 0;
       this.align.readFrozen(ex, (i, y, g, d) => { let b = 32, bv = -1; for (const [c, v] of d) if (v > bv) { bv = v; b = c; } rows.push([y, g]); ok += g === y; top += b === y; if (i >= a0) { aok += g === y; an++; } }, {T, noise, rand});
       let old = 0, oa = 0; for (let i = 0; i < ex.length; i++) { const g = argmax(this.chain.play(this.e, this.ctxOf(ex, i), this.histOf(ex, i)).out); if (i >= a0) old += g === ex[i], oa++; }
-      // the shape of the solution, before it is seen: from the question alone it writes the whole answer
+      // Legacy-character baseline only: this is NOT a learned goal-conditioned solution-shape planner.
       const shape = a0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
       // Separate learned state/action WORLD, rather than the next-character
@@ -520,12 +547,26 @@ export class Brain {
           contextGraphStates:planned.graphStates,finished:planned.finished,
           trace:planned.path.slice(0,120),beforeAnswer:true};
       }
+      const heldAnswer=a0 ? String.fromCharCode(...ex.slice(a0)).trim() : null;
+      const nativeGoal=nativePlan ? {
+        mode:nativePlan.mode,ready:nativePlan.ready,
+        wholePredictedBeforeFirstCharacter:nativePlan.predictedFullAnswerBeforeFirstCharacter||"",
+        executedAnswer:nativePlan.text||"",
+        fullAnswerExact:nativePlan.ready && nativePlan.text.trim()===heldAnswer,
+        externalReferenceScoredAfterPlanning:true,
+        modelInternalSuccess:nativePlan.verifiedAgainstLearnedActionWorld??false,
+        requiredAxes:nativePlan.stepAxes||[],steps:nativePlan.planSteps?.length||0,
+        reason:nativePlan.reason||null,noNextCharacterFallback:nativePlan.noNextCharacterFallback
+      }:null;
       out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
         shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null,
+        shapeLegacyDiagnosticOnly:true,nativeGoal,
+        nativeGoalExact: nativeGoal ? +(nativeGoal.fullAnswerExact) : null,
         constructed,constructedAccuracy}); }
     const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
     return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer"),
-      constructedAccuracy:av("constructedAccuracy")};
+      constructedAccuracy:av("constructedAccuracy"), nativeWholeAnswerExact:av("nativeGoalExact"),
+      nativeGoalNoTeacherAnswerDuringPlanning:true};
   }
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;

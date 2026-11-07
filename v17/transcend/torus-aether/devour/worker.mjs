@@ -177,25 +177,78 @@ const stage = name => {
   }
 };
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
+// Real accounting for every existing phase; never omit a learner to inflate rate.
+const goalTimings = {startedAt:performance.now(),sourceRows:0,sourceBytes:0,
+  phases:Object.create(null)};
+const measureGoal = (name,fn) => {
+  const t0=performance.now();
+  try { return fn(); } finally {
+    const ms=performance.now()-t0;
+    const s=goalTimings.phases[name] ||= {calls:0,totalMs:0,maxMs:0};
+    s.calls++;s.totalMs+=ms;s.maxMs=Math.max(s.maxMs,ms);
+  }
+};
+const measureGoalAsync = async (name,fn) => {
+  const t0=performance.now();
+  try {return await fn();}finally{
+    const ms=performance.now()-t0;
+    const s=goalTimings.phases[name] ||= {calls:0,totalMs:0,maxMs:0};
+    s.calls++;s.totalMs+=ms;s.maxMs=Math.max(s.maxMs,ms);
+  }
+};
+const goalTelemetry = () => {
+  const elapsedMs=performance.now()-goalTimings.startedAt;
+  return {sourceRows:goalTimings.sourceRows,sourceBytes:goalTimings.sourceBytes,
+    measuredWallSeconds:+(elapsedMs/1000).toFixed(3),
+    measuredRowsPerSecond:elapsedMs>0?+(1000*goalTimings.sourceRows/elapsedMs).toFixed(3):0,
+    measuredBytesPerSecond:elapsedMs>0?+(1000*goalTimings.sourceBytes/elapsedMs).toFixed(3):0,
+    phases:Object.fromEntries(Object.entries(goalTimings.phases).map(([k,v])=>
+      [k,{calls:v.calls,totalMs:+v.totalMs.toFixed(3),maxMs:+v.maxMs.toFixed(3)}]))};
+};
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
+// Heldout answers are NEVER observed as training. A complete frozen route
+// is produced from the Q alone; the A is consulted ONLY after planning.
+const goalHeldoutEval = () => {
+  const paragraphs=evalText.split(/\n\s*\n/);
+  let tested=0,exact=0,planned=0,noPath=0,totalAnswerChars=0;
+  for(const para of paragraphs){
+    if(!/(?:^|\n)\s*(?:A|Assistant)\s*:/im.test(para))continue;
+    const row=splitObservedText(para);
+    if(!row||row.provenance!=="observed-QA")continue;
+    const result=brain.answerByGoalPath(row.prompt);
+    tested++;planned+=+(result.ready===true);noPath+=+(result.ready!==true);
+    totalAnswerChars+=row.answer.length;
+    exact+=+(result.ready===true&&result.text.trim()===row.answer.trim());
+  }
+  return {tested,planned,exact,failedToPlan:noPath,exactRate:tested?exact/tested:null,
+    referenceAnswerUsedOnlyAfterFullPlan:true,totalAnswerChars,
+    caution:"Only complete Q/A records in existing HELDOUT split; text semantics not guaranteed"};
+};
 const report = (final = false) => {
   stage("CPU: evaluare înghețată + statistici");
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
-    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
+    speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT && !workerData.goalTraining ? brain.test(H) : null,
+    nativeGoalHeldout: TEXT ? (workerData.goalTraining ? measureGoal("frozen-heldout-whole-answer",goalHeldoutEval) : goalHeldoutEval()) : null, goalTraining: !!workerData.goalTraining, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
     shared: shared.status(), worldCore: brain.unifiedEnabled?brain.worldCore.report():null,
     constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     goalHyperpath: brain.goalPaths?.status() || null,
+    nativeGoalField: brain.numericGoalField?.report() || null,
+    goalPipeline: workerData.goalTraining ? goalTelemetry() : null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try {
     stage("CPU: salvare checkpoint V17");
-    selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText();
+    selfcode?.save();
+    msg.savedMB=(workerData.goalTraining ?
+      measureGoal("native-brain-checkpoint",()=>brain.save(saveFile)) :
+      brain.save(saveFile))/1e6;
+    if(workerData.goalTraining)measureGoal("language-sidecar-checkpoint",saveText);else saveText();
   } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
   stage(final ? "antrenament terminat" : "continuă următorul lot");
@@ -206,6 +259,8 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     goalHyperpath: brain.goalPaths?.status() || null,
+    nativeGoalField: brain.numericGoalField?.report() || null,
+    goalPipeline: workerData.goalTraining ? goalTelemetry() : null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
@@ -421,6 +476,69 @@ for await (const ex of stream()) {
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
+  if (TEXT && workerData.goalTraining) {
+    // Genuine fast structural training path: every source row enters all the
+    // existing semantic/multiscale/causal learners. The disallowed TextCard
+    // next-character objective and its expensive byte-by-byte visualization
+    // are NOT trained in this explicit experimental mode.
+    stage("GOAL: observații reale → axe → transformări → trasee");
+    const rowBefore=brain.chars;
+    if(ex.prompt&&ex.answer&&(brain.exercises||0)%32===0){
+      // ONLINE blind prediction: do this BEFORE any model sees the current
+      // row. The real answer is used afterwards for independent scoring.
+      const first=measureGoal("blind-infer",()=>brain.answerByGoalPath(ex.prompt));
+      parentPort.postMessage({type:"goal-live",w:workerData.gw,
+        exercise:(brain.exercises||0)+1,observedBytes:ex.bytes.length,
+        question:ex.prompt.slice(0,1200),
+        predictedBeforeObserved:(first.text||"").slice(0,5000),
+        actualAfterPlanning:ex.answer.slice(0,5000),
+        exact:first.ready===true&&first.text.trim()===ex.answer.trim(),
+        wholePlanReady:first.ready===true,
+        stepCount:first.planSteps?.length||0,
+        noNextCharacterFallback:first.noNextCharacterFallback===true,
+        frozenRoute:{
+          mode:first.mode,ready:!!first.ready,reason:first.reason||null,
+          predictedFullAnswerBeforeFirstCharacter:first.predictedFullAnswerBeforeFirstCharacter||"",
+          initialShape:first.initialShape?.slice(0,120)||[],
+          stepAxes:first.stepAxes?.slice(0,120)||[],
+          planSteps:first.planSteps?.slice(0,120)||[],
+          execution:first.execution?{
+            actual:first.execution.actual||first.text||"",
+            frames:first.execution.frames?.slice(0,121)||[],
+            internalMatch:first.execution.internalMatch??first.execution.success??false,
+            executedSteps:first.execution.executedSteps??first.execution.executed??0
+          }:null,
+          noNextCharacterFallback:first.noNextCharacterFallback===true
+        },
+        trainedBeforeRow:brain.exercises||0});
+    }
+    brain.exercises=(brain.exercises||0)+1;
+    brain.chars+=ex.bytes.length; // all source bytes were presented to the structural world
+    measureGoal("language-perspectives",()=>absorbLanguage(ex));
+    measureGoal("constructed-path-and-coupled-axes",()=>absorbConstructed(ex));
+    measureGoal("observed-text-transformations",()=>absorbObservedDifferences(ex));
+    measureGoal("causal-actions-shared-experience",()=>absorbText(ex));
+    goalTimings.sourceRows++;goalTimings.sourceBytes+=ex.bytes.length;
+    observedPipeline.lastLoop={TEXT:true,goalTraining:true,startedAtChars:rowBefore,
+      now:brain.chars,livedChars:ex.bytes.length,rowBytes:ex.bytes.length,
+      completeRowObserved:true,exercises:brain.exercises};
+    if((MAZE||TRANS||SELF_CODE)&&brain.chars>=nextMaze){
+      nextMaze=brain.chars+mazeEvery;
+      stage("GOAL: lumi fizice labirint + transformări");await measureGoalAsync("actual-maze-transform-worlds",()=>worldsOnce(false));
+    }
+    if(gpuSet&&shared.queue.length>=256){
+      stage("GOAL: CUDA actualizează reprezentarea comună");await measureGoalAsync("shared-latent-update",()=>flushShared());
+    }
+    if(brain.chars>=nextTest){
+      while(brain.chars>=nextTest)nextTest+=every;
+      stage("GOAL: evaluare frozen + checkpoint");report();
+    }
+    if((brain.exercises||0)%16===0){
+      measureGoal("live-snapshot",()=>shot());await new Promise(r=>setImmediate(r));
+    }
+    if(brain.chars>=maxChars||stop)break;
+    continue;
+  }
   if (TEXT && gpuSet) {
     if (gpuError || !(await gpuOn())) {
       parentPort.postMessage({type: "fatal", w: workerData.gw, text: "CUDA unavailable: " + (gpuError || "backend did not initialize")});

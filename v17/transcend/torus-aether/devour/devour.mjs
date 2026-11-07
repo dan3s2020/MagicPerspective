@@ -27,6 +27,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 2), textChunk: +arg("gpu-text-chunk", 128), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
 const unifiedWorld = process.argv.includes("--unified-world");
+const goalTraining = process.argv.includes("--goal-training"); // full observed Q/A state transitions, not TextCard next-character objective
 for (const x of worldsArg) if (!["text", "maze", "transform", "selfcode"].includes(x)) throw Error("unknown world " + x + " (text, maze, transform, selfcode)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
@@ -52,6 +53,7 @@ if (arg("text")) {
 }
 evalText = evalText.slice(0, evalChars);
 fs.mkdirSync(out, {recursive: true}); const log = fs.createWriteStream(path.join(out, "log.jsonl"), {flags: "a"});
+if(goalTraining)console.log("CAUSAL GOAL-TRAINING: structural observed Q/A + learned world transforms (no TextCard character training); all source rows consumed.");
 console.log(`worlds: ${worldsArg.join(" + ")} in the same brains${worldsArg.includes("maze") ? ` (a labyrinth every ${mazeEvery.toLocaleString()} chars)` : ""} · saves in ${path.join(out, "brains")}${resume ? " · resuming" : ""}`);
 console.log(`GPU worlds: ${gpuSettings.device === "off" ? "off (worlds one at a time on the CPU)" : `${gpuSettings.device} · ${gpuSettings.worlds} worlds at once · VRAM ${gpuSettings.vram || "all"} GB · ${gpuSettings.util}% of the GPU`}`);
 console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name).join(", ")} · test every ${every.toLocaleString()} chars on ${evalText.length} unseen chars · memory budget ${memGB} GB each`);
@@ -61,7 +63,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map();
 const realTextStreams = new Map(); // bounded real observed CUDA predictions, not generated demo
 const streamFor = w => {
-  if (!realTextStreams.has(w)) realTextStreams.set(w, {seq: 0, events: [], phase: "pregătire", phaseAt: Date.now()});
+  if (!realTextStreams.has(w)) realTextStreams.set(w, {seq: 0, events: [], goalSeq:0, goalEvents:[], phase: "pregătire", phaseAt: Date.now()});
   return realTextStreams.get(w);
 }; let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
@@ -111,6 +113,10 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
+    nativeGoalField: t?.final ? t.nativeGoalField : g?.nativeGoalField || t?.nativeGoalField || null,
+    nativeGoalHeldout: t?.nativeGoalHeldout || null,goalTraining,
+    goalPipeline: g?.goalPipeline || t?.goalPipeline || null,
+    goalHyperpath: t?.final ? t.goalHyperpath : g?.goalHyperpath || t?.goalHyperpath || null,
     worldCore: t?.final?t.worldCore:g?.worldCore||t?.worldCore||null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
@@ -129,12 +135,19 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
-    unifiedWorld}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    unifiedWorld,goalTraining}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
     if (m.type === "phase") {
       const q = streamFor(sl.w); q.phase = String(m.phase || "necunoscut"); q.phaseAt = Date.now();
+      return;
+    }
+    if(m.type==="goal-live"){
+      const q=streamFor(sl.w);
+      q.goalEvents.push({...m,seq:++q.goalSeq,at:Date.now()});
+      if(q.goalEvents.length>32)q.goalEvents.splice(0,q.goalEvents.length-32);
+      q.phase="GOAL: inferență blind pe întrebări reale + învățare";q.phaseAt=Date.now();
       return;
     }
     if (m.type === "text-live") {
@@ -406,6 +419,14 @@ http.createServer((req, res) => {
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null});
   }
+  if(url==="/goal-stream"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl)return json(res,{error:"Graph not found",w});
+    const g=streamFor(w),after=Math.max(0,+(q.get("after")||0));
+    return json(res,{w,goalTraining,sequence:g.goalSeq,
+      events:g.goalEvents.filter(x=>x.seq>after).slice(-32),
+      actualFullAnswersNotSentWhenLong:true});
+  }
   if (url === "/text-stream") {
     const w = +(q.get("w") || 0), sl = slots.find(x => x.w === w);
     if (!sl) return json(res, {error: "Graph not found", w});
@@ -415,7 +436,7 @@ http.createServer((req, res) => {
       events: stream.events.filter(e => e.seq > after).slice(-110),
       committedExercises: Math.max(graphs.get(w)?.exercises || 0, last.get(w)?.exercises || 0)});
   }
-  if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
+  if (url === "/graphs") return json(res, {world, every, goalTraining, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
     res.writeHead(g ? 200 : 404, {"content-type": "application/json", "cache-control": "no-store"});
     return res.end(g ? JSON.stringify({...g, test: last.get(w)?.test || null, world}) : "{}"); }
