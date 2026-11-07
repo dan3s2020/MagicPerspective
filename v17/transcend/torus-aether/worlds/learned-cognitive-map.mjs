@@ -2,7 +2,7 @@
 // The original Discoverer.shape law is imported verbatim from V18 shape-topology.
 // No hidden answer strings, maze BFS distances or oracle solution paths enter training.
 import {shapeOnLearnedTopology} from '../language-maze/shape-topology.mjs';
-import {KIND} from './exercise.mjs';
+import {KIND,Discoverer} from './exercise.mjs';
 
 export const tokenizeWorld = s => String(s).normalize('NFC')
   .match(/[\p{L}\p{M}\p{N}_]+(?:['’\-][\p{L}\p{M}\p{N}_]+)*|[^\s]/gu) || [];
@@ -29,6 +29,33 @@ const contextMatches=(r,t,op)=>{
   return true;
  });
 };
+
+
+// V22 exact direct ORIGINAL V17 function, not the V19 parallel reimplementation.
+// The world is learned from real complete-sentence contrasts/action results.
+// The *only* input goal is a checkable state predicate supplied BEFORE action.
+// No answer string, hidden heldout target or oracle route is ever an edge.
+function originalDiscovererOnText(world,disc,{seed=74129,temperature=null}={}){
+  const actor=new Discoverer(seed);
+  // An evaluator cannot advance the training Brain RNG; a separate seeded
+  // original Discoverer has precisely the same V17 uphill-noise sampling.
+  actor.temp=temperature===null?(disc?.temp||0):Math.max(0,Number(temperature)||0);
+  const kinds=world.states.map((_,i)=>i===world.start?KIND.self:
+    world.targets.includes(i)?KIND.target:KIND.floor);
+  const conduct=k=>k===KIND.wall?0:
+    k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1;
+  const attract=k=>k===KIND.target?1:0;
+  let values=[];
+  const path=actor.shape(kinds,0,world.start,{
+    neighbors:world.neighbors,conduct,attract,
+    onField:observed=>{values=observed;}
+  })||[];
+  return {path,nodes:[world.start,...path.map(h=>h.to)],values,
+    reason:path.length?'SHAPE_PROPAGATED':'NO_ASCENDING_PATH',
+    propagation:'DIRECT_ORIGINAL_DISCOVERER_SHAPE',
+    originalMethod:'Discoverer.shape',
+    temperature:actor.temp};
+}
 
 export class LearnedCognitiveMap {
   constructor({maxExamples=50000,maxRules=30000,maxNodes=768,maxDepth=12}={}){
@@ -279,14 +306,12 @@ export class LearnedCognitiveMap {
     const targets=states.flatMap((state,i)=>LearnedCognitiveMap.matchGoal(state,goal)?[i]:[]);
     if(!targets.length)return {found:false,reason:'GOAL_NOT_REACHED_IN_OBSERVED_TRANSITIONS',
       domain,states:states.length,learnedEdges:outgoing.size,path:[]};
-    const kinds=states.map((_,i)=>i===0?KIND.self:targets.includes(i)?KIND.target:KIND.floor);
-    const field=shapeOnLearnedTopology({kinds,neighbors,start:0,
-      conduct:k=>k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1,
-      attract:k=>k===KIND.target?1:0});
-    return {found:!!field.path&&targets.includes(field.path.at(-1)?.to),
+    const field=originalDiscovererOnText({states,neighbors,start:0,targets},disc);
+    return {found:!!field.path?.length&&targets.includes(field.path.at(-1)?.to),
       domain,states:states.length,learnedEdges:outgoing.size,
       path:field.path||[],field,plannedBeforeAction:true,
-      interpretation:'Original V17 shape over observed transitions ONLY; no unseen action physics inferred.'};
+      directOriginalMethod:'Discoverer.shape',
+      interpretation:'DIRECT original V17 Discoverer.shape on observed action transitions ONLY; unseen action physics never inferred.'};
   }
   // Goal is a CHECKABLE predicate on the generated state; the finished sentence
   // is NEVER supplied as a target string, node, hidden path, or teacher-forced prefix.
@@ -339,17 +364,16 @@ export class LearnedCognitiveMap {
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
     if(!world.targets.length)return {found:false,reason:'NO_GOAL_STATE_IN_LEARNED_MAP',world,
       learnedRules:this.rules.size,path:[],field:null};
-    const kinds=world.states.map((_,i)=>i===world.start?KIND.self:world.targets.includes(i)?KIND.target:KIND.floor);
-    // A goal predicate is explicit like the goal cell in the original maze.
-    // The navigable edges, unlike the original fixed hypercube, are learned.
-    const conduct=k=>k===KIND.wall?0:(k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1);
-    const attract=k=>k===KIND.target?1:0;
-    const field=shapeOnLearnedTopology({kinds,neighbors:world.neighbors,start:0,conduct,attract});
+    // This invokes the ACTUAL original Discoverer.shape method from
+    // exercise.mjs with the discovered N-D text-world adjacency. No V19/V20
+    // substitute field planner is used for this action path.
+    const field=originalDiscovererOnText(world,disc);
     const path=field.path||[];
     const reached=path.length?world.targets.includes(path.at(-1).to):world.targets.includes(0);
     return {found:reached,path,world,field,goal:clone(goal),
       learnedRules:this.rules.size,novelGoal:reached&&!this.examples.has(key(world.states[path.at(-1)?.to??0])),
-      plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
+      plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97',
+      directOriginalMethod:'Discoverer.shape',noise:field.temperature};
   }
   // The path is constructed FIRST. Every step then calls a REAL environment
   // callback; failures produce feedback (walls) and stop, never silently pass.
