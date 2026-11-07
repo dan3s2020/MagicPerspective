@@ -31,7 +31,7 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 <body>
 <header><div><h1>MagicPerspective V24 — training real, forma soluției</h1>
 <small>Trasee din <b>Discoverer.shape()</b> original · tranziții Q/A observate · ipotezele sunt separate de fapte</small></div>
-<div class="row"><button id="toggleOld">Ascunde/arată UI original V17</button><span id="connection" class="muted" aria-live="polite">Conectare...</span></div></header>
+<div class="row"><button id="toggleOld">Afișează UI original V17 (când e pornit)</button><span id="nativeStatus" class="muted">V17: verificare port...</span><span id="connection" class="muted" aria-live="polite">Conectare...</span></div></header>
 <main id="layout" class="compact">
 <div id="oldPane" class="closed">
 <div class="row" style="padding:8px 12px"><strong>UI original V17, neschimbat</strong>
@@ -108,17 +108,41 @@ if(Number.isInteger(nativePort)&&nativePort>=1024&&nativePort<=65535){
  $("oldUI").dataset.nativeUrl="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
 }
 let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false,historySignature="";
-let pathTimer=null,playbackPaused=false,currentGraph=null,historySelection=""; // predicted route, not actual execution
+let pathTimer=null,playbackPaused=false,currentGraph=null,historySelection="",nativeOnline=false; // predicted route, not actual execution
 const SVG="http://www.w3.org/2000/svg";
 function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
  for(const [k,v] of Object.entries(attrs||{}))n.setAttribute(k,String(v));
  if(text!==undefined)n.textContent=String(text);parent.appendChild(n);return n;}
 const set=(id,s)=>{$(id).textContent=String(s);};
 const pct=(a,b)=>b?((100*a/b).toFixed(2)+"%"):"—";
-$("toggleOld").onclick=()=>{const shown=$("oldPane").classList.toggle("closed")===false;
+$("toggleOld").onclick=()=>{
+ if(!nativeOnline){
+  set("nativeStatus","V17 este oprit. UI V24 și traseele reale funcționează fără portul V17.");
+  return;
+ }
+ const shown=$("oldPane").classList.toggle("closed")===false;
  $("layout").classList.toggle("compact",!shown);
  if(shown&&$("oldUI").src==="about:blank")$("oldUI").src=$("oldUI").dataset.nativeUrl;
 };
+async function detectOriginal(){
+ try{
+  const resp=await fetch("/api/native?port="+encodeURIComponent(nativePort),{cache:"no-store"});
+  const found=await resp.json();
+  nativeOnline=found.online===true;
+  if(nativeOnline){
+   const url="http://127.0.0.1:"+found.port+"/transcend/torus-aether/ui/index.html?live=1";
+   $("oldUI").dataset.nativeUrl=url;
+   set("nativeStatus","V17 LIVE pe port "+found.port+" · "+found.graphs+" creiere");
+  }else{
+   set("nativeStatus","V17 separat este oprit; V24 rulează independent");
+   if(!$("oldPane").classList.contains("closed")){
+    $("oldPane").classList.add("closed");$("layout").classList.add("compact");
+    $("oldUI").src="about:blank";
+   }
+  }
+ }catch(e){nativeOnline=false;set("nativeStatus","V17 nu răspunde: "+e.message);}
+}
+
 // Place the actually computed hypergraph above the fold, not below the statistics.
 $("newPane").insertBefore($("paths").closest("section"),$("newPane").firstElementChild);
 $("temperature").oninput=()=>set("temperatureLabel",$("temperature").value);
@@ -322,6 +346,7 @@ $("predict").onclick=async()=>{try{const prompt=$("query").value;
  catch(e){set("queryResult","Eroare: "+e.message);}};
 async function poll(){try{const s=await json("/api/status");render(s);}
  catch(e){set("connection","● backend offline: "+e.message);$("connection").className="warn";}}
-setInterval(poll,750);setInterval(history,2500);poll();history();
+setInterval(poll,750);setInterval(history,2500);setInterval(detectOriginal,12000);
+poll();history();detectOriginal();
 </script>
 </body></html>
