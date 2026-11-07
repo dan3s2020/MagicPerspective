@@ -55,8 +55,8 @@ test("ORIGINAL V17 worker reads ACTUAL repository corpus, owns trained xD transf
      return r.xdAtlas?.trainedWorlds>=1&&r.nativePathAtlas?.episodes>=1?r:null;
    });
    assert.ok(trained.xdAtlas.solved>=1);
-   assert.equal(trained.xdAtlas.last.atlas.fullWorld.completeFiniteMap,undefined,
-     "Do not duplicate 128 vertices inside every live summary when not requested");
+   assert.equal(trained.xdAtlas.last.atlas.fullWorld.completeFiniteMap,true,
+     "The user explicitly requires the FULL physical finite world in the live UI");
    assert.ok(trained.xdAtlas.last.atlas.allKnownPhysicalEdges.length>0);
    assert.ok(trained.nativePathAtlas.last);
    assert.equal(trained.nativePathAtlas.last.beforeTraining,true);
