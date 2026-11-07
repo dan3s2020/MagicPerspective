@@ -114,7 +114,8 @@ export class RealTrainer{
      this.progress.onlineF1Sum+=score.wordF1;
      const exactOld=plan.learnedContexts?.some(c=>normalize(c.question)===normalize(row.prompt))||false;
      this.progress.onlineExactQuestionRepeat+=Number(exactOld);
-     this.trace={row:row.index,question:row.prompt.slice(0,5000),predicted:plan.answer.slice(0,5000),
+     this.trace={row:row.index,beforeAction:plan.beforeAction,method:plan.method,
+       question:row.prompt.slice(0,5000),predicted:plan.answer.slice(0,5000),
        found:plan.found,exact:score.exact,wordF1:score.wordF1,route:plan.route,
        nodes:plan.nodes,edges:plan.edges,field:plan.field,
        hypotheses:plan.learnedContexts,
