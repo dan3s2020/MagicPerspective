@@ -19,6 +19,7 @@ import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {QuestionGoalNavigator} from "../worlds/question-goal-navigation.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -384,6 +385,108 @@ http.createServer((req, res) => {
       sl.wk.postMessage({cognitiveObserve:{id,before:m.before,action:m.action,
         after:m.after,accepted:m.accepted}});
     });return;
+  }
+  // V24 exact-original-shape path inferred from QUESTION ALONE.
+  // This endpoint does not accept an answer, a target token or a teacher route.
+  if(req.method==="POST"&&url==="/question-goal-plan"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>125000)req.destroy();});
+    req.on("end",()=>{
+      try{
+        const m=JSON.parse(body),sl=slots.find(x=>x.w===Number(m.w??0));
+        if(!sl||!sl.worlds.includes("cognitivemap"))
+          return json(res,{error:"The native V24 cognitive text world must be enabled"});
+        if(typeof m.question!=="string"||!m.question.trim()||m.question.length>100000)
+          return json(res,{error:"A nonempty question up to 100000 characters is required"});
+        const maxNodes=Math.max(20,Math.min(4000,Math.trunc(Number(m.maxNodes)||1500))),
+          temperature=Math.max(0,Math.min(2,Number(m.temperature)||0));
+        if(!sl.wk){
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Native V24 Brain checkpoint not saved"});
+          const brain=Brain.load(file);
+          if(!brain.questionGoalNavigator||!brain.cognitiveMap)
+            return json(res,{error:"Saved Brain does not yet contain trained V24 goal paths"});
+          const navigator=QuestionGoalNavigator.restore(brain.questionGoalNavigator),
+            cognitive=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const before=JSON.stringify([navigator.export(),cognitive.report()]);
+          const result=navigator.plan(m.question,{map:cognitive,geometry:brain.trace.geo,
+            disc:{temp:temperature},maxNodes});
+          const movement=result.ready?navigator.execute(result,{map:cognitive}):null;
+          if(before!==JSON.stringify([navigator.export(),cognitive.report()]))
+            throw Error("Frozen saved question-goal plan mutated learned state");
+          return json(res,{...result,movement,frozen:true,fromSave:true});
+        }
+        const id=++chatId,timer=setTimeout(()=>{
+          chats.delete(id);json(res,{error:"Native original Discoverer question-goal plan timed out"});
+        },120000);
+        chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+        sl.wk.postMessage({questionGoalPlan:{id,question:m.question,maxNodes,temperature}});
+      }catch(err){json(res,{error:err.message});}
+    });
+    return;
+  }
+  // Strict held-out: only the questions ever enter the planning worker.
+  // Their reference answers stay in the HTTP parent until all paths return.
+  if(req.method==="POST"&&url==="/question-goal-heldout"){
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("cognitivemap"))
+      return json(res,{error:"This graph has no V24 cognitive text world"});
+    if(source.kind!=="parquet")
+      return json(res,{error:"Exact episode-disjoint Parquet held-out split required"});
+    const count=Math.max(1,Math.min(16,Math.trunc(+(q.get("count")||4)))),
+      maxNodes=Math.max(20,Math.min(4000,Math.trunc(+(q.get("maxNodes")||1200))));
+    void (async()=>{
+      const ds=await openTextDataset(source.root);
+      if(ds.held<count)throw Error("Not enough original Parquet held-out rows");
+      const samples=[];
+      for(let i=0;i<count;i++)samples.push(await ds.heldOut(i));
+      const planOne=question=>{
+        if(!sl.wk){
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return Promise.reject(Error("No saved native V24 Brain"));
+          const brain=Brain.load(file);
+          if(!brain.questionGoalNavigator||!brain.cognitiveMap)
+            return Promise.reject(Error("Question-goal model not trained/saved"));
+          const nav=QuestionGoalNavigator.restore(brain.questionGoalNavigator),
+            cognitive=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          return Promise.resolve(nav.plan(question,{map:cognitive,geometry:brain.trace.geo,maxNodes}));
+        }
+        return new Promise((resolve,reject)=>{
+          const id=++chatId,timer=setTimeout(()=>{
+            chats.delete(id);reject(Error("Held-out frozen question route timed out"));
+          },120000);
+          chats.set(id,result=>{clearTimeout(timer);
+            result.error?reject(Error(result.error)):resolve(result);});
+          sl.wk.postMessage({questionGoalPlan:{id,question,maxNodes,temperature:0}});
+        });
+      };
+      const results=[];
+      for(const row of samples){
+        // Only QUESTION travels into worker. Score reference strictly afterward.
+        const planned=await planOne(row.prompt);
+        const truth=String(row.answer).normalize("NFC").trim(),output=planned.ready?
+          String(planned.predictedText).normalize("NFC").trim():"";
+        const a=truth.match(/[\p{L}\p{M}\p{N}_]+(?:['’\-][\p{L}\p{M}\p{N}_]+)*|[^\s]/gu)||[];
+        const b=output.match(/[\p{L}\p{M}\p{N}_]+(?:['’\-][\p{L}\p{M}\p{N}_]+)*|[^\s]/gu)||[];
+        let correct=0;for(let i=0;i<Math.min(a.length,b.length);i++)correct+=a[i]===b[i]?1:0;
+        results.push({index:row.index,questionChars:row.prompt.length,
+          answerChars:truth.length,generatedChars:output.length,
+          found:planned.ready===true,originalMethod:planned.originalOperator||null,
+          steps:planned.plannedSteps||0,exact:!!output&&output===truth,
+          characterExact:false,
+          tokenPositionAccuracy:correct/Math.max(1,a.length),
+          predictedPreview:output.slice(0,250),
+          error:planned.ready?null:planned.reason||"no learned path"});
+        results.at(-1).characterExact=!!output&&output===truth;
+      }
+      const n=results.length,good=results.filter(x=>x.exact).length,found=results.filter(x=>x.found).length;
+      return json(res,{frozen:true,source:"Original OpenThoughts3 Parquet held-out rows, never trained",
+        referenceAnswerOnlyInHTTPParent:true,
+        total:n,found,exact:good,exactPercent:n?good/n*100:null,
+        positionMean:results.reduce((s,r)=>s+r.tokenPositionAccuracy,0)/Math.max(1,n),
+        allCorrect:good===n,sufficientForUniversal100PctProof:false,results,
+        warning:"Correctly routed observed tokens are not necessarily a correct unseen answer."});
+    })().catch(err=>json(res,{error:err.message}));
+    return;
   }
   if (req.method === "POST" && url === "/cognitive-eval") {
     let body="";req.on("data", d => {body+=d;if(body.length>32768)req.destroy();});
