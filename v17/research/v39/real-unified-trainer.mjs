@@ -191,7 +191,7 @@ export function statusOf(brain,config,source){
 }
 function dashboard(base,token){
  const esc=JSON.stringify(token);
- return \`<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MagicPerspective V39 · Original Brain</title>
+ return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MagicPerspective V39 · Original Brain</title>
 <style>:root{color-scheme:dark}body{font:15px system-ui;background:#070d17;color:#e8f0f7;margin:2vw auto;max-width:1040px;padding:10px}h1{font:35px Georgia,serif}p{color:#a9c3d5}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.cell{background:#101d2c;border:1px solid #29425b;border-radius:13px;padding:17px}.cell strong{display:block;font:30px Georgia;margin:8px 0}button{padding:12px;margin:7px 5px 4px 0;background:#1b3348;color:#e5edf7;border:1px solid #456781;border-radius:9px;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.55 Consolas,monospace;background:#101d2c;padding:16px;border:1px solid #29425b;border-radius:12px;max-height:340px;overflow:auto}progress{width:100%;height:23px}small{color:#99b8c9}</style></head><body>
 <small>REAL Original V17/V34 Brain · V38 human-source semantic preference · frozen external validation</small>
 <h1>MagicPerspective — Training real, checkpoint permanent</h1><p>Un singur Brain.v8 pentru labirinte 2D, transformări textuale TinyStories și selecție semantică SQuAD. Nu înlocuiește interfața veche; funcțiile CUDA nu sunt activate automat.</p>
@@ -201,7 +201,7 @@ function dashboard(base,token){
 <div><button id="pause">Ⅱ Pauză</button><button id="resume">▶ Continuă</button><button id="save">◈ Salvează acum</button></div>
 <h2>Evaluare înghețată și blocaje de design</h2><pre id="data">Conectez la motorul original…</pre>
 <script>
-const tok=\${esc},$=id=>document.getElementById(id);
+const tok=${esc},$=id=>document.getElementById(id);
 async function req(route,method='GET'){const r=await fetch(route,{method,headers:{'x-v39-control-token':tok},cache:'no-store'});return r.json()}
 for(const key of ['pause','resume','save'])$(key).onclick=async()=>{const x=await req('/control?do='+key,'POST');if(x.error)alert(x.error);await refresh()};
 async function refresh(){try{const x=await req('/status');let cards=[
@@ -213,7 +213,7 @@ async function refresh(){try{const x=await req('/status');let cards=[
 ['Viteză',x.measuredExamplesPerSecond?.toFixed(1)+' exemple/s'||'încă necalculată']
 ];$('cards').replaceChildren(...cards.map(([k,v])=>{const d=document.createElement('div');d.className='cell';const label=document.createElement('small');label.textContent=k;const strong=document.createElement('strong');strong.textContent=String(v);d.append(label,strong);return d}));$('qa').value=x.percentQA||0;$('story').value=x.percentTinyStories||0;$('data').textContent=JSON.stringify({status:x.state,validation:x.validation,independentDev:x.independentDev,designLimits:{originalTextRejections:x.originalTextRejections,qaUnrepresentable:x.humanQAUnrepresentable,CUDAHardwareVerified:x.actualCudaVerified,generalIntelligenceProven:x.finalGeneralIntelligenceProven},checkpoint:x.lastCheckpoint},null,2)}catch(e){$('data').textContent=e.message}}
 refresh();setInterval(refresh,1500);
-</script></body></html>\`;
+</script></body></html>`;
 }
 export async function runOriginalV39(config){
  const out=path.resolve(config.out);
