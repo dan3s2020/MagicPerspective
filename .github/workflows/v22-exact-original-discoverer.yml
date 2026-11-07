@@ -1,0 +1,57 @@
+name: V22 exact original Discoverer to observed text-world acceptance
+on:
+  push:
+    branches:
+      - experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-maze-and-language:
+    name: Original V17 byte source + 2D noise parity + learned N-D text
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source hash, 84 original maze episodes and direct Discoverer on genuinely unseen text composition
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Preserve existing V19 cognitive agent tests, actual action feedback and goal no-leak
+        run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Original V19 native HTTP runtime with heldout composition
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+      - name: Native V21 contextual/observed-graph original regressions
+        run: |
+          node --test v17/tests/veil-aether.test.mjs
+          node --test v17/tests/veil-aether.observed-action-field.test.mjs
+          node --test v17/tests/veil-aether.dataset-progress.test.mjs
+          node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
+      - name: V21 original Q/A branch resume and full native HTTP
+        run: |
+          node --test v17/tests/veil-aether.text-migration.test.mjs
+          node --test v17/tests/veil-aether.http.test.mjs
+      - name: V22 original source and JS UI parse, keep all existing controls
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+  windows-original-launcher:
+    name: Keep exact Windows PowerShell 5.1 launcher intact
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native Windows PowerShell 5.1 source parser and no malformed ANSI
+        shell: powershell
+        run: |
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'Requires Windows PowerShell 5.1' }
+          foreach ($file in @('v17/START_V21_AETHER_VEIL.ps1','v17/ENSURE_V21_CUDA.ps1')) {
+            $bytes=[System.IO.File]::ReadAllBytes((Resolve-Path $file).Path)
+            if (@($bytes | Where-Object { $_ -gt 127 }).Count -gt 0) { throw ('Non ASCII in '+$file) }
+            $tokens=$null;$errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path,[ref]$tokens,[ref]$errors)
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
