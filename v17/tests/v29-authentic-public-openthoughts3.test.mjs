@@ -99,6 +99,14 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   assert.equal(measured.heldoutRows,4);
   assert.equal(measured.qaFrozenHeldoutQuestions,4);
   assert.equal(measured.qaTrainingPairs,20);
+  // Long-form replies are NOW physically observed in a bounded original
+  // Brain sequential hypermaze rather than rejected above 128 tokens.
+  // This is evidence consumption, NOT answer-generation success.
+  assert.equal(measured.qaLongFormEpisodes,20);
+  assert.ok(measured.qaLongFormAnswerTokens>500000);
+  assert.ok(measured.qaLongFormSequentialEdges>0);
+  assert.ok(measured.qaLongFormActiveChunkDigests>0);
+  assert.equal(measured.qaLongFormUnretained,0);
   assert.ok(measured.qaFrozenWholeRawExact>=0&&
    measured.qaFrozenWholeRawExact<=4);
   assert.equal(measured.qaFrozenGoalsFound>=0,true);
@@ -106,6 +114,15 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   const progress=JSON.parse(fs.readFileSync(path.join(out,
    "native-hypermaze-progress.json"),"utf8"));
   const loaded=Brain.load(path.join(out,progress.checkpoint));
+  assert.equal(loaded.qaRoleEvidence.longForm.episodes,20);
+  assert.ok(loaded.qaRoleEvidence.longForm.sequences.length>0);
+  assert.equal(loaded.qaRoleEvidence.longForm.sequences.length<=96,true);
+  const actualHeldoutHashes=rows.flatMap((row,i)=>i%6===5?[
+   crypto.createHash("sha256").update(
+    qaPairsFromRealJSON(row)[0].answer).digest("hex")]:[]);
+  assert.ok(loaded.qaRoleEvidence.longForm.sequences.every(seq=>
+   !actualHeldoutHashes.includes(seq.answerSHA256)),
+   "Actual long hidden answers must never be stored in native Brain");
   assert.equal(loaded.qaRoleEvidence?.examples.length,
    measured.qaLearnedPairs);
   assert.equal(loaded.qaRoleEvidence.examples.some(x=>rows.some((row,i)=>
@@ -118,6 +135,11 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
    fullRealQuestions:24,realTrainedPairs:measured.qaTrainingPairs,
    realHeldoutQuestions:measured.qaFrozenHeldoutQuestions,
    actuallyLearnedQAPairs:measured.qaLearnedPairs,
+   completeLongRoleEpisodesWitnessed:measured.qaLongFormEpisodes,
+   totalLongAnswerTokensWitnessed:measured.qaLongFormAnswerTokens,
+   originalObservedSequentialEdges:measured.qaLongFormSequentialEdges,
+   liveLongEpisodeChunkNodes:measured.qaLongFormActiveChunkDigests,
+   longEpisodesRejected:measured.qaLongFormUnretained,
    tokenLengthDistribution:lengths,
    wholeAnswerRawExact:measured.qaFrozenWholeRawExact,
    wholeAnswerRawAccuracy:measured.qaWholeAnswerExactRate,
