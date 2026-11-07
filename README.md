@@ -1,6 +1,9 @@
 # MagicPerspective — Shape Prediction Laboratory
 
 > [!CAUTION]
+> **V22 OPEN/BLOCKING — do not confuse extra token predictors with the requested original organism.** See [literal user's 2026-11-07 directive](./REGRESSION_USER_DIRECTIVE_2026-11-07-V22-NO-SUBSTITUTION.md), [issue #25](https://github.com/dan3s2020/MagicPerspective/issues/25) and [isolated exact-method V22 branch](https://github.com/dan3s2020/MagicPerspective/tree/experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107). Original V17 byte-for-byte baseline is preserved; direct original maze-to-text implementation and arbitrary long unseen answers are NOT yet certified. Do not replace original UI, checkpoint, noise or working code, and never label known-target graph reachability as a correct unknown answer.
+
+> [!CAUTION]
 > **BLOCKING REGRESSION — USER REQUIREMENTS HAVE PRIORITY.** All coding agents MUST read
 > [AGENTS.md](./AGENTS.md), [the exact user correction](./verbatim/2026-11-06-USER-REGRESSION-NO-REDEFINITION.md)
 > and [regression MP-REG-2026-11-06-001](./REGRESSION_USER_DIRECTIVE_2026-11-06.md)
