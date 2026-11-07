@@ -40,6 +40,14 @@ A repeated before-expression always goes into the same partition, so it cannot l
 
 This is prequential correlation, NOT proof of true causal relationships between arbitrary adjacent textual equations. Test partition selection is based on the known action identity inferred when the pair is observed, so it tests conditional effect prediction rather than autonomous action identification.
 
+## Link to an actual predicted first action
+
+After validating a real observed context axis, the original LiveObservedMathAxes.plan() path now exposes an extra read-only **preActionEffect** for its first state-dependent movement. The original mathematically learned path still chooses the action; the independent prequential gate predicts that action's numerical consequence from earlier evidence. The original magic.js UI includes this independent next-step prediction in the existing math path readout. No result from after acting is supplied in the goal; the original Brain.write() remains untouched.
+
+An integration regression deliberately uncovered a real identifiability issue: if the training text demonstrates only X+ movements paired with output changes, the native conditional state-space learner cannot know whether X or output is the dependent coordinate, so it falls back to its original coupled planner. We fixed **the experimental evidence**, not the rule, by supplying additional OBSERVED Y+ changes before asking for an unseen X+ state-dependent route. This verifies that at least two independent directions must be experienced to identify the dependent axis in this implementation.
+
+The new acceptance test asks for a native path from "15 * 91 = 1365" with the GOAL "first numeric coordinate becomes 16" (never supplies the new output 1456). Given prior observed X/Y movements, the frozen native conditional plan and separately validated context gate should agree on the first step: "16 * 91 = 1456". A green CI run is required for this additional acceptance.
+
 ## Reproducible results — VERIFIED hosted GitHub Actions
 
 Linux job: https://github.com/dan3s2020/MagicPerspective/actions/runs/42327257275/job/128265294840
