@@ -228,6 +228,75 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
+  // Every recorded training episode is stored append-only in its real
+  // native worker journal; read only a bounded byte range from a known path.
+  // Offset is an opaque BYTE cursor; no arbitrary client filesystem paths.
+  if(req.method==="GET"&&url==="/atlas-log"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl)return json(res,{error:"Unknown worker"});
+    const kind=q.get("kind")==="xd"?"xd-atlas":"path-atlas";
+    const file=saveOf(sl)+"."+kind+".jsonl";
+    const offset=Number(q.get("offset")||0),limit=Math.min(30,Math.max(1,+q.get("limit")||8));
+    if(!Number.isSafeInteger(offset)||offset<0)return json(res,{error:"Invalid append-only byte cursor"});
+    if(!fs.existsSync(file))return json(res,{entries:[],nextOffset:0,kind,
+      message:"Journal has no completed rows yet"});
+    const size=fs.statSync(file).size;
+    if(offset>=size)return json(res,{entries:[],nextOffset:offset,kind,
+      doneForNow:true,totalBytes:size});
+    const bytes=Math.min(size-offset,4*1024*1024),buf=Buffer.allocUnsafe(bytes);
+    const fd=fs.openSync(file,"r");let read=0;
+    try{read=fs.readSync(fd,buf,0,bytes,offset);}
+    finally{fs.closeSync(fd);}
+    const part=buf.subarray(0,read),lines=[],starts=[];
+    let begin=0;
+    for(let pos=0;pos<part.length&&lines.length<limit;pos++){
+      if(part[pos]===10){
+        lines.push(part.subarray(begin,pos).toString("utf8"));
+        starts.push(pos+1);begin=pos+1;
+      }
+    }
+    if(!lines.length)return json(res,{entries:[],nextOffset:offset,kind,
+      error:"Current atlas record exceeds 4 MiB or is not yet committed; no cursor advanced"});
+    const entries=[];
+    for(const line of lines){
+      try{entries.push(JSON.parse(line));}
+      catch(err){return json(res,{error:"Corrupt atlas journal record at byte "+offset+": "+err.message});}
+    }
+    return json(res,{kind,w,entries,nextOffset:offset+starts.at(-1),
+      totalBytes:size,moreAvailable:offset+starts.at(-1)<size,
+      source:"REAL append-only training episode journal"});
+  }
+  // An EXHAUSTIVE paged view of every stored learned native context state
+  // and outgoing transition. Querying does not trigger teacher training.
+  if(req.method==="GET"&&url==="/atlas-graph"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    const scale=Math.max(0,Math.min(5,Math.trunc(+(q.get("scale")||0))));
+    const offset=Math.max(0,Math.trunc(+(q.get("offset")||0)));
+    const limit=Math.max(1,Math.min(200,Math.trunc(+(q.get("limit")||80))));
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Worker busy; no fabricated empty atlas response"});
+    },25000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({nativeAtlasPage:{id,scale,offset,limit}});
+    return;
+  }
+  // Full finite-world frozen test. The agent receives the ENTIRE map, no
+  // correct path, no new probes; we compare the real action execution.
+  if(req.method==="POST"&&url==="/xd-atlas-eval"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    const dimensions=Math.trunc(+(q.get("dimensions")||1024));
+    const seed=Math.trunc(+(q.get("seed")||81919));
+    if(!Number.isInteger(dimensions)||dimensions<16||dimensions>8192)
+      return json(res,{error:"Dimension range 16..8192"});
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Frozen xD evaluation timed out"});
+    },25000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({xdAtlasTest:{id,dimensions,seed}});
+    return;
+  }
   // Sidecar-only settings. Native Brain and CUDA training parameters are unchanged.
   if(req.method==="POST"&&url==="/hypermaze-config"){
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
