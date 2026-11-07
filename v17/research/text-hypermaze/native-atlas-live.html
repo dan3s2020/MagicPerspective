@@ -74,6 +74,7 @@ table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;pad
 <span><i class="swatch" style="background:#6ae2b4"></i>Observat efectiv într-o lume</span>
 <span><i class="swatch" style="background:#7ea5d4"></i>Prezise prin transfer (încă neverificate aici)</span>
 <span><i class="swatch" style="background:#ab83d8"></i>Contraste text V17, nu efecte cauzale confirmate</span>
+<span><i class="swatch" style="background:#ba9bf0"></i>Trasee prezise prin contrast de corpus (încă neverificate fizic)</span>
 <span><i class="swatch" style="background:#ffc870"></i>Traseul anticipat de originalul Discoverer</span>
 <span><i class="swatch" style="background:#fd8395"></i>Cale cunoscută blocată de design</span>
 </div>
@@ -120,6 +121,8 @@ table{table-layout:fixed}fieldset{border:1px solid #29405b;border-radius:8px;pad
 <label>Condiția țintei <input id="goalValue" placeholder="21"></label>
 </div>
 <label>Opțional: acțiuni permise, separate prin virgulă <input id="allowed" placeholder="lasă gol pentru toate"></label>
+<label style="display:block"><input type="checkbox" id="useNativeContrast">
+ Încearcă și transformări învățate din contrastele textuale V17/V29 (ipoteze, NU fizică verificată)</label>
 <div class="controls"><button id="predict">Calculează forma soluției înainte de acțiune</button><span id="predictStatus" class="muted">—</span></div>
 </section>
 <section>
@@ -298,7 +301,9 @@ function draw(g){
   const contrast=String(e.status).includes("TEXT_CONTRAST");
   const seen=String(e.status).includes("WITNESSED");
   svg("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,
-   stroke:active?"#ffc870":blocked?"#fd8395":contrast?"#ab83d8":physical||seen?"#6ae2b4":"#7ea5d4",
+   stroke:active?"#ffc870":blocked?"#fd8395":
+     String(e.status).includes("PREDICTED_FROM_TEXT_CONTRAST")?"#ba9bf0":
+     contrast?"#ab83d8":physical||seen?"#6ae2b4":"#7ea5d4",
    "stroke-width":active?3.7:1.5,
    "stroke-dasharray":seen||physical?"":"6 4",opacity:active?1:.55},root);
  }
@@ -352,6 +357,7 @@ $("predict").onclick=async()=>{
    {containsToken:value};
   const actionText=$("allowed").value.trim();
   const request={startText:$("start").value,goal,
+   includeTextContrasts:$("useNativeContrast").checked,
    episodeId:$("episode").value.trim()||"query"};
   if(actionText)request.allowedActions=actionText.split(",").map(x=>x.trim()).filter(Boolean);
   const p=await post("/api/plan",request);
