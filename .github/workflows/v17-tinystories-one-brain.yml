@@ -1,0 +1,50 @@
+name: TinyStories ONE pretrained GPU brain - integrated context, 5D, worlds and epochs
+on:
+  push:
+    branches:
+      - feature/TINYSTORIES-UNIFIED-ONE-BRAIN-GPU-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-same-model-protocol-and-live-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python NumPy backend of real original Node-to-Python CUDA protocol
+        run: python3 -m pip install "numpy>=2,<3"
+      - name: Exact source syntax for integrated model, world physics, server and browser
+        run: |
+          python3 -m py_compile v17/transcend/torus-aether/gpu/fast_text.py
+          python3 -m py_compile v17/transcend/torus-aether/gpu/unified_fast.py
+          python3 -m py_compile v17/transcend/torus-aether/gpu/unified_worlds.py
+          python3 -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          node --check v17/research/tinystories/server.mjs
+          node --check v17/research/tinystories/ui/app.js
+          node --check v17/research/tinystories/ui/unified-ui.js
+          node --check v17/tests/tinystories-one-gpu-brain.test.mjs
+      - name: PROVE single existing learned model, real 5D and maze action training, frozen unseen metrics, 100% re-train and atomic resume
+        run: node --test v17/tests/tinystories-one-gpu-brain.test.mjs
+      - name: Keep previous original TinyStories performance and official train-vs-valid separation
+        run: node --test v17/tests/tinystories-aether-live.test.mjs
+  windows-launch:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse original real TinyStories PowerShell launcher unchanged
+        shell: powershell
+        run: |
+          foreach ($p in @("v17/START_TINYSTORIES.ps1","v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1")) {
+            $tokens=$null;$errs=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path,[ref]$tokens,[ref]$errs)|Out-Null
+            if($errs.Count){throw ($p+": "+($errs|Out-String))}
+            Write-Host "WIN_TINYSTORIES_ONE_BRAIN_SCRIPT_PASS $p"
+          }
