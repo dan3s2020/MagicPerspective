@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
       - name: Native persistent multi-exercise graph, all physical walls, no oracle, original Discoverer global field, checkpoints, contextual inference
         run: node --test v17/tests/v30-cumulative-hypermaze.test.mjs
+      - name: Real original on-disk JSONL native worker, exact original Brain HTTP, full cumulative graph and unchanged UI controls
+        run: node --test v17/tests/v30-real-corpus-cumulative-http.test.mjs
       - name: Existing independent established contextual and coupled axes regression
         run: |
           node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
