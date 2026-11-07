@@ -1,0 +1,89 @@
+{
+  "execution_date": "2026-11-07",
+  "execution_class": "INDEPENDENT_ACTUAL_SOURCE_FUNCTION_EXECUTION_NOT_FULL_NATIVE_APP",
+  "implementation_branch": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107",
+  "source_paths": [
+    "v17/transcend/torus-aether/worlds/labyrinth.mjs",
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "v17/transcend/torus-aether/language-maze/shape-topology.mjs",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs"
+  ],
+  "source_blob_sha": [
+    "96877ee6537c9ceb34239fc20f85909d0e3237fd",
+    "739d6c5cc36e8d43b83dc66f499c5140aca414d3",
+    "e34d787467b7238c7422a0509173b1f785eb2342",
+    "cc080d463065de7edbd16fd94285de42ae2e531f",
+    "b32c6d9a8329b10fdf7a2f772793d0e29c466820"
+  ],
+  "method": "Fetch exact five source files from GitHub connector; dynamically remove only import/export module declarations and inject module bindings; execute same function bodies in fresh V8 isolated JS runtime. No trained checkpoint, Node HTTP process, GPU, Windows, or real corpus available. Not native integration certification.",
+  "results": {
+    "maze_parity": {
+      "episodes": 84,
+      "mismatches": 0,
+      "temperatures": [
+        0,
+        0.45
+      ],
+      "noise": [
+        0,
+        0.18
+      ],
+      "maze_sizes": [
+        7,
+        9,
+        11
+      ],
+      "seeds_per_size": 7,
+      "comparison": "JSON equality of original versus V22 playExercise outputs"
+    },
+    "text_composition": {
+      "prior_sentences": [
+        "She is happy.",
+        "She is tired.",
+        "He is tired.",
+        "He is calm."
+      ],
+      "initial": "He is calm.",
+      "goal_slots": {
+        "0": "She",
+        "2": "calm"
+      },
+      "plan_before_action": true,
+      "direct_method": "Discoverer.shape",
+      "steps": 1,
+      "executed_result": "She is calm .",
+      "goal_met": true,
+      "rule_count": 6,
+      "caveat": "The goal specifies two answer tokens, and the environment applies the same verified edit; not independent semantic QA."
+    },
+    "long_76": {
+      "tokens": 76,
+      "found": true,
+      "target_slot": "Alice",
+      "caveat": "75 other tokens are copied unchanged; no new long-form answer inferred."
+    },
+    "long_97": {
+      "tokens": 97,
+      "rejected": true,
+      "error": "Error: Invalid cognitive planning limits"
+    },
+    "remove_all_learned_rules": {
+      "found": false
+    },
+    "unknown_goal_token": {
+      "found": false
+    }
+  },
+  "NOT_PROVEN": [
+    "natural-language question answering",
+    "100% large heldout text answers",
+    "text >96 tokens through cognitive planner",
+    "100+ real completed exercises per second",
+    "CUDA training for this cognitive map",
+    "V17 live UI and HTTP path at the user's Windows machine",
+    "unified cross-domain generalization",
+    "full byte-exact historic transcript"
+  ],
+  "release_status": "BLOCKED_NOT_APPROVED_DO_NOT_REPLACE_ORIGINAL_ENGINE"
+}
