@@ -1,0 +1,62 @@
+name: V23 real cross-world hypermaze and complete atlas
+on:
+  push:
+    branches:
+      - experiment/V23-CROSS-WORLD-HYPERMAZE-FULL-ATLAS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cross-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: Real V17 Discoverer on segmented text worlds / complete persisted path atlas
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V17 byte-identical source and source history preserved
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor f06d845d6c3e54772ec13933147d478cdfd2b748 HEAD
+          test "$(git rev-parse f06d845d6c3e54772ec13933147d478cdfd2b748:v17/transcend/torus-aether/worlds/exercise.mjs)" = "$(git rev-parse HEAD:v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs)"
+          deleted="$(git diff --name-only --diff-filter=DR f06d845d6c3e54772ec13933147d478cdfd2b748 HEAD)"
+          if [ -n "$deleted" ]; then echo "$deleted"; exit 1; fi
+      - name: Segmented cross-world context transfer, no oracle, 100 structurally new texts, honest failure reasons, complete paged atlas
+        run: node --test v17/tests/v23-cross-world-atlas.test.mjs
+      - name: REAL native original V17 CPU five-world trainer and HTTP atlas exported byte-for-byte
+        run: node --test v17/tests/v23-native-atlas-http.test.mjs
+      - name: Original V22 maze full parity with noise and pre-action shapes
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Original V19 text cognitive no regression
+        run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Original V22 actual native cognitive UI and action evaluation
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+      - name: Original V22 CPU strict natural Q/A no invented 70%
+        run: node --test v17/tests/v22-cpu-native-first-answer.test.mjs
+      - name: Native source syntax for all changed modules, no fake animation or deleted old UI
+        run: |
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/worlds/cross-world-transforms.mjs
+          node --check v17/transcend/torus-aether/devour/atlas-journal.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/v23-full-atlas-live.js
+          node --check v17/transcend/torus-aether/ui/app.js
+  windows-cpu-original:
+    name: Preserve original Windows PowerShell 5.1 CPU loader
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 syntax and immutable original GPU-off launcher
+        shell: powershell
+        run: |
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "Requires Windows PowerShell 5.1" }
+          $code=(Resolve-Path 'v17/START_V22_CPU_REAL_TEXT.ps1').Path
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile($code,[ref]$tokens,[ref]$errors)
+          if($errors.Count){ throw ($errors | Out-String) }
