@@ -445,6 +445,7 @@ $("mathPlan").onclick=async()=>{
    initial:found.input,states:found.plan?.states||[],
    actions:found.plan?.actions||[],expanded:found.plan?.expanded||0,
    holonomy:found.holonomy,
+   predictiveFirstMovement:found.preActionEffect||null,
    readOnly:found.frozen,semanticVerifier:found.independentSemanticVerifier,
    reason:found.plan?.reason||null
   },null,2);
