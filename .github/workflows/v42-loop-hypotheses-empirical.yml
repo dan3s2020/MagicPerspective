@@ -1,0 +1,23 @@
+name: V42 Original Organism - Toroidal Loop and Intersection Hypotheses
+on:
+  push:
+    branches:
+      - research/V42-TORUS-LOOP-INTERSECTION-HYPOTHESES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-empirical-probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only exact native source and test integrity
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/tests/torus-loop-intersection-hypotheses-20261107.test.mjs
+      - name: Run native learned organism hypotheses without changing original source
+        run: node --test v17/tests/torus-loop-intersection-hypotheses-20261107.test.mjs
