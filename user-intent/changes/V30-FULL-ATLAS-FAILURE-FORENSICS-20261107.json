@@ -1,0 +1,39 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "V30-FULL-ATLAS-FAILURE-FORENSICS-20261107",
+  "mode": "ISOLATED_RESEARCH_TEST",
+  "source": {
+    "path": "verbatim/2026-11-07-FULL-HYPERMAZE-ATLAS-REQUEST.txt",
+    "exact_user_quote": "SI TREBUIE SA VEDEM TOT ATLASUL A TOATE PATH-URILOR/TRANSFORMARILE SI TOT CE A FOLOSIT SA AJUNGA LA REZULTATE"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape(ret,n,me,topology)",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/atlas-explorer.js"
+  ],
+  "added_mechanisms": [
+    "Read-only paginated atlas routes and UI, preserving underlying actor",
+    "Isolated test suite reproducing missing-operator failure then observed-source recovery"
+  ],
+  "additional_user_authorization_quote": "SI TREBUIE SA VEDEM TOT ATLASUL A TOATE PATH-URILE/TRANSFORMARILE SI TOT CE A FOLOSIT SA AJUNGA LA REZULTATE",
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node --test v17/tests/v30-full-atlas-diagnostics.test.mjs",
+    "node --test v17/tests/v30-native-atlas-http.test.mjs"
+  ],
+  "actual_observed_results": "NOT_VERIFIED pending native CI",
+  "limitations": [
+    "No claim of unrestricted text understanding or 100% unseen next-character correctness",
+    "Read-only visualization; no original trained checkpoint mutation",
+    "User-requested broad system remains OPEN until end-to-end validation"
+  ],
+  "verification_status": "NOT_VERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
