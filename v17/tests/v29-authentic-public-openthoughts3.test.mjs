@@ -11,6 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import net from "node:net";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
+import {tokenizeObservation} from "../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {qaPairsFromRealJSON} from "../research/text-hypermaze/openthoughts-jsonl-source.mjs";
 import {launch} from "../research/text-hypermaze/real-corpus-server.mjs";
 
@@ -65,10 +66,7 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
  const rows=(await Promise.all(offsets.map(x=>realRows(x,length)))).flat();
  assert.equal(rows.length,24);
  const realPairs=rows.map(x=>qaPairsFromRealJSON(x)[0]);
- const describeTokenLengths=s=>{
-  const tokens=String(s).match(/[\\p{L}\\p{N}]+(?:['’][\\p{L}\\p{N}]+)*|[^\\s]/gu)||[];
-  return tokens.length;
- };
+ const describeTokenLengths=s=>tokenizeObservation(s).length;
  const qLengths=realPairs.map(x=>describeTokenLengths(x.question));
  const aLengths=realPairs.map(x=>describeTokenLengths(x.answer));
  const lengths={questionTokens:{min:Math.min(...qLengths),max:Math.max(...qLengths),
@@ -103,7 +101,15 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   // Brain sequential hypermaze rather than rejected above 128 tokens.
   // This is evidence consumption, NOT answer-generation success.
   assert.equal(measured.qaLongFormEpisodes,20);
-  assert.ok(measured.qaLongFormAnswerTokens>500000);
+  // Never assume or invent how many tokens a real corpus has.
+  // This EXACT check uses the original model tokenizer and the genuine
+  // training-only row split, no approximate duplicate regex.
+  const expectedTrainAnswerTokens=realPairs.reduce((n,p,i)=>
+   n+(i%6===5?0:tokenizeObservation(p.answer).length),0);
+  const expectedTrainQuestionTokens=realPairs.reduce((n,p,i)=>
+   n+(i%6===5?0:tokenizeObservation(p.question).length),0);
+  assert.equal(measured.qaLongFormAnswerTokens,expectedTrainAnswerTokens);
+  assert.equal(measured.qaLongFormQuestionTokens,expectedTrainQuestionTokens);
   assert.ok(measured.qaLongFormSequentialEdges>0);
   assert.ok(measured.qaLongFormActiveChunkDigests>0);
   assert.equal(measured.qaLongFormUnretained,0);
