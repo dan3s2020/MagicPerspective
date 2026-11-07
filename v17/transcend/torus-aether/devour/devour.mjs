@@ -60,7 +60,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
-const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
+const port = +arg("port", 8841), autostart = process.argv.includes("--start"), magicView = process.argv.includes("--magic-view"), brainsDir = path.join(out, "brains");
 const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} : ARMS[name] ? {name, rules: ARMS[name]} : null;
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function recordTelemetry(m) {
@@ -340,7 +340,8 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/reset") { for (const sl of slots) control(sl, "reset"); return json(res, {ok: true}); }
   if (req.method === "POST" && url === "/stop") { stopping = true; for (const sl of slots) sl.wk?.postMessage("stop"); res.writeHead(200); return res.end("ok"); }
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
-  if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
+  if (url === "/magic") { res.writeHead(302, {location: "/transcend/torus-aether/ui/magic.html?live=1"}); return res.end(); }
+  if (url === "/") { res.writeHead(302, {location: magicView ? "/transcend/torus-aether/ui/magic.html?live=1" : "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
   if(url==="/telemetry"){
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
@@ -363,9 +364,10 @@ http.createServer((req, res) => {
     res.writeHead(200, {"content-type": types[path.extname(abs)] || "application/octet-stream", "cache-control": "no-store"}); return fs.createReadStream(abs).pipe(res); }
   res.writeHead(404); res.end();
 }).listen(port, "127.0.0.1", () => {
-  const u = `http://127.0.0.1:${port}/`; console.log(`living graph: ${u}   (charts: ${u}dashboard)` + (autostart ? "" : " · press Start on the page (or run with --start)"));
-  exec(process.platform === "win32" ? `start "" "${u}"` : process.platform === "darwin" ? `open "${u}"` : process.env.PREFIX?.includes("com.termux") ? `termux-open-url "${u}"` : `xdg-open "${u}"`, () => {});
-}).on("error", e => console.log(`dashboard not started (${e.message}); use --port <other>`));
+  const u = `http://127.0.0.1:${port}/`, view = magicView ? u + "transcend/torus-aether/ui/magic.html?live=1" : u;
+  console.log(`living graph: ${view}   (original V17: ${u}transcend/torus-aether/ui/index.html?live=1)` + (autostart ? "" : " · press Start on the page (or run with --start)"));
+  exec(process.platform === "win32" ? `start "" "${view}"` : process.platform === "darwin" ? `open "${view}"` : process.env.PREFIX?.includes("com.termux") ? `termux-open-url "${view}"` : `xdg-open "${view}"`, () => {});
+}).on("error", e => { console.error(`dashboard not started (${e.message}); use --port <other>`); if(magicView)process.exit(1); });
 const summary = () => {
   console.log("\n=== summary (latest test of every graph) ===");
   const by = {}; for (const m of last.values()) (by[m.arm] ??= []).push(m);
