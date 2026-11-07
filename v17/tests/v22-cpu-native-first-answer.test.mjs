@@ -33,6 +33,7 @@ test("exact full Q/A scoring counts COMPLETE first guesses, never individual-cha
  const r=brain.evalTextExercises(prompts,{T:0,noise:0,seed:42,strictFullAnswer:true,maxGeneratedChars:128});
  assert.equal(r.firstAnswerExactTotal,10);
  assert.equal(r.firstAnswerExactCorrect,7);
+ assert.deepEqual(budgets,Array(10).fill(128),"Hidden answers must not affect the prediction generation budget");
  assert.equal(r.firstAnswerExactRate,.7);
  assert.equal(r.firstAnswerTarget70Reached,true);
  assert.equal(r.answer,1,"Teacher-forced char correctness MUST NOT replace exact answer result");
