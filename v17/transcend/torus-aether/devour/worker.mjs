@@ -12,6 +12,7 @@ import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
+import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -84,6 +85,10 @@ const selfcode = SELF_CODE ? new NativeSelfCodeWorld({brain,saveFile,seed:brain.
 if(workerData.paused)selfcode?.pause();
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
+const mathAxesFile = saveFile ? saveFile + ".observed-math-axes.v8" : null;
+const liveMathAxes = workerData.mathAxes ? (resume
+  ? LiveObservedMathAxes.restore(mathAxesFile)
+  : new LiveObservedMathAxes({saveFile:mathAxesFile})) : null;
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
@@ -99,6 +104,7 @@ const saveText = () => {
   fs.mkdirSync(path.dirname(textFile), {recursive: true});
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
+  liveMathAxes?.save();
 };
 // The very same corpus, already lived by the original AligningGraph, is also
 // learned at token/phrase/sentence scales within the SAME Brain and checkpoint.
@@ -145,8 +151,10 @@ const absorbObservedDifferences = row => {
   if(!row.prompt)previewCurrentLanguageWorld(row);
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
-  const learned=brain.learnObservedTransformations(Buffer.from(row.bytes).toString("latin1"));
+  const observedText=Buffer.from(row.bytes).toString("latin1");
+  const learned=brain.learnObservedTransformations(observedText);
   observedPipeline.accepted+=learned.newSentences;
+  liveMathAxes?.consume(observedText);
   observedPipeline.last=learned;
 };
 const absorbConstructed = row => {
@@ -175,6 +183,7 @@ const report = (final = false) => {
     shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
+    realMathAxes: liveMathAxes?.report() || null,
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
@@ -185,6 +194,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, chars: brain.chars, lived: brain.lived, controls: brain.controls, shared: shared.status(), constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
+    realMathAxes: liveMathAxes?.report() || null,
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
@@ -256,6 +266,14 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m && m.realMathGoal){
+    const {id,start,goals}=m.realMathGoal;
+    try{
+      const result=liveMathAxes?.plan(start,goals)||{found:false,reason:"Real observed numeric axes are not enabled"};
+      parentPort.postMessage({type:"chat",id,realMathGoal:true,...result});
+    }catch(err){parentPort.postMessage({type:"chat",id,realMathGoal:true,error:err.message});}
+    return;
+  }
   if(m && m.languageMaze){
     const {id,required,start,maxDepth=4,localPolicy=true,auto=false}=m.languageMaze;
     try{
