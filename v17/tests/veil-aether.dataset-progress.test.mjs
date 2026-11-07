@@ -10,9 +10,15 @@ test("OpenThoughts-style Parquet: excludes 16 truly held-out rows, not distinct 
   const partial=trainingProgress(source,{w:0,n:1,learned:1940,mode:"native-text"});
   assert.equal(partial.trained,1940);
   assert.equal(partial.remaining,8044);
-  assert.equal(partial.percent,Number((100*1940/9984).toFixed(2)));
+  assert.equal(partial.percent,Number((100*1940/9984).toFixed(6)));
   assert.equal(trainingProgress(source,{w:0,n:1,learned:9984}).percent,100);
   assert.equal(trainingProgress(source,{w:0,n:1,learned:10000}).overflow,true);
+  const large={kind:"parquet",totalRows:1210000,trainRows:1209984,heldRows:16};
+  const tiny=trainingProgress(large,{w:0,n:1,learned:12});
+  assert.equal(tiny.trained,12);
+  assert.equal(tiny.percent,Number((1200/1209984).toFixed(6)));
+  assert.ok(tiny.percent>0,"12 genuinely trained exercises must not appear to be 0%");
+
 });
 test("multiple workers receive accurate disjoint shard totals, not identical 100% whole-corpus badges", () => {
   const src={kind:"parquet",totalRows:10000,trainRows:9984,heldRows:16};
