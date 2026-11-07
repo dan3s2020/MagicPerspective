@@ -20,5 +20,10 @@ jobs:
           node --check v17/tests/math-original-shape.test.mjs
       - name: Exact algebra, native V17 shape, frozen unseen problems and leakage control
         run: node --test v17/tests/math-original-shape.test.mjs
+      - name: Validate inferred symbolic action module and its negative controls
+        run: |
+          node --check v17/transcend/torus-aether/worlds/math-observed.mjs
+          node --check v17/tests/math-observed-induction.test.mjs
+          node --test v17/tests/math-observed-induction.test.mjs
       - name: No regression in original maze organism
         run: node --test v17/tests/torus-organism.test.mjs
