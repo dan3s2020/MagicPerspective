@@ -180,6 +180,22 @@ const absorbObservedDifferences = row => {
   const learned=nativeHypermaze?nativeHypermaze.observe(observedText):
     brain.learnObservedTransformations(observedText);
   observedPipeline.accepted+=learned.newSentences;
+  if(nativeHypermaze&&typeof row.rawText==="string"&&
+     learned.atlasWorldSequence&&nativeHypermaze.livedTexts>1&&
+     nativeHypermaze.livedTexts%32===0){
+    // The SAME original worker replays genuinely observed historic worlds
+    // in bounded portions. It never sees held-out reference answers.
+    const historic=nativeHypermaze.atlasSummary();
+    const after=historic.lastReplayCursor>=learned.atlasWorldSequence-1?
+      0:historic.lastReplayCursor;
+    const started=performance.now();
+    const replay=nativeHypermaze.replayArchivedWorlds({
+      focusSequence:learned.atlasWorldSequence,after,limit:250});
+    observedPipeline.historicalAtlasReplay={
+      ...replay,replayMilliseconds:+(performance.now()-started).toFixed(2),
+      originalBrainSame:true,notAnExtraTrainingModel:true
+    };
+  }
   // Persist a frozen, atomic learner snapshot during long CUDA batches so
   // the live HTTP UI can answer without waiting in the training worker queue.
   const beforeMathPairs=liveMathAxes?.coupledAccepted||0;
@@ -215,9 +231,12 @@ const atlasStats=()=>{
  const s=nativeHypermaze.atlasSummary();
  return {journalEvents:s.journalEvents,journalBytes:s.journalBytes,
   worldsByDomain:s.worldsByDomain,learnedOperators:s.learnedOperatorEvents,
+  historicalReplayEvents:s.historicalReplayEvents||0,
+  lastReplayCursor:s.lastReplayCursor||0,
+  originalBrainHistoricalReplays:brain.observedTransformations.historicalReplays||0,
   searchesFound:s.searchesFound,searchesFailed:s.searchesFailed,
   failuresByReason:s.failuresByReason,originalBrainSidecar:s.persisted,
-  historicalCorpusBeforeAtlasNotReplayed:true,
+  historicalCorpusBeforeAtlasNotReplayed:s.historicCorpusUnavailableBeforeAtlas,
   allObservedEventsRetained:true,theoreticalWholeLanguageEnumerated:false};
 };
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
@@ -342,6 +361,19 @@ parentPort.on("message", m => {
        mode,result,originalBrain:true,fullHistoryAvailable:true});
     }catch(err){
       parentPort.postMessage({type:"chat",id,nativeHypermazeAtlas:true,error:err.message});
+    }
+    return;
+  }
+  if(m && m.nativeHypermazeReplay){
+    const {id,focusSequence,after=0,limit=250}=m.nativeHypermazeReplay;
+    try{
+      if(!nativeHypermaze)throw Error("Original hypermaze archive replay not enabled");
+      const result=nativeHypermaze.replayArchivedWorlds({focusSequence,after,limit});
+      parentPort.postMessage({type:"chat",id,nativeHypermazeReplay:true,
+       ...result,actualOriginalBrain:true,trainingAnswersNotUsed:true});
+      shot(true);
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,nativeHypermazeReplay:true,error:err.message});
     }
     return;
   }
