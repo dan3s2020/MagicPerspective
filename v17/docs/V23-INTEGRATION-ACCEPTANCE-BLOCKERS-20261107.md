@@ -7,7 +7,7 @@ No merge to `main`; no original V17 user controls, live model weights, checkpoin
 ## Authentic source and preservation
 - This session's exact user instruction is in `verbatim/2026-11-07-USER-V23-REQUIREMENT-VISIBLE-MESSAGE.txt` (byte-for-byte of the visible source string, not a retroactive claim about invisible past chat).
 - Mandatory source-to-change contract: `user-intent/changes/V23-DIRECT-DISCOVERER-OBSERVABILITY-20261107.json`.
-- Exact 2D source oracle: `v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs`. Existing V22 `exercise.mjs` calls the same `Discoverer.shape` algorithm for 2D and observed N-D topologies.
+- Exact 2D source oracle: `v17/transcend/torus-aether/worlds/exercise-v17-EXACT-ORIGINAL-SNAPSHOT.mjs` (Git blob SHA `df194ecb6999cce36c15fb9f4f94d3a36ae22fcb`, exactly equal to original `v17-torus-aether` branch). The V22 `exercise-v17-IMMUTABLE-BASELINE.mjs` is **not byte-identical** and is preserved for audit without deletion. Existing V22 `exercise.mjs` calls the same `Discoverer.shape` algorithm for 2D and observed N-D topologies.
 
 ## Actually integrated and checked
 1. The V22 `LearnedCognitiveMap.formSolution` calls `originalDiscovererOnText`, which calls `new Discoverer(seed).shape(ret,0,start,{neighbors,conduct,attract,onField})`. Edges arise from corpus-observed complete sentence contrasts, action results and disambiguation evidence; they are **hypotheses** until verified by real actions.
@@ -17,11 +17,11 @@ No merge to `main`; no original V17 user controls, live model weights, checkpoin
 5. Native `cognitivemap` worker still ingests real full documents and checkpoints the atlas. No fake progress / dataset rows were added. No source `text_gpu.py` or original live answer generator was replaced.
 
 ## Tests actually executed in GitHub CI (Node.js 22, Ubuntu)
-Verified workflow: https://github.com/dan3s2020/MagicPerspective/actions/runs/42341011029
-Head commit: `a73df3161d74491b0ea85de742c9c4ab5781429b`.
-**38 native Node tests passed; 0 failed** across six suites, plus new UI `node --check`.
+Verified workflow: https://github.com/dan3s2020/MagicPerspective/actions/runs/42341207470
+Head commit: `883cca6c1c3a77be43ecb610d9598f3857527395`.
+**39 native Node tests passed; 0 failed** across six suites, plus new UI `node --check`.
 
-- New V23 source-level tests: 6 passes, including **270** original-vs-current 2D maze comparisons (90 seeded maps × 3 temperatures), learned text-route freeze, seed/noise independence, action wall feedback, ablation, restored checkpoint.
+- New V23 source-level tests: 7 passes, including historical-byte SHA verification and **270** original-vs-current 2D maze comparisons (90 seeded maps × 3 temperatures), learned text-route freeze, seed/noise independence, action wall feedback, ablation, restored checkpoint.
 - Original learned cognitive-map tests: 19 passes.
 - Original whole-map tests: 8 passes.
 - World-source regression tests: 2 passes.
