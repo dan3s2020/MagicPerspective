@@ -43,7 +43,10 @@ assert observations and len(prior) > 250
 def text_run(card_class, chunk=4096):
     card = card_class("numpy")
     start_progress = []
-    card.append([prior], progress=lambda a, b, p: start_progress.append((a, b, p)))
+    if card_class is baseline.TextCard:
+        card.append([prior])  # immutable original doesn't expose index progress
+    else:
+        card.append([prior], progress=lambda a, b, p: start_progress.append((a, b, p)))
     assert card.indexed == len(prior)
     results = []
     for doc in observations:
