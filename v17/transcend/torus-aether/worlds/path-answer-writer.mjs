@@ -25,7 +25,7 @@ export function parseExplicitRewriteQuestion(question,{maxTokens=512}={}){
   return {ok:true,from,to,initial,tokens,goal:{slots:{[locations[0]]:to}},slot:locations[0]};
 }
 
-export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,maxTokens=512,seed=74129}={}){
+export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,maxTokens=512,seed=74129,includeAtlas=false}={}){
   if(!(model instanceof LearnedCognitiveMap))
     throw new Error('Use the original LearnedCognitiveMap — no standalone answer predictor');
   const parsed=parseExplicitRewriteQuestion(question,{maxTokens});
@@ -43,6 +43,7 @@ export function answerFromOriginalPath(model,question,{maxDepth=8,maxNodes=384,m
       return {...h,verified:!!edge?.verified,crossWorld:!!edge?.crossWorld,
         support:edge?.support??0,provenance:edge?.provenance||[],
         transformation:edge?.transformation||h.transformation||null};})||[],
+    fullAtlas:includeAtlas?{states:plan.world?.states||[],neighbors:plan.world?.neighbors||[],targets:plan.world?.targets||[]}:undefined,
     nodesConsidered:plan.world?.states.length||0,
     inputTokenCount:parsed.tokens.length,requestedMaxTokens:maxTokens,
     candidateEdges:plan.world?.estimatedTransitions||0,
