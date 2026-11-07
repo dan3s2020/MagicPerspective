@@ -1,0 +1,47 @@
+name: V24 real corpus native Discoverer integration
+on:
+  push:
+    branches:
+      - experiment/V24-REAL-CORPUS-NATIVE-SHAPE-20261107
+  workflow_dispatch:
+jobs:
+  real-dataset-trainer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Original V17/V22 immutable source and pre-action shape
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: V23 text graph and noise regressions
+        run: node --test v17/tests/v23-observed-relational-hypermaze.test.mjs v17/tests/v23-noisy-long-route.test.mjs v17/tests/v23-unknown-answer.test.mjs
+      - name: Real corpus streaming, checkpoint, heldout, HTTP, UI
+        run: node --test v17/tests/v24-real-native-training.test.mjs
+      - name: Produce actual Parquet dataset containing 85 Q/A pairs
+        run: |
+          python -m pip install pyarrow
+          mkdir -p "$RUNNER_TEMP/v24-open-thoughts-parquet"
+          python - <<'PY'
+          import os
+          import pyarrow as pa
+          import pyarrow.parquet as pq
+          out=os.path.join(os.environ["RUNNER_TEMP"],"v24-open-thoughts-parquet","sample.parquet")
+          table=pa.table({
+              "prompt":[f"parquet question {i}: what observed edge is next?" for i in range(85)],
+              "answer":[f"parquet answer {i}: independently witnessed transformation" for i in range(85)]
+          })
+          pq.write_table(table,out,compression="NONE",row_group_size=19)
+          print("Generated",out,len(table))
+          PY
+      - name: Native V17 Parquet reader and exact V24 heldout split
+        run: MP_V24_PARQUET_FIXTURE="$RUNNER_TEMP/v24-open-thoughts-parquet" node --test v17/tests/v24-real-native-training.test.mjs
+      - name: Node syntax validation
+        run: |
+          node --check v17/research/relational-hypermaze/real-corpus-core.mjs
+          node --check v17/research/relational-hypermaze/real-data-source.mjs
+          node --check v17/research/relational-hypermaze/real-trainer.mjs
