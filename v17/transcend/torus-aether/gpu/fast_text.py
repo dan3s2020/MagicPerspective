@@ -11,6 +11,7 @@ uncommitted text, not unacknowledged duplicate training.
 """
 import os
 import time
+import base64
 import numpy as np
 
 try:
@@ -119,7 +120,8 @@ class StreamingFastText:
             index = int(row["index"])
             if index <= latest:
                 continue
-            raw = np.asarray(row["bytes"], dtype=np.uint8)
+            raw = (np.frombuffer(base64.b64decode(row["b64"]), dtype=np.uint8)
+                   if "b64" in row else np.asarray(row["bytes"], dtype=np.uint8))
             if len(raw) and np.any(raw >= VOCAB):
                 raise ValueError("Fast text takes observed 7-bit V17 bytes only")
             if index <= self.last_index:
