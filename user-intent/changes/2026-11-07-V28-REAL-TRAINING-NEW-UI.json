@@ -1,0 +1,60 @@
+{
+  "id": "V28-NEW-V26-VISUAL-EXACT-ORIGINAL-TRAINING",
+  "source": "verbatim/2026-11-07-V28-V26-UI-REAL-TRAINING-USER-CORRECTION.txt",
+  "directive": "Keep the V26 new UI and connect real original V17 training and exact legacy comparable metrics/results/speed. Never revert to old UI or synthetic word replacement.",
+  "regressions": [
+    "V26 used controlled word substitutions instead of original text learning",
+    "V27 mistakenly brought back old UI rather than new design"
+  ],
+  "branch": "fix/V28-V26-UI-REAL-V17-TRAINING-METRIC-PARITY-20261107",
+  "source_base": "experiment/V26-NEW-LIVE-TEXT-HYPERMAZE-TRAINING-20261107",
+  "original_engine": "v17/transcend/torus-aether/devour/devour.mjs",
+  "original_checkpoint": "Original V17 -Resume and same -Out only",
+  "original_dataset": "D:\\training\\OpenThoughts3-1.2M, direct Parquet, original train/heldout split",
+  "visual": "v17/apps/hypermaze-studio-v26/public/native.html",
+  "bridge": "v17/apps/hypermaze-studio-v26/native-bridge.mjs",
+  "metrics": [
+    "test.aligned",
+    "test.live",
+    "test.together",
+    "test.C",
+    "test.field",
+    "maze.test.shape",
+    "maze.test.solved",
+    "maze.test.ratio",
+    "transform.test.solved",
+    "transform.test.failedRate",
+    "progress.trained",
+    "progress.total",
+    "progress.heldOut",
+    "gpu.text.hostMs.sustainedExercisesPerSecond",
+    "gpu.text.hostMs.sustainedCharactersPerSecond"
+  ],
+  "new_UI_controls": [
+    "native start/pause/save/reset",
+    "native frozen text/maze/transform eval",
+    "native CUDA config",
+    "noise/temperature",
+    "real graph/flow",
+    "character-by-character original correct vs predicted",
+    "initial maze plan vs executed path",
+    "original metric charts"
+  ],
+  "restrictions": [
+    "Do not call synthetic 100% from V26 a real Q/A accuracy",
+    "Do not overwrite original V17 motor or checkpoint",
+    "Do not change numerator, denominator or dataset split",
+    "Do not equate adapter GUI success with 70% general semantic reasoning"
+  ],
+  "verification": [
+    "Unit bridge HTTP and exact original field parity",
+    "Actual original V17 worker ran with real source text and positive progress",
+    "Real Chrome UI controls, graph, Q/A diff, screenshot",
+    "Real PowerShell bridge launcher tested with clearly labeled transport fixture"
+  ],
+  "open": [
+    "User Windows OpenThoughts3 full-corpus benchmark and RTX 3050Ti GPU speed",
+    "V26 controlled world generalized to unrestricted semantic QA",
+    "70%+ complete unseen natural answers"
+  ]
+}
