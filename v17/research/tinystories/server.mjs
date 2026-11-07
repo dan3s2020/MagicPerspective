@@ -297,8 +297,8 @@ export async function launch(opts){
  await app.init();
  const httpServer=http.createServer(async(req,res)=>{
   const url=new URL(req.url,"http://127.0.0.1");
-  if(req.method==="GET"&&["/","/index.html","/app.js"].includes(url.pathname)){
-   const p=path.join(here,"ui",url.pathname==="/app.js"?"app.js":"index.html");
+  if(req.method==="GET"&&["/","/index.html","/app.js","/native-ui.js"].includes(url.pathname)){
+   const p=path.join(here,"ui",url.pathname==="/native-ui.js"?"native-ui.js":url.pathname==="/app.js"?"app.js":"index.html");
    const b=await fsp.readFile(p);
    res.writeHead(200,{"content-type":p.endsWith(".js")?"text/javascript; charset=utf-8":"text/html; charset=utf-8",
     "cache-control":"no-cache"});
