@@ -14,7 +14,8 @@ param(
     [long]$Chars = 0,
     [string]$RuntimeName = "runtime-real-v17-live-20261107",
     [switch]$Resume,
-    [switch]$Paused
+    [switch]$Paused,
+    [switch]$GoalTraining
 )
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
@@ -82,6 +83,10 @@ $argsNative = @(
     "-TraceTransformations",
     "-EndogenousNoise"
 )
+if ($GoalTraining) {
+    $argsNative += "-GoalTraining"
+    $argsNative += "-UnifiedWorld"
+}
 if ($Resume) { $argsNative += "-Resume" }
 if (-not $Paused) { $argsNative += "-Start" }
 Write-Host "=== V17 REAL NATIVE TRAINING / LIVE UI ===" -ForegroundColor Cyan
@@ -93,7 +98,8 @@ Write-Host "Text chunk:     $GpuTextChunk (all characters still trained)"
 Write-Host "Evaluate/save: every $ReportEvery characters after initial checkpoint"
 Write-Host "LIVE UI:        http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "This runs the native model and its existing live observers."
-Write-Host "Research-only local-axis symbolic experiments are NOT integrated into native generation." -ForegroundColor Yellow
+Write-Host ("Text objective: " + $(if ($GoalTraining) { "LEARNED CAUSAL GOAL ROUTES; TextCard diagnostic disabled" } else { "LEGACY TextCard next-character training" })) -ForegroundColor Yellow
+Write-Host "Structural goal inference currently runs on CPU; CUDA accelerates shared / physical worlds where enabled."
 Write-Host "Ctrl+C requests a stop/save; leave the PowerShell server window running while using the UI."
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $native @argsNative
 if ($LASTEXITCODE -ne 0) {
