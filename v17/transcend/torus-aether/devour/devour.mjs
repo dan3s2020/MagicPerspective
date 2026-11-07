@@ -485,6 +485,10 @@ http.createServer((req, res) => {
           predictedLength:planned.predictedLength??null,
           plannedLength:planned.plannedSteps??null,referenceAnswerTokens:a.length,
           absoluteTokenLengthError:Math.abs((planned.plannedSteps||0)-a.length),
+          predictedLengthAbsoluteError:planned.predictedLength==null?null:
+            Math.abs(planned.predictedLength-a.length),
+          lengthShapeSimilarity:planned.predictedLength==null?null:
+            Math.max(0,1-Math.abs(planned.predictedLength-a.length)/Math.max(1,a.length)),
           predictedPreview:output.slice(0,250),
           error:planned.ready?null:planned.reason||"no learned path"});
         results.at(-1).characterExact=!!output&&output===truth;
@@ -496,6 +500,10 @@ http.createServer((req, res) => {
         total:n,found,exact:good,exactPercent:n?good/n*100:null,
         positionMean:results.reduce((s,r)=>s+r.tokenPositionAccuracy,0)/Math.max(1,n),
         meanAbsLengthError:results.reduce((s,r)=>s+r.absoluteTokenLengthError,0)/Math.max(1,n),
+        meanPredictedLengthError:results.every(r=>r.predictedLengthAbsoluteError!=null)?
+          results.reduce((s,r)=>s+r.predictedLengthAbsoluteError,0)/Math.max(1,n):null,
+        meanLengthShapeSimilarity:results.every(r=>r.lengthShapeSimilarity!=null)?
+          results.reduce((s,r)=>s+r.lengthShapeSimilarity,0)/Math.max(1,n):null,
         allCorrect:good===n,sufficientForUniversal100PctProof:false,results,
         warning:"Correctly routed observed tokens are not necessarily a correct unseen answer."});
     })().catch(err=>json(res,{error:err.message}));
