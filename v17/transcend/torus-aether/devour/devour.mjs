@@ -19,6 +19,7 @@ import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -173,6 +174,7 @@ const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||nu
   shapeField:r.field?.values?.slice(0,128),law:r.planningLaw||null,
   directOriginalMethod:r.directOriginalMethod||null,noiseTemperature:r.noise??null,
   preActionShape:r.field?.nodes?.slice(0,192)||[],
+  topology:frozenTextShapeTopology(r),
   truncated:r.world?.truncated||false});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
