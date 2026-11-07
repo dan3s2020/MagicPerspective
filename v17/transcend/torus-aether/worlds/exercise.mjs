@@ -46,18 +46,74 @@ export class Discoverer {
   conduct(kind) { return this.pass[kind] / (this.pass[kind] + this.block[kind]); }
   attract(kind) { return this.endIn[kind] / this.enter[kind]; }
   // ---- the shape of the solution: attraction spread over the exercise, climbed from itself ----
-  shape(ret, n, me) {
-    const att = [0, 1, 2, 3].map(k => this.attract(k)), cond = [0, 1, 2, 3].map(k => this.conduct(k)), V = new Float64Array(n * n);
-    let any = false; for (let i = 0; i < n * n; i++) if (att[ret[i]] > .2 && i !== me) { V[i] = att[ret[i]]; any = true; }
+  shape(ret, n, me, topology = null) {
+    if (topology) {
+      if (!Array.isArray(ret) || !Array.isArray(topology.neighbors) ||
+          ret.length !== topology.neighbors.length ||
+          !Number.isInteger(me) || me < 0 || me >= ret.length ||
+          ret.some(k => !Number.isInteger(k) || k < 0 || k > 3) ||
+          topology.neighbors.some(row => !Array.isArray(row) ||
+            row.some(e => !Number.isInteger(e?.to) || e.to < 0 ||
+              e.to >= ret.length || (typeof e.action !== "string" &&
+              !Number.isInteger(e.action)))))
+        throw Error("Discoverer.shape requires observed valid state/action topology");
+      if (typeof topology.conduct !== "function" ||
+          typeof topology.attract !== "function")
+        throw Error("Language world must supply actual conductance and checkable goal attraction");
+    }
+    const N = topology ? ret.length : n * n;
+    const att = [0, 1, 2, 3].map(k => topology ? topology.attract(k) : this.attract(k));
+    const cond = [0, 1, 2, 3].map(k => topology ? topology.conduct(k) : this.conduct(k));
+    const V = new Float64Array(N);
+    let any = false;
+    for (let i = 0; i < N; i++) if (att[ret[i]] > .2 && i !== me) { V[i] = att[ret[i]]; any = true; }
     if (!any) return null;
-    for (let it = 0; it < 2 * n * n; it++) { let ch = false;
-      for (let i = 0; i < n * n; i++) { const k = ret[i]; if (att[k] > .2 && i !== me) continue; const c = i === me ? 1 : cond[k]; if (c < .5) continue;
-        let b = 0; for (let a = 0; a < 4; a++) { const j = nextStep(n, i, a); if (j >= 0 && V[j] > b) b = V[j]; } const v = .97 * c * b; if (v > V[i] + 1e-12) { V[i] = v; ch = true; } }
-      if (!ch) break; }
-    const path = []; let p = me; const seen = new Set([p]);
-    for (let k = 0; k < n * n; k++) { let best = -1, bv = V[p]; const up = []; for (let a = 0; a < 4; a++) { const j = nextStep(n, p, a); if (j >= 0 && !seen.has(j) && V[j] > V[p]) up.push([a, V[j]]); if (j >= 0 && !seen.has(j) && V[j] > bv) { bv = V[j]; best = a; } }
-      if (this.temp && up.length > 1) { let z = 0; const w = up.map(([a, v]) => { const q = Math.exp((v - bv) / (this.temp * .03 * bv + 1e-12)); z += q; return [a, q]; }); let r = this.r.next() * z; for (const [a, q] of w) { r -= q; if (r <= 0) { best = a; break; } } }   // alive: among ways that climb almost as well, it does not always take the same one
-      if (best < 0) break; path.push(best); p = nextStep(n, p, best); seen.add(p); if (att[ret[p]] > .2) break; }
+    for (let it = 0; it < 2 * N; it++) {
+      let ch = false;
+      for (let i = 0; i < N; i++) {
+        const k = ret[i];
+        if (att[k] > .2 && i !== me) continue;
+        const c = i === me ? 1 : cond[k];
+        if (c < .5) continue;
+        let b = 0;
+        const row = topology?.neighbors[i];
+        for (let a = 0; a < (topology ? row.length : 4); a++) {
+          const j = topology ? row[a].to : nextStep(n, i, a);
+          if (j >= 0 && V[j] > b) b = V[j];
+        }
+        const v = .97 * c * b;
+        if (v > V[i] + 1e-12) { V[i] = v; ch = true; }
+      }
+      if (!ch) break;
+    }
+    // Optional read-only UI observation: does not seed, train or alter V.
+    if (topology?.onField) topology.onField(Array.from(V));
+    const path = [];
+    let p = me;
+    const seen = new Set([p]);
+    for (let k = 0; k < N; k++) {
+      let best = -1, bv = V[p];
+      const up = [], row = topology?.neighbors[p];
+      for (let a = 0; a < (topology ? row.length : 4); a++) {
+        const j = topology ? row[a].to : nextStep(n, p, a);
+        if (j >= 0 && !seen.has(j) && V[j] > V[p]) up.push([a, V[j]]);
+        if (j >= 0 && !seen.has(j) && V[j] > bv) { bv = V[j]; best = a; }
+      }
+      if (this.temp && up.length > 1) {
+        let z = 0;
+        const w = up.map(([a, v]) => { const q = Math.exp((v - bv) / (this.temp * .03 * bv + 1e-12)); z += q; return [a, q]; });
+        let r = this.r.next() * z;
+        for (const [a, q] of w) { r -= q; if (r <= 0) { best = a; break; } }
+      }
+      if (best < 0) break;
+      const j = topology ? row[best].to : nextStep(n, p, best);
+      path.push(topology ? {from: p, to: j, action: row[best].action,
+        transformation: row[best].transformation ?? null,
+        verified: !!row[best].verified} : best);
+      p = j;
+      seen.add(p);
+      if (att[ret[p]] > .2) break;
+    }
     return path.length ? path : null;
   }
   // ---- choosing what to emit ----
