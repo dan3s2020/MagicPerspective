@@ -13,6 +13,7 @@ import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
+import {NativeGoalTextMaze} from "../../../research/text-hypermaze/goal-conditioned-native.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -58,7 +59,8 @@ async function* stream() {                                                 // th
 let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
-if (workerData.endogenousNoise) brain.enableEndogenousNoise(); // policy is saved with the original Brain
+if (workerData.endogenousNoise || workerData.nativeHypermaze) brain.enableEndogenousNoise(); // SAME original native NoiseAgency, persisted in Brain.v8
+const nativeHypermaze=workerData.nativeHypermaze?new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6}):null;
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
@@ -154,7 +156,10 @@ const absorbObservedDifferences = row => {
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
   const observedText=Buffer.from(row.bytes).toString("latin1");
-  const learned=brain.learnObservedTransformations(observedText);
+  // The original actual text-stream worker owns the SAME Brain and trained
+  // discovered-edit operators. No second training model or independent worker.
+  const learned=nativeHypermaze?nativeHypermaze.observe(observedText):
+    brain.learnObservedTransformations(observedText);
   observedPipeline.accepted+=learned.newSentences;
   // Persist a frozen, atomic learner snapshot during long CUDA batches so
   // the live HTTP UI can answer without waiting in the training worker queue.
@@ -195,6 +200,10 @@ const report = (final = false) => {
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     realMathAxes: liveMathAxes?.report() || null,
+    nativeHypermaze: nativeHypermaze?{mode:"original-Discoverer-shapeGraph",
+      actualCorpusRows:nativeHypermaze.livedTexts,observedGeometryPairs:nativeHypermaze.livedGraphTransitions,
+      originalNativeBrain:true,originalNoiseAgency:!!brain.noiseAgent,
+      externalSemanticAccuracyProven:false}:null,
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
@@ -206,6 +215,10 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     realMathAxes: liveMathAxes?.report() || null,
+    nativeHypermaze: nativeHypermaze?{mode:"original-Discoverer-shapeGraph",
+      actualCorpusRows:nativeHypermaze.livedTexts,observedGeometryPairs:nativeHypermaze.livedGraphTransitions,
+      originalNativeBrain:true,originalNoiseAgency:!!brain.noiseAgent,
+      externalSemanticAccuracyProven:false}:null,
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
@@ -283,6 +296,22 @@ parentPort.on("message", m => {
       const result=liveMathAxes?.plan(start,goals)||{found:false,reason:"Real observed numeric axes are not enabled"};
       parentPort.postMessage({type:"chat",id,realMathGoal:true,...result});
     }catch(err){parentPort.postMessage({type:"chat",id,realMathGoal:true,error:err.message});}
+    return;
+  }
+  if(m && m.nativeHypermazeGoal){
+    const {id,start,required,execute=false,trainNoise=false}=m.nativeHypermazeGoal;
+    try{
+      if(!nativeHypermaze)throw Error("Original native hypermaze experiment was not activated");
+      const initial=nativeHypermaze.plan({start,required});
+      const body=execute&&initial.found?
+        nativeHypermaze.execute(initial,{trainNoise:!!trainNoise,enableNoise:true}):null;
+      parentPort.postMessage({type:"chat",id,nativeHypermazeGoal:true,...initial,
+        body,originalBrain:true,sameDiscovererMazeAlgorithm:true,
+        exactUnseenLargeAnswerProven:false,referenceAnswerNotSupplied:true});
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,nativeHypermazeGoal:true,
+        error:err.message,exactUnseenLargeAnswerProven:false});
+    }
     return;
   }
   if(m && m.languageMaze){
