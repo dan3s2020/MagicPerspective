@@ -1,4 +1,4 @@
-# MAGIC PERSPECTIVE — one command: original V17 CUDA worker + real native graph + magical LIVE interface.
+# MAGIC PERSPECTIVE - one command: original V17 CUDA worker + real native graph + magical LIVE interface.
 # This never runs the slow CPU-only train-real-text.mjs sidecar and never overwrites its output.
 # Starts the ORIGINAL, complete V17 Brain (text + maze + transformation) and saves the original .v8.
 param(
@@ -63,9 +63,9 @@ if (-not (Test-Path -LiteralPath $marker)) {
 $magic = "http://127.0.0.1:$Port/transcend/torus-aether/ui/magic.html?live=1"
 $original = "http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host ""
-Write-Host "╔══════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkYellow
-Write-Host "║            MAGIC PERSPECTIVE · THE LIVING AETHER                 ║" -ForegroundColor Yellow
-Write-Host "╚══════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkYellow
+Write-Host "+==================================================================+" -ForegroundColor DarkYellow
+Write-Host "|            MAGIC PERSPECTIVE * THE LIVING AETHER                 |" -ForegroundColor Yellow
+Write-Host "+==================================================================+" -ForegroundColor DarkYellow
 Write-Host "Real dataset: $Data"
 Write-Host "Isolated native checkpoint: $Out\brains"
 Write-Host "GPU requested: $Gpu (NO silent CPU fallback)" -ForegroundColor Cyan
