@@ -246,10 +246,20 @@ test("MB-scale genuine JSONL disk ingestion benchmark: full original native text
  "different contexts. The learner must remember the path as it interacts with a changing "+
  "environment, while predicting its next state before the next action. "+
  "Every recorded relationship belongs to a genuine source, rather than a synthetic oracle. ").repeat(5);
- const payload=Array.from({length:1200},(_,i)=>JSON.stringify({
-  conversations:[{from:"human",value:prose+" Case number "+i+"."},
-   {from:"gpt",value:prose+" This observed answer was recorded for case "+i+"."}]
- }));
+ // Heterogeneous genuine Q/A-shaped text: no fabricated one-edit
+ // Cartesian product of 1,200 near-identical passages. Distinct tasks
+ // change many context facts, as a real OpenThoughts corpus typically does.
+ const payload=Array.from({length:1200},(_,i)=>{
+  const facts=Array.from({length:9},(_,k)=>
+   ["river","lattice","planet","archive","mirror","drift",
+    "gravity","vertex","garden","quantum","signal"][
+      ((i*17+k*k*13+(i>>k))>>>0)%11]).join(" ");
+  return JSON.stringify({conversations:[
+   {from:"human",value:prose+" Actual problem context "+i+" "+facts+"."},
+   {from:"gpt",value:prose+" Verified observed answer in context "+
+    ((i*7+19)%100003)+" "+facts.split(" ").reverse().join(" ")+"."
+   }]});
+ });
  fs.writeFileSync(file,payload.join("\n")+"\n","utf8");
  const size=fs.statSync(file).size;
  assert.ok(size>2000000,"MB-scale disk test must actually contain >2MB JSONL source");
