@@ -46,6 +46,30 @@ if ($existing.Count -gt 0 -and -not $Resume) {
   throw "Found existing brain checkpoints in $saveDir. Use -Resume, or choose a NEW -Out. No checkpoint overwritten."
 }
 
+# One-time immutable snapshot BEFORE upgrading a hypertext-only V21 model to
+# native text+hypertext. A new save will use the same checkpoint file after
+# resume, but the full previous state and GPU/text sidecars remain recoverable.
+if ($Resume -and $existing.Count -gt 0) {
+  $marker = Join-Path $saveDir ".v21-pre-fulltext-snapshot.saved"
+  if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+    $backupName = "brains-before-v21-fulltext-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+    $backupDir = Join-Path (Split-Path -Parent $saveDir) $backupName
+    New-Item -ItemType Directory -Path $backupDir -ErrorAction Stop | Out-Null
+    $snapshotFiles = @(Get-ChildItem -LiteralPath $saveDir -File | Where-Object {
+      $_.Name -like "brain-*.v8" -or
+      $_.Name -like "brain-*.v8.shared.pt" -or
+      $_.Name -like "brain-*.v8.causal.json"
+    })
+    foreach ($file in $snapshotFiles) {
+      Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $backupDir $file.Name) -ErrorAction Stop
+    }
+    if ($snapshotFiles.Count -eq 0) { throw "Expected checkpoint snapshot files were not found; refusing resume." }
+    Set-Content -LiteralPath $marker -Value ("snapshot=" + $backupDir + ";files=" + $snapshotFiles.Count) -Encoding UTF8
+    Write-Host "PRE-UPGRADE BACKUP: $backupDir ($($snapshotFiles.Count) files, unchanged)" -ForegroundColor Green
+  }
+}
+
+
 # This repairs the V21 CUDA regression: explicitly prepare and validate a
 # CUDA-capable Python, rather than inheriting Hermes Agent's CPU-only PyTorch.
 if ($Gpu -match '^cuda:[0-9]+$') {
