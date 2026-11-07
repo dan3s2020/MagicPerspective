@@ -82,7 +82,7 @@ $launch = @{
  Data=$Data; Out=$Out; Port=$Port; Workers=$Workers; Arms=$Arms; Worlds=$Worlds
  Mem=$Mem; Every=$Every; Gpu=$Gpu; Vram=$Vram; GpuWorlds=$GpuWorlds
  GpuTextBatch=$GpuTextBatch; GpuTextChunk=$GpuTextChunk; Cuda=$Cuda
- Resume=$true; Start=$true; MagicUI=$true
+ Resume=$true; Start=$true; MagicUI=$true; MathAxes=$true
  TraceTransformations=[bool]$TraceTransformations
  EndogenousNoise=[bool]$EndogenousNoise
 }
