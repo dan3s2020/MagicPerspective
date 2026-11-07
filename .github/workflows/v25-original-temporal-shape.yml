@@ -1,0 +1,40 @@
+name: V25 Original Discoverer Temporal Text Shapes
+on:
+  push:
+    branches:
+      - experiment/V25-ORIGINAL-DISCOVERER-TEMPORAL-TEXT-SHAPES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check the time-lifted real action topology
+        run: |
+          node --check v17/transcend/torus-aether/worlds/temporal-text-shape.mjs
+          node --check v17/tests/v25-original-temporal-text-shape.test.mjs
+      - name: Prove 145-step shape and strict no wall bypass using ORIGINAL method
+        run: node --test v17/tests/v25-original-temporal-text-shape.test.mjs
+      - name: Preserve V24 learned Q/A and original V23 observed action graph tests
+        run: |
+          node --test v17/tests/v24-native-question-goal.test.mjs
+          node --test v17/tests/v23-observed-hyperpath-long-range.test.mjs
+  windows-original-shape:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Native V25 original shape on Windows
+        shell: pwsh
+        run: |
+          node --test v17/tests/v25-original-temporal-text-shape.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "V25 original temporal shape regression" }
