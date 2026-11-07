@@ -50,6 +50,19 @@ test('native original worker: path-answer generated from frozen Discoverer, atla
    await pause(150);
   }
   assert.ok(docCount>=8,'Actual worker did not learn enough documents: '+log);
+  const html=await(await fetch(base+'/transcend/torus-aether/ui/index.html?live=1',
+    {signal:AbortSignal.timeout(6000)})).text();
+  assert.match(html,/id="v31PathPanel"/);
+  assert.match(html,/id="v31PathInput"/);
+  assert.match(html,/src="v31-path-answer-ui.js"/);
+  assert.match(html,/id="v30AtlasCanvas"/);
+  assert.match(html,/id="datasetProgressBar"/);
+  const js=await(await fetch(base+'/transcend/torus-aether/ui/v31-path-answer-ui.js',
+    {signal:AbortSignal.timeout(6000)})).text();
+  assert.match(js,/fetch\("\/path-answer"/);
+  assert.match(js,/v30AtlasReload/);
+  assert.doesNotMatch(js,/reference\s*:/,'The native request must not include reference answers');
+
   const full=makeLong(400,302),question='Replace "tea" with "coffee" in:\n'+full.source;
   const good=await request(base+'/path-answer',{w:0,question,maxTokens:512});
   assert.ok(!good.error,JSON.stringify(good));
