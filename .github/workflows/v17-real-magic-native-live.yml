@@ -1,0 +1,41 @@
+name: MagicPerspective full real live CUDA-ready magical UI and native corpus integration
+on:
+  push:
+    branches:
+      - feature/V17-REAL-LIVE-AXES-MAZE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-v17-worker-and-magic-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax validity of actual original worker, server, magic UI and research bridges
+        run: |
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/magic.js
+          node --check v17/research/text-hypermaze/state-dependent-axes.mjs
+          node --check v17/research/text-hypermaze/coupled-axes.mjs
+          node --check v17/research/text-hypermaze/path-holonomy.mjs
+      - name: Browser and real native V17 training acceptance test, no fake API and old UI preserved
+        run: node --test v17/tests/magic-live-native-ui.test.mjs
+      - name: Original V17 live observed language maze / inline body / full goal regressions
+        run: |
+          node --test v17/tests/inline-language-maze-native.test.mjs
+          node --test v17/tests/language-maze-native-http.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+      - name: Prior 2048D learned-axis real corpus and frozen text tests must remain green
+        run: |
+          node --test v17/tests/real-corpus-axis-gating.test.mjs
+          node --test v17/tests/learned-axis-gating.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
+      - name: Original 5D constructed, observed and independent universe regression
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
