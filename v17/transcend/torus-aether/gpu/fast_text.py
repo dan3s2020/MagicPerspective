@@ -21,7 +21,7 @@ except ImportError:
 
 STATE_BITS = 16
 STATES = 1 << STATE_BITS
-VOCAB = 128
+VOCAB = 256
 ORDERS = 4
 PAD = 32
 FORMAT = 1
@@ -41,7 +41,7 @@ def text_features(raw):
             prev[distance:] = y[:-distance]
         a.append(prev)
     v1, v2, v3, v4 = a
-    # Order 2 has no collisions: 128**2=16384 <= 65536.
+    # Order 2 has no collisions: 256**2=65536, exactly the space size.
     return np.stack([v1,
                      (v2 * VOCAB + v1),
                      (v3 * 131 * 131 + v2 * 131 + v1) & (STATES - 1),
@@ -122,8 +122,6 @@ class StreamingFastText:
                 continue
             raw = (np.frombuffer(base64.b64decode(row["b64"]), dtype=np.uint8)
                    if "b64" in row else np.asarray(row["bytes"], dtype=np.uint8))
-            if len(raw) and np.any(raw >= VOCAB):
-                raise ValueError("Fast text takes observed 7-bit V17 bytes only")
             if index <= self.last_index:
                 continue
             fresh.append(raw)
@@ -188,8 +186,8 @@ class StreamingFastText:
             if len(examples) < 3:
                 take = min(int(preview), len(y))
                 examples.append({
-                    "actual": bytes(np.asarray(y[:take], dtype=np.uint8)).decode("ascii", errors="replace"),
-                    "predicted": bytes(np.asarray(pred[:take], dtype=np.uint8)).decode("ascii", errors="replace")})
+                    "actual": bytes(np.asarray(y[:take], dtype=np.uint8)).decode("utf-8", errors="replace"),
+                    "predicted": bytes(np.asarray(pred[:take], dtype=np.uint8)).decode("utf-8", errors="replace")})
         return {"seen": seen, "hits": hits,
                 "accuracy": round(hits / seen, 6) if seen else None,
                 "frozen": True, "algorithm": "observed-hashed-context-1to4",
