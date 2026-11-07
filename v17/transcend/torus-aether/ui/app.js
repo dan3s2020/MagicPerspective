@@ -553,6 +553,7 @@ async function pullSelectedGraph() {
       }
     }
     if(L) window.MPCognitiveGraph?.updateLive(L);
+    if(L) window.MPNativeMath?.setActiveGraph?.(liveW);
     const M = gs.wholeMap, mbox = $("wholeMapBox");
     if (mbox) {
       mbox.hidden = !M;
