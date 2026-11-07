@@ -99,7 +99,7 @@ test("one ORIGINAL V17 Brain: actual observed nonlinear actions -> saved checkpo
   assert.ok(!original.error,JSON.stringify(original).slice(0,1800));
   assert.equal(original.frozen,true);
   assert.equal(original.nativeBrain,true);
-  assert.equal(original.found,true);
+  assert.equal(original.found,true,JSON.stringify({reason:original.reason,observedPairs:original.observedPairs,operators:original.learnedOperators,method:original.originalMethod,stateFieldAtStart:original.stateFieldAtStart,graph:original.observedTopology}).slice(0,2500));
   assert.equal(original.originalMethod,"Discoverer.shape");
   assert.equal(original.planningLaw,"ORIGINAL_V17_ATTRACTION_0.97");
   assert.equal(original.heldoutReferenceAnswerProvided,false);
