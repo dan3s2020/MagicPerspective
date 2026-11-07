@@ -31,7 +31,7 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
  let logs="";
  for(const stream of [child.stdout,child.stderr])
   stream.on("data",data=>logs=(logs+data.toString()).slice(-20000));
- let browser=null;
+ let browser=null,page=null;
  const base="http://127.0.0.1:"+port;
  try{
   let ready=false;
@@ -41,7 +41,7 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
   }
   assert.ok(ready,"Original V17 could not boot: "+logs);
   browser=await chromium.launch({headless:true});
-  const page=await browser.newPage({viewport:{width:1500,height:1050}});
+  page=await browser.newPage({viewport:{width:1500,height:1050}});
   const errors=[];page.on("pageerror",e=>errors.push(e.message));
   await page.goto(base+"/transcend/torus-aether/ui/index.html?live=1",
     {waitUntil:"domcontentloaded",timeout:30000});
@@ -129,7 +129,17 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
     unseenTextFrozenTest:true,unseenXDActionTest:true,
     worldPixels:sampled,jsErrors:errors
   }));
- }catch(err){throw Error(err.message+"\nORIGINAL TRAINER LOGS:\n"+logs);}
+ }catch(err){
+  const diagnostic=page&&!page.isClosed()?await page.evaluate(()=>{
+   const ids=["fullAtlasPanel","atlasXdTotals","atlasTextTotals","atlasPageText",
+    "atlasGatedResult","atlasLogText","atlasTextFrozenResult","atlasXdEvalText"];
+   return {url:location.href,dom:ids.map(id=>({id,
+    text:document.getElementById(id)?.textContent?.slice(0,650)||null,
+    hidden:document.getElementById(id)?.hidden||false}))};
+  }).catch(e=>({captureError:e.message})):null;
+  throw Error(err.message+"\nORIGINAL V17 LIVE UI DIAGNOSTIC:\n"+
+   JSON.stringify(diagnostic,null,2)+"\nORIGINAL TRAINER LOGS:\n"+logs);
+ }
  finally{
   if(browser)await browser.close();
   try{process.kill(-child.pid,"SIGTERM");}catch{child.kill("SIGTERM");}
