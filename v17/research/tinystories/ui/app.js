@@ -91,7 +91,7 @@ function details(s){
   ["GPU cerut",s.device],
   ["GPU identificat",gpu.name||gpu.device||"—"],
   ["CUDA real la ultimul lot",last.gpuWeightsUpdated?"DA":last.gpuWeightsUpdated===false?"NU":"fără lot"],
-  ["Ultimul lot confirmat",last.stories!=null?num(last.stories)+" povești / "+num(last.chars)+" caractere":"—"],
+  ["Ultimul lot confirmat",last.stories!=null?num(last.stories)+" povești / "+num(last.chars)+" octeți":"—"],
   ["Salvare",s.lastSave||"încă nu"],
   ["Caractere în checkpoint",num(s.checkpointChars)],
   ["Faza",s.phase]
@@ -125,14 +125,14 @@ function paint(s){
  $("actual").textContent=s.preview?.preUpdate?.actual||"Aștept predicție pe text real…";
  $("predicted").textContent=s.preview?.preUpdate?.predicted||"Aștept predicție înainte de update…";
  $("predictionNote").textContent=s.preview?
-  "Modelul anterior · "+num(s.preview.correct)+" / "+num(s.preview.total)+" caractere prezise corect"+
+  "Modelul anterior · "+num(s.preview.correct)+" / "+num(s.preview.total)+" octeți prezise corect"+
   " ("+(s.preview.accuracy!=null?(s.preview.accuracy*100).toFixed(1)+"%":"—")+
   "). EXCLUSIV exemplu de antrenare înainte de actualizare; nu este scorul testului independent.":
   "Predicțiile apar după ce începe antrenarea efectivă.";
  details(s);drawPath();drawChart();
  const history=(s.history||[]).slice(-9).reverse().map(p=>
   new Date(p.at).toLocaleTimeString("ro-RO")+" · "+num(p.stories)+" povești · "+num(p.chars)+
-  " caractere · "+p.rateStories.toFixed(1)+" povești/s · "+p.rateMB.toFixed(3)+" MB/s");
+  " octeți · "+p.rateStories.toFixed(1)+" povești/s · "+p.rateMB.toFixed(3)+" MB/s");
  $("log").textContent=history.join("\n")||(s.error||"Aștept primele loturi confirmate…");
  if(s.heldout){
   const h=s.heldout;const lines=[
