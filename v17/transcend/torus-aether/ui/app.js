@@ -599,6 +599,14 @@ async function pullSelectedGraph() {
 }
 // Corpus progress is the number of ACTUAL training exercises committed or observed.
 // Distinct symbols in the finite ASCII graph are a different measurement entirely.
+function formatDatasetPercent(p) {
+  if (!p || !Number.isFinite(p.total) || p.total <= 0) return "--%";
+  const v = Math.max(0, Math.min(100, 100 * p.trained / p.total));
+  // For 6 / 1,209,984 show 0.0005%, NOT misleading 0.00%.
+  if (v > 0 && v < 0.0001) return v.toPrecision(2) + "%";
+  if (v > 0 && v < 0.01) return v.toFixed(4) + "%";
+  return v.toFixed(2) + "%";
+}
 function renderDatasetProgress(gr, corpusInfo) {
   const box = $("datasetProgressBox");
   if (!box) return;
@@ -625,7 +633,7 @@ function renderDatasetProgress(gr, corpusInfo) {
   box.hidden = false;
   const pct = Math.max(0, Math.min(100, p.percent));
   const nf = n => Math.max(0, Math.trunc(n)).toLocaleString("ro-RO");
-  $("datasetProgressPct").textContent = pct.toFixed(2) + "%";
+  $("datasetProgressPct").textContent = formatDatasetPercent(p);
   $("datasetProgressCount").textContent = nf(p.trained) + " / " + nf(p.total);
   $("datasetProgressRemaining").textContent = nf(p.remaining);
   $("datasetHeldOut").textContent = nf(p.heldOut);
@@ -646,12 +654,22 @@ function renderDatasetProgress(gr, corpusInfo) {
     " exercitii tinute separat si neincluse in numitor. " +
     (p.overflow ? "ATENTIE: contorul depaseste dimensiunea partitiei; verifica reluarea checkpointului. " : "") +
     "Nu confunda aceste cifre cu simbolurile distincte.";
+  const batch = gr?.gpu?.batch;
+  const liveBatch = batch ? (
+    "LOT CUDA ACUM: " + batch.phase + " | " +
+    (Number(batch.done) || 0).toLocaleString("ro-RO") + " / " +
+    (Number(batch.total) || 0).toLocaleString("ro-RO") + " caractere/faza" +
+    (batch.elapsedSeconds != null ? " | timp scurs " + batch.elapsedSeconds + "s" : "") +
+    (batch.waitingSeconds != null ? " | fara fragment complet " + batch.waitingSeconds + "s" : "") +
+    (batch.warning ? "\\nATENTIE: " + batch.warning : "")
+  ) : "";
   const display = $("gpuPerformanceInfo"), text = gr?.gpu?.text || null;
   const ms = x => Number.isFinite(x) ? (x / 1000).toFixed(2) + "s" : "--";
   if (display) {
     if (text?.hostMs) {
       const x=text.hostMs, y=text.phaseMs;
       display.textContent = [
+        liveBatch,
         "TIMPI REALI, ULTIMUL LOT TEXT (" + (x.textExercises ?? text.batch ?? "--") + " exercitii)",
         "Timp total lot: " + ms(x.total) +
           " | rata reala: " + Math.round(x.charactersPerSecond || 0).toLocaleString("ro-RO") + " caractere/s",
@@ -668,9 +686,9 @@ function renderDatasetProgress(gr, corpusInfo) {
     } else if (gr?.gpu?.error) {
       display.textContent = "GPU ERROR: " + gr.gpu.error;
     } else {
-      display.textContent = p.mode === "native-text" ?
+      display.textContent = liveBatch || (p.mode === "native-text" ?
         "Timpul real pe faze va aparea dupa primul lot CUDA complet. Daca ramane aici, verifica GPU/worker." :
-        "Graful selectat nu antreneaza textul nativ pe CUDA. Alege graful complet cu lumea text.";
+        "Graful selectat nu antreneaza textul nativ pe CUDA. Alege graful complet cu lumea text.");
     }
   }
 
@@ -687,7 +705,7 @@ async function livePull() {
     const pc = v => v == null ? "—" : (100 * v).toFixed(1) + "%";
     $("liveList").innerHTML = L.graphs.map(gr => `<div class="lgc${gr.w === liveW ? " on" : ""}" data-w="${gr.w}">
       <div class="t"><b>#${gr.w} ${gr.arm}</b> <span class="st${gr.status === "antrenează" ? " run" : ""}">${gr.status}</span>${gr.error ? ` · <span style="color:#ff4d6d">${String(gr.error).replace(/</g,"&lt;")}</span>` : ""} · ${gr.chars < 1e6 ? (gr.chars / 1e3).toFixed(1) + "k" : (gr.chars / 1e6).toFixed(2) + "M"}</div>
-      <div class="sc">${gr.progress ? `<span>Dataset</span><span><b>${gr.progress.percent.toFixed(2)}%</b> · ${gr.progress.trained.toLocaleString("ro-RO")}/${gr.progress.total.toLocaleString("ro-RO")} exercitii procesate${gr.progress.shards > 1 ? " (partitia grafului)" : ""}</span>` : ""}${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
+      <div class="sc">${gr.progress ? `<span>Dataset</span><span><b>${formatDatasetPercent(gr.progress)}</b> · ${gr.progress.trained.toLocaleString("ro-RO")}/${gr.progress.total.toLocaleString("ro-RO")} exercitii procesate${gr.progress.shards > 1 ? " (partitia grafului)" : ""}</span>` : ""}${gr.worlds.includes("text") ? `<span>text nevăzut</span><span>graful aliniat <b style='color:var(--green)'>${pc(gr.test?.aligned)}</b> · graf vechi <b>${pc(gr.test?.live)}</b> · cu câmpul <b>${pc(gr.test?.together)}</b> · C ${pc(gr.test?.C)}</span>` : ""}
         ${gr.worlds.includes("maze") ? `<span>labirinturi</span><span>nevăzute rezolvate <b>${pc(gr.maze?.test?.solved)}</b> · pași/optim ${gr.maze?.test?.ratio ? gr.maze.test.ratio.toFixed(2) : "—"} · forma ${pc(gr.maze?.test?.shape)} · trăite ${gr.maze?.played ?? 0}</span>` : ""}</div>
         ${gr.worlds.includes("transform") ? `<span>transformări</span><span>configurații nevăzute rezolvate <b>${pc(gr.transform?.test?.solved)}</b> · pași/optim ${gr.transform?.test?.ratio ? gr.transform.test.ratio.toFixed(2) : "—"} · predicții greșite ${pc(gr.transform?.test?.failedRate)} · imposibile recunoscute ${gr.transform?.test ? gr.transform.test.saidLimitation + "/" + gr.transform.test.impossible : "—"}</span>` : ""}
         ${gr.gpu ? `<span>GPU</span><span>${gr.gpu.error ? `<b style="color:#ff4d6d">${gr.gpu.error.slice(0, 120)}</b>` : `${gr.gpu.info?.name || gr.gpu.info?.device || gr.gpu.settings.device} · ${gr.gpu.maze?.batch ?? (gr.gpu.settings.worlds || gr.gpu.info?.autoWorlds || "auto")} lumi odată${gr.gpu.maze?.cardMs != null ? ` · lotul pe placă ${gr.gpu.maze.cardMs} ms, adunat în creier ${gr.gpu.maze.mergeMs} ms` : ""}${gr.gpu.text ? ` · text: ${gr.gpu.text.batch} exerciții pe lot, pe placă ${(gr.gpu.text.cardMs / 1000).toFixed(1)} s, adunate în creier ${gr.gpu.text.mergeMs} ms, ghicit în lot ${(100 * gr.gpu.text.acc).toFixed(1)}%` : ""} · ${gr.gpu.settings.util}% · VRAM ${gr.gpu.maze?.vramUsedGB ?? gr.gpu.transform?.vramUsedGB ?? "—"} / ${gr.gpu.settings.vram ? gr.gpu.settings.vram.toFixed(1) : (gr.gpu.info?.totalGB ?? "—")} GB${gr.gpu.batch ? ` · lot acum: ${gr.gpu.batch.phase} ${gr.gpu.batch.done}/${gr.gpu.batch.total}` : ""}`}</span>` : ""}
