@@ -17,12 +17,13 @@ import {Discoverer, playExercise, bodyEffect} from "../worlds/exercise.mjs";
 import {PerspectiveLearner, perspectiveEpisode, evaluatePerspective} from "../worlds/perspective.mjs";
 import {TextPerspectives} from "../language-universe/perspectives.mjs";
 import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/constructed-paths.mjs";
-import {ObservedTransformations} from "../worlds/observed-transformations.mjs";
+import {ObservedTransformations,setObservedOperatorHook} from "../worlds/observed-transformations.mjs";
+import {SharedTransformationCore} from "../worlds/shared-transformation-core.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -37,10 +38,37 @@ export class Brain {
     if (callback !== null && typeof callback !== "function") throw Error("shared observer must be a function or null");
     if (callback) SHARED_HOOKS.set(this, callback); else SHARED_HOOKS.delete(this);
   }
-  observeShared(e) { SHARED_HOOKS.get(this)?.(e); }
+  observeShared(e) {
+    if(this.unifiedEnabled&&e){
+      if(e.domain==='maze'){
+        if(typeof e.actualMoved==='boolean')
+          this.worldCore.observeBlindMaze({
+            action:e.action,moved:e.actualMoved,
+            progress:e.actualProgress??0,terminal:!!e.actualTerminal,
+            uncertainty:e.sensedUncertainty??0});
+        else this.worldCore.observeMazeRet(e.before,e.after,e.action);
+      }else if(e.domain==='transform'&&Array.isArray(e.before)&&Array.isArray(e.after)
+        &&e.before.length===e.after.length){
+        const changed=e.before.some((x,i)=>x!==e.after[i]);
+        this.worldCore.observe({world:'transform',action:'transform',changed,
+          blocked:!changed,source:'observed-action'});
+      }
+    }
+    SHARED_HOOKS.get(this)?.(e);
+  }
+  enableUnifiedWorldLearning(){
+    this.worldCore ||=new SharedTransformationCore();
+    this.unifiedEnabled=true;
+    this.constructedPaths ||=new ConstructedPathLearner({seed:this.seed});
+    this.constructedPaths.worldCore=this.worldCore;
+    this.observedTransformations ||=new ObservedTransformations();
+    setObservedOperatorHook(this.observedTransformations,
+      evidence=>this.worldCore.observeTextEdit(evidence));
+    return this.worldCore.report();
+  }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -61,6 +89,9 @@ export class Brain {
     this.language ||= new TextPerspectives({maxStates:85000});
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
     this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
+    this.worldCore ||= new SharedTransformationCore();
+    if(this.unifiedEnabled)this.enableUnifiedWorldLearning();
+    else {this.constructedPaths.worldCore=null;setObservedOperatorHook(this.observedTransformations,null);}
   }
   get CTX() { return this.e.c.cap; }
   ctxOf(b, i) { return Array.from({length: this.CTX}, (_, j) => (i - j - 1 >= 0 ? b[i - j - 1] : 32)); }
@@ -195,7 +226,9 @@ export class Brain {
       r=P.navigateBlind(w,{train:true,record,noiseAgent:this.noiseAgent||null,
         live:y=>this.live(y,this.lived%50===0),
         onTransition:t=>this.observeShared({domain:'maze',before:t.before,after:t.after,
-          action:t.action,context:t.context})});
+          action:t.action,context:t.context,actualMoved:t.actualMoved,
+          actualProgress:t.actualProgress,actualTerminal:t.actualTerminal,
+          sensedUncertainty:t.sensedUncertainty})});
     } finally {this.liveWorld=old;}
     return r;
   }
@@ -205,6 +238,9 @@ export class Brain {
     const frozen=Object.assign(Object.create(ConstructedPathLearner.prototype),structuredClone(P));
     frozen.links=Object.assign(Object.create(ConstructedTransitionGraph.prototype),frozen.links);
     frozen.scales=frozen.scales.map(x=>Object.assign(Object.create(ConstructedTransitionGraph.prototype),x));
+    // structuredClone makes class prototypes plain. This shared model is
+    // consulted READ-ONLY in frozen unseen tests, never learned upon there.
+    frozen.worldCore=this.unifiedEnabled?this.worldCore:null;
     const rows=[],full=[];
     for(let i=0;i<count;i++){
       const w=makeMaze(seedOf(SEEDS.test,400000+seed*211+i*103),[7,9,11,13][i%4]);
@@ -249,19 +285,22 @@ export class Brain {
   }
   // A frozen evaluation sees only GOAL CONSTRAINTS (tokens that must occur)
   // and an optional observed start; NEVER the complete correct answer.
-  planObservedTransformation(goal,{execute=true,trace=false,embodied=false,localPolicy=true}={}) {
+  planObservedTransformation(goal,{execute=true,trace=false,embodied=false,localPolicy=true,useUnified=true}={}) {
     const M=this.observedTransformations ||= new ObservedTransformations();
     const before=M.report();
-    const route=M.plan({...goal,recordSearch:trace,maxRecordedStates:240});
+    const worldCore=useUnified&&this.unifiedEnabled?this.worldCore:null;
+    const route=M.plan({...goal,recordSearch:trace,maxRecordedStates:240,worldCore});
     // GOLD line computed before the local cursor moves. Body sees only the
     // learned action model + goal constraints; its own noise agency runs on a
     // FROZEN independent copy to protect ongoing CUDA training.
     const body=embodied&&route.found?M.embody(route,{
-      noiseAgent:this.noiseAgent,localPolicy,maxSteps:40}):null;
+      noiseAgent:this.noiseAgent,localPolicy,maxSteps:40,worldCore}):null;
     const execution=execute&&route.found?M.execute(route,{record:false}):null;
     if(JSON.stringify(M.report())!==JSON.stringify(before))
       throw Error("Frozen transformation evaluation unexpectedly modified learned brain");
     return {...route,execution,body,training:before,frozen:true,
+      sharedWorldUsed:!!worldCore,
+      sharedWorldPolicy:worldCore?.report({top:16}).policy||null,
       goalProvidedAsTokens:true,referenceProvided:false,
       verifiedByObservedEffect:!!execution?.verified};
   }
@@ -521,6 +560,24 @@ export class Brain {
         if (a > .2) T.setEdge("o:self", "s:" + S[k], "attract", 1 + 4 * a); if (c < .5) T.setEdge("o:self", "s:" + S[k], "repel", 1 + 4 * (1 - c)); } }
     if (this.causal) for (const k of this.causal.selfKinds) { const y = TSYM[k]; if (y !== undefined) { T.node("s:" + y, "sym", "◆"); T.setEdge("o:self", "s:" + y, "is", 2); } }
     for (let o = 0; o < 8; o++) { const e = bodyEffect(this.body, o) || D?.effect(o); if (!e) continue; T.node("s:" + O[o], "sym", "▶" + o); T.setEdge("s:" + O[o], "o:self", "moves", 3, (e[0] > 0 ? "→" : e[0] < 0 ? "←" : e[1] > 0 ? "↓" : "↑")); }
+    // A small reusable-effect graph, recorded by the SAME original Brain.
+    // Never one visual node per token occurrence or maze position.
+    if(this.unifiedEnabled&&this.worldCore){
+      const R=this.worldCore.report({top:24});
+      T.node("uw:shared","A","TRANSFORMĂRI COMUNE");
+      T.setEdge("o:self","uw:shared","learned",Math.min(8,1+Math.log1p(R.updates)));
+      for(const item of R.nodes){
+        const id="uw:"+item.id;
+        T.node(id,item.kind==='world'?"A":item.kind==='action'?"C":"A",
+          item.id+' · '+item.count);
+      }
+      for(const e of R.edges){
+        const from=e.from==='self'?'o:self':"uw:"+e.from,
+          to=e.to==='goal'?"uw:goal":"uw:"+e.to;
+        if(e.from==='self')continue; // displayed through root shared link
+        T.setEdge(from,to,"transforms",Math.min(8,1+Math.log1p(e.count)));
+      }
+    }
     // Visualize *real* internal noise decisions as owned connections in the
     // SAME native living graph, not as invented random standalone particles.
     if (this.noiseAgent) {
