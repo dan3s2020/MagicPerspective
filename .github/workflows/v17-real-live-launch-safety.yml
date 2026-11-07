@@ -32,6 +32,7 @@ jobs:
             throw "Launcher failed to reject missing real corpus explicitly: $out"
           }
           Write-Host "Missing data fails closed; no demo fallback."
+          exit 0
   original-runtime-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 12
