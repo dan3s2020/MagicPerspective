@@ -9,6 +9,7 @@ import {openTextDataset} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveHyperMaze,parseHeldoutText} from "./live-hypermaze.mjs";
 import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
+import {CompleteXDWorld} from "../worlds/full-xd-maze-atlas.mjs";
 import {once} from "node:events";
 import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
@@ -129,8 +130,12 @@ if(resume&&nativeAtlasFile&&fs.existsSync(nativeAtlasFile)){
 if(nativeAtlasLogFile)fs.mkdirSync(path.dirname(nativeAtlasLogFile),{recursive:true});
 const nativeAtlasLog=nativeAtlasLogFile?fs.createWriteStream(nativeAtlasLogFile,
   {flags:"a",highWaterMark:1<<20}):null;
+const xdAtlasLogFile=saveFile?saveFile+".xd-atlas.jsonl":null;
+const xdAtlasLog=xdAtlasLogFile?fs.createWriteStream(xdAtlasLogFile,
+  {flags:"a",highWaterMark:1<<20}):null;
 const atlasFlush=async()=>{
   if(nativeAtlasLog?.writableNeedDrain)await once(nativeAtlasLog,"drain");
+  if(xdAtlasLog?.writableNeedDrain)await once(xdAtlasLog,"drain");
 };
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
 if (resume && textFile && fs.existsSync(textFile)) {
@@ -228,6 +233,7 @@ const absorbText = row => {
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 let nextAutoSave=checkpointEvery>0?(brain.chars||0)+checkpointEvery:Infinity;
+let nextXd=xdAtlasEvery>0?(brain.chars||0)+xdAtlasEvery:Infinity;
 const autonomousCheckpoint = () => {
   if(!saveFile||!Number.isFinite(nextAutoSave)||brain.chars<nextAutoSave)return false;
   setWorkerPhase("CPU: checkpoint without frozen unseen evaluation");
@@ -247,6 +253,8 @@ const report = (final = false) => {
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     hypermaze: TEXT ? hyperMaze.report() : null,
+    nativePathAtlas:TEXT?nativeAtlas.summary():null,
+    xdAtlas:brain.xdAtlas?.summary({includeWorld:true})||null,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try {
@@ -264,6 +272,8 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     hypermaze: TEXT ? hyperMaze.report() : null,
+    nativePathAtlas:TEXT?nativeAtlas.summary():null,
+    xdAtlas:brain.xdAtlas?.summary({includeWorld:true})||null,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
