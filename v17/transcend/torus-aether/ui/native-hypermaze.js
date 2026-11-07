@@ -90,12 +90,14 @@ async function poll(){
     setNum("cumVerified",cumulative.physicallyVerifiedEdges??null);
     setNum("cumNodes",cumulative.memoryNodes??null);
     setNum("cumProposed",cumulative.proposedEdges??null);
-    setNum("cumShared",cumulative.sharedExactChunkAnchors??null);
+    setNum("cumShared",cumulative.multiScaleSharedAnchors??null);
+    setNum("cumLongShared",cumulative.sharedExactChunkAnchors??null);
+    setNum("cumMotifEdges",cumulative.multiScaleObservedSourceEdges??null);
     setNum("cumWalls",cumulative.rejectedActions??null);
     document.documentElement.dataset.cumulativeCrossWorldEpisodes=
       String(cumulative.episodes??0);
     document.documentElement.dataset.cumulativeSharedAnchors=
-      String(cumulative.sharedExactChunkAnchors??0);
+      String(cumulative.multiScaleSharedAnchors??0);
     $("qaExact").textContent=qaPercent(m.qaFrozenWholeRawExact,m.qaFrozenHeldoutQuestions);
     $("qaCanonical").textContent=qaPercent(m.qaFrozenWholeCanonicalExact,m.qaFrozenHeldoutQuestions);
     $("qaCoverage").textContent=qaPercent(m.qaFrozenGoalsFound,m.qaFrozenHeldoutQuestions);
