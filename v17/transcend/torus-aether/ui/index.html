@@ -208,6 +208,19 @@
         <span id="v23ScrubLabel">—</span>
       </div>
       <pre id="v23PageOut" style="white-space:pre-wrap;overflow:auto;max-height:300px">Nu există pași înregistrați.</pre>
+      <section id="v25GateBox" style="margin-top:12px;padding:12px;border:1px solid #a28240;border-radius:8px">
+        <h3>V25 · Control de completitudine cauzală (mod STRICT)</h3>
+        <p class="note">Dacă o propoziție poate modifica entitatea și efectul ei nu a fost învățat, planul este RESPINS, nu se raportează 100%. Propozițiile neutre pot fi admise doar după dovezi fizice explicite înainte/după. Controlul conservator nu înțelege automat toate referințele/pronumele.</p>
+        <label class="dim">Dovezi observate ale lipsei efectului (listă JSON de obiecte cu sentence, entity, before, after IDENTICE, accepted=true)</label>
+        <textarea id="v25NeutralExamples" rows="3" style="width:100%;font:12px ui-monospace,monospace" placeholder='[{"sentence":"...","entity":"...","before":"A","after":"A","accepted":true}]'></textarea>
+        <div class="row">
+          <button type="button" id="v25TeachNeutral">Învață dovezi fără efect</button>
+          <button type="button" id="v25Audit">Auditează evenimente necunoscute</button>
+          <button type="button" id="v25StrictPlan">Construiește STRICT forma originală</button>
+        </div>
+        <pre id="v25GateResult" style="white-space:pre-wrap;overflow:auto;max-height:260px;color:#ffe5b6">Aștept analiza completitudinii lumii percepute.</pre>
+      </section>
+
     </section>
     <div id="wholeMapBox" hidden style="margin:12px 0;border:1px solid #236a77;border-radius:10px;padding:12px">
       <h2>Harta completă a textului · navigare ca în labirintul 2D</h2>
@@ -337,5 +350,6 @@
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
 <script type="module" src="v23-grounded-live.js"></script>
+<script type="module" src="v25-uncertainty-live.js"></script>
 </body>
 </html>
