@@ -391,7 +391,10 @@ parentPort.on("message", m => {
         plannedPath:plan.path?.map(e=>({action:e.action,after:plan.world.states[e.to]?.join(" ")})),
         shapeField:plan.field?.values?.slice(0,128),
         successor:plan.found?cognitive.successor(plan.world).map(x=>({gamma:x.gamma,goalOccupancyAtStart:x.goalOccupancyAtStart})):[],
-        law:plan.planningLaw||null,truncated:plan.world?.truncated||false};
+        law:plan.planningLaw||null,
+        directOriginalMethod:plan.directOriginalMethod||null,noiseTemperature:plan.noise??null,
+        preActionShape:plan.field?.nodes?.slice(0,192)||[],
+        truncated:plan.world?.truncated||false};
       if(JSON.stringify(pre)!==JSON.stringify(cognitive.report()))throw Error("Frozen evaluation changed learning state");
       parentPort.postMessage(reply);
     }catch(err){parentPort.postMessage({type:"chat",id,kind:"cognitive",error:err.message});}
