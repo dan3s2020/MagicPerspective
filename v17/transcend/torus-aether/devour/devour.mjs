@@ -234,13 +234,15 @@ http.createServer((req, res) => {
     const atlas=q.get("atlas")==="1";
     const maxPaths=Math.min(1000,Math.max(1,Math.trunc(Number(q.get("maxPaths"))||256)));
     const topology=q.get("topology")==="1"||atlas;
+    const maxStates=Math.min(10000,Math.max(4,Math.trunc(Number(q.get("maxStates"))||1500))),
+      maxDepth=Math.min(12,Math.max(1,Math.trunc(Number(q.get("maxDepth"))||6)));
     // A paused or completed original Brain is read from the saved checkpoint
     // with no 60-second inter-worker bottleneck or fabricated fresh state.
     if(!sl.wk){
       const f=saveOf(sl);
       if(!fs.existsSync(f))return json(res,{error:"Original Brain checkpoint absent"});
       try{
-        const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
+        const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates,maxDepth});
         const plan=native.plan({start,required,includeTopology:topology});
         const allPaths=atlas?enumerateNativePaths(plan,{maxPaths}):null;
         const body=execute&&plan.found?
@@ -263,7 +265,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Original Brain worker busy; cannot claim timely hypermaze path"});
     },30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,atlas,maxPaths,trainNoise:false}});
+    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,atlas,maxPaths,maxStates,maxDepth,trainNoise:false}});
     return;
   }
   // Read the append-only atlas WITHOUT making up paths from a new model.
