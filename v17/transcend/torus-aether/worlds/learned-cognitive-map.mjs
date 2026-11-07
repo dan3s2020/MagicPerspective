@@ -435,6 +435,14 @@ export class LearnedCognitiveMap {
     realObservedActions:[...this.interventions.values()].reduce((s,e)=>s+e.accepted+e.blocked,0),
     confirmedActions:[...this.rules.values()].filter(r=>r.accepted>0).length,
     rejectedActions:[...this.rules.values()].reduce((s,r)=>s+r.rejected,0),last:this.last,
+    // Actual corpus-induced transformations, not simulated geometry. Bounded
+    // live instrumentation; the complete checkpoint continues to retain
+    // ALL current rules and accumulated evidence, without truncating training.
+    liveRuleEdges:[...this.rules.values()].slice(-96).map(r=>({
+      id:r.id,from:Array.isArray(r.from)?r.from.join(' '):String(r.from??''),
+      to:Array.isArray(r.to)?r.to.join(' '):String(r.to??''),
+      at:r.at,observations:r.observations,accepted:r.accepted,
+      rejected:r.rejected,kind:r.kind,ambiguous:!!r.ambiguous})),
     interpretation:'Rules learned from contrasts are hypotheses until actions are observed. No next-token trainer.'};}
   export(){return {version:1,limits:this.limits,documents:this.documents,
     sentenceObservations:this.sentenceObservations,compactedExamples:this.compactedExamples,
