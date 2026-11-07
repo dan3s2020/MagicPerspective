@@ -71,6 +71,23 @@ test("NATIVE actual CPU Text+Cognitive+Hypermaze+Maze/Transform exposes entire p
   assert.equal(plan.found,true,"Actual multiple-text-world transitions must compose");
   assert.ok(plan.plannedPath.length>=2);
   assert.equal(plan.plannedPath.at(-1).after.split(" ")[0],"green");
+  // V22 refused initial text >1,024 characters. The full V23
+  // world must accept the entire original text, not just a short prefix.
+  const longInitial="blue "+Array.from({length:1100},(_,i)=>"whole_context_"+i).join(" ")+".";
+  assert.ok(longInitial.length>1024);
+  const longR=await fetch(base+"/cognitive-eval",{
+   method:"POST",headers:{"content-type":"application/json"},
+   body:JSON.stringify({w:0,initial:longInitial,
+     goal:{slots:{"0":"green"}},maxNodes:32,maxDepth:5})
+  });
+  assert.equal(longR.status,200);
+  const longPlan=await longR.json();
+  assert.ok(!longPlan.error,"Entire long source must be accepted: "+JSON.stringify(longPlan.error));
+  assert.equal(longPlan.found,true);
+  assert.equal(longPlan.directOriginalMethod,"Discoverer.shape");
+  assert.equal(longPlan.usedCrossWorld,true);
+  assert.ok(longPlan.plannedPath.at(-1).after.includes("whole_context_1099"),
+    "No part of the 1100-token context may disappear to cheat at navigation");
   const fail=await fetch(base+"/cognitive-eval",{
    method:"POST",headers:{"content-type":"application/json"},
    body:JSON.stringify({w:0,initial:"blue irrelevant context unknown.",
