@@ -1,0 +1,28 @@
+name: V17 learned local-axis robustness (real modules / frozen heldout)
+on:
+  push:
+    branches:
+      - experiment/V17-ROBUST-LOCAL-CAUSAL-AXES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  truthful-observed-axes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Strict syntax and original experimental model
+        run: |
+          node --check v17/research/text-hypermaze/state-dependent-axes.mjs
+          node --check v17/tests/state-dependent-axes-robust-heldout.test.mjs
+      - name: Exact unseen equation paths, noise robustness, unsupported refusals, causal ablation
+        run: node --test v17/tests/state-dependent-axes-robust-heldout.test.mjs
+      - name: Preserve earlier math and correlated text-world evidence
+        run: |
+          node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
+          node --test v17/tests/text-hypermaze-state-dependent.test.mjs
+          node --test v17/tests/text-hypermaze-xd-invariants.test.mjs
