@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_BLOCKING_PRE_IMPLEMENTATION",
+  "source_quotes": [
+    {
+      "source": "user-visible 2026-11-07 direct request in current conversation",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI"
+    },
+    {
+      "source": "user-visible 2026-11-07 direct request in current conversation",
+      "literal": "REZULTATELE TREBUIE SA FIE CLARE ! NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "base_branch": "experiment/V23-OBSERVED-HYPERPATH-LONG-RANGE-20261107",
+  "base_commit": "77051b7a0b6df8a19d43dba3fc36641f88025da9",
+  "target_branch": "experiment/V24-OBSERVED-ACTION-LONGTEXT-RESTORE-GPT6-20261107",
+  "immutableOriginal": "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+  "preserveExact": "v17/transcend/torus-aether/worlds/exercise.mjs, maze physics, all trained weights, original live UI, CUDA, all V21/V22 worlds",
+  "affected_existing_files": [
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "v17/tests/v23-observed-hyperpath-long-range.test.mjs"
+  ],
+  "new_files": [
+    "v17/tests/v24-longtext-independent-heldout.test.mjs",
+    ".github/workflows/v24-longtext-direct-discoverer.yml",
+    "v17/docs/V24_LONGTEXT_DIRECT_DISCOVERER_EVIDENCE_20261107.md"
+  ],
+  "scope": "Repair ONLY long-state admission with explicit opt-in size bound and TRUSTED observer-accepted action hypothesis conductance in the existing cognitive graph adapter; preserve same original 0.97 .5 .2 2N Discoverer.shape law. Original default model/test behavior unchanged; require independent-physics heldout evaluation and causal ablations, without claiming semantic general intelligence.",
+  "prior_failed_test": "GitHub run 42341046064 / job 128308568926: three RED V23 tests throw 'Invalid cognitive planning limits' on 2048-token unseen text; original 84 retinas, 144 and 511 accepted edge path tests PASS.",
+  "requirements": [
+    "Same actual original Discoverer.shape, no alternative A* or next-character head",
+    "Before-first-action complete path on 2048+ contextual tokens, exact frozen stored evidence, independent physics (not copy predicted)",
+    "Original 2D parity, contradiction and omitted-rule ablations",
+    "Never mark unseen accepted action hypothesis as verified at the heldout state",
+    "Only explicit trusted-action-evidence hypothesis gate may raise path conductance to address numeric extinction; observable and reversible",
+    "Record exact heldout metrics; failures and CUDA/semantic gaps must remain explicit"
+  ],
+  "release_gate": "BLOCKED until real unseen full OpenThoughts3 Q/A correctness, full native UI and user RTX 3050 Ti CUDA are established; passing synthetic symbolic graph tests is not a user-requested production release"
+}
