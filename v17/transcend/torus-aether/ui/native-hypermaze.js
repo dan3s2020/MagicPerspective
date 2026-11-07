@@ -14,7 +14,8 @@ const colors={gold:"#f0c87a",cyan:"#66cce7",mint:"#67deab",
 const state={worker:0,summary:null,plan:null,topology:null,
   frame:0,playing:false,lastTick:0,rotation:0,offsetX:0,offsetY:0,
   zoom:1,drag:null,busy:false,idToPoint:[],idByText:new Map(),
-  dataVersion:0,drawnVersion:-1};
+  dataVersion:0,drawnVersion:-1,atlas:null,planId:null,
+  operatorOffset:0,historyCursor:0,operators:[],history:[],audit:null};
 function say(message,isError=false){
  const element=$("status");
  element.textContent=message;
@@ -80,6 +81,9 @@ $("zoom").addEventListener("input",e=>{
 $("worker").addEventListener("change",e=>{
  state.worker=Number(e.target.value);
  state.plan=null;state.topology=null;state.frame=0;
+ state.atlas=null;state.planId=null;state.audit=null;
+ state.operatorOffset=0;state.historyCursor=0;state.operators=[];state.history=[];
+ $("atlasAudit").disabled=true;renderAtlas();
  clearCanvas();poll();
 });
 for(const action of ["start","pause","save"]){
@@ -108,13 +112,17 @@ $("plan").addEventListener("click",async()=>{
  say("Solicit traseul original Discoverer.shapeGraph de la Brain. Referința nu este transmisă.");
  try{
   const q=new URLSearchParams({w:String(state.worker),start,
-   required:required.join(","),execute:"1",topology:"1"});
+   required:required.join(","),execute:"1",topology:"1",atlas:"1",maxPaths:"256"});
   const result=await getJson("/native-hypermaze?"+q.toString(),
    {method:"POST"});
   if(!result.plannedBeforeFirstAction||result.referenceAnswerProvided!==false)
    throw Error("Sursa nu a confirmat planificarea înainte de acțiune, fără răspuns de referință");
+  if(result.atlas?.schema!=="v17-native-observed-path-atlas-v1")
+   throw Error("Original Brain did not return a real learned-path atlas");
   state.plan=result;
   state.topology=result.topology||null;
+  state.atlas=result.atlas;state.planId=result.planId;state.audit=null;
+  $("atlasAudit").disabled=!state.planId;renderAtlas();
   state.frame=0;state.playing=!!result.body?.frames?.length;
   state.lastTick=performance.now();
   state.dataVersion++;
@@ -240,6 +248,34 @@ function draw(){
   ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
  }
  ctx.stroke();
+ const atlas=state.atlas;
+ if(atlas?.paths?.length){
+  ctx.lineWidth=1.2;ctx.strokeStyle="rgba(181,154,243,.28)";
+  for(const route of atlas.paths.slice(0,256)){
+   if(route.isInitialShape)continue;
+   ctx.beginPath();
+   for(const [i,id] of route.nodes.entries()){
+    const p=points[id];if(!p)continue;
+    if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+   }
+   ctx.stroke();
+  }
+ }
+ if(atlas?.deadEnds?.length){
+  ctx.strokeStyle=colors.rose;ctx.lineWidth=1.5;
+  for(const dead of atlas.deadEnds){
+   const p=points[dead.at];if(!p)continue;
+   ctx.beginPath();ctx.moveTo(p.x-3,p.y-3);ctx.lineTo(p.x+3,p.y+3);
+   ctx.moveTo(p.x+3,p.y-3);ctx.lineTo(p.x-3,p.y+3);ctx.stroke();
+  }
+ }
+ if(topology.frontier?.length){
+  ctx.strokeStyle=colors.gold;ctx.lineWidth=1;
+  for(const f of topology.frontier){
+   const p=points[f.node];if(!p)continue;
+   ctx.strokeRect(p.x-4,p.y-4,8,8);
+  }
+ }
  for(const n of nodes){
   const p=points[n.id];if(!p)continue;
   const potential=Number.isFinite(n.potential)?n.potential:0;
