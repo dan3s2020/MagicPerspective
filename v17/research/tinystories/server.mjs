@@ -347,7 +347,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   batchKB:arg("batch-kb","128"),batchStories:arg("batch-stories","180"),
   nativeWorlds:!flag("no-native-worlds"),
   nativeTextEvery:positive(arg("native-text-every","16"),"native text every",1,256),
-  nativeTextBytes:positive(arg("native-text-bytes","48"),"native text bytes",4,128),
+  nativeTextBytes:positive(arg("native-text-bytes","48"),"native text bytes",4,8192),
   nativeWorldEvery:positive(arg("native-world-every","32"),"native world every",1,10000),
   saveSeconds:arg("save-seconds","45"),resume:!flag("fresh"),
   autoStart:flag("start"),autoOpen:flag("open")}).catch(e=>{console.error("TINYSTORIES_START_ERROR",message(e));process.exitCode=1;});
