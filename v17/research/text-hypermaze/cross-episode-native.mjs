@@ -100,7 +100,8 @@ const proposedAction=(tokens,rule)=>{
  return null;
 };
 export class NativeCrossEpisodeTransfer {
- constructor(brain,{minWorlds=2,maxStates=256,maxDepth=8}={}){
+ constructor(brain,{minWorlds=2,maxStates=256,maxDepth=8,
+  includeTextContrasts=false,minTextContrastSupport=2}={}){
   if(!(brain instanceof Brain))throw Error("The original V17 Brain instance is required");
   if(!Number.isInteger(minWorlds)||minWorlds<2||minWorlds>10)
    throw Error("At least two independent lived worlds are required");
@@ -109,6 +110,10 @@ export class NativeCrossEpisodeTransfer {
    throw Error("Invalid native hypermaze search limits");
   this.brain=brain;this.minWorlds=minWorlds;
   this.maxStates=maxStates;this.maxDepth=maxDepth;
+  this.includeTextContrasts=includeTextContrasts===true;
+  if(!Number.isInteger(minTextContrastSupport)||minTextContrastSupport<2||minTextContrastSupport>100)
+   throw Error("Text contrast reuse requires at least two independently observed examples");
+  this.minTextContrastSupport=minTextContrastSupport;
   // Plain Maps/Sets are saved INSIDE Brain's existing .v8 checkpoint.
   // The module's class and a second trainable model are NOT checkpointed.
   if(!brain.crossEpisodeTransformations)brain.crossEpisodeTransformations=fresh();
@@ -195,7 +200,10 @@ export class NativeCrossEpisodeTransfer {
     ready:this._ready(r),conflicted:r.conflicted,examples:r.examples.slice(0,3)})),
    memorySavedInOriginalBrain:true,
    noiseUsedInPlan:false,
-   fullLanguageSemanticsLearned:false};
+   fullLanguageSemanticsLearned:false,
+   textContrastExplorationEnabled:this.includeTextContrasts,
+   textContrastMinimumSupport:this.minTextContrastSupport,
+   originalTextContrastOperators:this.brain.observedTransformations?.operators?.size||0};
  }
  // Visible maze goal, NOT the entire correct output and NOT a hidden
  // reference answer. The goal may come from a distinct task world.
@@ -215,7 +223,8 @@ export class NativeCrossEpisodeTransfer {
   }
   throw Error("Unknown visible goal predicate");
  }
- plan({startText,goal,allowedActions=null}={}){
+ plan({startText,goal,allowedActions=null,
+  includeTextContrasts=this.includeTextContrasts}={}){
   const start=safe(startText,"Actual starting world"),
    sourceTokens=tokenizeObservation(start);
   if(sourceTokens.length<2)throw Error("A nonempty text world is required");
