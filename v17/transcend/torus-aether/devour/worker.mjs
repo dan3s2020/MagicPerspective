@@ -8,13 +8,15 @@ import path from "node:path";
 import {openTextDataset} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveHyperMaze,parseHeldoutText} from "./live-hypermaze.mjs";
+import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
+import {once} from "node:events";
 import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
-const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, saveFile, resume} = workerData;
+const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, xdAtlasEvery = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
 // A real text corpus may be Q/A pairs OR free prose. Both contain observed
@@ -110,6 +112,26 @@ const selfcode = SELF_CODE ? new NativeSelfCodeWorld({brain,saveFile,seed:brain.
 if(workerData.paused)selfcode?.pause();
 const sharedFile = saveFile ? saveFile + ".shared.pt" : null;
 const textFile = saveFile ? saveFile + ".causal.json" : null;
+const nativeAtlasFile=saveFile?saveFile+".native-paths.json":null;
+const nativeAtlasLogFile=saveFile?saveFile+".path-atlas.jsonl":null;
+let nativeAtlas=new NativeTextPathAtlas({maxFrames:160,maxLast:12});
+if(resume&&nativeAtlasFile&&fs.existsSync(nativeAtlasFile)){
+  try{
+    const saved=JSON.parse(fs.readFileSync(nativeAtlasFile,"utf8"));
+    if(saved.version!==1)throw Error("Unsupported atlas version");
+    nativeAtlas=Object.assign(new NativeTextPathAtlas(),saved);
+  }catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"Native text-path atlas not loaded: "+err.message});}
+}
+// Append only REAL seen training episodes. Native six-scale graph lives in
+// the original Brain checkpoint; all its current nodes and edges can be read
+// in /atlas-graph pages independently of these causal search journals.
+if(nativeAtlasLogFile)fs.mkdirSync(path.dirname(nativeAtlasLogFile),{recursive:true});
+const nativeAtlasLog=nativeAtlasLogFile?fs.createWriteStream(nativeAtlasLogFile,
+  {flags:"a",highWaterMark:1<<20}):null;
+const atlasFlush=async()=>{
+  if(nativeAtlasLog?.writableNeedDrain)await once(nativeAtlasLog,"drain");
+};
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
@@ -128,6 +150,10 @@ const saveText = () => {
   if(hyperFile){
     fs.writeFileSync(hyperFile+".tmp",JSON.stringify(hyperMaze.export()));
     fs.renameSync(hyperFile+".tmp",hyperFile);
+  }
+  if(nativeAtlasFile){
+    fs.writeFileSync(nativeAtlasFile+".tmp",JSON.stringify(nativeAtlas));
+    fs.renameSync(nativeAtlasFile+".tmp",nativeAtlasFile);
   }
 };
 // The very same corpus, already lived by the original AligningGraph, is also
@@ -183,8 +209,14 @@ const absorbConstructed = row => {
   if (typeof row?.prompt !== 'string' || typeof row?.answer !== 'string' ||
       !row.prompt.trim() || !row.answer.trim()) return;
   previewCurrentLanguageWorld(row);
-  // Every actual answer becomes a chain of observed character transitions.
-  // No held-out sample enters this stream. The same Brain owns the path model.
+  // Prediction FIRST, from the REAL six-scale native Brain, with no answer
+  // available. Only after this is frozen do we diagnose with the actual
+  // observed answer. The native graph is trained LAST, preventing leakage.
+  const before=nativeAtlas.before(brain.constructedPaths,row.prompt,
+    {episode:row.k,observed:brain.observedTransformations,maxOutput:48});
+  const judged=nativeAtlas.after(brain.constructedPaths,before,row.answer,
+    {observed:brain.observedTransformations,maxAnalyze:512});
+  if(nativeAtlasLog)nativeAtlasLog.write(JSON.stringify(judged)+"\n");
   brain.learnConstructedText(row.prompt,row.answer);
 };
 const absorbText = row => {
