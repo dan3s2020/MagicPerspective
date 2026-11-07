@@ -214,6 +214,44 @@ http.createServer((req, res) => {
   // same actual corpus, no reference answer passed or synthetic training.
   // No UI controls added; production default remains unchanged until full
   // semantic and original CUDA acceptance proves actual user compliance.
+  // This endpoint is READ-ONLY and paginated. Every row in the atlas came
+  // from actual original Brain events, real learned edit evidence, or an
+  // actual attempted (including unsuccessful) search. No static visual demo.
+  if(req.method==="GET"&&url==="/native-hypermaze-atlas"){
+    if(!process.argv.includes("--native-hypermaze"))
+      return json(res,{error:"Original native atlas research is not enabled"});
+    const sl=slots.find(x=>x.w===Number(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("text"))
+      return json(res,{error:"Select an original Brain learning text"});
+    const mode=q.get("mode")||"events";
+    if(!["events","summary","operators"].includes(mode))
+      return json(res,{error:"Atlas mode must be events, summary, or operators"});
+    const after=Number(q.get("after")||0),limit=Number(q.get("limit")||60);
+    if(!Number.isSafeInteger(after)||after<0||!Number.isSafeInteger(limit)||limit<1||limit>250)
+      return json(res,{error:"Atlas pagination requires 0+ cursor and 1..250 events"});
+    const kinds=q.getAll("kind").filter(Boolean);
+    const onlyFailed=q.get("onlyFailed")==="1",onlyUnused=q.get("onlyUnused")==="1";
+    if(!sl.wk){
+      const f=saveOf(sl);
+      if(!fs.existsSync(f))return json(res,{error:"Original Brain checkpoint not saved"});
+      try{
+        const brain=Brain.load(f);
+        const native=new NativeGoalTextMaze(brain,{
+          maxStates:1500,maxDepth:6,atlasFile:f+".hypermaze-atlas.jsonl"});
+        const result=mode==="operators"?
+          native.atlasOperators({after,limit,onlyUnused}):
+          mode==="summary"?native.atlasSummary():
+          native.atlasPage({after,limit,kinds,onlyFailed});
+        return json(res,{mode,result,fromSavedOriginalBrain:true});
+      }catch(err){return json(res,{error:err.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Original native atlas worker did not respond"});
+    },30000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({nativeHypermazeAtlas:{id,mode,after,limit,kinds,onlyFailed,onlyUnused}});
+    return;
+  }
   if(req.method==="POST"&&url==="/native-hypermaze"){
     if(!process.argv.includes("--native-hypermaze"))
       return json(res,{error:"Native original hypermaze research is not enabled; release remains BLOCKED"});
@@ -227,14 +265,21 @@ http.createServer((req, res) => {
       return json(res,{error:"Need an observed starting state and explicit goal constraints, NEVER a heldout answer"});
     const execute=q.get("execute")==="1";
     const topology=q.get("topology")==="1";
+    const maxStates=Number(q.get("maxStates")||1500);
+    const maxDepth=Number(q.get("maxDepth")||6);
+    if(!Number.isSafeInteger(maxStates)||maxStates<4||maxStates>50000||
+       !Number.isSafeInteger(maxDepth)||maxDepth<1||maxDepth>20)
+      return json(res,{error:"Search budget: 4..50000 states and 1..20 depth. The result will disclose truncation."});
     // A paused or completed original Brain is read from the saved checkpoint
     // with no 60-second inter-worker bottleneck or fabricated fresh state.
     if(!sl.wk){
       const f=saveOf(sl);
       if(!fs.existsSync(f))return json(res,{error:"Original Brain checkpoint absent"});
       try{
-        const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
-        const plan=native.plan({start,required,includeTopology:topology});
+        const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6,
+          atlasFile:f+".hypermaze-atlas.jsonl"});
+        const plan=native.plan({start,required,includeTopology:topology,
+          maxStates,maxDepth,recordAtlas:true});
         const body=execute&&plan.found?
           native.execute(plan,{enableNoise:true,trainNoise:false}):null;
         return json(res,{...plan,body,w:sl.w,fromSavedBrain:true,
@@ -246,7 +291,8 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Original Brain worker busy; cannot claim timely hypermaze path"});
     },30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,trainNoise:false}});
+    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,
+       maxStates,maxDepth,trainNoise:false}});
     return;
   }
   if(req.method==="POST"&&url==="/language-maze"){
