@@ -98,7 +98,7 @@ export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1"}=
      state.job=job;
      const child=spawn(process.execPath,["--test",file],{
        cwd:v17,windowsHide:true,stdio:["ignore","pipe","pipe"],
-       env:{...process.env,FORCE_COLOR:"0"}
+       env:{...process.env,NODE_TEST_CONTEXT:undefined,FORCE_COLOR:"0"}
      });
      const timeout=setTimeout(()=>{if(job.status==="running"){job.error="Research time limit exceeded";child.kill();}},120000);
      child.stdout.on("data",buf=>{job.stdout=append(job.stdout,buf);job.metrics=extractResults(job.stdout);});
