@@ -1,0 +1,31 @@
+name: V39 original Brain 9000 authentic human QA averaged learning scale and fresh 650 frozen answers
+on:
+  push:
+    branches:
+      - experiment/V39-9000-HUMAN-QA-AVERAGED-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-nine-thousand:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 9,000 authentic human TRAIN questions, 500 disjoint TRAIN calibration questions, then 650 genuinely unseen DEV questions; one native Brain
+        run: node --test v17/tests/v39-9000-human-qa-averaged.test.mjs
+  original-source-and-shape-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Keep unchanged original shape, native V38 averaged 2400 answer acceptance and full persistent checkpoint
+        run: |
+          node --test v17/tests/v38-real-averaged-evidence-validation.test.mjs
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
