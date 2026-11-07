@@ -40,6 +40,138 @@ async function action(operation,body={}){
     return x;
   }catch(e){errors++;appendLog("error",e.message);notice(e.message,true);throw e;}
 }
+
+// Browser-only history of native measurements. Does not affect V17 training.
+let nativeHistory=[],historyWorker=null;
+const chartMetrics=new Set(["aligned","live","together","C","mazeShape",
+  "completedExercisesPerSecond","sustainedCharactersPerSecond"]);
+const rateMetric=k=>k==="completedExercisesPerSecond"||
+  k==="sustainedCharactersPerSecond";
+function recordHistory(m){
+  if(historyWorker!==m.selectedWorker){
+    nativeHistory=[];historyWorker=m.selectedWorker;
+  }
+  const last=nativeHistory.at(-1),now=Date.now();
+  const progress=m.progressTrained;
+  if(last&&last.progress===progress&&now-last.time<3500)return;
+  nativeHistory.push({
+    time:now,progress,aligned:m.aligned,live:m.live,
+    together:m.together,C:m.C,mazeShape:m.mazeShape,
+    completedExercisesPerSecond:m.completedExercisesPerSecond,
+    sustainedCharactersPerSecond:m.sustainedCharactersPerSecond
+  });
+  if(nativeHistory.length>256)nativeHistory.shift();
+  drawHistory();
+}
+function drawHistory(){
+  const canvas=$("nativeHistoryCanvas"),context=canvas?.getContext("2d");
+  if(!context)return;
+  const scale=Math.min(2,window.devicePixelRatio||1),
+    width=Math.max(80,canvas.clientWidth),height=Math.max(80,canvas.clientHeight);
+  canvas.width=Math.round(width*scale);
+  canvas.height=Math.round(height*scale);
+  context.setTransform(scale,0,0,scale,0,0);
+  context.clearRect(0,0,width,height);
+  const key=$("nativeMetricView").value;
+  if(!chartMetrics.has(key))return;
+  const points=nativeHistory.filter(x=>typeof x[key]==="number"&&
+    Number.isFinite(x[key]));
+  context.font="11px system-ui";context.textAlign="left";
+  const x0=55,y0=height-26,spanX=width-82,spanY=height-44;
+  context.strokeStyle="#293d55";context.lineWidth=1;
+  context.beginPath();context.moveTo(x0,y0-spanY);
+  context.lineTo(x0,y0);context.lineTo(x0+spanX,y0);context.stroke();
+  if(!points.length){
+    context.fillStyle="#9ab0c8";
+    context.fillText("Măsurătoarea originală nu este încă disponibilă.",65,Math.round(height/2));
+    value("nativeHistoryInfo","Lipsesc puncte originale pentru "+key+"; nu sunt interpolate.");
+    return;
+  }
+  const max=rateMetric(key)?Math.max(1,...points.map(x=>x[key])):1;
+  const min=0;
+  for(let i=0;i<=4;i++){
+    const y=y0-i*spanY/4;
+    context.strokeStyle="#263b51";context.beginPath();
+    context.moveTo(x0,y);context.lineTo(x0+spanX,y);context.stroke();
+    context.fillStyle="#8da3c0";
+    context.fillText(rateMetric(key)?(max*i/4).toFixed(1):
+      ((i/4)*100).toFixed(0)+"%",8,y+3);
+  }
+  const timeMin=points[0].time,timeMax=points.at(-1).time;
+  const timeSpan=Math.max(1,timeMax-timeMin);
+  context.strokeStyle="#55e3ca";context.lineWidth=2;
+  context.beginPath();
+  points.forEach((p,i)=>{
+    const x=x0+spanX*(p.time-timeMin)/timeSpan,
+      y=y0-spanY*(p[key]-min)/max;
+    if(i===0)context.moveTo(x,y);else context.lineTo(x,y);
+  });
+  context.stroke();
+  const last=points.at(-1),valueText=rateMetric(key)?
+    fmt(last[key],2):formatPct(last[key]);
+  value("nativeHistoryInfo","ORIGINAL V17 · "+key+" = "+valueText+
+    " · "+points.length+" citiri valide · graful #"+historyWorker+
+    " · evoluția este desenată, nu recalculată.");
+}
+function updateGpuControls(snapshot,m){
+  const gpu=snapshot.gpu||{},config=m.gpuSettings||gpu;
+  if(!$("nativeGpuDevice").dataset.initialized){
+    const d=String(config.device||"off");
+    if(["off","cpu","cuda:0","cuda:1"].includes(d))$("nativeGpuDevice").value=d;
+    for(const [k,id]of [["worlds","nativeGpuWorlds"],["textBatch","nativeGpuTextBatch"],
+      ["vram","nativeGpuVram"],["util","nativeGpuUtil"]]){
+      if(config[k]!=null&&Number.isFinite(Number(config[k])))$(id).value=config[k];
+    }
+    $("nativeGpuDevice").dataset.initialized="yes";
+  }
+  const error=snapshot.original?.gpu?.error||snapshot.graph?.gpu?.error;
+  const textStatus=m.completedExercisesPerSecond===null?
+    "Viteză neraportată încă":"Viteză "+fmt(m.completedExercisesPerSecond,3)+" ex/s";
+  value("nativeGpuStatus",error?"EROARE CUDA "+String(error).slice(0,125):
+    String(m.nativeDevice)+" · "+textStatus);
+}
+function renderOriginalMaze(record){
+  const box=$("nativeMazeBox"),canvas=$("nativeMazeCanvas"),ctx=canvas?.getContext("2d");
+  if(!record||!Array.isArray(record.wall)||!Number.isInteger(record.n)||
+    !Array.isArray(record.path)){
+    box.hidden=true;return;
+  }
+  box.hidden=false;
+  const n=record.n,C=canvas.width,S=canvas.height,
+    size=Math.min(C,S)/n,x0=(C-n*size)/2;
+  ctx.clearRect(0,0,C,S);
+  for(let i=0;i<n*n;i++){
+    ctx.fillStyle=record.wall[i]?"#223a50":"#0a1422";
+    ctx.fillRect(x0+(i%n)*size+.5,Math.floor(i/n)*size+.5,size-1,size-1);
+  }
+  const px=i=>x0+(i%n+.5)*size,py=i=>(Math.floor(i/n)+.5)*size;
+  const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+  const first=record.shapes?.[0]||null;
+  if(Array.isArray(first)&&Number.isInteger(record.start)){
+    ctx.strokeStyle="#ffd36a";ctx.lineWidth=Math.max(1,size*.18);
+    ctx.setLineDash([5,4]);ctx.beginPath();
+    let pos=record.start;ctx.moveTo(px(pos),py(pos));
+    for(const action of first){
+      const dir=DIRS[action];if(!dir)break;
+      const col=pos%n+dir[0],row=Math.floor(pos/n)+dir[1];
+      if(col<0||row<0||col>=n||row>=n)break;
+      pos=row*n+col;ctx.lineTo(px(pos),py(pos));
+    }
+    ctx.stroke();ctx.setLineDash([]);
+  }
+  const path=record.path;
+  if(path.length>1){
+    ctx.strokeStyle="#73bbff";ctx.lineWidth=Math.max(2,size*.12);
+    ctx.beginPath();ctx.moveTo(px(path[0]),py(path[0]));
+    for(let i=1;i<path.length;i++)ctx.lineTo(px(path[i]),py(path[i]));
+    ctx.stroke();
+  }
+  for(const [cell,color]of [[record.start,"#ff8295"],[record.goal,"#62e6c2"]]){
+    if(!Number.isInteger(cell)||cell<0||cell>=n*n)continue;
+    ctx.fillStyle=color;ctx.beginPath();ctx.arc(px(cell),py(cell),Math.max(3,size*.24),0,7);ctx.fill();
+  }
+}
+
 function liveIdentity(d){
   const m=nativeMeasurements(d);
   const isConnected=true;
@@ -47,6 +179,8 @@ function liveIdentity(d){
   $("connection").classList.remove("error");
   value("connectionText","ORIGINAL V17 · conectat");
   value("nativeDevice",m.nativeDevice);
+  updateGpuControls(d,m);
+  recordHistory(m);
   const gr=d.original,source=d.corpus;
   const first=source?source.kind+" · "+fmt(source.trainRows)+
     " train · "+fmt(source.heldOut)+" holdout · "+fmt(source.totalRows)+" total":
@@ -254,6 +388,8 @@ function graphUpdate(raw){
 function drawEval(){
   if(!selectedEval)return;
   const ev=selectedEval,rows=ev.kind==="text"?ev.exercises:ev.kind==="maze"?ev.mazes:ev.tasks;
+  if(ev.kind==="maze")renderOriginalMaze(rows[selectedIndex]);
+  else $("nativeMazeBox").hidden=true;
   const x=rows[selectedIndex];if(!x)return;
   const max=rows.length;
   $("replayRange").max=max-1;$("replayRange").value=selectedIndex;
@@ -380,6 +516,15 @@ $("stepBtn").addEventListener("click",()=>{
 $("evalBtn").addEventListener("click",()=>evaluate().catch(e=>{
   value("nativeFrozenStatus","EVALUARE NEREUȘITĂ: "+e.message);
 }));
+$("nativeGpuApply").addEventListener("click",()=>action("gpu",{
+  device:$("nativeGpuDevice").value,
+  worlds:Number($("nativeGpuWorlds").value),
+  textBatch:Number($("nativeGpuTextBatch").value),
+  vram:Number($("nativeGpuVram").value),
+  util:Number($("nativeGpuUtil").value)
+}).then(()=>{notice("Setările GPU au fost transmise DIRECT motorului V17");poll()})
+  .catch(()=>{}));
+$("nativeMetricView").addEventListener("change",drawHistory);
 $("applyBtn").addEventListener("click",()=>action("params",{
   worker,ltemp:Number($("axes").value),wtemp:Number($("words").value),
   pnoise:Number($("noise").value),gnoise:Number($("batch").value),
