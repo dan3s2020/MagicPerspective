@@ -482,6 +482,10 @@ class Server:
             if self.fast_text is None:
                 raise RuntimeError("text_fast_init required before text_fast_train")
             r = self.fast_text.train(m["rows"])
+            if "epoch" in m and "endOffset" in m:
+                self.fast_text.cursor(int(m["epoch"]), int(m["endOffset"]))
+                r["cursorEpoch"] = self.fast_text.cursor_epoch
+                r["cursorOffset"] = self.fast_text.cursor_offset
         elif c == "text_fast_eval":
             if self.fast_text is None:
                 raise RuntimeError("text_fast_init required before text_fast_eval")
@@ -493,6 +497,11 @@ class Server:
         elif c == "text_fast_status":
             if self.fast_text is None:
                 raise RuntimeError("text_fast_init required before text_fast_status")
+            r = self.fast_text.status()
+        elif c == "text_fast_cursor":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_cursor")
+            self.fast_text.cursor(int(m["epoch"]), int(m["offset"]))
             r = self.fast_text.status()
         elif c == "text_fast_graph":
             if self.fast_text is None:
