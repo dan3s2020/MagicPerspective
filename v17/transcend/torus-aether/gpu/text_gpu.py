@@ -206,7 +206,7 @@ class TextCard:
             for q, (i, o) in enumerate(zip(Pi, Oi)):
                 e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - L:i][::-1] if L else [];  # exact context, O(maxK), NOT reverse O(i) entire preceding document ys_true[q] = e[i]
             for q, (i, o) in enumerate(zip(Pi, Oi)):
-                h = self._selfidx(exs, o); r = h.get(i)
+                h = self._selfidx(exs, o, progress=progress); r = h.get(i)
                 if r: sy[q], sk[q], sfar[q], fsy[q], fsk[q], fsfar[q] = r
             CX = X.arr(ctx); FCX = form_of(X, CX); Y = X.arr(ys_true); FY = form_of(X, Y)
             props = self._proposals(CX, FCX)
@@ -322,11 +322,15 @@ class TextCard:
         fb = farb if farb is not None else X.zeros(Q, np.int64) + 10
         return ((src * 13 + X.clip(dd, 0, 12)) * 4 + sb) * 11 + fb
     _self = {}
-    def _selfidx(self, exs, o):                  # per exercise: for every position, the longest earlier part of it that happened before (exact, as align.mjs SelfMem)
+    def _selfidx(self, exs, o, progress=None):  # same original SelfMem suffix automaton; report REAL positions while building it
         if o in self._self: return self._self[o]
         e = exs[o]; fe = [DIG if 48 <= c <= 57 else c for c in e]
-        def scan(seq):
+        def scan(seq, stage):
             ln = [0]; link = [-1]; nx = [{}]; first = [-1]; last = 0; res = {}
+            # The full-exercise suffix automaton is constructed once BEFORE
+            # the first CUDA microchunk can be completed. On huge records
+            # that looked like a frozen "alignment 0/N". Expose actual
+            # scanned characters, not fictitious trained characters.
             for pos, c in enumerate(seq):
                 if pos >= 1:                       # predicting seq[pos] from seq[:pos]: the link of the last state
                     st = link[last]
@@ -341,8 +345,12 @@ class TextCard:
                         while p != -1 and nx[p].get(c) == q: nx[p][c] = cl; p = link[p]
                         link[q] = cl; link[cur] = cl
                 last = cur
+                if progress is not None and (pos + 1) % 8192 == 0:
+                    progress(stage * len(seq) + pos + 1, 2 * len(seq), 'self-index')
+            if progress is not None:
+                progress((stage + 1) * len(seq), 2 * len(seq), 'self-index')
             return res
-        a = scan(e); f = scan(fe); out = {}
+        a = scan(e, 0); f = scan(fe, 1); out = {}
         for i in range(1, len(e)):
             x, y = a.get(i), f.get(i)
             if x or y: out[i] = (x[0] if x else -1, x[1] if x else 0, x[2] if x else 0, y[0] if y else -1, y[1] if y else 0, y[2] if y else 0)
