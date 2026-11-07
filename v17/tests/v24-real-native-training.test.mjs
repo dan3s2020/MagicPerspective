@@ -71,6 +71,12 @@ test("V24: genuine streaming, freeze-before-observation, checkpoint resume and h
  assert.equal(second.status().progress.datasetFullyConsumed,true);
  assert.equal(second.heldout.count,3);
  assert.equal(second.progress.onlineScored,15);
+ const completed=await new RealTrainer({source:src,out,maxRecords:40,resume:true}).initialize();
+ assert.equal(completed.mode,"finished");
+ assert.equal(completed.heldout.count,3);
+ assert.ok(completed.trace&&completed.trace.beforeAction!==false);
+ assert.ok(completed.events.length>0);
+ assert.throws(()=>completed.start(),/already reached/);
  for(const x of hold)assert.ok(![...second.model.records.values()].some(r=>r.prompt===x.prompt));
 });
 test("V24: online/pause/resume and real HTTP controls, HTML, trace, CSRF protection",async t=>{
