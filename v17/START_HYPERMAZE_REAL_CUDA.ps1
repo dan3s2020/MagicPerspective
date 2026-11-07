@@ -15,14 +15,16 @@ param(
   [string]$ResumeFrom = "",
   [int]$Port = 8877,
   [int]$Workers = 1,
+  [int]$Every = 250000,
+  [int]$CheckpointEvery = 100000,
   [string]$Arms = "winner",
   [int]$MazeEvery = 4000,
   [double]$Mem = 2,
   [string]$Gpu = "cuda:0",
   [double]$Vram = 2.2,
   [int]$GpuWorlds = 4,
-  [int]$GpuTextBatch = 1,
-  [int]$GpuTextChunk = 64,
+  [int]$GpuTextBatch = 8,
+  [int]$GpuTextChunk = 256,
   [int]$GpuUtil = 100,
   [switch]$Fresh,
   [switch]$TraceTransformations
@@ -39,6 +41,8 @@ if ($Port -lt 1024 -or $Port -gt 65535) { throw "Port must be 1024..65535" }
 if ($Workers -lt 1 -or $Workers -gt 16) { throw "Workers must be 1..16" }
 if ($GpuWorlds -lt 0) { throw "GpuWorlds must be nonnegative" }
 if ($Mem -lt 0.5) { throw "Mem must be at least 0.5 GB" }
+if ($Every -lt 1000) { throw "Every must be at least 1000" }
+if ($CheckpointEvery -lt 0) { throw "CheckpointEvery cannot be negative" }
 if ($Fresh -and $ResumeFrom) { throw "-Fresh cannot be combined with -ResumeFrom. Refusing to lose checkpoints." }
 # Unlike the original V17 server which prints a listen error and may keep
 # training without a reachable UI, refuse to launch on an occupied port.
@@ -77,7 +81,8 @@ Write-Host "http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "CUDA: $Gpu, world batch: $GpuWorlds, VRAM budget: $Vram GB, GPU utilization target: $GpuUtil %."
 Write-Host "Original CPU JavaScript Graph + CPU text maze sidecar remain CPU: 100% of all code on CUDA is NOT asserted." -ForegroundColor Yellow
 Write-Host "No demo: actual source rows train the original V17 Brain, with live pre-update text-route observations."
-Write-Host "Stability profile for 4GB VRAM: text batch $GpuTextBatch, CUDA chunk $GpuTextChunk, world batch $GpuWorlds, reserved budget $Vram GB."
+Write-Host "CUDA throughput: text batch $GpuTextBatch, chunk $GpuTextChunk, world batch $GpuWorlds, VRAM budget $Vram GB."
+Write-Host "Expensive frozen evaluation every $Every committed text chars; independent Brain checkpoint every $CheckpointEvery committed chars."
 Write-Host "Real status endpoint: http://127.0.0.1:$Port/health?w=0" -ForegroundColor Cyan
 Write-Host ""
 # Checkpoints belong to THIS isolated folder. Existing checkpoints are
@@ -97,7 +102,8 @@ $launchParams = @{
   GpuTextBatch = $GpuTextBatch
   GpuTextChunk = $GpuTextChunk
   GpuUtil = $GpuUtil
-  Every = 50000
+  Every = $Every
+  CheckpointEvery = $CheckpointEvery
 }
 if ($TraceTransformations) { $launchParams.TraceTransformations = $true }
 $launchParams.Start = $true
