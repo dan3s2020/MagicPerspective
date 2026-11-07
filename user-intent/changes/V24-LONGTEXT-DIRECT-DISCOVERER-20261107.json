@@ -1,7 +1,7 @@
 {
   "version": 1,
   "date": "2026-11-07",
-  "status": "NATIVE_ONE_BRAIN_HTTP_FEEDBACK_AND_REPLAN_CI_PASS_HELDOUT_STRESS_IN_PROGRESS",
+  "status": "EVIDENCE_REPRODUCED_STRUCTURED_ARITHMETIC_GENERAL_NATURAL_LANGUAGE_RELEASE_BLOCKED",
   "source_quotes": [
     {
       "source": "user-visible 2026-11-07 direct request in current conversation",
@@ -56,7 +56,7 @@
     "Only explicit trusted-action-evidence hypothesis gate may raise path conductance to address numeric extinction; observable and reversible",
     "Record exact heldout metrics; failures and CUDA/semantic gaps must remain explicit"
   ],
-  "release_gate": "BLOCKED until real unseen full OpenThoughts3 Q/A correctness, full native UI and user RTX 3050 Ti CUDA are established; passing synthetic symbolic graph tests is not a user-requested production release",
+  "release_gate": "STOP_SHIP / NO LAUNCH COMMAND UNTIL ALL USER REQUIREMENTS ACTUALLY VERIFIED, ESPECIALLY GENERAL LONG-ANSWER FIRST-TRY CORRECTNESS, LIVE TRAINING, CUDA, AND COMPLETE UI.",
   "additional_source_immutability": [
     "Copy exact bytes of proven v17/transcend/torus-aether/worlds/observed-transformations.mjs blob 203af6f21b3834bc6d9487e78cef268bba7f37e5 from experiment/V17-TEXT-MAZE-COUPLED-AXES-20261107",
     "Copy exact bytes of proven v17/research/text-hypermaze/state-dependent-axes.mjs blob 4a69a622e9221b1b18bee310343d0a1e3d25e46d from the same research branch",
@@ -66,5 +66,19 @@
   "additional_evaluation": "Unseen arithmetic result NOT provided in goal; learn nonlinear numeric action field from six real observed before/after pairs, generalize to new long document body and independent action physics; report hallucinated failures and ablations. Does not mean unrestricted OpenThoughts answers 100%. Add read-only native learned graph snapshots and seeded noise controls using proven V23 UI; preserve every original control and test same underlying worker HTTP and frozen state. Integrate optional corpus-confirmed learned arithmetic actions into original Brain object as ONE checkpointed native field, expose HTTP observe/eval only on enabled live cognitive world; bounded labels and immutable heldout prediction; no silent changes to original free text writer/CUDA. Native action feedback protocol must receive an independently supplied accepted/rejected physical outcome AFTER a frozen whole-route prediction. Compare actual document against predicted next whole document; record signed mismatch, update ONE original Brain and honest learned evidence, then replan using original Discoverer.shape when deviations occur. No simulated step reports or resetting user controls. Stress: 56 distinct unseen arithmetic input goals (x4..10 and y5..12) on unique 2057+ token contextual documents, train only on six original observed before/after transitions, freeze all weights during heldout, exact whole text check and independently implemented multiplication physics; keep failure evidence if any.",
   "observed_results": "V24 run 42341683874 PASS (job 128310527157): 16/16 first-shot full 2057-token answers; average 7 observed-action steps; 866256 total exact output characters, original Discoverer.shape; 48/48 2048-token symbolic action steps; 84 original maze parity; 6/6 V22 and 19/19 cognitive tests, V19 HTTP and V21 migration. OPEN: only structured arithmetic grammar, no general Q/A or GPU certification.",
   "native_integration_rule": "Do not instantiate a second Brain or independently replacing AligningGraph. Store only observed action-field state inside the existing Brain .v8 checkpoint; real worker adds no new source data during frozen evaluation.",
-  "verified_until": "GitHub run 42342635788 PASS @ 999946d7aa0a3a062ecaabd39a7b16949aad8b94: original one-Brain native HTTP long document, actual preserved V17 UI source and checkpoints, no OpenThoughts generalized 100%."
+  "verified_until": "GitHub run 42342635788 PASS @ 999946d7aa0a3a062ecaabd39a7b16949aad8b94: original one-Brain native HTTP long document, actual preserved V17 UI source and checkpoints, no OpenThoughts generalized 100%.",
+  "verified_results": [
+    "CI 42343283459 PASS sha 0149b5a00f8b992876667027df99cde7b0f94805: 56/56 distinct unseen input numerical goals, full 2050+ token document exactly predicted before action; 4,660,945 bytes-equivalent UTF-8 ASCII contextual answer characters verified; 4-17 steps; independent arithmetic physics, frozen learned operator weights; measured CPU scoring 3.285MiB/s (NOT training/CUDA).",
+    "CI 42343047816 PASS sha 702c6c697dc074cde98777bd61657c77165e18f9: 6 observed action pairs in ORIGINAL V17 Brain; native worker HTTP; 10 independently replayed physical steps; 2056 token complete answer; real blocked action replan and exact persisted brain checkpoint; original UI controls served.",
+    "CI 42342942748 PASS: true observed physical context wall changes original Discoverer first route from [0,1] to [1,1].",
+    "V22 original source and full 2D maze byte/behavior parity, V23 long path field and V19/V21 original regression all GREEN."
+  ],
+  "complete_evidence_report": "v17/docs/V24_ONE_BRAIN_INTEGRATED_REAL_HYPERPATH_PROOF_20261107.md",
+  "nonconformances": [
+    "NO actual OpenThoughts3 unrestricted heldout full answer accuracy 100% proof",
+    "NO all-GPU native RTX 3050 Ti CUDA training of original learner",
+    "NO proof original geometry/noise field causes general natural-language meaning",
+    "NO real user Windows browser full visual acceptance",
+    "NO complete archived original chat bytes."
+  ]
 }
