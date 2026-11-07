@@ -70,9 +70,15 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
          progress:{trained:4,total:1209984,heldOut:16,remaining:1209980,mode:"native-text"},
          test:{n:4000,aligned:.642,live:.617,together:.581,C:.594,field:.551},
          maze:{played:512,test:{shape:1,solved:1,ratio:1}},
-         gpu:{settings:{device:"cuda:0"},text:{hostMs:{
-           sustainedExercisesPerSecond:11.48,
-           sustainedCharactersPerSecond:98765}}}}]
+         gpu:{settings:{device:"cuda:0"},
+           info:{device:"cuda:0",totalGB:4.29,vramGB:3.72,
+             freeBeforeGB:4.02,safeHeadroomGB:.30},
+           text:{vramUsedGB:2.40,vramReservedGB:2.60,
+             vramCurrentAllocatedGB:1.90,vramFreeGB:1.10,
+             vramBudgetGB:3.72,realVramPeakFraction:.699,
+             cudaChunkUsed:8192,nextCudaChunk:16384,
+             hostMs:{sustainedExercisesPerSecond:11.48,
+               sustainedCharactersPerSecond:98765}}}}]
      }));
      if(u.pathname==="/graph")return res.end(JSON.stringify({
        w:0,nodes:[["a","symbol","a",2,0,0],["b","symbol","b",3,0,0],
@@ -168,6 +174,17 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    assert.match(progressUI.counts,/4 \/ 1\.209\.984/);
    assert.equal(progressUI.fatal,true);
    assert.ok(parseFloat(progressUI.color)>0,"Actual original training progress must be drawn");
+   const cudaReality=await c.eval("({used:document.querySelector('#v32GpuUsed').textContent,"+
+     "budget:document.querySelector('#v32GpuBudget').textContent,"+
+     "free:document.querySelector('#v32GpuFree').textContent,"+
+     "chunk:document.querySelector('#v32GpuMicrochunk').textContent,"+
+     "usage:document.querySelector('#v32GpuUsageFill').style.width})");
+   assert.match(cudaReality.used,/2,600 GB/);
+   assert.match(cudaReality.budget,/3,720 GB/);
+   assert.match(cudaReality.free,/1,100 GB/);
+   assert.match(cudaReality.chunk,/8\.192/);
+   assert.ok(Math.abs(parseFloat(cudaReality.usage)-2.6/3.72*100)<0.1);
+
 
    const nativeGeometry=await c.eval("({history:document.querySelector('#nativeHistoryCanvas').width, "+
      "status:document.querySelector('#nativeHistoryInfo').textContent, "+
