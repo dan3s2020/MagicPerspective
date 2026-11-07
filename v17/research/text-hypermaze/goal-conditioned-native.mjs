@@ -236,6 +236,16 @@ export class NativeGoalTextMaze {
    independentSemanticValidation:false,
    noNextByteSubstitution:true,
    modelObservationCount:b.observedTransformations.seen,
+   designLimits:{
+    maxTokensPerObservation:b.observedTransformations.maxTokens,
+    maxActiveObservedStates:b.observedTransformations.maxObserved,
+    maxLearnedOperators:b.observedTransformations.maxOperators,
+    rejectedLongObservations:b.observedTransformations.rejectedLong,
+    evictedOldObservations:b.observedTransformations.evicted,
+    droppedNewOperatorFamilies:b.observedTransformations.droppedOperators,
+    activeObservedStates:b.observedTransformations.records.size,
+    learnedOperatorFamilies:b.observedTransformations.operators.size
+   },
    failureReason:shape?.targetReached?null:
      w.goalNodes===0?(w.frontier.length?"frontier-unexpanded":"missing-reachable-goal"):
      b.disc.attract(2)<=.2?"target-attraction-not-learned":
