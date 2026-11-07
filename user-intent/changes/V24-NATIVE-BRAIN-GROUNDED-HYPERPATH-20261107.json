@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_FULL_ACCEPTANCE_BLOCKED",
+  "user_source_quotes": [
+    {
+      "source": "user turn 2026-11-07",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI"
+    },
+    {
+      "source": "user turn 2026-11-07",
+      "literal": "NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "ancestor": "experiment/V23-GROUNDED-TEMPORAL-PREACTION-SHAPE-20261107@59be1fe226eaaf117145e6a9ee27059649652066",
+  "originalPaths": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/devour/brain.mjs",
+    "v17/transcend/torus-aether/gpu/text_gpu.py",
+    "v17/transcend/torus-aether/ui/index.html"
+  ],
+  "affectedExistingSource": [
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/ui/index.html"
+  ],
+  "additions": [
+    "v17/transcend/torus-aether/ui/v23-grounded-live.js",
+    "v17/tests/v24-native-brain-v23-http.test.mjs",
+    ".github/workflows/v24-native-v23-lab.yml"
+  ],
+  "preservedOriginalEngine": true,
+  "additionalMechanism": "Append *explicit opt-in* grounded witnessed numeric/temporal causal world only, using directly original Discoverer.shape. Never replace original active V17 writer or CUDA engine automatically.",
+  "validation": {
+    "run": 42342970743,
+    "nativeTests": 39,
+    "failures": 0,
+    "nativeLongSteps": 100000,
+    "nativeLongInputCharacters": 4800055,
+    "nativeCorrectAnswer": 1212341,
+    "realNvidiaExecution": false,
+    "realOpenThoughtsHeldout": false
+  },
+  "limitations": [
+    "The original V17 AligningGraph/Brain open-ended answer emitter is NOT yet controlled by the learned solution-shape graph.",
+    "Training in this V24 endpoint requires witnessed before/action/after examples supplied explicitly; native Q/A corpus auto-learning these semantic action laws remains UNVERIFIED.",
+    "Long-document answer exactness is proved only in constrained learned-syntax arithmetic/event worlds, not novel natural-language OpenThoughts3 heldout text.",
+    "No verified native UI pixel rendering or automatic physical per-step execution and replanning.",
+    "No full 4D/5D intrinsic dimensional discovery, real causal Noise Space integration, fractal self/world emergence.",
+    "No full CUDA cognitive computation or 100 complete OpenThoughts exercises/sec measurements on RTX3050Ti.",
+    "Full original conversation exact bytes/attachments are not all available. main issue #25 remains OPEN."
+  ],
+  "noProductionLauncherUntilFinalGate": true
+}
