@@ -101,6 +101,69 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
    <div><div class="eyebrow" style="padding:13px 15px 0">Execuție, diferență și efect învățat</div><pre id="actual">Aștept efectele observate de organism.</pre></div>
   </div>
  </section>
+
+ <section class="panel" id="atlasPanel" style="margin-top:13px">
+  <div class="panelHead"><h2>Atlasul traseelor și transformărilor învățate</h2><small id="atlasSource">Doar date reale · finit și paginat · fără oracle</small></div>
+  <div class="panelBody">
+   <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:9px">
+    <div class="card"><label>Trasee simple enumerate</label><strong id="atlasRoutes">—</strong></div>
+    <div class="card"><label>Fundături reale</label><strong id="atlasDeadEnds">—</strong></div>
+    <div class="card"><label>Familii operatori în graf</label><strong id="atlasFamilies">—</strong></div>
+    <div class="card"><label>Frontiere neexplorate</label><strong id="atlasFrontiers">—</strong></div>
+    <div class="card"><label>Limită enumerare</label><strong id="atlasTruncated">—</strong></div>
+    <div class="card"><label>Greșeli Unicode</label><strong id="atlasWrong">—</strong></div>
+   </div>
+   <div class="legend" style="margin:12px 0">
+    <span style="--c:#b59af3">Trasee alternative învățate</span>
+    <span style="--c:#f0809a">Fundături și acțiuni blocate</span>
+    <span style="--c:#f0c87a">Frontieră neexplorată</span>
+    <span style="--c:#66cce7">Traseu executat</span>
+   </div>
+   <div class="results">
+    <div class="panel">
+     <div class="panelHead"><h2>Toate căile găsite în bugetul declarat</h2><small>Fiecare acțiune și dovada observației</small></div>
+     <pre id="atlasPaths">Niciun traseu presupus. Aștept atlasul original al organismului.</pre>
+    </div>
+    <div class="panel">
+     <div class="panelHead"><h2>Căi care nu ajung la țintă</h2><small>Motive verificabile: buclă, operator absent, limită de adâncime</small></div>
+     <pre id="atlasMisses">Aștept obiectivul și graful original.</pre>
+    </div>
+   </div>
+   <div class="results" style="margin-top:13px">
+    <div class="panel">
+     <div class="panelHead"><h2>Catalogul tuturor transformărilor memorate</h2><small>Operații reale din toate exercițiile</small></div>
+     <div class="panelBody controls">
+       <button id="atlasLoadOperators">Încarcă următorii 100 operatori</button>
+       <span id="atlasOperatorsProgress" class="muted">0 încărcați</span>
+     </div>
+     <pre id="atlasOperators">Un operator are sursă, destinație, context și proveniență reală.</pre>
+    </div>
+    <div class="panel">
+     <div class="panelHead"><h2>Istoric permanent al încercărilor</h2><small>Fișier JSONL separat, numai adăugare</small></div>
+     <div class="panelBody controls">
+       <button id="atlasLoadHistory">Încarcă următoarele 10 înregistrări</button>
+       <span id="atlasHistoryProgress" class="muted">0 înregistrări</span>
+     </div>
+     <pre id="atlasHistory">Forma și atlasul sunt salvate înainte ca evaluatorul să vadă referința.</pre>
+    </div>
+   </div>
+   <div class="panel" style="margin-top:13px">
+    <div class="panelHead"><h2>Postmortem pe caracterele greșite</h2><small>REFERINȚA intră numai DUPĂ traseul înghețat</small></div>
+    <div class="panelBody">
+     <label class="formlabel" for="atlasReference">Textul corect de referință, dezvăluit separat după prima predicție</label>
+     <textarea id="atlasReference" placeholder="Lipește aici răspunsul corect numai după ce ai obținut forma inițială. Nu intră în procesul de planificare."></textarea>
+     <div class="controls" style="margin-top:10px">
+      <button id="atlasAudit" disabled>Compară caractere și axe lipsă</button>
+      <span id="atlasAuditStatus" class="muted">Mai întâi prezice forma.</span>
+     </div>
+     <div class="results" style="margin-top:11px">
+      <div><div class="eyebrow">Fiecare caracter corect/greșit · indice Unicode</div><pre id="atlasCharacters">Aștept o predicție reală, apoi referința separată.</pre></div>
+      <div><div class="eyebrow">Transformări lipsă, nepotriviri și limitări de design</div><pre id="atlasGaps">Motivele nu sunt deduse din referință înainte de predicție.</pre></div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </section>
  <footer>Reprezentarea din canvas este o proiecție geometrică a coordonatelor 5D învățate sau, dacă lipsesc, un layout de vizualizare derivat explicit din muchiile reale. Nu constituie dovadă de dimensionalitate fizică ori de semantică generală. Acțiunile executate sunt transformări observate de modelul intern, nu un evaluator semantic extern. <a href="https://github.com/dan3s2020/MagicPerspective/pull/58">Cod, teste și limite (PR #58)</a>.</footer>
 </main>
 <script src="./native-hypermaze.js" defer></script>
