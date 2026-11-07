@@ -155,7 +155,10 @@ const chats = new Map(); let chatId = 0;                                     // 
 const datasetInfo = () => ({
   kind:source.kind,rows:source.totalRows??null,trainRows:source.trainRows??null,
   heldOutRows:source.heldRows??null,files:source.fileCount??null,
-  processed:overallDatasetProgress(source,slots,Math.max(1,Math.ceil(slots.length/arms.length)))
+  processed:overallDatasetProgress(source,
+    slots.map(sl=>({...sl,committedExercises:Math.max(
+      graphs.get(sl.w)?.exercises||0,last.get(sl.w)?.exercises||0)})),
+    Math.max(1,Math.ceil(slots.length/arms.length)))
 });
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
