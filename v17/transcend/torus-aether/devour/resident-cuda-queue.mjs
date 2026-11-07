@@ -147,12 +147,15 @@ export class ResidentCudaExerciseQueue {
         this.queued=queue.length;
         yield item;
         await takeHeld();
-        // Start the FIRST native TextCard training batch immediately after
-        // warmExercises records. A giant 48-row preload before the first
-        // commit reproduced the original "UI stands still" failure.
-        // Refill the resident pool only when the current warm queue drains;
-        // future rows still remain resident across many later commits.
-        if(!queue.length && !this._held)
+        // Start the FIRST native TextCard training batch promptly after a
+        // small warm window. Once one real native batch has committed, keep
+        // topping off the resident VRAM future text pool when its read-ahead
+        // queue drops below half the selected exercise budget, rather than
+        // letting the card go empty between large groups.
+        const refillThreshold=Math.max(2,Math.floor(this.maxExercises/2));
+        if((!queue.length||
+            (this.bytesCommitted>0 && queue.length<=refillThreshold))&&
+            !this._held)
           await fill(this.maxExercises);
       }
     }finally{
