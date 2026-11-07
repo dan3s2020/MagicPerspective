@@ -3,7 +3,6 @@
 // terms, not claimed to be autonomously learned physics or semantic knowledge.
 // Axes 12..15 are observed role, confidence, experience age and ORIGINAL
 // Discoverer.shape goal-attraction field. Graph edges remain authoritative.
-import {terms} from "./real-corpus-core.mjs";
 export const AXIS_LABELS=[
  "Text term projection 01","Text term projection 02","Text term projection 03",
  "Text term projection 04","Text term projection 05","Text term projection 06",
@@ -19,7 +18,7 @@ function hash(s,salt){
 }
 const ROLE={ "new-question":-1,"hypothesized-perspective":-.45,
   "observed-question":.35,"observed-answer":1};
-function termVector(text){
+function termVector(text,terms){
  const values=new Array(12).fill(0),tokens=terms(text);
  if(!tokens.length)return values;
  for(const token of tokens){
@@ -31,12 +30,12 @@ function termVector(text){
  const scale=1/Math.sqrt(tokens.length);
  return values.map(x=>Math.tanh(x*scale));
 }
-export function projectObservedWorld(nodes,field,records,nextId){
+export function projectObservedWorld(nodes,field,records,nextId,terms){
  const projected=nodes.map((n,i)=>{
   const r=n.recordId==null?null:records.get(n.recordId);
   const actualText=n.kind==="observed-answer"&&r?r.answer:
     n.kind==="observed-question"&&r?r.prompt:n.label;
-  const semantic=termVector(actualText);
+  const semantic=termVector(actualText,terms);
   const confidence=n.kind==="observed-answer"||n.kind==="observed-question"?1:
     n.kind==="hypothesized-perspective"?.25:0;
   const age=r&&nextId>1?2*r.id/(nextId-1)-1:0;
