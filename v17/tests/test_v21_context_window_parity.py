@@ -51,6 +51,26 @@ class TextCudaContextWindowTests(unittest.TestCase):
         self.assertIn("ctx[r, :L] = e[i - L:i][::-1]",imagination)
         self.assertNotIn("e[i - 1::-1]",alignment)
         self.assertNotIn("e[i - 1::-1]",imagination)
+    def test_full_exercise_self_index_reports_real_progress_before_first_cuda_chunk(self):
+        # No change in suffix-automaton result, only honest observed
+        # build progress for texts too long for the initial 4,096 chunk.
+        data=[ord(c) for c in "ABCCABABABA Q: Why? A: Yes. " * 800]
+        original=tg.TextCard("numpy")
+        indexed=original._selfidx([data],0)
+        observed=[]
+        instrumented=tg.TextCard("numpy")
+        got=instrumented._selfidx([data],0,progress=lambda done,total,phase:
+                                   observed.append((phase,done,total)))
+        self.assertEqual(got,indexed)
+        self.assertGreaterEqual(len(observed),4)
+        self.assertEqual(observed[-1],("self-index",2*len(data),2*len(data)))
+        self.assertTrue(all(x[0]=="self-index" and 0<x[1]<=x[2]
+                            for x in observed))
+        self.assertTrue(all(a[1]<=b[1] for a,b in zip(observed,observed[1:])))
+        self.assertEqual(instrumented._selfidx([data],0,progress=lambda *a:
+                              self.fail("Already-indexed text should not rescan")),
+                         indexed)
+
     def test_bounded_slice_benchmark_without_changing_math(self):
         # Old CPU O(prefix length) for every context; new O(maxK=64).
         # Do not compare CPU speed with GPU throughput; record this microbenchmark.
