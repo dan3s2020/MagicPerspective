@@ -29,6 +29,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Parse original and optimized Windows PowerShell launcher scripts
+        run: |
+          if command -v pwsh >/dev/null 2>&1; then
+            pwsh -NoProfile -Command '
+              $ErrorActionPreference="Stop"
+              foreach($f in @("v17/START_V17.ps1","v17/START_HYPERMAZE_REAL_CUDA.ps1","v17/WATCH_TRAINING_THROUGHPUT.ps1")){
+                $tokens=$null
+                $parseErrors=$null
+                $null=[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f).Path,[ref]$tokens,[ref]$parseErrors)
+                if($parseErrors.Count -gt 0){$parseErrors|Out-String|Write-Error;throw "Invalid PowerShell $f"}
+              }
+              Write-Host "All V17 Windows scripts pass PowerShell AST parsing."
+            '
+          else
+            echo 'PowerShell executable not installed on this CI image: Windows syntax check not run'
+          fi
       - name: Preserve original V17 backend, GPU timeout watchdog, real corpus learning and checkpoint
         run: |
           node --check v17/transcend/torus-aether/devour/worker.mjs
