@@ -157,7 +157,7 @@ test("V24: full native Parquet training to real held-out test and checkpoint, no
  const held=await src.heldOut();
  for(const row of held)assert.ok(![...trainer.model.records.values()].some(r=>r.sourceRow===row.index));
 });
-test("V24: actual OpenThoughts-like nested conversations parquet, human/gpt roles and separate heldout",async()=>{
+test("V24: actual OpenThoughts-like nested conversations parquet, human/gpt roles and separate heldout",async t=>{
  const dir=process.env.MP_V24_PARQUET_CONVERSATION_FIXTURE;if(!dir)return;
  const src=await openRealSource({data:dir});
  assert.equal(src.totalRows,85);assert.equal(src.heldRows,16);assert.equal(src.trainRows,69);
@@ -169,4 +169,14 @@ test("V24: actual OpenThoughts-like nested conversations parquet, human/gpt role
  const held=await src.heldOut();
  assert.equal(held[0].index,69);
  assert.ok(held[0].prompt.includes("nested human question 69"));
+ const dirOut=await fs.mkdtemp(path.join(os.tmpdir(),"mp-v24-nested-conversations-"));
+ t.after(()=>fs.rm(dirOut,{recursive:true,force:true}));
+ const trainer=await new RealTrainer({source:src,out:dirOut,maxRecords:90,
+   saveEvery:17,onlineEvery:11}).initialize();
+ trainer.start();await trainer.loop;
+ assert.equal(trainer.mode,"finished");
+ assert.equal(trainer.progress.cursor,69);
+ assert.equal(trainer.model.stats.accepted,69);
+ assert.equal(trainer.heldout.count,16);
+ for(const x of held)assert.ok(![...trainer.model.records.values()].some(r=>r.sourceRow===x.index));
 });
