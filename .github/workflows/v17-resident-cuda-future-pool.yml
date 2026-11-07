@@ -26,10 +26,12 @@ jobs:
           python -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
           python -m py_compile v17/transcend/torus-aether/gpu/resident_text_pool.py
           python -m py_compile v17/tests/test_resident_cuda_text_pool.py
+          python -m py_compile v17/tests/resident_cuda_real_device_selftest.py
           node --check v17/transcend/torus-aether/devour/resident-cuda-queue.mjs
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/full-path-atlas.js
       - name: GPU-resident FIFO parity on ORIGINAL worlds_gpu.Server.handle and TextCard.live()
         run: python -m unittest discover -s v17/tests -p test_resident_cuda_text_pool.py -v
       - name: ORIGINAL exact full-atlas long text reference and impossible-to-silently-skip exercises
