@@ -223,6 +223,7 @@ http.createServer((req, res) => {
         const list = opts.again && sl.lastText ? sl.lastText : opts.own ? [opts.text] : await heldPick(Math.max(1, Math.min(200, +opts.count || 12))); sl.lastText = list;   // "again": the same exercises
         let requestedMax; try { requestedMax = requestedExerciseLength(opts.max); }
         catch (err) { return json(res, {error: err.message}); }
+        opts.fullAnswerRequested = requestedMax === 0;
         opts.list = list.map(t => limitExerciseBytes(toB(t), requestedMax)); delete opts.text; }
       const id = ++ev.id; ev.wait.set(id, r => json(res, {...r, w: sl.w, source: m.kind === "text" ? (opts.own ? "textul tău" : "exerciții nevăzute trase la întâmplare din " + world) : undefined})); ev.wk.postMessage({id, kind: m.kind, opts}); }); return; }
   if (req.method === "POST" && url === "/exam") {                        // ?w=&sizes=7,9,…&per=1 : the frozen brain plays unseen labyrinths, small to large
