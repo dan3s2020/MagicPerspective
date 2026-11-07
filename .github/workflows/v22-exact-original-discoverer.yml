@@ -18,6 +18,8 @@ jobs:
           node-version: '22'
       - name: Verify source hash, 84 original maze episodes and direct Discoverer on genuinely unseen text composition
         run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: 100 LONG unseen compositional answers / actual seed-controlled V17 noise and rejection
+        run: node --test v17/tests/v22-long-unseen-shape.test.mjs
       - name: Preserve existing V19 cognitive agent tests, actual action feedback and goal no-leak
         run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
       - name: Original V19 native HTTP runtime with heldout composition
