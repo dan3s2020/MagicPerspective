@@ -15,6 +15,7 @@ import {KIND} from "../../transcend/torus-aether/worlds/exercise.mjs";
 import {tokenizeObservation,renderObservation} from
  "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {ContextAxisNavigator} from "./context-axis-evidence.mjs";
+import {planNumericOnCumulativeMemory} from "./cumulative-numeric-shape.mjs";
 
 const norm=s=>renderObservation(tokenizeObservation(String(s??"")));
 const edgeKey=(before,action,after)=>JSON.stringify([before,action,after]);
@@ -170,6 +171,10 @@ export class CumulativeHyperMaze {
    evictedNodes:S.evictedNodes,evictedEdges:S.evictedEdges,
    ...this._originalSourceRoleStats()};
  }
+ // Prior independent research on contextual nonlinear movement and
+ // hidden path-order memory is attached to this SAME persistent Brain.
+ // We do not use A* here; only the original Discoverer.shapeGraph.
+ planNumeric(args={}){return planNumericOnCumulativeMemory(this,args);}
  plan({start,required,allowInferred=false,maxExpansionDepth=10,
   maxGraphNodes=this.state.maxStates,includeTopology=false}={}){
   const S=this.state;
