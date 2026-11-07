@@ -21,8 +21,9 @@ $view = Join-Path $PSScriptRoot "research\path-memory\magic-live.html"
 if(-not(Test-Path -LiteralPath $script -PathType Leaf)){throw "Real training script missing: $script"}
 if(-not(Test-Path -LiteralPath $view -PathType Leaf)){throw "Magic UI missing: $view"}
 if(-not(Get-Command node -ErrorAction SilentlyContinue)){throw "Node.js 22 or newer is required"}
-$version = (& node -p 'process.versions.node.split(".")[0]')
-if([int]$version -lt 22){throw "Node.js 22+ required; installed major version: $version"}
+$versionText = (& node --version)
+if($versionText -notmatch '^v(\d+)\.') { throw "Could not read Node version: $versionText" }
+if([int]$Matches[1] -lt 22){throw "Node.js 22+ required; installed: $versionText"}
 if($Text -and $Events){throw "Choose one source: Parquet (-Data), text (-Text) or labeled transitions (-Events)."}
 if($Text){$source=$Text;$field="text"}
 elseif($Events){$source=$Events;$field="events"}
