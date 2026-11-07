@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - experiment/V32-REAL-CUDA-TEXT-THROUGHPUT-VRAM-20261107
+  pull_request:
+    branches:
+      - fix/V29-REAL-START-STATUS-DATASET-PROGRESS-20261107
   workflow_dispatch:
 permissions:
   contents: read
