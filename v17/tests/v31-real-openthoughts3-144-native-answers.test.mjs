@@ -48,13 +48,18 @@ function originalBrain(){
 test("OFFICIAL 144 public OpenThoughts3 human Q/A rows: 120 original Brain training examples, 24 FROZEN natural full-answer tests (no fallback)",{
  timeout:390000
 },async()=>{
- const t0=performance.now(),offsets=[0,210000,810000],perWindow=48,
+ const t0=performance.now(),offsets=[0,210000,810000],perWindow=52,
   blocks=await Promise.all(offsets.map(offset=>getRealRows(offset,perWindow)));
- const rows=blocks.flat();
- assert.equal(rows.length,144);
- const qs=rows.map(x=>x.question);
- assert.equal(new Set(qs).size,rows.length,
-  "Found duplicate natural questions: withholding must be nonleaky");
+ const fetched=blocks.flat(),seen=new Set(),distinct=[];
+ for(const row of fetched){
+  const questionKey=row.question.normalize("NFC").trim();
+  if(seen.has(questionKey))continue;
+  seen.add(questionKey);distinct.push(row);
+ }
+ assert.ok(distinct.length>=144,"Insufficient distinct natural questions; NO synthetic replacement");
+ const rows=distinct.slice(0,144);
+ assert.equal(new Set(rows.map(x=>x.question)).size,144,
+  "Heldout questions must be deduplicated BEFORE the train/test split");
  const model=new NativeGoalTextMaze(originalBrain(),{
   maxStates:2500,maxDepth:6,geometryWeight:0,sharedPolicyWeight:0});
  const training=[],heldout=[];
@@ -97,7 +102,8 @@ test("OFFICIAL 144 public OpenThoughts3 human Q/A rows: 120 original Brain train
  assert.ok(trainingBytes>100000,"Expected substantive original natural language dataset");
  console.log("V31_REAL_OPENTHOUGHTS3_144_NATIVE_QA",JSON.stringify({
   dataset,officialSource:true,
-  offsetWindows:offsets,rowsPerWindow:perWindow,
+  offsetWindows:offsets,sourceRowsPerWindow:perWindow,sourceRowsFetched:fetched.length,
+  duplicateQuestionRowsRemoved:fetched.length-distinct.length,distinctRowsUsed:rows.length,
   genuinelyObservedTrainingQA:training.length,genuinelyUnseenHeldoutQA:heldout.length,
   originalNativeBrain:true,
   originalMazeTrainingEpisodes:model.brain.disc.episodes,
