@@ -1,0 +1,31 @@
+name: V27 exact original Discoverer on learned 4D text axes and inferred goal
+on:
+  push:
+    branches:
+      - experiment/V27-LEARNED-4D-GOAL-ORIGINAL-SHAPE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-4d-text:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Actual original 2D parity, learned target from text, 4D physical path and original Brain checkpoint
+        run: node --test v17/tests/v27-original-4d-text-target-discovery.test.mjs
+      - name: Existing native 4D observed linguistic state and action learner
+        run: node --test v17/tests/goal-text-4d-native-brain.test.mjs
+      - name: Original Brain 2D maze, noise and CUDA method preservation
+        run: |
+          node --test v17/tests/goal-text-original-brain-baseline.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: Syntax of source, old UI, Brain and real learned tokenizer
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/worlds/goal-text-navigator.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
