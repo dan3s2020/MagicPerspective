@@ -230,7 +230,7 @@ export class NativeGoalTextMaze {
    matchedInitialShape:text===plan.predicted,
    actions:frames.length-1,divergences:departures,replans:repairs,
    frames,frozen:!trainNoise,noiseLearned:!!trainNoise,
-   actualExternalSemanticGoalValidated:false,
+   actualExternalSemanticGoalValidated:false,externalSemanticGoalValidated:false,
    originalBrainUnmodifiedInFrozenTest:!trainNoise,
    note:"The SAME original maze-shape propagation plans learned text edits, "+
     "but the executor's observations are currently INTERNAL learned text-world "+
