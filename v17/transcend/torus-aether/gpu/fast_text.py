@@ -13,6 +13,7 @@ import os
 import time
 import base64
 import numpy as np
+from unified_fast import UnifiedHeads
 
 try:
     import torch
@@ -70,6 +71,8 @@ class StreamingFastText:
         self.saved_at_chars = 0
         self.loaded = False
         self.last_checkpoint_time = None
+        self.unified = None
+        restored = None
         if resume and checkpoint and os.path.exists(checkpoint):
             with np.load(checkpoint, allow_pickle=False) as data:
                 if int(data["format"]) != FORMAT:
@@ -85,6 +88,11 @@ class StreamingFastText:
                 self.rows = int(data["rows"])
                 self.saved_at_chars = self.chars
                 self.loaded = True
+                restored = {k: data[k].copy() for k in data.files if k.startswith("unified_")}
+
+        # Existing 256 MiB learned TinyStories counts are reused verbatim.
+        # New heads live inside THIS model, on the SAME selected GPU.
+        self.unified = UnifiedHeads(device, restored)
 
     def _batch(self, values):
         if not values:
@@ -128,6 +136,9 @@ class StreamingFastText:
             latest = index
         t0 = time.perf_counter()
         n = self._batch(fresh)
+        # Every genuine byte also trains integrated multi-perspective, 5D
+        # geometry, observed transformations and route evidence on this GPU.
+        extended = self.unified.observe(fresh)
         if fresh:
             self.rows += len(fresh)
             self.chars += n
@@ -142,7 +153,8 @@ class StreamingFastText:
                 "observed-hashed-context-1to4", "device": self.device,
                 "gpuWeightsUpdated": bool(fresh and self.use_torch and
                                           self.device.startswith("cuda")),
-                "savedChars": self.saved_at_chars}
+                "savedChars": self.saved_at_chars,
+                "unified": extended}
 
     def _selected_counts(self, features):
         n = features.shape[1]
@@ -188,10 +200,11 @@ class StreamingFastText:
                 examples.append({
                     "actual": bytes(np.asarray(y[:take], dtype=np.uint8)).decode("utf-8", errors="replace"),
                     "predicted": bytes(np.asarray(pred[:take], dtype=np.uint8)).decode("utf-8", errors="replace")})
+        new = self.unified.eval(rows)
         return {"seen": seen, "hits": hits,
                 "accuracy": round(hits / seen, 6) if seen else None,
                 "frozen": True, "algorithm": "observed-hashed-context-1to4",
-                "examples": examples}
+                "examples": examples, "unified": new}
 
     def save(self):
         if not self.checkpoint:
@@ -208,7 +221,8 @@ class StreamingFastText:
         with open(temp, "wb") as f:
             np.savez(f, format=np.int64(FORMAT),
                      counts=arr, last_index=np.int64(self.last_index),
-                     chars=np.int64(self.chars), rows=np.int64(self.rows))
+                     chars=np.int64(self.chars), rows=np.int64(self.rows),
+                     **self.unified.serialize())
             f.flush()
             os.fsync(f.fileno())
         os.replace(temp, target)
@@ -228,4 +242,7 @@ class StreamingFastText:
                 "perspectives": 4, "hashStatesPerOrder": STATES,
                 "collisionsOrder3And4": True,
                 "fullOriginalSixScaleAligner": False,
-                "checkpoint": bool(self.checkpoint)}
+                "checkpoint": bool(self.checkpoint),
+                "unified": self.unified.report(),
+                "pretrainedTinyStoriesRetained": self.loaded,
+                "integratedIntoSameCheckpoint": True}
