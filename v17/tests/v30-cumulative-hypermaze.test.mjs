@@ -181,3 +181,61 @@ test("sparse old context-axis evidence can join separated text experiences witho
   semanticClaim:"inferred, requires environment check before promoting to verified"
  }));
 });
+
+test("all four math action observations are in DIFFERENT worlds, but original native goal attraction composes a novel multiplication answer with NO output supplied",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b,{maxStates:5000,maxEdges:20000});
+ const training=[
+  ["2 * 3 = 6.","3 * 3 = 9."],
+  ["2 * 4 = 8.","3 * 4 = 12."],
+  ["2 * 3 = 6.","2 * 4 = 8."],
+  ["3 * 3 = 9.","3 * 4 = 12."]
+ ];
+ training.forEach(([before,after],i)=>m.observeTransition({
+  episode:"distinct-math-world-"+i,before,after,action:"observed-number-change-"+i,
+  accepted:true,source:"independently-verified-numeric-action-outcome"
+ }));
+ const exactUnseenStart="5 * 6 = 30.",expected="8 * 7 = 56.";
+ const goalOnlyInputs=[{index:0,value:8},{index:2,value:7}];
+ assert.equal(training.some(row=>row.includes(exactUnseenStart)),false);
+ assert.equal(training.some(row=>row.includes(expected)),false);
+ const p=m.planNumeric({start:exactUnseenStart,numericGoals:goalOnlyInputs,
+  maxExpansionDepth:15,maxGraphNodes:4000,includeTopology:true});
+ assert.equal(p.found,true,JSON.stringify(p).slice(0,850));
+ assert.equal(p.predicted,expected);
+ assert.equal(p.originalPlanner,"Discoverer.shapeGraph");
+ assert.equal(p.goalDependentAnswerSupplied,false);
+ assert.equal(p.plannedBeforeFirstAction,true);
+ assert.equal(p.pathContainsInferredEdges,true);
+ assert.ok(p.steps>=4);
+ assert.equal(p.inferredNumericModel,"original-StateDependentTextAxes");
+ assert.equal(p.learnedOperatorObservations,4);
+ assert.ok(p.learnedAxisRank>=2);
+ assert.ok(p.values[0]>0);
+ // The independent oracle is used HERE only after the plan is frozen.
+ for(const frame of p.initialShape){
+  const values=frame.match(/\d+/g).map(Number);
+  assert.equal(values[0]*values[1],values[2]);
+ }
+ console.log("V30_CROSS_MAZE_NUMERIC_PATH",JSON.stringify({
+  physicallyObservedActionEpisodes:training.length,
+  unknownStart:exactUnseenStart,fullUnseenAnswer:p.predicted,
+  steps:p.steps,originalPlanner:p.originalPlanner,
+  learnedGlobalGraphNodes:p.topology.nodes.length,
+  inferredEdges:p.topology.hypothesisEdges,
+  outputAnswerNotProvided:true,
+  independentMultiplicationTruth:true,
+  limitation:"controlled numeric token grammar, not open-ended general natural language"
+ }));
+});
+
+test("sparse cross-world samples must NOT create false confident nonlinear axes",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b);
+ m.observeTransition({episode:"sparse-1",before:"2 * 3 = 6.",
+  after:"3 * 3 = 9.",action:"first-plus",accepted:true});
+ m.observeTransition({episode:"sparse-2",before:"2 * 3 = 6.",
+  after:"2 * 4 = 8.",action:"second-plus",accepted:true});
+ const p=m.planNumeric({start:"5 * 6 = 30.",
+  numericGoals:[{index:0,value:8},{index:2,value:7}]});
+ assert.equal(p.found,false);
+ assert.equal(p.reason,"INSUFFICIENT_CROSS_CONTEXT_EVIDENCE");
+});
