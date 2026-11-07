@@ -11,11 +11,15 @@ const out=v34LiveResearch(b,{type:"character-status"});
 const firstMs=performance.now()-t-loadedMs;
 const repeat=v34LiveResearch(b,{type:"character-status"});
 const repeatMs=performance.now()-t-loadedMs-firstMs;
+const byteT=performance.now();
+b.beginExercise();b.live(81,false);
+const firstNativeByteMs=performance.now()-byteT;
 console.log("V34_WINDOWS_ISOLATED_ORIGINAL_BRAIN_CHAR_PROBE",JSON.stringify({
  originalRecordedOperators:op,
  originalTextStates:b.observedTransformations.records.size,
  observedCharacterRules:out.acceptedMinimalOneCharacterContrasts,
  firstStatusMs:+firstMs.toFixed(1),identicalRepeatMs:+repeatMs.toFixed(1),
- incrementalNoReprocess:repeat.scannedOriginalSentencePairs===out.scannedOriginalSentencePairs
+ incrementalNoReprocess:repeat.scannedOriginalSentencePairs===out.scannedOriginalSentencePairs,
+ firstNativeTextByteMs:+firstNativeByteMs.toFixed(2)
 }));
 if(firstMs>25000)throw Error("Standalone evidence extraction unresponsive even before live trainer");
