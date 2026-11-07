@@ -102,7 +102,7 @@ function workerHealth(sl, graph = graphs.get(sl.w)) {
   return {
     state:sl.status==="eroare"?"error":noHeartbeat?"unresponsive":
       snapshotStale?"stale-snapshot":sl.status==="pauză"?"paused":
-      sl.status==="gata"?"completed":"running",
+      sl.status==="gata"?"completed":sl.status==="oprit"?"stopped":"running",
     heartbeatAgeMs,snapshotAgeMs,phase,phaseSince:sl.lastHeartbeat?.phaseSince??null,
     gpuRequest,batch:sl.lastHeartbeat?.batch??null,
     lastReportedChars:sl.lastHeartbeat?.chars??0,
