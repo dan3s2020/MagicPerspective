@@ -101,6 +101,13 @@ test("RED→GREEN real native V17: a missing bridge is NOT walkable, independent
   atlasResult:completed.diagnostic,reference:"exit reached"});
  assert.equal(diagnosticBefore.exact,false);
  assert.equal(diagnosticBefore.firstMismatch,0);
+ assert.equal(diagnosticBefore.scoredAgainstPreActionFrozenGraph,true);
+ assert.equal(diagnosticAfter.scoredAgainstPreActionFrozenGraph,true);
+ assert.equal(diagnosticBefore.referenceStateReachable,false,
+  "The old prediction MUST be compared to the old disconnected graph, not the updated graph");
+ assert.equal(diagnosticBefore.firstWrongReason,
+  "CHARACTER_EXISTS_BUT_NOT_IN_REACHABLE_COMPONENT");
+ assert.equal(diagnosticAfter.referenceStateReachable,true);
  assert.equal(diagnosticAfter.exact,true);
  results.results.push({
   category:"original_V17_physically_verified_missing_bridge",
