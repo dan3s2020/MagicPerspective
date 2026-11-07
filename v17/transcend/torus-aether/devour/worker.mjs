@@ -44,6 +44,12 @@ async function* stream() {                                                 // th
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
+    const assigned = w < ds.trainRows ? Math.ceil((ds.trainRows-w)/n) : 0;
+    parentPort.postMessage({type:"dataset",w:workerData.gw,
+      totalTrainingRows:ds.trainRows,assignedTrainingRows:assigned,
+      heldOutRows:ds.held,sourceParquetFiles:ds.files.length,
+      sourceKind:"OpenThoughts Parquet",
+      source:"metadata only, not counted as consumed exercises"});
     for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
   } else {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
@@ -236,10 +242,20 @@ let batchNow = null;                                                       // wh
 // No invented progress counters: the same original worker emits its own data.
 let workerPhase = "starting", phaseSince = Date.now();
 const setWorkerPhase = label => {workerPhase=label;phaseSince=Date.now();};
+let rateAt=Date.now(),rateChars=brain.chars||0,rateExercises=brain.exercises||0;
 const heartbeat = setInterval(()=>{
-  parentPort.postMessage({type:"heartbeat",w:workerData.gw,at:Date.now(),
-    phase:workerPhase,phaseSince,chars:brain.chars||0,
-    exercises:brain.exercises||0,batch:batchNow,
+  const now=Date.now(),deltaSeconds=Math.max(.001,(now-rateAt)/1000);
+  const committedChars=brain.chars||0,committedExercises=brain.exercises||0;
+  const textMBps=Math.max(0,(committedChars-rateChars)/1e6/deltaSeconds);
+  const exercisesPerSecond=Math.max(0,(committedExercises-rateExercises)/deltaSeconds);
+  rateAt=now;rateChars=committedChars;rateExercises=committedExercises;
+  parentPort.postMessage({type:"heartbeat",w:workerData.gw,at:now,
+    phase:workerPhase,phaseSince,chars:committedChars,
+    exercises:committedExercises,batch:batchNow,
+    textMBps,exercisesPerSecond,
+    throughputIntervalSeconds:deltaSeconds,
+    rawTextMB:committedChars/1e6,
+    throughputDefinition:"COMMITTED text characters in original Brain / wall-clock seconds (NOT Parquet file I/O bytes)",
     activeGpuRpc:gpu?.activeCommand||null,
     gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9});
 },5000);
@@ -283,15 +299,16 @@ const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuS
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   setWorkerPhase("text CUDA: working on real training batch");
-  batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
+  batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot();
   const startChars = brain.chars;
   await brain.learnTextGPU(gpu, exs, progress => {
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
     setWorkerPhase(batchNow.phase);
-    shot();
+    // The real lightweight /health heartbeat carries CUDA progress; do NOT
+    // recompute and serialize the entire organ graph on every kernel tick.
   });
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
-  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
+  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot();
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
   for(const row of meta){absorbHyperMaze(row);absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
@@ -302,9 +319,16 @@ const processGpuText = async (exs, meta) => {
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   batchNow = null;
   setWorkerPhase("completed text batch; preparing next exercises");
-  // Report the first committed batch immediately, not only after 60,000 bytes.
-  if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
-  shot(true);
+  // Heavy frozen evaluation and serializing the entire native Brain must
+  // NOT block the very first batch when the user's intent is continuous text
+  // training. It still runs on each configured true-text checkpoint boundary.
+  if (Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
+    setWorkerPhase("CPU: frozen unseen evaluation and atomic checkpoint");
+    report();
+  }
+  // Limit expensive full-size UI graph snapshots; return counts via /health
+  // every 5 seconds even when the Brain is in a long CUDA batch.
+  shot();
 };
 parentPort.on("message", m => {
   if(m && m.hyperMazeConfig){
