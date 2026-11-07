@@ -8,6 +8,7 @@ CPU (trust right/tried per kind, hits of the brain and of its variations); the e
 there. Mirrors align.mjs (AligningGraph) exactly where it can; where it cannot (the longest earlier match inside the
 exercise is found at lengths 1, 2, 4 … 64, not exactly) it says so."""
 import numpy as np
+import time
 try:
     import torch
     HAVE_TORCH = True
@@ -133,6 +134,7 @@ class TextCard:
     def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None):
         """exs: exercises (lists of symbols) lived now. trust: {key_id: [right, tried]}. Returns the totals."""
         X = self.X; flat = []; owner = []; posin = []; self._self = {}
+        started_at = time.perf_counter()
         for e_i, e in enumerate(exs):
             for i in range(1, len(e)): flat.append(i); owner.append(e_i)
         T_right = {}; T_tried = {}; hits = 0; vhits = [0] * len(variants); total = len(flat)
@@ -185,11 +187,16 @@ class TextCard:
         if progress is not None: progress(c0 + Q, total, 'alignment')
         # imagining: from every 31st moment it writes 48 symbols ahead from its own expectations (all at once); as the real
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
+        X.sync()
+        finished_alignment = time.perf_counter()
         W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress, batch=max(32, min(256, chunk)))
+        X.sync()
+        finished_imagination = time.perf_counter()
         if progress is not None: progress(0, 1, 'indexing')
-        self.X.sync(); self.append(exs); self._self = {}
+        self.X.sync(); self.append(exs); self.X.sync(); self._self = {}
+        finished_index = time.perf_counter()
         if progress is not None: progress(1, 1, 'completed')
-        return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem)), "textWindowChars": self.max_memory, "totalCardChars": self.total_seen}
+        return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem)), "textWindowChars": self.max_memory, "totalCardChars": self.total_seen, "phaseTimes": {"alignmentMs": round((finished_alignment-started_at)*1000, 1), "imaginationMs": round((finished_imagination-finished_alignment)*1000, 1), "indexRebuildMs": round((finished_index-finished_imagination)*1000, 1)}, "fullOriginalMechanism": True, "exactCUDAFusedSuffix": bool(X.t and str(X.dev).startswith("cuda"))}
     def _imagine(self, exs, trust, g, formW, every=31, K=48, progress=None, batch=128):
         X = self.X; starts = [(o, i) for o, e in enumerate(exs) for i in range(every, len(e) - 1, every)]
         W_right, W_tried = {}, {}
