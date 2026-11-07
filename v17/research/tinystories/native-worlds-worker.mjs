@@ -15,7 +15,7 @@ const out=workerData.out,checkpoint=path.join(out,"tinystories-native-v17.v8");
 const rules={depth:1,off:["R2","R4"],budEvery:100,empty:true,maxWires:32,fold:false};
 const c={margin:.05,window:400,many:12};
 const symbolEvery=Math.max(1,Number(workerData.symbolEvery)||16);
-const symbolBytes=Math.min(128,Math.max(4,Number(workerData.symbolBytes)||48));
+const symbolBytes=Math.min(8192,Math.max(4,Number(workerData.symbolBytes)||48));
 const worldEvery=Math.max(1,Number(workerData.worldEvery)||32);
 const saveSeconds=Math.max(2,Number(workerData.saveSeconds)||45);
 const since=()=>Date.now();
