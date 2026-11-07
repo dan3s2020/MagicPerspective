@@ -5,9 +5,17 @@
 // No exact heldout answer, hidden correct goal tokens, BFS or next-char head
 // participates in planning. Unknown grammar/physics => abstention.
 import {KIND} from "../../transcend/torus-aether/worlds/exercise.mjs";
+import {createHash} from "node:crypto";
 import {tokenizeObservation,renderObservation}
  from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 
+const digest=s=>createHash("sha256").update(String(s)).digest("hex");
+const chunkDigests=(tokens,width=96)=>{
+ const chunks=[];
+ for(let i=0;i<tokens.length;i+=width)
+  chunks.push(digest(JSON.stringify(tokens.slice(i,i+width))));
+ return chunks;
+};
 const isWord=s=>/^[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*$/u.test(s);
 const equal=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
 const oneChange=(a,b)=>{
@@ -39,8 +47,16 @@ export class QARoleAxes {
  observe(question,answer){
   const S=this.state;S.seen++;
   const q=tokenizeObservation(question),a=tokenizeObservation(answer);
-  if(q.length<3||q.length>128||a.length<2||a.length>128)
-   return {learned:false,reason:"qa-token-bound",seen:S.seen};
+  if(q.length<3||a.length<2)
+   return {learned:false,reason:"invalid-qa-role-observation",seen:S.seen};
+  // The real OpenThoughts3 sample contains ~31,000–65,000 answer tokens.
+  // They were previously silently excluded by this 128-token rule. For
+  // long Q/A, witness ALL 96-token linked chunks in the same native Brain
+  // with exact raw source hashes and a bounded active segment graph.
+  // Do NOT claim these sequence observations learned general semantic
+  // action physics or can reproduce an unseen long answer.
+  if(q.length>128||a.length>128)
+   return this._observeLong(question,answer,q,a);
   const qk=key(q),ak=key(a);
   if(S.conflicts.includes(qk))return {learned:false,reason:"known-contradiction"};
   const duplicate=S.examples.find(x=>key(x.q)===qk);
@@ -70,6 +86,50 @@ export class QARoleAxes {
   return {learned:true,seen:S.seen,trained:S.trained,
    newlyObservedAxes:discovered.length,realWitnesses:S.edges.length,
    activeQAPairs:S.examples.length};
+ }
+ // True source-sequential long-form role experience. This is a compressed
+ // observed topology, NOT a synthetic reasoning plan or oracle goal.
+ // Each digest stands for a real consecutive original 96-token window;
+ // every input token has a deterministically accounted chunk position.
+ _observeLong(question,answer,q,a){
+  const S=this.state;
+  const L=S.longForm ||= {
+   episodes:0,questionTokens:0,answerTokens:0,questionChunks:0,
+   answerChunks:0,observedRoleTransitions:0,
+   activeChunks:0,evictedSequences:0,
+   tooLongToRetainChunks:0,sequences:[],maxActiveChunks:40000
+  };
+  L.episodes++;L.questionTokens+=q.length;L.answerTokens+=a.length;
+  const qCount=Math.ceil(q.length/96),aCount=Math.ceil(a.length/96);
+  L.questionChunks+=qCount;L.answerChunks+=aCount;
+  L.observedRoleTransitions+=qCount+aCount-1;
+  const canStore=q.length<=120000&&a.length<=120000;
+  if(!canStore){
+   L.tooLongToRetainChunks++;
+   return {learned:false,observed:true,roleTrajectoryLearned:false,
+    reason:"real-long-answer-witness-counted-but-above-retention-cap",
+    answerTokens:a.length,questionTokens:q.length,seen:S.seen};
+  }
+  const qs=chunkDigests(q),as=chunkDigests(a);
+  const seq={questionSHA256:digest(question),answerSHA256:digest(answer),
+   questionTokens:q.length,answerTokens:a.length,
+   questionChunks:qs,answerChunks:as,
+   roleBoundary:{from:qs.at(-1),to:as[0]},
+   evidence:"observed source-sequential, NOT externally validated semantic actions"
+  };
+  L.sequences.push(seq);
+  L.activeChunks+=qs.length+as.length;
+  while(L.activeChunks>L.maxActiveChunks||L.sequences.length>96){
+   const drop=L.sequences.shift();
+   L.activeChunks-=drop.questionChunks.length+drop.answerChunks.length;
+   L.evictedSequences++;
+  }
+  return {learned:false,observed:true,roleTrajectoryLearned:true,
+   reason:"original-long-qa-trajectory-witnessed-without-semantic-claim",
+   questionTokens:q.length,answerTokens:a.length,
+   observedSequentialEdges:qCount+aCount-1,
+   retainedSegmentHashes:qs.length+as.length,
+   seen:S.seen};
  }
  // Connected components are formed ONLY by independently witnessed
  // one-question-axis / one-answer-axis changes in complete real Q/A outcomes.
