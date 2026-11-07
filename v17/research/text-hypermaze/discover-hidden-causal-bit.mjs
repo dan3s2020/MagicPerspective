@@ -9,13 +9,18 @@ import {TWorld} from "../../transcend/torus-aether/worlds/transform.mjs";
 
 const nextRng=seed=>()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
 const center=patch=>patch[4];
-export function buildPartialObservationWorld({lever=true}={}) {
+export function buildPartialObservationWorld({lever=true,leverCoord=[1,1]}={}) {
  const n=7,idx=(x,y)=>y*n+x,terr=Array(n*n).fill(0);
+ if(!Array.isArray(leverCoord)||leverCoord.length!==2||
+    leverCoord.some(v=>!Number.isInteger(v)||v<1||v>5)||
+    (leverCoord[0]===3&&leverCoord[1]===1)||
+    (Math.abs(leverCoord[0]-3)<=1&&Math.abs(leverCoord[1]-3)<=1))
+   throw Error("Lever must be an interior point outside final 3x3 sensory patch, away from door");
  for(let i=0;i<n;i++){
   terr[idx(i,0)]=terr[idx(i,n-1)]=1;
   terr[idx(0,i)]=terr[idx(n-1,i)]=1;
  }
- if(lever)terr[idx(1,1)]=3; // V17's own terrain code, evaluator only.
+ if(lever)terr[idx(leverCoord[0],leverCoord[1])]=3; // Original V17 lever terrain, evaluator only.
  terr[idx(3,1)]=5; // V17 lever-controlled door; outside final 3x3 vision.
  const level={n,terr,self:idx(3,3),boxes:[],goal:Array(n*n).fill(17)};
  return new TWorld(level,[0,1,2,3]);
@@ -28,9 +33,9 @@ function patch3x3(world) {
  }
  return patch;
 }
-export function causalEpisode(seed,loops,{lever=true}={}) {
+export function causalEpisode(seed,loops,{lever=true,leverCoord=[1,1]}={}) {
  if(!Number.isInteger(loops)||loops<0)throw Error("Need nonnegative loop count");
- const rng=nextRng(seed),world=buildPartialObservationWorld({lever});
+ const rng=nextRng(seed),world=buildPartialObservationWorld({lever,leverCoord});
  const observedCenters=[],actions=[];
  const action=output=>{
    const before=world.self;
@@ -45,7 +50,12 @@ export function causalEpisode(seed,loops,{lever=true}={}) {
  interruptions();
  // A fully known, controlled loop used to generate observations. The learner
  // is NOT told that entry into a specific symbol toggles a hidden switch.
- const loop=[3,3,0,0,2,2,1,1];
+ // Test HARNESS computes a route to the deliberately placed lever.
+ // The predictive learner is never told the lever's location or this route.
+ const [lx,ly]=leverCoord,go=[];
+ for(let k=0;k<Math.abs(lx-3);k++)go.push(lx<3?3:1);
+ for(let k=0;k<Math.abs(ly-3);k++)go.push(ly<3?0:2);
+ const reverse=go.slice().reverse().map(a=>(a+2)%4),loop=go.concat(reverse);
  for(let i=0;i<loops;i++){
    loop.forEach(action);interruptions();
  }
