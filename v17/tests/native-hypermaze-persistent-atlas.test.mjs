@@ -60,11 +60,11 @@ test("all observed edits, full explored paths and genuinely missing routes survi
   assert.equal(body.solvedInternalGoal,true);
   assert.equal(body.executedFinal,correct.predicted);
   assert.ok(body.atlasExecutionSequence>correct.atlasSequence);
-  const impossible=m.plan({start:"He is calm.",required:["no-historic-word"],
+  const impossible=m.plan({start:"He is calm.",required:["unicorn"],
    recordAtlas:true,includeTopology:true});
   assert.equal(impossible.found,false);
   assert.equal(impossible.diagnostic.outcome,"no-path-in-finite-known-closure");
-  assert.ok(impossible.diagnostic.missingTargetTokens.includes("no-historic-word"));
+  assert.ok(impossible.diagnostic.missingTargetTokens.includes("unicorn"));
   assert.ok(impossible.diagnostic.causes.includes("missing-observed-goal-concepts"));
   assert.equal(impossible.topology.complete,true);
   const cut=m.plan({start:"He is calm.",required:["She","happy"],
