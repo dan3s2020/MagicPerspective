@@ -50,7 +50,8 @@ export function scoreAxisPredictions(bytes,answerStart,alignDists,fieldRows,alph
     allCorrect:0,allTotal:0,answerCorrect:0,answerTotal:0,
     allNLL:0,answerNLL:0,fieldCoverage:0,alpha:a,
     alignedTrueByteBlocked:0,geometricTrueByteRecoveryPossible:0,
-    geometricExpandedSuccessorSet:0,fieldOnlyAfterEmptyAlign:0
+    geometricExpandedSuccessorSet:0,fieldOnlyAfterEmptyAlign:0,
+    answerAlignedTrueByteBlocked:0,answerGeometricTrueByteRecoveryPossible:0
   }]));
   for(let i=4;i<bytes.length;i++){
     const y=bytes[i];
@@ -71,7 +72,10 @@ export function scoreAxisPredictions(bytes,answerStart,alignDists,fieldRows,alph
       t.geometricTrueByteRecoveryPossible+=+(trueBlocked&&fieldHasTruth);
       t.geometricExpandedSuccessorSet+=+fieldAddsAny;
       t.fieldOnlyAfterEmptyAlign+=+(!original.available&&fieldAvailable);
-      if(i>=answerStart){t.answerCorrect+=correct;t.answerTotal++;t.answerNLL+=logLoss;}
+      if(i>=answerStart){t.answerCorrect+=correct;t.answerTotal++;t.answerNLL+=logLoss;
+        t.answerAlignedTrueByteBlocked+=+trueBlocked;
+        t.answerGeometricTrueByteRecoveryPossible+=+(trueBlocked&&fieldHasTruth);
+      }
     }
   }
   return Object.fromEntries(Object.entries(totals).map(([k,s])=>[k,{
@@ -82,6 +86,8 @@ export function scoreAxisPredictions(bytes,answerStart,alignDists,fieldRows,alph
     fieldCoverageFraction:s.allTotal?s.fieldCoverage/s.allTotal:null,
     alignedTrueByteBlockedFraction:s.allTotal?s.alignedTrueByteBlocked/s.allTotal:null,
     geometryRestoresBlockedTargetFraction:s.allTotal?s.geometricTrueByteRecoveryPossible/s.allTotal:null,
+    answerAlignedTrueByteBlockedFraction:s.answerTotal?s.answerAlignedTrueByteBlocked/s.answerTotal:null,
+    answerGeometryRestoresBlockedTargetFraction:s.answerTotal?s.answerGeometricTrueByteRecoveryPossible/s.answerTotal:null,
     geometryExpandsSuccessorStepsFraction:s.allTotal?s.geometricExpandedSuccessorSet/s.allTotal:null
   }]));
 }
