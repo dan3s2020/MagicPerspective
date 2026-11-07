@@ -23,10 +23,14 @@ jobs:
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/question-goal-live.js
           node --check v17/tests/v24-http-live-native.test.mjs
+          node --check v17/tests/v24-release-contract.mjs
+          node --check v17/tests/v24-release-contract.test.mjs
       - name: Validate exact original shape on real learned text actions and no hidden answer
         run: node --test v17/tests/v24-native-question-goal.test.mjs
       - name: Preserve V23 long observed routes and original 2D parity
         run: node --test v17/tests/v23-observed-hyperpath-long-range.test.mjs
+      - name: Block launch if real 100% unseen answers or full CUDA performance are unproven
+        run: node --test v17/tests/v24-release-contract.test.mjs
   windows-native-question-goal:
     runs-on: windows-2022
     timeout-minutes: 15
