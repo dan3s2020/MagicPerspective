@@ -48,7 +48,7 @@ function originalDiscovererOnText(world,disc,{seed=74129,temperature=null}={}){
   // a long chain before the original 0.97 attraction reaches its start.
   // Hypothetical cognitive edges keep the prior learned/default conductance.
   const conduct=k=>k===KIND.wall?0:
-    k===KIND.floor?(world.verifiedTransitions?1:
+    k===KIND.floor?(world.verifiedTransitions||world.confirmedActionPhysics?1:
       Math.max(.5,disc?.conduct?.(KIND.floor)??.5)):1;
   const attract=k=>k===KIND.target?1:0;
   let values=[];
@@ -329,7 +329,12 @@ export class LearnedCognitiveMap {
   }
   buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth}={}){
     const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
-    if(!start.length||start.length>96||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
+    // Training still observes short whole-sentence contrasts (<=96 tokens),
+    // but a learned local action can act on a much larger unseen world.
+    // Bound the total candidate-world token cells to prevent runaway memory.
+    if(!start.length||start.length>8192||!valid(maxNodes,2,20000)||
+      !valid(maxDepth,1,256)||maxNodes*start.length>4000000)
+      throw Error('Invalid cognitive planning limits');
     LearnedCognitiveMap.matchGoal(start,goal);
     const queue=[start],byKey=new Map([[key(start),0]]),out=[[]],depth=[0];
     let rejected=0,truncated=false,imagined=0;
@@ -355,7 +360,16 @@ export class LearnedCognitiveMap {
       }
     }
     const targets=queue.map((tokens,i)=>LearnedCognitiveMap.matchGoal(tokens,goal)?i:null).filter(i=>i!==null);
+    // World edges remain hypothetical for a NEW state. Only the local
+    // operators have been physically confirmed in earlier observed worlds.
+    // This evidence raises traversability for long attraction propagation;
+    // independent physics must still verify every action at execution.
+    const confirmedActionPhysics=imagined>0&&out.every(row=>row.every(edge=>{
+      const r=this.rules.get(edge.action);
+      return !!r&&r.accepted>0&&r.rejected===0&&!r.ambiguous;
+    }));
     return {states:queue,neighbors:out,start:0,targets,goal:clone(goal),truncated,
+      confirmedActionPhysics,
       estimatedTransitions:imagined,rejected,fromObservedExamples:this.examples.size,
       source:'observed complete-sentence contrasts + actual action feedback',
       unseenStates:queue.filter(s=>!this.examples.has(key(s))).length};
