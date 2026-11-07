@@ -4,6 +4,7 @@
 // AFTER the plan has been frozen. All counts have explicit truncation flags.
 import {createHash} from "node:crypto";
 import fs from "node:fs";
+import path from "node:path";
 
 const hash=v=>createHash("sha256").update(JSON.stringify(v)).digest("hex");
 const tokens=t=>(String(t||"").match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*|[^\s]/gu)||[]);
@@ -215,7 +216,7 @@ export function appendNativeAtlasLedger(filename,entry){
   throw Error("Original Brain atlas ledger requires a file path");
  // All past attempts are append-only. This never overwrites prior traces
  // or the pretrained V17 .v8 / TinyStories .npz checkpoint.
- fs.mkdirSync(new URL("file://"+filename).pathname.replace(/\/[^/]*$/,"")||".",{recursive:true});
+ fs.mkdirSync(path.dirname(filename),{recursive:true});
  fs.appendFileSync(filename,JSON.stringify(entry)+"\n",{encoding:"utf8"});
 }
 
@@ -226,21 +227,22 @@ export function readNativeAtlasLedger(filename,{cursor=0,limit=20}={}){
  if(offset>size)throw Error("Ledger cursor beyond file size");
  const fd=fs.openSync(filename,"r");
  const chunk=Buffer.alloc(64*1024);
- let pos=offset,pending="",records=[],readBytes=0;
+ let pos=offset,pending=Buffer.alloc(0),records=[],readBytes=0;
  try{
-  while(pos<size&&records.length<rows&&readBytes<10*1024*1024){
+  while(pos<size&&records.length<rows&&readBytes<16*1024*1024){
    const n=fs.readSync(fd,chunk,0,Math.min(chunk.length,size-pos),pos);
    if(!n)break;pos+=n;readBytes+=n;
-   pending+=chunk.toString("utf8",0,n);
+   pending=Buffer.concat([pending,chunk.subarray(0,n)]);
    let cut;
-   while((cut=pending.indexOf("\n"))>=0&&records.length<rows){
-    const raw=pending.slice(0,cut);pending=pending.slice(cut+1);
+   while((cut=pending.indexOf(10))>=0&&records.length<rows){
+    const raw=pending.subarray(0,cut).toString("utf8");
+    pending=pending.subarray(cut+1);
     if(raw.trim())records.push(JSON.parse(raw));
    }
   }
  }finally{fs.closeSync(fd);}
- const unreadBuffer=Buffer.byteLength(pending,"utf8");
- const nextCursor=pos-unreadBuffer;
+ const nextCursor=pos-pending.length;
  return {rows:records,nextCursor,end:nextCursor>=size,
-  totalLedgerBytes:size,recordedEventsAreAppendOnly:true};
+  totalLedgerBytes:size,recordedEventsAreAppendOnly:true,
+  pageLimitedByBytes:records.length<rows&&nextCursor<size};
 }
