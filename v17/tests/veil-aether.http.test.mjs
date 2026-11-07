@@ -97,11 +97,19 @@ test("NATIVE V17 V20 V21 multiworld: live frames + frozen route + original UI + 
   assert.match(html.slice(panelAt,gridClose),/id="datasetProgressBar"/);
     assert.match(html,/id="datasetProgressPct"/);
   assert.match(html,/id="datasetProgressBar"/);
+  assert.match(html,/id="gpuPerformanceInfo"/,"GPU/CPU timing must be shown next to actual dataset progress");
+  assert.ok(html.indexOf('id="gpuPerformanceInfo"') > html.indexOf('id="datasetProgressBox"') &&
+    html.indexOf('id="gpuPerformanceInfo"') < html.indexOf('<h2>Cât ghicește'),
+    "GPU/CPU timing must stay in Ce s-a nascut, not another panel");
+
   assert.match(html,/id="datasetProgressCount"/);
   assert.match(html,/id="datasetHeldOut"/);
   const originalApp=await(await read("/transcend/torus-aether/ui/app.js")).text();
   assert.match(originalApp,/renderDatasetProgress/);
   assert.match(originalApp,/datasetProgressInfo/);
+  assert.match(originalApp,/CPU V19\/V20\/V21/);
+  assert.match(originalApp,/text\.phaseMs/);
+
 
   assert.match(html,/src="veil-aether-live.js"/);
   assert.match(html,/src="text-hypermaze-live.js"/);
