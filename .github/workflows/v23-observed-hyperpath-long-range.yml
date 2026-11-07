@@ -26,6 +26,12 @@ jobs:
         run: |
           node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
           node --test v17/tests/veil-aether.observed-action-field.test.mjs
+      - name: Native V19 corpus training and heldout composition through actual HTTP worker
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+      - name: Original V21/V17 multiworld native HTTP, UI, save and checkpoint migration
+        run: |
+          node --test v17/tests/veil-aether.http.test.mjs
+          node --test v17/tests/veil-aether.text-migration.test.mjs
       - name: Native JS syntax and existing UI
         run: |
           node --check v17/transcend/torus-aether/worlds/exercise.mjs
