@@ -83,6 +83,12 @@ test("actual V17 goal-training consumes complete real Q/A rows, streams whole-an
     const final=await json("/graphs");
     assert.equal(final.graphs[0].goalTraining,true);
     assert.equal(final.graphs[0].nativeGoalField.observedNumericQAPairs,450);
+    // Score ALL 50 completely unseen source Q/A pairs, not only a few chosen
+    // follow-up queries or teacher-forced next-character probabilities.
+    const held=final.graphs[0].nativeGoalHeldout;
+    assert.equal(held?.tested,50,"Entire actual heldout split must be scored");
+    assert.equal(held?.exact,50,JSON.stringify(held));
+    assert.equal(held?.referenceAnswerUsedOnlyAfterFullPlan,true);
     const phases=final.graphs[0].goalPipeline?.phases||{};
     for(const stage of ["language-perspectives","constructed-path-and-coupled-axes",
       "observed-text-transformations","causal-actions-shared-experience"])
@@ -94,6 +100,8 @@ test("actual V17 goal-training consumes complete real Q/A rows, streams whole-an
       trainedRows:450,wallSeconds:+wallSec.toFixed(3),
       measuredRowsPerSecond:+rate.toFixed(2),correlatedEffects:snapshot.nativeGoalField.correlatedTransitions,
       blindProbes:live.events.length,firstBlind:!!first.frozenRoute,
+      frozenHeldoutCompleteAnswersExact:held.exact,
+      frozenHeldoutCompleteAnswersTotal:held.tested,
       workerMeasuredRate:final.graphs[0].goalPipeline?.measuredRowsPerSecond,
       sourceStageTimings:phases,
       unseenCompleteAnswer:answer.text,legacyCharacterMode:false,
