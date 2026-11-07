@@ -221,32 +221,35 @@ export async function runOriginalV39(config){
  const checkpoint=path.join(out,"brains","brain-0.v8");
  const journal=path.join(out,"v39-training-atlas.jsonl"),statusPath=path.join(out,"v39-status.json");
  const sourceTrain=loadSquad(config.train,{requireOfficial:!config.fixture,expectedSha:TRAIN_SHA});
- const sourceDev=loadSquad(config.dev,{requireOfficial:!config.fixture,expectedSha:DEV_SHA});
+ // Pin DEV corpus identity without parsing answers until policy freeze.
+ const devBuffer=fs.readFileSync(config.dev),devSha=digest(devBuffer);
+ if(!config.fixture&&devSha!==DEV_SHA)
+  throw Error("Official independent DEV SHA256 mismatch. Refusing to train.");
+ const devSize=devBuffer.length;
  const articleCount=sourceTrain.articles.length;
  const divide=Math.max(1,Math.min(articleCount-1,Math.floor(articleCount*380/442)));
- if(articleCount<3||sourceDev.articles.length<1)
+ if(articleCount<3||devSize<100)
   throw Error("Insufficient independent SQuAD articles for real training/calibration/DEV");
  const selectedTrain=new Set(sourceTrain.articles.slice(0,divide)),
   selectedCalib=new Set(sourceTrain.articles.slice(divide));
  const allTrain=sourceTrain.rows.filter(x=>selectedTrain.has(x.article)),
   allCalibration=sourceTrain.rows.filter(x=>selectedCalib.has(x.article));
- if(!allTrain.length||!allCalibration.length||!sourceDev.rows.length)
+ if(!allTrain.length||!allCalibration.length)
   throw Error("SQuAD article split contains an empty role");
  const training=choose(allTrain,config.trainSamples),
-  calibration=choose(allCalibration,config.calibrationSamples),
-  dev=choose(sourceDev.rows,config.devSamples);
+  calibration=choose(allCalibration,config.calibrationSamples);
  const sourceStory=config.tiny?fs.statSync(config.tiny):null;
  if(sourceStory&&!sourceStory.isFile())throw Error("TinyStories input must be a file");
  if(config.tiny&&path.resolve(config.tiny)===path.resolve(config.train))
   throw Error("Never train on QA training JSON as story text");
- const source={trainSha:sourceTrain.sha,devSha:sourceDev.sha,
+ const source={trainSha:sourceTrain.sha,devSha,
   storyFile:config.tiny?path.resolve(config.tiny):null,
   storySize:sourceStory?.size||0,storyMtimeMs:sourceStory?.mtimeMs||null,
   trainArticleCount:selectedTrain.size,calibrationArticleCount:selectedCalib.size,
-  devArticleCount:sourceDev.articles.length,
+  devArticleCount:"unknown-until-frozen-policy-selection",
   trainIdsSha:digest(Buffer.from(JSON.stringify(training.map(x=>x.id))))};
  const identity={source,trainSamples:training.length,calibrationSamples:calibration.length,
-  devSamples:dev.length,epochs:config.epochs,storyLimit:config.storyLimit,
+  devSamples:config.devSamples,epochs:config.epochs,storyLimit:config.storyLimit,
   storyEvery:config.storyEvery,snapshotEvery:config.snapshotEvery,burnIn:config.burnIn,
   checkpointEvery:config.checkpointEvery};
  assertIsolatedFolder(out,manifest,config.original);
@@ -391,6 +394,15 @@ export async function runOriginalV39(config){
   }
   if(!state.dev){
    state.state="external-frozen-evaluation";
+   // DEV annotations enter the evaluator ONLY AFTER the selected policy
+   // was checkpointed. The original shape sees question+source, not gold.
+   const independent=loadSquad(config.dev,{
+    requireOfficial:!config.fixture,expectedSha:DEV_SHA});
+   if(independent.sha!==devSha)
+    throw Error("DEV changed since policy freeze");
+   if(independent.articles.some(a=>selectedTrain.has(a)||selectedCalib.has(a)))
+    throw Error("External DEV articles overlap TRAIN/calibration articles");
+   const dev=choose(independent.rows,config.devSamples);
    const devScore=scoreFrozen(learner,dev,state.selectedPolicy);
    state.dev={...devScore,articleDisjoint:true,answerHiddenFromPlanner:true,
     policyFrozenBeforeDev:true,realIndependentHumanQA:true};
@@ -400,6 +412,9 @@ export async function runOriginalV39(config){
   state.state="complete";doSave("final-training-and-external-evaluation");
   const original=Brain.load(checkpoint);
   const restored=new NativeRealTextEvidencePaths(original);
+  const independent=loadSquad(config.dev,{
+   requireOfficial:!config.fixture,expectedSha:DEV_SHA});
+  const dev=choose(independent.rows,config.devSamples);
   const q=dev[0],r1=learner.plan({question:q.question,context:q.context,
    weightMode:state.selectedPolicy,includeAtlas:true}),
    r2=restored.plan({question:q.question,context:q.context,
