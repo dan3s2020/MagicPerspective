@@ -390,6 +390,35 @@ parentPort.on("message", m => {
     }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,error:err.message});}
     return;
   }
+  // V21 native: SAME original Discoverer.shape on actual V19 learned
+  // sentence/action transformations, including hypothetical unseen states.
+  if(m?.cognitiveNativeEval){
+    const {id,initial,goal,maxNodes=384,maxDepth=8}=m.cognitiveNativeEval;
+    try{
+      if(!cognitive)throw Error("This Brain has no native cognitive world");
+      const before=JSON.stringify(cognitive.report());
+      const plan=cognitive.formSolutionNative(initial,goal,
+        {disc:brain.disc,maxNodes,maxDepth});
+      if(JSON.stringify(cognitive.report())!==before)
+        throw Error("Native heldout planning changed training state");
+      parentPort.postMessage({type:"chat",kind:"cognitive-native",id,
+        frozen:true,found:plan.found,reason:plan.reason||plan.field?.reason||null,
+        originalDiscovererDirectlyUsed:plan.originalDiscovererDirectlyUsed,
+        noHiddenAnswerOracle:plan.noHiddenAnswerOracle,
+        firstAction:plan.field?.firstAction??null,
+        rules:plan.learnedRules,observedSentences:plan.world?.fromObservedExamples,
+        generatedStates:plan.world?.states.length,candidateGoals:plan.world?.targets.length,
+        novelGoal:plan.novelGoal||false,
+        start:plan.world?.states[0]?.join(" "),
+        plannedPath:plan.path?.map(e=>({action:e.action,from:plan.world.states[e.from]?.join(" "),
+          after:plan.world.states[e.to]?.join(" "),provenance:e.provenance,
+          potentialBefore:e.potentialBefore,potentialAfter:e.potentialAfter,
+          observedSupport:e.support})),
+        math:plan.field?.math??null,law:plan.planningLaw||null,
+        truncated:plan.world?.truncated||false});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-native",id,error:err.message});}
+    return;
+  }
   if(m?.cognitiveEval){
     const {id,initial,goal,maxNodes=384,maxDepth=8}=m.cognitiveEval;
     try{
