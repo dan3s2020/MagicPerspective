@@ -94,7 +94,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     ? datasetProgress(source, sl.share, shares, Math.max(g?.exercises||0,t?.exercises||0))
     : null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
-    exercises:Math.max(g?.exercises||0,t?.exercises||0),dataset:progress,
+    exercises:Math.max(g?.exercises||0,t?.exercises||0),dataset:progress,rate:g?.rate||t?.rate||null,
     nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
     snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
@@ -130,7 +130,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
           noProgressSeconds:m.noProgressSeconds,heartbeatAt:m.at};
         existing.gpu=gpu;
         existing.snapshotAt=m.at;
-        existing.chars=m.chars;existing.exercises=m.exercises;
+        existing.chars=m.chars;existing.exercises=m.exercises;existing.rate=m.rate;
         recordTelemetry(existing);
       }
       return;
@@ -153,7 +153,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
       dProgress.remaining.toLocaleString():" | dataset: total necunoscut";
     console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
-      (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + corpusLine + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
+      (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + corpusLine + ` | rata REALA ${Number(m.rate?.exercisesPerSecond||0).toFixed(3)} exercitii/s · ${Number(m.rate?.megabytesPerSecond||0).toFixed(4)} MB/s | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
