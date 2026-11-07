@@ -177,6 +177,38 @@
       <div class="row"><button id="cognitiveRecord" type="button">Înregistrează rezultatul observat</button></div>
       <pre id="cognitiveRecordOut" style="white-space:pre-wrap;color:#aacde9;font:12px ui-monospace,monospace"></pre>
     </div>
+
+    <!-- ADDITIVE V24 panel. All existing V17 tabs, buttons and canvases remain intact. -->
+    <section id="v23LabBox" style="margin:14px 0;padding:14px;border:1px solid #627589;border-radius:10px;background:#071521">
+      <h2>V23/V24 · Formă învățată pe text cauzal · același Brain V17</h2>
+      <p class="note">Antrenare NUMAI din observații reale înainte/acțiune/după furnizate explicit. Testele sunt înghețate: linia de aur este TRASEUL PROPUS de Discoverer.shape(), nu o mișcare fizică executată. Nu este next-character predictor și nu pretinde 100% pe limbaj general sau execuție pe CUDA.</p>
+      <div class="row">
+        <label>Reguli observate <select id="v23Kind"><option value="numeric">Numeric · efecte cauzale învățate</option><option value="temporal">Evenimente · relații temporale</option></select></label>
+        <button type="button" id="v23Learn">Absoarbe observațiile în același Brain</button>
+      </div>
+      <label class="dim">Observații reale JSON · listă de obiecte: <code>type=action / initial / question</code> cu dovezi observate, fără răspunsuri inventate</label>
+      <textarea id="v23Evidence" rows="5" style="width:100%;font:12px ui-monospace,monospace" placeholder='[{"type":"action","sentence":"...","entity":"...","quantity":2,"before":10,"after":12}]'></textarea>
+      <pre id="v23LearnOut" style="white-space:pre-wrap;max-height:150px;overflow:auto">Nu au fost trimise observații.</pre>
+      <label class="dim">Text real complet · linii de evenimente în ordine; răspunsul final nu este introdus ca țintă</label>
+      <textarea id="v23Document" rows="7" style="width:100%;font:12px ui-monospace,monospace" placeholder="Întreaga lume textuală, fără scurtarea automată a sursei"></textarea>
+      <div class="row">
+        <label>Întrebare <input type="text" size="64" id="v23Question" placeholder="After the full report, what is the balance of ...?"></label>
+        <label>Noise <input type="number" id="v23Noise" min="0" max="2" step="0.05" value="0" style="width:70px"></label>
+        <label>Seed <input type="number" id="v23Seed" min="0" max="4294967295" step="1" value="74129" style="width:120px"></label>
+        <button type="button" id="v23Plan">Construiește întreaga formă ÎNAINTE de acțiune</button>
+      </div>
+      <pre id="v23PlanOut" style="white-space:pre-wrap;overflow:auto;max-height:280px;color:#d6e5ff">Niciun traseu înghețat încă.</pre>
+      <canvas id="v23PathCanvas" width="1000" height="300" style="display:block;width:100%;background:#07101b;border:1px solid #526d88;border-radius:8px" aria-label="Traseu învățat vizual, nivelurile originale de atracție și pasul curent ipotetic"></canvas>
+      <div class="row">
+        <button type="button" id="v23Prev">Pagina anterioară</button>
+        <button type="button" id="v23Next">Pagina următoare</button>
+        <button type="button" id="v23Play">Animă traseul PROPUS (nu execută acțiuni)</button>
+        <button type="button" id="v23Pause">Oprește animația</button>
+        <input type="range" id="v23Scrub" min="0" max="99" value="0" style="flex:1;min-width:140px">
+        <span id="v23ScrubLabel">—</span>
+      </div>
+      <pre id="v23PageOut" style="white-space:pre-wrap;overflow:auto;max-height:300px">Nu există pași înregistrați.</pre>
+    </section>
     <div id="wholeMapBox" hidden style="margin:12px 0;border:1px solid #236a77;border-radius:10px;padding:12px">
       <h2>Harta completă a textului · navigare ca în labirintul 2D</h2>
       <p class="note">Algoritmul prestabilit calculează traseul intern înainte de mișcare; caracterul reflectă deplasarea cursorului. Nu este încă o cale descoperită prin învățare.</p>
@@ -304,5 +336,6 @@
 <script type="module" src="app.js"></script>
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
+<script type="module" src="v23-grounded-live.js"></script>
 </body>
 </html>
