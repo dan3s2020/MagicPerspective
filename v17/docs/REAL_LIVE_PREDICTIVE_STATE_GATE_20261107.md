@@ -46,14 +46,14 @@ After validating a real observed context axis, the original LiveObservedMathAxes
 
 An integration regression deliberately uncovered a real identifiability issue: if the training text demonstrates only X+ movements paired with output changes, the native conditional state-space learner cannot know whether X or output is the dependent coordinate, so it falls back to its original coupled planner. We fixed **the experimental evidence**, not the rule, by supplying additional OBSERVED Y+ changes before asking for an unseen X+ state-dependent route. This verifies that at least two independent directions must be experienced to identify the dependent axis in this implementation.
 
-The new acceptance test asks for a native path from "15 * 91 = 1365" with the GOAL "first numeric coordinate becomes 16" (never supplies the new output 1456). Given prior observed X/Y movements, the frozen native conditional plan and separately validated context gate should agree on the first step: "16 * 91 = 1456". A green CI run is required for this additional acceptance.
+The new acceptance test asks for a native path from "15 * 91 = 1365" with the GOAL "first numeric coordinate becomes 16" (never supplies the new output 1456). Given prior observed X/Y movements, the frozen native conditional plan and separately validated context gate should agree on the first step: "16 * 91 = 1456". **ACCEPTED in CI:** 46/46 Node tests, including this exact independent first-action alignment, and both Linux/Windows jobs green.
 
 ## Reproducible results — VERIFIED hosted GitHub Actions
 
 Linux job: https://github.com/dan3s2020/MagicPerspective/actions/runs/42327257275/job/128265294840
 Windows launcher job: https://github.com/dan3s2020/MagicPerspective/actions/runs/42327257275/job/128265294693
 
-Both succeeded at commit 6e2b0978e7c93eb8b4afd5be0af384ff74d54da4. Node test suites: 45 passes / 0 failures.
+The initial acceptance at commit 6e2b0978e7c93eb8b4afd5be0af384ff74d54da4 passed 45/45 Node tests and Windows parser. The NEXT full acceptance at commit 1802bb5fff4ab712fdafbc293aa18d9a7b076104 succeeded 46/46 Node tests plus Windows parser (Linux job 128267171146, Windows job 128267170778). It additionally verified the real Chrome browser DOM displays measurements and the independent first-action perspective.
 
 Controlled arithmetic-format sequence, no future delta label supplied at inference:
 - 35 observed training transitions, 16 independent validation transitions, 35 holdout transitions with previously unseen high numeric contexts.
