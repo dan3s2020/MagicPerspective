@@ -55,6 +55,26 @@ class X:                                         # numpy or torch, the same call
     def add_at(self, acc, idx, val):
         if self.t: acc.index_put_((idx,), val, accumulate=True)
         else: np.add.at(acc, idx, val)
+    def cuda_add_votes(self, acc, ys, valid, weight, form_source=False):
+        """Same 64 sampled next-symbol votes as the original j-loop, issued as
+        a single native-device scatter_add instead of 64 Python GPU launches.
+        Only called for Torch; the original NumPy path is unchanged.
+        Returned digit mass is held for the SAME 48->digit redistribution.
+        """
+        if not self.t:
+            raise RuntimeError("cuda_add_votes is only for the Torch backend")
+        columns = ys.clamp(0, 128)
+        counts = valid.to(torch.float32).sum(dim=1).clamp_min(1)
+        amounts = torch.where(valid, (weight / counts).unsqueeze(1),
+                              torch.zeros_like(ys, dtype=torch.float32))
+        if form_source:
+            digits = columns == DIG
+            digit_mass = torch.where(digits, amounts, torch.zeros_like(amounts)).sum(dim=1)
+            amounts = torch.where(digits, torch.zeros_like(amounts), amounts)
+        else:
+            digit_mass = torch.zeros_like(weight)
+        acc.scatter_add_(1, columns, amounts)
+        return digit_mass
     def argmax1(self, a): return a.argmax(dim=1) if self.t else a.argmax(axis=1)
     def maxv1(self, a): return a.max(dim=1).values if self.t else a.max(axis=1)
     def cat(self, xs): return torch.cat(xs) if self.t else np.concatenate(xs)
@@ -162,11 +182,16 @@ class TextCard:
                     src, d, ok, sup, ys = p[:5]; farb = p[5] if len(p) > 5 else None
                     kid = self._kid(src, d, sup, farb, Q); w = LUT[kid] ** gv * (fw if src >= 2 else 1.0); w = X.where(ok, w, X.zeros(Q, np.float32))
                     valid = ys >= 0; cnt = X.f32(valid).sum(1); cnt = X.where(cnt > 0, cnt, cnt + 1)
-                    for j in range(ys.shape[1]):
-                        yj = X.clip(ys[:, j], 0, 128); m = valid[:, j]; q = X.where(m, w / cnt, X.zeros(Q, np.float32))
-                        if src >= 2:
-                            isd = yj == DIG; dmass = dmass + X.where(isd, q, X.zeros(Q, np.float32)); q = X.where(isd, X.zeros(Q, np.float32), q)
-                        S[X.arange(Q), yj] += q
+                    if X.t:
+                        # Same observed 64 votes, same trust/shape mass. Avoid
+                        # 64 * (index + mask + add) CUDA launches per perspective.
+                        dmass = dmass + X.cuda_add_votes(S, ys, valid, w, src >= 2)
+                    else:
+                        for j in range(ys.shape[1]):
+                            yj = X.clip(ys[:, j], 0, 128); m = valid[:, j]; q = X.where(m, w / cnt, X.zeros(Q, np.float32))
+                            if src >= 2:
+                                isd = yj == DIG; dmass = dmass + X.where(isd, q, X.zeros(Q, np.float32)); q = X.where(isd, X.zeros(Q, np.float32), q)
+                            S[X.arange(Q), yj] += q
                 dig = S[:, 48:58]; dz = dig.sum(1); has = dz > 0
                 share = X.where(has[:, None], dig / X.where(has, dz, dz + 1)[:, None], X.zeros(dig.shape, np.float32))
                 S[:, 48:58] = dig + dmass[:, None] * share; S[:, DIG] = S[:, DIG] + X.where(has, X.zeros(Q, np.float32), dmass)
@@ -224,10 +249,13 @@ class TextCard:
                 for src, d, okp, sup, ys in props:
                     kid = self._kid(src, d, sup, None, Rn); w = LUT[kid] ** g * (formW if src >= 2 else 1.0); w = X.where(okp, w, X.zeros(Rn, np.float32))
                     valid = ys >= 0; cnt = X.f32(valid).sum(1); cnt = X.where(cnt > 0, cnt, cnt + 1)
-                    for j in range(ys.shape[1]):
-                        yj = X.clip(ys[:, j], 0, 128); q = X.where(valid[:, j], w / cnt, X.zeros(Rn, np.float32))
-                        if src >= 2: isd = yj == DIG; dmass = dmass + X.where(isd, q, X.zeros(Rn, np.float32)); q = X.where(isd, X.zeros(Rn, np.float32), q)
-                        Sx[X.arange(Rn), yj] += q
+                    if X.t:
+                        dmass = dmass + X.cuda_add_votes(Sx, ys, valid, w, src >= 2)
+                    else:
+                        for j in range(ys.shape[1]):
+                            yj = X.clip(ys[:, j], 0, 128); q = X.where(valid[:, j], w / cnt, X.zeros(Rn, np.float32))
+                            if src >= 2: isd = yj == DIG; dmass = dmass + X.where(isd, q, X.zeros(Rn, np.float32)); q = X.where(isd, X.zeros(Rn, np.float32), q)
+                            Sx[X.arange(Rn), yj] += q
                     top = self._top(ys); want = FY if src >= 2 else Y; m = okp & X.arr(act, bool)
                     kn = X.tonp(kid[m]); rn = X.tonp(X.i64(top == want)[m])
                     if len(kn):
@@ -243,8 +271,11 @@ class TextCard:
     def _top(self, ys):                          # the most frequent symbol among what followed (the proposal's guess)
         X = self.X; Q, S = ys.shape
         if S == 1: return ys[:, 0]
-        oh = X.zeros((Q, 129), np.float32);
-        for j in range(S): oh[X.arange(Q), X.clip(ys[:, j], 0, 128)] += X.f32(ys[:, j] >= 0)
+        oh = X.zeros((Q, 129), np.float32)
+        if X.t:
+            oh.scatter_add_(1, ys.clamp(0, 128), (ys >= 0).to(torch.float32))
+        else:
+            for j in range(S): oh[X.arange(Q), X.clip(ys[:, j], 0, 128)] += X.f32(ys[:, j] >= 0)
         return X.argmax1(oh[:, :128])
     def _kid(self, src, d, sup, farb, Q):
         X = self.X; dd = d if not isinstance(d, int) else X.zeros(Q, np.int64) + d
