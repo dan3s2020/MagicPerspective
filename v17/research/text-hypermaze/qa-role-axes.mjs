@@ -85,6 +85,10 @@ export class QARoleAxes {
  _grammar(ids){
   const S=this.state,rows=ids.map(i=>S.examples[i]);
   const first=rows[0],ql=first.q.length,al=first.a.length;
+  // A real contradictory outcome falsifies the entire connected
+  // transformation world that used that witnessed question, not just the
+  // identical input. No frozen route may depend on disputed physics.
+  if(rows.some(x=>S.conflicts.includes(key(x.q))))return null;
   if(rows.some(x=>x.q.length!==ql||x.a.length!==al))return null;
   const variableQ=[],variableA=[];
   for(let i=0;i<ql;i++)if(rows.some(x=>x.q[i]!==first.q[i]))variableQ.push(i);
