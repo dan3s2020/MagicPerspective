@@ -31,6 +31,7 @@ area.appendChild(frag);if(!area.childNodes.length)area.textContent="Nu există e
 describe();
 }
 function predicted(e){
+if(e?.pathDrivenAnswer!==undefined&&e?.pathDrivenAnswer!==null)return e.pathDrivenAnswer;
 if(e?.type==="answer-evaluation")return e.predictedAnswer??null;
 if(e?.type!=="planning-attempt"||!e.found)return null;
 const a=e.fullAtlas?.states||[],p=e.fullPredictedPath||[],i=p.length?p.at(-1).to:0;
