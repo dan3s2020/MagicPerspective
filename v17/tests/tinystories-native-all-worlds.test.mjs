@@ -63,7 +63,8 @@ test("Fast CUDA-architecture text feed runs in PARALLEL with true original Brain
    if(s.native?.status==="error")throw Error("Native V17 failed: "+s.native.error);
    return (s.finished&&s.native?.stories>=8&&
      s.native?.mazes?.played>=1&&s.native?.transformations?.played>=1&&
-     s.native?.graph?.nodes?.length>0&&s.native?.selfCode?.ticks>=1)?s:null;
+     s.native?.graph?.nodes?.length>0&&s.native?.graph?.U?.length>0&&
+     s.native?.selfCode?.ticks>=1)?s:null;
   },140000);
   assert.equal(progress.stories,12);
   assert.equal(progress.percent,100);
