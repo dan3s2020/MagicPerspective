@@ -1,0 +1,37 @@
+name: V29 original training START truth and colored dataset progress
+on:
+  push:
+    branches:
+      - fix/V29-REAL-START-STATUS-DATASET-PROGRESS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-runtime-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax and original KPI parity
+        run: |
+          node --check v17/apps/hypermaze-studio-v26/native-bridge.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/native-app.js
+          node --test v17/apps/hypermaze-studio-v26/tests/native-bridge.test.mjs v17/apps/hypermaze-studio-v26/tests/native-v29-status.test.mjs
+      - name: Execute actual original V17 worker against real repository text and check progress
+        run: |
+          node --test v17/apps/hypermaze-studio-v26/tests/native-real-runtime.test.mjs
+      - name: Actual Chromium V26 UI, ORIGINAL native Q/A and real colored dataset bar
+        run: |
+          which google-chrome || which chromium
+          node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
+      - name: Archive actual screenshot from Chromium
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v29-real-V26-design-original-training
+          path: v28-native-ui-real-chrome.png
+          if-no-files-found: warn
+          retention-days: 7
