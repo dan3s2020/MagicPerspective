@@ -264,6 +264,14 @@ function heldoutProbe(segments,qaPairs=[]){
     renderObservation(tokenizeObservation(actual));
   counters.qaFrozenWholeRawExact+=Number(exact);
   counters.qaFrozenWholeCanonicalExact+=Number(canonical);
+  // Publish every real heldout question and real failed answer in the SAME
+  // original persistent atlas. The correct answer string is NOT passed to
+  // this call or stored in the native Brain checkpoint.
+  const audited=engine.auditFrozenQA({
+   question:pair.question,plan,exact,canonical,source:"authentic-jsonl-heldout"
+  });
+  if(!audited.withheldAnswerNeverStored)
+   throw Error("Frozen QA atlas attempted to retain reference answer");
   counters.qaLastPrediction={
    questionPreview:pair.question.slice(0,140),
    modelPrediction:proposed?.slice(0,400)??null,
