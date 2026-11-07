@@ -47,6 +47,8 @@ test("Magic Studio exposes its own real provenance, UI assets, rejects arbitrary
  assert.match(page,/Graful organismului/);
  assert.match(page,/START|Start training/);
  assert.match(page,/metricAligned/);
+ assert.match(page,/pathStep/);
+ assert.match(page,/showEvaluatorWalls/);
  const ui=await(await fetch(base+"/magic-studio.js")).text();
  assert.match(ui,/api\/native/);
  assert.match(ui,/graphCanvas/);
@@ -67,7 +69,9 @@ test("Magic Studio exposes its own real provenance, UI assets, rejects arbitrary
  assert.equal(empty.current,null);
 });
 test("real research results are from EXECUTED Node tests, never hardcoded front-end scores",async t=>{
- const studio=createMagicStudio({port:0,backendPort:18888});
+ const archive=fs.mkdtempSync(path.join(os.tmpdir(),"mp-studio-tests-"));
+ t.after(()=>fs.rmSync(archive,{recursive:true,force:true}));
+ const studio=createMagicStudio({port:0,backendPort:18888,archiveDir:archive});
  await studio.start();t.after(()=>studio.stop());
  const base="http://127.0.0.1:"+studio.server.address().port;
  const start=await(await fetch(base+"/api/research/run?kind=axes",{method:"POST"})).json();
@@ -82,6 +86,9 @@ test("real research results are from EXECUTED Node tests, never hardcoded front-
  assert.ok(result.metrics.some(x=>x.name==="LEARNED_LOCAL_AXES_HELDOUT_ROUTES"));
  assert.ok(result.metrics.some(x=>x.name==="NOISY_LOCAL_AXES_RECOVERY"));
  assert.ok(result.metrics.find(x=>x.name==="LEARNED_LOCAL_AXES_HELDOUT_ROUTES").data.some(x=>x.D===5&&x.exactRoutes>0));
+ assert.ok(fs.existsSync(result.stdoutFile),"raw research output must be durably archived");
+ assert.ok(fs.readFileSync(result.stdoutFile,"utf8").includes("LEARNED_LOCAL_AXES_HELDOUT_ROUTES"));
+ assert.ok(fs.readFileSync(path.join(archive,"research-index.jsonl"),"utf8").includes("local-axis-transport-shapes.test.mjs"));
 });
 test("connect Studio to a REAL native V17 devouring worker on a real repo text corpus; observe actual training snapshots",async t=>{
  const source=path.join(v17,"docs","TORUS_AETHER_ABC_20261104.md");
