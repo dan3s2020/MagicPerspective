@@ -108,6 +108,33 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.ok(result.topology.initialShapeIds.length>=2);
   assert.ok(result.topology.nodes.some(n=>n.text==="She is calm."&&n.goal),
    "The real textual goal state must be an actual topology node");
+  const atlasSummary=await(await fetch(url+"/native-hypermaze-atlas?"+
+    new URLSearchParams({w:"0",mode:"summary"}))).json();
+  assert.ok(atlasSummary.result?.journalEvents>3,
+   "No actual append-only atlas entries saved after corpus ingestion");
+  assert.ok(atlasSummary.result.worldsByDomain.text>=1);
+  assert.ok(atlasSummary.result.searchesFound>=1);
+  assert.ok(fs.existsSync(save+".hypermaze-atlas.jsonl"),
+   "Original worker must preserve its atlas next to Brain.v8");
+  const atlasSearch=await(await fetch(url+"/native-hypermaze-atlas?"+
+    new URLSearchParams({w:"0",mode:"events",kind:"search",limit:"10"}))).json();
+  const atlasRecorded=atlasSearch.result.events.find(x=>x.seq===result.atlasSequence);
+  assert.ok(atlasRecorded?.found);
+  assert.ok(atlasRecorded.fullExploredTopology.nodes.length>=3);
+  assert.ok(atlasRecorded.fullExploredTopology.edges.length>=1);
+  const atlasOperators=await(await fetch(url+"/native-hypermaze-atlas?"+
+    new URLSearchParams({w:"0",mode:"operators",limit:"50"}))).json();
+  assert.ok(atlasOperators.result.totalOperators>=2);
+  assert.ok(atlasOperators.result.operators.some(x=>x.pathsUsedSuccessful>0));
+  const unknown=await(await fetch(url+"/native-hypermaze?"+
+    new URLSearchParams({w:"0",start:"He is calm.",required:"unicorn",
+     topology:"1",execute:"0"}),{method:"POST"})).json();
+  assert.equal(unknown.found,false);
+  assert.ok(unknown.diagnostic.causes.includes("missing-observed-goal-concepts"));
+  const failures=await(await fetch(url+"/native-hypermaze-atlas?"+
+    new URLSearchParams({w:"0",mode:"events",kind:"search",
+     onlyFailed:"1",limit:"30"}))).json();
+  assert.ok(failures.result.events.some(x=>x.seq===unknown.atlasSequence));
   // The REAL original V17 native worker must retain Romanian diacritics
   // in the observed world, and infer a completely unseen Unicode goal.
   const unicodeGoal=new URLSearchParams({w:"0",
@@ -166,6 +193,22 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
    console.log("REAL_NATIVE_HYPERMAZE_CHROMIUM",JSON.stringify({
     browser,connected:true,browserNodes,goal:"She is calm.",
     noMockData:true,originalUIUntouched:true}));
+   const atlasUrl=url+"/transcend/torus-aether/ui/native-hypermaze-atlas.html?"+
+     new URLSearchParams({w:"0",searchSequence:String(result.atlasSequence)});
+   const atlasDom=spawnSync(browser,[
+    "--headless","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
+    "--dump-dom","--virtual-time-budget=4500",atlasUrl
+   ],{encoding:"utf8",timeout:25000,maxBuffer:12*1024*1024});
+   assert.equal(atlasDom.status,0,atlasDom.stderr?.slice(-700));
+   assert.match(atlasDom.stdout,/data-atlas-event-count="[1-9][0-9]*"/);
+   assert.match(atlasDom.stdout,/data-atlas-selected-kind="success"/);
+   const atlasNodes=+(atlasDom.stdout.match(/data-atlas-graph-nodes="(\d+)"/)?.[1]||0);
+   assert.ok(atlasNodes>=3,
+    "Chrome must draw the ACTUAL explored hypermaze, not an empty mock");
+   console.log("REAL_NATIVE_ATLAS_CHROMIUM",JSON.stringify({
+    browser,journalEventCount:atlasSummary.result.journalEvents,
+    realExploredGraphNodes:atlasNodes,
+    successAndMissingPathEventsFound:true,noMock:true}));
   }else console.log("NATIVE_BROWSER_NOT_INSTALLED: real worker/API/static page tested");
   console.log("REAL_ORIGINAL_WORKER_SHARED_HYPERMAZE",JSON.stringify({
    originalBrainSaved:true,checkpointBytes:fs.statSync(save).size,
