@@ -22,8 +22,11 @@ jobs:
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/research/text-hypermaze/grounded-4d-benchmark.mjs
           node --check v17/tests/goal-text-4d-native-brain.test.mjs
+          node --check v17/tests/native-text-world-endogenous-noise.test.mjs
       - name: Actual original Brain owns, trains, freezes and checkpoints 4D action/text-world model
         run: node --test v17/tests/goal-text-4d-native-brain.test.mjs
+      - name: Original organism-owned endogenous NoiseAgency chooses real text-world perspectives and learns outcomes
+        run: node --test v17/tests/native-text-world-endogenous-noise.test.mjs
       - name: Reproduce exact heldout linguistic-syntax/OOD/noise results and save true observation
         run: |
           node v17/research/text-hypermaze/grounded-4d-benchmark.mjs > observed-grounded-4d.json
