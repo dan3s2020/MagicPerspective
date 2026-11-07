@@ -521,3 +521,72 @@ test("atlas refuses to turn contradictory axes, failed physical steps, or simila
  assert.ok(fails.rows.some(e=>e.code==="UNTESTED_HYPOTHESIS_EDGES"));
  assert.ok(fails.rows.some(e=>e.code==="DISCONNECTED_OR_MISSING_GOAL"));
 });
+
+test("28 fully UNSEEN numeric language questions: same Brain reuses four earlier Q/A worlds plus four independently measured action worlds; causal component removal blocks solutions",()=>{
+ const b=brain(),n=new NativeGoalTextMaze(b);
+ const observedQAs=[
+  ["Compute 2 times 3.","2 * 3 = 6."],
+  ["Compute 2 times 4.","2 * 4 = 8."],
+  ["Compute 3 times 3.","3 * 3 = 9."],
+  ["Compute 3 times 4.","3 * 4 = 12."]
+ ];
+ const physicallyObserved=[
+  ["2 * 3 = 6.","3 * 3 = 9."],
+  ["2 * 4 = 8.","3 * 4 = 12."],
+  ["2 * 3 = 6.","2 * 4 = 8."],
+  ["3 * 3 = 9.","3 * 4 = 12."]
+ ];
+ physicallyObserved.forEach(([before,after],i)=>n.observeVerifiedWorldTransition({
+  episode:"isolated-math-world-"+i,before,after,
+  action:"physical-"+i,accepted:true,source:"verified-world-step"
+ }));
+ observedQAs.forEach(([q,a])=>n.observeQA(q,a));
+ const inputs=[];
+ for(let x=4;x<=10;x++)for(let y=5;y<=8;y++)inputs.push([x,y]);
+ let fullExact=0,realOriginalPlan=0,minSteps=Infinity,maxSteps=0;
+ for(const [x,y] of inputs){
+  const question="Compute "+x+" times "+y+".",expected=x+" * "+y+" = "+x*y+".";
+  assert.ok(observedQAs.every(([q])=>q!==question));
+  const p=n.planCumulativeQuestion({question,maxGraphNodes:4200,
+   maxExpansionDepth:18});
+  if(!p.found)continue;
+  realOriginalPlan+=Number(p.originalPlanner==="Discoverer.shapeGraph");
+  fullExact+=Number(p.predicted===expected);
+  minSteps=Math.min(minSteps,p.steps);maxSteps=Math.max(maxSteps,p.steps);
+  assert.equal(p.goalDependentAnswerSupplied,false);
+  assert.equal(p.referenceAnswerProvided,false);
+  assert.equal(p.sourceWitnessedQuestionAnswerExamples,4);
+ }
+ assert.equal(realOriginalPlan,28);
+ assert.equal(fullExact,28);
+ const noActionBrain=brain(),noAction=new NativeGoalTextMaze(noActionBrain);
+ observedQAs.forEach(([q,a])=>noAction.observeQA(q,a));
+ let withoutPhysical=0;
+ for(const [x,y] of inputs){
+  withoutPhysical+=Number(noAction.planCumulativeQuestion({
+   question:"Compute "+x+" times "+y+"."}).found);
+ }
+ assert.equal(withoutPhysical,0);
+ const noGoalBrain=brain(),noGoal=new NativeGoalTextMaze(noGoalBrain);
+ physicallyObserved.forEach(([before,after],i)=>noGoal.observeVerifiedWorldTransition({
+  episode:"isolated-math-world-"+i,before,after,
+  action:"physical-"+i,accepted:true
+ }));
+ let withoutTaskGoal=0;
+ for(const [x,y] of inputs){
+  withoutTaskGoal+=Number(noGoal.planCumulativeQuestion({
+   question:"Compute "+x+" times "+y+"."}).found);
+ }
+ assert.equal(withoutTaskGoal,0);
+ console.log("V30_CROSS_EPISODE_LANGUAGE_HELDOUT",JSON.stringify({
+  distinctPreviouslyUnseenQuestions:inputs.length,
+  correctWholeAnswers:firstTrySafe(fullExact),
+  realOriginalDiscovererRoutes:realOriginalPlan,
+  minPathLength:minSteps,maxPathLength:maxSteps,
+  tasksWithoutPhysicalEvidenceSolved:withoutPhysical,
+  tasksWithoutGoalExampleEvidenceSolved:withoutTaskGoal,
+  originalBrainOnly:true,
+  semanticScope:"learned one numeric question grammar, NOT generic language competence"
+ }));
+});
+function firstTrySafe(n){return n}
