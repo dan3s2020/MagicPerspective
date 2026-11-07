@@ -73,4 +73,10 @@ Write-Host "=== PHASE 2: FIXED LENGTH, T=0.6, FROZEN SAME CHECKPOINT ===" -Foreg
 $rows | Select-Object Arm, Prompt, LoopPct, RepeatedContexts, Singletons, Dominant95, EntropyBits, PromptUniqueOutputs | Format-Table -AutoSize
 Write-Host "CSV: $csv" -ForegroundColor Green
 Write-Host "Full per-step JSON output: $runDir"
+$wallScript = Join-Path $here "graph0-geometry-wall-audit.mjs"
+Write-Host ""
+Write-Host "=== PHASE 2: CAUSAL GEOMETRY/POLICY WALL AUDIT ===" -ForegroundColor Cyan
+& $node.Source --max-old-space-size=6144 $wallScript --checkpoint $experimentCheckpoint --out $runDir --max $Max --seed $Seed
+if ($LASTEXITCODE -ne 0) { throw "Native 5D policy-wall audit failed." }
+Write-Host ("5D policy-wall report: " + (Join-Path $runDir "graph0-geometry-policy-wall-audit.json"))
 Write-Host "Original native trainer and all saved brains remain untouched."
