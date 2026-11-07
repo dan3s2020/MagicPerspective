@@ -57,3 +57,8 @@ An **additional** 32D latent or other learned component may coexist **only if** 
 Read [AGENTS.md](./AGENTS.md) **before any coding**. Every code PR must carry an explicit source-to-change contract and passes the [user-intent contract CI gate](./.github/workflows/user-intent-guard.yml) where applicable. The gate checks documented source quotes and declared scope; it cannot prove scientific semantics or authenticate a forged quote on its own. Human review and GitHub branch protection are still necessary to make checks unavoidable for every actor, including administrators and direct pushes.
 
 This is a **regression record**, not a claim that the current language implementation has been fixed. Full original Verbatim remains incomplete and the existing release gate stays **BLOCKED**.
+
+
+## 2026-11-07 additional production TinyStories regression (STILL BLOCKING)
+
+Permanent direct incident: [TinyStories unauthorized learning-motor substitution](./docs/INCIDENT_TINYSTORIES_UNAUTHORIZED_MOTOR_REPLACEMENT_20261107.md), exact [user directive](./verbatim/2026-11-07-TINYSTORIES-CRITICAL-REGRESSION-USER-VERBATIM.txt). Faster next-byte training, an unrelated 5D count graph or a split second worker DOES NOT satisfy the original native global/pre-action/goal-conditioned maze-to-text motor. Main code remains unchanged by this notice. Never close the blocker based on UI and NumPy-parity tests.
