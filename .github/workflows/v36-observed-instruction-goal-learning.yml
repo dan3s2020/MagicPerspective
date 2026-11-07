@@ -1,0 +1,51 @@
+name: V36 same ORIGINAL Discoverer - learned instruction intent to goal, zero answer target in the heldout question
+on:
+  push:
+    branches:
+      - experiment/V36-OBSERVED-QUESTION-INTENT-GOAL-PATH-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-discoverer-observed-question-goals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source validation of unchanged original cognitive motor and additive observations
+        run: |
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/worlds/observed-instruction-goals.mjs
+          node --check v17/transcend/torus-aether/worlds/path-answer-writer.mjs
+          node --check v17/tests/v36-observed-intent-first-shot.test.mjs
+      - name: 360 frozen questions WITHOUT any answer target word - first-shot learning curve, cross-world causal effect removal and 1800-token long text
+        run: node --test v17/tests/v36-observed-intent-first-shot.test.mjs
+      - name: Previous 360/360 EXPLICIT-goal first-shot V31 curve must remain EXACTLY unchanged
+        env:
+          MP_V31_CURVE_JSON: v17/artifacts/v31-control-curve.json
+        run: node v17/experiments/v31-causal-learning-curve.mjs
+      - name: Previous 32/32 actual 1,800-token ORIGINAL route-driven full strings and no-shortcut negative controls
+        run: node --test v17/tests/v31-long-complete-text-path.test.mjs
+      - name: Previous native V31 original HTTP worker, recorded atlas provenance and lack of oracle answers
+        run: node --test v17/tests/v31-native-path-answer-http.test.mjs
+      - name: Previous V19 V22 V30 original shape and learned world regression
+        run: |
+          node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs
+          node --test v17/tests/v22-long-unseen-shape.test.mjs v17/tests/torus-cognitive-learned-map.test.mjs
+  previous-launchers-unaltered:
+    runs-on: windows-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check old PowerShell V17 launchers are still valid - never touch user's existing brains
+        shell: powershell
+        run: |
+          foreach ($file in @("v17/START_V17.ps1","v17/START_TINYSTORIES.ps1")) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path,[ref]$tokens,[ref]$errors) | Out-Null
+            if($errors.Count){throw ($errors | Out-String)}
+            Write-Host "ORIGINAL_LAUNCHER_UNCHANGED $file"
+          }
