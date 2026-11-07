@@ -171,7 +171,7 @@ export async function launch(options={}){
     const raw=(url.searchParams.get("inputs")||"").split(",").map(x=>x.trim()).filter(Boolean);
     if(!start.trim()||start.length>4000||
       raw.length<1||raw.length>12||
-      raw.some(x=>!/^\\d+:\\d+$/.test(x)))
+      raw.some(x=>!/^\d+:\d+$/.test(x)))
      return response(res,400,{error:"Numeric task inputs format index:value,index:value; no output answer"});
     const numericGoals=raw.map(x=>{
      const [index,value]=x.split(":").map(Number);
