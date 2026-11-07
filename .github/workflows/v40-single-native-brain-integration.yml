@@ -23,12 +23,17 @@ jobs:
           node --check v17/tests/v40-single-original-brain-integration.test.mjs
           node --check v17/research/text-hypermaze/START_V40_REAL_HUMAN_QA.mjs
           node --check v17/research/text-hypermaze/v40-original-source-witness-memory.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/v40-live-human.js
       - name: One original brain checkpoint, witnessed intent, real QA preference and strict refusal
         run: node --test v17/tests/v40-single-original-brain-integration.test.mjs
       - name: Exact V32 compact source motif memory, verified replay, and saved original Brain manifest
         run: node --test v17/tests/v40-source-memory-shared-brain.test.mjs
       - name: Safety guards for serious real human original-Brain training
         run: node --test v17/tests/v40-real-training-checkpoint-guard.test.mjs
+      - name: ACTUAL native V17/V34 worker, frozen V36 and V39 original Brain paths, old UI preserved
+        run: node --test v17/tests/v40-native-live-qa-http.test.mjs
       - name: Original V34 integration core compatibility
         run: |
           node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
