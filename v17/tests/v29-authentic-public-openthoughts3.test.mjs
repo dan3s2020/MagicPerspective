@@ -26,12 +26,30 @@ const dataset="open-thoughts/OpenThoughts3-1.2M";
 async function realRows(offset,length){
  const params=new URLSearchParams({dataset,config:"default",split:"train",
   offset:String(offset),length:String(length)});
- const response=await fetch(api+"?"+params,{
-  headers:{"accept":"application/json","user-agent":"MagicPerspective-V29-evidence-audit"},
-  signal:AbortSignal.timeout(50000)
- });
- if(!response.ok)throw Error("Authentic OpenThoughts3 API returned HTTP "+
-  response.status+" for offset "+offset+" (NO SYNTHETIC FALLBACK)");
+ // The official dataset viewer sporadically returns 502/503. Retry the
+ // SAME exact offset and query, never change rows, invent data or silently
+ // substitute a synthetic fixture. Terminal failure stays a real CI error.
+ let response=null;
+ for(let attempt=0;attempt<5;attempt++){
+  try{
+   response=await fetch(api+"?"+params,{
+    headers:{"accept":"application/json","user-agent":"MagicPerspective-V29-evidence-audit"},
+    signal:AbortSignal.timeout(50000)
+   });
+  }catch(error){
+   if(attempt===4)throw Error("Authentic OpenThoughts3 source network failure at offset "+
+    offset+": "+String(error?.message||error)+" (NO SYNTHETIC FALLBACK)");
+   await delay(750*(attempt+1));continue;
+  }
+  if(response.ok)break;
+  if(![429,500,502,503,504].includes(response.status)||attempt===4)
+   throw Error("Authentic OpenThoughts3 API returned HTTP "+
+    response.status+" for offset "+offset+" (NO SYNTHETIC FALLBACK)");
+  await response.body?.cancel();
+  await delay(750*(attempt+1));
+ }
+ if(!response?.ok)throw Error("Authentic OpenThoughts3 source unavailable at "+
+  offset+" (NO SYNTHETIC FALLBACK)");
  const json=await response.json();
  if(!Array.isArray(json.rows)||json.rows.length!==length)throw Error(
   "Authentic dataset API returned incomplete real rows; NO fabricated replacements");
