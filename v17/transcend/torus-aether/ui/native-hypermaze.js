@@ -490,6 +490,24 @@ function atlasShowAttempt(attempt){
   "\n\nDE CE A FUNCȚIONAT SAU NU:\n"+
   (attempt.diagnostics||[]).map(d=>d.code+
    " ["+d.kind+"] "+d.explanation).join("\n")+
+  "\n\nRUTE ALTERNATIVE DIN ACELAȘI GRAF ORIGINAL:\n"+
+  (attempt.alternatives?
+   "Căi enumerate: "+attempt.alternatives.enumeratedPathCount+
+   "; stări finale distincte: "+attempt.alternatives.distinctGoalTexts+
+   "; țintă insuficient determinată: "+
+   String(attempt.alternatives.goalUnderdetermined)+
+   "; enumerare incompletă: "+
+   String(attempt.alternatives.enumerationTruncated)+
+   "\nNu înseamnă toate căile posibile ale limbajului.\n"+
+   (attempt.alternatives.paths||[]).map((route,i)=>
+    "RUTA "+(i+1)+(route.isOriginalChoice?" [ALEASĂ DE DISCOVERER]":" [ALTERNATIVĂ]")+
+    " · "+route.length+" acțiuni\n"+
+    route.states.join(" → ")+
+    "\nDOVEZI:\n"+(route.actions||[]).map(x=>
+     "  "+String(x.action)+" ["+String(x.edgeStatus)+"] "+
+      "din experiența "+String(x.evidenceEpisode||"necunoscută")).join("\n")
+   ).join("\n\n"):
+   "Topologia completă a grafului finit nu a fost cerută la momentul încercării; nu inventăm rute istorice care nu au fost salvate.")+
   "\n\nNoduri explorate: "+String(attempt.graph?.reachableStates)+
   ", trunchiat la limită: "+String(attempt.graph?.expansionTruncated)+
   ". Traseul păstrat nu este o execuție semantică independent verificată.";
