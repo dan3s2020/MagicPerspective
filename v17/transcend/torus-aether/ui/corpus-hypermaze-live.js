@@ -4,6 +4,7 @@
 // original V17 Brain/2D maze/5D visualization, without replacing any of them.
 const get=id=>document.getElementById(id);
 const finite=n=>typeof n==="number"&&Number.isFinite(n);
+const validNumber=n=>finite(n)?n:0;
 const pct=n=>finite(n)?(100*n).toFixed(1)+"%":"—";
 const number=n=>finite(n)?n.toLocaleString("ro-RO"):"—";
 const short=(s,n=18)=>{s=String(s??"∅").replace(/\n/g,"↵");return s.length>n?s.slice(0,n-1)+"…":s;};
