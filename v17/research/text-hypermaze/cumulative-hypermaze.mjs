@@ -16,6 +16,7 @@ import {tokenizeObservation,renderObservation} from
  "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {ContextAxisNavigator} from "./context-axis-evidence.mjs";
 import {planNumericOnCumulativeMemory} from "./cumulative-numeric-shape.mjs";
+import {planNativeQuestionOnCumulativeMemory} from "./cumulative-question-goal.mjs";
 
 const norm=s=>renderObservation(tokenizeObservation(String(s??"")));
 const edgeKey=(before,action,after)=>JSON.stringify([before,action,after]);
@@ -209,6 +210,10 @@ export class CumulativeHyperMaze {
  // hidden path-order memory is attached to this SAME persistent Brain.
  // We do not use A* here; only the original Discoverer.shapeGraph.
  planNumeric(args={}){return planNumericOnCumulativeMemory(this,args);}
+ // A real unobserved question itself supplies the task goal; the hidden
+ // dependent answer number is never accepted as a goal constraint.
+ planQuestion(args={}){return planNativeQuestionOnCumulativeMemory(this,args);}
+
  plan({start,required,allowInferred=false,maxExpansionDepth=10,
   maxGraphNodes=this.state.maxStates,includeTopology=false}={}){
   const S=this.state;
