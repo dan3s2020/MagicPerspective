@@ -22,8 +22,9 @@ function groupSamples(samples,numericCount) {
  const operators=[];
  for(const [key,observed] of groups){
    const [primary,step]=key.split(":").map(Number);
-   const candidates=Array.from({length:numericCount},(_,i)=>i).filter(i=>i!==primary&&i!==dependent);
+   const candidates=Array.from({length:numericCount},(_,i)=>i).filter(i=>i!==dependent);
    const slopes=Array(numericCount).fill(0),evidence=Array(numericCount).fill(0);
+   const median=a=>{const sorted=a.slice().sort((x,y)=>x-y);return sorted.length ? sorted[Math.floor((sorted.length-1)/2)] : 0;};
    for(const j of candidates) {
      const found=[];
      for(let a=0;a<observed.length;a++)for(let b=a+1;b<observed.length;b++){
@@ -33,19 +34,21 @@ function groupSamples(samples,numericCount) {
        found.push((y.delta[dependent]-x.delta[dependent])/diff);
      }
      if(found.length){
-       slopes[j]=found.reduce((a,b)=>a+b,0)/found.length;
+       slopes[j]=median(found);
        evidence[j]=found.length;
      }
    }
-   const intercept=observed.reduce((t,s)=>
-     t+s.delta[dependent]-slopes.reduce((a,b,i)=>a+b*s.before[i],0),0)/observed.length;
+   const intercept=median(observed.map(s=>s.delta[dependent]-slopes.reduce((a,b,i)=>a+b*s.before[i],0)));
    let residual=0;
    for(const s of observed){
      const predicted=intercept+slopes.reduce((a,b,i)=>a+b*s.before[i],0);
      residual=Math.max(residual,Math.abs(s.delta[dependent]-predicted));
    }
+   const residuals=observed.map(s=>Math.abs(s.delta[dependent]-intercept-slopes.reduce((a,b,i)=>a+b*s.before[i],0)));
+   const verifiedInliers=residuals.filter(x=>x<1e-7).length;
    operators.push({primary,step,dependent,intercept,slopes,
-     evidence,trainingPairs:observed.length,maxTrainingResidual:residual});
+     evidence,trainingPairs:observed.length,maxTrainingResidual:residual,
+     verifiedInliers,verifiedFraction:verifiedInliers/observed.length});
  }
  return {ready:operators.length>0,numericCount,dependent,
    axes:[...new Set(operators.map(x=>x.primary))].sort((a,b)=>a-b),operators};
@@ -100,6 +103,14 @@ export class StateDependentTextAxes {
  plan(start,goals,{maxExpanded=this.maxExpanded,maxSteps=150}={}) {
    const initial=tokenizeObservation(start),model=this.discover(start);
    if(!model.ready)return {found:false,reason:model.reason};
+   // A heldout goal must NOT be predicted from a local field contradicted by
+   // training observations. This outlier-tolerant gate abstains for
+   // unsupported function families instead of showing a confident wrong path.
+   if(!model.operators?.length || model.operators.some(op=>
+     !Number.isFinite(op.verifiedFraction) || op.verifiedFraction<0.9))
+     return {found:false,reason:"inconsistent-local-field-evidence",
+       weakestVerifiedFraction:Math.min(...(model.operators||[]).map(op=>op.verifiedFraction)),
+       observations:model.pairedObservations};
    const req=goals.map(x=>({index:x.index,value:Number(x.value)}));
    if(!req.length||req.some(x=>!model.numericTokenIndices.includes(x.index)||x.index===model.numericTokenIndices[model.dependent]))
      throw Error("Goal must constrain observed input dimensions, without supplying dependent answer");
