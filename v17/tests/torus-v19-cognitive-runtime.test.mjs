@@ -69,6 +69,21 @@ test('native V19 worker ingests complete documents, persists learned graph, and 
   assert.equal(answer.novelGoal,true);
   assert.ok(answer.plannedPath.length>=1);
   assert.equal(answer.law,'ORIGINAL_V17_ATTRACTION_0.97');
+  assert.equal(answer.topology?.originalMethod,"Discoverer.shape");
+  assert.equal(answer.topology?.actionExecutionOccurred,false,
+    "Frozen visual preview MUST NEVER pretend an action was executed");
+  assert.ok(answer.topology.nodes.length>=2);
+  assert.ok(answer.topology.edges.some(x=>x.onInitialPath),
+    "Live canvas must draw actual learned edges of the original V17 planned path");
+  assert.deepEqual(answer.topology.predictedRoute,answer.preActionShape);
+  const ui=await fetch(base+'/transcend/torus-aether/ui/index.html?live=1');
+  assert.equal(ui.status,200);
+  const html=await ui.text();
+  assert.match(html,/id="v22OriginalShapeCanvas"/);
+  assert.match(html,/v22-original-text-labyrinth-live.js/);
+  const js=await fetch(base+'/transcend/torus-aether/ui/v22-original-text-labyrinth-live.js');
+  assert.equal(js.status,200);
+  assert.match(await js.text(),/v22-original-shape/);
   assert.equal(answer.directOriginalMethod,'Discoverer.shape',
     'The actual native text planner MUST invoke V17 Discoverer.shape, not the V19 duplicated law');
   assert.ok(Array.isArray(answer.preActionShape)&&answer.preActionShape.length>=2);
