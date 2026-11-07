@@ -28,6 +28,8 @@ jobs:
           node --test v17/tests/text-path-holonomy-memory.test.mjs
       - name: Authentic 24 source public OpenThoughts Q/A heldout with failure retained in original atlas
         run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
+      - name: SCALE to 96 ACTUAL PUBLIC OpenThoughts3 samples / 80 train 16 unseen Q/A (same original Brain, no synthetic fallback)
+        run: node --test v17/tests/v31-authentic-96-openthoughts-stress.test.mjs
   windows-native-original:
     runs-on: windows-latest
     timeout-minutes: 7
