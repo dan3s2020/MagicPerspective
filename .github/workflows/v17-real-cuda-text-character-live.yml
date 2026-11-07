@@ -33,3 +33,29 @@ jobs:
         run: |
           node --test v17/tests/torus-live-observability.test.mjs
           node --test v17/tests/torus-unified-http.test.mjs
+  windows-launcher-syntax:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native Windows PowerShell entrypoints remain syntactically valid
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          foreach ($file in @("v17/START_V17.ps1", "v17/START_NATIVE_V17_TRAINING_LIVE.ps1")) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw "$file syntax errors: $($errors | Out-String)" }
+            Write-Host "SYNTAX PASS: $file"
+          }
+      - name: Reject missing training corpus without a demo fallback
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Continue"
+          $msg = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\v17\START_NATIVE_V17_TRAINING_LIVE.ps1 -Data "Z:\MISSING_OPEN_THOUGHTS" -ReportEvery 200000 -GpuTextChunk 128 2>&1 | Out-String
+          if ($LASTEXITCODE -eq 0 -or $msg -notmatch 'REAL OpenThoughts dataset not found') {
+            throw "Missing-data guard did not correctly refuse training: $msg"
+          }
+          Write-Host "No fake corpus or fallback; hard fail was observed."
+          exit 0
