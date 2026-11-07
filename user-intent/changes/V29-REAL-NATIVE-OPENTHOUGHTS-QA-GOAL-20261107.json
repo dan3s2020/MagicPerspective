@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_BLOCKING_NO_SEMANTIC_RELEASE",
+  "base_sha": "d6b7fd08e501651e6dd5ba80f62a8d0d0b195be1",
+  "base_branch": "feature/V17-REAL-OPENTHOUGHTS-HYPERMAZE-STREAM-20261107",
+  "user_request": "Stop demos, take the actual MagicPerspective architecture and make it work on real OpenThoughts Q/A training until tested results exist",
+  "scope": "One existing native V17 Brain, existing learned ObservedTransformations, original Discoverer.shapeGraph, real corpus worker with role-correct Q/A ingest and frozen whole-answer goal evaluation",
+  "red_first": true,
+  "nonnegotiables": [
+    "No substitution of LLM, next-character model, BFS or independent second engine",
+    "Do not provide heldout answer or required goal tokens to the plan",
+    "Preserve native OpenThoughts streaming/resume/CPU/UI/NoiseAgency and original 2D maze",
+    "No fabricated 594MB user-machine GPU or semantic success claims",
+    "No changes to previous branches or main",
+    "Prove physical independent whole-answer exact, including abstentions and negative controls"
+  ],
+  "data_limit": "The user's 594MB D: file cannot be read by GitHub CI; tests must be labeled controlled and the runner must measure actual user-file heldout when launched locally."
+}

@@ -7,6 +7,7 @@
 // available from the user task BEFORE any withheld answer is examined.
 // Internal actions simulate learned operators, NOT validated external semantics.
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
+import {QARoleAxes} from "./qa-role-axes.mjs";
 import {NoiseAgency} from "../../transcend/torus-aether/worlds/noise-agency.mjs";
 import {tokenizeObservation,renderObservation}
  from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
@@ -39,7 +40,24 @@ export class NativeGoalTextMaze {
   this.geometryWeight=geometryWeight;
   this.sharedPolicyWeight=sharedPolicyWeight;
   this.livedTexts=0;this.livedGraphTransitions=0;
+  // Same persistent Brain, not a second training brain or next-byte model.
+  // The field stores only question/answer effects from ACTUAL training rows.
+  this.qaRole=new QARoleAxes(brain.qaRoleEvidence);
+  brain.qaRoleEvidence=this.qaRole.state;
  }
+ // Role-identified actual Q/A training evidence, never a generated answer.
+ // This is part of the SAME original native Brain checkpoint and model.
+ observeQA(question,answer){
+  const r=this.qaRole.observe(question,answer);
+  this.brain.qaRoleEvidence=this.qaRole.state;
+  return r;
+ }
+ // No answer, gold goals, answer-derived tokens, external oracle or
+ // subsequent heldout training is accepted into this method.
+ planQA({question}={}){
+  return this.qaRole.plan(question,this.brain);
+ }
+ executeQA(plan){return this.qaRole.execute(plan);}
  // Experience ONLY actual observed text; no generated answer is inserted.
  // Text edit operators and their evidence come from the EXISTING Brain.
  observe(text){

@@ -145,6 +145,14 @@ export async function launch(options={}){
     const result=await rpc(commands[action]);
     return response(res,200,{ok:true,action,status:result});
    }
+   if(req.method==="POST"&&url.pathname==="/native-qa"){
+    const question=url.searchParams.get("question")||"";
+    if(!question.trim()||question.length>4000)
+     return response(res,400,{error:"Question required, at most 4000 characters; do NOT send answer"});
+    const data=await rpc("qa",{question,
+     execute:url.searchParams.get("execute")==="1"},30000);
+    return response(res,200,data);
+   }
    if(req.method==="POST"&&url.pathname==="/native-hypermaze"){
     const required=(url.searchParams.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean);
     const start=url.searchParams.get("start")||"";

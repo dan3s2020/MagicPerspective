@@ -1,0 +1,19 @@
+name: V29 independent authentic PUBLIC OpenThoughts3 full-answer check - no substitute data
+on:
+  push:
+    branches:
+      - experiment/V29-REAL-OPENTHOUGHTS-QA-GOAL-CLOSED-LOOP-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authentic-public-openthoughts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ORIGINAL one native Brain on actual public OpenThoughts3 dataset rows; print actual full-answer accuracy
+        run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs

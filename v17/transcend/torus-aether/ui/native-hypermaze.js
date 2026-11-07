@@ -77,6 +77,19 @@ async function poll(){
     $("realOps").textContent=format(m.learnedOperators);
     $("realHeldout").textContent=m.probeEligible?
      (100*m.probeCorrect/m.probeEligible).toFixed(2)+"%":"—";
+    const qaPercent=(n,d)=>d>0?(100*n/d).toFixed(2)+"%":"—";
+    setNum("qaLearned",m.qaLearnedPairs??null);
+    setNum("qaAxes",m.qaRoleWitnessedAxisEdges??null);
+    setNum("qaHeldout",m.qaFrozenHeldoutQuestions??null);
+    setNum("qaLongEpisodes",m.qaLongFormEpisodes??null);
+    setNum("qaLongTokens",m.qaLongFormAnswerTokens??null);
+    setNum("qaLongEdges",m.qaLongFormSequentialEdges??null);
+    setNum("qaLongActive",m.qaLongFormActiveChunkDigests??null);
+    $("qaExact").textContent=qaPercent(m.qaFrozenWholeRawExact,m.qaFrozenHeldoutQuestions);
+    $("qaCanonical").textContent=qaPercent(m.qaFrozenWholeCanonicalExact,m.qaFrozenHeldoutQuestions);
+    $("qaCoverage").textContent=qaPercent(m.qaFrozenGoalsFound,m.qaFrozenHeldoutQuestions);
+    document.documentElement.dataset.qaWholeExact=String(m.qaWholeAnswerExactRate??"unmeasured");
+    document.documentElement.dataset.qaHeldout=String(m.qaFrozenHeldoutQuestions??0);
     $("realDetails").textContent=
      format(m.bytesRead)+" / "+format(m.totalBytes)+" octeți JSONL · "+
      format(m.observedTokens)+" tokeni text observați · "+
@@ -185,6 +198,60 @@ $("plan").addEventListener("click",async()=>{
  }catch(e){
   say(e.message,true);
  }finally{state.busy=false;$("plan").disabled=false;}
+});
+// A separate experiment on the SAME original native Brain and the SAME
+// physical observed-Q/A graph. No answer, target tokens or reference are sent.
+$("qaPlan").addEventListener("click",async()=>{
+ if(state.busy)return;
+ const question=$("qaQuestion").value.trim();
+ if(!question||question.length>4000){
+  $("qaPrediction").textContent="Introdu doar întrebarea (1–4.000 caractere).";
+  return;
+ }
+ state.busy=true;$("qaPlan").disabled=true;
+ try{
+  const params=new URLSearchParams({question,execute:"1"});
+  const result=await getJson("/native-qa?"+params.toString(),{method:"POST"});
+  if(result.referenceAnswerProvided!==false||
+     result.plannedBeforeFirstAction!==true||
+     result.originalPlanner!=="Discoverer.shapeGraph")
+   throw Error("NATIVE QA must be frozen, answer-free and driven by original Discoverer.shapeGraph");
+  if(!result.found){
+   $("qaPrediction").textContent="CREIERUL REFUZĂ: "+String(result.reason)+
+    "\nNu există dovadă suficientă pentru un traseu. Fără răspuns inventat.";
+   say("Lumea Q/A nu are încă suficiente tranziții învățate.",true);
+   return;
+  }
+  state.plan={
+   ...result,kind:result.originalPlanner,required:[],
+   body:{frames:(result.body?.frames||[]).map((actual,i,list)=>({
+     stage:i?"after-action":"before-first-action",actual,
+     expected:result.initialShape?.[i]||null,
+     goalReached:i===list.length-1
+   })),replans:0}
+  };
+  state.topology=result.topology;
+  state.frame=0;state.playing=!!state.plan.body.frames.length;
+  state.lastTick=performance.now();state.dataVersion++;
+  state.idByText=new Map((state.topology?.nodes||[]).map(n=>[n.text,n.id]));
+  setNum("nodes",state.topology?.nodes?.length??null);
+  setNum("edges",state.topology?.edges?.length??null);
+  setNum("steps",result.actions?.length??null);
+  $("goal").textContent="Învățată";
+  $("frame").max=String(Math.max(0,state.plan.body.frames.length-1));
+  $("frame").value="0";
+  $("truth").textContent="Țintă construită DIN ÎNTREBARE + efecte Q/A învățate; evaluare semantică externă încă necesară";
+  $("predicted").textContent=(result.initialShape||[]).map((x,i)=>i+" → "+x).join("\n\n");
+  $("qaPrediction").textContent="RĂSPUNS COMPLET PREZIS ÎNAINTE DE ACȚIUNE:\n"+
+   result.predicted+"\n\nTRASEU CAUZAL:\n"+
+   (result.trace||[]).map((v,i)=>(i+1)+". "+v.from+"\n  "+JSON.stringify(v.action)+
+   "\n  → "+v.to+" (V="+v.value+")").join("\n")+
+   "\n\nRăspuns de referință transmis: NU.\nValidare semantică externă în această întrebare: NU.";
+  refreshFrame();draw();
+  say("Traseul original a fost construit înainte de acțiune din efectele Q/A reale.");
+ }catch(error){
+  $("qaPrediction").textContent="EROARE: "+error.message;say(error.message,true);
+ }finally{state.busy=false;$("qaPlan").disabled=false;}
 });
 $("frame").addEventListener("input",e=>{
  state.frame=Number(e.target.value);state.playing=false;
