@@ -92,6 +92,8 @@ test("real independent TinyStories Python GPU protocol: train, LIVE UI, frozen v
   assert.ok(status.storiesPerSecond>0);
   assert.ok(status.preview?.preUpdate?.actual.length>0);
   assert.ok(status.preview?.preUpdate?.predicted.length>0);
+  assert.ok(!status.preview.preUpdate.actual.includes("\u0000"),"Observed text must be rendered as genuine ASCII, not int64 NUL bytes");
+  assert.ok(!status.preview.preUpdate.predicted.includes("\u0000"),"Predicted text must not contain int64 serialization NUL bytes");
   assert.ok(fs.existsSync(path.join(out,"tinystories-fast-v1.npz")));
   const prior=JSON.parse(fs.readFileSync(path.join(out,"tinystories-manifest.json"),"utf8"));
   assert.equal(prior.rows,120);
