@@ -49,6 +49,8 @@ jobs:
         run: |
           node --test v17/tests/native-cognitive-goal.test.mjs
           node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Full long-form native original Disc path, 0.9MB real archival text, frozen edits and ablations
+        run: node --test v17/tests/native-long-text-shape.test.mjs
       - name: Real worker, original UI, native endpoint, checkpoint persistence
         run: node --test v17/tests/native-goal-http.test.mjs
       - name: Real original Brain V19 cognitive goal HTTP and UI integration
