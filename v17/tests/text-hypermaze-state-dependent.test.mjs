@@ -114,3 +114,32 @@ test("stochastic world moves along learned CONTEXT axes: observed replanning bea
  console.log("NONLINEAR_STOCHASTIC_REPLAN",JSON.stringify({
   episodes:50,closed,open,disturbances,offManifoldWorldStates:invalid}));
 });
+
+test("non-commuting learned axes expose PATH DEPENDENCE: the same visible goal coordinates can hide distinct states",()=>{
+ const m=new StateDependentTextAxes({maxValue:200});
+ const contextPairs=[
+  ["2 @ 3 ~ 6.","3 @ 3 ~ 9."], // axis-X increment changes dependent value by Y
+  ["2 @ 4 ~ 8.","3 @ 4 ~ 12."],
+  ["2 @ 3 ~ 6.","2 @ 4 ~ 10."], // axis-Y increment changes dependent by 2X
+  ["3 @ 3 ~ 9.","3 @ 4 ~ 15."]
+ ];
+ for(const [a,b] of contextPairs)assert.equal(m.observePair(a,b).learned,true);
+ const start="5 @ 6 ~ 30.",t=tokenizeObservation(start),model=m.discover(start);
+ assert.equal(model.ready,true,JSON.stringify(model));
+ const X=model.operators.find(o=>o.primary===0&&o.step===1);
+ const Y=model.operators.find(o=>o.primary===1&&o.step===1);
+ assert.ok(X&&Y);
+ const xy=m.apply(m.apply(t,X,model),Y,model);
+ const yx=m.apply(m.apply(t,Y,model),X,model);
+ const numericA=digits(xy.join(" ")),numericB=digits(yx.join(" "));
+ assert.deepEqual(numericA.slice(0,2),numericB.slice(0,2));
+ assert.notEqual(numericA[2],numericB[2]);
+ assert.equal(Math.abs(numericA[2]-numericB[2]),1);
+ console.log("NONCOMMUTATIVE_TEXT_TRANSFORMATIONS",JSON.stringify({
+   startingState:start,XY:xy.join(" "),YX:yx.join(" "),
+   sameInputCoordinates:true,differentDependentCoordinate:true,
+   pathOrderDiscrepancy:numericA[2]-numericB[2],
+   implication:"A route can carry state/history that visible input coordinate goals alone do not specify",
+   notQuantumEvidence:true
+ }));
+});
