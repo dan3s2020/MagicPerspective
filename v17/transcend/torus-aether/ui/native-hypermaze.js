@@ -101,6 +101,11 @@ async function poll(){
     setNum("atlasPhysical",atlas.physicallyTraversableNow??null);
     setNum("atlasGuesses",atlas.proposedEdges??null);
     setNum("atlasAnchors",atlas.sharedPhraseAnchors??null);
+    const archive=m.qaDiskMotifArchive||{};
+    setNum("diskMotifCount",archive.indexedExactMotifs??null);
+    setNum("diskSharedCount",archive.sharedExactMotifsAcrossEpisodes??null);
+    setNum("diskSourceEdgeCount",archive.observedSourceOnlyEdgeTypes??null);
+    setNum("diskRecallCount",archive.reencounteredExactSourceMotifs??null);
     document.documentElement.dataset.cumulativeCrossWorldEpisodes=
       String(cumulative.episodes??0);
     document.documentElement.dataset.cumulativeSharedAnchors=
@@ -598,6 +603,74 @@ $("atlasExport").addEventListener("click",async()=>{
  }catch(error){$("atlasPage").textContent="Export oprit: "+error.message;
   say("Exportul atlasului a eșuat; nu a fost substituit cu date fictive.",true);
  }finally{atlasUI.busy=false;btn.disabled=false;}
+});
+// Exact disk history attached to ONE native Brain: read-only, paginated
+// source evidence. Never inject an archived phrase as a valid semantic move.
+const diskAtlasUI={offset:0,last:null,busy:false};
+function diskMotifRender(data){
+ const target=$("diskMotifResults"),label=$("diskMotifPage");
+ if(data.enabled===false){
+  target.textContent="Memoria pe disc nu este activă. "+
+   (data.reason||"Actualizați Node.js la versiunea 22 sau verificați serverul.");
+  label.textContent="Disk archive indisponibil";return;
+ }
+ if(data.exactOriginalWitness!==undefined){
+  label.textContent=data.exactOriginalWitness?
+   "Ancoră indexată cu proveniență reală":"ID neobservat";
+  target.textContent="DOVADA ORIGINALĂ:\n"+
+   JSON.stringify(data.exactOriginalWitness,null,2)+
+   "\n\nLEGĂTURI DE ORDINE TEXTUALĂ (nu acțiuni fizice):\n"+
+   JSON.stringify(data.sourceOnlyNeighbors||[],null,2)+
+   "\n\nAsemănarea dintre texte NU demonstrează o transformare semantică validă.";
+  return;
+ }
+ const rows=data.rows||[];
+ diskAtlasUI.offset=data.offset||0;diskAtlasUI.last=data;
+ label.textContent=rows.length?
+  (diskAtlasUI.offset+1)+"–"+Math.min(diskAtlasUI.offset+rows.length,data.total)+
+   " / "+data.total+" ancore originale pe disc":"0 / "+(data.total||0);
+ $("diskMotifPrev").disabled=diskAtlasUI.offset<=0;
+ $("diskMotifNext").disabled=data.nextOffset===null;
+ target.textContent=rows.map(x=>x.id+" | "+x.episodes+
+  " experiențe | "+x.occurrences+" observații\n"+
+  "  "+x.example+"\n  prima lume #"+x.firstEpisode+
+  ", ultima lume #"+x.lastEpisode).join("\n\n")||
+  "Încă nu există dovezi lingvistice în arhiva originală.";
+}
+async function diskMotifLoad({id="",offset=0}={}){
+ if(diskAtlasUI.busy)return;
+ diskAtlasUI.busy=true;
+ $("diskMotifLoad").disabled=true;$("diskMotifLookup").disabled=true;
+ try{
+  const qs=id?new URLSearchParams({id,limit:"50"}):
+   new URLSearchParams({offset:String(offset),limit:"50"});
+  const data=await getJson("/native-motif-archive?"+qs);
+  diskMotifRender(data);
+  say("Memoria de pe disc a fost citită din același worker V17; dovezile de sursă nu au fost promovate ca semantice.");
+ }catch(error){
+  $("diskMotifResults").textContent="Arhivă indisponibilă: "+error.message;
+  say(error.message,true);
+ }finally{
+  diskAtlasUI.busy=false;
+  $("diskMotifLoad").disabled=false;$("diskMotifLookup").disabled=false;
+ }
+}
+$("diskMotifLoad").addEventListener("click",()=>diskMotifLoad({offset:0}));
+$("diskMotifLookup").addEventListener("click",()=>{
+ const id=$("diskMotifId").value.trim();
+ if(!/^\d+:[a-f0-9]{64}$/.test(id)){
+  $("diskMotifResults").textContent="ID invalid. Folosește 5: sau 12: urmat de SHA256 din atlas.";
+  return;
+ }
+ diskMotifLoad({id});
+});
+$("diskMotifPrev").addEventListener("click",()=>diskMotifLoad({
+ offset:Math.max(0,diskAtlasUI.offset-50)
+}));
+$("diskMotifNext").addEventListener("click",()=>{
+ if(diskAtlasUI.last?.nextOffset!==null&&
+   diskAtlasUI.last?.nextOffset!==undefined)
+  diskMotifLoad({offset:diskAtlasUI.last.nextOffset});
 });
 $("frame").addEventListener("input",e=>{
  state.frame=Number(e.target.value);state.playing=false;
