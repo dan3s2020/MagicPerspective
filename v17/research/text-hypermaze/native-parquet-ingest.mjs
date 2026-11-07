@@ -77,7 +77,7 @@ export async function ingestNativeParquet(runtime,root,{saveEvery=5000,
   m.answerCharacters+=row.answer?.length||0;
   m.cursor=index+1;
   if(m.cursor%saveEvery===0){
-   runtime.save();m.lastSavedCursor=m.cursor;
+   m.lastSavedCursor=m.cursor;runtime.save();
   }
   if(m.cursor%2000===0){
    const sec=Math.max(1e-3,(Date.now()-begin)/1000);
@@ -92,7 +92,7 @@ export async function ingestNativeParquet(runtime,root,{saveEvery=5000,
   if(m.cursor%32===0)await yieldLoop();
  }
  runtime.state=m.cursor>=ds.trainRows?"finished":"partial";
- runtime.save();m.lastSavedCursor=m.cursor;
+ m.lastSavedCursor=m.cursor;runtime.save();
  return {
   rowsConsumed:m.cursor,totalTrainRows:ds.trainRows,heldoutExcluded:ds.held,
   completedAllTrainRows:m.cursor>=ds.trainRows,
