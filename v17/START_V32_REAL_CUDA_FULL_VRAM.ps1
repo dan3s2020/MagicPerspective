@@ -67,6 +67,8 @@ if ($TextChunk -lt 512 -or $TextChunk -gt 32768) { throw "TextChunk must be 512.
 $env:MP_GPU_TEXT_CHUNK = [string]$TextChunk
 $env:MP_GPU_TEXT_AUTOTUNE = if ($AutoTuneCudaText) { "1" } else { "0" }
 $env:MP_PROFILE_TEXT = if ($ProfileText) { "1" } else { "0" }
+$env:MP_V32_TEXT_SELFTEST = if ($Gpu -like "cuda:*") { "1" } else { "0" }
+Write-Host "Before real Parquet training: run exact ORIGINAL text alignment CUDA-versus-NumPy selftest: $env:MP_V32_TEXT_SELFTEST" -ForegroundColor Cyan
 Write-Host "GPU $Gpu, CUDA $Cuda, $GpuWorlds maze worlds, $GpuTextBatch text document(s)/batch" -ForegroundColor Cyan
 Write-Host ("VRAM requested: "+$(if ($Vram -eq 0) {"AUTO MAX SAFE FREE"} else {"$Vram GB"}) +
   " · initial CUDA alignment microchunk: $TextChunk · autotune: $AutoTuneCudaText") -ForegroundColor Cyan
