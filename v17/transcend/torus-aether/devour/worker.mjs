@@ -445,6 +445,20 @@ parentPort.on("message", m => {
     }catch(err){parentPort.postMessage({type:"chat",id,nativeAtlasPage:true,error:err.message});}
     return;
   }
+  if(m?.nativeAtlasEval){
+    const id=m.nativeAtlasEval.id;
+    try{
+      const held=Array.isArray(m.nativeAtlasEval.rows)?
+        m.nativeAtlasEval.rows.map(parseHeldoutText).filter(Boolean):[];
+      const tested=nativeAtlas.evaluateFrozen(brain.constructedPaths,held,
+        {max:Math.min(16,held.length)});
+      parentPort.postMessage({type:"chat",id,nativeAtlasEval:true,...tested,
+        trainingRowsBefore:brain.constructedPaths.textRows,
+        trainingAtlasEpisodesBefore:nativeAtlas.episodes,
+        trainingAtlasEpisodesAfter:nativeAtlas.episodes});
+    }catch(err){parentPort.postMessage({type:"chat",id,nativeAtlasEval:true,error:err.message});}
+    return;
+  }
   // Freeze the learned axis operators before testing a NEW complete world.
   // Test seeds are distinct from all training episodes; no probes supplied.
   if(m?.xdAtlasTest){
