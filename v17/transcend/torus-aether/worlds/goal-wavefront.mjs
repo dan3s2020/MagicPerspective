@@ -36,7 +36,10 @@ export function observedGoalField(space,{temperature=0,random=()=>0.5}={}){
   }
   for(const e of space.edges){
     const probability=e.count/totals.get(e.from+"\u0000"+e.action);
-    const edge={...e,probability};outgoing[e.from].push(edge);incoming[e.to].push(edge);
+    const provenance=e.provenance||"observed";
+    if(!["observed","learned-rule-hypothesis"].includes(provenance))
+      throw Error("Unknown provenance: an action cannot appear without source evidence");
+    const edge={...e,provenance,probability};outgoing[e.from].push(edge);incoming[e.to].push(edge);
   }
   const V=new Float64Array(N),heap=new Heap();
   for(const g of goals){V[g]=1;heap.add({id:g,v:1});}
@@ -73,6 +76,7 @@ export function observedGoalField(space,{temperature=0,random=()=>0.5}={}){
     }
     likelihood*=best.probability;
     path.push({from:here,to:best.to,action:best.action,observedCount:best.count,
+      provenance:best.provenance,
       empiricalOutcomeProbability:best.probability,potentialBefore:V[here],
       potentialAfter:V[best.to],edgeScore:best.score});
     here=best.to;nodes.push(here);seen.add(here);
@@ -84,7 +88,8 @@ export function observedGoalField(space,{temperature=0,random=()=>0.5}={}){
     predictedOutcomeProbability:likelihood,
     math:{maxBellmanResidual:residual,reachableStates:reachable,queuePops:pops,
       strictlyUphill:path.every(e=>e.potentialAfter>e.potentialBefore),
-      noUnobservedEdges:path.every(e=>e.observedCount>0),
+      noUnobservedEdges:path.every(e=>e.provenance==="observed"),
+      inferredHypothesisSteps:path.filter(e=>e.provenance==="learned-rule-hypothesis").length,
       law:"V(goal)=1;V(s)=0.97*conduct(s)*max P(next|s,action)*V(next)",
       scope:"observed graph goal navigation; NOT unconstrained semantic text answers",
       fullCUDAVerified:false}};
