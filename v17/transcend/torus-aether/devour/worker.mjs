@@ -409,7 +409,16 @@ const processGpuText = async (exs, meta) => {
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot();
   // The original V17 trace sees the first actual exercise, exactly once.
-  if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
+  if (exs.length) {
+    let progressed = 0;
+    for (const y of exs[0]) {
+      brain.live(y, brain.lived % 50 === 0, {old: true});
+      // Allow actual live original Brain UI and controls to respond even
+      // while CUDA's batch is being absorbed by the CPU old organs.
+      // Strict source order and every original weight update are preserved.
+      if (++progressed % 32 === 0) await new Promise(r => setImmediate(r));
+    }
+  }
   for(const row of meta){absorbHyperMaze(row);absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
   setWorkerPhase("CUDA: training shared transition model");
@@ -641,7 +650,11 @@ for await (const ex of stream()) {
   // Explicitly switching to CPU drains any pending exercises rather than dropping them.
   if (TEXT && textBatch.length) {
     for (let j = 0; j < textBatch.length; j++) {
-      brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
+      brain.beginExercise(); let lastUIYield=0;
+      for (const y of textBatch[j]) {
+        brain.live(y, brain.chars % 50 === 0); brain.chars++;
+        if (++lastUIYield % 32 === 0) await new Promise(r => setImmediate(r));
+      }
       brain.exercises = (brain.exercises || 0) + 1;
       absorbHyperMaze(textMeta[j]);absorbLanguage(textMeta[j]);absorbConstructed(textMeta[j]);
       absorbObservedDifferences(textMeta[j]);absorbText(textMeta[j]);
@@ -658,6 +671,12 @@ for await (const ex of stream()) {
     if (brain.chars >= nextTest) { nextTest += every; if (process.memoryUsage().heapUsed / 1e9 > memGB && !brain.full) { brain.full = true; parentPort.postMessage({type: "note", w: workerData.gw, text: "memory budget reached: nothing is deleted; the old graph stops growing, the aligning graph keeps everything"}); } report(); }
     if (brain.chars >= maxChars || stop) break;
     if (paused || saveNow) { shot(true); await hold(); }
+    // Real OpenThoughts rows can contain many thousands of text symbols.
+    // The original worker formerly blocked ALL requests until a whole
+    // row's byte loop finished. Cooperative scheduling every 32 symbols
+    // changes NO observations, update order, math, or GPU allocations.
+    if ((brain.chars-startedAtChars) % 32 === 0)
+      await new Promise(r => setImmediate(r));
   }
   const livedChars=brain.chars-startedAtChars;
   observedPipeline.lastLoop={TEXT,stop,gpuSet:!!gpuSet,startedAtChars,
@@ -672,8 +691,15 @@ for await (const ex of stream()) {
     if(livedChars===ex.bytes.length&&!stop){
       // Diagnose BEFORE observing the current sentence/answer in EITHER
       // the six-scale graph or the contextual edit-operator atlas.
-      absorbHyperMaze(ex);absorbLanguage(ex);absorbConstructed(ex);
-      absorbObservedDifferences(livedRow);absorbText(ex);
+      absorbHyperMaze(ex);
+      await new Promise(r => setImmediate(r));
+      absorbLanguage(ex);
+      await new Promise(r => setImmediate(r));
+      absorbConstructed(ex);
+      await new Promise(r => setImmediate(r));
+      absorbObservedDifferences(livedRow);
+      await new Promise(r => setImmediate(r));
+      absorbText(ex);
       await flushShared();
     }else absorbObservedDifferences(livedRow);
   }
