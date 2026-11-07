@@ -214,7 +214,7 @@ export class CharacterHypermaze{
      missing.length?"MISSING_CHARACTER_TRANSFORMATION_EDGES":"NO_REACHABLE_GOAL_WITH_OBSERVED_RULES";
   return {states,neighbors,targets,start:0,goal,diagnostics:diag,reason,truncated};
  }
- formSolution(initial,goal,{disc=null,temperature=0,seed=74129,transfer=true,maxNodes=4096,maxDepth=8}={}){
+ formSolution(initial,goal,{disc=null,temperature=0,seed=74129,transfer=true,maxNodes=4096,maxDepth=8,postHocReference=false}={}){
   this.plans++;
   const world=this.buildWorld(initial,goal,{transfer,maxNodes,maxDepth});
   if(world.targets.includes(0)){
@@ -224,7 +224,7 @@ export class CharacterHypermaze{
   if(!world.targets.length){
     const failed={found:false,world,path:[],field:{values:[],nodes:[0]},
       method:"Discoverer.shape",plannedBeforeAction:true,reason:world.reason};
-    this.#auditPlan(initial,failed,transfer);return failed;
+    this.#auditPlan(initial,failed,transfer,postHocReference);return failed;
   }
   const d=new Discoverer(seed);d.temp=Math.max(0,Number(temperature)||0);
   const kinds=world.states.map((s,i)=>i===0?KIND.self:world.targets.includes(i)?KIND.target:KIND.floor);
@@ -239,9 +239,9 @@ export class CharacterHypermaze{
     temperature:d.temp,reason:found?null:"NO_ASCENDING_ORIGINAL_V17_SHAPE",
     firstPrediction: path.map(e=>({from:world.states[e.from].join(""),action:e.action,
       to:world.states[e.to].join(""),verified:e.verified}))};
-  this.#auditPlan(initial,result,transfer);return result;
+  this.#auditPlan(initial,result,transfer,postHocReference);return result;
  }
- #auditPlan(initial,plan,transfer){
+ #auditPlan(initial,plan,transfer,postHocReference=false){
   this.atlasSink?.({type:"character-planning-attempt",world:"text-characters",
     input:Array.isArray(initial)?initial.join(""):String(initial),
     goal:plan.world.goal,found:plan.found,reason:plan.reason||null,
@@ -251,7 +251,10 @@ export class CharacterHypermaze{
       neighbors:plan.world.neighbors,targets:plan.world.targets},
     completePredictedPath:plan.firstPrediction||[],
     originalShapeNodes:plan.field.nodes,originalShapeValues:plan.field.values,
-    hiddenAnswerNotProvided:true,successIsExplicitGoalReachabilityNotSemanticAnswer:true});
+    hiddenAnswerNotProvided:!postHocReference,
+    postHocReferenceUsedForDiagnosisOnly:!!postHocReference,
+    notPartOfOriginalPrediction:!!postHocReference,
+    successIsExplicitGoalReachabilityNotSemanticAnswer:true});
  }
  execute(plan,{step}={}){
   if(typeof step!=="function")throw Error("Real independent step() world required, never replay predicted edges as an oracle");
