@@ -1,0 +1,56 @@
+name: V42 original CUDA imagination - full learned-output parity and live speed audit
+on:
+  push:
+    branches:
+      - perf/V42-REAL-CUDA-IMAGINATION-KERNEL-OVERHEAD-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-numpy-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: NumPy historical ORIGINAL parity prerequisites
+        run: python -m pip install numpy
+      - name: Python syntax, test uses V41 immutable reference and actual observed repo text
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py
+          python -m py_compile v17/transcend/torus-aether/gpu/v42_real_cuda_parity.py
+          git cat-file -e 829a982570da76d102c3cb9597cfe5dab877239b^{blob}
+          python v17/transcend/torus-aether/gpu/v42_real_cuda_parity.py --device numpy
+      - name: Original unchanged finite native text, graph and xD tests
+        run: |
+          python -m unittest discover -s v17/tests -p 'text_index_fast_test.py' -v
+          python -m unittest discover -s v17/tests -p 'text_variant_fast_test.py' -v
+          node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
+      - name: CI NO RTX, cannot assert real CUDA acceleration
+        run: |
+          echo 'V42_REAL_NVIDIA_GPU_ACCELERATION=NOT_MEASURED_BY_THIS_CPU_RUNNER'
+          echo 'Need python .../v42_real_cuda_parity.py --require-cuda ON AN RTX.'
+  windows-original-source:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Original NumPy suffix and native trust still run on Windows
+        shell: pwsh
+        run: |
+          python -m pip install numpy
+          if ($LASTEXITCODE -ne 0) { throw "NumPy install failed" }
+          python v17/transcend/torus-aether/gpu/v42_real_cuda_parity.py --device numpy
+          if ($LASTEXITCODE -ne 0) { throw "V41 -> V42 exact native text parity failed" }
