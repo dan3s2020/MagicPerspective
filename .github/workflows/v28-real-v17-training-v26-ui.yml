@@ -28,3 +28,6 @@ jobs:
       - name: Actual bridge HTTP with exact original native payload, original /eval and original SHA protections
         run: |
           node --test v17/apps/hypermaze-studio-v26/tests/native-bridge.test.mjs
+      - name: Run REAL original native V17 devour worker and evaluate new UI transport (no mocks)
+        run: |
+          node --test v17/apps/hypermaze-studio-v26/tests/native-real-runtime.test.mjs
