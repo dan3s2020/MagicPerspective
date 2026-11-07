@@ -103,7 +103,7 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
      res.statusCode=404;res.end(JSON.stringify({error:"Not found"}));
    });
    await open(upstream);
-   bridge=await createNativeBridge({port:0,nativePort:upstream.address().port});
+   bridge=await createNativeBridge({port:0,nativePort:upstream.address().port,inspectCuda:async()=>({ok:true,python:'test-only-fixture'})});
    const base=bridge.url;
    const chromeDir=path.join(dir,"chrome");
    await fs.mkdir(chromeDir,{recursive:true});
