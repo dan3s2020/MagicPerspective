@@ -20,6 +20,8 @@ import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {cognitiveRouteSnapshot} from "../worlds/cognitive-route-snapshot.mjs";
+import {nativeMathRouteSnapshot} from "../worlds/native-math-route-snapshot.mjs";
+import {NativeMathGoalField} from "../../../research/goal-path-field/native-math-graph.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -360,6 +362,65 @@ http.createServer((req, res) => {
         }catch(e){return json(res,{error:e.message});}
       });
       sl.wk.postMessage({hypermazePlan:{id,start:m.start,goal:m.goal,maxSteps}});
+    });return;
+  }
+  // Actual native Brain: observe only independently witnessed before/after
+  // arithmetic state transitions. Never insert evaluation answers as training.
+  if(req.method==="POST"&&url==="/native-math-observe"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>16384)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid native math observation JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap")||!sl.wk)
+        return json(res,{error:"A RUNNING original cognitive Brain is required"});
+      if(typeof m.before!=="string"||typeof m.after!=="string"||
+         !m.before||!m.after||m.before.length>2048||m.after.length>2048)
+        return json(res,{error:"Provide actual independently observed before/after text states"});
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);json(res,{error:"Native observed action evidence timed out"});
+      },60000);
+      chats.set(id,reply=>{clearTimeout(timer);json(res,reply)});
+      sl.wk.postMessage({nativeMathObserve:{id,before:m.before,after:m.after}});
+    });return;
+  }
+  if(req.method==="POST"&&url==="/native-math-eval"){
+    let body="";req.on("data",d=>{body+=d;if(body.length>120000)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid native math evaluation JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap"))
+        return json(res,{error:"Select a graph with ORIGINAL cognitive Brain enabled"});
+      const seed=Number(m.seed??4105),temperature=Number(m.temperature??0);
+      if(typeof m.document!=="string"||m.document.length>110000||!m.document.trim()||
+         !Array.isArray(m.goals)||!m.goals.length||m.goals.length>16||
+         m.goals.some(g=>!Number.isInteger(g?.index)||!Number.isSafeInteger(g?.value))||
+         !Number.isSafeInteger(seed)||seed<0||seed>4294967295||
+         !Number.isFinite(temperature)||temperature<0||temperature>2)
+        return json(res,{error:"Provide a bounded document, independent integer input goals, seeded noise 0..2; NEVER an answer"});
+      const frozenFromSave=()=>{
+        const file=saveOf(sl);
+        if(!fs.existsSync(file))throw Error("No trained original Brain checkpoint");
+        const brain=Brain.load(file);
+        if(!brain.nativeMathField)throw Error("No mathematical transitions learned by original Brain");
+        const field=NativeMathGoalField.restore(brain.nativeMathField);
+        const before=JSON.stringify(field.export());
+        const plan=field.formSolution(m.document,m.goals,{seed,temperature});
+        if(before!==JSON.stringify(field.export()))throw Error("Frozen planning changed checkpoint");
+        return {...nativeMathRouteSnapshot(plan),frozen:true,fromSave:true,nativeBrain:true};
+      };
+      if(!sl.wk||sl.status==="gata"){
+        try{return json(res,frozenFromSave());}catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);
+        json(res,{error:"Native math field evaluation timed out"});
+      },120000);
+      chats.set(id,reply=>{clearTimeout(timer);json(res,reply)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{json(res,frozenFromSave());}catch(err){json(res,{error:err.message});}
+      });
+      sl.wk.postMessage({nativeMathEval:{id,document:m.document,goals:m.goals,seed,temperature}});
     });return;
   }
   if (req.method === "POST" && url === "/cognitive-observe") {
