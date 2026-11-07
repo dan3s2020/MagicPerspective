@@ -36,7 +36,7 @@ test("three real Brain.load checkpoint ablation runs on one immutable synthetic 
       const report=JSON.parse(fs.readFileSync(path.join(root,"graph0-"+arm+".json"),"utf8"));
       assert.equal(report.runs.length,8);
       assert.deepEqual(report.learnedBefore,report.learnedAfter);
-      assert.ok(report.runs.every(r=>r.observedPathTrace.steps.length===r.output.length));
+      assert.ok(report.runs.every(r=>r.observedPathTrace.steps.length >= r.output.length && r.observedPathTrace.steps.length <= r.output.length+1), "stopBlank trims one final newline after the observer captures its step");
       for (const r of report.runs) {
         const all=r.observedPathTrace.steps.flatMap(s=>s.supportingPerspectives.map(p=>p.perspective));
         if (arm==="no-self") assert.ok(!all.includes("self"),"self must be removed in no-self");
