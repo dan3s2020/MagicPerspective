@@ -5,6 +5,7 @@
 // No fake throughput. No OpenThoughts, no generated training samples.
 import http from "node:http";
 import {exec} from "node:child_process";
+import {Worker} from "node:worker_threads";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
@@ -27,7 +28,8 @@ const message=e=>String(e?.stack||e?.message||e).slice(0,3600);
 
 export class TinyStoriesTrainer{
  constructor({train,valid,out,device="cuda:0",port=8897,batchKB=128,
-  batchStories=180,saveSeconds=45,resume=true}){
+  batchStories=180,saveSeconds=45,resume=true,nativeWorlds=true,
+  nativeTextEvery=16,nativeTextBytes=48,nativeWorldEvery=32}){
   if(path.resolve(train)===path.resolve(valid))throw Error("Train and held-out validation must be DISTINCT files");
   this.train=path.resolve(train);this.valid=path.resolve(valid);this.out=path.resolve(out);
   this.device=device;this.port=positive(port,"port",1025,65535);
@@ -38,13 +40,20 @@ export class TinyStoriesTrainer{
   this.manifest=path.join(this.out,"tinystories-manifest.json");
   this.paused=true;this.stopRequested=false;this.saveRequested=false;this.running=false;this.finished=false;
   this.model=null;this.gpu=null;this.pendingTest=false;
+  this.nativeWorlds=!!nativeWorlds;this.nativeTextEvery=nativeTextEvery;
+  this.nativeTextBytes=nativeTextBytes;this.nativeWorldEvery=nativeWorldEvery;
+  this.native=null;this.nativeStopped=false;
   this.state={mode:"TinyStories-only",algorithm:"learned 1-4 character contexts (orders 3/4 hashed)",
    phase:"initializing",device,port:this.port,stories:0,chars:0,bytesRead:0,
    datasetSize:0,percent:0,storiesPerSecond:0,charsPerSecond:0,
    MBPerSecond:0,updates:0,checkpointChars:0,lastIndex:-1,
    lastSave:null,startedAt:null,elapsedSeconds:0,error:null,
    preview:null,heldout:null,lastBatch:null,perspectives:[1,2,3,4],
-   noOriginalBrain:true,trainingLive:false,history:[]};
+   noOriginalBrain:!this.nativeWorlds,trainingLive:false,history:[],
+   native:{enabled:this.nativeWorlds,status:"not-started",stories:0,bytesRead:0,
+    cpuOriginal:true,worldIntervalStories:nativeWorldEvery,
+    nativeTextSymbolEvery:nativeTextEvery,nativeTextBytesPerSelectedStory:nativeTextBytes,
+    modelScope:"original V17 learned language/maze/transform/construction/5D"}};
  }
  async init(){
   const trainMeta=await sourceMetadata(this.train),validMeta=await sourceMetadata(this.valid);
@@ -81,7 +90,48 @@ export class TinyStoriesTrainer{
    this.state.chars=this.model.chars;
    this.state.checkpointChars=this.model.savedChars;
    this.state.phase="ready";
+   if(this.nativeWorlds)this.startNativeWorker();
   }catch(e){this.state.error=message(e);this.state.phase="error";this.gpu.close();throw e;}
+ }
+ startNativeWorker(){
+  if(this.native)return;
+  const nativeWorker=this.native=new Worker(new URL("./native-worlds-worker.mjs",import.meta.url),{
+   workerData:{train:this.train,valid:this.valid,out:this.out,
+    symbolEvery:this.nativeTextEvery,symbolBytes:this.nativeTextBytes,
+    worldEvery:this.nativeWorldEvery,saveSeconds:this.saveSeconds}
+  });
+  nativeWorker.on("message",m=>{
+   if(m.type==="state"){
+    this.state.native={...m,percent:this.trainMeta?.size?
+     100*m.bytesRead/this.trainMeta.size:0,
+     lagBehindFastStories:Math.max(0,this.state.stories-m.stories)};
+   }else if(m.type==="fatal"||m.type==="exam-error"){
+    this.state.native={...this.state.native,error:m.error,
+     status:m.type==="fatal"?"error":this.state.native?.status||"unknown"};
+   }else if(m.type==="finished"){
+    this.state.native={...this.state.native,status:"complete",
+     stories:m.rows,bytesRead:m.offset,percent:100};
+   }else if(m.type==="saved"){
+    this.state.native={...this.state.native,
+     lastCheckpoint:new Date().toISOString(),
+     lastSavedOffset:m.offset,lastSavedRows:m.rows};
+   }
+  });
+  nativeWorker.on("error",e=>{
+   this.state.native={...this.state.native,status:"error",error:message(e)};
+  });
+  nativeWorker.on("exit",code=>{
+   this.nativeStopped=true;
+   if(code!==0&&this.state.native?.status!=="error")
+    this.state.native={...this.state.native,status:"error",
+     error:"Original V17 worker unexpectedly exited with code "+code};
+  });
+ }
+ nativeCommand(type){
+  if(!this.native)return {accepted:false,reason:"original V17 background worker disabled"};
+  if(this.nativeStopped)return {accepted:false,error:"V17 original worker is not running"};
+  this.native.postMessage({type});
+  return {accepted:true,command:type};
  }
  readStatus(){return {...this.state,paused:this.paused,running:this.running,
   finished:this.finished,saveRequested:this.saveRequested,
@@ -192,11 +242,13 @@ export class TinyStoriesTrainer{
   if(this.finished)throw Error("TinyStories corpus finished. Choose a new output directory for another pass.");
   this.paused=false;
   if(!this.running){this.run();}
+  this.nativeCommand("start");
   return this.readStatus();
  }
- pause(){this.paused=true;return this.readStatus();}
+ pause(){this.paused=true;this.nativeCommand("pause");return this.readStatus();}
  save(){
   this.saveRequested=true;
+  this.nativeCommand("save");
   if(!this.running){this.commit().catch(e=>{this.state.error=message(e);this.state.phase="error";});}
   return {accepted:true,notes:"Checkpoint written after current GPU batch; check lastSave."};
  }
@@ -219,11 +271,18 @@ export class TinyStoriesTrainer{
  }
  async stop(){
   this.stopRequested=true;this.paused=false;this.saveRequested=true;
+  this.nativeCommand("stop");
   if(this.running){
    for(let i=0;i<450&&this.running;i++)await rest(100);
   }else{
    try{await this.commit();}catch(e){this.state.error=message(e);}
    this.gpu?.close();
+  }
+  if(this.native&&!this.nativeStopped){
+   const w=this.native;
+   const closed=new Promise(resolve=>w.once("exit",resolve));
+   await Promise.race([closed,rest(12000)]);
+   if(!this.nativeStopped)await w.terminate();
   }
  }
 }
@@ -251,7 +310,9 @@ export async function launch(opts){
     if(url.pathname==="/api/start")return send(res,app.start());
     if(url.pathname==="/api/pause")return send(res,app.pause());
     if(url.pathname==="/api/save")return send(res,app.save());
-    if(url.pathname==="/api/test")return send(res,await app.evaluate({
+    if(url.pathname==="/api/native-test")return send(res,app.nativeCommand("evaluate"));
+     if(url.pathname==="/api/native-graph")return send(res,app.nativeCommand("snapshot"));
+     if(url.pathname==="/api/test")return send(res,await app.evaluate({
      maxStories:positive(url.searchParams.get("stories")||32,"heldout stories",1,128)
     }));
    }catch(e){return send(res,{error:message(e)},400);}
@@ -283,6 +344,10 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  if(!train||!valid||!out){console.error("Usage: node server.mjs --train TinyStories-train.txt --valid TinyStories-valid.txt --out SeparateRun --device cuda:0 --port 8897 --start");process.exit(2);}
  launch({train,valid,out,device:arg("device","cuda:0"),port:arg("port","8897"),
   batchKB:arg("batch-kb","128"),batchStories:arg("batch-stories","180"),
+  nativeWorlds:!flag("no-native-worlds"),
+  nativeTextEvery:positive(arg("native-text-every","16"),"native text every",1,256),
+  nativeTextBytes:positive(arg("native-text-bytes","48"),"native text bytes",4,128),
+  nativeWorldEvery:positive(arg("native-world-every","32"),"native world every",1,10000),
   saveSeconds:arg("save-seconds","45"),resume:!flag("fresh"),
   autoStart:flag("start"),autoOpen:flag("open")}).catch(e=>{console.error("TINYSTORIES_START_ERROR",message(e));process.exitCode=1;});
 }
