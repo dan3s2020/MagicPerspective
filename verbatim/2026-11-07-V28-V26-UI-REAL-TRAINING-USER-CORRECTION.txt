@@ -1,0 +1,1 @@
+coaie. nu ti-am cerut sa te intorci la vechiul ui!! ci sa faci antrenamentul si rezultatele si viteza,motorul si astea din demo,sa mearga pe trainingul real !!!deci trebuia doar sa bagi trainingul real,adica sa masoare si sa testeze la fel ca in ui-ul vechi ! ai facut regresie trecand la vechiul ui!!! nu asta am cerut!
