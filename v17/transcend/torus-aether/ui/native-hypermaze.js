@@ -85,6 +85,17 @@ async function poll(){
     setNum("qaLongTokens",m.qaLongFormAnswerTokens??null);
     setNum("qaLongEdges",m.qaLongFormSequentialEdges??null);
     setNum("qaLongActive",m.qaLongFormActiveChunkDigests??null);
+    const cumulative=m.crossMazeMemory||{};
+    setNum("cumEpisodes",cumulative.episodes??null);
+    setNum("cumVerified",cumulative.physicallyVerifiedEdges??null);
+    setNum("cumNodes",cumulative.memoryNodes??null);
+    setNum("cumProposed",cumulative.proposedEdges??null);
+    setNum("cumShared",cumulative.sharedExactChunkAnchors??null);
+    setNum("cumWalls",cumulative.rejectedActions??null);
+    document.documentElement.dataset.cumulativeCrossWorldEpisodes=
+      String(cumulative.episodes??0);
+    document.documentElement.dataset.cumulativeSharedAnchors=
+      String(cumulative.sharedExactChunkAnchors??0);
     $("qaExact").textContent=qaPercent(m.qaFrozenWholeRawExact,m.qaFrozenHeldoutQuestions);
     $("qaCanonical").textContent=qaPercent(m.qaFrozenWholeCanonicalExact,m.qaFrozenHeldoutQuestions);
     $("qaCoverage").textContent=qaPercent(m.qaFrozenGoalsFound,m.qaFrozenHeldoutQuestions);
@@ -253,6 +264,87 @@ $("qaPlan").addEventListener("click",async()=>{
   $("qaPrediction").textContent="EROARE: "+error.message;say(error.message,true);
  }finally{state.busy=false;$("qaPlan").disabled=false;}
 });
+// V30 original single-Brain CUMULATIVE world graph from ALL previous
+// observations, never a new demo. GOLD path is frozen BEFORE any physical
+// action. Inferred edges are not represented as physically verified.
+$("cumPlan").addEventListener("click",async()=>{
+ if(state.busy)return;
+ const mode=$("cumMode").value,start=$("cumStart").value.trim(),
+  depth=$("cumDepth").value,budget=$("cumBudget").value;
+ const required=$("cumRequired").value.split(",").map(x=>x.trim()).filter(Boolean);
+ const numericInputs=$("cumNumericInputs").value.trim();
+ if(!start||start.length>4000){
+  $("cumEvidence").textContent="Starea inițială trebuie să aibă între 1 și 4.000 caractere.";
+  return;
+ }
+ if(mode==="numeric"&&!numericInputs){
+  $("cumEvidence").textContent="Specifică NUMAI coordonatele de intrare: 0:8,2:7. Nu oferi rezultatul dependent.";
+  return;
+ }
+ if(mode!=="numeric"&&(!required.length||required.length>16)){
+  $("cumEvidence").textContent="Pentru text, oferă 1–16 tokeni ai obiectivului; nu răspunsul complet.";
+  return;
+ }
+ state.busy=true;$("cumPlan").disabled=true;
+ $("cumEvidence").textContent="Construiesc topologia din toate experiențele memorate de originalul Brain...";
+ try{
+  const qs=mode==="numeric"?
+   new URLSearchParams({start,inputs:numericInputs,depth,budget,topology:"1"}):
+   new URLSearchParams({start,required:required.join(","),depth,budget,
+    inferred:mode==="inferred"?"1":"0",topology:"1"});
+  const url=(mode==="numeric"?"/native-cumulative-numeric?":"/native-cumulative?")+qs;
+  const result=await getJson(url,{method:"POST"});
+  if(result.originalPlanner!=="Discoverer.shapeGraph"||
+   result.referenceAnswerProvided!==false||
+   result.plannedBeforeFirstAction!==true)
+   throw Error("Originalul Discoverer nu a confirmat planificarea globală fără răspuns");
+  if(!result.found){
+   $("cumEvidence").textContent="NICIO CALE CERTIFICATĂ: "+
+    String(result.reason)+"\n\nMEMORIE REALĂ:\n"+
+    JSON.stringify(result.memory||result.graph||{},null,2)+
+    "\n\nLipsa dovezilor NU înseamnă că legătura nu există; organismul nu a învățat-o încă.";
+   say("Labirintul cumulativ nu conține încă o cale către această țintă.",true);
+   return;
+  }
+  state.plan={...result,kind:"native-accumulated-real-topology",
+   body:{frames:[],replans:0}};
+  state.topology=result.topology||null;
+  state.frame=0;state.playing=false;state.dataVersion++;
+  state.idByText=new Map((state.topology?.nodes||[]).map(n=>[n.text,n.id]));
+  setNum("nodes",state.topology?.nodes?.length??null);
+  setNum("edges",state.topology?.edges?.length??null);
+  setNum("steps",result.steps);
+  $("goal").textContent="Formă găsită";
+  $("frame").max="0";$("frame").value="0";
+  $("truth").textContent="Forma a fost prezisă, execuția fizică încă NU a fost efectuată. Verificarea externă rămâne necesară.";
+  $("predicted").textContent="FORMA ORIGINALĂ ÎNAINTE DE PRIMA ACȚIUNE\n"+
+   (result.initialShape||[]).map((x,i)=>i+" → "+x).join("\n\n");
+  $("actual").textContent="Corpul NU s-a mișcat încă.\n"+
+   "Graf vizualizat: stări/muchii observate, respectiv ipoteze etichetate.\n"+
+   "Acest rezultat este PREZICȚIE, nu execuție simulată.";
+  const items=result.actions||[];
+  $("cumEvidence").textContent=
+   "TRASEU COMPLET: "+result.steps+" transformări; "+
+   (result.pathContainsInferredEdges?"CONȚINE IPOTEZE NEVERIFICATE":"FIZIC VERIFICAT ÎN EXPERIENȚE")+
+   "\n\n"+items.map((x,i)=>String(i+1)+". "+
+    (x.before??x.from)+"\n   prin "+String(x.action??x.actionId??x.kind)+
+    " → "+String(x.after??x.to)+
+    "\n   dovadă: "+String(x.edgeStatus??x.status??"learned-inferred")+
+    " · suport "+String(x.observedSupport??x.observedTrainingPairs??"n/a")).join("\n\n")+
+   "\n\nMEMORIE / AXE / LIMITE:\n"+
+   JSON.stringify(result.memory||result.graph||{},null,2)+
+   "\n\nRĂSPUNS COMPLET INFERAT:\n"+String(result.predicted)+
+   "\n\nAcuratețe semantică generală: NEDEMONSTRATĂ.";
+  refreshFrame();draw();
+  say("Am compus o cale din mai multe lumi; " +
+   (result.pathContainsInferredEdges?
+    "conține tranziții ce trebuie confirmate în lumea reală.":
+    "muchiile din traseu au dovezi fizice independente."));
+ }catch(error){
+  $("cumEvidence").textContent="EROARE REALĂ: "+error.message;
+  say(error.message,true);
+ }finally{state.busy=false;$("cumPlan").disabled=false;}
+});
 $("frame").addEventListener("input",e=>{
  state.frame=Number(e.target.value);state.playing=false;
  $("play").textContent="▶ Redă animația";refreshFrame();draw();
@@ -336,15 +428,23 @@ function draw(){
  $("viewInfo").textContent=nodes.length+" stări reale · "+
   topology.edges.length+" muchii · "+genuine+" poziții 5D învățate/inferate · "+
   (nodes.length-genuine)+" poziții 2D derivate topologic · rotiți cu mouse-ul";
- ctx.lineWidth=.65;
- ctx.strokeStyle="rgba(75,122,153,.13)";
- ctx.beginPath();
- for(const e of topology.edges){
-  const a=points[e.from],b=points[e.to];
-  if(!a||!b)continue;
-  ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+ // Verified edges are solid. Hypotheses are dashed and reddish; they are
+ // NOT real walls/corridors until independent action feedback confirms them.
+ for(const inferred of [false,true]){
+  ctx.lineWidth=inferred?.9:.75;
+  ctx.strokeStyle=inferred?"rgba(240,128,154,.30)":"rgba(102,204,231,.20)";
+  ctx.setLineDash(inferred?[3,4]:[]);
+  ctx.beginPath();
+  for(const e of topology.edges){
+   const status=String(e.status||"physically-verified");
+   const guess=status.includes("inferred")||status.includes("hypothesis");
+   if(guess!==inferred)continue;
+   const a=points[e.from],b=points[e.to];
+   if(!a||!b)continue;
+   ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+  }
+  ctx.stroke();ctx.setLineDash([]);
  }
- ctx.stroke();
  for(const n of nodes){
   const p=points[n.id];if(!p)continue;
   const potential=Number.isFinite(n.potential)?n.potential:0;
