@@ -26,7 +26,16 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   "Q: How does she feel?\nA: She is calm.",
   "Q: How does he feel?\nA: He is happy.",
   "Q: How does she feel?\nA: She is very happy.",
-  "Q: How does he feel?\nA: He is very calm."
+  "Q: How does he feel?\nA: He is very calm.",
+  "Q: Observe a transformation.\nA: 2 * 3 = 6\n3 * 3 = 9",
+  "Q: Observe a transformation.\nA: 2 * 4 = 8\n3 * 4 = 12",
+  "Q: Observe a transformation.\nA: 3 * 3 = 9\n4 * 3 = 12",
+  "Q: Observe a transformation.\nA: 3 * 4 = 12\n4 * 4 = 16",
+  "Q: Observe a transformation.\nA: 2 * 3 = 6\n2 * 4 = 8",
+  "Q: Observe a transformation.\nA: 3 * 3 = 9\n3 * 4 = 12",
+  "Q: Observe a transformation.\nA: 4 * 3 = 12\n4 * 4 = 16",
+  "Q: Observe a transformation.\nA: 2 * 5 = 10\n3 * 5 = 15",
+  "Q: Observe a transformation.\nA: 3 * 5 = 15\n4 * 5 = 20"
  ].join("\n\n")+"\n","utf8");
  const port=await freePort(),url="http://127.0.0.1:"+port;
  const child=spawn(process.execPath,[
@@ -34,7 +43,7 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   "--workers","1","--arms","stable+many","--worlds","text,maze,transform",
   "--text",data,"--out",out,"--port",String(port),"--gpu","off",
   "--mem","2","--every","5000","--maze-every","50000",
-  "--start","--magic-view","--trace-transformations"
+  "--start","--magic-view","--math-axes","--trace-transformations"
  ],{cwd:root,detached:true,stdio:["ignore","pipe","pipe"]});
  let logs="";
  for(const ch of [child.stdout,child.stderr])ch.on("data",s=>logs=(logs+String(s)).slice(-14000));
@@ -106,6 +115,30 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   const graphs=await(await fetch(url+"/graphs")).json();
   assert.ok(graphs.graphs[0].chars>100);
   assert.ok(graphs.graphs[0].language.observedTokens>0);
+  let learnedMath=null;
+  for(let i=0;i<140;i++){
+   const response=await fetch(url+"/graph?w=0");
+   if(response.ok){
+    const graph=await response.json();
+    if(graph.realMathAxes?.coupledPairs>=5 && graph.realMathAxes.stateDependentPairs>=5){
+     learnedMath=graph.realMathAxes;break;
+    }
+   }
+   await sleep(120);
+  }
+  assert.ok(learnedMath,"Original native worker failed to absorb observed math lines: "+logs);
+  const planned=await (await fetch(url+"/real-math-plan?w=0&start="+encodeURIComponent("5 * 6 = 30")+
+   "&index=0&value=6",{method:"POST"})).json();
+  assert.equal(planned.frozen,true,JSON.stringify(planned));
+  assert.equal(planned.referenceAnswerProvided,false);
+  assert.ok(planned.plan?.states?.length>=2,JSON.stringify(planned));
+  const checkpoint=path.join(out,"brains","brain-0-stable+many.v8.observed-math-axes.v8");
+  let saved=false;
+  for(let i=0;i<90;i++){
+   if(fs.existsSync(checkpoint)&&fs.statSync(checkpoint).size>50){saved=true;break;}
+   await sleep(80);
+  }
+  assert.ok(saved,"Observed math axes were not persisted next to real native Brain checkpoint");
   // Browser smoke: only if Chrome is already available; never silently
   // claim visual verification if not installed in this runner.
   const chromeNames=["google-chrome","chromium","chromium-browser"];
@@ -128,6 +161,8 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    operators:trained.observedTransformations.learnedOperators,
    pathModelRows:episode.modelRowsBeforeNewObservation,bodyFrames:episode.frames.length,
    globalPath:episode.globalPrediction.slice(0,60),telemetry:telemetry.points.length,
+   actualNumericPairs:learnedMath.coupledPairs,actualNumericTransforms:learnedMath.stateDependentPairs,
+   frozenMathPath:planned.plan.states,mathCheckpoint:true,
    cuda:false,reason:"CI has no NVIDIA GPU; original CUDA launcher still performs device self-tests on user machine"
   }));
  }finally{
