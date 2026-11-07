@@ -18,6 +18,7 @@ import {PerspectiveLearner, perspectiveEpisode, evaluatePerspective} from "../wo
 import {TextPerspectives} from "../language-universe/perspectives.mjs";
 import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/constructed-paths.mjs";
 import {ObservedTransformations} from "../worlds/observed-transformations.mjs";
+import {evidenceGatedTextRoute} from "../worlds/evidence-gated-text-route.mjs";
 import {CompleteXDWorld,LearnedXDActionAtlas} from "../worlds/full-xd-maze-atlas.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
@@ -535,6 +536,12 @@ export class Brain {
         T.setEdge("o:noise", id, "portal", Math.min(12, 1 + Math.log1p(count)), "" + count + " decisions");
       }
     }
+  }
+  planEvidenceGatedTextRoute(start,required,{maxSteps=8,maxExpanded=6000}={}){
+    // Exact original stored operators, with optional RESEARCH bridge evidence;
+    // original strict actor is unchanged and not bypassed silently.
+    return evidenceGatedTextRoute(this.observedTransformations,
+      {start,required,maxSteps,maxExpanded});
   }
   // Each XD exercise exposes a FULL finite graph before any action. Only
   // action effects learned from earlier physical interventions may label it.
