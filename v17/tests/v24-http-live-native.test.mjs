@@ -16,7 +16,7 @@ const freePort=()=>new Promise((resolve,reject)=>{
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
-const dataset=process.argv.find((x,i,a)=>a[i-1]==="--fixture");
+const dataset=process.env.MP_V24_TEST_PARQUET||process.argv.find((x,i,a)=>a[i-1]==="--fixture");
 if(!dataset)test.skip("real Parquet fixture path is required by --fixture");
 else test("real V24 native Parquet worker + original 2D unaffected + UI + checkpoint + frozen holdout",
  {timeout:115000},async()=>{
