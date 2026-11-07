@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective · Original Native Hypermaze</title>
+<style>
+:root{color-scheme:dark;--bg:#050815;--sheet:#0c1626;--sheet2:#0d1d2d;--stroke:#223c55;--fg:#e9f1f9;--muted:#98b2c8;--gold:#f0c87a;--blue:#66cce7;--green:#67deab;--red:#f0809a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 58% 35% at 53% 0%,#22354b77,transparent),var(--bg);color:var(--fg);font:13px/1.5 "Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(15px,3vw,37px);border-bottom:1px solid var(--stroke);background:#07101dcf}
+h1,h2{font-family:Georgia,serif;font-weight:400}h1{font-size:clamp(25px,3vw,39px);margin:2px 0}h2{font-size:20px;margin:0}.eyebrow{text-transform:uppercase;letter-spacing:.21em;font-size:10px;color:var(--gold)}
+nav{display:flex;flex-wrap:wrap;gap:7px}nav a{display:inline-block;text-decoration:none;color:var(--blue);border:1px solid #2e5570;padding:8px 11px;border-radius:8px}
+main{padding:16px clamp(12px,2vw,28px) 35px;max-width:1800px;margin:auto}
+.notice{font-size:12px;color:#bfd3e0;border:1px solid #344d64;border-radius:10px;padding:11px 15px;margin-bottom:14px;line-height:1.65}
+.cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.card{background:#0b192bdc;border:1px solid var(--stroke);padding:13px;border-radius:12px;min-width:0}
+.card label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.card strong{display:block;font:28px Georgia,serif;margin:7px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rowmain{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(320px,1fr);gap:13px}
+.panel{border:1px solid var(--stroke);border-radius:14px;background:linear-gradient(140deg,#0a1829ed,#070f1ce8);min-width:0;overflow:hidden}
+.panelHead{padding:12px 15px;border-bottom:1px solid var(--stroke);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panelHead small{color:var(--muted)}.panelBody{padding:13px}
+canvas{display:block;width:100%;height:470px;touch-action:none;cursor:grab;background:radial-gradient(ellipse at 50% 60%,#16283c,#060b17 70%)}
+canvas:active{cursor:grabbing}
+label.formlabel{display:block;font-size:11px;letter-spacing:.04em;margin:11px 0 5px;color:#b8cbd9}
+select,textarea,input:not([type=range]),button{font:inherit;color:var(--fg);border:1px solid #31506a;background:#0b1c2c;border-radius:8px;padding:8px 10px}
+select,textarea,input:not([type=range]){width:100%;outline:none}textarea{min-height:95px;resize:vertical}
+button{cursor:pointer;background:linear-gradient(120deg,#172c41,#0e1f30)}
+button:hover{border-color:#86cbe8}button.primary{background:linear-gradient(125deg,#665036,#332920);border-color:#b89458;color:#fff3d8}
+button:disabled{opacity:.45;cursor:not-allowed}
+.controls{display:flex;flex-wrap:wrap;gap:7px}.controls button{flex:1;min-width:78px}
+.axisbar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:11px 14px;border-top:1px solid var(--stroke)}
+.axisbar label{font-size:11px;color:var(--muted)}.axisbar select{width:80px}.axisbar input{width:105px}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:290px;overflow:auto;padding:13px 15px;margin:0;font:11.5px/1.7 Consolas,"Courier New",monospace;color:#c3d9e6}
+.muted{color:var(--muted)}.success{color:var(--green)}.failure{color:var(--red)}.gold{color:var(--gold)}
+.timeline{display:flex;gap:9px;align-items:center;padding:12px 15px;border-bottom:1px solid var(--stroke);flex-wrap:wrap}
+.timeline input{flex:1;min-width:125px}.timeline output{font:12px Consolas,monospace;color:var(--gold)}
+#status{font-size:12px;color:var(--muted);margin:8px 0 0}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#b0c7d6}
+.legend span:before{content:"●";color:var(--c);padding-right:5px}
+footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
+@media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.rowmain{grid-template-columns:1fr}.results{grid-template-columns:1fr}canvas{height:350px}}
+@media(max-width:520px){.cards{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+ <div><div class="eyebrow">Original V17 · actual observed transformations · no demonstration data</div>
+ <h1>The Native Hyperdimensional Labyrinth</h1>
+ <div class="muted">Atracție originală → formă globală înainte de primul pas → mișcare → efect → replanificare</div></div>
+ <nav><a href="./index.html?live=1">V17 original</a><a href="./magic.html?live=1">Magic Observatory</a></nav>
+</header>
+<main>
+ <div class="notice">Acest observator afișează <b>numai stările și transformările calculate de motorul original V17</b>. Are nevoie de un obiectiv explicit în termeni de tokeni; nu folosește răspunsul ascuns ca țintă. Exactitatea semantică generală de 100%, utilizarea integrală CUDA și beneficiul cauzal al geometriei 5D nu sunt demonstrate. Interfața este izolată și nu modifică versiunea veche.</div>
+ <div class="cards">
+  <div class="card"><label>Conexiune</label><strong id="connected">—</strong></div>
+  <div class="card"><label>Corpus procesat</label><strong id="observed">—</strong></div>
+  <div class="card"><label>Stări text în graf</label><strong id="nodes">—</strong></div>
+  <div class="card"><label>Muchii învățate</label><strong id="edges">—</strong></div>
+  <div class="card"><label>Traseu global</label><strong id="steps">—</strong></div>
+  <div class="card"><label>Țintă internă</label><strong id="goal">—</strong></div>
+ </div>
+ <div class="rowmain">
+  <section class="panel">
+   <div class="panelHead"><h2>Topologie reală · proiecție 5D</h2><div class="legend"><span style="--c:#f0c87a">Forma globală</span><span style="--c:#66cce7">Execuție</span><span style="--c:#67deab">Obiectiv</span><span style="--c:#f0809a">Abatere</span></div></div>
+   <canvas id="world" aria-label="Graful învățat al transformărilor textuale și traseul de acțiune"></canvas>
+   <div class="axisbar">
+    <label>Axa X <select id="axisX"></select></label>
+    <label>Axa Y <select id="axisY"></select></label>
+    <label>Axa Z <select id="axisZ"></select></label>
+    <label>Zoom <input id="zoom" type="range" min="0.4" max="2.8" step=".05" value="1"></label>
+    <span class="muted" id="viewInfo">Nu există încă date native. Nodurile fără coordonate învățate folosesc exclusiv un layout topologic derivat.</span>
+   </div>
+  </section>
+  <section class="panel">
+   <div class="panelHead"><h2>Acțiuni ale organismului</h2><small id="worldStatus">Aștept serverul real</small></div>
+   <div class="panelBody">
+    <label class="formlabel" for="worker">Brain V17 activ</label>
+    <select id="worker"><option value="0">#0 · aștept datele reale</option></select>
+    <div class="controls" style="margin-top:11px">
+     <button id="start" class="primary">▶ Start</button><button id="pause">Ⅱ Pauză</button><button id="save">◈ Salvează</button>
+    </div>
+    <label class="formlabel" for="source">Starea textuală observată, punctul de plecare</label>
+    <textarea id="source" placeholder="Introduceți un text din lumea observată de organism; nu răspunsul de referință"></textarea>
+    <label class="formlabel" for="required">Tokeni necesari în starea-țintă (separați prin virgulă)</label>
+    <input id="required" placeholder="de exemplu: tokenA,tokenB" autocomplete="off">
+    <div class="controls" style="margin-top:12px">
+     <button id="plan" class="primary">◈ Prezice forma și execută</button>
+    </div>
+    <p id="status" role="status">Niciun traseu inventat: aștept obiectivul și workerul nativ.</p>
+    <p class="muted" style="font-size:11px">Start, pauză și salvare folosesc <code>/control</code> al V17. Planificarea folosește <code>/native-hypermaze</code> și aceeași instanță Brain, fără actualizarea greutăților în evaluarea înghețată.</p>
+   </div>
+  </section>
+ </div>
+ <section class="panel" style="margin-top:13px">
+  <div class="panelHead"><h2>Forma înainte de acțiune / mișcarea corpului</h2><small id="truth">Referință indisponibilă planificatorului</small></div>
+  <div class="timeline"><button id="play">Ⅱ Oprește animația</button><label for="frame">Cadru</label><input id="frame" type="range" min="0" max="0" step="1" value="0"><output id="stepLabel">0 / 0</output><span class="muted" id="replans">Replanificări: —</span></div>
+  <div class="results">
+   <div><div class="eyebrow" style="padding:13px 15px 0">Forma globală, înghețată înainte de prima acțiune</div><pre id="predicted">Aștept date reale de la originalul Brain.</pre></div>
+   <div><div class="eyebrow" style="padding:13px 15px 0">Execuție, diferență și efect învățat</div><pre id="actual">Aștept efectele observate de organism.</pre></div>
+  </div>
+ </section>
+ <footer>Reprezentarea din canvas este o proiecție geometrică a coordonatelor 5D învățate sau, dacă lipsesc, un layout de vizualizare derivat explicit din muchiile reale. Nu constituie dovadă de dimensionalitate fizică ori de semantică generală. Acțiunile executate sunt transformări observate de modelul intern, nu un evaluator semantic extern. <a href="https://github.com/dan3s2020/MagicPerspective/pull/58">Cod, teste și limite (PR #58)</a>.</footer>
+</main>
+<script src="./native-hypermaze.js" defer></script>
+</body>
+</html>

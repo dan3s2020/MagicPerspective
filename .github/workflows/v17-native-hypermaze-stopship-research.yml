@@ -1,0 +1,64 @@
+name: Original V17 native shape parity + learned text hypermaze (NOT a release)
+on:
+  push:
+    branches:
+      - fix/V17-HYPERMAZE-ARCHITECTURE-REGRESSION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-original-maze-to-text-mechanism:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Original sources unchanged and newly added native method parses
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/research/text-hypermaze/goal-conditioned-native.mjs
+          node --check v17/transcend/torus-aether/ui/native-hypermaze.js
+          test -s v17/transcend/torus-aether/ui/native-hypermaze.html
+          node --check v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --check v17/tests/native-hypermaze-goal-text.test.mjs
+      - name: Original maze behavior must be EXACTLY identical on unseen layouts
+        run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+      - name: Actual original text observed operator graph, global preaction shape, shared noise and Brain checkpoint
+        run: node --test v17/tests/native-hypermaze-goal-text.test.mjs
+      - name: Actual original native V17 text corpus process and Brain checkpoint must call new global-shape operator (no fake UI)
+        run: node --test v17/tests/native-hypermaze-original-worker-integration.test.mjs
+      - name: Frozen withheld text compositions using SAME original maze shape, geometry and shared-policy ablations
+        run: node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
+      - name: Original V17 maze/text/transform learning baseline must remain unchanged
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: Long repeated words and insert/delete must produce real learned text edits, no next-byte substitution
+        run: node --test v17/tests/native-hypermaze-regression-long-index.test.mjs
+      - name: 100 strictly heldout long text passages via original native value-propagation, 5 learned body transforms, real CPU timings
+        run: node --test v17/tests/native-hypermaze-long-multistep-heldout.test.mjs
+      - name: Production exact long-heldout semantics + actual native RTX must remain STOPSHIP until independently proven
+        run: node --test v17/tests/hypermaze-stopship-release.test.mjs
+      - name: Explicit release blocker must remain documented
+        run: |
+          test -s REGRESSION_STOPSHIP_HYPERMAZE_20261107.md
+          test -s verbatim/2026-11-07-HYPERMAZE-REGRESSION-STOPSHIP-USER-VERBATIM.txt
+          test -s user-intent/changes/2026-11-07-MP-REG-HYPERMAZE-NATIVE-RESTORATION.json
+          grep -q 'NOT ACCEPTED' REGRESSION_STOPSHIP_HYPERMAZE_20261107.md
+  previous-experiments-protected:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Original Windows launchers still parse; NO new user launch command provided
+        shell: powershell
+        run: |
+          foreach ($p in @("v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1","v17/START_TINYSTORIES.ps1")) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path,[ref]$tokens,[ref]$errors) | Out-Null
+            if($errors.Count) { throw ($p+" "+($errors|Out-String)) }
+            Write-Host "ORIGINAL_WINDOWS_LAUNCHER_NOT_TOUCHED $p"
+          }

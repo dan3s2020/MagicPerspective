@@ -1,0 +1,57 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "MP-REG-2026-11-07-REAL-HYPERMAZE-STOPSHIP",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-07-HYPERMAZE-REGRESSION-STOPSHIP-USER-VERBATIM.txt",
+    "exact_user_quote": "TREBUIE SA GHICEASCA RASPUNSUL DIN PRIMA,FORMA SOLUTIEI DIN PRIMA CU 100% CA LA LABIRINTE DUPA CATEVA LUMI TRAITE !AI DEJA TOTUL IN REPO NENOROCITULE ! SA NU TE PRIND CA OMITI VREUN BYTE"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape(ret,n,me): original attraction/conductance value propagation and path-climbing BEFORE first action, with Discoverer.learnStep and NoiseAgency",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/devour/brain.mjs (original baseline reused; source file NOT rewritten)",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/research/text-hypermaze/goal-conditioned-native.mjs",
+    "v17/research/text-hypermaze/production-release-gate.mjs",
+    "v17/transcend/torus-aether/worlds/observed-transformations.mjs",
+    "v17/transcend/torus-aether/ui/native-hypermaze.html",
+    "v17/transcend/torus-aether/ui/native-hypermaze.js",
+    ".github/workflows/v17-native-hypermaze-stopship-research.yml"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "v17/tests/native-hypermaze-shape-parity.test.mjs",
+    "v17/tests/native-hypermaze-goal-text.test.mjs",
+    "v17/tests/native-hypermaze-original-worker-integration.test.mjs",
+    "v17/tests/native-hypermaze-compositional-heldout.test.mjs",
+    "v17/tests/hypermaze-stopship-release.test.mjs",
+    "v17/tests/native-hypermaze-regression-long-index.test.mjs",
+    "v17/tests/native-hypermaze-long-multistep-heldout.test.mjs"
+  ],
+  "actual_observed_results": "PARTIAL ORIGINAL-MECHANISM RESEARCH, RELEASE BLOCKED. Verifiable GitHub Actions run 42344185561 (first browser failure documented), run 42343690214 measured 100/100 fully heldout >=1,273B structured five-word-action compositions, 1,000 distinct 1KB+ observed passages 1.274MB/0.620s = 2.0567 MB/s, 1,614.08 exercises/s on hosted CPU, 24/24 additional long heldout complete structured outputs, original Discoverer.shape 42/42 exact 2D parity. Real original V17 worker and Brain.v8 checkpoint with original NoiseAgency, Romaninan Unicode source without legacy ASCII substitutions, and unobserved goal 'Știința este stabilă.' verified. Browser headless google-chrome subsequently VERIFIED native-hypermaze.html live with data-native-connected=true, node count=6, data-native-before-action=true and real learned topo/full potential/coordinate data from actual original Brain (success job 128318582143, latest full verification two green jobs 128318646705 and 128318646830). Causal 5D geometry and shared path ablation did not affect final answer, long natural language semantic solutions 100% NOT proven, trained 2M TinyStories checkpoint NOT integrated, RTX native full training NOT measured, no proof every byte permanently preserved. DO NOT PROVIDE USER START COMMAND.",
+  "limitations": [
+    "Full historical Verbatim is incomplete; current exact user turn is archived, original earlier images may be inaccessible",
+    "No unconditional evidence exists that exact arbitrary unseen large text answers are identifiable from prompts",
+    "Cannot claim completed CUDA GPU hardware throughput using GitHub CI NumPy parity",
+    "Original GPU pretrained TinyStories model must not be overwritten by experimental hypermaze adapter",
+    "Structurally heldout two-edit text cases are short with goals supplied as explicit tokens; NOT general language inference",
+    "Original learned 5D geometry and path policy are present but had no measurable final-output effect in 6/6 compositional ablations",
+    "Text learned operator execution uses model-predicted effects, not an independent physical/semantic environment oracle; externally semantic correctness unverified",
+    "Original inverted index last 96 records erased rare long-horizon learned axes; fixed only on isolated branch, main production source untouched.",
+    "Original worker streamed non-ASCII code points as '?'; only opt-in native hypermaze receives exact raw Unicode source; legacy AligningGraph still ASCII-only.",
+    "Working limits maxTokens=256 and maxObserved=12000 mean original hypermaze does not yet preserve/reuse every byte of arbitrary long corpora.",
+    "New isolated native-hypermaze.html/js have real Chrome headless HTTP and DOM acceptance, but do not establish any semantic generalization; original UI index.html and magic.html are untouched.",
+    "Observed 1.27KB long passages contained ~180-256 tokenized words under original maxTokens=256 cap; arbitrary >256-token prose can still be rejected and not learned by this component."
+  ],
+  "verification_status": "PARTIAL_RESEARCH_VERIFIED_RELEASE_BLOCKED",
+  "full_verbatim_gate": "BLOCKED"
+}

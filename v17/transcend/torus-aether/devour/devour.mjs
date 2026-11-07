@@ -16,6 +16,7 @@ import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
+import {NativeGoalTextMaze} from "../../../research/text-hypermaze/goal-conditioned-native.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -93,6 +94,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
+    nativeHypermaze: t?.final ? t.nativeHypermaze : g?.nativeHypermaze || t?.nativeHypermaze || null,
     realMathAxes: t?.final ? t.realMathAxes : g?.realMathAxes || t?.realMathAxes || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
@@ -110,7 +112,8 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
-    mathAxes: process.argv.includes("--math-axes")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    mathAxes: process.argv.includes("--math-axes"),
+    nativeHypermaze: process.argv.includes("--native-hypermaze")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
@@ -205,6 +208,45 @@ http.createServer((req, res) => {
     const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Real math axis plan timed out; no saved model yet"});},30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
     sl.wk.postMessage({realMathGoal:{id,start,goals}});
+    return;
+  }
+  // Opt-in ORIGINAL V17 Discoverer.shape graph extension: same Brain state,
+  // same actual corpus, no reference answer passed or synthetic training.
+  // No UI controls added; production default remains unchanged until full
+  // semantic and original CUDA acceptance proves actual user compliance.
+  if(req.method==="POST"&&url==="/native-hypermaze"){
+    if(!process.argv.includes("--native-hypermaze"))
+      return json(res,{error:"Native original hypermaze research is not enabled; release remains BLOCKED"});
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("text"))
+      return json(res,{error:"Requires the same original Brain currently learning real text"});
+    const required=(q.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean);
+    const start=q.get("start")||"";
+    if(!start.trim()||start.length>4000||required.length<1||required.length>16||
+       required.some(x=>!x||x.length>120))
+      return json(res,{error:"Need an observed starting state and explicit goal constraints, NEVER a heldout answer"});
+    const execute=q.get("execute")==="1";
+    const topology=q.get("topology")==="1";
+    // A paused or completed original Brain is read from the saved checkpoint
+    // with no 60-second inter-worker bottleneck or fabricated fresh state.
+    if(!sl.wk){
+      const f=saveOf(sl);
+      if(!fs.existsSync(f))return json(res,{error:"Original Brain checkpoint absent"});
+      try{
+        const brain=Brain.load(f),native=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
+        const plan=native.plan({start,required,includeTopology:topology});
+        const body=execute&&plan.found?
+          native.execute(plan,{enableNoise:true,trainNoise:false}):null;
+        return json(res,{...plan,body,w:sl.w,fromSavedBrain:true,
+          verifiedLongUnseenSemanticAnswers:false,
+          exactUnseenLargeAnswerProven:false});
+      }catch(err){return json(res,{error:err.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Original Brain worker busy; cannot claim timely hypermaze path"});
+    },30000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,trainNoise:false}});
     return;
   }
   if(req.method==="POST"&&url==="/language-maze"){

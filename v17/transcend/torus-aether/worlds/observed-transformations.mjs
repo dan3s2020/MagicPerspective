@@ -66,21 +66,26 @@ function actionFrom(a,b) {
     beforeLength:a.length,afterLength:b.length};
 }
 function runAction(tokens,action,index) {
-  const t=cloneTokens(tokens);
-  if(index<0||index>t.length)return null;
-  const left=t[index-1]||null;
-  const right=t[index+(action.kind==="insert"?0:1)]||null;
-  // Anchors and the position of the editable part are discovered from real
-  // compared observations, never encoded as subject/verb/adjective rules.
+  if(index<0||index>tokens.length)return null;
+  const left=tokens[index-1]||null;
+  const right=tokens[index+(action.kind==="insert"?0:1)]||null;
+  // Check the unchanged REAL evidence-based anchors BEFORE copying a long
+  // paragraph. The old implementation allocated a full token-array clone
+  // for EVERY failed candidate index, even when its source word was absent.
   if(action.left!==null&&action.left!==left)return null;
   if(action.right!==null&&action.right!==right)return null;
   if(action.left===null&&index!==0)return null;
-  if(action.right===null&&index!==(action.kind==="insert"?t.length:t.length-1))return null;
-  if(action.kind==="replace"&&t[index]===action.from) t[index]=action.to;
-  else if(action.kind==="insert") t.splice(index,0,action.to);
-  else if(action.kind==="delete"&&t[index]===action.from)t.splice(index,1);
-  else return null;
-  return t;
+  if(action.right===null&&index!==(action.kind==="insert"?tokens.length:tokens.length-1))return null;
+  if(action.kind==="replace"&&tokens[index]===action.from){
+    const t=cloneTokens(tokens);t[index]=action.to;return t;
+  }
+  if(action.kind==="insert"){
+    const t=cloneTokens(tokens);t.splice(index,0,action.to);return t;
+  }
+  if(action.kind==="delete"&&tokens[index]===action.from){
+    const t=cloneTokens(tokens);t.splice(index,1);return t;
+  }
+  return null;
 }
 
 const signature = a => JSON.stringify([
@@ -95,7 +100,7 @@ export class ObservedTransformations {
     this.records=new Map(); // actual corpus sentences only
     this.lookup=new Map(); // exact observed strings for O(1) no-memorized-answer check
     this.order=[];
-    this.index=new Map(); // length + token -> recent actual sentences
+    this.index=new Map(); // length + token -> all active observed original states
     this.operators=new Map(); // edit actions inferred from observation differences
     this.operatorIndex=new Map(); // from-token / insertion-anchor -> only relevant possible actions
     this.invariants=new Map(); // learned contextual invariants at each length
@@ -112,17 +117,42 @@ export class ObservedTransformations {
     return unique(tokens).map(x=>tokens.length+"|"+normalized(x));
   }
   _candidateSentences(tokens) {
+    // Exact oneEdit() verifies all transitions from actual BEFORE/AFTER.
+    // Last-80/96 postings previously forgot rare axes after hundreds of
+    // sentences. Common words repeated >2 also invalidated length-based
+    // thresholds. Full active postings + rare context anchors fix BOTH.
+    const lengths=[tokens.length-1,tokens.length,tokens.length+1]
+      .filter(n=>n>0);
+    const words=[...new Set(this._indexKeys(tokens)
+      .map(k=>k.slice(k.indexOf("|")+1)))];
+    const picks=words.map(word=>{
+      const postings=lengths.map(n=>this.index.get(n+"|"+word)||[]);
+      return {word,postings,size:postings.reduce((n,a)=>n+a.length,0)};
+    }).sort((a,b)=>a.size-b.size||a.word.localeCompare(b.word))
+      .slice(0,Math.min(12,words.length));
     const scores=new Map();
-    for(const key of this._indexKeys(tokens)){
-      const ids=this.index.get(key)||[];
-      for(let i=Math.max(0,ids.length-80);i<ids.length;i++){
-        const id=ids[i];
-        if(this.records.has(id)) scores.set(id,(scores.get(id)||0)+1);
+    for(const anchor of picks)for(const ids of anchor.postings){
+      for(const id of ids){
+        if(this.records.has(id))scores.set(id,(scores.get(id)||0)+1);
       }
     }
-    return [...scores].filter(([,count])=>count>=Math.max(1,tokens.length-2))
+    // One exact one-token edit removes at most ONE selected shared anchor.
+    // The actual order, change position, and effect are checked by oneEdit.
+    const required=Math.max(1,picks.length-1);
+    const ranked=[...scores].filter(([id,count])=>
+      count>=required&&
+      Math.abs(this.records.get(id).tokens.length-tokens.length)<=1)
       .sort((a,b)=>b[1]-a[1]||b[0]-a[0])
       .slice(0,this.maxCandidatePairs).map(([id])=>this.records.get(id));
+    if(ranked.length||this.records.size===0)return ranked;
+    // Short utterances may share no lexical anchors after a real edit.
+    // Limited fallback still must pass exact oneEdit before training.
+    const back=[];
+    for(let i=this.order.length-1;i>=0&&back.length<32;i--){
+      const row=this.records.get(this.order[i]);
+      if(row&&Math.abs(row.tokens.length-tokens.length)<=1)back.push(row);
+    }
+    return back;
   }
   _operatorBucket(action){
     return action.kind==="insert" ?
@@ -205,7 +235,13 @@ export class ObservedTransformations {
       let arr=this.index.get(k);
       if(!arr){arr=[];this.index.set(k,arr);}
       arr.push(id);
-      if(arr.length>96)arr.shift();
+      // Retain all active observed worlds up to maxObserved. Only obsolete
+      // references are compacted; an infrequent earlier axis is NEVER
+      // excluded just because 96 newer passages share common anchor words.
+      if(arr.length>2*this.maxObserved){
+        const live=arr.filter(v=>this.records.has(v));
+        arr.splice(0,arr.length,...live);
+      }
     }
     if(this.order.length>this.maxObserved){
       const old=this.order.shift(),record=this.records.get(old);
@@ -238,10 +274,23 @@ export class ObservedTransformations {
     for(const token of tokens){buckets.add("e:"+token);buckets.add("i:"+token);}
     const keys=new Set();
     for(const b of buckets)for(const k of this.operatorIndex.get(b)||[])keys.add(k);
+    // Index real action anchors to positions ONCE. With 256-token passages,
+    // an original observed replacement of one rare word must not scan and
+    // allocate all 256 possible positions at every node in the solution
+    // hypermaze. No action rules or learned weights are changed.
+    const positions=new Map();
+    for(let i=0;i<tokens.length;i++){
+      const a=positions.get(tokens[i])||[];
+      a.push(i);positions.set(tokens[i],a);
+    }
     for(const k of keys){
       const op=this.operators.get(k);
       if(!op)continue;
-      for(let i=0;i<tokens.length+(op.kind==="insert"?1:0);i++){
+      const indices=op.kind==="insert"?
+        op.left===null?[0]:
+          (positions.get(op.left)||[]).map(i=>i+1):
+        positions.get(op.from)||[];
+      for(const i of indices){
         const result=runAction(tokens,op,i);
         if(!result)continue;
         const key=freezeKey(result);
