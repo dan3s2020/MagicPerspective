@@ -31,13 +31,19 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    sourceEvidence:e.learnedFrom??null,
    observedSupport:e.observedSupport||0,
    fromToken:e.fromToken??null,toToken:e.toToken??null,
-   actionIndex:e.actionIndex??null,edgeIndex:i};
+   actionIndex:e.actionIndex??null,edgeIndex:i,
+   contextFreeTransferHypothesis:e.contextFreeTransferHypothesis===true,
+   independentlyObservedContexts:e.independentlyObservedContexts??null,
+   generalizedFromRealObservations:e.generalizedFromRealObservations??null};
   forward[e.from].push(edge);
   seenEdges.push(edge);
   const k=edge.key||"unknown:"+i;
   const op=operatorMap.get(k)||{key:k,kind:edge.kind,
    fromToken:edge.fromToken,toToken:edge.toToken,examples:edge.sourceEvidence?[edge.sourceEvidence]:[],
-   graphUses:0,sourceObservations:edge.observedSupport,chosenInInitialPath:0};
+   graphUses:0,sourceObservations:edge.observedSupport,chosenInInitialPath:0,
+   contextFreeTransferHypothesis:edge.contextFreeTransferHypothesis,
+   independentlyObservedContexts:edge.independentlyObservedContexts,
+   generalizedFromRealObservations:edge.generalizedFromRealObservations};
   op.graphUses++;
   if(!op.examples.length&&edge.sourceEvidence)op.examples.push(edge.sourceEvidence);
   operatorMap.set(k,op);
@@ -66,7 +72,9 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    allPaths.push({id:hash(nodes).slice(0,18),nodes,
     actions:route.map(e=>({from:e.from,to:e.to,key:e.key,
      kind:e.kind,fromToken:e.fromToken,toToken:e.toToken,
-     sourceEvidence:e.sourceEvidence,observedSupport:e.observedSupport})),
+     sourceEvidence:e.sourceEvidence,observedSupport:e.observedSupport,
+     contextFreeTransferHypothesis:e.contextFreeTransferHypothesis,
+     independentlyObservedContexts:e.independentlyObservedContexts})),
     states:nodes.map(i=>topology.nodes[i]?.text||null),
     length:route.length,
     isInitialShape:nodes.length===original.length&&nodes.every((v,i)=>v===original[i])});
@@ -116,6 +124,10 @@ export function enumerateNativePaths(plan,{maxPaths=256,maxVisits=40000,maxSteps
    frontier:topology.frontier||[],
    frontierCount:topology.frontier?.length||0,
    cyclesDetected:cycleEdges.size},
+  contextTransferHypotheses:{
+   known:transforms.filter(x=>x.contextFreeTransferHypothesis).length,
+   usedInInitialShape:usedEdges.filter(x=>x.contextFreeTransferHypothesis).length,
+   caveat:"Generalized axes are hypotheses validated on heldout structured goals, not universal grammar"},
   initialShape:{nodes:original,usedEdges,
    usedOperators:[...usedKeys].filter(Boolean),
    hasTarget:plan.found===true,predicted:plan.predicted??null},
@@ -167,6 +179,9 @@ export function traceOriginalCharacterOrigins(plan){
    actionIndex:i,characterIndexWithinAction:index,
    operatorKey:action?.key||null,
    operatorKind:action?.kind||null,
+   contextFreeTransferHypothesis:action?.contextFreeTransferHypothesis===true,
+   independentlyObservedContexts:action?.independentlyObservedContexts??null,
+   supportingRealContexts:action?.generalizedFromRealObservations??null,
    operatorFrom:action?.operatorFrom??null,
    operatorTo:action?.operatorTo??null,
    sourceState:states[i],targetState:states[i+1],
@@ -178,6 +193,8 @@ export function traceOriginalCharacterOrigins(plan){
   steps.push({actionIndex:i,operatorKey:action?.key||null,
    operatorFrom:action?.operatorFrom??null,operatorTo:action?.operatorTo??null,
    sourceEvidence:action?.learnedFrom??null,
+   contextFreeTransferHypothesis:action?.contextFreeTransferHypothesis===true,
+   independentlyObservedContexts:action?.independentlyObservedContexts??null,
    startCodepoint:prefix,removed:oldChange.join(""),inserted:newChange.join(""),
    originalBeforeState:states[i],predictedAfterState:states[i+1]});
   current=next;
@@ -265,6 +282,9 @@ export function auditNativePath({plan,atlas,reference,brain}){
  if(!plan.found)categories.push(plan.failureReason||"no-global-shape");
  if(atlas?.topology?.frontierCount)categories.push("search-frontier-not-fully-explored");
  if(!exact){
+  if(lineage.available&&charAudit.incorrectCharacters.some(x=>
+      x.originalPathSource?.contextFreeTransferHypothesis===true))
+   categories.push("unverified-cross-context-axis-contributed-to-wrong-character");
   for(const c of Object.keys(operatorGap.gapCategories||{}))categories.push(c);
   if(plan.found){
    categories.push("predicted-different-complete-text");
