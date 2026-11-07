@@ -6,6 +6,7 @@ import os from "node:os";
 import net from "node:net";
 import crypto from "node:crypto";
 import {launch} from "../research/text-hypermaze/real-corpus-server.mjs";
+import {enumerateJSONL} from "../research/text-hypermaze/openthoughts-jsonl-source.mjs";
 import {openNativeMotifArchive} from "../research/text-hypermaze/native-motif-disk-archive.mjs";
 
 const sha=s=>crypto.createHash("sha256").update(String(s)).digest("hex");
@@ -58,6 +59,16 @@ test("V32 real native worker: preexisting V31 source SQLite with non-empty old e
   compactFilename=path.join(newOut,"original-native-long-language-motifs-compact.sqlite");
  fs.writeFileSync(data,Array.from({length:36},(_,i)=>record(i)).join("\n")+"\n","utf8");
  fs.mkdirSync(oldOut,{recursive:true});
+ // A V31 archived output directory has the ORIGINAL server signature
+ // marker. Reconstruct its exact verified format from the same native
+ // enumerateJSONL implementation; otherwise its already-working guard
+ // properly refuses any prepopulated directory to prevent overwrites.
+ const exactSource=await enumerateJSONL(data);
+ fs.writeFileSync(path.join(oldOut,"native-real-corpus-marker.json"),
+  JSON.stringify({kind:"actual-original-native-hypermaze-JSONL",
+   input:exactSource.map(x=>({
+    path:x.path,size:x.size,mtimeMs:x.mtimeMs
+   }))},null,2),"utf8");
  let legacy=null;
  try{
   legacy=await openNativeMotifArchive(oldFilename);
