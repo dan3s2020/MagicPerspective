@@ -24,8 +24,8 @@ const idOf=buffer=>{
  return b[0]+":"+b.subarray(1).toString("hex");
 };
 const pageNum=(n,d,limit)=>okInt(n,MAX)?Math.min(n,limit):d;
-const mapMotif=row=>row?{...row,id:idOf(row.id)}:null;
-const mapEdge=row=>({...row,source:idOf(row.source),target:idOf(row.target)});
+const mapMotif=row=>row?Object.assign(Object.create(null),row,{id:idOf(row.id)}):null;
+const mapEdge=row=>Object.assign(Object.create(null),row,{source:idOf(row.source),target:idOf(row.target)});
 
 export async function openCompactNativeMotifArchive(filename){
  if(typeof filename!=="string"||!filename.trim()||!path.isAbsolute(filename))
