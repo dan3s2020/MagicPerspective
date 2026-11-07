@@ -1,0 +1,105 @@
+name: V34 Windows native real PowerShell startup and checkpoint protection
+on:
+  push:
+    branches:
+      - integration/V34-ORIGINAL-XD-V31-V24-VERIFIED-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-real-start:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare authentic source-backed Parquet with native original checkpoint
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check pyarrow==20.0.0
+          if ($LASTEXITCODE -ne 0) { throw 'Parquet writer installation failed' }
+          $root=Join-Path $env:RUNNER_TEMP 'V34 Windows paths with spaces'
+          $original=Join-Path $root 'original runtime untouched'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          node v17/tests/v34-windows-real-brain-fixture.mjs $original
+          if ($LASTEXITCODE -ne 0) { throw 'Original V17 checkpoint training failed' }
+          $env:V34_E2E_ROOT=$root
+          @'
+          from pathlib import Path
+          import os
+          import pyarrow as pa
+          import pyarrow.parquet as pq
+          root=Path(os.environ['V34_E2E_ROOT'])
+          paragraphs=[p.strip() for p in Path('v17/docs/TORUS_AETHER_ABC_20261104.md').read_text(encoding='utf-8').split('\n\n') if len(p.strip())>10]
+          assert len(paragraphs)>=3, 'Original source text is empty'
+          dest=root/'actual repository text parquet with spaces'
+          dest.mkdir(parents=True,exist_ok=True)
+          rows=40
+          pq.write_table(pa.table({
+            'prompt':[paragraphs[i%len(paragraphs)][:2000] for i in range(rows)],
+            'answer':[paragraphs[(i+1)%len(paragraphs)][:2000] for i in range(rows)]
+          }), dest/'source observed sentences.parquet',compression='zstd',row_group_size=8)
+          print('V34_WINDOWS_REAL_REPOSITORY_TEXT_SOURCE', rows, 'rows; not OpenThoughts semantic benchmark')
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Source-backed parquet writer failed' }
+      - name: End-to-end Windows PowerShell launcher, native source Brain resume, UI/API and SHA protection
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'V34 Windows paths with spaces'
+          $original=Join-Path $root 'original runtime untouched'
+          $dest=Join-Path $root 'new separate V34 runtime'
+          $data=Join-Path $root 'actual repository text parquet with spaces'
+          $originalFile=Join-Path (Join-Path $original 'brains') 'brain-0-winner.v8'
+          $hashBefore=(Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash
+          $launcher=(Resolve-Path -LiteralPath 'v17/START_V34_VERIFIED.ps1').Path
+          $stdout=Join-Path $root 'native stdout.txt'
+          $stderr=Join-Path $root 'native stderr.txt'
+          $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $launcher + '"'),'-Data',('"' + $data + '"'),'-OriginalOut',('"' + $original + '"'),'-Out',('"' + $dest + '"'),'-Port','18997','-Workers','1','-Gpu','off','-GpuWorlds','0','-Mem','1.2','-Every','1000','-CheckpointEvery','1000','-XdAtlasEvery','2000')
+          $proc=Start-Process -FilePath powershell.exe -ArgumentList $args -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $base='http://127.0.0.1:18997'
+            $ready=$false
+            for($i=0;$i -lt 120;$i++){
+              if($proc.HasExited){throw "Native launcher exited early ($($proc.ExitCode))"}
+              try {
+                $st=Invoke-RestMethod -Uri "$base/v34/status?w=0" -TimeoutSec 3
+                if($st.originalLiveWorker -and $st.originalBrainIdentityVerified){$ready=$true;break}
+              } catch {}
+              Start-Sleep -Milliseconds 500
+            }
+            if(-not $ready){throw 'Native V34 Windows endpoint did not launch'}
+            if($st.sourceTraining.nativeTextStatesActive -le 0){throw 'Original corpus knowledge not restored'}
+            $char=Invoke-RestMethod -Uri "$base/v34/research?w=0" -Method Post -ContentType 'application/json' -Body '{"type":"character-status"}' -TimeoutSec 15
+            if($char.operation -ne 'real-original-V17-corpus-to-Unicode-transformations'){throw "Native character observation failed: $($char.error)"}
+            $obs=Invoke-RestMethod -Uri "$base/v34/research?w=0" -Method Post -ContentType 'application/json' -Body '{"type":"numeric-observe","before":"2 @ 3 ~ 6","after":"3 @ 3 ~ 9","actualActionWitness":true}' -TimeoutSec 15
+            if(-not $obs.evidence.learned){throw "Observed numeric action not learned: $($obs.error)"}
+            $saved=Invoke-RestMethod -Uri "$base/control?do=save&w=0" -Method Post -TimeoutSec 15
+            if(-not $saved.ok){throw "Original native Brain save was rejected: $($saved.error)"}
+            $destFile=Join-Path (Join-Path $dest 'brains') 'brain-0-winner.v8'
+            $persist=$false
+            for($i=0;$i -lt 60;$i++){
+              if(Test-Path -LiteralPath $destFile){
+                if((Get-Item -LiteralPath $destFile).Length -gt 500){$persist=$true;break}
+              }
+              Start-Sleep -Milliseconds 300
+            }
+            if(-not $persist){throw 'Isolated V34 checkpoint missing'}
+            $hashAfter=(Get-FileHash -LiteralPath $originalFile -Algorithm SHA256).Hash
+            if($hashBefore -ne $hashAfter){throw 'ORIGINAL checkpoint was changed'}
+            $page=Invoke-WebRequest -Uri "$base/transcend/torus-aether/ui/index.html?live=1" -UseBasicParsing -TimeoutSec 15
+            if($page.Content -notmatch 'v34ResearchPanel'){throw 'Original HTML missing integrated panel'}
+            Write-Host "V34_WINDOWS_ACTUAL_NATIVE_LAUNCH_PASS isolated=$destFile saved=$persist originalSHAPreserved=true nativeChar=true sourceCorpus=true"
+          } finally {
+            if(-not $proc.HasExited){Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue}
+            Write-Host '--- original runtime STDOUT ---'
+            Get-Content -LiteralPath $stdout -ErrorAction SilentlyContinue | Select-Object -Last 80
+            Write-Host '--- original runtime STDERR ---'
+            Get-Content -LiteralPath $stderr -ErrorAction SilentlyContinue | Select-Object -Last 80
+          }
