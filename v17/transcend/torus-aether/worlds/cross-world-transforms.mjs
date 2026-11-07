@@ -52,7 +52,8 @@ export function candidatePortable(state,portable,interventions){
  const results=[];
  for(const r of portable){
    for(let i=0;i<state.length;i++){
-     if(state[i]!==r.from)continue;
+     if(state[i]!==r.from||
+        (r.causallySupportedPositions&&!r.causallySupportedPositions.includes(i)))continue;
      const action=portableId(i,r.from,r.to),id=state.join(SEP)+"|"+action;
      const seen=interventions.get(id);
      if(seen?.blocked && seen.blocked>=seen.accepted)continue;
