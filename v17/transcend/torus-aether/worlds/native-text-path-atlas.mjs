@@ -208,6 +208,46 @@ export class NativeTextPathAtlas {
   if(this.recent.length>this.maxLast)this.recent.shift();
   return out;
  }
+ evaluateFrozen(model,rows,{max=12}={}){
+  // The native model and THIS TRAINING INSPECTOR are both immutable.
+  // Evaluation uses a fresh inspector with its own counters, which is
+  // discarded after generating the requested held-out report.
+  if(!(model instanceof ConstructedPathLearner))
+    throw Error("Frozen text test requires the native trained V17 language graph");
+  const before=JSON.stringify(sourceSig(model));
+  const inspector=new NativeTextPathAtlas({maxFrames:64,maxLast:5});
+  const result={kind:"frozen-native-V17-text-graph-path-evaluation",
+    noTraining:true,noReferenceInInitialPlan:true,
+    rows:0,characters:0,teacherForcedCorrect:0,missingEdges:0,
+    wrongRanking:0,exactFreeRun:0,examples:[],perScaleStates:model.scales.map(x=>x.edges.size)};
+  for(const row of rows.slice(0,clip(max,1,30))){
+    if(typeof row?.prompt!=="string"||typeof row?.answer!=="string"||
+      !row.prompt.trim()||!row.answer.trim())continue;
+    const p=inspector.before(model,row.prompt,{episode:result.rows+1,
+      maxOutput:64,beamWidth:3,fanOut:6});
+    const d=inspector.after(model,p,row.answer,{maxAnalyze:256});
+    result.rows++;result.characters+=d.teacherForcedTotal;
+    result.teacherForcedCorrect+=d.teacherForcedCorrect;
+    result.missingEdges+=d.missingEdges;
+    result.wrongRanking+=d.wrongRanking;
+    result.exactFreeRun+=Number(d.freeRunExactAnswer);
+    if(result.examples.length<5)
+      result.examples.push({prompt:row.prompt.slice(0,150),
+        actual:row.answer.slice(0,160),predicted:d.preActionPrediction.slice(0,160),
+        teacherForcedCorrect:d.teacherForcedCorrect,
+        analyzed:d.teacherForcedTotal,
+        firstDivergence:d.firstDivergence,
+        missingEdges:d.missingEdges,wrongRanking:d.wrongRanking,
+        explanation:d.frames.slice(0,24)});
+  }
+  result.teacherForcedAccuracy=result.characters?
+    result.teacherForcedCorrect/result.characters:null;
+  result.freeRunExactRate=result.rows?result.exactFreeRun/result.rows:null;
+  result.nativeGraphUnchanged=before===JSON.stringify(sourceSig(model));
+  if(!result.nativeGraphUnchanged)
+    throw Error("Frozen text atlas evaluation unexpectedly modified the original learned graph");
+  return result;
+ }
  summary({includeLast=true}={}){
   return {version:this.version,source:"READ-ONLY explanation of the SAME V17 Brain's persistent six scale graphs",
     episodes:this.episodes,explainedChars:this.explainedChars,
