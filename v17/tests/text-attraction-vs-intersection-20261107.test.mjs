@@ -42,7 +42,7 @@ test('original text graph: monotone field versus loop oscillations and AND-goal 
    L.buildField({iterations:45});
  }
  const nav=L.navigate('portal north',{steps:12,useField:true});
- const held=B.testLanguage('portal north gate',{maxTokens:16,seed:77});
+ const held=B.testLanguage('portal south gate',{maxTokens:16,seed:77});
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'v42-native-language-goal-'));
  let checkpointRoundtrip=false;
  try{
@@ -71,7 +71,7 @@ test('original text graph: monotone field versus loop oscillations and AND-goal 
    mathematicalOperator:'max over available observed neighbors; not conjunction of goals'
   },
   originalNavigation:{prefix:nav.prefix,path:nav.path.map(s=>({token:s.token,perspective:s.perspective,attraction:s.attraction}))},
-  actualHeldoutTextProbe:{rawAccuracy:held.tokenPrediction.accuracy,
+  unseenCombinationProbe:{rawAccuracy:held.tokenPrediction.accuracy,
     fieldAccuracy:held.fieldPrediction.accuracy,
     knownRaw:held.tokenPrediction.known,knownField:held.fieldPrediction.known},
   checkpointRoundtrip,
