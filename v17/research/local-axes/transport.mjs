@@ -24,7 +24,7 @@ export function randomFrame(D,rand){
   return indices.map(x=>rand()<.5?x:-x);
 }
 export function world({D=3,side=3,seed=11}={}){
-  if(D<2||D>6||side<2||side>4||side**D>1500)throw Error("Unsupported research-world size");
+  if(D<2||D>11||side<2||side>4||side**D>2500)throw Error("Unsupported research-world size");
   const rng=seeded(seed),size=side**D,powers=Array.from({length:D},(_,i)=>side**i);
   const coords=Array.from({length:size},(_,index)=>powers.map(p=>Math.floor(index/p)%side));
   const links=[];
