@@ -1,0 +1,21 @@
+name: V42 Native 5-Torus Geometry and Lived Field Dynamics
+on:
+  push:
+    branches:
+      - research/V42-TORUS-LOOP-INTERSECTION-HYPOTHESES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-geometry-memory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real 5-torus symbols vs counterfactual memory field
+        run: |
+          node --check v17/tests/native-5torus-fractal-memory-20261107.test.mjs
+          node --test v17/tests/native-5torus-fractal-memory-20261107.test.mjs
