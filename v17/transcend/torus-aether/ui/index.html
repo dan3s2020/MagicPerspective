@@ -236,7 +236,9 @@
         <div class="m"><small>Raspunsuri complete EXACT corecte (holdout)</small><b id="cpuExactRate">NEEVALUAT</b></div>
         <div class="m"><small>Reusite / testate</small><b id="cpuExactCount">-- / --</b></div>
         <div class="row" style="margin:10px 0">
-          <button id="cpuExactEvaluate" type="button">TESTEAZA 16 RASPUNSURI INTREGI NEVAZUTE (CPU)</button>
+          <label for="cpuExactMaxOutput">Maxim caractere generate/raspuns, fix pentru toate intrebarile (fara lungime din raspunsul ascuns):</label>
+          <input id="cpuExactMaxOutput" type="number" min="1" max="200000" step="1" value="4096" style="max-width:100px">
+                    <button id="cpuExactEvaluate" type="button">TESTEAZA 16 RASPUNSURI INTREGI NEVAZUTE (CPU)</button>
         </div>
         <p class="note" id="cpuExactVerdict">Prag 70%: NEMASURAT. 100/100 pe transformari cu scop dat NU inseamna 70% pe intrebari naturale.</p>
       </section>
