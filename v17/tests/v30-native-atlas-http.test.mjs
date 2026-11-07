@@ -86,3 +86,71 @@ test('native V17 worker really exports the persisted complete atlas and existing
   rmSync(temp,{recursive:true,force:true});
  }
 });
+
+
+test('real native frozen heldout Q/A records every guessed character AFTER generation and flags no causal Discoverer-to-writer link', {timeout:95000},async()=>{
+ const temp=mkdtempSync(path.join(os.tmpdir(),'mp-v30-heldout-char-'));
+ const input=path.join(temp,'qa.txt'),out=path.join(temp,'runtime');
+ // Genuine file rows. Every tenth is excluded from training by original native split.
+ const docs=Array.from({length:30},(_,i)=>'Q: For item '+i+', what name was recorded?\nA: marked_'+i);
+ writeFileSync(input,docs.join('\n\n')+'\n','utf8');
+ const listen=await port(),base='http://127.0.0.1:'+listen;
+ const proc=spawn(process.execPath,[native,'--workers','1','--arms','stable+many',
+  '--worlds','text,cognitivemap','--text',input,'--gpu','off','--out',out,
+  '--port',String(listen),'--start'],
+  {cwd:root,env:{...process.env,MP_NO_BROWSER:'1'},stdio:['ignore','pipe','pipe']});
+ let log='';for(const stream of [proc.stdout,proc.stderr])
+   stream.on('data',b=>{log=(log+b.toString()).slice(-14000);});
+ try {
+  const t=Date.now();let graph;
+  while(Date.now()-t<35000){
+   if(proc.exitCode!==null)throw Error('Native worker crash '+log);
+   try{const response=await fetch(base+'/graph?w=0',{signal:AbortSignal.timeout(3500)});
+    graph=await response.json();if(graph?.cognitive?.documents>=10)break;}catch{}
+   await delay(200);
+  }
+  assert.ok(graph?.cognitive?.documents>=10,'Original training did not ingest Q/A source: '+log);
+  const response=await fetch(base+'/eval',{
+    method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({w:0,kind:'text',
+      opts:{count:2,max:0,maxOutput:72,strictHeldout:true,T:0,noise:0}}),
+    signal:AbortSignal.timeout(60000)
+  });
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.equal(data.heldoutAnswerComplete,true,JSON.stringify(data.error));
+  assert.equal(data.firstAnswerExactTotal,2);
+  const audit=await fetch(base+'/atlas?w=0&cursor=0&limit=20&kind=answer-evaluation');
+  assert.equal(audit.status,200);
+  const page=await audit.json();
+  assert.ok(!page.error,JSON.stringify(page.error));
+  assert.equal(page.rows.length,2,'One saved record for each genuinely heldout full answer');
+  for(const e of page.rows){
+   assert.equal(e.type,'answer-evaluation');assert.equal(e.scorable,true);
+   assert.equal(e.frozen,true);assert.equal(e.causallyDrivenByDiscovererPath,false);
+   assert.match(e.blockedByDesign,/NO_CAUSAL_BRIDGE/);
+   assert.equal(e.scoringConsistent,true);
+   assert.equal(typeof e.questionPrefix,'string');
+   assert.ok(e.questionPrefix.startsWith('Q: For item '));
+   assert.equal(typeof e.expectedAnswer,'string');
+   assert.equal(typeof e.predictedAnswer,'string');
+   assert.ok(Array.isArray(e.differences));
+   assert.equal(e.comparedCharacters,
+    Math.max(Array.from(e.predictedAnswer).length,Array.from(e.expectedAnswer).length));
+  }
+  console.log('V30_REAL_HELDOUT_CHAR_AUDIT',JSON.stringify({
+   trainedDocuments:graph.cognitive.documents,strictHeldout:2,
+   exactAnswers:page.rows.filter(x=>x.answerExact).length,
+   totalCharacterMismatches:page.rows.reduce((s,x)=>s+x.differences.length,0),
+   recordedAfterPrediction:true,causalDiscovererToWriter:false,
+   hardware:'GitHub-hosted CPU only'
+  }));
+ }finally{
+  if(proc.exitCode===null){
+   const exited=new Promise(done=>proc.once('exit',done));
+   proc.kill('SIGTERM');await Promise.race([exited,delay(1000)]);
+   if(proc.exitCode===null)proc.kill('SIGKILL');
+  }
+  rmSync(temp,{recursive:true,force:true});
+ }
+});
