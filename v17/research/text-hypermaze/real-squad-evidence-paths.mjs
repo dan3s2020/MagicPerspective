@@ -204,15 +204,59 @@ export class NativeRealTextEvidencePaths {
   totals.updates=this.memory.updates;totals.features=this.memory.weights.size;
   return totals;
  }
+ // Optional V38 research experiment: average ORIGINAL learned weight trajectory
+ // over many genuine source/Q&A observations rather than trusting the last
+ // unstable online update. Same question features, labels and transition
+ // ranking motor; no gold answers or test examples enter these snapshots.
+ trainAveraged(samples,{epochs=2,snapshotEvery=200,burnIn=400}={}){
+  if(!Array.isArray(samples)||epochs<1||epochs>6||
+     !Number.isInteger(snapshotEvery)||snapshotEvery<20||
+     !Number.isInteger(burnIn)||burnIn<0)
+   throw Error("Invalid real supervised averaging contract");
+  let seen=0,snapshots=0,accepted=0,unrepresentable=0,alreadyCorrect=0;
+  const summed=new Map();
+  const snapshot=()=>{
+   snapshots++;
+   for(const [feature,weight] of this.memory.weights)
+    summed.set(feature,(summed.get(feature)||0)+weight);
+  };
+  for(let epoch=0;epoch<epochs;epoch++)for(const example of samples){
+   const result=this.trainOne(example);
+   accepted+=+result.trained;unrepresentable+=+!result.trained;
+   alreadyCorrect+=+!!result.correctBeforeUpdate;seen++;
+   if(seen>=burnIn&&seen%snapshotEvery===0)snapshot();
+  }
+  if(!snapshots||seen%snapshotEvery!==0)snapshot();
+  const average=new Map();
+  for(const [feature,value] of summed){
+   const w=value/snapshots;
+   if(w)average.set(feature,w);
+  }
+  this.memory.averagedWeights=average;
+  this.memory.averagedSnapshots=snapshots;
+  return {realQuestionExposures:seen,accepted,unrepresentable,
+   onlineCorrectBeforeUpdate:alreadyCorrect,
+   originalLastWeightFeatures:this.memory.weights.size,
+   timeAveragedWeightFeatures:average.size,snapshots,
+   burnIn,snapshotEvery,sameOriginalBrain:true,
+   referenceDevAnswersNeverUsed:true};
+ }
+ _weightPolicy(weightMode="last"){
+  if(weightMode==="last")return this.memory.weights;
+  if(weightMode==="average"&&this.memory.averagedWeights instanceof Map)
+   return this.memory.averagedWeights;
+  throw Error("No validated native evidence-weight policy: "+weightMode);
+ }
  // A strict control: choose the SAME trained candidate score directly,
  // WITHOUT running original Discoverer.shapeGraph. If both outputs agree,
  // the native route is faithfully executable but not yet causally necessary
  // for semantic selection on this 2-hop extractive task.
- rankDirectly({question,context}={}){
+ rankDirectly({question,context,weightMode="last"}={}){
   const {q,tokens,sentence,candidates}=buildExamples({question,context});
   let best=-Infinity,chosen=-1;
+  const W=this._weightPolicy(weightMode);
   for(let i=0;i<candidates.length;i++){
-   const z=sparseScore(features(q,tokens,sentence,candidates[i]),this.memory.weights);
+   const z=sparseScore(features(q,tokens,sentence,candidates[i]),W);
    if(z>best){best=z;chosen=i;}
   }
   return chosen<0?{found:false,reason:"no-observed-source-span"}:
@@ -226,10 +270,10 @@ export class NativeRealTextEvidencePaths {
  // a possible text span; no oracle answer ID is passed to the attraction field.
  // Learned real QA comparisons choose WHICH goal through edgePreference.
  // shapeGraph performs exact original goal attraction and route extraction.
- plan({question,context,useLearnedPreference=true,includeAtlas=false}={}){
+ plan({question,context,useLearnedPreference=true,includeAtlas=false,weightMode="last"}={}){
   const startClock=Date.now(),{q,tokens,sentence,candidates}=buildExamples({question,context});
   if(!candidates.length)return {found:false,reason:"no-observed-text-spans"};
-  const W=useLearnedPreference?this.memory.weights:new Map();
+  const W=useLearnedPreference?this._weightPolicy(weightMode):new Map();
   const allScores=candidates.map(c=>sparseScore(features(q,tokens,sentence,c),W));
   const high=Math.max(...allScores),lowScore=Math.min(...allScores);
   const spanPreference=allScores.map(s=>(s-lowScore)/(high-lowScore+TINY)*.75);
