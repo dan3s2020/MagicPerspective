@@ -15,8 +15,11 @@
   },
   "changed_code_paths": [
     "v17/transcend/torus-aether/worlds/exercise.mjs",
-    "v17/transcend/torus-aether/devour/brain.mjs",
-    "v17/research/text-hypermaze/goal-conditioned-native.mjs"
+    "v17/transcend/torus-aether/devour/brain.mjs (original baseline reused; source file NOT rewritten)",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/research/text-hypermaze/goal-conditioned-native.mjs",
+    "v17/research/text-hypermaze/production-release-gate.mjs"
   ],
   "added_mechanisms": [],
   "additional_user_authorization_quote": null,
@@ -24,14 +27,19 @@
   "acceptance_tests": [
     "v17/tests/native-hypermaze-shape-parity.test.mjs",
     "v17/tests/native-hypermaze-goal-text.test.mjs",
+    "v17/tests/native-hypermaze-original-worker-integration.test.mjs",
+    "v17/tests/native-hypermaze-compositional-heldout.test.mjs",
     "v17/tests/hypermaze-stopship-release.test.mjs"
   ],
-  "actual_observed_results": "NOT_VERIFIED: user requests 100% exact unseen long first-try answers; legacy TinyStories 64.43% is teacher-forced next-byte prediction only.",
+  "actual_observed_results": "PARTIAL tests only, CI https://github.com/dan3s2020/MagicPerspective/actions/runs/42341701259: original Discoverer.shape parity 42/42 on unseen 2D mazes; 6/6 two-action structured heldout textual compositions, predicted globally before action; real original corpus worker integration, original NoiseAgency trained and Brain.v8 saved. Geometry 5D ablation changed 0/6 final answers and shared-policy ablation changed 0/6: NO causal efficacy demonstrated. NO long unseen natural-language exact answer benchmark, no original RTX native throughput. RELEASE BLOCKED.",
   "limitations": [
     "Full historical Verbatim is incomplete; current exact user turn is archived, original earlier images may be inaccessible",
     "No unconditional evidence exists that exact arbitrary unseen large text answers are identifiable from prompts",
     "Cannot claim completed CUDA GPU hardware throughput using GitHub CI NumPy parity",
-    "Original GPU pretrained TinyStories model must not be overwritten by experimental hypermaze adapter"
+    "Original GPU pretrained TinyStories model must not be overwritten by experimental hypermaze adapter",
+    "Structurally heldout two-edit text cases are short with goals supplied as explicit tokens; NOT general language inference",
+    "Original learned 5D geometry and path policy are present but had no measurable final-output effect in 6/6 compositional ablations",
+    "Text learned operator execution uses model-predicted effects, not an independent physical/semantic environment oracle; externally semantic correctness unverified"
   ],
   "verification_status": "NOT_VERIFIED",
   "full_verbatim_gate": "BLOCKED"
