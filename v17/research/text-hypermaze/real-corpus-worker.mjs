@@ -28,6 +28,7 @@ const checkpointEvery=Math.max(1,opts.saveEvery||500);
 const transitionEvery=Math.max(1,opts.transitionEvery||128);
 const windowTokens=opts.windowTokens||96;
 const startedAt=performance.now();
+let sessionTrainingBytes=0,sessionRows=0,sessionSourceBytes=0;
 let brain,engine,seq=0,stop=false,paused=!opts.autoStart,saveRequested=false,saving=false,done=false;
 const yieldTurn=()=>new Promise(resolve=>setImmediate(resolve));
 const time=()=>performance.now();
@@ -51,9 +52,9 @@ function info(){
  return {...counters,
   totalBytes,percent:100*counters.bytesRead/Math.max(1,totalBytes),
   elapsedSeconds:+elapsed.toFixed(2),
-  textMBPerSecond:+(counters.trainTextUTF8Bytes/1e6/elapsed).toFixed(4),
-  sourceMBPerSecond:+(counters.bytesRead/1e6/elapsed).toFixed(4),
-  exercisesPerSecond:+(counters.trainedRows/elapsed).toFixed(2),
+  textMBPerSecond:+((counters.trainTextUTF8Bytes-sessionTrainingBytes)/1e6/elapsed).toFixed(4),
+  sourceMBPerSecond:+((counters.bytesRead-sessionSourceBytes)/1e6/elapsed).toFixed(4),
+  exercisesPerSecond:+((counters.trainedRows-sessionRows)/elapsed).toFixed(2),
   observedTokenWindowsPerSecond:+(counters.actualObservedWindows/elapsed).toFixed(2),
   observedStates:o?.records.size??0,totalObservedStates:o?.newObservations??0,
   learnedOperators:o?.operators.size??0,
@@ -113,6 +114,9 @@ async function init(){
   send("note",{text:"Original Discoverer.shapeGraph learned maze attractor in "+brain.disc.episodes+" real procedural worlds"});
  }
  brain.enableEndogenousNoise();
+ sessionTrainingBytes=counters.trainTextUTF8Bytes;
+ sessionSourceBytes=counters.bytesRead;
+ sessionRows=counters.trainedRows;
  engine=new NativeGoalTextMaze(brain,{maxStates:1500,maxDepth:6});
  done=counters.fileIndex>=files.length;
  publish();
