@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective · Atlasul complet al căilor observate</title>
+<style>
+:root{color-scheme:dark;--bg:#050a14;--surface:#0b1a2c;--line:#26465c;--fg:#e8f2f8;--muted:#9db6cb;--cyan:#7acfe4;--gold:#ffcf80;--green:#70d7b0;--red:#ed8ba0}
+*{box-sizing:border-box}
+body{margin:0;color:var(--fg);background:radial-gradient(ellipse at 25% -5%,#1c3552,transparent 55%),var(--bg);font:13px/1.5 system-ui,"Segoe UI",sans-serif}
+h1,h2{font-family:Georgia,serif;font-weight:400;margin:0}h1{font-size:clamp(27px,3.2vw,43px)}h2{font-size:20px}
+header{padding:18px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header a{color:var(--cyan);text-decoration:none;border:1px solid var(--line);padding:9px 12px;border-radius:9px}
+.kicker{text-transform:uppercase;letter-spacing:.22em;font-size:10px;color:var(--gold)}
+main{max-width:1850px;margin:auto;padding:17px 20px 28px}
+.note{padding:11px 14px;border:1px solid var(--line);border-radius:12px;color:#c9d8e7;line-height:1.6;background:#0a1523}
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:14px 0}
+.metric,.panel{border:1px solid var(--line);background:#081828e8;border-radius:12px;min-width:0}
+.metric{padding:12px}
+.metric span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.metric strong{font:30px Georgia,serif;display:block;padding-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid{display:grid;grid-template-columns:minmax(250px,.85fr) minmax(400px,1.7fr) minmax(280px,.9fr);gap:12px;align-items:stretch}
+.panelhead{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.panelbody{padding:10px 13px}.muted{color:var(--muted)}
+label{font-size:11px;color:var(--muted)}
+select,input,button{font:inherit;color:var(--fg);background:#0e263a;border:1px solid #3a607a;border-radius:8px;padding:7px 9px}
+button{cursor:pointer}button:hover{border-color:var(--cyan)}
+button[disabled]{opacity:.4;cursor:not-allowed}
+input[type=checkbox]{vertical-align:middle}
+.controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+#worker{min-width:65px}#mode{flex:1}
+.items{height:580px;overflow:auto;padding:5px}
+.item{border:1px solid transparent;border-radius:8px;margin:4px;padding:9px;text-align:left;background:#102339;cursor:pointer;width:calc(100% - 8px);display:block}
+.item:hover,.item.selected{border-color:#78bfd8}
+.item b{display:block;font-size:12px}.item small{color:var(--muted);font-size:10px}
+.item.failure{border-left:3px solid var(--red)}.item.success{border-left:3px solid var(--green)}
+footer{padding-top:12px;color:var(--muted);font-size:11px;line-height:1.65}
+canvas{display:block;height:480px;width:100%;background:radial-gradient(ellipse at center,#12283e,#06101d 72%);cursor:grab;touch-action:none}
+.legend{display:flex;gap:12px;flex-wrap:wrap;color:#adc4d6;font-size:10px}
+.dot:before{content:"●";padding-right:4px;color:var(--c)}
+#detail{font:11px/1.6 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;max-height:430px;margin:0;padding:13px;color:#b6d2e4}
+#missing{color:#ffadbf}#status{margin:10px 2px;color:var(--muted)}
+.pager{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border-top:1px solid var(--line)}
+.mini{font:11px/1.5 Consolas,monospace;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;color:#c3d8e5}
+@media(max-width:1350px){.grid{grid-template-columns:1fr 1.6fr}.grid>.panel:last-child{grid-column:1/-1}.metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){main{padding:10px}.grid{grid-template-columns:1fr}.grid>.panel:last-child{grid-column:auto}.metrics{grid-template-columns:repeat(2,1fr)}.items{height:260px}canvas{height:360px}}
+</style>
+</head>
+<body>
+<header>
+ <div><div class="kicker">MagicPerspective · V17 Original Brain · persistent cross-world atlas</div>
+ <h1>Atlasul căilor și transformărilor</h1>
+ <div class="muted">Trasee reușite · eșecuri explicate · frontiere neexplorate · operatori reutilizabili între lumi</div></div>
+ <div class="controls"><a href="./native-hypermaze.html">Înapoi la organismul live</a><a href="./index.html?live=1">V17 original</a></div>
+</header>
+<main>
+<div class="note"><strong>Ce reprezintă atlasul:</strong> toate observațiile și căutările <em>înregistrate efectiv după activarea jurnalului</em>, fără eliminarea celor vechi. Operatorii deja învățați în checkpoint apar ca istoric preexistent, separat de experiențele văzute direct. Un graf limitat de adâncime sau de memorie este marcat <strong>INCOMPLET</strong>, nu „cale imposibilă”. Nu afirmăm că au fost enumerate toate propozițiile posibile ale limbajului.</div>
+<section class="metrics">
+ <div class="metric"><span>Evenimente persistente</span><strong id="events">—</strong></div>
+ <div class="metric"><span>Observații / lumi</span><strong id="worlds">—</strong></div>
+ <div class="metric"><span>Operatori descoperiți</span><strong id="operators">—</strong></div>
+ <div class="metric"><span>Căi găsite</span><strong id="successes">—</strong></div>
+ <div class="metric"><span>Căi negăsite</span><strong id="failures">—</strong></div>
+ <div class="metric"><span>Octeți jurnal</span><strong id="bytes">—</strong></div>
+</section>
+<div class="controls" style="margin:0 0 11px">
+ <label for="worker">Brain</label><select id="worker"><option value="0">#0</option></select>
+ <label for="mode">Inspectează</label>
+ <select id="mode">
+  <option value="search">Căutări: succes + eșec</option>
+  <option value="failed">Doar căi eșuate</option>
+  <option value="operators">Toți operatorii învățați</option>
+  <option value="unused">Operatori neutilizați în rutele reușite</option>
+  <option value="worlds">Toate lumile observate (text/maze/transform)</option>
+  <option value="everything">Fiecare eveniment înregistrat</option>
+ </select>
+ <button id="refresh">↻ Actualizează</button>
+ <span class="muted" id="cursor">0 / 0</span>
+</div>
+<section class="grid">
+ <div class="panel">
+  <div class="panelhead"><h2>Istoricul complet</h2><small id="listTitle" class="muted">Paginat, fără ștergere</small></div>
+  <div class="items" id="items" role="list" aria-label="Evenimente reale din atlas"></div>
+  <div class="pager"><button id="previous">‹ Anterior</button><span id="pageStatus" class="muted">—</span><button id="next">Următor ›</button></div>
+ </div>
+ <div class="panel">
+  <div class="panelhead"><h2>Graful explorat efectiv</h2><div class="legend">
+   <span class="dot" style="--c:#ffcf80">Calea prezisă</span>
+   <span class="dot" style="--c:#70d7b0">Ținta găsită</span>
+   <span class="dot" style="--c:#ed8ba0">Frontieră / blocaj</span>
+  </div></div>
+  <canvas id="graph" aria-label="Toate nodurile și muchiile reale ale căutării selectate"></canvas>
+  <div class="controls" style="padding:10px;border-top:1px solid var(--line)">
+   <label>Axa X <select id="axisX"></select></label>
+   <label>Axa Y <select id="axisY"></select></label>
+   <label>Axa Z <select id="axisZ"></select></label>
+   <label>Zoom <input id="zoom" type="range" min=".5" max="2.5" step=".1" value="1"></label>
+  </div>
+  <div class="mini" id="graphStatus">Selectează o căutare înregistrată; graful nu va fi inventat.</div>
+ </div>
+ <div class="panel">
+  <div class="panelhead"><h2>Ce știe și ce lipsește?</h2><small class="muted">Diagnostic bazat pe traseu</small></div>
+  <div class="panelbody"><div id="missing" class="mini">Selectează un eșec pentru lista legăturilor lipsă și a limitelor.</div></div>
+  <div class="panelhead"><h2>Dovezi și acțiuni</h2></div>
+  <pre id="detail">Aștept jurnalul original V17.</pre>
+ </div>
+</section>
+<div id="status" role="status">Aștept serverul original, nu simulez date.</div>
+<footer>Jurnalul este un fișier JSONL local, append-only, lângă checkpointul \`Brain.v8\`. Cursorul afișează evenimente în pagini de 30, nu doar cele mai recente 80. Căile noi sunt limitate de inventarul operatorilor învățați și de bugetul de explorare; frontierele nerezolvate sunt afișate ca nerezolvate, nu ca dovezi că nu există drum. <a href="https://github.com/dan3s2020/MagicPerspective/pull/58" style="color:var(--cyan)">Originea și limitele cercetării</a>.</footer>
+</main>
+<script src="./native-hypermaze-atlas.js" defer></script>
+</body></html>
