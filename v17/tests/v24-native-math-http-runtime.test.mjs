@@ -131,6 +131,44 @@ test("one ORIGINAL V17 Brain: actual observed nonlinear actions -> saved checkpo
   const again=await post(base+"/native-math-eval",arguments_);
   assert.deepEqual(again.plannedPath,original.plannedPath);
   assert.equal(again.completeAnswer,original.completeAnswer);
+  // Independent world physics replays the entire previously frozen route:
+  // true multiplication is defined ONLY in this heldout physical evaluator.
+  // The planner does NOT get this function or a target dependent answer.
+  let actualDocument=doc,planId=again.planId,lastOutcome=null;
+  assert.ok(Number.isSafeInteger(planId));
+  for(const hop of again.plannedPath){
+    const [primary,step]=JSON.parse(hop.action);
+    const old=/(\d+) \* (\d+) = (\d+)\./.exec(actualDocument);
+    assert.ok(old,"Real world must expose current numeric expression");
+    const a=Number(old[1])+(primary===0?step:0);
+    const b=Number(old[2])+(primary===1?step:0);
+    const observed=actualDocument.replace(old[0],a+" * "+b+" = "+(a*b)+".");
+    lastOutcome=await post(base+"/native-math-step",{
+      w:0,planId,afterDocument:observed,accepted:true});
+    assert.equal(lastOutcome.accurate,true,JSON.stringify(lastOutcome).slice(0,1100));
+    assert.equal(lastOutcome.evidenceStatus,
+      "USER_OR_EXTERNAL_WORLD_SUPPLIED_ACTUAL_OUTCOME_NOT_SELF_EXECUTED");
+    assert.ok(lastOutcome.trace.at(-1).physicallyReported);
+    actualDocument=observed;
+  }
+  assert.equal(lastOutcome.completed,true);
+  assert.equal(lastOutcome.fullOutcomeMatchedPrediction,true);
+  assert.equal(lastOutcome.measuredSteps,again.plannedSteps);
+  assert.equal(actualDocument,again.completeAnswer);
+  const afterFeedback=await post(base+"/native-math-eval",arguments_);
+  assert.equal(afterFeedback.found,true);
+  assert.equal(afterFeedback.completeAnswer,original.completeAnswer);
+  // A physically rejected action is NOT automatically a successful step.
+  const rejected=await post(base+"/native-math-step",{
+    w:0,planId:afterFeedback.planId,afterDocument:doc,accepted:false});
+  assert.equal(rejected.accurate,false);
+  assert.equal(rejected.trace.at(-1).blockedThisContext,true);
+  assert.equal(rejected.fullOutcomeMatchedPrediction,false);
+  assert.ok(rejected.replanned,
+    "After surprise the original Discoverer must issue a new plan or state an honest failure");
+  const postRejection=await post(base+"/native-math-eval",arguments_);
+  assert.equal(postRejection.completeAnswer,original.completeAnswer,
+    "Blocking one experienced corridor must not erase independent valid alternative paths");
   const illegal=await post(base+"/native-math-eval",{
    w:0,document:doc,goals:[{index:4,value:56}]
   });
@@ -149,7 +187,8 @@ test("one ORIGINAL V17 Brain: actual observed nonlinear actions -> saved checkpo
   assert.equal(restored.found,true,JSON.stringify(restored).slice(0,1000));
   assert.equal(restored.completeAnswer,original.completeAnswer,
     "Original V17 Brain persisted all induced action evidence");
-  assert.deepEqual(restored.plannedPath,original.plannedPath);
+  assert.deepEqual(restored.plannedPath,postRejection.plannedPath,
+    "Checkpoint must restore the updated state, including actual observed resistance");
   console.log("V24_ONE_NATIVE_BRAIN_HTTP_COMPLETE",JSON.stringify({
     observedActionPairs:observed.length,fullDocumentTokenCount:original.inputTokens,
     fullAnswerCharacters:original.completeAnswer.length,
@@ -157,6 +196,8 @@ test("one ORIGINAL V17 Brain: actual observed nonlinear actions -> saved checkpo
     graphStates:original.observedTopology.completeNodes,
     originalMethod:original.originalMethod,
     exactRestoredAnswer:true,originalUIAndRuntimePreserved:true,
+    separatelyObservedPhysicalSteps:again.plannedSteps,
+    physicalContradictionRecorded:true,realReplanTriggered:true,
     CUDAExecuted:false,unrestrictedTextUnderstandingProven:false
   }));
  } finally {
