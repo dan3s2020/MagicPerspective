@@ -63,3 +63,44 @@ jobs:
           if ((Get-Content "v17/START_V39_SERIOUS_TRAINING.ps1" -Raw) -notmatch "OriginalBrain") { throw "Old original trained Brain requirement missing" }
           if ((Get-Content "v17/START_V39_SERIOUS_TRAINING.ps1" -Raw) -match "Remove-Item") { throw "Destructive cleanup is forbidden in launcher" }
           Write-Host "V39_WINDOWS_REAL_LAUNCHER_PRESERVES_OLD_CHECKPOINTS_AND_OLD_UI"
+
+  windows-launcher-actual-serious-training:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Create original real V17 Brain.v8 and UTF-8 corpus fixture in exclusive folder
+        shell: powershell
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "v39-real-original"
+          node v17/tests/v39-windows-ps-real-launcher-fixture.mjs $root
+          if ($LASTEXITCODE -ne 0) { throw "Cannot create original native brain" }
+      - name: Run FULL original serious PowerShell launcher on actual Windows using official SQuAD, native trained Brain and Unicode story input
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = Join-Path $env:RUNNER_TEMP "v39-real-original"
+          $sourceBrain = Join-Path $root "original-brain.v8"
+          $dataDir = Join-Path $root "official-real-squad"
+          $runDir = Join-Path $root "new-v39-run"
+          $storyPath = Join-Path $root "TinyStories-train.txt"
+          $before = (Get-FileHash -LiteralPath $sourceBrain -Algorithm SHA256).Hash
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_V39_SERIOUS_TRAINING.ps1" -OriginalBrain $sourceBrain -Data $dataDir -Out $runDir -TinyStories $storyPath -Port 8978 -TrainSamples 80 -CalibrationSamples 40 -DevSamples 40 -Epochs 1 -CheckpointEvery 20 -SnapshotEvery 20 -BurnIn 20 -StoryLimit 5 -StoryEvery 4 -Download -ExitWhenFinished
+          if ($LASTEXITCODE -ne 0) { throw "REAL user V39 PowerShell launcher failed" }
+          $after = (Get-FileHash -LiteralPath $sourceBrain -Algorithm SHA256).Hash
+          if ($before -ne $after) { throw "ORIGINAL BRAIN CHECKPOINT WAS MODIFIED" }
+          $resultPath = Join-Path $runDir "v39-result.json"
+          if (-not (Test-Path -LiteralPath $resultPath -PathType Leaf)) {
+            throw "User PowerShell launcher produced NO final verified training result"
+          }
+          $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+          if (-not $result.ok -or -not $result.restoreVerified -or
+              $result.realTraining -ne 80 -or $result.storyCount -ne 5 -or
+              $result.externalDev.n -ne 40 -or
+              -not $result.internalCalibration.policySelectedBeforeDev) {
+            throw "Original native Windows runner progress/checkpoint/DEV mismatch"
+          }
+          Write-Host "V39_REAL_WINDOWS_POWERSHELL_TRAINING_PASSED" ($result | ConvertTo-Json -Compress)
