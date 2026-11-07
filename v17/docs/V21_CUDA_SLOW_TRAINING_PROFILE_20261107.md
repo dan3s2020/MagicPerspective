@@ -4,6 +4,8 @@
 
 Utilizatorul a raportat "DAR TRAININGUL PE CUDA MERGE FOARTE INCET ORICAT AS INCERCA S-AL UMPLU." Screenshotul Task Manager arata RTX 3050 Ti Laptop GPU ~23%, temperatura ~86 C si Intel Iris Xe ~33%. Screenshotul anterior din UI indica **2 lumi/lot** si **1 exercitiu text/lot** cu VRAM 3 GB. Este un instantaneu, nu dovada unei utilizari CUDA medii, a throttling-ului sau a unui throughput masurat. Task Manager poate afisa alte motoare grafice, nu kernelurile CUDA; comparati cu nvidia-smi (NVML) si cu duratele V21.
 
+> **ADDENDUM 2026-11-07: defect major verificat in pregatirea contextelor, inainte de GPU.** `TextCard.live()` si `_imagine()` foloseau `e[i - 1::-1][:L]`, care copiaza intregul prefix pana la `i` la FIECARE caracter, apoi retinea numai `L <= 64` simboluri. Acest cost `O(N^2)` pe CPU a fost corectat in ambele locuri cu `e[i - L:i][::-1]`, identic simbol cu simbol dar `O(L)`. `_selfidx` afiseaza si progres real al construiri memoriei inaintea primului chunk CUDA. **Nu confundati lipsa progresului de UI cu un blocaj GPU confirmat.** Postmortem complet: [V21_FIRST_CUDA_BATCH_STALL_CONTEXT_COPY_20261107.md](./V21_FIRST_CUDA_BATCH_STALL_CONTEXT_COPY_20261107.md).
+
 ## Cauze confirmate in codul ORIGINAL
 
 - `v17/transcend/torus-aether/gpu/text_gpu.py`, `TextCard.append()`, reconstruieste ambele indexuri/suffix arrays (`Index(X,self.mem)` si `Index(X,self.fmem)`) dupa fiecare lot de exercitii, pe **intregul istoric acumulat**. Indexarea de tip prefix-doubling sorteaza repetat ranguri; costul poate creste pe masura ce memoria de text se mareste. Acest cod nu este o bucla continua de GEMM-uri GPU.
