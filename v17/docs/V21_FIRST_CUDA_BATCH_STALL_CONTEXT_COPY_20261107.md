@@ -34,6 +34,12 @@ Noul `_selfidx(exs,o,progress=None)` publica acum **numarul real de pozitii proc
 
 Faza `alignment` transmite de asemenea numarul real de pozitii incheiate la fiecare fragment CUDA. Heartbeat-ul Node afiseaza timpul scurs si avertizeaza cand peste 60 secunde nu s-a terminat niciun fragment; nu inventeaza caractere procesate.
 
+## Cache SelfMem per instanta, nu partajat intre creiere
+
+Un test independent a depistat ca `TextCard._self` era initial un atribut de clasa, nu al instantei. Ruta normala `live()` il reseta la inceputul fiecarui lot, dar utilizarea directa inainte de `live()` putea reutiliza rezultatul unei alte instante `TextCard`, incalcand izolarea creierelor. `TextCard.__init__` seteaza acum explicit `self._self={}`. Fluxul normal de antrenare continua sa goleasca acest cache la fiecare lot, iar checkpointurile si algoritmul SelfMem nu sunt schimbate. Testul nou cere iesire identica a automatului si progres monoton chiar pentru o instanta independenta.
+
+Date CPU observate: la 170.000 simboluri si 207 contexte de 64, benchmarkul Python in GitHub Actions a raportat **47,68 ms** pentru copierea vechiului prefix, **0,114 ms** pentru fereastra scurta, raport **416,42×**; acestea sunt timpii strict ai copiilor CPU sintetice, nu throughput CUDA si nici accelerarea intregului model.
+
 ## Validare
 
 - `v17/tests/test_v21_context_window_parity.py`: compara vechiul si noul context pentru TOATE pozitiile unor texte scurte, 229.187 caractere aleatoare, contexte 1/4/6/16/48/64/128, si ambele puncte reale din `TextCard`.
