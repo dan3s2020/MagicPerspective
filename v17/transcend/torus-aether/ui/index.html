@@ -337,6 +337,24 @@
       <pre id="v30AtlasChars" style="white-space:pre-wrap;max-height:240px;overflow:auto;font:12px ui-monospace,monospace;color:#e1b8ab">Compară caracterele, prima divergență și toate diferențele.</pre>
       <p class="note">„Traseu găsit” înseamnă numai atingerea unei ținte specificate pe topologia modelată. Nu echivalează cu înțelegere semantică sau cu răspunsuri corecte la probleme naturale. Jurnalul expune înregistrări de la activarea instrumentării; nu poate reconstrui evenimente istorice neînregistrate.</p>
     </section>
+    <section id="v31PathPanel" style="margin:14px 0;padding:12px;border:1px solid #39a691;border-radius:10px;background:#071826">
+      <h2>V31 · RĂSPUNS GENERAT DIN CALEA ORIGINALĂ DISCOVERER.SHAPE()</h2>
+      <p class="note">Mod experimental verificabil: introdu o instrucțiune de înlocuire cu text complet. Răspunsul este reconstruit STRICT prin executarea acțiunilor din calea calculată de motorul original, folosind transformări învățate din lumea cognitivă. Nu folosește predictorul legacy de caractere și nu rezolvă încă orice întrebare naturală.</p>
+      <label>Întrebare reală (format acceptat: Replace "tea" with "coffee" in: urmat de o linie de text)
+        <textarea id="v31PathInput" rows="5" style="display:block;width:100%;background:#06121c;color:#e8f3ff;border:1px solid #456880;border-radius:6px">Replace "tea" with "coffee" in:
+Ada keeps tea.</textarea>
+      </label>
+      <div class="row" style="margin:8px 0">
+        <label>Max tokens <input id="v31PathTokens" type="number" min="1" max="2048" value="512" style="width:85px"></label>
+        <label>Max nodes <input id="v31PathNodes" type="number" min="2" max="20000" value="384" style="width:90px"></label>
+        <label>Max depth <input id="v31PathDepth" type="number" min="1" max="256" value="8" style="width:70px"></label>
+        <button id="v31PathRun" type="button">Generează din calea învățată</button>
+      </div>
+      <pre id="v31PathStatus" aria-live="polite" style="white-space:pre-wrap;color:#c5deea">Se folosește workerul ales în Atlas. Nu trimite un răspuns corect de referință.</pre>
+      <pre id="v31PathAnswer" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:230px;overflow:auto;color:#6af0c2">Încă nu există un răspuns produs.</pre>
+      <pre id="v31PathEvidence" style="white-space:pre-wrap;overflow:auto;max-height:280px;font:12px ui-monospace,monospace;color:#cfb6ed">Traseul, dovezile, diagnosticele și blocajele apar după prima execuție.</pre>
+      <p class="note">Nu este un benchmark secret: instrucțiunea include explicit transformarea cerută. Pentru evaluarea caracterelor, răspunsul de referință se introduce separat în Atlas <b>doar după predicție</b>. Toate încercările sunt jurnalizate, inclusiv eșecurile.</p>
+    </section>
   </aside>
 </div>
 <button id="chatTab">💬 Vorbește cu el</button>
@@ -353,6 +371,7 @@
 </div>
 <script type="module" src="app.js"></script>
 <script type="module" src="atlas-explorer.js"></script>
+  <script type="module" src="v31-path-answer-ui.js"></script>
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
  <script type="module" src="v22-original-text-labyrinth-live.js"></script>
