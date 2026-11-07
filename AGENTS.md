@@ -4,6 +4,9 @@
 
 ## STOP: open BLOCKING regression
 
+> [!CAUTION]
+> **NEW OPEN V22 REGRESSION (2026-11-07):** [User's exact no-omission and same-original-maze-to-language directive](./REGRESSION_USER_DIRECTIVE_2026-11-07-V22-NO-SUBSTITUTION.md) is binding alongside issue #25. Keep all original V17/V19/V20/V21 bytes and features; use the actual `Discoverer.shape()` in learned text navigation, show actual pre-action answer and noise, and do NOT claim 100% unseen OpenThoughts accuracy before independent tests. Experimental branch [V22](https://github.com/dan3s2020/MagicPerspective/tree/experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107) remains isolated and BLOCKED for completion.
+
 [MP-REG-2026-11-06-001 — unauthorized redefinition of maze-to-language learning](./REGRESSION_USER_DIRECTIVE_2026-11-06.md)  
 [Public issue #25](https://github.com/dan3s2020/MagicPerspective/issues/25)  
 [Exact user's corrective words](./verbatim/2026-11-06-USER-REGRESSION-NO-REDEFINITION.md)
