@@ -39,8 +39,23 @@ test('actual V17 native server serves original visualizer plus unified shared te
     }
     assert.ok(snap?.shared,'Shared model status is missing from real V17 graph backend: '+logs.slice(-1200));
     assert.equal(typeof snap.shared.totalObserved,'number');
+    // The real HTTP endpoint is ASYNCHRONOUS: POST creates a job and
+    // GET /shared-eval-status reports the frozen worker result.
     const ev=await fetch(base+'/shared-eval?w=0',{method:'POST'});
-    const response=await ev.json();
+    assert.equal(ev.status,200);
+    const accepted=await ev.json();
+    assert.ok(Number.isInteger(accepted.id),'A real evaluation job ID is required');
+    let response=null;
+    for(let i=0;i<80;i++){
+      const r=await fetch(base+'/shared-eval-status?id='+accepted.id);
+      const current=await r.json();
+      if(current.status==='failed'||current.status==='done'){
+        response=current;break;
+      }
+      await sleep(100);
+    }
+    assert.ok(response,'The real asynchronous evaluation must finish');
+    assert.equal(response.status,'failed','GPU-off evaluation must fail closed');
     assert.match(response.error||'',/PyTorch|CUDA|device/i,
       'Without a configured GPU, frozen evaluation must not claim CUDA success');
   } finally {
