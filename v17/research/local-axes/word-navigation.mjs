@@ -6,8 +6,8 @@ import {ConstructedTransitionGraph} from "../../transcend/torus-aether/worlds/co
 import {apply,inverse,seeded,identity} from "./transport.mjs";
 
 export function secretWords(D,seed=7){
- const words=["zen","ori","vek","sim","nul","ki","aro","lum","rav","pe","sot","eni"];
- if(D>6)throw Error("Too many words");
+ const words=["zen","ori","vek","sim","nul","ki","aro","lum","rav","pe","sot","eni","dax","sol","mer","val","tor","xen","iva","nop","zai","fir","elo","ren"];
+ if(D>11)throw Error("Too many words");
  const out=words.slice(0,2*D),random=seeded(seed);
  for(let i=out.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
  const commands=Array.from({length:2*D},(_,i)=>i<D?i+1:-(i-D+1));
