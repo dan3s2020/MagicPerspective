@@ -172,6 +172,24 @@ export class QARoleAxes {
    fullAnswer:final,sourceAnswer:renderObservation(start),
    initialShape:[renderObservation(start),...path.map(x=>renderObservation(states[x.to]))],
    values:result.values,actions:path.map(x=>x.action),
+   topology:{
+    originalNativeV17Graph:true,complete:true,sourceId:0,
+    nodes:states.map((tokens,id)=>({
+     id,text:renderObservation(tokens),depth:axes.reduce((n,_,k)=>n+Number(!!(id&(1<<k))),0),
+     goal:id===count-1,kind:kinds[id],
+     observed:S.examples.some(x=>equal(x.a,tokens)),
+     potential:result.values[id]??null,position5D:null,
+     geometryEvidence:"unavailable; learned Q/A action axes are not 5D coordinates"
+    })),
+    edges:neighbors.flatMap((rows,from)=>rows.map(e=>({
+     from,to:e.to,kind:"observed-qa-role-effect",
+     observedSupport:e.action.actualObservedContrastSupport,
+     action:e.action
+    }))),
+    initialShapeIds:[0,...path.map(e=>e.to)],
+    coordinatesAreOriginalLearned5DTorus:false,
+    source:"actual learned role-binding world, original V17 attraction"
+   },
    trace:path.map(x=>({from:renderObservation(states[x.from]),
     to:renderObservation(states[x.to]),action:x.action,value:x.value})),
    graph:{nodes:count,edges:neighbors.reduce((n,a)=>n+a.length,0),
