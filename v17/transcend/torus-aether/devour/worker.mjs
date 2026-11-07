@@ -159,6 +159,8 @@ const absorbConstructed = row => {
   // Every actual answer becomes a chain of observed character transitions.
   // No held-out sample enters this stream. The same Brain owns the path model.
   brain.learnConstructedText(row.prompt,row.answer);
+  // Every actual observed Q/A pair trains the native goal-state axis model.
+  brain.learnGoalPathPair(row.prompt,row.answer);
 };
 const absorbText = row => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
@@ -186,6 +188,7 @@ const report = (final = false) => {
     shared: shared.status(), worldCore: brain.unifiedEnabled?brain.worldCore.report():null,
     constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
+    goalHyperpath: brain.goalPaths?.status() || null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
@@ -202,6 +205,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     worldCore: brain.unifiedEnabled?brain.worldCore.report():null,
     constructedPaths: brain.constructedPaths?.summary() || null,
     observedTransformations: brain.observedTransformations?.report() || null,
+    goalHyperpath: brain.goalPaths?.status() || null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
