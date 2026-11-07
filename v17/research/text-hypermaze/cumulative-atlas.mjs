@@ -10,8 +10,16 @@ const edgeIdentity=(from,action,to)=>JSON.stringify([from,action,to]);
 
 function atlasState(state) {
  const a=state.atlas ||= {version:1,nextId:1,events:[],evictedEvents:0,
-  maxEvents:512,attemptsTotal:0,successesTotal:0,failuresTotal:0};
+  maxEvents:512,attemptsTotal:0,successesTotal:0,failuresTotal:0,
+  qaEvaluationsTotal:0,qaExactWholeAnswersTotal:0,
+  qaCanonicalWholeAnswersTotal:0,qaPlannedRoutesTotal:0};
  if(a.version!==1)throw Error("Unknown Brain atlas evidence schema");
+ // Checkpoints made before the full-answer audit existed may not have
+ // explicit zero counters. An unseen failure is numerically zero, not
+ // undefined; preserve the exact old journal/events without migration.
+ for(const k of ["qaEvaluationsTotal","qaExactWholeAnswersTotal",
+  "qaCanonicalWholeAnswersTotal","qaPlannedRoutesTotal"])
+  if(!Number.isSafeInteger(a[k]))a[k]=0;
  return a;
 }
 export function recordOriginalHypermazeAttempt(state,plan,query={}){
