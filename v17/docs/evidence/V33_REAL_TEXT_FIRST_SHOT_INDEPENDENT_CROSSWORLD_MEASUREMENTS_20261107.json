@@ -1,0 +1,174 @@
+{
+  "schema": "MagicPerspective V33 actual CI evidence summary",
+  "date": "2026-11-07",
+  "scope": "authentic heldout OpenThoughts3 1.2M, original V17 brain, first 128 UTF8/JS-codepoint characters; distinct from full semantic response",
+  "branch": "experiment/V33-FIRST-SHOT-TEXT-PATH-FORENSICS-20261107",
+  "fullCodePaths": [
+    "v17/tests/v33-authentic-original-first-shot-paths.test.mjs",
+    "v17/tests/v33-first-shot-path-forensics.test.mjs",
+    "v17/tests/v33-native-chat-shape-bridge.test.mjs"
+  ],
+  "source": {
+    "officialDataset": "open-thoughts/OpenThoughts3-1.2M",
+    "trainCount": 50,
+    "exploreHeldoutCount": 10,
+    "exploreExactOffsets": [
+      "0-19",
+      "210000-210019",
+      "810000-810019"
+    ],
+    "exploreSHA256": "6a533454efd6c8640102bf264002d8b7c72ded5ff2cbdeefc9dad387bb42b815",
+    "independentHeldoutCount": 20,
+    "independentExactOffsets": [
+      "420000-420009",
+      "960000-960009"
+    ],
+    "independentSHA256": "fe28cba547bd445de4ebbf626ef7d364b035571b199ce1e9940ed83fc1a9e6c2",
+    "questionAnswerLeakage": false,
+    "storedTrainingPrefixOnly": true
+  },
+  "historicalSixScaleFirstShot": {
+    "scales": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "trainAnswerPrefixCodeUnits": 1024,
+    "predictionLimitCodePoints": 128,
+    "trainingOnlySharedBoilerplate": "<think> ",
+    "trainingOnlyBoilerplateCodePoints": 8,
+    "exploratory10": {
+      "originalAfterTemplate": {
+        "matched": 179,
+        "total": 1200,
+        "accuracy": 0.14916666666666667
+      },
+      "originalGreedy": {
+        "matched": 190,
+        "total": 1200,
+        "accuracy": 0.15833333333333333
+      },
+      "originalWideBeam": {
+        "matched": 172,
+        "total": 1200,
+        "accuracy": 0.14333333333333334
+      },
+      "sameOriginalPlusPairedMazes": {
+        "matched": 179,
+        "total": 1200,
+        "accuracy": 0.14916666666666667
+      },
+      "unsafeUniversalKeyResearchOnly": {
+        "matched": 212,
+        "total": 1200,
+        "accuracy": 0.17666666666666667
+      },
+      "sourceQuestionKeyUnseen": 10,
+      "originalDistinctAnswers": 1,
+      "ungatedDistinctAnswers": 1,
+      "wholeAnswersExactOriginal": 0,
+      "wholeAnswersExactUngated": 0
+    },
+    "independent20": {
+      "originalAfterTemplate": {
+        "matched": 311,
+        "total": 2400,
+        "accuracy": 0.12958333333333333
+      },
+      "unsafeUniversalKeyResearchOnly": {
+        "matched": 376,
+        "total": 2400,
+        "accuracy": 0.15666666666666668
+      },
+      "absoluteDifferencePercentagePoints": 2.7083333333333335,
+      "originalRaw128": {
+        "matched": 471,
+        "total": 2560,
+        "accuracy": 0.183984375
+      },
+      "ungatedRaw128": {
+        "matched": 536,
+        "total": 2560,
+        "accuracy": 0.209375
+      },
+      "longScaleQuestionContextEvidenceOriginal": {
+        "observedQuestionKeys": 0,
+        "outOf": 20
+      },
+      "longScaleQuestionContextEvidenceUngated": {
+        "observedQuestionKeys": 20,
+        "outOf": 20
+      },
+      "originalDistinctAnswers": 1,
+      "ungatedDistinctAnswers": 1,
+      "wholeAnswersExactOriginal": 0,
+      "wholeAnswersExactUngated": 0,
+      "meanCorrectPrefixOriginal": 13.5,
+      "meanCorrectPrefixUngated": 17.95
+    }
+  },
+  "independentlyObservedCausalPaths": {
+    "exactOriginalV17NativeShape": "Discoverer.shapeGraph",
+    "disconnectedObservedWorldBefore": {
+      "verifiedComponents": 2,
+      "pathFound": false,
+      "reachableStates": 5
+    },
+    "physicalBridgeAction": "corridor 4 --cross-bridge--> corridor 6",
+    "connectedObservedWorldAfter": {
+      "verifiedComponents": 1,
+      "pathFound": true,
+      "plannedBeforeAction": true,
+      "correctIndependentSteps": 9,
+      "totalSteps": 9,
+      "finalOutput": "exit reached",
+      "correctEmittedCodepoints": 12,
+      "totalEmittedCodepoints": 12
+    },
+    "frozenKnownWorldSnapshotBeforeBridge": true,
+    "nativeStrictAnchors3AxisBefore": {
+      "complete": 0,
+      "tested": 64
+    },
+    "evidenceGatedContexts3AxisAfter": {
+      "complete": 64,
+      "tested": 64,
+      "correctStateCodepoints": 2688,
+      "totalStateCodepoints": 2688
+    },
+    "originalStrictPlannerWithSameBridgeExamples": {
+      "complete": 1,
+      "tested": 64
+    },
+    "negativeOtherWorldRejectsBridge": true
+  },
+  "naturalSemanticAudit": {
+    "earlierOfficialV29": {
+      "trained": 20,
+      "holdout": 4,
+      "wholeExact": 0,
+      "learnedCausalQAAxes": 0,
+      "trainingAnswerTokens": 277941,
+      "observedSequentialEdges": 2991
+    },
+    "generalization70PercentProven": false,
+    "original5DHyperdimensionalSemanticWritingProven": false,
+    "gpuWindowsProven": false
+  },
+  "ci": {
+    "completeGreenNativeAndAuthenticV29": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42357097700",
+    "initialReal10QAbationsGreen": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42357750505",
+    "independent20NewRowsHistoricalTestGreenButV29ExternalHTTP500": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42357959198",
+    "jsonArtifactName": "v33-authentic-original-v17-first-shot-path-errors-and-ablation"
+  },
+  "integrity": {
+    "originalMainUntouched": true,
+    "originalBrainAndMazeCodeUnmodified": true,
+    "neverPromoteHypotheticalCorpusAdjacency": true,
+    "withheldGoldNotPassedToPlanner": true,
+    "experimentalQuestionGateRelaxationNotProvenSafe": true
+  }
+}
