@@ -219,6 +219,51 @@ const chats = new Map(); let chatId = 0;                                     // 
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
+  // V34 native research inspection/typed evidence in the SAME original Brain.
+  // Existing training and all previous V17 HTTP routes remain untouched.
+  if(url==="/v34/status"||url==="/v34/research"){
+    if(req.headers.origin&&req.headers.origin!=="http://"+req.headers.host)
+      return json(res,{error:"Cross-origin original Brain modifications refused"});
+    const w=Number(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!Number.isSafeInteger(w)||!sl?.wk)
+      return json(res,{error:"Choose a living original V17 Brain worker"});
+    const send=request=>{
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);
+        json(res,{error:"Original V17 Brain research request timed out, no fake result"});
+      },30000);
+      chats.set(id,reply=>{
+        clearTimeout(timer);
+        json(res,reply.error?{error:reply.error}:{...reply.result,w,
+          originalLiveWorker:true,engine:"Native original V17 Brain"});
+      });
+      sl.wk.postMessage({v34Research:{id,request}});
+    };
+    if(req.method==="GET"&&url==="/v34/status"){
+      send({type:"status"});return;
+    }
+    if(req.method!=="POST"||url!=="/v34/research")
+      return json(res,{error:"Unsupported V34 HTTP method"});
+    let bytes=0,parts=[],tooLarge=false;
+    req.on("data",chunk=>{
+      bytes+=chunk.length;
+      if(bytes>65536){tooLarge=true;parts=[];}
+      else if(!tooLarge)parts.push(chunk);
+    });
+    req.on("end",()=>{
+      if(tooLarge)return json(res,{error:"V34 evidence body exceeds 64 KiB"});
+      let request;
+      try{request=JSON.parse(Buffer.concat(parts).toString("utf8"));}
+      catch(err){return json(res,{error:"Invalid V34 UTF-8 evidence JSON: "+err.message});}
+      if(!request||typeof request!=="object"||Array.isArray(request))
+        return json(res,{error:"V34 request must be an object"});
+      send(request);
+    });
+    req.on("error",err=>{
+      if(!res.writableEnded)json(res,{error:"V34 evidence connection: "+err.message});
+    });
+    return;
+  }
   if (url === "/state") return json(res, {world, worlds: worldsArg, workers: slots.length, arms: arms.map(a => a.name), every, memGB, started, stopping,
     graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent})), last: h.at(-1)}))});
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
