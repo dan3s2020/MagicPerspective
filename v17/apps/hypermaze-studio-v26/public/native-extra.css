@@ -1,0 +1,24 @@
+/* V28 presentation-only additions over unchanged V26 design. */
+.native-history-panel{min-height:270px}
+.native-chart-area{margin:0 18px 5px;border:1px solid #2b415b;
+ background:radial-gradient(ellipse at center,#132139 0%,#0c1626 75%);
+ border-radius:8px;height:215px;overflow:hidden}
+#nativeHistoryCanvas{display:block;width:100%;height:100%}
+.native-chart-note{font-size:11px;color:#94adc5;padding:6px 20px 14px}
+.native-gpu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.native-gpu-grid label{display:flex;flex-direction:column;gap:5px;color:#9bb5cf;font-size:11px}
+.native-gpu-grid input,.native-gpu-grid select{min-width:0;width:100%;background:#0b1829;
+  border:1px solid #30435b;border-radius:8px;color:#dceaf8;padding:8px}
+#nativeGpuApply{width:100%;margin:12px 0 10px}
+#nativeGpuPanel small{display:block;color:#a1b6c9;font-size:10px;line-height:1.5}
+.native-maze-box{padding:8px 16px 22px;text-align:center;color:#b5d2e7}
+.native-maze-box[hidden]{display:none}
+.native-maze-box h3{font-size:13px;margin:8px 0 12px}
+#nativeMazeCanvas{max-width:600px;width:min(100%,600px);height:auto;
+  aspect-ratio:1;background:#081322;border:1px solid #314b64;border-radius:9px}
+#textActual span{white-space:pre-wrap}
+#nativeResultsTable button{white-space:normal;text-align:left}
+@media(max-width:750px){
+  .native-gpu-grid{grid-template-columns:1fr}
+  .native-chart-area{margin:0 10px;height:200px}
+}
