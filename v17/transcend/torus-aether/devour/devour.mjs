@@ -19,6 +19,7 @@ import {Brain} from "./brain.mjs";
 import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {cognitiveRouteSnapshot} from "../worlds/cognitive-route-snapshot.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -166,11 +167,7 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
-const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||null,
-  rules:r.learnedRules,observedSentences:r.world?.fromObservedExamples,generatedStates:r.world?.states.length,
-  candidateGoals:r.world?.targets.length,novelGoal:r.novelGoal||false,
-  start:r.world?.states[0]?.join(" "),plannedPath:r.path?.map(e=>({action:e.action,after:r.world.states[e.to]?.join(" ")})),
-  shapeField:r.field?.values?.slice(0,128),law:r.planningLaw||null,truncated:r.world?.truncated||false});
+const cognitiveReply = r => cognitiveRouteSnapshot(r);
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
@@ -394,11 +391,15 @@ http.createServer((req, res) => {
       if(typeof m.initial!=="string"||m.initial.length>1024||
         !m.goal||typeof m.goal!=="object"||!m.goal.slots||Object.keys(m.goal.slots).length>32)
         return json(res,{error:"Provide initial text and goal.slots constraints; no hidden target answer"});
+      const temperature=Number(m.temperature??0),seed=Number(m.seed??74129);
+      if(!Number.isFinite(temperature)||temperature<0||temperature>2||
+         !Number.isSafeInteger(seed)||seed<0||seed>4294967295)
+        return json(res,{error:"Temperature must be 0..2 and seed a uint32 integer"});
       if(!sl.wk || sl.status === "gata"){
         try{
           const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No cognitive checkpoint"});
           const brain=Brain.load(save),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
-          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8)),seed,temperature});
           return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
         }catch(e){return json(res,{error:e.message});}
       }
@@ -410,13 +411,13 @@ http.createServer((req, res) => {
           const file=saveOf(sl);
           if(!fs.existsSync(file))return json(res,{error:"Worker exited before any cognitive checkpoint was saved"});
           const brain=Brain.load(file),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
-          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8)),seed,temperature});
           return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
         }catch(e){return json(res,{error:e.message});}
       });
       sl.wk.postMessage({cognitiveEval:{id,initial:m.initial,goal:m.goal,
         maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),
-        maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))}});
+        maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8)),seed,temperature}});
     });return;
   }
   if (url === "/maptext-audit") {
