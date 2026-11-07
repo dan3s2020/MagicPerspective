@@ -1,0 +1,25 @@
+name: V30 Native orthogonal-axis and original-shape causal ablations
+on:
+  push:
+    branches:
+      - experiment/V30-ORTHOGONAL-TRANSFORM-PATH-NATIVE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-v30-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Native V30 intrinsic dimension, multi-scale action composition, exact original shape, feedback and genuine 5D text
+        run: node --test v17/tests/v30-orthogonal-transform-original-motors.test.mjs
+      - name: Existing original maze path parity and actual learned causal axes remain unchanged
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --test v17/tests/learned-axis-gating.test.mjs
+      - name: Existing V29 original Brain and real Q/A regression
+        run: node --test v17/tests/v29-real-qa-closed-loop.test.mjs
