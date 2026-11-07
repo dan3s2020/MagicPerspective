@@ -323,6 +323,10 @@ const processGpuText = async (exs, meta) => {
   }
   if(brain.textGpu)brain.textGpu.sideObserversMs=
     +(performance.now()-observersStarted).toFixed(1);
+  // Snapshot REAL observed numeric axes after a completed input batch, before
+  // potentially long frozen exams. External route planning reads this file
+  // without blocking the original live training thread; save is atomic.
+  liveMathAxes?.save();
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   progressAt=Date.now();
   await flushShared();
