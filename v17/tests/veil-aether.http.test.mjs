@@ -51,6 +51,20 @@ test("NATIVE V17 V20 V21 multiworld: live frames + frozen route + original UI + 
   }
   assert.ok(g?.hypermaze?.veil?.documents>=50,"No genuine real-corpus V21 training: "+logs);
   assert.ok(g.hypermaze.veil.onlinePredictions>0);
+  // The original screenshot's 100 distinct ASCII symbols are NOT 100% corpus usage.
+  const index=await(await read("/graphs")).json();
+  assert.equal(index.corpus.kind,"text");
+  assert.equal(index.corpus.trainRows,59);
+  assert.equal(index.corpus.heldOut,6);
+  const chosen=index.graphs.find(x=>x.w===0);
+  assert.ok(chosen?.progress,"Native worker must expose live source-backed progress");
+  assert.equal(chosen.progress.mode,"observed-only");
+  assert.equal(chosen.progress.total,59);
+  assert.ok(chosen.progress.trained>0 && chosen.progress.trained<=59);
+  assert.ok(chosen.progress.percent>0 && chosen.progress.percent<=100);
+  assert.equal(g.progress.total,59,"Individual /graph reports the same actual corpus size");
+  assert.equal(g.progress.percent,Number((100*g.progress.trained/59).toFixed(2)));
+
   assert.ok(g.hypermaze.veil.states>0 && g.hypermaze.veil.edges>0);
   assert.ok(g.hypermaze.veil.last?.frames?.length>0);
   assert.ok(g.hypermaze.veil.last?.actual?.length>0);
@@ -66,6 +80,14 @@ test("NATIVE V17 V20 V21 multiworld: live frames + frozen route + original UI + 
   assert.match(html,/id="veilCanvas"/);
   assert.match(html,/id="veilScrub"/);
   assert.match(html,/id="veilActionCanvas"/);
+  assert.match(html,/id="datasetProgressPct"/);
+  assert.match(html,/id="datasetProgressBar"/);
+  assert.match(html,/id="datasetProgressCount"/);
+  assert.match(html,/id="datasetHeldOut"/);
+  const originalApp=await(await read("/transcend/torus-aether/ui/app.js")).text();
+  assert.match(originalApp,/renderDatasetProgress/);
+  assert.match(originalApp,/datasetProgressInfo/);
+
   assert.match(html,/src="veil-aether-live.js"/);
   assert.match(html,/src="text-hypermaze-live.js"/);
   assert.match(html,/src="app.js"/);
