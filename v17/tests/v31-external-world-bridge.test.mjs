@@ -28,7 +28,8 @@ function setup(){
  return e;
 }
 const realTwo=({text,action,...rest})=>{
- assert.deepEqual(Object.keys(rest),[],"Independent target world must NEVER receive expected next solution");
+ assert.deepEqual(Object.keys(rest),["step"],"Independent target world receives only its action index, not the expected next solution");
+ assert.ok(Number.isSafeInteger(rest.step));
  const change=action.name==="increase-two"?2:action.name==="decrease-one"?-1:NaN;
  assert.ok(Number.isSafeInteger(change));
  const match=text.match(/\bhas ([0-9]+)\b/);
