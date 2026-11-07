@@ -42,8 +42,14 @@ function originalDiscovererOnText(world,disc,{seed=74129,temperature=null}={}){
   actor.temp=temperature===null?(disc?.temp||0):Math.max(0,Number(temperature)||0);
   const kinds=world.states.map((_,i)=>i===world.start?KIND.self:
     world.targets.includes(i)?KIND.target:KIND.floor);
+  // On a graph built exclusively from actions ALREADY observed to succeed,
+  // each stored outgoing edge is passable evidence, not an imagined route.
+  // Do not apply the unrelated 0.5 default that numerically extinguishes
+  // a long chain before the original 0.97 attraction reaches its start.
+  // Hypothetical cognitive edges keep the prior learned/default conductance.
   const conduct=k=>k===KIND.wall?0:
-    k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1;
+    k===KIND.floor?(world.verifiedTransitions?1:
+      Math.max(.5,disc?.conduct?.(KIND.floor)??.5)):1;
   const attract=k=>k===KIND.target?1:0;
   let values=[];
   const path=actor.shape(kinds,0,world.start,{
@@ -306,7 +312,7 @@ export class LearnedCognitiveMap {
     const targets=states.flatMap((state,i)=>LearnedCognitiveMap.matchGoal(state,goal)?[i]:[]);
     if(!targets.length)return {found:false,reason:'GOAL_NOT_REACHED_IN_OBSERVED_TRANSITIONS',
       domain,states:states.length,learnedEdges:outgoing.size,path:[]};
-    const field=originalDiscovererOnText({states,neighbors,start:0,targets},disc);
+    const field=originalDiscovererOnText({states,neighbors,start:0,targets,verifiedTransitions:true},disc);
     return {found:!!field.path?.length&&targets.includes(field.path.at(-1)?.to),
       domain,states:states.length,learnedEdges:outgoing.size,
       path:field.path||[],field,plannedBeforeAction:true,
