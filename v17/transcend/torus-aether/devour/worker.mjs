@@ -263,14 +263,36 @@ const processGpuText = async (exs, meta) => {
       charsCommitted: brain.chars, exercisesCommitted: brain.exercises || 0, sample: progress.sample});
     if (performance.now() - lastShot >= 4500) shot();
   });
-  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
-  // The original V17 trace sees the first actual exercise, exactly once.
-  if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
-  for(const row of meta){absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
-  for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  batchNow = {phase: "CPU: integrare în graful V17", done: 0, total: exs[0]?.length || 0};
+  await lap("CPU: graf vizual per caracter", async () => {
+    // Preserve EVERY original graph update. Yield during long exercises so
+    // the UI, pause and save can react instead of appearing frozen.
+    if (exs.length) for (let i = 0; i < exs[0].length; i++) {
+      brain.live(exs[0][i], brain.lived % 50 === 0, {old: true});
+      if ((i + 1) % 512 === 0) {
+        batchNow.done = i + 1;
+        stage("CPU: graf vizual " + (i + 1) + "/" + exs[0].length);
+        await new Promise(r => setImmediate(r));
+        if (paused || saveNow) await hold();
+      }
+    }
+  });
+  for (const row of meta) {
+    await lap("CPU: limbaj și perspective", () => absorbLanguage(row));
+    await lap("CPU: trasee text construite", () => absorbConstructed(row));
+    await lap("CPU: transformări observate", () => absorbObservedDifferences(row));
+    await new Promise(r => setImmediate(r));
+  }
+  for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) {
+    await lap("CPU: acțiuni lingvistice cauzale", () => absorbText(meta[j]));
+  }
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
-  await flushShared();
-  if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+  await lap("CUDA: antrenare reprezentare comună", () => flushShared());
+  if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) {
+    nextMaze = brain.chars + mazeEvery;
+    await lap("CUDA: lumi labirint + transformări", () => worldsOnce(false));
+  }
+  if (brain.textGpu) brain.textGpu.pipelineMs = timing;
   batchNow = null;
   // Report the first committed batch immediately, not only after 60,000 bytes.
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
