@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-07",
+  "branch": "experiment/V25-UNKNOWN-CAUSAL-EVENT-ABSTENTION-20261107",
+  "parent": "experiment/V24-NATIVE-BRAIN-V23-GROUNDED-HYPERPATH-20261107@c8dc62f0ecdacadb0ac80c61ce20168df8623df0",
+  "nativeCi": {
+    "runId": 42343645683,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42343645683",
+    "verifiedHead": "03667b9a3cf2b0471e7eaffb9dd4a662ef82a68f",
+    "tests": {
+      "strictEvidence": 5,
+      "nativeStrictHttp": 1,
+      "nativeV24OriginalLongHttp": 1,
+      "priorV23LongProof": 10,
+      "originalV17V19V21V22": 27,
+      "total": 44,
+      "failed": 0
+    }
+  },
+  "falsifiedOriginal": {
+    "scenario": "Account novel_account begins with 10 credits. Receives 2. Donates 5 (unknown rule). Receives 3.",
+    "legacyV24Answer": 15,
+    "independentWorldTruth": 10,
+    "reason": "Unknown target-relevant sentence omitted, original solution shape propagated on an incomplete world.",
+    "reportedAsRegression": true
+  },
+  "newStrictMechanism": {
+    "directDiscovererUnchanged": true,
+    "unknownRelevantSentenceReturns": {
+      "found": false,
+      "reason": "UNKNOWN_RELEVANT_SENTENCE"
+    },
+    "unknownPronounSentenceDetectedWhenBeginsItTheyHeSheThisThat": true,
+    "physicalNoEffectLearner": {
+      "independentWitnessedExamples": 8,
+      "evidence": "sentence/entity and before==after only, accepted=true",
+      "minDifferentEntityExamples": 3,
+      "minFixedTokens": 8,
+      "minimumEvidence": 4,
+      "compiledNeutralPatterns": 1
+    },
+    "knownSafeTextPlan": "Original Discoverer.shape predicts exactly where trained actions lead when relevant unknowns absent; no answer supplied in goal.",
+    "nativeProcess": "V17 devour.mjs + worker.mjs + existing Brain saveFile and same checkpoint.",
+    "ui": "Original V17 controls kept; V25 panel shows unknown sentences and can display V23 verified frozen paths."
+  },
+  "longRegressionPreserved": {
+    "steps": 100000,
+    "inputCharacters": 4800055,
+    "nativeAnswer": 1212341,
+    "originalDiscovererCalls": 790,
+    "maxLocalNodes": 129,
+    "originalNativeHttpStillPassing": true
+  },
+  "interimFailure": {
+    "ciRunId": 42343471702,
+    "conclusion": "failure",
+    "observed": "Original V24 native worker HTTP request timed out after 20s during training, on the early V25 branch snapshot. This is a timing/stall observation; not evidence of semantic regression. Later independent runs completed with same old worker/API and all tests passed.",
+    "notHidden": true
+  },
+  "scientificLimits": [
+    "Reference recognition currently uses exact entity tokens and a conservative subset of sentence-initial coreference signals; arbitrary anaphora and omitted actors cannot be ruled out.",
+    "A user-provided before==after may be wrong; formal external ground-truth provenance is not authenticated automatically.",
+    "Training grammar and numerical operator basis remain observed constrained forms, not generic natural-language understanding.",
+    "Abstention does NOT prove the correct unknown answer is found; it prevents overclaiming.",
+    "V25 strict mode is opt-in and does not change old V17 Answer writer or automatically consume OpenThoughts3 semantic action feedback.",
+    "100% observed scores refer to structured heldout tasks, not all arbitrary text, natural language, or full mathematical problems.",
+    "No benchmark on original RTX 3050 Ti, no all-CUDA cognitive training, no 100 full OpenThoughts exercises/sec.",
+    "HTML/script checks and native HTTP controls are not browser pixel/render verification.",
+    "No universal 4D/5D intrinsic physical hyperdimensional world or real Noise Space semantics proved.",
+    "Main branch and original user checkpoint untouched, full historical exact VERBATIM remains incomplete."
+  ],
+  "status": "STRICT_CAUSAL_INCOMPLETE_WORLD_FALSIFICATION_AND_REPAIR_PROVEN__FULL_RELEASE_BLOCKED"
+}
