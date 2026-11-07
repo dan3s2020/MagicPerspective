@@ -146,6 +146,21 @@ class Index:                                     # suffix array of the REVERSED 
 
 def form_of(X, a): return X.where((a >= 48) & (a <= 57), X.zeros(a.shape, np.int64) + DIG, a)
 
+def _torch_exact_top_vote(ys):
+    """Same original first-argmax vote for [Q,S] symbol samples, batched.
+
+    Sum of up to S integer 0/1 votes is exact in float32 for S <= 64.
+    This pure torch helper also runs on CPU, to verify CUDA math separately
+    from CUDA availability, without claiming CPU is a GPU speed benchmark.
+    """
+    Q, _S = ys.shape
+    offsets = torch.arange(Q, device=ys.device, dtype=torch.long)[:, None] * 129
+    keys = (offsets + ys.clamp(0, 128)).reshape(-1)
+    counts = torch.zeros(Q * 129, dtype=torch.float32, device=ys.device)
+    counts.index_add_(0, keys, (ys >= 0).to(torch.float32).reshape(-1))
+    return counts.view(Q, 129)[:, :128].argmax(dim=1)
+
+
 class TextCard:
     def __init__(self, device, depth=6, form_depth=4, maxK=64, S=64, max_memory=65536):
         self.X = X(device); self.depth, self.form_depth, self.maxK, self.S = depth, form_depth, maxK, S
@@ -327,11 +342,7 @@ class TextCard:
         # tie-breaking argmax (first/lower symbol) and prediction are unchanged.
         # Preserve both existing NumPy and torch-CPU paths byte-for-byte.
         if X.t and str(X.dev).startswith("cuda"):
-            offsets = torch.arange(Q, device=ys.device, dtype=torch.long)[:, None] * 129
-            keys = (offsets + ys.clamp(0, 128)).reshape(-1)
-            counts = torch.zeros(Q * 129, dtype=torch.float32, device=ys.device)
-            counts.index_add_(0, keys, (ys >= 0).to(torch.float32).reshape(-1))
-            return counts.view(Q, 129)[:, :128].argmax(dim=1)
+            return _torch_exact_top_vote(ys)
         oh = X.zeros((Q, 129), np.float32);
         for j in range(S): oh[X.arange(Q), X.clip(ys[:, j], 0, 128)] += X.f32(ys[:, j] >= 0)
         return X.argmax1(oh[:, :128])
