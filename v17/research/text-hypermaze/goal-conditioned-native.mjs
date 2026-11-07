@@ -8,6 +8,7 @@
 // Internal actions simulate learned operators, NOT validated external semantics.
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
 import {NoiseAgency} from "../../transcend/torus-aether/worlds/noise-agency.mjs";
+import {PersistentHypermazeAtlas} from "./persistent-atlas.mjs";
 import {tokenizeObservation,renderObservation}
  from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
 
@@ -28,7 +29,7 @@ function validatedRequired(required){
 
 export class NativeGoalTextMaze {
  constructor(brain,{maxStates=2500,maxDepth=6,geometryWeight=.025,
-  sharedPolicyWeight=.01}={}){
+  sharedPolicyWeight=.01,atlasFile=null}={}){
   if(!(brain instanceof Brain))throw Error("The ACTUAL original V17 Brain is required");
   if(!Number.isSafeInteger(maxStates)||maxStates<4||maxStates>50000)
    throw Error("Invalid native observed-world state limit");
@@ -38,7 +39,26 @@ export class NativeGoalTextMaze {
   this.maxStates=maxStates;this.maxDepth=maxDepth;
   this.geometryWeight=geometryWeight;
   this.sharedPolicyWeight=sharedPolicyWeight;
-  this.livedTexts=0;this.livedGraphTransitions=0;
+  this.atlas=new PersistentHypermazeAtlas({file:atlasFile});
+  this.livedTexts=this.atlas.summary().totalWorlds;
+  this.livedGraphTransitions=this.atlas.summary().learnedOperatorEvents;
+  // Existing .v8 checkpoints may predate the atlas. Snapshot their actual
+  // learned transformations as an explicitly labeled legacy baseline once,
+  // so the atlas never pretends we witnessed historic training events.
+  if(!this.atlas.summary().journalEvents&&brain.observedTransformations.operators.size){
+   const entries=[...brain.observedTransformations.operators.values()];
+   for(let j=0;j<entries.length;j+=100){
+    this.atlas.append("baseline",{
+     source:"preexisting-original-Brain.v8",
+     historicTrainingNotReplayed:true,
+     operators:entries.slice(j,j+100).map(op=>({
+      key:op.key,kind:op.kind,from:op.from,to:op.to,
+      left:op.left,right:op.right,
+      observedSupport:op.sourceObservations,evidence:op.evidence||[]
+     }))
+    });
+   }
+  }
  }
  // Experience ONLY actual observed text; no generated answer is inserted.
  // Text edit operators and their evidence come from the EXISTING Brain.
@@ -76,6 +96,23 @@ export class NativeGoalTextMaze {
     newPairs++;
    }
   }
+  const novel=[...this.brain.observedTransformations.operators.values()]
+    .filter(op=>!old.has(op.key));
+  // Capture exact original text, including UTF-8 diacritics. The atlas is
+  // an append-only evidence log, NOT another trained model or separate brain.
+  this.atlas.append("world",{world:"text",observedEpisode:this.livedTexts+1,
+   rawText:text,utf8Bytes:Buffer.byteLength(text,"utf8"),
+   observedUnits:observed.observedUnits,
+   learnedSentences:observed.newSentences,
+   learnedOperatorCount:novel.length,
+   rejectedLongTotal:this.brain.observedTransformations.rejectedLong,
+   source:"actual original corpus (never heldout evaluation)"});
+  for(const op of novel)this.atlas.append("operator",{
+   key:op.key,kind:op.kind,from:op.from,to:op.to,
+   left:op.left,right:op.right,
+   support:op.sourceObservations,evidence:op.evidence||[],
+   originEpisode:this.livedTexts+1,
+   beforeAndAfterActuallyObserved:true});
   this.livedTexts++;
   this.livedGraphTransitions+=newPairs;
   this._topologyCache=null; // actual new observations invalidate frozen topology
