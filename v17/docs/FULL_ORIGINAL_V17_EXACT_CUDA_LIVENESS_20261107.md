@@ -60,7 +60,7 @@ An end-to-end CI run exposed an actual 30s timeout for /real-math-plan when the 
 
 The original 30s timeout is therefore avoided for requests that can be answered from committed learned evidence; it is not replaced with an unbounded wait. The user-facing UI still shows live updated exercise and text counters and unchanged original paths.
 ## Final CI acceptance — all green
-Workflow run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42338142987
+Workflow run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42338354242
 Latest completed source CI on commit 27b3923e6cf2906284508437027d4903852009f3: BOTH `exact-original-model` and `windows-original-launchers` succeeded.
 - PyTorch reference 3/3: 1000 seeded exact suffix boundaries, all 64 context depths and complete TextCard.live output/variants/trust/imagination identical.
 - Node tests 15/15: original real worker+headless browser, Python protocol progress, second/third original GPU-protocol text batches, all original frozen text evaluation metrics unchanged, inactive GPU watchdog, previous predictive math regressions.
