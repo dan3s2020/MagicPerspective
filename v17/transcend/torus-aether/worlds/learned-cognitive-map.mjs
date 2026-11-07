@@ -357,7 +357,7 @@ export class LearnedCognitiveMap {
   // Same V17 operator, same .97 and .5 thresholds: no BFS oracle or target string.
   // Only the target PREDICATE seeds the attraction field; its successful states
   // must emerge from learned transition hypotheses.
-  formSolution(initial,goal,{disc=null,maxNodes,maxDepth}={}){
+  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null}={}){
     const world=this.buildWorld(initial,goal,{maxNodes,maxDepth});
     if(world.targets.includes(0))return {found:true,path:[],world,field:{reason:'ALREADY_AT_GOAL',values:[]},
       goal:clone(goal),learnedRules:this.rules.size,novelGoal:false,
@@ -367,7 +367,7 @@ export class LearnedCognitiveMap {
     // This invokes the ACTUAL original Discoverer.shape method from
     // exercise.mjs with the discovered N-D text-world adjacency. No V19/V20
     // substitute field planner is used for this action path.
-    const field=originalDiscovererOnText(world,disc);
+    const field=originalDiscovererOnText(world,disc,{seed,temperature});
     const path=field.path||[];
     const reached=path.length?world.targets.includes(path.at(-1).to):world.targets.includes(0);
     return {found:reached,path,world,field,goal:clone(goal),
