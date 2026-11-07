@@ -207,6 +207,89 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    meanModelPredictedChars:variants.reduce((n,x)=>n+Array.from(x.predictedFirstShot).length,0)/variants.length,
    blockers:reasonCounts};
  };
+ // Independently held-out SECOND SOURCE WINDOW, never involved in
+ // choosing the question-gating hypothesis above. Same pretrained native
+ // models, no more training, no reference answers in generation.
+ const independentOffsets=[420000,960000],independentCountPerOffset=10;
+ const independent=(await Promise.all(independentOffsets.map(offset=>
+  officialRows(offset,independentCountPerOffset)))).flat();
+ assert.equal(independent.length,20);
+ const allPriorQuestions=new Set(data.map(x=>x.question));
+ assert.ok(independent.every(x=>!allPriorQuestions.has(x.question)),
+  "Independent future questions must be entirely disjoint from training AND exploratory data");
+ const independentPredictions=[];
+ for(const row of independent){
+  const attempts=[];
+  for(const [name,b] of [
+   ["originalRestrictiveLongQuestionGate",original],
+   ["originalSameWeightsGlobalLongGateReleased",gateReleased]
+  ]){
+   const m=b.constructedPaths;
+   // Full 128-step frozen prediction: GOLD is NOT passed into model.
+   const prediction=m.imagineText(row.question,{maxChars:cap,
+    beamWidth:3,fanOut:4,record:false});
+   assert.equal(prediction.referenceNotAvailable,true);
+   const longSourceAtStart=m.byScale.slice(3).map((scale,i)=>
+    m.scales[i+3].choices(m.textState(row.question,"",scale))
+      .reduce((acc,x)=>acc+x.total,0));
+   const longSourceAtPrefix=m.byScale.slice(3).map((scale,i)=>
+    m.scales[i+3].choices(m.textState(row.question,"<think> ",scale))
+      .reduce((acc,x)=>acc+x.total,0));
+   attempts.push({name,prediction:prediction.predicted,
+    longSourceAtStart,longSourceAtPrefix});
+  }
+  const expected=Array.from(row.answer);
+  const scored=attempts.map(a=>{
+   const P=Array.from(a.prediction),T=expected.slice(0,cap);
+   const positionCorrect=T.filter((c,i)=>P[i]===c).length;
+   const postTemplateCorrect=T.slice(genericPrefixChars)
+    .filter((c,i)=>P[genericPrefixChars+i]===c).length;
+   let prefix=0;while(prefix<T.length&&P[prefix]===T[prefix])prefix++;
+   return {...a,
+    positionCorrect,postTemplateCorrect,longestCorrectPrefix:prefix,
+    answerWholeExact:a.prediction===row.answer,
+    terminalShapeExactFirst128:prefix===cap,
+    predictedPreview:a.prediction.slice(0,145)};
+  });
+  independentPredictions.push({offset:row.rowIndex,
+   questionSHA256:hash(row.question),referenceSHA256:hash(row.answer),
+   questionAnchorSeenInTrain:originalKeys.has(
+    ConstructedPathLearner.qkey(row.question)),
+   referencePreviewAfterFrozenPrediction:row.answer.slice(0,90),
+   variants:scored});
+ }
+ assert.deepEqual([sourceSig(original),sourceSig(paired),sourceSig(gateReleased)],
+  copyBefore,"Independent 20 unseen answers cannot enter any native Brain memory");
+ const secondMetric=(variantIndex)=>{
+  const v=independentPredictions.map(x=>x.variants[variantIndex]);
+  const uniq=new Set(v.map(x=>x.prediction));
+  const accurate=v.reduce((n,x)=>n+x.positionCorrect,0);
+  const afterBoilerplate=v.reduce((n,x)=>n+x.postTemplateCorrect,0);
+  return {testQuestions:v.length,uniqueFirstShotOutputs:uniq.size,
+   fullAnswersCorrect:v.filter(x=>x.answerWholeExact).length,
+   all128CharactersCorrect:v.filter(x=>x.terminalShapeExactFirst128).length,
+   first128MatchedPositions:accurate,first128TotalPositions:v.length*cap,
+   first128PositionAccuracy:accurate/(v.length*cap),
+   noGenericPrefixMatched:afterBoilerplate,
+   noGenericPrefixCompared:v.length*(cap-genericPrefixChars),
+   noGenericPrefixAccuracy:afterBoilerplate/
+    (v.length*(cap-genericPrefixChars)),
+   firstWrongAfterMeanPrefix:v.reduce((n,x)=>n+x.longestCorrectPrefix,0)/v.length,
+   unseenQuestionCountWithLongScaleStartEvidence:v.filter(x=>
+    x.longSourceAtStart.some(n=>n>0)).length,
+   unseenQuestionCountWithLongScalePrefixEvidence:v.filter(x=>
+    x.longSourceAtPrefix.some(n=>n>0)).length};
+ };
+ const independentResults={
+  source:"OFFICIAL authentic OpenThoughts3, strictly new offset windows, training source unchanged",
+  offsets:independentOffsets,rowsPerOffset:independentCountPerOffset,
+  sha256:hash(JSON.stringify(independent.map(x=>[x.rowIndex,x.question,x.answer]))),
+  disjointTrainingAndExploration:true,
+  original:secondMetric(0),
+  allLongContextsUnconditionallyUngated:secondMetric(1),
+  summary:"Causal effect of removing original Question QKey barrier on real heldout characters; does NOT establish semantic state or correct full answers",
+  samples:independentPredictions
+ };
  const report={version:"V33-original-constructed-multiscale-authentic-text",
   exactSource:"Official open-thoughts/OpenThoughts3-1.2M Dataset Viewer /rows",
   sourceOffsets:offsets,rowsPerSourceWindow:rowsPer,
@@ -234,6 +317,7 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    researchOnlyUngatedLongScalesTreatAllQuestionsAsSameWorld:true,
    evenIfUngatingImprovesCharacterMetricsItIsNotEvidenceOfCausalSemanticEquivalence:true
   },
+  independentNewSourceWindow:independentResults,
   independentWorldAblation:{
    identicalRealTextObservations:true,
    extraPairedOriginalTrainingMazes:8,
@@ -257,6 +341,13 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   sourceOnlySharedTrainingPrefix:sharedTrainPrefix,
   previouslyBlockedExactQuestionAnchors:absentQuestionAnchorCount,
   researchOnlyAllLongContextsUngated:report.results.allLongContextsUngatedResearchOnly,
+  independentFutureSourceWindow:{
+   offsets:independentOffsets,
+   sha256:independentResults.sha256,
+   original:independentResults.original,
+   ungated:independentResults.allLongContextsUnconditionallyUngated,
+   answerReferenceNotSeenBeforeAnyPrediction:true
+  },
   examples:results.slice(0,4).map(x=>({
    index:x.rowIndex,question:x.questionPreview,
    reference:x.answerPreviewAfterFrozenScoring,
