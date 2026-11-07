@@ -1,0 +1,32 @@
+name: V36 native original Brain human-text scaling and direct-ranker causal ablation
+on:
+  push:
+    branches:
+      - experiment/V36-HUMAN-TEXT-SCALING-AND-ABLATIONS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authentic-source-learning-curve:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Three REAL official SQuAD training volumes with SAME frozen 600 human DEV questions and direct/native ablation
+        run: node --test v17/tests/v36-real-squad-learning-curve.test.mjs
+  unchanged-original-native-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real V35 first human heldout proof and original V31 million-state parity
+        run: |
+          node --test v17/tests/v35-real-squad-evidence-paths.test.mjs
+          node --test v17/tests/v31-scalable-original-attraction.test.mjs
+          node --test v17/tests/v31-million-original-log-attraction.test.mjs
