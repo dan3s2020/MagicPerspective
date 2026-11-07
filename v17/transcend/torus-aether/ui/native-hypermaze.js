@@ -85,6 +85,26 @@ async function poll(){
     setNum("qaLongTokens",m.qaLongFormAnswerTokens??null);
     setNum("qaLongEdges",m.qaLongFormSequentialEdges??null);
     setNum("qaLongActive",m.qaLongFormActiveChunkDigests??null);
+    const cumulative=m.crossMazeMemory||{};
+    setNum("cumEpisodes",cumulative.episodes??null);
+    setNum("cumVerified",cumulative.physicallyVerifiedEdges??null);
+    setNum("cumNodes",cumulative.memoryNodes??null);
+    setNum("cumProposed",cumulative.proposedEdges??null);
+    setNum("cumShared",cumulative.multiScaleSharedAnchors??null);
+    setNum("cumLongShared",cumulative.sharedExactChunkAnchors??null);
+    setNum("cumMotifEdges",cumulative.multiScaleObservedSourceEdges??null);
+    setNum("cumWalls",cumulative.rejectedActions??null);
+    const atlas=m.atlasTotals||{};
+    setNum("atlasAttempts",atlas.attemptsTotal??null);
+    setNum("atlasFound",atlas.successesTotal??null);
+    setNum("atlasFailed",atlas.failuresTotal??null);
+    setNum("atlasPhysical",atlas.physicallyTraversableNow??null);
+    setNum("atlasGuesses",atlas.proposedEdges??null);
+    setNum("atlasAnchors",atlas.sharedPhraseAnchors??null);
+    document.documentElement.dataset.cumulativeCrossWorldEpisodes=
+      String(cumulative.episodes??0);
+    document.documentElement.dataset.cumulativeSharedAnchors=
+      String(cumulative.multiScaleSharedAnchors??0);
     $("qaExact").textContent=qaPercent(m.qaFrozenWholeRawExact,m.qaFrozenHeldoutQuestions);
     $("qaCanonical").textContent=qaPercent(m.qaFrozenWholeCanonicalExact,m.qaFrozenHeldoutQuestions);
     $("qaCoverage").textContent=qaPercent(m.qaFrozenGoalsFound,m.qaFrozenHeldoutQuestions);
@@ -253,6 +273,332 @@ $("qaPlan").addEventListener("click",async()=>{
   $("qaPrediction").textContent="EROARE: "+error.message;say(error.message,true);
  }finally{state.busy=false;$("qaPlan").disabled=false;}
 });
+// V30 original single-Brain CUMULATIVE world graph from ALL previous
+// observations, never a new demo. GOLD path is frozen BEFORE any physical
+// action. Inferred edges are not represented as physically verified.
+$("cumPlan").addEventListener("click",async()=>{
+ if(state.busy)return;
+ const mode=$("cumMode").value,start=$("cumStart").value.trim(),
+  depth=$("cumDepth").value,budget=$("cumBudget").value;
+ const required=$("cumRequired").value.split(",").map(x=>x.trim()).filter(Boolean);
+ const numericInputs=$("cumNumericInputs").value.trim();
+ if(!start||start.length>4000){
+  $("cumEvidence").textContent="Starea inițială trebuie să aibă între 1 și 4.000 caractere.";
+  return;
+ }
+ if(mode==="numeric"&&!numericInputs){
+  $("cumEvidence").textContent="Specifică NUMAI coordonatele de intrare: 0:8,2:7. Nu oferi rezultatul dependent.";
+  return;
+ }
+ if(mode!=="numeric"&&mode!=="question"&&(!required.length||required.length>16)){
+  $("cumEvidence").textContent="Pentru text, oferă 1–16 tokeni ai obiectivului; nu răspunsul complet.";
+  return;
+ }
+ state.busy=true;$("cumPlan").disabled=true;
+ $("cumEvidence").textContent="Construiesc topologia din toate experiențele memorate de originalul Brain...";
+ try{
+  const qs=mode==="question"?
+   new URLSearchParams({question:start,depth,budget,topology:"1"}):
+   mode==="numeric"?
+   new URLSearchParams({start,inputs:numericInputs,depth,budget,topology:"1"}):
+   new URLSearchParams({start,required:required.join(","),depth,budget,
+    inferred:mode==="inferred"?"1":"0",topology:"1"});
+  const url=(mode==="question"?"/native-cumulative-question?":
+   mode==="numeric"?"/native-cumulative-numeric?":"/native-cumulative?")+qs;
+  const result=await getJson(url,{method:"POST"});
+  if(result.originalPlanner!=="Discoverer.shapeGraph"||
+   result.referenceAnswerProvided!==false||
+   result.plannedBeforeFirstAction!==true)
+   throw Error("Originalul Discoverer nu a confirmat planificarea globală fără răspuns");
+  if(!result.found){
+   $("cumEvidence").textContent="NICIO CALE CERTIFICATĂ: "+
+    String(result.reason)+"\n\nMEMORIE REALĂ:\n"+
+    JSON.stringify(result.memory||result.graph||{},null,2)+
+    "\n\nLipsa dovezilor NU înseamnă că legătura nu există; organismul nu a învățat-o încă.";
+   say("Labirintul cumulativ nu conține încă o cale către această țintă.",true);
+   return;
+  }
+  state.plan={...result,kind:"native-accumulated-real-topology",
+   body:{frames:[],replans:0}};
+  state.topology=result.topology||null;
+  state.frame=0;state.playing=false;state.dataVersion++;
+  state.idByText=new Map((state.topology?.nodes||[]).map(n=>[n.text,n.id]));
+  setNum("nodes",state.topology?.nodes?.length??null);
+  setNum("edges",state.topology?.edges?.length??null);
+  setNum("steps",result.steps);
+  $("goal").textContent=mode==="question"&&result.goalLearnedFromQuestion?
+   "Țintă descoperită din întrebare":"Formă găsită";
+  $("frame").max="0";$("frame").value="0";
+  $("truth").textContent="Forma a fost prezisă, execuția fizică încă NU a fost efectuată. Verificarea externă rămâne necesară.";
+  $("predicted").textContent="FORMA ORIGINALĂ ÎNAINTE DE PRIMA ACȚIUNE\n"+
+   (result.initialShape||[]).map((x,i)=>i+" → "+x).join("\n\n");
+  $("actual").textContent="Corpul NU s-a mișcat încă.\n"+
+   "Graf vizualizat: stări/muchii observate, respectiv ipoteze etichetate.\n"+
+   "Acest rezultat este PREZICȚIE, nu execuție simulată.";
+  const items=result.actions||[];
+  $("cumEvidence").textContent=
+   "TRASEU COMPLET: "+result.steps+" transformări; "+
+   (result.pathContainsInferredEdges?"CONȚINE IPOTEZE NEVERIFICATE":"FIZIC VERIFICAT ÎN EXPERIENȚE")+
+   "\n\n"+items.map((x,i)=>String(i+1)+". "+
+    (x.before??x.from)+"\n   prin "+String(x.action??x.actionId??x.kind)+
+    " → "+String(x.after??x.to)+
+    "\n   dovadă: "+String(x.edgeStatus??x.status??"learned-inferred")+
+    " · suport "+String(x.observedSupport??x.observedTrainingPairs??"n/a")).join("\n\n")+
+   "\n\nMEMORIE / AXE / LIMITE:\n"+
+   JSON.stringify(result.memory||result.graph||{},null,2)+
+   (mode==="question"?"\n\nȚINTĂ ÎNVĂȚATĂ DIN ÎNTREBARE: "+
+    String(result.goalLearnedFromQuestion===true)+
+    " · exemple Q/A observate: "+String(result.sourceWitnessedQuestionAnswerExamples)+
+    " · fără numărul-răspuns în obiectiv":"")+
+   "\n\nRĂSPUNS COMPLET INFERAT:\n"+String(result.predicted)+
+   "\n\nAcuratețe semantică generală: NEDEMONSTRATĂ.";
+  refreshFrame();draw();
+  say("Am compus o cale din mai multe lumi; " +
+   (result.pathContainsInferredEdges?
+    "conține tranziții ce trebuie confirmate în lumea reală.":
+    "muchiile din traseu au dovezi fizice independente."));
+ }catch(error){
+  $("cumEvidence").textContent="EROARE REALĂ: "+error.message;
+  say(error.message,true);
+ }finally{state.busy=false;$("cumPlan").disabled=false;}
+});
+// V30 FULL REAL-OBSERVATION ATLAS. These pages are served directly from
+// original Brain.v8 evidence; never synthesize a node, solve a path, or
+// pretend adjacent text windows are causally verified world movements.
+const atlasUI={view:"attempts",filter:"all",search:"",offset:0,
+ last:null,busy:false,selectedId:null};
+async function atlasPage(params={}){
+ const query=new URLSearchParams({
+  view:params.view??atlasUI.view,
+  filter:params.filter??atlasUI.filter,
+  search:params.search??atlasUI.search,
+  offset:String(params.offset??atlasUI.offset),
+  limit:String(params.limit??50)
+ });
+ if(params.attemptId!==undefined&&params.attemptId!==null)
+  query.set("attemptId",String(params.attemptId));
+ const data=await getJson("/native-atlas?"+query);
+ if(data.ok!==true||data.sameNativeBrain!==true||
+    data.originalPlanner!=="Discoverer.shapeGraph")
+  throw Error("Atlas must come from ONE original Brain and its real historical evidence");
+ return data;
+}
+function atlasSummary(data){
+ const m=data.memory||{},c=data.comparison||{};
+ setNum("atlasAttempts",m.attemptsTotal??null);
+ setNum("atlasFound",m.successesTotal??null);
+ setNum("atlasFailed",m.failuresTotal??null);
+ setNum("atlasPhysical",m.physicallyTraversableNow??null);
+ setNum("atlasGuesses",m.proposedEdges??null);
+ setNum("atlasAnchors",m.sharedPhraseAnchors??null);
+ $("atlasComparison").textContent=
+  "Din toate încercările păstrate: găsite "+nfmt(c.foundRetained)+
+  ", negăsite "+nfmt(c.failedRetained)+
+  "\nTrasee compuse doar din acțiuni fizic confirmate: "+
+  nfmt(c.fullyPhysicalRoutes)+
+  "\nTrasee care conțin transformări propuse: "+
+  nfmt(c.withInferredEdges)+
+  "\nTotal istoric (inclusiv ieșite din jurnal): "+
+  nfmt(m.attemptsTotal)+
+  "\nÎncercări ieșite din memoria limitată: "+nfmt(m.attemptsEvicted)+
+  "\n\nNu declarăm că sunt cunoscute toate căile posibile.";
+ $("atlasMissing").textContent=
+  (c.reasons||[]).slice(0,22).map(x=>String(x.count)+" × "+x.code+
+   " ["+x.kind+"]\n  "+x.explanation+
+   "\n  exemple încercări #"+(x.exampleAttemptIds||[]).join(",")).join("\n\n")||
+  "Nu există încă încercări cu motive diagnosticate. Lipsa dovezilor nu este un perete fizic demonstrat.";
+ const gates=data.designGates||{};
+ $("atlasMissing").textContent+="\n\nRESTRICȚII REALE PRIN DESIGN:\n"+
+  Object.entries(gates).map(([key,value])=>key+": "+
+   (typeof value==="object"?JSON.stringify(value):String(value))).join("\n")+
+  "\n\nFiecare restricție explică o posibilă conexiune imposibil de observat/propune în configurația actuală; nu certifică existența ei.";
+}
+function atlasPrintEntry(entry){
+ if(Object.hasOwn(entry,"outcome"))
+  return "#"+entry.id+" "+(entry.outcome==="answer-correct"?"RĂSPUNS ÎNTREG CORECT":
+    entry.outcome==="answer-incorrect"?"TRASEU, DAR RĂSPUNS GREȘIT":
+    entry.outcome==="path-missing"?"NU A GĂSIT CALEA":"TRASEU GĂSIT")+
+   " · "+entry.kind+" · "+entry.actions+" acțiuni"+
+   (entry.inferred?" · CONȚINE IPOTEZE":"")+
+   "\n"+entry.start+"  →  "+JSON.stringify(entry.goalTerms)+
+   "\n"+(entry.reason||"dovezi existente în memoria originală");
+ if(Object.hasOwn(entry,"status"))
+  return String(entry.status)+" · "+String(entry.from??entry.key??entry.id??"")+
+   " → "+String(entry.to??"")+
+   " · "+String(entry.action??entry.role??"")+
+   (entry.observedSupport?" · suport "+entry.observedSupport:"");
+ if(Object.hasOwn(entry,"code"))
+  return entry.code+" · "+entry.kind+" · încercarea #"+
+    String(entry.attemptId)+"\n"+entry.explanation;
+ return JSON.stringify(entry);
+}
+function atlasDrawHistoricTrace(selected){
+ // Only the stored historical path edges, not a fictional full maze!
+ // No 5D coordinates are invented for a historical trace.
+ const trace=selected?.trace||[];
+ if(!selected?.found||!trace.length)return;
+ const nodes=[],edges=[],byText=new Map(),route=[];
+ const ensure=(text)=>{
+  if(byText.has(text))return byText.get(text);
+  const id=nodes.length;byText.set(text,id);
+  nodes.push({id,text,depth:id,goal:false,kind:0,
+   observed:false,position5D:null,potential:null});
+  return id;
+ };
+ for(let i=0;i<trace.length;i++){
+  const t=trace[i],from=ensure(t.from),to=ensure(t.to);
+  if(!i)route.push(from);
+  edges.push({from,to,action:t.action,status:t.status,
+   observedSupport:t.observedSupport||0,
+   evidenceEpisode:t.episode});
+  nodes[to].potential=t.value;route.push(to);
+ }
+ nodes[route[0]].kind=3;nodes[route.at(-1)].kind=2;
+ nodes[route.at(-1)].goal=true;
+ state.topology={complete:false,sourceId:route[0],
+  originalNativeV17Graph:true,nodes,edges,initialShapeIds:route,
+  source:"HISTORICAL STORED TRACE ONLY — NOT all explored states",
+  historicalTraceOnly:true,coordinatesAreOriginalLearned5DTorus:false};
+ state.plan={kind:"atlas-original-historical-path",found:true,
+  predicted:trace.at(-1)?.to,body:{frames:[],replans:0}};
+ state.frame=0;state.playing=false;state.dataVersion++;
+ state.idByText=new Map(nodes.map(n=>[n.text,n.id]));
+ setNum("nodes",nodes.length);setNum("edges",edges.length);
+ setNum("steps",trace.length);$("goal").textContent="Traseu istoric";
+ $("truth").textContent="Numai muchiile traseului istoric reținut; poziții 5D indisponibile. Restul grafului este disponibil separat prin paginare.";
+ draw();
+}
+function atlasShowAttempt(attempt){
+ if(!attempt)return;
+ atlasUI.selectedId=attempt.id;
+ $("atlasSelected").textContent=
+  "ÎNCERCARE ORIGINALĂ #"+attempt.id+" · "+attempt.outcome+
+  "\nSTART:\n"+attempt.start+
+  "\nOBIECTIV / INPUTURI: "+JSON.stringify(attempt.goalTerms)+
+  "\nRAȚIUNE: "+(attempt.reason||"traseu găsit")+
+  "\n\nFIECARE TRANSFORMARE (max. 128 păstrate per încercare):\n"+
+  (attempt.trace||[]).map(a=>
+   (a.order+1)+". "+a.from+"\n    "+a.action+" → "+a.to+
+   "\n    "+a.status+" · observație #"+(a.episode||"fără episod")+
+   " · suport "+String(a.observedSupport??"necunoscut")+
+   " · câmp "+String(a.value??"necunoscut")).join("\n\n")+
+  "\n\nDE CE A FUNCȚIONAT SAU NU:\n"+
+  (attempt.diagnostics||[]).map(d=>d.code+
+   " ["+d.kind+"] "+d.explanation).join("\n")+
+  "\n\nNoduri explorate: "+String(attempt.graph?.reachableStates)+
+  ", trunchiat la limită: "+String(attempt.graph?.expansionTruncated)+
+  ". Traseul păstrat nu este o execuție semantică independent verificată.";
+ if(attempt.found)atlasDrawHistoricTrace(attempt);
+ else{state.topology=null;state.plan=null;state.dataVersion++;draw();}
+}
+function renderAtlasRows(data){
+ atlasSummary(data);
+ $("atlasPage").textContent=(data.total?
+   (data.offset+1)+"–"+Math.min(data.offset+data.rows.length,data.total):
+   "0")+" / "+data.total+" · "+data.view+
+   " · paginat (max. 200 rezultate/pagină)";
+ $("atlasPrev").disabled=data.offset<=0;
+ $("atlasNext").disabled=data.nextOffset===null;
+ const root=$("atlasRows");root.replaceChildren();
+ if(!data.rows.length){root.textContent="Nicio înregistrare păstrată pentru acest filtru.";return;}
+ for(const entry of data.rows){
+  const item=document.createElement("button");
+  item.type="button";item.style.display="block";item.style.width="100%";
+  item.style.textAlign="left";item.style.whiteSpace="pre-wrap";
+  item.style.padding="9px";item.style.margin="2px 0";
+  item.className="atlas-row";
+  item.textContent=atlasPrintEntry(entry);
+  if(entry.outcome==="answer-incorrect"||entry.found===false||
+    String(entry.status).includes("block"))
+   item.style.borderLeft="3px solid #f0809a";
+  if((entry.found===true&&entry.outcome!=="answer-incorrect")||
+    entry.status==="physically-verified")
+   item.style.borderLeft="3px solid #67deab";
+  if(entry.status==="inferred-unverified"||entry.status==="hypothesis")
+   item.style.borderLeft="3px dashed #f0c87a";
+  item.addEventListener("click",async()=>{
+   const id=entry.id??entry.attemptId;
+   if(!id||!["attempts","diagnostics"].includes(data.view)){
+    $("atlasSelected").textContent=JSON.stringify(entry,null,2)+
+     "\n\nAceasta este o dovadă de memorie, nu o cale semantică demonstrată.";
+    return;
+   }
+   try{
+    const selected=await atlasPage({view:"attempts",filter:"all",
+     search:"",offset:0,limit:1,attemptId:id});
+    atlasShowAttempt(selected.selectedAttempt);
+   }catch(err){$("atlasSelected").textContent="Eroare citire din Brain: "+err.message;}
+  });
+  root.appendChild(item);
+ }
+}
+async function loadRealAtlas(offset=0){
+ if(atlasUI.busy)return;
+ atlasUI.busy=true;$("atlasLoad").disabled=true;
+ try{
+  atlasUI.view=$("atlasView").value;
+  atlasUI.filter=$("atlasFilter").value;
+  atlasUI.search=$("atlasSearch").value.trim();
+  const data=await atlasPage({offset});
+  atlasUI.offset=data.offset;atlasUI.last=data;
+  renderAtlasRows(data);
+  say("Atlas nativ: "+data.total+" dovezi reale păstrate în categoria selectată.");
+ }catch(error){
+  $("atlasRows").textContent="ATLAS indisponibil: "+error.message;
+  say("Nu am reușit să citesc atlasul real din Brain.",true);
+ }finally{atlasUI.busy=false;$("atlasLoad").disabled=false;}
+}
+$("atlasLoad").addEventListener("click",()=>loadRealAtlas(0));
+$("atlasPrev").addEventListener("click",()=>loadRealAtlas(Math.max(0,atlasUI.offset-50)));
+$("atlasNext").addEventListener("click",()=>{
+ if(atlasUI.last?.nextOffset!==null&&atlasUI.last?.nextOffset!==undefined)
+  loadRealAtlas(atlasUI.last.nextOffset);
+});
+for(const id of ["atlasView","atlasFilter"])
+ $(id).addEventListener("change",()=>loadRealAtlas(0));
+$("atlasSearch").addEventListener("keydown",e=>{
+ if(e.key==="Enter")loadRealAtlas(0);
+});
+// Export ALL retained records in every view: the browser follows every
+// page until nextOffset=null. Do not silently cut off old paths, or invent
+// absent evidence. The checkpoint explicitly reports its eviction totals.
+$("atlasExport").addEventListener("click",async()=>{
+ if(atlasUI.busy)return;
+ atlasUI.busy=true;const btn=$("atlasExport");btn.disabled=true;
+ try{
+  const evidence={origin:"ORIGINAL MagicPerspective V17 Brain",views:{},
+   scope:"bounded retained evidence only, not all logically possible routes"};
+  for(const view of ["attempts","diagnostics","nodes","edges","motifs","motifEdges"]){
+   const all=[];let offset=0,first=true;
+   for(;;){
+    const data=await atlasPage({view,filter:"all",search:"",
+     offset,limit:200});
+    if(first){evidence.memory=data.memory;
+     evidence.provenance=data.provenance;
+     evidence.comparison=data.comparison;
+     evidence.designGates=data.designGates;first=false;}
+    all.push(...data.rows);
+    $("atlasPage").textContent="Export real: "+view+" "+
+     all.length+" / "+data.total+" dovezi...";
+    if(data.nextOffset===null)break;
+    if(data.nextOffset<=offset)throw Error("Invalid pagination cursor in Brain atlas");
+    offset=data.nextOffset;
+   }
+   evidence.views[view]=all;
+  }
+  const json=JSON.stringify(evidence,null,2);
+  const url=URL.createObjectURL(new Blob([json],{type:"application/json"}));
+  const link=document.createElement("a");link.href=url;
+  link.download="MagicPerspective_V30_Original_Brain_Retained_Atlas.json";
+  document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),12000);
+  $("atlasPage").textContent="Atlas reținut exportat. Număr de înregistrări: "+
+   Object.values(evidence.views).reduce((n,x)=>n+x.length,0)+
+   ". Consultați eviction totals pentru dovezi mai vechi pierdute.";
+ }catch(error){$("atlasPage").textContent="Export oprit: "+error.message;
+  say("Exportul atlasului a eșuat; nu a fost substituit cu date fictive.",true);
+ }finally{atlasUI.busy=false;btn.disabled=false;}
+});
 $("frame").addEventListener("input",e=>{
  state.frame=Number(e.target.value);state.playing=false;
  $("play").textContent="▶ Redă animația";refreshFrame();draw();
@@ -336,15 +682,23 @@ function draw(){
  $("viewInfo").textContent=nodes.length+" stări reale · "+
   topology.edges.length+" muchii · "+genuine+" poziții 5D învățate/inferate · "+
   (nodes.length-genuine)+" poziții 2D derivate topologic · rotiți cu mouse-ul";
- ctx.lineWidth=.65;
- ctx.strokeStyle="rgba(75,122,153,.13)";
- ctx.beginPath();
- for(const e of topology.edges){
-  const a=points[e.from],b=points[e.to];
-  if(!a||!b)continue;
-  ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+ // Verified edges are solid. Hypotheses are dashed and reddish; they are
+ // NOT real walls/corridors until independent action feedback confirms them.
+ for(const inferred of [false,true]){
+  ctx.lineWidth=inferred?.9:.75;
+  ctx.strokeStyle=inferred?"rgba(240,128,154,.30)":"rgba(102,204,231,.20)";
+  ctx.setLineDash(inferred?[3,4]:[]);
+  ctx.beginPath();
+  for(const e of topology.edges){
+   const status=String(e.status||"physically-verified");
+   const guess=status.includes("inferred")||status.includes("hypothesis");
+   if(guess!==inferred)continue;
+   const a=points[e.from],b=points[e.to];
+   if(!a||!b)continue;
+   ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+  }
+  ctx.stroke();ctx.setLineDash([]);
  }
- ctx.stroke();
  for(const n of nodes){
   const p=points[n.id];if(!p)continue;
   const potential=Number.isFinite(n.potential)?n.potential:0;

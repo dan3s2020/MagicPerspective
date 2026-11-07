@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "branch": "experiment/V30-UNIFIED-LEARNED-HYPERMAZE-TOPOLOGY-20261107",
+  "base_branch": "experiment/V29-REAL-OPENTHOUGHTS-QA-GOAL-CLOSED-LOOP-20261107",
+  "base_sha": "f8edeabdcc7183b9a3e587ecceee1b1126a22a5d",
+  "user_verbatim": "PROBLEMA CU LIMBAJUL ESTE CA NU POATE REZOLVA UN MAZE CARE ESTE SEGMENTAT,PENTRU CA NU EXISTA TOT LIMBAJUL IN EXERCITIU,DECI TREBUIE SA POATA RETINE TRANSFORMARI SI DIN ALTE MAZEURI ,IAR DUPA ITERATII SI EXEMPLE PE CARE LE VEDE IAR,SA DESCOPERE CAILE/TRANSFORMARILE/ETC",
+  "acceptance": [
+    "Use actual original V17 Brain and Discoverer.shapeGraph; no 4D demo replacement, no A* substitute for new routes",
+    "Persist physical action transitions across independent worlds in same native V8 checkpoint; reuse across new task goals",
+    "Verified edges vs inferred observed text actions vs source-only lexical overlap are three DIFFERENT types",
+    "Learn contextual axes only from independently witnessed bridge evidence; discover numeric state-dependent and noncommuting effects",
+    "Reject ambiguous hidden-history effects and missing physical walls rather than hallucinate walkable routes",
+    "Retain multiscale 5/12-token motif evidence across separately long Q/A episodes where full 96-token chunks never repeat",
+    "Derive a task goal from previously witnessed Q/A examples, WITHOUT injecting hidden answer or output number",
+    "Show exact original field/paths and all relevant evidence live in existing UI; preserve original controls",
+    "Do not merge or give release/training-complete command before real full OpenThoughts QA >=70% and hardware acceptance"
+  ],
+  "scientific_limits": [
+    "All 28/28 known numeric question-format successes are bounded grammar outcomes, not general open-ended language understanding",
+    "Real OpenThoughts3 20 train/4 heldout baseline remains 0/4 full semantic answers",
+    "Shared lexical 5/12-token motifs are structural potential connections, NOT certified semantic action edges",
+    "Default native cumulative memory is bounded and cannot contain all language states in an infinite space",
+    "No validation yet of full native CUDA training on user's 4GB RTX3050Ti or 594MB private local file"
+  ]
+}

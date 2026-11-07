@@ -95,6 +95,12 @@ function info(){
   qaLongFormEvictedSequences:brain?.qaRoleEvidence?.longForm?.evictedSequences??0,
   qaLongFormUnretained:brain?.qaRoleEvidence?.longForm?.tooLongToRetainChunks??0,
   qaSemanticCaveat:"Full answers are scored WITHOUT passing heldout answer or target tokens to the original shape planner.",
+  // One persistent original Brain graph across training rows and episodes.
+  // Distinguish witnessed real operators/observed sequence from validated
+  // physical paths; a text-adjacent segment is NOT a semantic wall crossing.
+  crossMazeMemory:engine?.cumulativeWorldStatus?.()||null,
+  atlasTotals:engine?.cumulativeAtlas?.({view:"attempts",limit:1})?.memory||null,
+  crossMazeTopologicalCompleteness:"bounded by retained observations; cannot assume unknown language connections exist",
   saturated:o?.droppedOperators>0,
   boundedMemoryWarning:"Observed text-window states are bounded; evicted states are not permanently retained as individual observations. All source bytes are streamed, not all bytes become unique persistent nodes."
  };
@@ -258,6 +264,14 @@ function heldoutProbe(segments,qaPairs=[]){
     renderObservation(tokenizeObservation(actual));
   counters.qaFrozenWholeRawExact+=Number(exact);
   counters.qaFrozenWholeCanonicalExact+=Number(canonical);
+  // Publish every real heldout question and real failed answer in the SAME
+  // original persistent atlas. The correct answer string is NOT passed to
+  // this call or stored in the native Brain checkpoint.
+  const audited=engine.auditFrozenQA({
+   question:pair.question,plan,exact,canonical,source:"authentic-jsonl-heldout"
+  });
+  if(!audited.withheldAnswerNeverStored)
+   throw Error("Frozen QA atlas attempted to retain reference answer");
   counters.qaLastPrediction={
    questionPreview:pair.question.slice(0,140),
    modelPrediction:proposed?.slice(0,400)??null,
@@ -391,6 +405,73 @@ parentPort.on("message",m=>{
    return send("rpc",{id,result:{...plan,body,originalBrain:true,
     realTrainingCorpus:files.map(x=>x.path),
     withheldAnswerSupplied:false,generalNaturalLanguageAccuracyProven:false}});
+  }
+  if(m.cmd==="atlas"){
+   // The atlas is the SAME saved native Brain. It is a read-only factual
+   // inspector, paginated so tens of thousands of nodes/edges do not
+   // overwhelm the original UI or a 4GB VRAM Windows laptop.
+   const evidence=engine.cumulativeAtlas({
+    view:String(m.view||"attempts"),
+    offset:Number(m.offset||0),limit:Number(m.limit||50),
+    filter:String(m.filter||"all"),
+    search:String(m.search||""),
+    attemptId:m.attemptId??null
+   });
+   return send("rpc",{id,result:{
+    ...evidence,sameNativeBrain:true,
+    originalPlanner:"Discoverer.shapeGraph",
+    allUnknownWorldsMapped:false,
+    historicalSamplesBounded:true
+   }});
+  }
+  if(m.cmd==="cumulative"){
+   const start=String(m.start||"");
+   if(!start.trim()||start.length>4000||!Array.isArray(m.required)||
+    m.required.length<1||m.required.length>16)
+    throw Error("Cross-maze planning needs observed source and explicit 1..16 goal tokens; no hidden answer");
+   const plan=engine.planCumulativeWorld({
+    start,required:m.required,allowInferred:!!m.allowInferred,
+    maxExpansionDepth:Number(m.maxExpansionDepth||12),
+    maxGraphNodes:Number(m.maxGraphNodes||2200),
+    includeTopology:!!m.topology
+   });
+   publish(); // refresh live atlas totals after original V17 path/refusal
+   return send("rpc",{id,result:{...plan,originalBrain:true,
+    trainedRealOperators:brain.observedTransformations.operators.size,
+    noProvidedReferenceAnswer:true,
+    fullGeneralLanguageCompetenceProven:false}});
+  }
+  if(m.cmd==="cumulativeQuestion"){
+   const question=String(m.question||"");
+   if(!question.trim()||question.length>4000)
+    throw Error("Native question-only cumulative navigation needs a 1..4000 character question; never send the answer");
+   const prediction=engine.planCumulativeQuestion({
+    question,maxGraphNodes:Number(m.maxGraphNodes||2200),
+    maxExpansionDepth:Number(m.maxExpansionDepth||18),
+    includeTopology:!!m.topology
+   });
+   publish(); // include question-only attempt in same live atlas
+   return send("rpc",{id,result:{...prediction,
+    originalBrain:true,goalFromPreviousQuestionExamples:true,
+    fullGoldAnswerNotPassed:true,
+    independentPhysicalAcceptanceStillRequired:true,
+    unrestrictedSemanticAnswerAccuracyProven:false}});
+  }
+  if(m.cmd==="cumulativeNumeric"){
+   const start=String(m.start||"");
+   if(!start.trim()||start.length>4000||!Array.isArray(m.numericGoals)||
+      m.numericGoals.length<1||m.numericGoals.length>12)
+    throw Error("Numeric cumulative goal needs current text and input indices ONLY");
+   const plan=engine.planCumulativeNumericWorld({
+    start,numericGoals:m.numericGoals,
+    maxExpansionDepth:Number(m.maxExpansionDepth||18),
+    maxGraphNodes:Number(m.maxGraphNodes||2200),
+    includeTopology:!!m.topology
+   });
+   publish(); // include inferred numeric attempt in same atlas
+   return send("rpc",{id,result:{...plan,
+    originalBrain:true,noProvidedDependentAnswer:true,
+    everyPredictedNumericalStepMustBePhysicallyVerified:true}});
   }
   if(m.cmd==="plan"){
    const start=String(m.start||""),required=m.required;

@@ -120,11 +120,27 @@ export async function launch(options={}){
      "text/javascript; charset=utf-8":"text/html; charset=utf-8",
      "cache-control":"no-store"});res.end(data);return;
    }
-   if(req.method==="GET"&&url.pathname==="/api/status")
-    return response(res,200,{ready:started,error:workerError,status:latest,
+   if(req.method==="GET"&&url.pathname==="/api/status"){
+    // Completion is idle: query the SAME native Brain for its authoritative
+    // current counters. A worker can publish a new path/atlas snapshot just
+    // after the HTTP server cached the previous one. Never show "0 attempts"
+    // when the persisted atlas already recorded four. While the corpus is
+    // actively training, keep the existing non-blocking streaming snapshot.
+    let status=latest;
+    if(latest?.completed&&!workerError&&!closed){
+     try{
+      status=await rpc("status",{},6000);
+      latest=status;
+     }catch(error){
+      // Expose the last actual worker snapshot, not an invented response.
+      if(!status)return response(res,503,{error:"Native worker status unavailable: "+error.message});
+     }
+    }
+    return response(res,200,{ready:started,error:workerError,status,
      originalModel:"NativeGoalTextMaze + original Discoverer.shapeGraph",
      trainingSource:files.map(x=>({path:x.path,bytes:x.size})),
      noLegacyBytePredictor:true,usesGPU:false});
+   }
    if(req.method==="GET"&&url.pathname==="/graphs")
     return response(res,200,{graphs:[{
      w:0,arm:"verified-native-hypermaze",status:workerError?"error":latest?.phase||"starting",
@@ -144,6 +160,85 @@ export async function launch(options={}){
     if(!(action in commands))return response(res,400,{error:"Unsupported native action "+action});
     const result=await rpc(commands[action]);
     return response(res,200,{ok:true,action,status:result});
+   }
+   // Same actual original Brain worker and same native UI, not a second
+   // model, simulated demo endpoint or fabricated path.
+   if(req.method==="GET"&&url.pathname==="/native-atlas"){
+    // Read-only, paginated evidence directly from ONE original Brain
+    // checkpoint, not a decorative canvas nor a synthetic maze.
+    const view=url.searchParams.get("view")||"attempts",
+     filter=url.searchParams.get("filter")||"all",
+     search=(url.searchParams.get("search")||"").slice(0,180),
+     offset=Number(url.searchParams.get("offset")||0),
+     limit=Number(url.searchParams.get("limit")||50),
+     attemptId=url.searchParams.get("attemptId");
+    if(!["attempts","nodes","edges","motifs","motifEdges","diagnostics"].includes(view)||
+     !["all","failed","found","verified","proposed","blocked","ambiguous"].includes(filter)||
+     !Number.isSafeInteger(offset)||offset<0||
+     !Number.isSafeInteger(limit)||limit<1||limit>200||
+     (attemptId!==null&&(!Number.isSafeInteger(Number(attemptId))||
+       Number(attemptId)<1)))
+     return response(res,400,{error:"Invalid atlas view/filter, attemptId or pagination. Each page has 1..200 rows."});
+    const evidence=await rpc("atlas",{
+     view,filter,search,offset,limit,attemptId
+    },30000);
+    return response(res,200,evidence);
+   }
+   if(req.method==="POST"&&url.pathname==="/native-cumulative"){
+    const start=url.searchParams.get("start")||"";
+    const required=(url.searchParams.get("required")||"")
+     .split(",").map(x=>x.trim()).filter(Boolean);
+    if(!start.trim()||start.length>4000||
+     !required.length||required.length>16)
+     return response(res,400,{error:"Need 1..16 visible task tokens and a real start; do not pass reference answer"});
+    const depth=Number(url.searchParams.get("depth")||12),
+     budget=Number(url.searchParams.get("budget")||2200);
+    if(!Number.isSafeInteger(depth)||depth<1||depth>32||
+     !Number.isSafeInteger(budget)||budget<10||budget>8000)
+     return response(res,400,{error:"Expansion budget must be 10..8000 nodes and depth 1..32"});
+    const data=await rpc("cumulative",{
+     start,required,allowInferred:url.searchParams.get("inferred")==="1",
+     maxExpansionDepth:depth,maxGraphNodes:budget,
+     topology:url.searchParams.get("topology")==="1"
+    },120000);
+    return response(res,200,data);
+   }
+   if(req.method==="POST"&&url.pathname==="/native-cumulative-question"){
+    const question=url.searchParams.get("question")||"";
+    if(!question.trim()||question.length>4000)
+     return response(res,400,{error:"Real question is required; do not send its answer or target output"});
+    const depth=Number(url.searchParams.get("depth")||18),
+     budget=Number(url.searchParams.get("budget")||2200);
+    if(!Number.isSafeInteger(depth)||depth<1||depth>32||
+      !Number.isSafeInteger(budget)||budget<10||budget>8000)
+     return response(res,400,{error:"Native question-only graph budget is 10..8000 nodes, depth 1..32"});
+    const data=await rpc("cumulativeQuestion",{
+     question,maxExpansionDepth:depth,maxGraphNodes:budget,
+     topology:url.searchParams.get("topology")==="1"
+    },120000);
+    return response(res,200,data);
+   }
+   if(req.method==="POST"&&url.pathname==="/native-cumulative-numeric"){
+    const start=url.searchParams.get("start")||"";
+    const raw=(url.searchParams.get("inputs")||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(!start.trim()||start.length>4000||
+      raw.length<1||raw.length>12||
+      raw.some(x=>!/^\d+:\d+$/.test(x)))
+     return response(res,400,{error:"Numeric task inputs format index:value,index:value; no output answer"});
+    const numericGoals=raw.map(x=>{
+     const [index,value]=x.split(":").map(Number);
+     return {index,value};
+    });
+    const depth=Number(url.searchParams.get("depth")||18),
+     budget=Number(url.searchParams.get("budget")||2200);
+    if(!Number.isSafeInteger(depth)||depth<1||depth>32||
+     !Number.isSafeInteger(budget)||budget<10||budget>8000)
+     return response(res,400,{error:"Numeric expansion budget 10..8000 nodes and depth 1..32"});
+    const data=await rpc("cumulativeNumeric",{
+     start,numericGoals,maxExpansionDepth:depth,
+     maxGraphNodes:budget,topology:url.searchParams.get("topology")==="1"
+    },120000);
+    return response(res,200,data);
    }
    if(req.method==="POST"&&url.pathname==="/native-qa"){
     const question=url.searchParams.get("question")||"";

@@ -26,12 +26,30 @@ const dataset="open-thoughts/OpenThoughts3-1.2M";
 async function realRows(offset,length){
  const params=new URLSearchParams({dataset,config:"default",split:"train",
   offset:String(offset),length:String(length)});
- const response=await fetch(api+"?"+params,{
-  headers:{"accept":"application/json","user-agent":"MagicPerspective-V29-evidence-audit"},
-  signal:AbortSignal.timeout(50000)
- });
- if(!response.ok)throw Error("Authentic OpenThoughts3 API returned HTTP "+
-  response.status+" for offset "+offset+" (NO SYNTHETIC FALLBACK)");
+ // The official dataset viewer sporadically returns 502/503. Retry the
+ // SAME exact offset and query, never change rows, invent data or silently
+ // substitute a synthetic fixture. Terminal failure stays a real CI error.
+ let response=null;
+ for(let attempt=0;attempt<5;attempt++){
+  try{
+   response=await fetch(api+"?"+params,{
+    headers:{"accept":"application/json","user-agent":"MagicPerspective-V29-evidence-audit"},
+    signal:AbortSignal.timeout(50000)
+   });
+  }catch(error){
+   if(attempt===4)throw Error("Authentic OpenThoughts3 source network failure at offset "+
+    offset+": "+String(error?.message||error)+" (NO SYNTHETIC FALLBACK)");
+   await delay(750*(attempt+1));continue;
+  }
+  if(response.ok)break;
+  if(![429,500,502,503,504].includes(response.status)||attempt===4)
+   throw Error("Authentic OpenThoughts3 API returned HTTP "+
+    response.status+" for offset "+offset+" (NO SYNTHETIC FALLBACK)");
+  await response.body?.cancel();
+  await delay(750*(attempt+1));
+ }
+ if(!response?.ok)throw Error("Authentic OpenThoughts3 source unavailable at "+
+  offset+" (NO SYNTHETIC FALLBACK)");
  const json=await response.json();
  if(!Array.isArray(json.rows)||json.rows.length!==length)throw Error(
   "Authentic dataset API returned incomplete real rows; NO fabricated replacements");
@@ -96,11 +114,26 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   assert.equal(measured.trainedRows,20);
   assert.equal(measured.heldoutRows,4);
   assert.equal(measured.qaFrozenHeldoutQuestions,4);
+  // V30 atlas MUST show the REAL failures, not only paths drawn from
+  // pre-provided partial synthetic goals. Gold answers are never stored.
+  assert.equal(measured.atlasTotals?.qaEvaluationsTotal,4);
+  assert.equal(measured.atlasTotals?.qaExactWholeAnswersTotal,0);
+  assert.equal(measured.atlasTotals?.failuresTotal,4);
   assert.equal(measured.qaTrainingPairs,20);
   // Long-form replies are NOW physically observed in a bounded original
   // Brain sequential hypermaze rather than rejected above 128 tokens.
   // This is evidence consumption, NOT answer-generation success.
   assert.equal(measured.qaLongFormEpisodes,20);
+  // V30: same Brain persists experience across source episodes but source
+  // adjacency cannot masquerade as independently verified physical axes.
+  assert.ok(measured.crossMazeMemory?.originalBrain);
+  assert.equal(measured.crossMazeMemory.roleEpisodes,20);
+  assert.equal(measured.crossMazeMemory.physicallyVerifiedEdges,0);
+  assert.equal(measured.crossMazeMemory.observedChunks,
+   measured.qaLongFormChunkNodes);
+  assert.equal(measured.crossMazeMemory.observedSequentialEdges,
+   measured.qaLongFormSequentialEdges);
+  assert.ok(measured.crossMazeMemory.sharedExactChunkAnchors>=0);
   // Never assume or invent how many tokens a real corpus has.
   // This EXACT check uses the original model tokenizer and the genuine
   // training-only row split, no approximate duplicate regex.
@@ -129,6 +162,12 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
   const progress=JSON.parse(fs.readFileSync(path.join(out,
    "native-hypermaze-progress.json"),"utf8"));
   const loaded=Brain.load(path.join(out,progress.checkpoint));
+  assert.equal(loaded.hypermazeCumulativeExperience.atlas.attemptsTotal,4);
+  assert.equal(loaded.hypermazeCumulativeExperience.atlas.events.filter(
+   e=>e.kind==="frozen-real-natural-language-qa").length,4);
+  assert.ok(loaded.hypermazeCumulativeExperience.atlas.events.every(
+   e=>e.withheldGoldAnswerNotPersisted===true),
+   "Original Brain atlas must never train on or store heldout answer strings");
   assert.equal(loaded.qaRoleEvidence.longForm.episodes,20);
   assert.ok(loaded.qaRoleEvidence.longForm.sequences.length>0);
   assert.equal(loaded.qaRoleEvidence.longForm.sequences.length<=96,true);
@@ -162,6 +201,8 @@ test("PUBLIC REAL OpenThoughts3 records: run same original native Brain and scor
    goalCoverage:measured.qaFrozenGoalCoverage,
    learnedQAAxes:measured.qaRoleWitnessedAxisEdges,
    originalOperatorCount:measured.learnedOperators,
+   originalBrainCumulativeMemory:measured.crossMazeMemory,
+   sourceOnlyChunksNotPhysicalActions:true,
    lastModelPrediction:measured.qaLastPrediction,
    preservedCheckpoint:true,device:"GitHub hosted CPU",
    realUsersPrivate594MBFileRead:false,

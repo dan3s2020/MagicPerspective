@@ -8,6 +8,7 @@
 // Internal actions simulate learned operators, NOT validated external semantics.
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
 import {QARoleAxes} from "./qa-role-axes.mjs";
+import {CumulativeHyperMaze} from "./cumulative-hypermaze.mjs";
 import {NoiseAgency} from "../../transcend/torus-aether/worlds/noise-agency.mjs";
 import {tokenizeObservation,renderObservation}
  from "../../transcend/torus-aether/worlds/observed-transformations.mjs";
@@ -44,6 +45,9 @@ export class NativeGoalTextMaze {
   // The field stores only question/answer effects from ACTUAL training rows.
   this.qaRole=new QARoleAxes(brain.qaRoleEvidence);
   brain.qaRoleEvidence=this.qaRole.state;
+  // Full persistent cross-maze transition map lives INSIDE this SAME
+  // native Brain checkpoint. The original learning and UI are preserved.
+  this.cumulative=new CumulativeHyperMaze(brain);
  }
  // Role-identified actual Q/A training evidence, never a generated answer.
  // This is part of the SAME original native Brain checkpoint and model.
@@ -58,6 +62,43 @@ export class NativeGoalTextMaze {
   return this.qaRole.plan(question,this.brain);
  }
  executeQA(plan){return this.qaRole.execute(plan);}
+ // Physical before/action/after is contributed only after the actual
+ // environment reports the observed transition. Corpus text adjacency
+ // and generated operator hypotheses must NOT masquerade as physics.
+ observeVerifiedWorldTransition(observation){
+  return this.cumulative.observeTransition(observation);
+ }
+ observeNonCausalTextAdjacency(observation){
+  return this.cumulative.observeTextAdjacency(observation);
+ }
+ // The original attraction/conductance is reused; no BFS or A* planner
+ // replaces Discoverer.shapeGraph. Trained operations persist across mazes.
+ planCumulativeWorld(request){
+  return this.cumulative.plan(request);
+ }
+ // Previously demonstrated state-dependent numeric action fields are
+ // fitted from physical outcomes retained in that same Brain, then routed
+ // by the ORIGINAL Discoverer.shapeGraph; no dependent output goal.
+ planCumulativeNumericWorld(request){
+  return this.cumulative.planNumeric(request);
+ }
+ // Full question-only path: prior Q/A examples learn WHICH numeric input
+ // variables the task requests; previously verified numeric-world actions
+ // supply its movement field; the original Discoverer constructs the path.
+ planCumulativeQuestion(request){
+  return this.cumulative.planQuestion(request);
+ }
+ cumulativeWorldStatus(){return this.cumulative.audit();}
+ // Original one-Brain atlas is an evidence inspector, never a second
+ // navigator. Paginate every retained node, edge and attempt (including
+ // failures) and surface why action/path constraints blocked progress.
+ cumulativeAtlas(options={}){return this.cumulative.atlas(options);}
+ // Audit ONLY after the heldout scorer has assessed the completed
+ // prediction. The actual reference answer is never supplied or stored.
+ auditFrozenQA(info){return this.cumulative.auditFrozenQA(info);}
+
+
+
  // Experience ONLY actual observed text; no generated answer is inserted.
  // Text edit operators and their evidence come from the EXISTING Brain.
  observe(text){
