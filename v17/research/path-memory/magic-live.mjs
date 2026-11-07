@@ -144,6 +144,9 @@ async function learn(row){
    history.push(expected);if(history.length>32)history.shift();
   }
   const beforeHits=samples.reduce((a,b)=>a+ +(b.match),0);
+  // Freeze proposed continuation BEFORE reading the paragraph into the Brain.
+  const shapeBeforeLearning=brain.language.navigate(tokens.slice(0,Math.min(8,tokens.length)).join(" "),
+    {steps:12,useField:false}).path;
   const actual=brain.liveLanguage(input);
   const operators=brain.learnObservedTransformations(input);
   last={kind:"text",source:"Before training on this paragraph",position:row.position,
@@ -151,8 +154,8 @@ async function learn(row){
    correctBeforeTraining:beforeHits,comparedTokens:tokens.length,
    accuracyBeforeTraining:tokens.length?beforeHits/tokens.length:null,
    predictions:samples.slice(-16),learnedOperators:operators.newOperators,
-   shape:brain.language.navigate(tokens.slice(0,Math.min(8,tokens.length)).join(" "),
-    {steps:12,useField:false}).path};
+   shape:shapeBeforeLearning,
+   causalSolutionProven:false};
   rec({kind:"text",position:row.position,passage:input,sourceChars:rawText(row.text).length,trainedChars:input.length,
    truncated:rawText(row.text).length>input.length,predictions:samples,
    correct:beforeHits,total:tokens.length,lastPredictions:samples.slice(-5)});
