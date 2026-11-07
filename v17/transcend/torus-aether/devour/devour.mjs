@@ -182,7 +182,14 @@ const nativeCognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reas
     action:e.action,from:r.world.states[e.from]?.join(" "),after:r.world.states[e.to]?.join(" "),
     provenance:e.provenance,potentialBefore:e.potentialBefore,
     potentialAfter:e.potentialAfter,observedSupport:e.support})),
-  math:r.field?.math??null,law:r.planningLaw||null,truncated:r.world?.truncated||false});
+  math:r.field?.math??null,law:r.planningLaw||null,
+  graph:r.world?{
+    nodes:r.world.states.map((state,i)=>({id:i,label:state.join(" ")})),
+    edges:r.world.neighbors.flatMap((out,from)=>out.map(e=>({
+      from,to:e.to,action:e.action,support:e.support,verified:!!e.verified}))).slice(0,4096),
+    totalEdges:r.world.neighbors.reduce((sum,row)=>sum+row.length,0),
+    sampledMaxEdges:4096
+  }:null,truncated:r.world?.truncated||false});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
