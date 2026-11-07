@@ -80,7 +80,7 @@ th{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;le
  <nav class="controls" aria-label="Training controls">
   <button class="primary" id="start">▶ Start training</button><button id="pause">Ⅱ Pause</button>
   <button class="alt" id="save">◇ Save checkpoint</button><button id="eval">◎ Frozen unseen test</button>
-  <button class="neutral" id="export">⇩ Export actual state</button>
+  <button class="neutral" id="export">⇩ Export actual state</button><button class="neutral" id="ledger">⇩ Full observation log</button>
   <label class="speed">Training rate <input id="speed" type="range" min="1" max="30" value="6"><span id="speedValue">6 Hz</span></label>
  </nav>
  <section class="summary" aria-label="Real telemetry">
@@ -145,6 +145,7 @@ id("save").onclick=()=>call("save");
 id("eval").onclick=()=>call("evaluate");
 id("speed").oninput=e=>{text("speedValue",e.target.value+" Hz");call("speed",Number(e.target.value));};
 id("export").onclick=()=>window.open("/api/export","_blank","noopener,noreferrer");
+id("ledger").onclick=()=>window.open("/api/log","_blank","noopener,noreferrer");
 id("plan").onclick=()=>{try{call("path",{start:JSON.parse(id("startState").value),goal:JSON.parse(id("target").value)});}
  catch(e){text("error",e.message);}};
 function node(k,content){const n=document.createElement(k);if(content!==undefined)n.textContent=content;return n;}
