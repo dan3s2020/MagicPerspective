@@ -14,12 +14,20 @@ const repeatMs=performance.now()-t-loadedMs-firstMs;
 const byteT=performance.now();
 b.beginExercise();b.live(81,false);
 const firstNativeByteMs=performance.now()-byteT;
+const fullByteT=performance.now(),batchBytes=128;
+for(let i=0;i<batchBytes;i++) {
+ b.live(65+i%26,false);
+ if((i+1)%32===0)console.log("V34_WINDOWS_NATIVE_FIRST_128_SYMBOLS_PROGRESS",
+  JSON.stringify({symbols:i+1,elapsedMs:+(performance.now()-fullByteT).toFixed(1)}));
+}
+const first128NativeBytesMs=performance.now()-fullByteT;
 console.log("V34_WINDOWS_ISOLATED_ORIGINAL_BRAIN_CHAR_PROBE",JSON.stringify({
  originalRecordedOperators:op,
  originalTextStates:b.observedTransformations.records.size,
  observedCharacterRules:out.acceptedMinimalOneCharacterContrasts,
  firstStatusMs:+firstMs.toFixed(1),identicalRepeatMs:+repeatMs.toFixed(1),
  incrementalNoReprocess:repeat.scannedOriginalSentencePairs===out.scannedOriginalSentencePairs,
- firstNativeTextByteMs:+firstNativeByteMs.toFixed(2)
+ firstNativeTextByteMs:+firstNativeByteMs.toFixed(2),
+ original128SubsequentByteMs:+first128NativeBytesMs.toFixed(2)
 }));
 if(firstMs>25000)throw Error("Standalone evidence extraction unresponsive even before live trainer");
