@@ -38,7 +38,25 @@ jobs:
         with:
           node-version: '22'
       - name: Authentic official OpenThoughts3 24 sampled rows, 4 genuinely held-out full answers
-        run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
+        shell: bash
+        run: |
+          # Only transient official dataset 5xx may be retried; any other
+          # assertion/regression fails immediately. No synthetic source.
+          for attempt in 1 2 3; do
+            if node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs > v33-authentic-source-test.log 2>&1; then
+              cat v33-authentic-source-test.log
+              exit 0
+            fi
+            cat v33-authentic-source-test.log
+            if ! grep -Eq 'Authentic OpenThoughts3 API returned HTTP 5[0-9][0-9]' v33-authentic-source-test.log; then
+              exit 1
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo 'Official source failed after three independent real HTTP attempts; no fake fallback'
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
   authentic-six-scale-historical-v17-character-shape:
     runs-on: ubuntu-latest
     timeout-minutes: 15
