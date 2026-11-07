@@ -28,6 +28,7 @@ export class PersistentHypermazeAtlas {
   this.failedReasons=Object.create(null);
   this.worldsByDomain=Object.create(null);
   this.lastReplayCursor=0;
+  this.lastTextWorldSequence=0;
   this.records=[]; // ONLY used when there is no on-disk journal
   this.last=null;
   this.bytes=0;
@@ -42,7 +43,11 @@ export class PersistentHypermazeAtlas {
      entry.seq!==this.offsets.length+1)
    throw Error("Atlas JSONL chronology corrupted: a journal event was lost or reordered");
   countTo(this.counts,entry.type);
-  if(entry.type==="world")countTo(this.worldsByDomain,entry.world||"unknown");
+  if(entry.type==="world"){
+   countTo(this.worldsByDomain,entry.world||"unknown");
+   if(entry.world==="text"&&typeof entry.rawText==="string")
+    this.lastTextWorldSequence=entry.seq;
+  }
   if(entry.type==="replay")this.lastReplayCursor=entry.nextCursor||0;
   if(entry.type==="search"){
    if(!entry.found)countTo(this.failedReasons,entry.diagnostic?.reason||"unknown");
@@ -161,6 +166,7 @@ export class PersistentHypermazeAtlas {
    legacyOperatorBaselineEvents:this.counts.baseline||0,
    historicalReplayEvents:this.counts.replay||0,
    lastReplayCursor:this.lastReplayCursor,
+   lastTextWorldSequence:this.lastTextWorldSequence,
    historicCorpusUnavailableBeforeAtlas:(this.counts.baseline||0)>0,
    searches:this.counts.search||0,executions:this.counts.execution||0,
    searchesFailed:Object.values(this.failedReasons).reduce((a,b)=>a+b,0),
