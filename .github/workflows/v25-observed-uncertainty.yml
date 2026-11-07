@@ -22,8 +22,11 @@ jobs:
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/v23-grounded-live.js
+          node --check v17/transcend/torus-aether/ui/v25-uncertainty-live.js
       - name: Independently observed neutral worlds, unknown-effect rejection and 300-step no-answer route
         run: node --test v17/tests/v25-unknown-causal-abstention.test.mjs
+      - name: V25 genuine native Brain/HTTP unknown semantics and observed neutral evidence
+        run: node --test v17/tests/v25-native-unknown-http.test.mjs
       - name: V24 native original Brain + real HTTP + original checkpoints, 100k action shapes
         run: node --test v17/tests/v24-native-brain-v23-http.test.mjs
       - name: V23 original 100k whole event and numerical action regression
