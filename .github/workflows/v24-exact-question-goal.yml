@@ -39,3 +39,18 @@ jobs:
         run: |
           node --test v17/tests/v24-native-question-goal.test.mjs
           if ($LASTEXITCODE -ne 0) { throw "V24 native shape acceptance failed" }
+      - name: Install CI-only real Parquet fixture writer
+        shell: pwsh
+        run: python -m pip install --quiet pyarrow
+      - name: Generate native Q/A with withheld episodes in original Parquet schema
+        shell: pwsh
+        run: |
+          python v17/tests/v24-ci-parquet-fixture.py "$env:RUNNER_TEMP\v24-parquet"
+          if ($LASTEXITCODE -ne 0) { throw "Parquet fixture generation failed" }
+      - name: Native 38D HTTP worker, original V17 UI, checkpoint and Q-only holdout
+        shell: pwsh
+        run: |
+          $env:MP_V24_TEST_PARQUET = "$env:RUNNER_TEMP\v24-parquet"
+          node --test v17/tests/v24-http-live-native.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "Native V24 HTTP integration failed" }
+
