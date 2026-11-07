@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import {createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
-import {createNativeBridge,pickNativeGraph,nativeSnapshot} from "../native-bridge.mjs";
+import {createNativeBridge,pickNativeGraph,nativeSnapshot,inspectOriginalCuda,isCudaStartupFailure} from "../native-bridge.mjs";
 import {nativeMeasurements,summarizeNativeEvaluation,formatDatasetProgress,
   formatPct} from "../native-metrics.mjs";
 
@@ -43,7 +43,7 @@ const nativeGraph={
 const frozenText={w:0,lived:6000,T:.4,noise:0,answer:.625,all:.7,oldAnswer:.55,
   exercises:[{n:5,a0:2,answer:.625,all:.7,oldAnswer:.55,
     shape:"ab",shapeSame:.5,rows:[[65,65],[66,67],[67,67],[68,69],[69,69]]}]};
-const makeFakeNative=async()=>{
+const makeFakeNative=async({failed=false}={})=>{
   const commands=[];
   const fake=http.createServer(async(req,res)=>{
     const url=new URL(req.url,"http://localhost");
@@ -51,7 +51,11 @@ const makeFakeNative=async()=>{
     for await(const b of req)input+=b;
     commands.push({method:req.method,path:url.pathname,search:url.search,body:input});
     res.setHeader("content-type","application/json; charset=utf-8");
-    if(url.pathname==="/graphs")res.end(JSON.stringify(nativeOriginal));
+    if(url.pathname==="/graphs")res.end(JSON.stringify(!failed?nativeOriginal:{
+      ...nativeOriginal,graphs:nativeOriginal.graphs.map((g,i)=>i?g:{
+        ...g,status:"eroare",error:"CUDA RuntimeError('torch.cuda.is_available() is false in C:\\\\Users\\\\DSV\\\\AppData\\\\Local\\\\hermes\\\\hermes-agent\\\\venv\\\\Scripts\\\\python.exe')"
+      })
+    }));
     else if(url.pathname==="/graph")res.end(JSON.stringify(nativeGraph));
     else if(url.pathname==="/control"||url.pathname==="/controls"||
       url.pathname==="/gpu")res.end(JSON.stringify({ok:true,graphs:[0,1]}));
@@ -210,4 +214,43 @@ test("exact original V17 engine and data dataset modules unchanged in V28 branch
     assert.equal(await sha(path.join(root,p)),expect,"V28 modified ORIGINAL native training: "+p);
   console.log("V28_ORIGINAL_BYTE_PARITY",JSON.stringify({
     unchangedOriginalTrainingFiles:Object.keys(frozen).length,allExact:true}));
+});
+
+test("Hermes CPU-only PyTorch CUDA is reported, and Start/GPU refuse to fake a successful training run",async()=>{
+  const source=await makeFakeNative({failed:true});
+  let bridge;
+  try{
+    bridge=await createNativeBridge({port:0,nativePort:source.port,
+      inspectCuda:async()=>({ok:false,python:"C:/Users/DSV/AppData/Local/hermes/hermes-agent/venv/Scripts/python.exe",
+        reason:"torch.cuda.is_available() is false"})});
+    const snapshot=await (await fetch(bridge.url+"/api/native-state?w=0")).json();
+    assert.equal(snapshot.original.status,"eroare");
+    assert.ok(isCudaStartupFailure(snapshot.original));
+    assert.match(snapshot.nativeCudaError,/torch\.cuda\.is_available/);
+    const post=async(action,body)=>{
+      const r=await fetch(bridge.url+action,{method:"POST",
+        headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+      return {status:r.status,data:await r.json()};
+    };
+    const start=await post("/api/native-control",{action:"start",worker:0});
+    assert.equal(start.status,502);
+    assert.match(start.data.error,/Restart the ORIGINAL V17 process/);
+    assert.equal(source.commands.filter(x=>x.path==="/control").length,0,
+      "Start must not say success while original CUDA worker remains erroare");
+    const gpu=await post("/api/native-gpu",{device:"cuda:0",worlds:3,textBatch:3,vram:3,util:100});
+    assert.equal(gpu.status,502);
+    assert.match(gpu.data.error,/CUDA preflight rejected/);
+    assert.equal(source.commands.filter(x=>x.path==="/gpu").length,0,
+      "No failing CUDA mutation may reach original backend");
+    const missing=await inspectOriginalCuda({python:"/absent/magic-v28-cuda-python"});
+    assert.equal(missing.ok,false);
+    assert.ok(missing.reason);
+    console.log("V28_HERMES_CUDA_REGRESSION",JSON.stringify({
+      fatalErrorVisible:true,repeatedStartBlocked:true,
+      CUDAUnvalidatedSettingsBlocked:true,noTrainingMutations:true,
+      originalV17CodeUntouched:true}));
+  }finally{
+    if(bridge)await bridge.close();
+    await source.close();
+  }
 });
