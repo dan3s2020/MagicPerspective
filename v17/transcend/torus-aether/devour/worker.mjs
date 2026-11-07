@@ -215,7 +215,7 @@ const worldsOnce = async (record) => {                                     // on
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 8)));
 const processGpuText = async (exs, meta) => {
   const profileText = process.env.MP_PROFILE_TEXT === "1";
-  const profStart = profileText ? performance.now() : 0;
+  const profStart = performance.now(); // cheap CPU wall-clock telemetry, no CUDA synchronization
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
   const startChars = brain.chars;
@@ -223,20 +223,20 @@ const processGpuText = async (exs, meta) => {
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
     shot();
   });
-  const profCardEnd = profileText ? performance.now() : 0;
+  const profCardEnd = performance.now();
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
   if (COGNITIVE || HYPER) for(const row of meta) absorbCognitive(row);
-  const profTraceEnd = profileText ? performance.now() : 0;
+  const profTraceEnd = performance.now();
   if (CODE) for (let i = 0; i < 4; i++) codeWorld.step();
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
-  const profCausalEnd = profileText ? performance.now() : 0;
+  const profCausalEnd = performance.now();
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
-  const profSharedEnd = profileText ? performance.now() : 0;
+  const profSharedEnd = performance.now();
   if ((MAZE || TRANS || MAPTEXT) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
-  if (profileText && brain.textGpu) {
+  if (brain.textGpu) {
     const end = performance.now();
     brain.textGpu.hostMs = {
       card: +(profCardEnd - profStart).toFixed(2),
@@ -244,7 +244,12 @@ const processGpuText = async (exs, meta) => {
       causalTextAndCode: +(profCausalEnd - profTraceEnd).toFixed(2),
       sharedPyTorch: +(profSharedEnd - profCausalEnd).toFixed(2),
       mazeAndTransform: +(end - profSharedEnd).toFixed(2),
-      total: +(end - profStart).toFixed(2)
+      total: +(end - profStart).toFixed(2),
+      textCharacters: exs.reduce((sum, e) => sum + e.length, 0),
+      textExercises: exs.length,
+      charactersPerSecond: +((exs.reduce((sum, e) => sum + e.length, 0) * 1000) / Math.max(1, end - profStart)).toFixed(2),
+      note: "wall-clock per completed batch; card includes GPU+Python synchronization and suffix-index rebuild; not a GPU utilization sensor",
+      detailedCudaSync: profileText
     };
   }
   batchNow = null;
