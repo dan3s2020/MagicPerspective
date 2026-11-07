@@ -18,22 +18,34 @@
     "v17/transcend/torus-aether/ui/app.js",
     "v17/transcend/torus-aether/ui/index.html",
     "v17/transcend/torus-aether/ui/cognitive-graph-live.js",
-    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs"
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "v17/transcend/torus-aether/worlds/cognitive-route-snapshot.mjs",
+    "v17/tests/torus-v19-cognitive-runtime.test.mjs",
+    "v17/docs/V23-INTEGRATION-ACCEPTANCE-BLOCKERS-20261107.md"
   ],
   "minimum_scope": "Non-destructive native observed N-D graph visualization, seeded temperature control for actual Discoverer.shape, immutable V17 maze parity gate and honest frozen stats; NO substitute planner; no checkpoint overwrites",
   "preserved_definitions": "Use original V17 Discoverer.shape as the only solution-shape operator; keep 2D path behavior and all V17/V21 controls and learning logic unchanged; no token predictor substitution.",
   "extra_mechanisms": "none; projection of actual learned edges is diagnostic/read-only and does not claim an invented 4D latent",
   "executable_tests": [
     "node --test v17/tests/torus-v23-exact-discoverer.test.mjs",
+    "node --check v17/transcend/torus-aether/ui/cognitive-graph-live.js",
     "node --test v17/tests/torus-cognitive-learned-map.test.mjs",
-    "node --test v17/tests/torus-v19-cognitive-runtime.test.mjs"
+    "node --test v17/tests/torus-whole-map-text.test.mjs",
+    "node --test v17/tests/torus-world-source-regression.test.mjs",
+    "node --test v17/tests/torus-v19-cognitive-runtime.test.mjs",
+    "node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs"
   ],
-  "observed_results": "NOT YET EXECUTED",
+  "observed_results": "GitHub Actions success 42341011029 on a73df3161d74491b0ea85de742c9c4ab5781429b; 270 seeded maze comparisons, 38 Node tests passing across 6 suites; no Windows/CUDA full corpus or long-text first-shot accuracy established.",
   "limitations_open": [
     "Full no-leakage first-shot 100% long natural language heldout answers is NOT proven",
     "No full CUDA graph executor; currently graph operations are Node CPU",
     "Native open-ended Q/A output remains AligningGraph; cognitive planner currently gated by explicit goal.slots",
-    "No claim of byte-perfect historical transcript; only quoted visible turn preserved"
+    "No claim of byte-perfect historical transcript; only quoted visible turn preserved",
+    "Cognitive source currently rejects sentences longer than 96 tokens and max default planning depth is 12",
+    "Native Q/A generation still uses original AligningGraph, not formSolution()",
+    "Cognitive /cognitive-eval is frozen planning only, does not execute native text actions",
+    "Goal requires explicit goal.slots constraints, not a learned semantic goal predicate",
+    "CI validates Node runtime and HTTP, not browser-side rendered pixels or CUDA"
   ],
   "acceptance_status": "BLOCKED_UNVERIFIED"
 }
