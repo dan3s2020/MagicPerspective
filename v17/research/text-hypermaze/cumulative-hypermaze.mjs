@@ -181,6 +181,7 @@ export class CumulativeHyperMaze {
   const source=norm(start),goals=unique(required||[]).map(x=>String(x));
   const fail=(reason,fields={})=>({found:false,reason,
    frozenBeforeAction:true,goalAnswerSupplied:false,
+   plannedBeforeFirstAction:true,referenceAnswerProvided:false,
    originalPlanner:"Discoverer.shapeGraph",start:source,required:goals,
    actions:[],steps:0,predicted:null,
    semanticCorrectnessExternallyVerified:false,
@@ -287,7 +288,8 @@ export class CumulativeHyperMaze {
    originalPlanner:"Discoverer.shapeGraph",
    frozenBeforeAction:true,goalAnswerSupplied:false,
    predictionFrom:"persistent original Brain witnessed topology + separately marked learned proposals",
-   predicted,actions:steps,steps:steps.length,values:original.values,
+   predicted,initialShape:[source,...steps.map(step=>step.after)],
+   actions:steps,steps:steps.length,values:original.values,
    pathContainsInferredEdges:containsInferred,
    externalSemanticValidation:false,externallyVerifiedSemanticExecution:false,
    completeReachableVerifiedTopology:!allowInferred&&!truncated&&S.evictedNodes===0,
