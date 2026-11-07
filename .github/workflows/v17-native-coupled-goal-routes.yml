@@ -26,6 +26,8 @@ jobs:
         run: node --test v17/tests/native-goal-coupled-whole-answer.test.mjs
       - name: Real original V17 HTTP worker and browser UI + unseen complete-answer tests
         run: node --test v17/tests/native-goal-coupled-http-integration.test.mjs
+      - name: Actual structural-goal training on 500 Q/A source rows, throughput and no TextCard
+        run: node --test v17/tests/native-goal-training-throughput-http.test.mjs
       - name: Existing source-integrated native tests
         run: |
           node --test v17/tests/shared-world-core-v17.test.mjs
