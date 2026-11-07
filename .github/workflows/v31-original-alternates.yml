@@ -37,6 +37,16 @@ jobs:
         run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
       - name: SCALE to 96 ACTUAL PUBLIC OpenThoughts3 samples / 80 train 16 unseen Q/A (same original Brain, no synthetic fallback)
         run: node --test v17/tests/v31-authentic-96-openthoughts-stress.test.mjs
+  legacy-node20-original:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Earlier original Node20+ native worker STILL starts, trains and checkpoints with explicit disk-archive unsupported warning
+        run: node --test v17/tests/v30-real-corpus-cumulative-http.test.mjs
   windows-native-original:
     runs-on: windows-latest
     timeout-minutes: 7
