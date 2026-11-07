@@ -51,15 +51,19 @@ class X:                                         # numpy or torch, the same call
         if self.t and str(self.dev).startswith("cuda"): torch.cuda.synchronize()
 
 class Index:                                     # suffix array of the REVERSED memory: a context read backwards is a prefix
-    def __init__(self, X_, mem):                 # mem: int64 array of symbols (on the card)
+    def __init__(self, X_, mem, progress=None):  # mem: original native symbols on the selected device
         n = len(mem); self.n = n; X = X_
         R = mem.flip(0) if X.t else mem[::-1].copy(); self.R = R
         rk = X.i64(R) + 1; sa = None; k = 1
+        turns = 0
+        maximum_turns = max(1, int(np.ceil(np.log2(max(1, n)))) + 1)
         while True:                              # prefix doubling: sort by (rank[i], rank[i+k])
             sec = X.cat([rk[k:], X.zeros(min(k, n), np.int64)]) if n > k else X.zeros(n, np.int64)
             keyv = rk * (max(n, 256) + 2) + sec; sa = X.argsort(keyv); ks = keyv[sa]
             new = X.zeros(n, np.int64); diff = X.i64(ks[1:] != ks[:-1]); csum = diff.cumsum(0) if X.t else np.cumsum(diff)
             new[sa[1:]] = csum + 1; new[sa[0]] = 1; rk = new
+            turns += 1
+            if progress is not None: progress(turns, maximum_turns, 'suffix-index')
             if int(rk.max()) >= n or k >= n: break
             k *= 2
         self.sa = sa
@@ -140,8 +144,9 @@ class TextCard:
         self.X = X(device); self.depth, self.form_depth, self.maxK, self.S = depth, form_depth, maxK, S
         self.max_memory = max(256, int(max_memory))
         self.total_seen = 0
+        self._self = {} # never reuse per-exercise suffix automata across native Brains
         self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0
-    def append(self, exs):
+    def append(self, exs, progress=None):
         X = self.X; raw = np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]) if exs else np.zeros(0, np.int64)
         if not len(raw): return
         # The complete AligningGraph memory and learned trust remain on the Node side.
@@ -151,7 +156,11 @@ class TextCard:
         recent = recent[-self.max_memory:]
         f_recent = form_of(X, recent)
         # Transactional: if suffix-index construction OOMs, keep the previous model.
-        big = Index(X, recent); fbig = Index(X, f_recent)
+        if progress is not None: progress(0, 1, 'indexing-memory')
+        big = Index(X, recent, progress=(lambda done, total, phase: progress(done, total, 'indexing-memory')) if progress else None)
+        if progress is not None: progress(0, 1, 'indexing-form')
+        fbig = Index(X, f_recent, progress=(lambda done, total, phase: progress(done, total, 'indexing-form')) if progress else None)
+        if progress is not None: progress(1, 1, 'indexing-complete')
         self.mem, self.fmem, self.big, self.fbig = recent, f_recent, big, fbig
         self.indexed = len(recent); self.total_seen += len(raw)
     def _proposals(self, ctxs, fctxs):
@@ -170,6 +179,7 @@ class TextCard:
         for e_i, e in enumerate(exs):
             for i in range(1, len(e)): flat.append(i); owner.append(e_i)
         T_right = {}; T_tried = {}; hits = 0; vhits = [0] * len(variants); total = len(flat)
+        if progress is not None: progress(0, total, 'preparing-real-text')
         names = [x for x in trust if not x[0].endswith(":c")]; trust = [(name_id(nm), r, t) for nm, r, t in names if nm.split(":")[0] in SRC]
         tk = np.array([k for k, _, _ in trust], dtype=np.int64); tv = np.array([(r + 1) / (t + 2) for _, r, t in trust], dtype=np.float32)
         lut = np.full(4 * 13 * 4 * 11 + 1, .5, dtype=np.float32); lut[tk] = tv; LUT = X.arr(lut, np.float32)
@@ -180,9 +190,9 @@ class TextCard:
             sy = np.full(Q, -1, dtype=np.int64); sk = np.zeros(Q, dtype=np.int64); sfar = np.zeros(Q, dtype=np.int64)
             fsy = np.full(Q, -1, dtype=np.int64); fsk = np.zeros(Q, dtype=np.int64); fsfar = np.zeros(Q, dtype=np.int64)
             for q, (i, o) in enumerate(zip(Pi, Oi)):
-                e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - 1::-1][:L] if i - 1 >= 0 else []; ys_true[q] = e[i]
+                e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - L:i][::-1] if L else []; ys_true[q] = e[i]
             for q, (i, o) in enumerate(zip(Pi, Oi)):
-                h = self._selfidx(exs, o); r = h.get(i)
+                h = self._selfidx(exs, o, progress=progress); r = h.get(i)
                 if r: sy[q], sk[q], sfar[q], fsy[q], fsk[q], fsfar[q] = r
             CX = X.arr(ctx); FCX = form_of(X, CX); Y = X.arr(ys_true); FY = form_of(X, Y)
             props = self._proposals(CX, FCX)
@@ -246,7 +256,7 @@ class TextCard:
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
         W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress, batch=max(32, min(256, chunk)))
         if progress is not None: progress(0, 1, 'indexing')
-        self.X.sync(); self.append(exs); self._self = {}
+        self.X.sync(); self.append(exs, progress=progress); self._self = {}
         if progress is not None: progress(1, 1, 'completed')
         return {"trust": [[key_name(k), T_right[k], T_tried[k]] for k in T_tried] + [["w|" + key_name(k), W_right[k], W_tried[k]] for k in W_tried], "hits": hits, "seen": total, "variants": vhits, "memory": int(len(self.mem)), "textWindowChars": self.max_memory, "totalCardChars": self.total_seen}
     def _imagine(self, exs, trust, g, formW, every=31, K=48, progress=None, batch=128):
@@ -262,7 +272,7 @@ class TextCard:
         LUT = X.arr(lut, np.float32)
         for c0 in range(0, len(starts), batch):
             St = starts[c0:c0 + batch]; Rn = len(St); ctx = np.full((Rn, self.maxK), -2, dtype=np.int64)
-            for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - 1::-1][:L]
+            for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - L:i][::-1]
             CX = X.arr(ctx); ok = np.ones(Rn, dtype=bool)
             for step in range(K):
                 if progress is not None and step % 8 == 0: progress(c0 * K + step * Rn, len(starts) * K, 'imagination')
@@ -302,10 +312,12 @@ class TextCard:
         fb = farb if farb is not None else X.zeros(Q, np.int64) + 10
         return ((src * 13 + X.clip(dd, 0, 12)) * 4 + sb) * 11 + fb
     _self = {}
-    def _selfidx(self, exs, o):                  # per exercise: for every position, the longest earlier part of it that happened before (exact, as align.mjs SelfMem)
+    def _selfidx(self, exs, o, progress=None):   # same original per-exercise automaton; only reports actual scanning positions
         if o in self._self: return self._self[o]
-        e = exs[o]; fe = [DIG if 48 <= c <= 57 else c for c in e]
-        def scan(seq):
+        e = exs[o]
+        if progress is not None: progress(0, 2 * len(e), 'self-index')
+        fe = [DIG if 48 <= c <= 57 else c for c in e]
+        def scan(seq, stage):
             ln = [0]; link = [-1]; nx = [{}]; first = [-1]; last = 0; res = {}
             for pos, c in enumerate(seq):
                 if pos >= 1:                       # predicting seq[pos] from seq[:pos]: the link of the last state
@@ -321,8 +333,11 @@ class TextCard:
                         while p != -1 and nx[p].get(c) == q: nx[p][c] = cl; p = link[p]
                         link[q] = cl; link[cur] = cl
                 last = cur
+                if progress is not None and (pos + 1) % 8192 == 0:
+                    progress(stage * len(seq) + pos + 1, 2 * len(seq), 'self-index')
+            if progress is not None: progress((stage + 1) * len(seq), 2 * len(seq), 'self-index')
             return res
-        a = scan(e); f = scan(fe); out = {}
+        a = scan(e, 0); f = scan(fe, 1); out = {}
         for i in range(1, len(e)):
             x, y = a.get(i), f.get(i)
             if x or y: out[i] = (x[0] if x else -1, x[1] if x else 0, x[2] if x else 0, y[0] if y else -1, y[1] if y else 0, y[2] if y else 0)
