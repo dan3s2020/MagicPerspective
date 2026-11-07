@@ -75,6 +75,11 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
  }
  for(let i=0;i<8;i++)
   paired.trainConstructedMaze(makeMaze(seedOf(SEEDS.train,700+i),7),true);
+ const firstAnswers=train.map(x=>x.answer);
+ const sharedTrainPrefix=firstAnswers.slice(1).reduce((prefix,ans)=>{
+  let i=0;while(i<prefix.length&&prefix[i]===ans[i])i++;return prefix.slice(0,i);
+ },firstAnswers[0].slice(0,cap));
+ const genericPrefixChars=Math.min(cap,Array.from(sharedTrainPrefix).length);
  const sourceSig=b=>JSON.stringify({
   rows:b.constructedPaths.textRows,chars:b.constructedPaths.textChars,
   states:b.constructedPaths.scales.map(x=>x.edges.size),
@@ -91,12 +96,17 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    referenceTotalCodepoints:Array.from(row.answer).length,
    answerPreviewAfterFrozenScoring:null,variants:{}};
   const predicted=new Map();
-  for(const [label,b] of [["originalTextOnly",original],["sameTextPlusMazePaired",paired]]){
+  for(const [label,b,beamWidth,fanOut] of [
+   ["originalTextOnly",original,3,4],
+   ["originalGreedySameWorld",original,1,1],
+   ["originalWideBeamSameWorld",original,6,8],
+   ["sameTextPlusMazePaired",paired,3,4]
+  ]){
    const m=b.constructedPaths;
    // Important: at this exact point the answer string is NOT available to
    // the prediction API. It is referenced only in score() below.
-   const f=m.imagineText(row.question,{maxChars:cap,beamWidth:3,
-    fanOut:4,record:false});
+   const f=m.imagineText(row.question,{maxChars:cap,beamWidth,
+    fanOut,record:false});
    assert.equal(f.previewBeforeAnswer,true);
    assert.equal(f.referenceNotAvailable,true);
    const pred=f.predicted;
@@ -112,8 +122,16 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   const gold=row.answer;
   item.answerPreviewAfterFrozenScoring=gold.slice(0,160);
   for(const [label,pred] of predicted){
-   const m=(label==="originalTextOnly"?original:paired).constructedPaths;
+   const m=(label.startsWith("original")?original:paired).constructedPaths;
    const scoring=computeScore(pred,gold);
+   const predictedChars=Array.from(pred),truthChars=Array.from(gold);
+   const postPrefixMatch=truthChars.slice(genericPrefixChars,cap)
+    .reduce((n,c,i)=>n+Number(predictedChars[genericPrefixChars+i]===c),0);
+   scoring.genericPrefixCharactersDiscarded=genericPrefixChars;
+   scoring.postTrainingTemplateMatch=postPrefixMatch;
+   scoring.postTrainingTemplateCompared=Math.max(1,cap-genericPrefixChars);
+   scoring.postTrainingTemplateAccuracy=postPrefixMatch/
+    Math.max(1,cap-genericPrefixChars);
    const expectedFirst=scoring.firstWrongExpected;
    const branch=m.nextCharacters(row.question,
     pred.slice(0,scoring.firstMismatch),24);
@@ -140,8 +158,14 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   const count=variants.reduce((n,x)=>n+x.matchedAtSamePosition,0);
   const denom=variants.reduce((n,x)=>n+x.charactersCompared,0);
   const reasonCounts={};
+  const postTemplateCorrect=variants.reduce((n,x)=>n+x.postTrainingTemplateMatch,0);
+  const postTemplateTotal=variants.reduce((n,x)=>n+x.postTrainingTemplateCompared,0);
   for(const r of variants)reasonCounts[r.blocker]=(reasonCounts[r.blocker]||0)+1;
   return {answerWholeExact:variants.filter(x=>x.wholeAnswerExact).length,
+   uniqueFrozenAnswers:new Set(variants.map(x=>x.predictedFirstShot)).size,
+   postTrainingTemplatePositionalAccuracy:postTemplateCorrect/postTemplateTotal,
+   postTrainingTemplateCorrect:postTemplateCorrect,
+   postTrainingTemplateCompared:postTemplateTotal,
    first128Correct:variants.filter(x=>x.full128Exact).length,
    first128MatchedCharacters:count,comparedCharacters:denom,
    first128PositionalAccuracy:count/denom,
@@ -160,8 +184,14 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   baselineNoNewTextPredictor:true,
   compareToNativeSemanticOriginalV29:"0/4 full answers on 4 heldout authentic questions",
   graphMethod:"6 original next-character context scales, not original semantic goal attraction",
-  results:{originalTextOnly:aggregate("originalTextOnly"),
-   sameTextPlusMazePaired:aggregate("sameTextPlusMazePaired")},
+  sharedTrainingOnlyTemplatePrefix:sharedTrainPrefix,
+  genericPrefixCharactersDiscarded:genericPrefixChars,
+  results:{
+   originalTextOnly:aggregate("originalTextOnly"),
+   originalGreedySameWorld:aggregate("originalGreedySameWorld"),
+   originalWideBeamSameWorld:aggregate("originalWideBeamSameWorld"),
+   sameTextPlusMazePaired:aggregate("sameTextPlusMazePaired")
+  },
   independentWorldAblation:{
    identicalRealTextObservations:true,
    extraPairedOriginalTrainingMazes:8,
@@ -180,6 +210,9 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
   sha256:sourceHash,realTrain:train.length,unseen:holdout.length,
   originalTextOnly:report.results.originalTextOnly,
   sameTextPlusMazePaired:report.results.sameTextPlusMazePaired,
+  originalGreedySameWorld:report.results.originalGreedySameWorld,
+  originalWideBeamSameWorld:report.results.originalWideBeamSameWorld,
+  sourceOnlySharedTrainingPrefix:sharedTrainPrefix,
   examples:results.slice(0,4).map(x=>({
    index:x.rowIndex,question:x.questionPreview,
    reference:x.answerPreviewAfterFrozenScoring,
