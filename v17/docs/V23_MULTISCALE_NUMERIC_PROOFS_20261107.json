@@ -1,0 +1,148 @@
+{
+  "runDateUTC": "2026-11-07",
+  "ciRunId": 42342352414,
+  "ciUrl": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42342352414",
+  "ciStatus": "completed_success",
+  "ciTestCounts": {
+    "v23Grounded": 3,
+    "v23Multiscale": 3,
+    "v23Numeric": 4,
+    "v22Original": 6,
+    "v19Memory": 19,
+    "v21Boundary": 2,
+    "total": 37,
+    "failed": 0
+  },
+  "sourceFiles": [
+    {
+      "path": "v17/transcend/torus-aether/worlds/grounded-temporal-hypermaze.mjs",
+      "blobSha": "af9e2dac05e8b1cab1f2fed466b1b1fa0b308c7d"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/multiscale-grounded-hypermaze.mjs",
+      "blobSha": "aa4dab9e377f82b375b10890d27f61dc0b3e5691"
+    },
+    {
+      "path": "v17/transcend/torus-aether/worlds/learned-numeric-causal-shape.mjs",
+      "blobSha": "f5ea08df82bd5bc70eccac686e7da85f385d3b2c"
+    }
+  ],
+  "measured": {
+    "structuredUnknownFinalLocation": {
+      "heldout": 300,
+      "fullAnswersExact": 300,
+      "characters": 11237882,
+      "maxTokens": 7703,
+      "maxEvents": 59
+    },
+    "longStructuredWorld": {
+      "tokens": 118882,
+      "characters": 780227,
+      "events": 100,
+      "success": true
+    },
+    "originalNumericExtinction": {
+      "directWorksAt": 900,
+      "directFailsAt": [
+        920,
+        1000,
+        3000
+      ],
+      "cause": "original 0.97**N scale plus absolute 1e-12 relaxation tolerance"
+    },
+    "hierarchicalOriginal": {
+      "steps": 100000,
+      "inputCharacters": 6877784,
+      "success": true,
+      "recursiveDiscovererCalls": 790,
+      "maxNodesPerCall": 129,
+      "depth": 2
+    },
+    "numericLaws": {
+      "independentTrainingObservations": 120,
+      "verifiedTemplates": 5,
+      "features": [
+        "before",
+        "quantity",
+        "before*quantity",
+        "1"
+      ],
+      "learnedCoefficients": [
+        [
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          -1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          -1,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ]
+      ]
+    },
+    "numericUnknownAnswer": {
+      "heldout": 300,
+      "fullAnswersExact": 300,
+      "sourceCharacters": 2434838,
+      "maxWhitespaceTokens": 1660
+    },
+    "longNumeric": {
+      "steps": 100000,
+      "sourceCharacters": 4800055,
+      "answer": 1212341,
+      "truthAsFullNumberPresentInSourceText": false,
+      "plannedBeforeAnyAction": true,
+      "independentStepValidation": true,
+      "recursiveDiscovererCalls": 790,
+      "maxNodesPerCall": 129
+    },
+    "controlResults": {
+      "missingRulesAbstain": true,
+      "unknownSyntaxAbstainsOnUnrecognizedOnly": true,
+      "physicallyRejectedStepStops": true,
+      "contradictionsAbstain": true,
+      "fixedCheckpointsRoundtrip": true,
+      "originalV17MazeParityPreserved": true
+    },
+    "negativeCiRuns": [
+      {
+        "runId": 42342233021,
+        "reason": "new numeric test asserted +0 vs -0 strict equality, and substring-based entity digits could match numeric answer by accident"
+      },
+      {
+        "runId": 42342350046,
+        "reason": "source numerical zero canonicalization fixed, but improved test identifier fix not in this earlier commit"
+      }
+    ]
+  },
+  "disclaimers": [
+    "These are deterministic/procedural controlled domains using observed language forms. 100% does NOT extend to natural-language open-ended Q/A.",
+    "Correctness of 100000-step numeric chain depends on an observed ground-truth affine law; no general unknown scientific axioms discovered.",
+    "The numeric action law was fit using a preselected 4-feature functional basis; no autonomous universal feature discovery.",
+    "The original Discoverer.shape is invoked exactly at each hierarchy level; hierarchy grouping is new source logic.",
+    "Not yet causally connected to the original V17 live answer writer, native training worker, UI or GPU. No V17 CUDA throughput claim.",
+    "No real OpenThoughts3 heldout long-answer test was run here, no external full-text general accuracy guarantee.",
+    "Full original transcript byte completeness remains blocked; only current source branch files known."
+  ],
+  "gate": "PARTIAL_SCIENTIFIC_RESULT__FULL_RELEASE_BLOCKED"
+}
