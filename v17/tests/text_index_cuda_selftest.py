@@ -38,10 +38,18 @@ def main():
     X.sync();fastMs=(time.perf_counter()-t)*1000
     for a,b in zip(old,fast):
         np.testing.assert_array_equal(X.tonp(a),X.tonp(b))
+    # CPU is the semantic oracle.  CUDA must return the exact same ordered
+    # trust updates, predictions, counters and bounded memory before the real
+    # trainer is allowed to start.
+    exercise=list(map(int,corpus[180:320]))
     card=mod.TextCard(device,max_memory=2048)
-    card.append([corpus[:180]])
+    reference=mod.TextCard("numpy",max_memory=2048)
+    card.append([corpus[:180]]); reference.append([corpus[:180]])
     before=card.total_seen
-    r=card.live([list(map(int,corpus[180:320]))],trust=[],chunk=64)
+    r=card.live([exercise],trust=[],chunk=64)
+    cpu=reference.live([exercise],trust=[],chunk=64)
+    assert r==cpu,(r,cpu)
+    np.testing.assert_array_equal(card.X.tonp(card.mem),reference.mem)
     assert r["seen"]==139, r
     assert r["totalCardChars"]==before+140, r
     assert len(r["variants"])==0,r
@@ -56,6 +64,7 @@ def main():
       "preUpdateCorrect":r["hits"],
       "preUpdateTotal":r["seen"],
       "modelMemory":r["memory"],
+      "exactCpuOracleParity":True,
       "result":"PASS; no fake GPU or inference-only pass"},flush=True)
 
 if __name__=="__main__":

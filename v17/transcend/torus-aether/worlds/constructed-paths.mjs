@@ -305,6 +305,10 @@ export class ConstructedPathLearner {
     const suffix=history.slice(-scale);
     return 'text:'+scale+':'+(scale>=8?ConstructedPathLearner.qkey(question):'')+':'+suffix;
   }
+  textStateWithKey(questionKey,history,scale){
+    const suffix=history.slice(-scale);
+    return 'text:'+scale+':'+(scale>=8?questionKey:'')+':'+suffix;
+  }
   trainText(question,answer){
     if(typeof question!=='string'||typeof answer!=='string'||!question.trim()||!answer.trim())
       return {trained:false,reason:'missing observed question or answer'};
@@ -312,16 +316,20 @@ export class ConstructedPathLearner {
     // No hard cap on training answer length; only the number of DISTINCT
     // learned states is bounded. Long sequences continue providing evidence.
     const bytes=Array.from(answer,c=>c.charCodeAt(0)).filter(x=>x>=0&&x<128);
-    const context=this.first.get(ConstructedPathLearner.qkey(q))||new Map();
-    const firstKey=ConstructedPathLearner.qkey(q),leading=bytes[0];
+    // qkey is invariant for the entire row.  Recomputing its regexp/Set/sort
+    // for every character and every long-context scale dominated CPU time on
+    // real OpenThoughts rows while producing the exact same key each time.
+    const firstKey=ConstructedPathLearner.qkey(q);
+    const context=this.first.get(firstKey)||new Map();
+    const leading=bytes[0];
     context.set(leading,(context.get(leading)||0)+1);
     if(this.first.size<25000||this.first.has(firstKey))this.first.set(firstKey,context);
     let history='';
     for(let i=0;i<=bytes.length;i++){
       const next=i===bytes.length?END:bytes[i];
       for(let s=0;s<this.byScale.length;s++){
-        const width=this.byScale[s],state=this.textState(q,history,width);
-        this.scales[s].observe(state,String(next),this.textState(q,history+String.fromCharCode(next===END?0:next),width));
+        const width=this.byScale[s],state=this.textStateWithKey(firstKey,history,width);
+        this.scales[s].observe(state,String(next),this.textStateWithKey(firstKey,history+String.fromCharCode(next===END?0:next),width));
       }
       if(next===END){this.textEOS++;break;}
       this.textChars++;history+=String.fromCharCode(next);

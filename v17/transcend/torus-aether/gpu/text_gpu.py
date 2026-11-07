@@ -7,6 +7,8 @@ earned), then sees the symbol: each kind of alignment earns or loses trust. Only
 CPU (trust right/tried per kind, hits of the brain and of its variations); the exercises join the memory here and
 there. Mirrors align.mjs (AligningGraph) exactly where it can; where it cannot (the longest earlier match inside the
 exercise is found at lengths 1, 2, 4 … 64, not exactly) it says so."""
+import ctypes
+import pathlib
 import numpy as np
 try:
     import torch
@@ -16,6 +18,39 @@ except Exception:
 
 DIG = 48
 SRC = ["mem", "self", "form", "fself"]          # key ids, the same names as align.mjs
+_EXACT_HISTOGRAM = None
+
+def exact_histogram_available():
+    """Load the prebuilt placement-only CUDA kernel; absence keeps exact slow path."""
+    global _EXACT_HISTOGRAM
+    if _EXACT_HISTOGRAM is False: return False
+    if _EXACT_HISTOGRAM is None:
+        dll = pathlib.Path(__file__).with_name("exact_histogram_cuda.dll")
+        if not dll.exists():
+            _EXACT_HISTOGRAM = False
+            return False
+        try:
+            lib = ctypes.CDLL(str(dll))
+            fn = lib.mp_exact_weighted_histogram
+            fn.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
+                           ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
+                           ctypes.c_int, ctypes.c_void_p]
+            fn.restype = ctypes.c_int
+            _EXACT_HISTOGRAM = (lib, fn)
+        except OSError:
+            _EXACT_HISTOGRAM = False
+    return bool(_EXACT_HISTOGRAM)
+
+def exact_weighted_histogram(ys, weights, scores, digit_mass, form_source):
+    if not exact_histogram_available(): return False
+    ys = ys.contiguous(); weights = weights.contiguous()
+    stream = torch.cuda.current_stream(ys.device).cuda_stream
+    status = _EXACT_HISTOGRAM[1](
+        ctypes.c_void_p(ys.data_ptr()), ctypes.c_void_p(weights.data_ptr()),
+        ctypes.c_void_p(scores.data_ptr()), ctypes.c_void_p(digit_mass.data_ptr()),
+        ys.shape[0], ys.shape[1], int(bool(form_source)), ctypes.c_void_p(stream))
+    if status: raise RuntimeError("exact ordered CUDA histogram launch failed: %d" % status)
+    return True
 
 def key_id(src, d, supb, farb):                  # one integer per kind of alignment (align.mjs key(p))
     return ((src * 13 + min(d, 12)) * 4 + supb) * 11 + farb   # farb 10 = none
@@ -147,10 +182,12 @@ class Index:                                     # suffix array of the REVERSED 
 def form_of(X, a): return X.where((a >= 48) & (a <= 57), X.zeros(a.shape, np.int64) + DIG, a)
 
 class TextCard:
+    KEY_COUNT = 4 * 13 * 4 * 11
     def __init__(self, device, depth=6, form_depth=4, maxK=64, S=64, max_memory=65536):
         self.X = X(device); self.depth, self.form_depth, self.maxK, self.S = depth, form_depth, maxK, S
         self.max_memory = max(256, int(max_memory))
         self.total_seen = 0
+        self._fraction_lut = None
         self._self = {} # never reuse per-exercise suffix automata across native Brains
         self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0
     def append(self, exs, progress=None):
@@ -180,28 +217,91 @@ class TextCard:
                 lo = LO[r, kc]; hi = HI[r, kc]; ys = ix.sample_next(X, lo, hi, self.S)
                 out.append((src, d, ok, hi - lo, ys))
         return out
+    def _cuda_empirical(self, ys, form_source=False):
+        """Exact old repeated-q histogram, with integer CUDA counting.
+
+        The lookup table is built by the same sequence of FP32 additions as
+        the former j-loop, so this removes kernel-launch overhead without
+        replacing the arithmetic with count/total (which can round
+        differently).
+        """
+        X = self.X; Q, width = ys.shape
+        if self._fraction_lut is None:
+            den = torch.arange(self.S + 1, dtype=torch.float32, device=X.dev)
+            q = torch.where(den > 0, 1.0 / den, torch.zeros_like(den))
+            lut = torch.zeros((self.S + 1, self.S + 1), dtype=torch.float32, device=X.dev)
+            for n in range(1, self.S + 1):
+                lut[:, n] = lut[:, n - 1] + q
+            self._fraction_lut = lut
+        valid = ys >= 0
+        symbols = ys.clamp(0, 128)
+        counts = torch.zeros((Q, 129), dtype=torch.int64, device=X.dev)
+        counts.scatter_add_(1, symbols, valid.to(torch.int64))
+        totals = valid.to(torch.int64).sum(1).clamp(1, self.S)
+        base = self._fraction_lut[totals[:, None], counts.clamp(0, self.S)]
+        if form_source:
+            digit_mass = base[:, DIG].clone()
+            base[:, DIG] = 0
+        else:
+            digit_mass = torch.zeros(Q, dtype=torch.float32, device=X.dev)
+        return base, digit_mass
     def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None):
         """exs: exercises (lists of symbols) lived now. trust: {key_id: [right, tried]}. Returns the totals."""
         X = self.X; flat = []; owner = []; posin = []; self._self = {}
         for e_i, e in enumerate(exs):
             for i in range(1, len(e)): flat.append(i); owner.append(e_i)
         T_right = {}; T_tried = {}; hits = 0; vhits = [0] * len(variants); total = len(flat)
+        # On CUDA these exact integer totals stay on the card for the complete
+        # batch.  The old path copied kid/right to NumPy for every proposal,
+        # forcing thousands of device synchronizations.  first_group retains
+        # the original dict insertion order: chunks, then proposals, with the
+        # keys sorted by np.unique inside each proposal.
+        cuda = X.t and str(X.dev).startswith("cuda")
+        if cuda:
+            T_right_card = torch.zeros(self.KEY_COUNT, dtype=torch.int64, device=X.dev)
+            T_tried_card = torch.zeros(self.KEY_COUNT, dtype=torch.int64, device=X.dev)
+            T_first_group = torch.full((self.KEY_COUNT,), 2**62, dtype=torch.int64, device=X.dev)
+            hits_card = torch.zeros((), dtype=torch.int64, device=X.dev)
+            vhits_card = torch.zeros(len(variants), dtype=torch.int64, device=X.dev)
+            # Keep the real exercises on the card and gather every reversed
+            # context there.  Previously Python rebuilt Q x 64 contexts one
+            # row at a time and copied each chunk to CUDA.
+            lengths = np.asarray([len(e) for e in exs], dtype=np.int64)
+            starts = np.concatenate([np.zeros(1, dtype=np.int64), np.cumsum(lengths)[:-1]])
+            starts_card_all = X.arr(starts)
+            exercise_card = X.arr(np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]))
+            reverse_depth = torch.arange(self.maxK, dtype=torch.int64, device=X.dev)[None, :]
         if progress is not None: progress(0, total, 'preparing-real-text')
         names = [x for x in trust if not x[0].endswith(":c")]; trust = [(name_id(nm), r, t) for nm, r, t in names if nm.split(":")[0] in SRC]
         tk = np.array([k for k, _, _ in trust], dtype=np.int64); tv = np.array([(r + 1) / (t + 2) for _, r, t in trust], dtype=np.float32)
         lut = np.full(4 * 13 * 4 * 11 + 1, .5, dtype=np.float32); lut[tk] = tv; LUT = X.arr(lut, np.float32)
         for c0 in range(0, total, chunk):
             Pi = flat[c0:c0 + chunk]; Oi = owner[c0:c0 + chunk]; Q = len(Pi)
-            ctx = np.full((Q, self.maxK), -2, dtype=np.int64); ys_true = np.zeros(Q, dtype=np.int64)
+            ctx = None if cuda else np.full((Q, self.maxK), -2, dtype=np.int64)
+            ys_true = None if cuda else np.zeros(Q, dtype=np.int64)
             # inside the exercise: the longest earlier match of the present (lengths 1,2,4..64), the symbol after it, how far back
             sy = np.full(Q, -1, dtype=np.int64); sk = np.zeros(Q, dtype=np.int64); sfar = np.zeros(Q, dtype=np.int64)
             fsy = np.full(Q, -1, dtype=np.int64); fsk = np.zeros(Q, dtype=np.int64); fsfar = np.zeros(Q, dtype=np.int64)
-            for q, (i, o) in enumerate(zip(Pi, Oi)):
-                e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - L:i][::-1] if L else []; ys_true[q] = e[i]
+            if cuda:
+                owners_card = X.arr(Oi)
+                local_pos = X.arr(Pi)
+                starts_card = starts_card_all[owners_card]
+                global_pos = starts_card + local_pos
+                gather = global_pos[:, None] - 1 - reverse_depth
+                valid_context = gather >= starts_card[:, None]
+                CX = torch.where(valid_context,
+                    exercise_card[gather.clamp(0, len(exercise_card) - 1)],
+                    torch.full((Q, self.maxK), -2, dtype=torch.int64, device=X.dev))
+                Y = exercise_card[global_pos]
+            else:
+                for q, (i, o) in enumerate(zip(Pi, Oi)):
+                    e = exs[o]; L = min(i, self.maxK); ctx[q, :L] = e[i - L:i][::-1] if L else []; ys_true[q] = e[i]
             for q, (i, o) in enumerate(zip(Pi, Oi)):
                 h = self._selfidx(exs, o, progress=progress); r = h.get(i)
                 if r: sy[q], sk[q], sfar[q], fsy[q], fsk[q], fsfar[q] = r
-            CX = X.arr(ctx); FCX = form_of(X, CX); Y = X.arr(ys_true); FY = form_of(X, Y)
+            if not cuda:
+                CX = X.arr(ctx); Y = X.arr(ys_true)
+            FCX = form_of(X, CX); FY = form_of(X, Y)
             props = self._proposals(CX, FCX)
             # the self alignments as proposals with one symbol
             for src, yy, kk, ff in ((1, sy, sk, sfar), (3, fsy, fsk, fsfar)):
@@ -221,16 +321,19 @@ class TextCard:
                 valid = ys >= 0
                 cnt = X.f32(valid).sum(1)
                 cnt = X.where(cnt > 0, cnt, cnt + 1)
-                base = X.zeros((Q, 129), np.float32)
-                digit_mass = X.zeros(Q, np.float32)
-                for j in range(ys.shape[1]):
-                    yj = X.clip(ys[:, j], 0, 128)
-                    q = X.where(valid[:, j], 1.0 / cnt, X.zeros(Q, np.float32))
-                    if src >= 2:
-                        isd = yj == DIG
-                        digit_mass += X.where(isd, q, X.zeros(Q, np.float32))
-                        q = X.where(isd, X.zeros(Q, np.float32), q)
-                    base[rows, yj] += q
+                if cuda:
+                    base, digit_mass = self._cuda_empirical(ys, src >= 2)
+                else:
+                    base = X.zeros((Q, 129), np.float32)
+                    digit_mass = X.zeros(Q, np.float32)
+                    for j in range(ys.shape[1]):
+                        yj = X.clip(ys[:, j], 0, 128)
+                        q = X.where(valid[:, j], 1.0 / cnt, X.zeros(Q, np.float32))
+                        if src >= 2:
+                            isd = yj == DIG
+                            digit_mass += X.where(isd, q, X.zeros(Q, np.float32))
+                            q = X.where(isd, X.zeros(Q, np.float32), q)
+                        base[rows, yj] += q
                 prepared.append((src, ok, kid, base, digit_mass))
             def blend(gv, fw):
                 S = X.zeros((Q, 129), np.float32)
@@ -248,17 +351,46 @@ class TextCard:
                 S[:, DIG] = S[:, DIG] + X.where(has,
                     X.zeros(Q, np.float32), dmass)
                 return X.argmax1(S[:, :128])
-            guess = blend(g, formW); hits += int((guess == Y).sum())
-            for vi, (gv, fw) in enumerate(variants): vhits[vi] += int((blend(gv, fw) == Y).sum())
-            for p in props:
+            guess = blend(g, formW)
+            if cuda: hits_card += X.i64(guess == Y).sum()
+            else: hits += int((guess == Y).sum())
+            for vi, (gv, fw) in enumerate(variants):
+                score = X.i64(blend(gv, fw) == Y).sum()
+                if cuda: vhits_card[vi] += score
+                else: vhits[vi] += int(score)
+            for prop_i, p in enumerate(props):
                 src, d, ok, sup, ys = p[:5]; farb = p[5] if len(p) > 5 else None
                 kid = self._kid(src, d, sup, farb, Q); top = self._top(ys); want = FY if src >= 2 else Y
                 right = X.i64((top == want) & ok); okc = X.i64(ok)
-                kn = X.tonp(kid[ok]); rn = X.tonp(right[ok])
-                if len(kn): u, inv = np.unique(kn, return_inverse=True); rr = np.bincount(inv, weights=rn).astype(np.int64); tt = np.bincount(inv).astype(np.int64)
-                else: u, rr, tt = [], [], []
-                for k_, r_, t_ in zip(u, rr, tt): T_right[int(k_)] = T_right.get(int(k_), 0) + int(r_); T_tried[int(k_)] = T_tried.get(int(k_), 0) + int(t_)
-        if progress is not None: progress(c0 + Q, total, 'alignment')
+                if cuda:
+                    kn = kid[ok]
+                    if kn.numel():
+                        T_right_card += torch.bincount(kn, weights=right[ok], minlength=self.KEY_COUNT).to(torch.int64)
+                        T_tried_card += torch.bincount(kn, minlength=self.KEY_COUNT)
+                        # Preserve the original configured 256-character
+                        # update-list insertion order even when a larger CUDA
+                        # execution chunk combines several such logical
+                        # groups. This makes chunk size a placement/performance
+                        # choice only, never a learned-state ordering change.
+                        rows_present = torch.nonzero(ok, as_tuple=False).flatten()
+                        logical_chunk = min(chunk, 256)
+                        groups = ((c0 + rows_present) // logical_chunk) * len(props) + prop_i
+                        first = torch.full((self.KEY_COUNT,), 2**62,
+                                           dtype=torch.int64, device=X.dev)
+                        first.scatter_reduce_(0, kn, groups, reduce="amin", include_self=True)
+                        T_first_group = torch.minimum(T_first_group, first)
+                else:
+                    kn = X.tonp(kid[ok]); rn = X.tonp(right[ok])
+                    if len(kn): u, inv = np.unique(kn, return_inverse=True); rr = np.bincount(inv, weights=rn).astype(np.int64); tt = np.bincount(inv).astype(np.int64)
+                    else: u, rr, tt = [], [], []
+                    for k_, r_, t_ in zip(u, rr, tt): T_right[int(k_)] = T_right.get(int(k_), 0) + int(r_); T_tried[int(k_)] = T_tried.get(int(k_), 0) + int(t_)
+            if progress is not None: progress(c0 + Q, total, 'alignment')
+        if cuda:
+            card = torch.stack([T_right_card, T_tried_card, T_first_group], dim=1).cpu().numpy()
+            order = sorted(np.flatnonzero(card[:, 1]), key=lambda k: (int(card[k, 2]), int(k)))
+            for k in order:
+                T_right[int(k)] = int(card[k, 0]); T_tried[int(k)] = int(card[k, 1])
+            hits = int(hits_card.cpu()); vhits = vhits_card.cpu().tolist()
         # imagining: from every 31st moment it writes 48 symbols ahead from its own expectations (all at once); as the real
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
         W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress, batch=max(32, min(256, chunk)))
@@ -277,39 +409,70 @@ class TextCard:
         for nm, v in wl.items():
             if nm.split(":")[0] in SRC: lut[name_id(nm)] = v                 # while imagining: what it learned to trust then, else what it trusts reading
         LUT = X.arr(lut, np.float32)
+        cuda = X.t and str(X.dev).startswith("cuda")
+        if cuda:
+            W_right_card = torch.zeros(self.KEY_COUNT, dtype=torch.int64, device=X.dev)
+            W_tried_card = torch.zeros(self.KEY_COUNT, dtype=torch.int64, device=X.dev)
+            W_first_group = torch.full((self.KEY_COUNT,), 2**62, dtype=torch.int64, device=X.dev)
         for c0 in range(0, len(starts), batch):
             St = starts[c0:c0 + batch]; Rn = len(St); ctx = np.full((Rn, self.maxK), -2, dtype=np.int64)
             for r, (o, i) in enumerate(St): e = exs[o]; L = min(i, self.maxK); ctx[r, :L] = e[i - L:i][::-1]
-            CX = X.arr(ctx); ok = np.ones(Rn, dtype=bool)
+            CX = X.arr(ctx); ok = X.arr(np.ones(Rn, dtype=bool), bool) if cuda else np.ones(Rn, dtype=bool)
             for step in range(K):
                 if progress is not None and step % 8 == 0: progress(c0 * K + step * Rn, len(starts) * K, 'imagination')
                 real = np.array([exs[o][i + step] if i + step < len(exs[o]) else -1 for (o, i) in St], dtype=np.int64)
-                act = ok & (real >= 0)
-                if not act.any(): break
-                props = self._proposals(CX, form_of(X, CX)); Y = X.arr(real); FY = form_of(X, Y)
+                real_card = X.arr(real)
+                act = ok & ((real_card >= 0) if cuda else (real >= 0))
+                if not bool(act.any()): break
+                props = self._proposals(CX, form_of(X, CX)); Y = real_card; FY = form_of(X, Y)
                 Sx = X.zeros((Rn, 129), np.float32); dmass = X.zeros(Rn, np.float32)
-                for src, d, okp, sup, ys in props:
+                for prop_i, (src, d, okp, sup, ys) in enumerate(props):
                     kid = self._kid(src, d, sup, None, Rn); w = LUT[kid] ** g * (formW if src >= 2 else 1.0); w = X.where(okp, w, X.zeros(Rn, np.float32))
                     valid = ys >= 0; cnt = X.f32(valid).sum(1); cnt = X.where(cnt > 0, cnt, cnt + 1)
-                    for j in range(ys.shape[1]):
-                        yj = X.clip(ys[:, j], 0, 128); q = X.where(valid[:, j], w / cnt, X.zeros(Rn, np.float32))
-                        if src >= 2: isd = yj == DIG; dmass = dmass + X.where(isd, q, X.zeros(Rn, np.float32)); q = X.where(isd, X.zeros(Rn, np.float32), q)
-                        Sx[X.arange(Rn), yj] += q
-                    top = self._top(ys); want = FY if src >= 2 else Y; m = okp & X.arr(act, bool)
-                    kn = X.tonp(kid[m]); rn = X.tonp(X.i64(top == want)[m])
-                    if len(kn):
-                        u, inv = np.unique(kn, return_inverse=True); rr = np.bincount(inv, weights=rn).astype(np.int64); tt = np.bincount(inv).astype(np.int64)
-                        for k_, r_, t_ in zip(u, rr, tt): W_right[int(k_)] = W_right.get(int(k_), 0) + int(r_); W_tried[int(k_)] = W_tried.get(int(k_), 0) + int(t_)
+                    fused = cuda and exact_weighted_histogram(ys, w, Sx, dmass, src >= 2)
+                    if not fused:
+                        for j in range(ys.shape[1]):
+                            yj = X.clip(ys[:, j], 0, 128); q = X.where(valid[:, j], w / cnt, X.zeros(Rn, np.float32))
+                            if src >= 2: isd = yj == DIG; dmass = dmass + X.where(isd, q, X.zeros(Rn, np.float32)); q = X.where(isd, X.zeros(Rn, np.float32), q)
+                            Sx[X.arange(Rn), yj] += q
+                    top = self._top(ys); want = FY if src >= 2 else Y; m = okp & (act if cuda else X.arr(act, bool))
+                    if cuda:
+                        kn = kid[m]; rn = X.i64(top == want)[m]
+                        if kn.numel():
+                            W_right_card += torch.bincount(kn, weights=rn, minlength=self.KEY_COUNT).to(torch.int64)
+                            W_tried_card += torch.bincount(kn, minlength=self.KEY_COUNT)
+                            present = torch.bincount(kn, minlength=self.KEY_COUNT) > 0
+                            group = ((c0 // batch) * K + step) * len(props) + prop_i
+                            W_first_group = torch.where(present & (W_first_group > group), group, W_first_group)
+                    else:
+                        kn = X.tonp(kid[m]); rn = X.tonp(X.i64(top == want)[m])
+                        if len(kn):
+                            u, inv = np.unique(kn, return_inverse=True); rr = np.bincount(inv, weights=rn).astype(np.int64); tt = np.bincount(inv).astype(np.int64)
+                            for k_, r_, t_ in zip(u, rr, tt): W_right[int(k_)] = W_right.get(int(k_), 0) + int(r_); W_tried[int(k_)] = W_tried.get(int(k_), 0) + int(t_)
                 dig = Sx[:, 48:58]; dz = dig.sum(1); has = dz > 0
                 Sx[:, 48:58] = dig + dmass[:, None] * X.where(has[:, None], dig / X.where(has, dz, dz + 1)[:, None], X.zeros(dig.shape, np.float32))
-                guess = X.tonp(X.argmax1(Sx[:, :128]))
-                ok = ok & ~((guess != real) & (step >= 2))                      # once its imagination left reality (after the first 3), the rest says nothing
-                cn = X.tonp(CX); cn = np.concatenate([guess[:, None], cn[:, :-1]], axis=1); CX = X.arr(cn)
+                guess = X.argmax1(Sx[:, :128])
+                if cuda:
+                    ok = ok & ~((guess != real_card) & (step >= 2))
+                    CX = torch.cat([guess[:, None], CX[:, :-1]], dim=1)
+                else:
+                    guess = X.tonp(guess)
+                    ok = ok & ~((guess != real) & (step >= 2))                      # once its imagination left reality (after the first 3), the rest says nothing
+                    cn = X.tonp(CX); cn = np.concatenate([guess[:, None], cn[:, :-1]], axis=1); CX = X.arr(cn)
+        if cuda:
+            card = torch.stack([W_right_card, W_tried_card, W_first_group], dim=1).cpu().numpy()
+            order = sorted(np.flatnonzero(card[:, 1]), key=lambda k: (int(card[k, 2]), int(k)))
+            for k in order:
+                W_right[int(k)] = int(card[k, 0]); W_tried[int(k)] = int(card[k, 1])
         if progress is not None: progress(len(starts) * K, len(starts) * K, 'imagination')
         return W_right, W_tried
     def _top(self, ys):                          # the most frequent symbol among what followed (the proposal's guess)
         X = self.X; Q, S = ys.shape
         if S == 1: return ys[:, 0]
+        if X.t and str(X.dev).startswith("cuda"):
+            oh = torch.zeros((Q, 129), dtype=torch.int64, device=X.dev)
+            oh.scatter_add_(1, ys.clamp(0, 128), (ys >= 0).to(torch.int64))
+            return oh[:, :128].argmax(dim=1)
         oh = X.zeros((Q, 129), np.float32);
         for j in range(S): oh[X.arange(Q), X.clip(ys[:, j], 0, 128)] += X.f32(ys[:, j] >= 0)
         return X.argmax1(oh[:, :128])

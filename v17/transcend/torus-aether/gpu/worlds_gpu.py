@@ -449,7 +449,7 @@ class Server:
                     sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
                                                  "done": int(done), "total": int(total)}) + "\n")
                     sys.stdout.flush()
-            chunk = max(32, min(512, int(m.get("chunk") or self.text_chunk)))
+            chunk = max(32, min(4096, int(m.get("chunk") or self.text_chunk)))
             while True:
                 try:
                     r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),

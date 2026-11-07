@@ -6,7 +6,7 @@ param(
   [string]$Gpu="cuda:0",
   [double]$Vram=3.0,
   [int]$GpuTextBatch=1,
-  [int]$GpuTextChunk=256,
+  [int]$GpuTextChunk=4096,
   [int]$GpuWorlds=3,
   [int]$Every=250000,
   [int]$CheckpointEvery=100000,

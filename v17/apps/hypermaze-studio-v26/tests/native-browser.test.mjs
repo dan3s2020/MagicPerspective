@@ -11,6 +11,16 @@ import {spawn,spawnSync} from "node:child_process";
 import {createNativeBridge} from "../native-bridge.mjs";
 const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
 const browserBinary=()=>{
+  if(process.platform==="win32"){
+    const roots=[process.env.PROGRAMFILES,process.env["PROGRAMFILES(X86)"],
+      process.env.LOCALAPPDATA].filter(Boolean);
+    for(const root of roots)for(const rel of [
+      "Google/Chrome/Application/chrome.exe",
+      "Microsoft/Edge/Application/msedge.exe"]){
+      const candidate=path.join(root,rel);
+      try{if(spawnSync("cmd.exe",["/d","/c","if exist \""+candidate+"\" exit 0 else exit 1"]).status===0)return candidate}catch{}
+    }
+  }
   for(const name of ["google-chrome","google-chrome-stable","chromium","chromium-browser"]){
     const r=spawnSync("which",[name],{encoding:"utf8"});
     if(r.status===0)return r.stdout.trim();
@@ -82,6 +92,9 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
      }));
      if(u.pathname==="/health")return res.end(JSON.stringify({
         w:0,status:"antrenează",lastError:null,
+        lastBatchReal:{seconds:12.5,originalExerciseCount:1,characters:50000,
+          realEndToEndCharactersPerSecond:4000,cudaCardCharactersPerSecond:12500,
+          textChunk:4096},
         health:{state:"running",phase:"CPU: Brain.live exact original symbolic consolidation",
           phaseSince:Date.now()-4500,heartbeatAgeMs:250,
           batch:{phase:"CPU: Brain.live exact original symbolic consolidation",
@@ -210,10 +223,18 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    assert.ok(nativeGeometry.history>200);
    assert.match(nativeGeometry.status,/ORIGINAL V17/);
    assert.equal(nativeGeometry.gpu,"cuda:0");
+   const speedUI=await c.eval("({last:document.querySelector('#nativeSpeedLast').textContent,"+
+     "cuda:document.querySelector('#nativeSpeedCuda').textContent,"+
+     "chunk:document.querySelector('#nativeGpuTextChunk').value})");
+   assert.match(speedUI.last,/4\.000,0 caractere\/s/);
+   assert.match(speedUI.cuda,/12\.500,0 caractere\/s/);
+   assert.equal(speedUI.chunk,"4096");
    await c.eval("document.querySelector('#nativeGpuApply').click()");
    await sleep(170);
    assert.ok(calls.some(x=>x.url==="/gpu"&&x.query.includes("device=cuda%3A0")),
      "Original GPU control should not be cosmetic");
+   assert.ok(calls.some(x=>x.url==="/gpu"&&x.query.includes("textChunk=4096")),
+     "CUDA text chunk must be forwarded live to the original engine");
    await c.eval("document.querySelector('#evalBtn').click()");
    let accurate=false;
    for(let i=0;i<90;i++){

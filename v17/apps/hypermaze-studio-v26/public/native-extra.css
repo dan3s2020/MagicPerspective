@@ -11,6 +11,12 @@
   border:1px solid #30435b;border-radius:8px;color:#dceaf8;padding:8px}
 #nativeGpuApply{width:100%;margin:12px 0 10px}
 #nativeGpuPanel small{display:block;color:#a1b6c9;font-size:10px;line-height:1.5}
+.native-speed-title{margin:4px 0 7px;color:#5ff0cf;font-size:10px;font-weight:900;letter-spacing:.1em}
+.native-speed-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 14px}
+.native-speed-grid>div{min-width:0;padding:12px 10px;border:1px solid #3d8b82;border-radius:8px;background:linear-gradient(145deg,#0a2230,#0b1829);box-shadow:inset 0 0 18px #41e3c50b}
+.native-speed-grid span{display:block;color:#78f1d7;font-size:9px;font-weight:900;letter-spacing:.08em}
+.native-speed-grid strong{display:block;margin:6px 0 3px;color:#f0fffb;font-size:18px;font-variant-numeric:tabular-nums}
+.native-speed-grid small{color:#8fa9bd!important}
 .native-maze-box{padding:8px 16px 22px;text-align:center;color:#b5d2e7}
 .native-maze-box[hidden]{display:none}
 .native-maze-box h3{font-size:13px;margin:8px 0 12px}
@@ -20,6 +26,7 @@
 #nativeResultsTable button{white-space:normal;text-align:left}
 @media(max-width:750px){
   .native-gpu-grid{grid-template-columns:1fr}
+  .native-speed-grid{grid-template-columns:1fr}
   .native-chart-area{margin:0 10px;height:200px}
 }
 

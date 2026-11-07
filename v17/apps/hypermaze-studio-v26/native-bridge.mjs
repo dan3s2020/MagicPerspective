@@ -155,6 +155,7 @@ export async function createNativeBridge({
         send(res,{...nativeSnapshot(graphs,graph,worker),
           workerHealth:nativeWorkerHealth(selected),
           liveHealth:liveHealth?.health||null,
+          liveLastBatchReal:liveHealth?.lastBatchReal||null,
           liveHealthStatus:liveHealth?.status||null,
           liveLastError:liveHealth?.lastError||null,
           liveHealthError,
@@ -257,6 +258,7 @@ export async function createNativeBridge({
           device:dev,
           worlds:String(Math.trunc(bounded(b.worlds,0,100000,0))),
           textBatch:String(Math.trunc(bounded(b.textBatch,1,128,8))),
+          textChunk:String(Math.trunc(bounded(b.textChunk,32,4096,4096))),
           vram:String(bounded(b.vram,0,128,0)),
           util:String(Math.trunc(bounded(b.util,5,100,100)))
         });

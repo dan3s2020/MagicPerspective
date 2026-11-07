@@ -164,7 +164,14 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
-    if (m.type === "note") {sl.lastNote=m.text;return console.log(`#${sl.w} ${m.text}`);}
+    if (m.type === "note") {
+      sl.lastNote=m.text;
+      if (typeof m.text === "string" && m.text.startsWith("V41_BATCH_END_TO_END_REAL ")) {
+        try { sl.lastBatchReal=JSON.parse(m.text.slice("V41_BATCH_END_TO_END_REAL ".length)); }
+        catch { /* keep the original note even if diagnostic JSON is incomplete */ }
+      }
+      return console.log(`#${sl.w} ${m.text}`);
+    }
     if (m.type === "heartbeat") {
       sl.lastHeartbeatAt=Date.now();sl.lastHeartbeat=m;return;
     }
@@ -286,7 +293,10 @@ http.createServer((req, res) => {
     for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
   if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform", "selfcode"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
-    for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
+    for (const k of ["device", "worlds", "vram", "util", "textBatch", "textChunk"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
+    gpuSettings.textBatch=Math.max(1,Math.min(128,Math.trunc(gpuSettings.textBatch||1)));
+    gpuSettings.textChunk=Math.max(32,Math.min(4096,Math.trunc(gpuSettings.textChunk||128)));
+    gpuSettings.util=Math.max(5,Math.min(100,Math.trunc(gpuSettings.util||100)));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
   // Every recorded training episode is stored append-only in its real
   // native worker journal; read only a bounded byte range from a known path.
@@ -645,6 +655,7 @@ http.createServer((req, res) => {
       canResume:fs.existsSync(saveOf(sl)),
       checkpoint:saveOf(sl),lastError:sl.lastError||null,
       lastNote:sl.lastNote||null,
+      lastBatchReal:sl.lastBatchReal||null,
       snapshotAt:graphs.get(w)?.snapshotAt||null,
       lastGraphChars:graphs.get(w)?.chars??null,
       dataset:slotInfo(sl).dataset});

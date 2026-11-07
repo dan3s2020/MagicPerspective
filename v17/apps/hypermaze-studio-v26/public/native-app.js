@@ -120,7 +120,7 @@ function updateGpuControls(snapshot,m){
   if(!$("nativeGpuDevice").dataset.initialized){
     const d=String(config.device||"off");
     if(["off","cpu","cuda:0","cuda:1"].includes(d))$("nativeGpuDevice").value=d;
-    for(const [k,id]of [["worlds","nativeGpuWorlds"],["textBatch","nativeGpuTextBatch"],
+    for(const [k,id]of [["worlds","nativeGpuWorlds"],["textBatch","nativeGpuTextBatch"],["textChunk","nativeGpuTextChunk"],
       ["vram","nativeGpuVram"],["util","nativeGpuUtil"]]){
       if(config[k]!=null&&Number.isFinite(Number(config[k])))$(id).value=config[k];
     }
@@ -131,6 +131,20 @@ function updateGpuControls(snapshot,m){
     "Viteză neraportată încă":"Viteză "+fmt(m.completedExercisesPerSecond,3)+" ex/s";
   value("nativeGpuStatus",error?"EROARE CUDA "+String(error).slice(0,125):
     String(m.nativeDevice)+" · "+textStatus);
+  const last=m.lastBatchReal;
+  const lastCps=Number.isFinite(last?.realEndToEndCharactersPerSecond)?
+    last.realEndToEndCharactersPerSecond:m.lastCharactersPerSecond;
+  const cudaCps=Number.isFinite(last?.cudaCardCharactersPerSecond)?
+    last.cudaCardCharactersPerSecond:m.cudaCardCharactersPerSecond;
+  value("nativeSpeedLast",fmt(lastCps,1)+" caractere/s");
+  value("nativeSpeedLastMeta",last?
+    fmt(last.characters)+" caractere · "+fmt(last.seconds,3)+" s · "+fmt(last.originalExerciseCount)+" texte":
+    "aștept finalizarea lotului");
+  value("nativeSpeedCuda",fmt(cudaCps,1)+" caractere/s");
+  value("nativeSpeedCudaMeta","chunk folosit "+fmt(last?.textChunk??m.gpuMicrochunkUsed??m.gpuConfiguredTextChunk)+
+    " · faza CUDA separată");
+  value("nativeSpeedSustained",fmt(m.sustainedCharactersPerSecond,1)+" caractere/s");
+  value("nativeSpeedSustainedMeta",fmt(m.completedExercisesPerSecond,4)+" texte/s · end-to-end");
 }
 function renderOriginalMaze(record){
   const box=$("nativeMazeBox"),canvas=$("nativeMazeCanvas"),ctx=canvas?.getContext("2d");
@@ -678,6 +692,7 @@ $("nativeGpuApply").addEventListener("click",()=>action("gpu",{
   device:$("nativeGpuDevice").value,
   worlds:Number($("nativeGpuWorlds").value),
   textBatch:Number($("nativeGpuTextBatch").value),
+  textChunk:Number($("nativeGpuTextChunk").value),
   vram:Number($("nativeGpuVram").value),
   util:Number($("nativeGpuUtil").value)
 }).then(()=>{notice("Setările GPU au fost transmise DIRECT motorului V17");poll()})

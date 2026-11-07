@@ -375,6 +375,7 @@ const worldsOnce = async (record) => {                                     // on
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } if (selfcode) selfcode.step(); await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
+let completedTextBatchChars=0,completedTextBatchExercises=0,completedTextBatchMs=0;
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   // V41 observability: this measures original CUDA and CPU work separately.
@@ -439,7 +440,9 @@ const processGpuText = async (exs, meta) => {
         setWorkerPhase("CPU: Brain.live exact original symbolic consolidation "+
           progressed+"/"+(exs[0]?.length||0));
       }
-      if (progressed % 32 === 0) await new Promise(r => setImmediate(r));
+      // Yield often enough for controls/health without paying for thousands
+      // of event-loop turns per long source row. Learning order is unchanged.
+      if (progressed % 2048 === 0) await new Promise(r => setImmediate(r));
     }
   }
   timed("CPU_ORIGINAL_BRAIN_LIVE_FULL_REPLAY");
@@ -478,17 +481,33 @@ const processGpuText = async (exs, meta) => {
     if(checkpointEvery>0)nextAutoSave=brain.chars+checkpointEvery;
   }else autonomousCheckpoint();
   timed("ORIGINAL_SAVING_OR_FROZEN_EVAL");
+  const batchElapsedMs=Math.max(1,performance.now()-batchStart);
+  completedTextBatchChars+=total;
+  completedTextBatchExercises+=exs.length;
+  completedTextBatchMs+=batchElapsedMs;
+  const endToEndCps=total*1000/batchElapsedMs;
+  if(brain.textGpu){
+    const cardMs=Math.max(1,Number(brain.textGpu.cardMs)||1);
+    brain.textGpu.hostMs={
+      charactersPerSecond:+endToEndCps.toFixed(2),
+      sustainedCharactersPerSecond:+(completedTextBatchChars*1000/completedTextBatchMs).toFixed(2),
+      sustainedExercisesPerSecond:+(completedTextBatchExercises*1000/completedTextBatchMs).toFixed(6),
+      cudaCardCharactersPerSecond:+(total*1000/cardMs).toFixed(2),
+      endToEndMilliseconds:+batchElapsedMs.toFixed(1)
+    };
+  }
   // Limit expensive full-size UI graph snapshots; return counts via /health
   // every 5 seconds even when the Brain is in a long CUDA batch.
   shot();
   timed("GRAPH_SNAPSHOT_ORIGINAL");
   parentPort.postMessage({type:"note",w:workerData.gw,
     text:"V41_BATCH_END_TO_END_REAL "+JSON.stringify({
-      seconds:+((performance.now()-batchStart)/1000).toFixed(3),
+      seconds:+(batchElapsedMs/1000).toFixed(3),
       originalExerciseCount:exs.length,
       characters:total,
-      realEndToEndCharactersPerSecond:
-        +((total*1000)/Math.max(1,performance.now()-batchStart)).toFixed(2)})});
+      realEndToEndCharactersPerSecond:+endToEndCps.toFixed(2),
+      cudaCardCharactersPerSecond:brain.textGpu?.hostMs?.cudaCardCharactersPerSecond??null,
+      textChunk:brain.textGpu?.textChunk??null})});
 };
 parentPort.on("message", m => {
   // V34 OPTIONAL research panel: exactly SAME mutable original Brain

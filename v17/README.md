@@ -39,6 +39,27 @@ node --test tests/*.test.mjs
 
 Rezultatele și metodele sunt în `docs/TORUS_AETHER_ABC_20261104.md`.
 
+## V41: profil CUDA exact și UI live de viteză
+
+Pentru RTX 3050 Ti 4 GB, profilul verificat care continuă checkpointul original
+fără să schimbe arhitectura sau ordinea învățării este:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\v17\START_V41_SPEED_PROFILE.ps1
+```
+
+Launcherul deschide PowerShell-ul trainerului și UI-ul la
+`http://127.0.0.1:8952/`. În `04 / CONTROL LIVE` sunt afișate separat viteza
+ultimului lot complet, viteza fazei CUDA TextCard și viteza susținută
+end-to-end. `Caractere / chunk CUDA` este aplicat la frontiera următorului lot;
+valoarea verificată pe placa de mai sus este `4096`, cu reducere automată numai
+la un OOM real.
+
+Instrucțiunile complete, rezultatele măsurate și regenerarea kernelului Windows
+sunt în [`docs/CUDA_SPEED_V41.md`](docs/CUDA_SPEED_V41.md). Invariantele care
+interzic regresia de învățare sunt în
+[`docs/CUDA_PORT_INVARIANTS.md`](docs/CUDA_PORT_INVARIANTS.md).
+
 
 ## Experimental: unified real-world transformation learner (isolated)
 
