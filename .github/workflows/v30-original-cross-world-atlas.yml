@@ -27,3 +27,5 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright-core@1.56.1
           node v17/tests/v30-native-atlas-browser.test.mjs
+      - name: Real segmented text contrast transfer through native original shape, positive and falsifying physical worlds
+        run: node --test v17/tests/v30-segmented-native-corpus-transfer.test.mjs
