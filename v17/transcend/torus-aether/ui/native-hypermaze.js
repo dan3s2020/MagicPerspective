@@ -307,3 +307,12 @@ function animation(timestamp){
 }
 poll();setInterval(poll,1500);requestAnimationFrame(animation);
 draw();
+// Deep link is NOT a demo or fabricated answer. Only an explicitly
+// user-supplied observed start + goal tokens + plan=1 triggers the SAME
+// real worker POST route; no hidden reference answer is included.
+const deep=new URLSearchParams(location.search);
+if(deep.get("plan")==="1"&&deep.has("source")&&deep.has("required")){
+ $("source").value=deep.get("source");
+ $("required").value=deep.get("required");
+ setTimeout(()=>$("plan").click(),300);
+}
