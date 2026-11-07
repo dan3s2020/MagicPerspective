@@ -885,8 +885,17 @@ function renderWorkerHealth(summary,error=null) {
     D.assignedTrainingRows+" exerciții train · "+
     D.percent.toFixed(3)+"% din partea acestui worker (held-out excluse)":
     "Progres dataset: metadate încă neprimite";
+  const R=H.residentText;
+  const resident=R?
+    "VRAM SOURCE RESIDENT: "+Number(R.residentMB||0).toFixed(3)+" MB / "+
+      Number(R.budgetMB||0).toFixed(1)+" MB · "+
+      (R.residentExercises||0)+" exerciții viitoare încă necomise · "+
+      (R.committedExercises||0)+" evacuate DUPĂ învățare"+
+      "\nGPU fizic="+String(R.physicallyCudaResident)+
+      " · Context viitor = TRANSDUCTIV (nu test nevăzut)":
+    "Pool VRAM: se inițializează / neactivat";
   target.textContent=warning+"\n"+heartbeat+" · "+snapshot+
-    " · "+task+rpc+"\n"+rate+"\n"+progress;
+    " · "+task+rpc+"\n"+rate+"\n"+progress+"\n"+resident;
   target.style.borderColor=status==="error"||status==="unresponsive"?"#e65b6c":
     status==="stale-snapshot"?"#d49b43":"#30485f";
 }
