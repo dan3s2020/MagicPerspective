@@ -24,7 +24,7 @@ export class VeilAether {
     this.frameLimit=frameLimit;
     this.index=new Map();this.nodes=[];this.edges=new Map();this.out=new Map();
     this.docs=0;this.transitions=0;this.tokens=0;this.skippedStates=0;this.skippedEdges=0;
-    this.predictions=0;this.correct=0;this.singleCorrect=0;this.covered=0;
+    this.predictions=0;this.correct=0;this.singleCorrect=0;this.singleOnContextCovered=0;this.covered=0;
     this.single=new Map();this.domainEvents={maze:0,transform:0,text:0,code:0};
     this.experiences=new Map();this.last=null;
   }
@@ -101,6 +101,7 @@ export class VeilAether {
       this.predictions++;cov+=+(guess.token!==null);
       c+=+(guess.token!==null&&guess.token===observation);
       base+=+(one===observation);
+      if(guess.token!==null)this.singleOnContextCovered+=+(one===observation);
       if(record&&i<this.frameLimit){
         const localPlan=this.plan(states[i],goal,{maxSteps:80,field});
         frames.push({step:i+1,state:shown(states[i]),predicted:guess.token,
@@ -215,6 +216,7 @@ export class VeilAether {
       contextAccuracyCovered:this.covered?this.correct/this.covered:null,
       contextCoverage:this.predictions?this.covered/this.predictions:null,
       oneTokenAccuracyAll:this.predictions?this.singleCorrect/this.predictions:null,
+      oneTokenAccuracyOnSameCovered:this.covered?this.singleOnContextCovered/this.covered:null,
       priorContextGroupsWithDifferentFutures:ambiguousMiddle,
       historyAxisEvidence:historyUseful,
       axes:["previous_symbol","current_symbol"],gatingMeaning:
@@ -230,7 +232,8 @@ export class VeilAether {
       edges:[...this.edges.values()].map(e=>({...e})),docs:this.docs,
       transitions:this.transitions,tokens:this.tokens,skippedStates:this.skippedStates,
       skippedEdges:this.skippedEdges,predictions:this.predictions,
-      correct:this.correct,singleCorrect:this.singleCorrect,covered:this.covered,
+      correct:this.correct,singleCorrect:this.singleCorrect,
+      singleOnContextCovered:this.singleOnContextCovered,covered:this.covered,
       single:[...this.single].map(([word,m])=>[word,[...m]]),
       domainEvents:{...this.domainEvents},experiences:[...this.experiences.values()].map(x=>({...x})),
       last:this.last};
@@ -247,7 +250,7 @@ export class VeilAether {
       a.out.get(e.from).set(e.to,e.count);
     }
     for(const k of ["docs","transitions","tokens","skippedStates","skippedEdges",
-      "predictions","correct","singleCorrect","covered"])a[k]=data[k]||0;
+      "predictions","correct","singleCorrect","singleOnContextCovered","covered"])a[k]=data[k]||0;
     a.single=new Map((data.single||[]).map(([word,rows])=>[word,new Map(rows)]));
     a.domainEvents={...a.domainEvents,...data.domainEvents};
     a.experiences=new Map((data.experiences||[]).map(x=>[x.domain+"\u001f"+x.action,{...x}]));
