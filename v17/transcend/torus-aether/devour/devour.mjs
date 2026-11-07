@@ -74,6 +74,10 @@ function recordTelemetry(m) {
     textStates:m.constructedPaths?.scaleGraphStates?.reduce((n,x)=>n+(x.distinctStates||0),0)||0,
     pairedWorlds:m.constructedPaths?.pairedWorlds||0,
     noiseDecisions:m.endogenousNoise?.decisions||0,
+    hypermazeRows:m.hypermaze?.rows||0,
+    hypermazeAccuracy:m.hypermaze?.nextTokenAccuracy??null,
+    hypermazeBaseline:m.hypermaze?.unigramAccuracy??null,
+    hypermazeContext:m.hypermaze?.contextScale??null,
     gpuPhase:m.gpu?.batch?.phase||null,gpuDone:m.gpu?.batch?.done??null,
     gpuTotal:m.gpu?.batch?.total??null,gpuTextAccuracy:m.gpu?.text?.acc??null,
     vramGB:m.gpu?.maze?.vramUsedGB??m.gpu?.text?.vramUsedGB??null};
@@ -92,12 +96,13 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
-    language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
+    language: g?.language || t?.language || null, hypermaze:g?.hypermaze || t?.hypermaze || null,
+    endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".hypermaze.json"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
@@ -153,6 +158,30 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util", "textBatch"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
     for (const sl of slots) sl.wk?.postMessage({gpu: gpuFor() || {device: "off"}}); console.log("GPU settings:", JSON.stringify(gpuSettings)); return json(res, {ok: true, gpu: gpuSettings}); }
+  // Sidecar-only settings. Native Brain and CUDA training parameters are unchanged.
+  if(req.method==="POST"&&url==="/hypermaze-config"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl||!sl.wk)return json(res,{error:"Select a running text-training graph"});
+    const noise=+(q.get("noise")||0);
+    if(!Number.isFinite(noise)||noise<0||noise>1)return json(res,{error:"Noise must be between 0 and 1"});
+    sl.wk.postMessage({hyperMazeConfig:{noise}});
+    return json(res,{ok:true,w,noise,engine:"real streaming text-world sidecar"});
+  }
+  if(req.method==="POST"&&url==="/hypermaze-eval"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl||!sl.worlds.includes("text")||!sl.wk)
+      return json(res,{error:"A running graph training real text is required"});
+    const n=Math.max(1,Math.min(60,Math.trunc(+(q.get("count")||12))));
+    const id=++chatId,timer=setTimeout(()=>{chats.delete(id);
+      json(res,{error:"Frozen text maze evaluation exceeded 60 seconds"});},60000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w,
+      source:"actual held-out rows from the original V17 training dataset"})});
+    void heldPick(n).then(rows=>{
+      if(chats.has(id))sl.wk.postMessage({hyperMazeEval:{id,rows}});
+    }).catch(err=>{if(chats.has(id)){chats.delete(id);clearTimeout(timer);
+      json(res,{error:"Could not read held-out corpus: "+err.message});}});
+    return;
+  }
   if (req.method === "POST" && url === "/controls") {                    // ?w=<graph> (none = every graph) &ltemp=&pnoise=&gnoise=&glr=&repel=&wtemp=&ttemp=
     const c = {}; for (const k of ["ltemp", "pnoise", "gnoise", "glr", "repel", "wtemp", "ttemp"]) if (q.has(k) && Number.isFinite(+q.get(k))) c[k] = +q.get(k);
     const to = q.has("w") ? slots.filter(x => x.w === +q.get("w")) : slots; for (const sl of to) { sl.controls = {...(sl.controls || {}), ...c}; sl.wk?.postMessage({controls: c}); }
@@ -351,7 +380,8 @@ http.createServer((req, res) => {
       observedTransformations:graphs.get(w)?.observedTransformations||null,
       shared:graphs.get(w)?.shared||null,
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
-      constructedPaths:graphs.get(w)?.constructedPaths||null});
+      constructedPaths:graphs.get(w)?.constructedPaths||null,
+      hypermaze:graphs.get(w)?.hypermaze||null});
   }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
