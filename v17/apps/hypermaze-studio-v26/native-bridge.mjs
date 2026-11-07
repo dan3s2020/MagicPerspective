@@ -13,6 +13,7 @@ const FILES={
   "/": ["public/native.html","text/html; charset=utf-8"],
   "/native-app.js": ["public/native-app.js","text/javascript; charset=utf-8"],
   "/style.css": ["public/style.css","text/css; charset=utf-8"],
+  "/native-extra.css": ["public/native-extra.css","text/css; charset=utf-8"],
   "/native-metrics.mjs": ["native-metrics.mjs","text/javascript; charset=utf-8"]
 };
 const send=(res,body,status=200)=>{
