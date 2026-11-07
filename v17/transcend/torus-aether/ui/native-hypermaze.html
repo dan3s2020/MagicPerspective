@@ -61,6 +61,25 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
   <div class="card"><label>Traseu global</label><strong id="steps">—</strong></div>
   <div class="card"><label>Țintă internă</label><strong id="goal">—</strong></div>
  </div>
+ <section class="panel" id="realCorpus" style="margin-bottom:14px">
+  <div class="panelHead"><h2>OpenThoughts · antrenare reală a labirintului textual</h2>
+   <small id="realPhase">Aștept citirea corpusului real</small></div>
+  <div class="panelBody">
+   <div class="cards" style="margin-bottom:9px">
+    <div class="card"><label>Dataset consumat</label><strong id="realPercent">—</strong></div>
+    <div class="card"><label>Viteză text învățat</label><strong id="realMBs">—</strong><small>MB/s CPU · motorul testat</small></div>
+    <div class="card"><label>Rânduri învățate</label><strong id="realRows">—</strong></div>
+    <div class="card"><label>Exerciții / secundă</label><strong id="realEPS">—</strong></div>
+    <div class="card"><label>Operatori real învățați</label><strong id="realOps">—</strong></div>
+    <div class="card"><label>Control nevăzut</label><strong id="realHeldout">—</strong></div>
+   </div>
+   <div style="background:#17283c;height:8px;overflow:hidden;border-radius:9px">
+    <div id="realBar" style="width:0%;height:100%;background:linear-gradient(90deg,#a078d0,#efc77b,#68d7c3)"></div>
+   </div>
+   <div class="muted" id="realDetails" style="margin-top:9px">Datele sunt numai din procesul nativ, nu dintr-un contor fictiv.</div>
+   <div class="muted" style="font-size:11px;margin-top:5px">„Dataset consumat” înseamnă octeții JSONL citiți; fiecare token textual este reprezentat în observații, dar stările individuale au o memorie activă limitată. Procentul de predicție locală pe holdout nu este acuratețe semantică sau IQ.</div>
+  </div>
+ </section>
  <div class="rowmain">
   <section class="panel">
    <div class="panelHead"><h2>Topologie reală · proiecție 5D</h2><div class="legend"><span style="--c:#f0c87a">Forma globală</span><span style="--c:#66cce7">Execuție</span><span style="--c:#67deab">Obiectiv</span><span style="--c:#f0809a">Abatere</span></div></div>

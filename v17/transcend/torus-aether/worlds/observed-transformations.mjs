@@ -127,7 +127,7 @@ export class ObservedTransformations {
       .map(k=>k.slice(k.indexOf("|")+1)))];
     const picks=words.map(word=>{
       const postings=lengths.map(n=>this.index.get(n+"|"+word)||[]);
-      return {word,postings,size:postings.reduce((n,a)=>n+a.length,0)};
+      return {word,postings,size:postings.reduce((n,a)=>n+(a.size??a.length),0)};
     }).sort((a,b)=>a.size-b.size||a.word.localeCompare(b.word))
       .slice(0,Math.min(12,words.length));
     const scores=new Map();
@@ -177,6 +177,10 @@ export class ObservedTransformations {
       if(this.operators.size>=this.maxOperators){this.droppedOperators++;return;}
       op={...action,sourceObservations:0,evidence:[],key:k};
       this.operators.set(k,op);
+      // Optional SAME-BRAIN observation callback: allows the real corpus
+      // streamer to update original 5D geometry ONLY for genuinely new
+      // actions, instead of rescanning all learned operators per text row.
+      this.onNewOperator?.(op);
       this._ensureOperatorIndex();
       const bucket=this._operatorBucket(op);
       if(!this.operatorIndex.has(bucket))this.operatorIndex.set(bucket,new Set());
@@ -232,20 +236,35 @@ export class ObservedTransformations {
     this.newObservations++;
     this.order.push(id);
     for(const k of this._indexKeys(tokens)){
-      let arr=this.index.get(k);
-      if(!arr){arr=[];this.index.set(k,arr);}
-      arr.push(id);
-      // Retain all active observed worlds up to maxObserved. Only obsolete
-      // references are compacted; an infrequent earlier axis is NEVER
-      // excluded just because 96 newer passages share common anchor words.
-      if(arr.length>2*this.maxObserved){
-        const live=arr.filter(v=>this.records.has(v));
-        arr.splice(0,arr.length,...live);
+      let postings=this.index.get(k);
+      if(!postings){postings=new Set();this.index.set(k,postings);}
+      // Existing .v8 checkpoints may contain the original array index.
+      // Convert in place without removing any still-active observation.
+      if(Array.isArray(postings)){
+       postings=new Set(postings.filter(v=>this.records.has(v)));
+       this.index.set(k,postings);
       }
+      postings.add(id);
     }
     if(this.order.length>this.maxObserved){
       const old=this.order.shift(),record=this.records.get(old);
-      if(record)this.lookup.delete(freezeKey(record.tokens));
+      if(record){
+       this.lookup.delete(freezeKey(record.tokens));
+       // Critical real-corpus memory guard: never keep a million dead rare
+       // token keys after their source state was evicted. Posting removal
+       // is O(1) using Sets. The full original operator policy remains.
+       for(const k of this._indexKeys(record.tokens)){
+        const postings=this.index.get(k);
+        if(postings instanceof Set){
+         postings.delete(old);
+         if(!postings.size)this.index.delete(k);
+        }else if(Array.isArray(postings)){
+         const at=postings.indexOf(old);
+         if(at>=0)postings.splice(at,1);
+         if(!postings.length)this.index.delete(k);
+        }
+       }
+      }
       this.records.delete(old);this.evicted++;
     }
     return {learned:true,matched:candidates.length,operators:this.operators.size};

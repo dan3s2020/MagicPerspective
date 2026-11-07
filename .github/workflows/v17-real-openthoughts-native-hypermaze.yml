@@ -1,0 +1,48 @@
+name: REAL OpenThoughts JSONL -> tested NativeGoalTextMaze only (NOT legacy trainer)
+on:
+  push:
+    branches:
+      - feature/V17-REAL-OPENTHOUGHTS-HYPERMAZE-STREAM-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-disk-train-and-restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify ALL real corpus input, native model and native UI JS syntax
+        run: |
+          node --check v17/research/text-hypermaze/openthoughts-jsonl-source.mjs
+          node --check v17/research/text-hypermaze/real-corpus-worker.mjs
+          node --check v17/research/text-hypermaze/real-corpus-server.mjs
+          node --check v17/research/text-hypermaze/goal-conditioned-native.mjs
+          node --check v17/transcend/torus-aether/ui/native-hypermaze.js
+          node --check v17/tests/hypermaze-real-openthoughts-stream.test.mjs
+      - name: Actually run original proven NativeGoalTextMaze on UTF8 JSONL files, train/pause/save/restart/finish and browser (not mock)
+        run: node --test v17/tests/hypermaze-real-openthoughts-stream.test.mjs
+      - name: Preserve original exact 42/42 maze shape and real 100/100 + 24/24 withheld text tests
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
+          node --test v17/tests/native-hypermaze-long-multistep-heldout.test.mjs
+      - name: Never falsely claim full GPU/semantic release; contract remains BLOCKED
+        run: node --test v17/tests/hypermaze-stopship-release.test.mjs
+  windows-powershell:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse the REAL OpenThoughts native Hypermaze launcher and original launchers
+        shell: powershell
+        run: |
+          foreach($p in @("v17/START_REAL_OPENTHOUGHTS_HYPERMAZE.ps1","v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1")){
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path,[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw ($p+": "+($errors|Out-String))}
+            Write-Host "WIN_ORIGINAL_NATIVE_POWERSHELL_PARSE_PASS $p"
+          }
