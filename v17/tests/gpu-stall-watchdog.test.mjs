@@ -62,7 +62,12 @@ test("silent Python GPU RPC fails after bound, rejects pending promise and kills
    const gpu=make({idleTimeoutMs:1100,hardTimeoutMs:4000,initTimeoutMs:3000});
    await gpu.ready;
    const t0=Date.now();
-   await assert.rejects(gpu.call({cmd:"never-answer"}),/GPU RPC idle timeout: never-answer/);
+   await assert.rejects(gpu.call({cmd:"never-answer"}),err=>{
+     assert.match(err.message,/GPU RPC idle timeout: never-answer/);
+     assert.match(err.message,/no valid progress packets received/);
+     assert.match(err.message,/last CUDA stderr: none/);
+     return true;
+   });
    assert.ok(Date.now()-t0>=1000);
    assert.ok(Date.now()-t0<3200);
    assert.equal(gpu.dead,true);
@@ -94,8 +99,13 @@ test("even continuous GPU progress cannot hide a true hard wall-clock stall",{
    const gpu=make({idleTimeoutMs:1100,hardTimeoutMs:1900,initTimeoutMs:3000});
    await gpu.ready;
    const t0=Date.now();
-   await assert.rejects(gpu.call({cmd:"progress-with-no-end"}),
-     /GPU RPC hard timeout: progress-with-no-end/);
+   await assert.rejects(gpu.call({cmd:"progress-with-no-end"}),err=>{
+     assert.match(err.message,/GPU RPC hard timeout: progress-with-no-end/);
+     assert.match(err.message,/last valid progress/);
+     assert.match(err.message,/phase gpu loop/);
+     assert.match(err.message,/done \d+\/1000000000000/);
+     return true;
+   });
    assert.ok(Date.now()-t0>=1700);
    assert.ok(Date.now()-t0<3400);
    assert.equal(gpu.dead,true);
