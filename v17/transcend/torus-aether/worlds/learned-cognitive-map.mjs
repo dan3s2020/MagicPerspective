@@ -397,6 +397,84 @@ export class LearnedCognitiveMap {
       planningLaw:"ORIGINAL_DISCOVERER_SHAPE_ON_LEARNED_TRANSFORMATIONS",
       experimentalScope:"V19 observed local rules extrapolated to unseen state; NOT general natural-language semantic answering"};
   }
+
+  // Large text lives in the SAME V19 learned state/action/next-state grammar.
+  // Existing V19 buildWorld() 96-token method is left unchanged. This new
+  // explicitly bounded extension operates on the FULL token vector, including
+  // millions of source characters, with the exact original predict() law.
+  // Search is sparse in reachable transformed full states, not in characters.
+  // It does NOT infer a hidden semantic answer from an unconstrained question.
+  formSolutionLongNative(initial,goal,{
+    disc,maxNodes=32,maxDepth=8,maxTokens=400000
+  }={}){
+    if(typeof disc?.shape!=="function")throw Error("Original Discoverer.shape required");
+    if(!Number.isInteger(maxNodes)||maxNodes<2||maxNodes>128||
+       !Number.isInteger(maxDepth)||maxDepth<1||maxDepth>24||
+       !Number.isInteger(maxTokens)||maxTokens<97||maxTokens>400000)
+      throw Error("Long text state bounds must be explicit and finite");
+    const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
+    if(!start.length||start.length>maxTokens||start.some(s=>typeof s!=="string"))
+      throw Error("Original full text exceeds bounded token memory; never silently truncate");
+    LearnedCognitiveMap.matchGoal(start,goal);
+    const states=[start],neighbors=[[]],depth=[0],byKey=new Map([[key(start),0]]);
+    let truncated=false,predicted=0,rejected=0;
+    for(let head=0;head<states.length;head++){
+      if(depth[head]>=maxDepth)continue;
+      const state=states[head];
+      for(const r of this.rules.values()){
+        // EXACT V19 learned action-effect predictor, including contexts,
+        // observed resistance, accepted/rejected intervention history.
+        const next=this.predict(state,r.id);
+        if(!next){rejected++;continue;}
+        if(next.length>maxTokens){truncated=true;continue;}
+        const identifier=key(next);
+        let to=byKey.get(identifier);
+        if(to===undefined){
+          if(states.length>=maxNodes){truncated=true;continue;}
+          to=states.length;states.push(next);neighbors.push([]);
+          depth.push(depth[head]+1);byKey.set(identifier,to);
+        }
+        const observed=this.interventions.get(key(state)+"|"+r.id);
+        neighbors[head].push({to,action:r.id,support:Math.max(1,r.observations||1),
+          verified:!!observed?.accepted,transformation:{at:r.at,from:r.from,to:r.to}});
+        predicted++;
+      }
+    }
+    const targets=states.flatMap((tokens,i)=>LearnedCognitiveMap.matchGoal(tokens,goal)?[i]:[]);
+    const world={states,neighbors,start:0,targets,goal:clone(goal),truncated,
+      rejected,estimatedTransitions:predicted,fromObservedExamples:this.examples.size,
+      source:"real original V19 learned action effects, full long text states",
+      tokenCount:start.length,originalTextLength:typeof initial==="string"?initial.length:null};
+    if(!targets.length)return {found:false,reason:truncated?"NO_GOAL_IN_BOUNDED_LONG_STATE_SPACE":"NO_GOAL_IN_LEARNED_LONG_STATE_SPACE",
+      world,goal:clone(goal),path:[],originalDiscovererDirectlyUsed:true,
+      plannedBeforeAction:true};
+    const edges=[];
+    for(let from=0;from<neighbors.length;from++)for(const e of neighbors[from]){
+      edges.push({from,to:e.to,action:e.action,count:e.support,
+        provenance:e.verified?"observed":"learned-rule-hypothesis"});
+      const blocked=this.interventions.get(key(states[from])+"|"+e.action);
+      if(blocked?.blocked>0)edges.push({from,to:from,action:e.action,
+        count:Math.trunc(blocked.blocked),provenance:"observed"});
+    }
+    const baseConduct=Math.max(.5,disc.conduct?.(KIND.floor)??.5);
+    const conduct=states.map((_,i)=>i===0||targets.includes(i)?1:baseConduct);
+    const shape=disc.shape(null,0,-1,{nodes:states,edges,start:0,
+      goals:targets,conduct,maxSteps:maxDepth});
+    const path=shape.path.map(e=>({
+      from:e.from,to:e.to,action:e.action,provenance:e.provenance,
+      support:e.observedCount,potentialBefore:e.potentialBefore,
+      potentialAfter:e.potentialAfter,
+      transformation:neighbors[e.from].find(h=>h.to===e.to&&h.action===e.action)?.transformation
+    }));
+    const reached=shape.found&&targets.includes(shape.nodes.at(-1));
+    return {found:reached,path,world,field:shape,goal:clone(goal),
+      learnedRules:this.rules.size,
+      novelGoal:reached&&!this.examples.has(key(states[shape.nodes.at(-1)])),
+      plannedBeforeAction:true,noHiddenAnswerOracle:true,
+      originalDiscovererDirectlyUsed:true,
+      planningLaw:"ORIGINAL_DISCOVERER_SHAPE_FULL_TEXT_LEARNED_V19",
+      caveat:"Long-form structured causal text edits; NOT arbitrary semantic QA"};
+  }
   // The path is constructed FIRST. Every step then calls a REAL environment
   // callback; failures produce feedback (walls) and stop, never silently pass.
   execute(plan,{step,observe=true,brain=null}={}){
