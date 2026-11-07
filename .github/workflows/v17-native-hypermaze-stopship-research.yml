@@ -25,6 +25,8 @@ jobs:
         run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
       - name: Actual original text observed operator graph, global preaction shape, shared noise and Brain checkpoint
         run: node --test v17/tests/native-hypermaze-goal-text.test.mjs
+      - name: Actual original native V17 text corpus process and Brain checkpoint must call new global-shape operator (no fake UI)
+        run: node --test v17/tests/native-hypermaze-original-worker-integration.test.mjs
       - name: Original V17 maze/text/transform learning baseline must remain unchanged
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
