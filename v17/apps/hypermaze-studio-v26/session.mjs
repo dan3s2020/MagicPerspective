@@ -41,7 +41,7 @@ export class StudioSession extends EventEmitter {
     super();this.config=bounded({...defaults,...config});
     this.corpusPath=corpusPath;this.checkpointDir=checkpointDir;
     this.corpus=null;this.effects=[];this.model=null;
-    this.stats=stats0();this.last=null;this.sequence=0;
+    this.stats=stats0();this.last=null;this.lastRaw=null;this.sequence=0;
     this.running=false;this.busy=false;this.evalBusy=false;
     this.phase="initializing";this.logs=[];this.recent=[];
     this.random=seeded(this.config.seed);
@@ -59,7 +59,7 @@ export class StudioSession extends EventEmitter {
     const effects=chooseAxisPhysics(next,this.config.axes);
     this.corpus=next;this.corpusPath=next.path;this.effects=effects;
     if(reset){this.model=new ObservedEffects({maxRules:this.config.axes});
-      this.stats=stats0();this.last=null;this.recent=[];
+      this.stats=stats0();this.last=null;this.lastRaw=null;this.recent=[];
       this.random=seeded(this.config.seed);}
     this.phase="ready";
     this.message("info","Loaded actual corpus: "+next.trainTokens+
@@ -107,7 +107,11 @@ export class StudioSession extends EventEmitter {
         predictedTarget:h.transformation?.to,
         position:h.transformation?.position})),
       caveat:"Controlled corpus-derived token actions; not semantic open-ended QA"};
-    this.last=record;this.recent.push({
+    this.last=record;
+    this.lastRaw={before:task.tokens.slice(),predicted:plan.final?.slice()||null,
+      executed:out?.actual?.slice()||null,expected:expected.slice(),
+      split:task.sourceSplit,fullLength:task.tokens.length};
+    this.recent.push({
       id:record.id,kind,exact:record.initialPathExact,
       found:record.found,words:record.inputWords,actions:record.planLength});
     if(this.recent.length>60)this.recent.shift();
@@ -251,7 +255,7 @@ export class StudioSession extends EventEmitter {
     this.running=false;
     if(this.evalBusy)throw Error("Finish frozen evaluation before reset");
     this.model=new ObservedEffects({maxRules:this.config.axes});
-    this.stats=stats0();this.recent=[];this.last=null;this.sequence=0;
+    this.stats=stats0();this.recent=[];this.last=null;this.lastRaw=null;this.sequence=0;
     this.random=seeded(this.config.seed);this.phase="ready";
     this.message("warn","In-memory training reset; saved checkpoint files untouched");
     return this.snapshot();
@@ -262,7 +266,8 @@ export class StudioSession extends EventEmitter {
       createdAt:new Date().toISOString(),source:{path:this.corpus.path,
       fingerprint:this.corpus.fingerprint,sizeBytes:this.corpus.sizeBytes},
       config:this.config,stats:this.stats,sequence:this.sequence,
-      rngState:this.random.state(),model:this.model.export(),effects:this.effects};
+      rngState:this.random.state(),model:this.model.export(),effects:this.effects,
+      last:this.last,lastRaw:this.lastRaw,recent:this.recent};
     await fs.mkdir(this.checkpointDir,{recursive:true});
     const name="v26-"+Date.now()+"-"+this.stats.episodes+".json";
     const dest=path.join(this.checkpointDir,name);
@@ -288,9 +293,16 @@ export class StudioSession extends EventEmitter {
     this.random=seeded(this.config.seed);
     if(!Number.isInteger(saved.rngState))throw Error("Checkpoint lacks exact RNG state");
     this.random.restore(saved.rngState);
-    this.phase="paused";this.last=null;this.recent=[];
+    this.phase="paused";this.last=saved.last||null;
+    this.lastRaw=saved.lastRaw||null;this.recent=saved.recent||[];
     this.message("success","Restored checkpoint without modifying V17 weights");
     return this.snapshot();
+  }
+  fullExport(){
+    return {...this.snapshot(),fullText:this.lastRaw,
+      learnerCheckpoint:this.model?.export()||null,
+      sourceBytesIncluded:false,
+      note:"Full latest text tokens, learned evidence and graph; not an export of the original corpus file"};
   }
   snapshot(){
     const s=this.stats,rate=n=>Number((n||0).toFixed(5));
