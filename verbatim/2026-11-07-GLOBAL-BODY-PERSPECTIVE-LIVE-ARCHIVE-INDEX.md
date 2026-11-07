@@ -8,6 +8,7 @@ This is an **append-only continuation index** under \`main\`, beside the existin
 
 1. [Literal USER-visible turns, U-01…U-24](./2026-11-07-HYPERDIMENSIONAL-PERSPECTIVE-V17-LIVE-USER-VERBATIM-PARTIAL.md): 24 recoverable message fragments/excerpts; stops at the explicit request to archive on main. They are not asserted to form a complete uninterrupted native chronological transcript; exact native IDs/times and screenshots missing.
 2. [ASSISTANT exact visible excerpts, A-01…A-06](./2026-11-07-GLOBAL-BODY-V17-LIVE-ASSISTANT-EXACT-EXCERPTS-PARTIAL.md): exact text spans where accessible; research references in A-06 are explicitly not called verbatim; assistant turns between them are missing.
+4. [Earlier initial question with Grassmann screenshots and recoverable PowerShell/CUDA failure logs](./2026-11-07-PERSPECTIVE-ORIGINAL-SCREENSHOT-AND-POWERSHELL-LOG-RECOVERY-PARTIAL.md): terminal text as visible through chat escaping; full native clipboard and screenshot binaries not verified.
 3. [Research discoveries/evidence/hypotheses, clearly distinguished](../docs/RESEARCH_GLOBAL_BODY_PERSPECTIVE_V17_LIVE_EVIDENCE_HYPOTHESES_20261107.md): original \`Discoverer.shape()\` full-map behavior, the proposed global/body coordinate transformation, Termux comparison vs integrated V17, matched frozen tests, CI evidence, save/load and GPU protocol caveats, controls needed for falsification.
 
 ## Already saved in main — do not copy twice
