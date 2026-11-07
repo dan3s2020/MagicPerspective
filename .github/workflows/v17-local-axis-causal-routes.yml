@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
       - name: Native V17 ConstructedTransitionGraph + node-local xD route tests
         run: node --test v17/tests/local-axis-transport-shapes.test.mjs
+      - name: Learn symbolic mathematical transformations and multi-action forms on unseen textual math goals
+        run: node --test v17/tests/math-language-transformation-shapes.test.mjs
       - name: Baseline regression tests for original V17 are unchanged
         run: |
           node --test v17/tests/observed-text-paths.test.mjs
