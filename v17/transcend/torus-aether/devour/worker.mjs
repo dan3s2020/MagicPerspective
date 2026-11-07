@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {openTextDataset} from "../data/text-dataset.mjs";
 import {trainingProgress} from "./dataset-progress.mjs";
+import {classifyGpuUpdate} from "./gpu-settings-transition.mjs";
 import {Brain} from "./brain.mjs";
 import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
@@ -174,14 +175,28 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
-let gpuSet = !MAP_ONLY && workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false;
+let gpuSet = !MAP_ONLY && workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false, gpuHotPending = false;
 const gpuOn = async () => {
   // Never kill a Python process while a CUDA batch is in flight. Apply changes at the next batch boundary.
-  if (gpuResetPending) { gpu?.close(); gpu = null; sharedLoaded = false; gpuResetPending = false; }
+  if (gpuResetPending) { gpu?.close(); gpu = null; sharedLoaded = false; gpuResetPending = false; gpuHotPending = false; }
   if (!gpuSet) return null;
   if (!gpu || gpu.dead) { gpu = new GpuWorlds(gpuSet); sharedLoaded = false; batchNow = {phase: "GPU: pornește " + gpu.py, done: 0, total: 0}; shot(true);
     try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
-    catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
+    catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null;
+  } else if (gpuHotPending) {
+    // Server.init on the SAME device changes VRAM/util but does NOT replace
+    // Python Server.text or .shared. Reuse the full suffix-array index.
+    gpuHotPending = false;
+    try { gpuInfo = await gpu.configure(gpuSet); gpuError = null;
+      parentPort.postMessage({type:"note",w:workerData.gw,
+        text:"GPU settings applied in-place; CUDA text memory/index and shared model preserved."});
+    } catch (err) {
+      gpuError = "GPU in-place reconfiguration failed: " + err.message;
+      gpu.close(); gpu = null;
+      parentPort.postMessage({type:"note",w:workerData.gw,text:gpuError});
+    }
+  }
+  return gpu; };
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
@@ -362,7 +377,20 @@ parentPort.on("message", m => {
   }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
-  if (m && m.gpu) { gpuSet = MAP_ONLY || m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null;
+  if (m && m.gpu) {
+    const next = MAP_ONLY || m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu};
+    const change = classifyGpuUpdate(gpuSet,next);
+    gpuSet = next;
+    if (change === "restart") { gpuResetPending = true; gpuHotPending = false; }
+    else if (change === "configure") gpuHotPending = true;
+    // "reuse": worlds/textBatch changes are consumed at the NEXT batch
+    // boundary without reloading the full text model/index or losing memory.
+    gpuError = null;
+    parentPort.postMessage({type:"note",w:workerData.gw,
+      text:"GPU settings change: "+change+
+        (change==="reuse"?" (CUDA model and suffix index kept in memory)":
+        change==="configure"?" (same device, update without losing text index)":
+        " (device changed, model must be reloaded)")});
     if (MAP_ONLY && m.gpu.device !== "off") parentPort.postMessage({type: "note", w: workerData.gw, text: "Maptext-only is CPU; rejected unnecessary CUDA activation."});
     return; }
   if (m === "stop") stop = true; else if (m === "pause") paused = true; else if (m === "resume") paused = false; else if (m === "save") saveNow = true; });
