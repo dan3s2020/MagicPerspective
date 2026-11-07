@@ -12,6 +12,7 @@
 import {TextExperiment} from "../../epistemic-text/engine.mjs";
 import {Observatory} from "./observatory.js";
 import {LanguageMazeViewer} from "./language-maze-view.js";
+import {drawSharedWorldCore} from "./shared-world-view.mjs";
 import {InlineTextMaze} from "./inline-text-maze.js";
 import {ObservedTextPathMap} from "./observed-text-path-map.js";
 import {distC} from "../torus.mjs";
@@ -537,6 +538,7 @@ function applySnap(gs) {
   renderLanguage(gs.language || null);
   renderConstructed(gs.constructedPaths || null);
   renderObservedTransformations(gs.observedTransformations || null);
+  drawSharedWorldCore(gs.worldCore || null);
   languageMazeViewer?.setGraph(gs);
   // Same original snapshot: text is always visible on TRAINING, right
   // beneath the 2D maze and transformation game, without a manual exam.
@@ -1067,9 +1069,9 @@ fetch("/corpus").then(r => r.json()).then(c => {
     languageMazeViewer?.renderInfo();
   };
   let languageMazeRequesting=false,languageMazeAutoSeen=0;
-  async function runLanguageMaze(localPolicy=true,auto=false) {
+  async function runLanguageMaze(localPolicy=true,auto=false,compare=false) {
     if(languageMazeRequesting)return;
-    const button=auto?$("languageMazeAuto"):localPolicy?$("languageMazePlan"):$("languageMazeFollow");
+    const button=compare?$("languageMazeCompare"):auto?$("languageMazeAuto"):localPolicy?$("languageMazePlan"):$("languageMazeFollow");
     const start=$("languageMazeStart").value.trim();
     const required=$("languageMazeGoal").value.trim();
     if(!required&&!auto){$("languageMazeStatus").textContent=
@@ -1083,6 +1085,8 @@ fetch("/corpus").then(r => r.json()).then(c => {
         "&required="+encodeURIComponent(required)+
         "&start="+encodeURIComponent(start)+
         "&local="+(localPolicy?"on":"off")+
+        "&unified="+($("languageMazeUnified").checked?"on":"off")+
+        (compare?"&compare=1":"")+
         (auto?"&auto=1":"");
       const response=await fetch(url,{method:"POST",cache:"no-store"});
       if(!response.ok)throw Error("HTTP "+response.status);
@@ -1094,12 +1098,28 @@ fetch("/corpus").then(r => r.json()).then(c => {
         $("languageMazeGoal").value=(r.selfGoal.required||[]).join(",");
       }
       languageMazeViewer?.setEpisode(r);
+      if(compare){
+        const C=r.comparison;
+        $("languageMazeSharedAblation").textContent=C?.actuallyCompared?
+          ("A/B real, ACELAȘI start + obiectiv, doar politica comună diferă.\n"+
+          "Original: "+C.withoutShared.steps+" acțiuni prezise · "+C.withoutShared.bodySteps+
+          " executate · țintă structurală "+C.withoutShared.bodySuccess+"\n"+
+          "Comun: "+C.withShared.steps+" acțiuni prezise · "+C.withShared.bodySteps+
+          " executate · țintă structurală "+C.withShared.bodySuccess+"\n"+
+          "Traseu anticipat diferit: "+C.changedInitialRoute+
+          " · acțiuni locale diferite: "+C.changedLocalExecution+
+          "\nNu reprezintă evaluare semantică independentă."):
+          "Nu există încă o comparație A/B: pornește V17 cu -UnifiedWorld.";
+      }
       $("languageMazeStatus").textContent=
         (r.found?"FORMA REALĂ ÎNGHEȚATĂ înainte de primul pas. Apasă Replay sau Pas ▶.":
           "Nu există încă o cale învățată; sunt afișate doar ramurile căutate.")+
         " Stări: "+(r.search?.nodes?.length||0)+", muchii: "+
         (r.search?.edges?.length||0)+
-        (r.found?" · forma: "+r.predicted:" · "+(r.reason||""));
+        (r.found?" · forma: "+r.predicted:" · "+(r.reason||""))+
+        (r.sharedWorldUsed?" · core comun a evaluat "+
+          (r.sharedRanking?.candidateEdgesScored||0)+" muchii, "+
+          (r.sharedRanking?.candidateOrderChanges||0)+" ordini de acțiuni modificate.":" · original V17 fără core comun.");
     }catch(err){$("languageMazeStatus").textContent=
       "Căutarea nativă a eșuat: "+err.message+
       ". Nu afișez o cale simulată."; }
@@ -1108,6 +1128,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
   $("languageMazePlan").onclick=()=>runLanguageMaze(true);
   $("languageMazeFollow").onclick=()=>runLanguageMaze(false);
   $("languageMazeAuto").onclick=()=>runLanguageMaze(true,true);
+  $("languageMazeCompare").onclick=()=>runLanguageMaze(true,false,true);
   // Optional ACTUAL autonomous-operator structural probes while training
   // evolves. Never generate decorative routes or replay a reference answer.
   setInterval(()=>{
