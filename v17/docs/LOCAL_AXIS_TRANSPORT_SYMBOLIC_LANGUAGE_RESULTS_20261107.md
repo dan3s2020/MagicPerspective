@@ -100,6 +100,33 @@ Example real experiment trace, 11D / 2048 states:
 - learned output action words: fir -> pe -> aro
 - physical execution: all three predicted transitions matched the actual world.
 
+### Direct attempts to transfer the learned-geometry idea into the ORIGINAL V17 text predictor — NEGATIVE
+
+Two separate frozen native-text evaluations were added AFTER the synthetic route research. Both import the unmodified V17 AligningGraph and Geometry classes and evaluate real held-out character streams, not generated outputs.
+
+Corpus: separate ASCII-filtered segments of the repository's TORUS_AETHER_ABC_20261104.md. 23,000 train / 7,000 validation / 8,000 heldout characters. The *current* target character is unseen when scoring; previous characters are supplied as context (teacher-forced next-character evaluation). The interpolation parameter is chosen on validation only and then frozen for test.
+
+**Native symbol geometry**:
+- unmodified AligningGraph: 51.4375% top-1
+- validation-chosen native + existing symbol 5D Geometry score: 51.2625%
+- permuted geometry control at the same interpolation: 51.425%
+- the geometry changed 3.725% of next-character choices but did NOT improve heldout accuracy.
+
+**New contextual-state Geometry prototype**:
+- Four separately trained geometries over the previous 1/2/3/4 actual bytes as state, each with native Geometry.learn.
+- Validation selected context length 2 with interpolation 0.8.
+- heldout original: 51.4375%
+- heldout contextual geometry reranker: 51.2625%
+- scrambled contextual geometry control: 49.725%
+- contextual state was available at that length in 96.525% of heldout positions.
+- Some signal is real (scrambling is worse), but it is not useful enough to beat the native aligner on this independent test.
+
+**The negative result is important**: a nice mathematically consistent per-node frame transport in a synthetic world does NOT make V17's language generator learn the causal "form of the solution". Even modelling last-few-symbol contexts as geometric states with simple score interpolation did NOT improve the native text model. The attempted transfer mechanism must be changed; it must learn actual goal-conditioned ACTION TRANSFORMATIONS over contextual states and prove multi-step heldout text-task success, not just alter token scores. No positive natural-language claim is justified by these data.
+
+Reproduction:
+    node --test v17/tests/native-geometry-hybrid-text.test.mjs
+    node --test v17/tests/native-context-axis-geometry.test.mjs
+
 ### What does NOT follow from these results?
 
 - The original V17 AligningGraph.write() has not been changed and does not start using the new geometrical navigator just because these tests passed.
