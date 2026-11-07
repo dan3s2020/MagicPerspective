@@ -99,7 +99,7 @@ test("V26 design includes visible original 1:1 colored dataset bar, worker fatal
     assert.match(html,/id="nativeProgressHeldout"/);
     assert.match(css,/\.native-progress-fill/);
     assert.match(css,/linear-gradient/);
-    assert.match(js,/trainingProgressVerified/);
+    assert.match(js,/startRequestedProgress/);
     assert.match(js,/renderNativeDataset/);
     assert.match(js,/trainingProgress|TRAINING REAL CONFIRMAT/);
     assert.doesNotMatch(html,/src="\/app\.js"/,
