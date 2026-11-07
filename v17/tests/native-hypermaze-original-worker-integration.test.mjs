@@ -88,7 +88,7 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.ok(observed.nativeHypermaze.originalNoiseAgency);
   assert.equal(observed.nativeHypermaze.externalSemanticAccuracyProven,false);
   const qp=new URLSearchParams({w:"0",start:"He is calm.",
-   required:"She,calm",execute:"1",topology:"1"});
+   required:"She,calm",execute:"1",topology:"1",atlas:"1",maxPaths:"100"});
   const response=await fetch(url+"/native-hypermaze?"+qp,{method:"POST"});
   const result=await response.json();
   assert.equal(response.status,200);
@@ -101,6 +101,46 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.equal(result.body?.frames[0]?.worldActionsExecuted,0);
   assert.equal(result.body?.externalSemanticGoalValidated,false);
   assert.equal(result.exactUnseenLargeAnswerProven,false);
+  assert.equal(result.atlas?.schema,"v17-native-observed-path-atlas-v1");
+  assert.ok(result.planId?.startsWith("0:")||result.planId?.startsWith("saved:0:"),
+   "Real original Brain may finish corpus before HTTP plan; both live and saved paths are valid");
+  assert.ok(result.atlas.paths.some(p=>p.isInitialShape&&p.actions.length>=1));
+  assert.ok(result.atlas.transformations.length>=2);
+  assert.ok(result.atlas.transformations.some(x=>x.examples?.[0]?.from));
+  // Gold is delivered ONLY AFTER the server has already saved the full
+  // original before-action atlas. No predicted answer reaches training.
+  const evaluate=async(reference)=>{
+   const response=await fetch(url+"/native-hypermaze-audit",{
+    method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({w:0,planId:result.planId,reference})});
+   const data=await response.json();
+   assert.equal(response.status,200);
+   assert.equal(data.referenceEnteredAfterPathFrozen,true,JSON.stringify(data).slice(0,500));
+   assert.equal(data.audit?.referenceWasUsedForPlanning,false);
+   return data.audit;
+  };
+  const right=await evaluate("She is calm.");
+  assert.equal(right.completeTextExactFirstTry,true);
+  assert.equal(right.charAudit.accuracy,1);
+  const wrong=await evaluate("She is different.");
+  assert.equal(wrong.completeTextExactFirstTry,false);
+  assert.ok(wrong.charAudit.incorrectCharacters.length>=1);
+  assert.ok(wrong.operatorGap.minimumTokenEditDistance>=1);
+  const ledger=await(await fetch(url+"/native-hypermaze-atlas?w=0&cursor=0&limit=2")).json();
+  assert.equal(ledger.rows.length,2);
+  assert.equal(ledger.rows[0].event,"preaction");
+  assert.equal(ledger.rows[1].event,"postmortem");
+  assert.equal(ledger.rows[0].referenceSeenBeforePlanning,false);
+  const continuation=await(await fetch(url+"/native-hypermaze-atlas?w=0&cursor="+
+   ledger.nextCursor+"&limit=2")).json();
+  assert.ok(continuation.rows.some(x=>x.event==="postmortem"&&
+   x.audit.completeTextExactFirstTry===false));
+  const catalog=await(await fetch(url+"/native-hypermaze-operators?w=0&offset=0&limit=100")).json();
+  assert.ok(catalog.total>=4);
+  assert.ok(catalog.operators.some(x=>x.evidence?.[0]?.from));
+  assert.ok(["same original persistent Brain.v8",
+    "same original saved Brain.v8"].includes(catalog.source),
+   "All operator evidence must come from the exact original Brain, never a replacement model");
   assert.ok(result.topology?.nodes?.length>=3,"Actual native learned text-world nodes are missing");
   assert.ok(result.topology.edges.length>=1,"Actual original observed transformation edges are missing");
   assert.ok(result.topology.nodes.some(n=>n.position5D?.length===5),
@@ -108,6 +148,25 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.ok(result.topology.initialShapeIds.length>=2);
   assert.ok(result.topology.nodes.some(n=>n.text==="She is calm."&&n.goal),
    "The real textual goal state must be an actual topology node");
+  // A segmented world with only one move of visibility MUST expose its
+  // frontier rather than reporting an impossible answer. More learned
+  // world depth on the SAME original Brain then makes the route traversable.
+  const restricted=new URLSearchParams({w:"0",start:"He is calm.",
+   required:"She,tired",execute:"0",topology:"1",atlas:"1",
+   maxDepth:"1",maxStates:"100"});
+  const narrow=await(await fetch(url+"/native-hypermaze?"+restricted,
+   {method:"POST"})).json();
+  assert.equal(narrow.found,false);
+  assert.equal(narrow.graph.closedUnderLearnedOperators,false);
+  assert.ok(narrow.graph.frontierCount>0);
+  assert.ok(narrow.topology.frontier.some(x=>x.reason==="depth-budget"));
+  restricted.set("maxDepth","6");
+  const wide=await(await fetch(url+"/native-hypermaze?"+restricted,
+   {method:"POST"})).json();
+  assert.equal(wide.found,true,JSON.stringify(wide).slice(0,900));
+  assert.equal(wide.predicted,"She is tired.");
+  assert.ok(wide.actions.length>=2);
+
   // The REAL original V17 native worker must retain Romanian diacritics
   // in the observed world, and infer a completely unseen Unicode goal.
   const unicodeGoal=new URLSearchParams({w:"0",
@@ -161,6 +220,10 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
    const browserNodes=+(ran.stdout.match(/data-native-node-count="(\d+)"/)?.[1]||0);
    assert.ok(browserNodes>=3,
     "Actual native graphical hypermaze was not populated from the original Brain");
+   assert.match(ran.stdout,/data-native-atlas-paths="[1-9][0-9]*"/,
+    "Actual atlas alternatives were not populated in the browser");
+   assert.ok(ran.stdout.includes('id="atlasPaths"'),
+    "Atlas panels with all paths and failures must exist in the real UI");
    assert.ok(ran.stdout.includes("She is calm."),
     "Real browser answer-shape readout did not show original native prediction");
    console.log("REAL_NATIVE_HYPERMAZE_CHROMIUM",JSON.stringify({

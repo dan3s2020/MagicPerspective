@@ -1,0 +1,55 @@
+name: Original MagicPerspective V17 persistent transformation atlas and hypermaze
+on:
+  push:
+    branches:
+      - experiment/V17-FULL-TRANSFORMATION-ATLAS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-original-brain-atlas-and-heldout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of real original brain, path atlas, Unicode audit and bounded closure
+        run: |
+          node --check v17/research/text-hypermaze/native-path-atlas.mjs
+          node --check v17/research/text-hypermaze/goal-conditioned-native.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/tests/native-hypermaze-persistent-atlas.test.mjs
+      - name: Real original Discoverer shape with a missing transformation, evidence from another world, persistent learned graph, enumerated paths and all wrong characters
+        run: node --test v17/tests/native-hypermaze-persistent-atlas.test.mjs
+      - name: Causal original operator deletion, ambiguous goal paths, 256-token design ceiling and complete multilingual UTF-8 ledger pagination
+        run: node --test v17/tests/native-hypermaze-operator-causality.test.mjs
+      - name: Learn new cross-context original V17 axes from two independent lived mazes; frozen unseen third context and causal ablation
+        run: node --test v17/tests/native-hypermaze-cross-context-axis.test.mjs
+      - name: Previous exact unseen 2D shape parity remains unchanged
+        run: node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+      - name: Original short compositional hidden text cases and actual native noise checkpoint remain unchanged
+        run: |
+          node --test v17/tests/native-hypermaze-goal-text.test.mjs
+          node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
+      - name: Large true original learned action graph with 100 and 24 withheld passages
+        run: node --test v17/tests/native-hypermaze-long-multistep-heldout.test.mjs
+      - name: Corpus worker and HTTP integration, original UI and Unicode preservation
+        run: node --test v17/tests/native-hypermaze-original-worker-integration.test.mjs
+      - name: Full release stopship remains blocked until real unseen language/CUDA proof
+        run: node --test v17/tests/hypermaze-stopship-release.test.mjs
+  windows-source-check:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Keep original launcher files intact and PowerShell parseable
+        shell: powershell
+        run: |
+          foreach ($file in @("v17/START_V17.ps1","v17/START_TINYSTORIES.ps1")) {
+            $tokens=$null;$errs=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path,[ref]$tokens,[ref]$errs)|Out-Null
+            if($errs.Count){throw ($errs|Out-String)}
+            Write-Host "ORIGINAL_POWERSHELL_PRESERVED $file"
+          }
