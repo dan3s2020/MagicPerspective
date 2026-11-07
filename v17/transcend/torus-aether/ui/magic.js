@@ -426,6 +426,8 @@ $("mathPlan").onclick=async()=>{
    actions:found.plan?.actions||[],expanded:found.plan?.expanded||0,
    holonomy:found.holonomy,
    readOnly:found.frozen,semanticVerifier:found.independentSemanticVerifier,
+   checkpointFrozen:!!found.fromSave,snapshotTrainingRows:found.learnedRowsAtSnapshot??null,
+   worldWorkerResponsiveWithoutBlocking:!!found.liveWorkerBusySafe,
    reason:found.plan?.reason||null
   },null,2);
  }catch(e){
