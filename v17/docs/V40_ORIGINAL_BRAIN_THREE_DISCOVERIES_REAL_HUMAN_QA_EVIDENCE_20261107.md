@@ -64,7 +64,27 @@ Exact source-only memory sidecar: isolated-source-motifs.sqlite, original V32 SH
 - V36 task goals require at least two witnessed instruction/action state transitions. The supervising SQuAD gold answer spans are NOT physical action evidence; V40's serious trainer does not fabricate them.
 - V32 exact shared strings are a persistent SOURCE EVIDENCE INDEX, not meaning transformations or hallucinated paths.
 - Original Windows RTX3050Ti CUDA performance is not measured in GitHub CPU CI; human QA source-span ranker runs on CPU.
-- Full Windows original V17 UI not replaced, modified or claimed to support new V40 controls: the V40 research adapter and offline saved Brain are optional, separate.
+- In V40 only, the original V17/V34 UI and native runtime gained ADDITIVE, optional V40 endpoints/panels; prior controls and original source engines are preserved. Original V34 and main are not changed. Actual V40 live worker and HTTP were executed, not mocked.
 - Keep original issue #25 blocked; do not merge to main or erase existing data without independent live semantic + GPU acceptance.
 
 The decisive next research experiment: learn reliable natural-language goal preference and actual text-changing transformation *causally* from previously witnessed world actions, then demonstrate 3-way ablation (no source-memory, no goal inference, no learned ranker) on SAME external heldout question corpus. Co-location alone is not sufficient.
+
+## Verified full V40 native worker, browser page and E2E
+
+Actual original V34 worker and saved original V40 Brain, not a simulated service, were exercised against POST /v40/answer?w=0. No reference/expected/goal/target/answer can be submitted. The existing V17 page preserves original graphics and controls; new v40-live-human.js displays original source-backed shape paths and complete candidate graphs. Attempts (including abstentions) are saved in append-only .v40-native-frozen-answer-atlas.jsonl.
+
+Native run PASS: https://github.com/dan3s2020/MagicPerspective/actions/runs/42373289179 . Original worker returned V36 witnessed instruction with target absent: Brew the refreshment + Ada keeps tea. -> Ada keeps coffee. from Discoverer.shape; V39 original ShapeGraph returned Rome from a complete witnessed source passage. Source graph had 30 nodes, 3 attempt records, original checkpoint checksum unchanged, hidden answer injection blocked, old UI retained. This is controlled finite instruction behavior, not general semantic answer discovery.
+
+Serious official SQuAD full CLI run PASS: https://github.com/dan3s2020/MagicPerspective/actions/runs/42372335332 . New checkpoint saved with 9,000 real TRAIN human QAs, 18,000 supervised exposures, policy chosen from disjoint TRAIN validation, and exactly 650 external DEV frozen source/answer/path/full-graph JSONL records. Original saved Brain sha256 unchanged; new 3,593,327-byte saved Brain restored; V32 compact SQLite archived first 8 true source episodes (318 motifs). 650 first-shot answers: 153 exact, 4 normalized-only, 424 wrong ranked goals ALREADY AVAILABLE in the candidate graph, 69 absent candidate goals. None of these labels entered scoring/training before prediction.
+
+## Three-way ablation in same original Brain (test copies)
+
+- Removing V36 witnessed finite intent memory destroys its previously known finite instruction answer but does not alter independent V39 source-span selection.
+- Removing V39 averaged QA weights does not destroy the separate V36 finite instruction result.
+- Removing V32 lexical source-archive metadata does not change either sampled output. Missing archived evidence when its manifest is present still triggers an explicit guard.
+
+These prove persistence and task-specific independence, not that all mechanisms causally cooperate. Actual new V40 sources changed ONLY in isolated V40 branch: original devour/worker gained additive read-only /v40/answer handler; original V17 HTML added an optional V40 panel with v40-live-human.js. Prior original motor, UI, CUDA, and checkpoint methods preserved.
+
+## Remaining release blockers
+
+External SQuAD is extractive with original passage supplied and supervised TRAIN answer offsets. Original long OpenThoughts3 unseen free-form Q/A remains 0/24 full exact in independent V34 research. No demonstrated goal inference for arbitrary novel natural-language requests, no semantic causal benefit of V32 exact source overlaps, no proven V36-V39 interaction gain beyond V39's 153/650, and no user's local NVIDIA RTX CUDA run. Issue #25 stays OPEN; no main merge or other branches overwritten.
