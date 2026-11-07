@@ -11,7 +11,8 @@ import {openTextDataset,exerciseOf} from "../../transcend/torus-aether/data/text
 export async function* jsonlRows(file){
  const lines=readline.createInterface({input:fs.createReadStream(file,{encoding:"utf8"}),crlfDelay:Infinity});
  let index=0,lineNo=0;
- for await(const line of lines){
+ for await(const rawLine of lines){
+  const line=lineNo===0?rawLine.replace(/^\uFEFF/,""):rawLine;
   lineNo++;if(!line.trim())continue;
   let obj;try{obj=JSON.parse(line);}catch(e){throw Error("JSONL parse failure at line "+lineNo+": "+e.message);}
   if(!obj||typeof obj!=="object"||Array.isArray(obj))throw Error("Expected JSONL object at "+lineNo);
@@ -21,8 +22,9 @@ export async function* jsonlRows(file){
 }
 export async function* qaTxtRows(file){
  const lines=readline.createInterface({input:fs.createReadStream(file,{encoding:"utf8"}),crlfDelay:Infinity});
- let index=0,prompt=null,answer=null;
- for await(const line of lines){
+ let index=0,prompt=null,answer=null,lineNo=0;
+ for await(const rawLine of lines){
+  const line=lineNo++===0?rawLine.replace(/^\uFEFF/,""):rawLine;
   if(/^Q:\s*/i.test(line)){
    if(prompt!==null){
     if(answer===null)throw Error("Q/A TXT: missing answer for row "+index);
