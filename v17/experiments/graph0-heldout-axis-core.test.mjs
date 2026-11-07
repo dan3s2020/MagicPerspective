@@ -11,6 +11,7 @@ test("mixing two distributions makes previously unreachable candidate selectable
  assert.equal(mixedPrediction(A,F,0.75).top,65);
  assert.equal(mixedPrediction(A,null,1).top,88,"when FIELD missing, alignment remains usable");
  assert.equal(mixedPrediction(new Map(),F,0).top,65,"when alignment missing, FIELD remains usable");
+ assert.equal(mixedPrediction(new Map(),null,0.5).top,32,"the original native default when every successor set is empty");
  assert.equal(ALPHAS.length,6);
 });
 
