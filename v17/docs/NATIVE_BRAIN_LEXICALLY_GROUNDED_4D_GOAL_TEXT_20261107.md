@@ -42,7 +42,7 @@ After **40 actual training-world executions** with observed rewards, the origina
 ## Independent CI acceptance
 
 GitHub Actions workflow: `.github/workflows/v17-native-grounded-4d-goal-training.yml`.
-Independent run, validated: https://github.com/dan3s2020/MagicPerspective/actions/runs/42345194290
+Independent run, validated: https://github.com/dan3s2020/MagicPerspective/actions/runs/42343485197
 
 - 6/6 native Brain text-goal tests (actual model training, heldout first action, dimensional ablation, noise contingency, OOD controls and checkpoint reloading).
 - 1/1 original native NoiseAgency learning / heldout / checkpoint / real physical action test.
