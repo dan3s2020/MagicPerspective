@@ -1,0 +1,21 @@
+name: V42 Native Speech Loops - Geometry vs Learned Memory
+on:
+  push:
+    branches:
+      - research/V42-TORUS-LOOP-INTERSECTION-HYPOTHESES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-speech-loop-probes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run native frozen speech and 5D observer-only geometry ablation
+        run: |
+          node --check v17/tests/torus-speech-memory-hypotheses-20261107.test.mjs
+          node --test v17/tests/torus-speech-memory-hypotheses-20261107.test.mjs
