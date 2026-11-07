@@ -1,0 +1,100 @@
+name: MagicPerspective full real live CUDA-ready magical UI and native corpus integration
+on:
+  push:
+    branches:
+      - feature/V17-REAL-LIVE-AXES-MAZE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-v17-worker-and-magic-page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax validity of actual original worker, server, magic UI and research bridges
+        run: |
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/magic.js
+          node --check v17/research/text-hypermaze/state-dependent-axes.mjs
+          node --check v17/research/text-hypermaze/coupled-axes.mjs
+          node --check v17/research/text-hypermaze/path-holonomy.mjs
+          node --check v17/research/text-hypermaze/live-observed-axes.mjs
+          node --check v17/tests/live-observed-math-axes.test.mjs
+      - name: Verify discovered coupled math axes, nonlinear transformations, frozen solution paths and real checkpoint persistence
+        run: node --test v17/tests/live-observed-math-axes.test.mjs
+      - name: Browser and real native V17 training acceptance test, no fake API and old UI preserved
+        run: node --test v17/tests/magic-live-native-ui.test.mjs
+      - name: Original V17 live observed language maze / inline body / full goal regressions
+        run: |
+          node --test v17/tests/inline-language-maze-native.test.mjs
+          node --test v17/tests/language-maze-native-http.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+      - name: Prior 2048D learned-axis real corpus and frozen text tests must remain green
+        run: |
+          node --test v17/tests/real-corpus-axis-gating.test.mjs
+          node --test v17/tests/learned-axis-gating.test.mjs
+          node --test v17/tests/observed-text-paths.test.mjs
+      - name: Original 5D constructed, observed and independent universe regression
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
+
+  windows-launcher-safety:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse ALL original and new PowerShell launchers using Windows PowerShell
+        shell: powershell
+        run: |
+          $files = @(
+            "v17/START_V17.ps1",
+            "v17/START_MAGIC_REAL.ps1",
+            "v17/START_REAL_TEXT_AXES.ps1"
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file).Path, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              throw ("PowerShell parser errors in " + $file + ": " + ($errors | Out-String))
+            }
+            Write-Host "WINDOWS_PS_SYNTAX_OK $file"
+          }
+      - name: Refuse to overwrite an unrelated Windows output directory
+        shell: powershell
+        run: |
+          $out = Join-Path $env:TEMP "magic-native-refuse-existing"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $untouched = Join-Path $out "user-precious-data.txt"
+          Set-Content -LiteralPath $untouched -Value "DO NOT DELETE" -NoNewline
+          $orig = (Get-FileHash -LiteralPath $untouched -Algorithm SHA256).Hash
+          $dataset = Join-Path $env:TEMP "magic-fake-existing-data-folder"
+          New-Item -ItemType Directory -Force -Path $dataset | Out-Null
+          $originalPreference = $ErrorActionPreference
+          $ErrorActionPreference = "Continue"
+          try {
+            $errors = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $dataset -Out $out -Gpu off -Port 8874 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+          } finally { $ErrorActionPreference = $originalPreference }
+          if ($exitCode -eq 0) { throw "Unsafe launcher accepted unrelated existing output" }
+          if ((Get-FileHash -LiteralPath $untouched -Algorithm SHA256).Hash -ne $orig) {
+            throw "Original user data changed"
+          }
+          if ($errors -notmatch "Refusing to touch") {
+            throw ("Launcher refused to start for wrong reason: " + $errors)
+          }
+          Write-Host "WINDOWS_SAFE_REFUSAL_OK Existing data byte-identical"
+          # The child deliberately failed as a safety test. Reset native exit code
+          # so GitHub Runner does not mistake the EXPECTED refusal for CI failure.
+          $global:LASTEXITCODE = 0

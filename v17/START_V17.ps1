@@ -22,6 +22,8 @@ param(
   [int]$GpuTextBatch = 2,
   [int]$GpuTextChunk = 128,
   [switch]$Start,
+  [switch]$MagicUI,
+  [switch]$MathAxes,
   [switch]$TraceTransformations,
   [switch]$EndogenousNoise,
   [double]$Vram = 0,
@@ -77,4 +79,4 @@ if ($Gpu -ne "off") {
   $ErrorActionPreference = "Stop"
 }
 $heap = [int]([Math]::Ceiling($Mem * 1024 * 1.7))
-node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --gpu-text-chunk $GpuTextChunk --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Start) { "--start" }) $(if ($TraceTransformations) { "--trace-transformations" }) $(if ($EndogenousNoise) { "--endogenous-noise" })
+node --max-old-space-size=$heap transcend/torus-aether/devour/devour.mjs --workers $Workers --arms $Arms --mem $Mem --every $Every --chars $Chars --data "$Data" --out "$Out" --port $Port --worlds $Worlds --maze-every $MazeEvery --gpu $Gpu --gpu-worlds $GpuWorlds --gpu-text-batch $GpuTextBatch --gpu-text-chunk $GpuTextChunk --vram $Vram --gpu-util $GpuUtil $(if ($Resume) { "--resume" }) $(if ($Start) { "--start" }) $(if ($MagicUI) { "--magic-view" }) $(if ($MathAxes) { "--math-axes" }) $(if ($TraceTransformations) { "--trace-transformations" }) $(if ($EndogenousNoise) { "--endogenous-noise" })

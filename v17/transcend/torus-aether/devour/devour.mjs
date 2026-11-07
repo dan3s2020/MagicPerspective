@@ -15,6 +15,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
+import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -60,7 +61,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map(); let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
 const world = source.kind === "parquet" ? source.root : source.files.map(f => path.basename(f)).join(", ");
-const port = +arg("port", 8841), autostart = process.argv.includes("--start"), brainsDir = path.join(out, "brains");
+const port = +arg("port", 8841), autostart = process.argv.includes("--start"), magicView = process.argv.includes("--magic-view"), brainsDir = path.join(out, "brains");
 const armOf = name => CLAWS[name] ? {name, rules: ARMS.winner, c: CLAWS[name]} : ARMS[name] ? {name, rules: ARMS[name]} : null;
 const saveOf = sl => path.join(brainsDir, `brain-${sl.w}-${sl.arm.name}.v8`);
 function recordTelemetry(m) {
@@ -92,6 +93,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
+    realMathAxes: t?.final ? t.realMathAxes : g?.realMathAxes || t?.realMathAxes || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;
@@ -107,7 +109,8 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
-    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
+    mathAxes: process.argv.includes("--math-axes")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
@@ -178,6 +181,27 @@ http.createServer((req, res) => {
   // Search on ACTUAL learned edges is captured before any body action, then
   // local action choices and corrective replans are returned for native replay.
   // The only supplied goal is required tokens; no answer text or teacher path.
+  if(req.method==="POST"&&url==="/real-math-plan"){
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl||!sl.worlds.includes("text"))return json(res,{error:"Select a real text worker"});
+    const start=q.get("start")||"",index=Number(q.get("index")),value=Number(q.get("value"));
+    if(!start.trim()||start.length>500||!Number.isSafeInteger(index)||index<0||index>60||
+       !Number.isSafeInteger(value)||value<0||value>100000)
+      return json(res,{error:"A start expression and valid numeric index/value constraint are required"});
+    const goals=[{index,value}];
+    if(!sl.wk){
+      const file=saveOf(sl)+".observed-math-axes.v8";
+      if(!fs.existsSync(file))return json(res,{found:false,reason:"No saved observed math axes"});
+      try{
+        // Loaded statically at module start; no asynchronous handler or fake fallback.
+        return json(res,{...LiveObservedMathAxes.restore(file).plan(start,goals),w:sl.w,fromSave:true});
+      }catch(e){return json(res,{error:e.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Real math axis plan timed out"});},30000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({realMathGoal:{id,start,goals}});
+    return;
+  }
   if(req.method==="POST"&&url==="/language-maze"){
     const sl=slots.find(x=>x.w===+(q.get("w")||0));
     if(!sl||!sl.worlds.includes("text"))
@@ -340,7 +364,8 @@ http.createServer((req, res) => {
   if (req.method === "POST" && url === "/reset") { for (const sl of slots) control(sl, "reset"); return json(res, {ok: true}); }
   if (req.method === "POST" && url === "/stop") { stopping = true; for (const sl of slots) sl.wk?.postMessage("stop"); res.writeHead(200); return res.end("ok"); }
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
-  if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
+  if (url === "/magic") { res.writeHead(302, {location: "/transcend/torus-aether/ui/magic.html?live=1"}); return res.end(); }
+  if (url === "/") { res.writeHead(302, {location: magicView ? "/transcend/torus-aether/ui/magic.html?live=1" : "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
   if (url === "/dashboard") { res.writeHead(200, {"content-type": "text/html; charset=utf-8"}); return fs.createReadStream(path.join(here, "dashboard.html")).pipe(res); }
   if(url==="/telemetry"){
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
@@ -363,9 +388,10 @@ http.createServer((req, res) => {
     res.writeHead(200, {"content-type": types[path.extname(abs)] || "application/octet-stream", "cache-control": "no-store"}); return fs.createReadStream(abs).pipe(res); }
   res.writeHead(404); res.end();
 }).listen(port, "127.0.0.1", () => {
-  const u = `http://127.0.0.1:${port}/`; console.log(`living graph: ${u}   (charts: ${u}dashboard)` + (autostart ? "" : " · press Start on the page (or run with --start)"));
-  exec(process.platform === "win32" ? `start "" "${u}"` : process.platform === "darwin" ? `open "${u}"` : process.env.PREFIX?.includes("com.termux") ? `termux-open-url "${u}"` : `xdg-open "${u}"`, () => {});
-}).on("error", e => console.log(`dashboard not started (${e.message}); use --port <other>`));
+  const u = `http://127.0.0.1:${port}/`, view = magicView ? u + "transcend/torus-aether/ui/magic.html?live=1" : u;
+  console.log(`living graph: ${view}   (original V17: ${u}transcend/torus-aether/ui/index.html?live=1)` + (autostart ? "" : " · press Start on the page (or run with --start)"));
+  exec(process.platform === "win32" ? `start "" "${view}"` : process.platform === "darwin" ? `open "${view}"` : process.env.PREFIX?.includes("com.termux") ? `termux-open-url "${view}"` : `xdg-open "${view}"`, () => {});
+}).on("error", e => { console.error(`dashboard not started (${e.message}); use --port <other>`); if(magicView)process.exit(1); });
 const summary = () => {
   console.log("\n=== summary (latest test of every graph) ===");
   const by = {}; for (const m of last.values()) (by[m.arm] ??= []).push(m);
