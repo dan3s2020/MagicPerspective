@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: V21 actual dataset consumption and percentage accounting (TXT, Parquet, workers)
+        run: node --test v17/tests/veil-aether.dataset-progress.test.mjs
       - name: V21 observed contextual graph, pre-action shape, no-leak and preservation tests
         run: node --test v17/tests/veil-aether.test.mjs
       - name: V21 actual observed action axes, stochastic causal branching, path-order memory
