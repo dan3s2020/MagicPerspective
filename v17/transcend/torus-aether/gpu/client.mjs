@@ -74,9 +74,18 @@ export class GpuWorlds {
       const succeed = value => { if (settled) return; settled = true; cleanup(); resolve(value); };
       const failed = err => { if (settled) return; settled = true; cleanup(); reject(err); };
       const abort = kind => {
+        const current = this.activeCommand?.id === id ? this.activeCommand : null;
+        const progress = current?.lastProgressAt ?
+          ("last valid progress " + Math.round((Date.now()-current.lastProgressAt)/1000) +
+            " s ago, phase " + (current.phase||"?") +
+            ", done " + (current.done??"?") + "/" + (current.total??"?")) :
+          "no valid progress packets received";
+        // Previous "last CUDA output: none" inspected STDERR only and could
+        // incorrectly hide genuine progress that arrived on STDOUT.
         const reason = "GPU RPC " + kind + " timeout: " + command +
           " (request #" + id + ", elapsed " + Math.round((Date.now() - startedAt) / 1000) +
-          " s, last CUDA output: " + (this.error || "none") + "). No CPU fallback.";
+          " s, CUDA progress: " + progress +
+          ", last CUDA stderr: " + (this.error || "none") + "). No CPU fallback.";
         this.close(reason);
       };
       const touch = () => {
