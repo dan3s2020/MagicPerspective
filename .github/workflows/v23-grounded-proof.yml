@@ -22,6 +22,8 @@ jobs:
           node --check v17/tests/v23-grounded-temporal-hypermaze.test.mjs
       - name: Independent heldout full-answer 300-case test and 100k-token long-context test
         run: node --test v17/tests/v23-grounded-temporal-hypermaze.test.mjs
+      - name: Recursive native Discoverer on 100000 real observed events, independent physics and numeric extinction regression
+        run: node --test v17/tests/v23-multiscale-grounded-hypermaze.test.mjs
       - name: Original V17 2D noise/source parity and V22 direct text shape
         run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
       - name: Original V19 cognitive memory and actual world-physics tests
