@@ -1,0 +1,55 @@
+name: HEAD-TO-HEAD original V42 hybrid vs real Kissat (hard 3-SAT)
+on:
+  push:
+    branches:
+      - benchmark/V42-UNMODIFIED-VS-KISSAT-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  same-machine-original-v42-vs-kissat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build actual unmodified upstream Kissat CDCL baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/arminbiere/kissat.git /tmp/kissat-original
+          git -C /tmp/kissat-original rev-parse HEAD
+          (cd /tmp/kissat-original && ./configure && make -j2)
+          /tmp/kissat-original/build/kissat --version
+      - name: Exact same 3-SAT formulas, single host, 20 seconds maximum each
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/sat-benchmark.log
+          for spec in "100 20261110" "300 20261113" "1000 20261115" "parity72 9"; do
+            read -r caseId seed <<< "$spec"
+            echo "RUNNING case=$caseId seed=$seed" | tee -a /tmp/sat-benchmark.log
+            node v17/benchmarks/v42_vs_kissat.mjs generate "$caseId" "$seed" 20000 > /tmp/sat-input.cnf
+            head -n 3 /tmp/sat-input.cnf | tee -a /tmp/sat-benchmark.log
+            start=$(date +%s%3N)
+            set +e
+            timeout --signal=TERM --kill-after=2s 20s /tmp/kissat-original/build/kissat /tmp/sat-input.cnf > /tmp/kissat-output.log 2>&1
+            result=$?
+            set -e
+            end=$(date +%s%3N)
+            if [[ $result -ne 10 && $result -ne 20 && $result -ne 124 ]]; then
+              echo "Unexpected Kissat exit code $result"; tail -n 30 /tmp/kissat-output.log; exit 1
+            fi
+            echo "KISSAT_STATUS_EXIT_CODE $result KISSAT_TOTAL_WALL_MS $((end-start)) case=$caseId" | tee -a /tmp/sat-benchmark.log
+            node v17/benchmarks/v42_vs_kissat.mjs kissat-verify "$caseId" "$seed" 20000 /tmp/kissat-output.log | tee -a /tmp/sat-benchmark.log
+            timeout --signal=TERM --kill-after=2s 50s node v17/benchmarks/v42_vs_kissat.mjs v42 "$caseId" "$seed" 20000 | tee -a /tmp/sat-benchmark.log
+          done
+      - name: Preserve unabridged comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-v42-versus-real-kissat-hard-sat
+          path: /tmp/sat-benchmark.log
+          if-no-files-found: warn
