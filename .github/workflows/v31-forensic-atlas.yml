@@ -21,6 +21,8 @@ jobs:
           node --check v17/research/text-hypermaze/cross-episode-native.mjs
           node --check v17/tests/v31-forensic-path-atlas.test.mjs
           node --check v17/tests/v31-native-atlas-http.test.mjs
+          node --check v17/research/text-hypermaze/cross-world-bridge-experiment.mjs
+          node --check v17/tests/v31-external-world-bridge.test.mjs
           node --check v17/transcend/torus-aether/ui/forensic-path-atlas.js
           node --check v17/research/text-hypermaze/real-corpus-server.mjs
           node --check v17/research/text-hypermaze/real-corpus-worker.mjs
@@ -28,6 +30,8 @@ jobs:
         run: node --test v17/tests/v31-forensic-path-atlas.test.mjs
       - name: Live real JSONL native original worker, UI, paged atlas, frozen reference leak rejection
         run: node --test v17/tests/v31-native-atlas-http.test.mjs
+      - name: Actual cross-world transformations -> independent physics -> witnessed maze edge or wall
+        run: node --test v17/tests/v31-external-world-bridge.test.mjs
       - name: Preserve exact original V17 maze 2D parity and cumulative V30 native Brain
         run: |
           node --test v17/tests/native-hypermaze-shape-parity.test.mjs
@@ -46,3 +50,5 @@ jobs:
         run: |
           node --test v17/tests/v31-forensic-path-atlas.test.mjs
           if ($LASTEXITCODE -ne 0) { throw "V31 forensic atlas native Windows test failure" }
+          node --test v17/tests/v31-external-world-bridge.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "V31 native cross-world bridge and wall failure" }
