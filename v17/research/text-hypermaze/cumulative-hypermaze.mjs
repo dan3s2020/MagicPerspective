@@ -249,7 +249,7 @@ export class CumulativeHyperMaze {
     if(e.edgeStatus!=="physically-verified")proposedCount++;
     const descriptor={to:dest,action:e,observedSupport:e.observedSupport};
     adj[origin].push(descriptor);
-    liveEdges.push({from:origin,to:dest,...e});
+    liveEdges.push({...e,from:origin,to:dest});
    }
   }
   const kinds=list.map((x,i)=>i===0?KIND.self:
