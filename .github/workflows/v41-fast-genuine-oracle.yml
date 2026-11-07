@@ -1,0 +1,23 @@
+name: V41 Fast true original CUDA oracle gate
+on:
+  push:
+    branches:
+      - test/V41-FAST-TRUE-ORIGINAL-REGRESSION-GATE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  baseline-is-independent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify actual pre-Fast source is NOT current source, and CUDA test uses pinned baseline
+        run: node --test v17/tests/v41-fast-real-oracle-integrity.test.mjs
+      - name: Python source syntax only - no claimed GPU parity on CPU runner
+        run: python -m py_compile v17/tests/text_gpu_cuda_residency_test.py
