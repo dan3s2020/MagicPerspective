@@ -1,0 +1,56 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "V31-CAUSAL-PATH-LEARNING-CURVES-20261107",
+  "mode": "ISOLATED_RESEARCH_TEST",
+  "source": {
+    "path": "verbatim/2026-11-07-USER-V31-TRAINING-SCALING-CONTINUE.txt",
+    "exact_user_quote": "OK,TESTEAZA PANA REZOLVI SI AI REZULTATE CARE SA NE ARATE CA CU CAT MAI MULT TRAINING CU CAT O SA AJUNGA LA 100% DIN PRIMA\n\nCONTINUA"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape(ret,n,me,topology)",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/worlds/path-answer-writer.mjs",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "v17/transcend/torus-aether/worlds/cross-world-transforms.mjs",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/v31-path-answer-ui.js",
+    "v17/transcend/torus-aether/ui/atlas-explorer.js",
+    "v17/START_V31_REAL_TRAINING.ps1",
+    "v17/experiments/v31-causal-learning-curve.mjs",
+    "v17/tests/v31-native-path-answer-http.test.mjs",
+    "v17/tests/v31-long-complete-text-path.test.mjs",
+    "v17/tests/v31-three-hop-composition.test.mjs",
+    "v17/tests/v31-spurious-shortcut-recovery.test.mjs",
+    "v17/tests/v31-physical-causal-transfer.test.mjs",
+    ".github/workflows/v31-causal-learning-curve.yml"
+  ],
+  "additional_user_authorization_quote": "OK,TESTEAZA PANA REZOLVI SI AI REZULTATE CARE SA NE ARATE CA CU CAT MAI MULT TRAINING CU CAT O SA AJUNGA LA 100% DIN PRIMA",
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node v17/experiments/v31-causal-learning-curve.mjs",
+    "node --test v17/tests/v31-long-complete-text-path.test.mjs",
+    "node --test v17/tests/v31-three-hop-composition.test.mjs",
+    "node --test v17/tests/v31-spurious-shortcut-recovery.test.mjs",
+    "node --test v17/tests/v31-physical-causal-transfer.test.mjs",
+    "node --test v17/tests/v31-native-path-answer-http.test.mjs",
+    "GitHub Actions: https://github.com/dan3s2020/MagicPerspective/actions/workflows/v31-causal-learning-curve.yml"
+  ],
+  "actual_observed_results": "12 closed word replacements: frozen exact 0/360 at 0/6/12 observed worlds, 180/360 at 18, 360/360 at 24/36. Long complete texts up to 1800 tokens: 32/32 and 198685 compared characters. 3-hop independently observed path: 0/30 -> 30/30 and 238308 chars; path ablation breaks response, new worlds restore it. Native worker HTTP path-answer tested on 400-token complete text. Physically accepted contexts: after two independent context observations, 100/100 exact and 100/100 executable heldout 3-hop transfers; 10/10 OOD different-verb abstentions. All reported results controlled synthetic tasks using an explicit target word. All legacy regressions previously passed, Windows launcher preflight tested on GitHub CPU. No OpenThoughts3 100%-first-answer claim.",
+  "verification_status": "NATIVE_NODE22_CPU_AND_WINDOWS_POWERSHELL_PREFLIGHT_VERIFIED__UNRESTRICTED_SEMANTIC_TEXT_AND_LOCAL_CUDA_UNTESTED",
+  "limitations": [
+    "Original V17 Brain and writer remain unchanged and main is not modified.",
+    "Native path-answer handles explicitly specified single-token replacements, not arbitrary question answer extraction.",
+    "Exact 100% is valid only on controlled finite target/operator distributions, not general language.",
+    "CUDA availability, speed and actual OpenThoughts3 sample performance have NOT been checked on the user's local RTX 3050 Ti.",
+    "Checkpoint paths are isolated and original baseline acceptance issue #25 remains OPEN.",
+    "Existing V30 atlas remains append-only; historical unlogged events cannot be reconstructed."
+  ],
+  "full_verbatim_gate": "BLOCKED"
+}
