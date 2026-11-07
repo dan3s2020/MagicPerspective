@@ -203,7 +203,13 @@ const report = (final = false) => {
     hypermaze: TEXT ? hyperMaze.report() : null,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
-  if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
+  if (saveFile) { try {
+    setWorkerPhase("checkpoint: serializing original Brain");
+    msg.savedMB = brain.save(saveFile) / 1e6;
+    setWorkerPhase("checkpoint: saving sidecars");
+    saveText();selfcode?.save();
+    setWorkerPhase("checkpoint complete");
+  } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 1100) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
@@ -226,6 +232,18 @@ const gpuOn = async () => {
     try { gpuInfo = await gpu.ready; gpuError = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ready: " + JSON.stringify(gpuInfo)}); }
     catch (err) { gpuError = err.message; gpu = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } batchNow = null; } return gpu; };
 let batchNow = null;                                                       // where the current GPU batch is (shown on the page while the brain lives it)
+// Independent signal while waiting for CUDA; detects idle IPC vs frozen JS.
+// No invented progress counters: the same original worker emits its own data.
+let workerPhase = "starting", phaseSince = Date.now();
+const setWorkerPhase = label => {workerPhase=label;phaseSince=Date.now();};
+const heartbeat = setInterval(()=>{
+  parentPort.postMessage({type:"heartbeat",w:workerData.gw,at:Date.now(),
+    phase:workerPhase,phaseSince,chars:brain.chars||0,
+    exercises:brain.exercises||0,batch:batchNow,
+    activeGpuRpc:gpu?.activeCommand||null,
+    gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9});
+},5000);
+heartbeat.unref?.();
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
   if (!gpuSet) { shared.error = "Observed transitions queued; choose CUDA or explicit CPU for PyTorch training."; return; }
@@ -254,29 +272,36 @@ const flushShared = async (force = false) => {
 };
 const tick = async (phase, done, total) => { batchNow = {phase, done, total}; shot(); if (paused || saveNow) await hold(); await new Promise(r => setImmediate(r)); };
 const worldsOnce = async (record) => {                                     // one round of the worlds: one each on the CPU, or a batch of N on the GPU
+  setWorkerPhase("GPU: worlds / transformation batch");
   const G = await gpuOn();
   if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); if (selfcode) selfcode.step(); await flushShared(); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
-  if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
+  if (gpuSet) { shot(true); throw Error("CUDA worlds batch failed: "+(gpuError||"GPU process unavailable")+
+    ". No world silently skipped and no CPU fallback."); }
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } if (selfcode) selfcode.step(); await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
+  setWorkerPhase("text CUDA: working on real training batch");
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot(true);
   const startChars = brain.chars;
   await brain.learnTextGPU(gpu, exs, progress => {
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
+    setWorkerPhase(batchNow.phase);
     shot();
   });
+  setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
   for(const row of meta){absorbHyperMaze(row);absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  setWorkerPhase("CUDA: training shared transition model");
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
   batchNow = null;
+  setWorkerPhase("completed text batch; preparing next exercises");
   // Report the first committed batch immediately, not only after 60,000 bytes.
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) report();
   shot(true);
@@ -385,7 +410,15 @@ parentPort.on("message", m => {
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
   if (m === "stop") stop = true; else if (m === "pause") {paused = true;selfcode?.pause();} else if (m === "resume") {paused = false;selfcode?.resume();} else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
-const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveText(), selfcode?.save(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
+const doSave = () => { saveNow = false; if (saveFile) try {
+  setWorkerPhase("checkpoint: saving original Brain (atomic temp file)");
+  const MB=brain.save(saveFile)/1e6;
+  setWorkerPhase("checkpoint: writing auxiliary state after original Brain");
+  saveText();selfcode?.save();
+  parentPort.postMessage({type:"saved",w:workerData.gw,MB});
+  setWorkerPhase(paused?"paused":"checkpoint saved; resume training");
+} catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
+  text:"Checkpoint save FAILED: "+err.message});} };
 let k = 0, textBatch = [], textMeta = [];
 shot(true); await hold();
 for await (const ex of stream()) {
@@ -395,11 +428,13 @@ for await (const ex of stream()) {
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
   if (TEXT && gpuSet) {
+    setWorkerPhase("CUDA: verify device ready");
     if (gpuError || !(await gpuOn())) {
       parentPort.postMessage({type: "fatal", w: workerData.gw, text: "CUDA unavailable: " + (gpuError || "backend did not initialize")});
       stop = true; break;
     }
     textBatch.push(ex.bytes); textMeta.push(ex);
+    setWorkerPhase("collecting next real CUDA text batch");
     if (textBatch.length >= selectedTextBatch() || textBatch.reduce((n, b) => n + b.length, 0) >= 120000) {
       const exs = textBatch, meta = textMeta;
       try { await processGpuText(exs, meta); textBatch = []; textMeta = []; }
@@ -421,6 +456,7 @@ for await (const ex of stream()) {
     }
     textBatch = []; textMeta = []; shot(true);
   }
+  setWorkerPhase("CPU: native V17 text exercise");
   const startedAtChars=brain.chars;
   brain.exercises = (brain.exercises || 0) + (TEXT ? 1 : 0); if (TEXT) brain.beginExercise();
   for (const y of ex.bytes) {
@@ -459,6 +495,7 @@ if (TEXT && gpuSet && !stop && textBatch.length) {
   catch (err) { gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
     parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
 }
+setWorkerPhase("final checkpoint and test");
 report(stop ? false : true);
 shot(true); // publish ALL final learned transformations, graph, text and noise even for small corpora and no-noise organisms
 if (gpu) gpu.close();
