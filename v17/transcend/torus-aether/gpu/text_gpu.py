@@ -100,10 +100,18 @@ class Index:                                     # suffix array of the REVERSED 
         """ctx: (Q, maxK) symbols read backwards (-2 = beyond the start). Returns lo, hi: (Q, maxK) ranges (empty = lo==hi)."""
         Q = ctx.shape[0]; n = self.n; lo = X.zeros(Q, np.int64); hi = X.zeros(Q, np.int64) + n
         LO = X.zeros((Q, maxK), np.int64); HI = X.zeros((Q, maxK), np.int64); R = self.R; sa = self.sa
+        # NumPy stops at the FIRST depth where no context in the entire
+        # microbatch survives. Keep that exact observable interval layout
+        # on CUDA without per-depth host synchronization: accumulate a
+        # single device-side activity flag for each processed depth, and
+        # zero all globally inactive interval columns before returning.
+        cuda_active_depth = X.zeros(maxK, bool) if X.t else None
         steps = max(1, int(np.ceil(np.log2(n + 1))) + 1)
         for k in range(maxK):
             c = ctx[:, k]; alive = (hi > lo) & (c >= 0)
             if not X.t and not bool(alive.any()): break  # original exact NumPy stop
+            if X.t:
+                cuda_active_depth[k] = alive.any()  # DEVICE flag; no CPU sync here
             # Most real text contexts stop matching after only a few symbols.
             # Avoid executing thousands of masked CUDA binary-search kernels
             # for all 64 depths after every row has stopped matching. One
@@ -141,6 +149,13 @@ class Index:                                     # suffix array of the REVERSED 
             ok = alive & (nhi > nlo)
             lo = X.where(ok, nlo, lo); hi = X.where(ok, nhi, lo)        # a query whose alignment ends keeps an empty range
             LO[:, k] = lo; HI[:, k] = X.where(ok, hi, lo)
+        if X.t:
+            # The original NumPy code leaves the unused trailing columns
+            # zero. Earlier CUDA code incorrectly repeated the last live
+            # interval into up to 64 dead columns: fix that discrepancy.
+            active = cuda_active_depth[None, :]
+            LO = torch.where(active, LO, torch.zeros_like(LO))
+            HI = torch.where(active, HI, torch.zeros_like(HI))
         return LO, HI
     def sample_next(self, X, lo, hi, S=32):
         """(Q,) ranges -> (Q, S) symbols that followed up to S pasts spread over the range (-1 = none)"""
