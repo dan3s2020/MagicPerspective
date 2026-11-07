@@ -175,3 +175,34 @@ test("V25: unchanged ORIGINAL 2D Discoverer shape, 84 varied mazes with and with
  console.log(JSON.stringify({name:"V25_ORIGINAL_2D_PARITY",boards:parity,noiseCases:42}));
  assert.equal(parity,84);
 });
+
+test("V25: original seeded imagination noise explores alternate FULL causal routes without changing goal",()=>{
+ const {world}=learn(),task=caseAt(17);
+ const target={requires:TO.slice()};
+ const firstActions=new Map(),distinctPaths=new Set();
+ let solved=0,sixStep=0;
+ for(let k=1;k<=200;k++){
+  const plan=world.formSolution(task.start,target,{
+    seed:74129+k*7919,temperature:.7
+  });
+  solved+=Number(plan.found);
+  sixStep+=Number(plan.path.length===6);
+  if(plan.path.length)firstActions.set(plan.path[0].action,
+    (firstActions.get(plan.path[0].action)||0)+1);
+  distinctPaths.add(plan.path.map(h=>h.action).join(","));
+ }
+ const deterministicA=world.formSolution(task.start,target,{seed:4,temperature:0});
+ const deterministicB=world.formSolution(task.start,target,{seed:99,temperature:0});
+ assert.deepEqual(deterministicA.path,deterministicB.path);
+ const result={name:"V25_SEEDED_NOISE_ALTERNATIVE_FULL_SHAPES",
+   trials:200,goalReached:solved,optimalSixStepRoutes:sixStep,
+   distinctWholePaths:distinctPaths.size,
+   distinctFirstActions:firstActions.size,
+   firstActionCounts:Object.fromEntries(firstActions),
+   limitation:"Externally selected temperature on native Discoverer; NOT a learned autonomous NoiseAgency or continuous 5D language geometry"};
+ console.log(JSON.stringify(result));
+ assert.equal(solved,200);
+ assert.equal(sixStep,200);
+ assert.ok(distinctPaths.size>2);
+ assert.ok(firstActions.size>2);
+});
