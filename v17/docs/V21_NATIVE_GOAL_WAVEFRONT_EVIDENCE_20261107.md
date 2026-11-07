@@ -48,6 +48,21 @@ Verified full workflow **SUCCESS**:
 - `.github/workflows/v21-native-goal-wavefront.yml`: reproducible direct CI execution plus original untouched branch differential control.
 - No reset or migration of `brain-*.v8` or saved original CUDA index. No merge into `main`.
 
+## Third hypothesis: scaling the ORIGINAL causal text-state grammar beyond V19's 96-token cap
+
+**Measured CI success:** [run 42342834670](https://github.com/dan3s2020/MagicPerspective/actions/runs/42342834670), commit `1f1f9ff9ca1b5c7328adf3a9dc8a08b97ccf1eb6`.
+
+The original V19 `buildWorld` accepts no more than **96** tokens for its original training/evaluation path. The extension `formSolutionLongNative` is **additive**: it leaves `buildWorld` and the old cutoff unchanged and uses the exact same original V19 `predict(state,action)` learned from observations. Every full text state is a token vector; each candidate action transforms an actual component of the vector, and the original `Discoverer.shape()` computes the complete state/action route before the action is tried. A `maxTokens=400000` / `maxNodes=32` explicit budget bounds active memory and reports a failed/capped world rather than silently truncating. An independent physical action callback validates the complete final state without hiding an answer inside the planner.
+
+- A real mixed-language source from the repository was repeated into **903,253 input characters**, **195,604 tokens**; the complete target state after two observed text-edit operations was **955,237 characters**. The difference in lengths results from tokenization and joining, not from inventing a different answer. Both full output state and every token were checked for exact equality with the independently constructed expected state.
+- **Full exact result: PASS**; two native predicted actions before the first action; two inferred future transitions explicitly flagged; Bellman residual **0**; measured planning time **276.27 ms** on GitHub Ubuntu runner (not a GPU measurement, not sustained throughput).
+- Second long-form battery: **100/100** previously unseen **128-token** states with different contextual distractor tokens, full end-state exact-match, cumulative **150,260 input characters**. This is separate from the earlier 100/100 battery of 64-token states.
+- Original short method still enforces its unchanged 96-token limit and remains tested. Removing the learned action laws causes native navigation to fail instead of making up a route; over-budget large input is rejected without slicing the source.
+- `v17/tests/native-long-text-shape.test.mjs`: **4/4 PASS**; the complete CI job including old maze, V19, V20, V21, both real original worker HTTP tests and UI syntax is **SUCCESS**.
+- The first attempt had a **test-only false regression**: `execute(plan,{observe:false})` records `last` result telemetry, so comparing every byte of the exported model before/after execution was too strict. This was corrected by asserting unchanged learned `rules` and `interventions` while retaining honest `last` run telemetry. No production model code was changed for that failure.
+
+**Scientific interpretation:** text as a high-dimensional discrete state vector with learned action-edges works, for these explicitly constrained transformations, at almost a million input characters. This is NOT evidence of arbitrary novel natural-language meaning/answer goal inference and does not show that the original free-text `Brain.chat()` uses this action graph. This remains a restricted structural result, not unconditional 100% QA.
+
 ## Critical remaining scientific acceptance gaps
 
 1. The Native V21 contextual graph currently navigates to a *known contextual goal*. Its exact 27-step route is **not** proof that a question alone determines a semantically correct unknown answer.
