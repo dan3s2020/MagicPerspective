@@ -134,3 +134,17 @@ $("v23Play").onclick=()=>{
 $("v23Pause").onclick=stop;
 $("v23Kind").onchange=()=>{stop();frozen=null;page=[];render()};
 render();
+
+
+document.addEventListener("mp-v25-strict-frozen-path",e=>{
+  const data=e.detail;
+  if(!data?.found||!data.strictClosedWorld||!data.path?.steps)return;
+  stop();frozen=data;page=data.path.steps;offset=data.path.offset||0;cursor=0;
+  setOut("v23PlanOut","V25 STRICT VERIFIED OBSERVATION COVERAGE | ORIGINAL Discoverer.shape "+
+    "\nTraseu înghețat: "+count(data.path.total)+" pași"+
+    "\nRăspuns (nesupus ca țintă): "+String(data.answer)+
+    "\nUnknown relevant sentences: "+String(data.audit?.unknown?.length||0)+
+    "\nSHA256: "+data.sha256+
+    "\nAtenție: câmpul arată un traseu PROPUS, nu pași fizici executați.");
+  render();
+});
