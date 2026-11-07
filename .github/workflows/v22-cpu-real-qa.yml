@@ -1,0 +1,55 @@
+name: V22 CPU-only native real text and strict 70% full-answer gate
+on:
+  push:
+    branches: [experiment/V22-CPU-REAL-QA-70-GATE-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cpu-original:
+    name: CPU original V17/V19/V20/V21 and exact complete heldout answer acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original CPU training and STRICT complete-answer 70% gate (no fictitious 70%)
+        run: node --test v17/tests/v22-cpu-native-first-answer.test.mjs
+      - name: V22 full original source, noise and 84 maze regressions
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Native cognitive source actions and original frozen UI
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+      - name: CPU 100 structured, truly unseen 80-token tests (not semantic Q/A)
+        run: node --test v17/tests/v22-long-unseen-shape.test.mjs
+      - name: JavaScript source syntax
+        run: |
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/eval-worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/v22-original-text-labyrinth-live.js
+  windows-powershell5:
+    name: Windows PowerShell 5.1 CPU launcher parse without CUDA
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native Windows PowerShell 5.1 source and ASCII
+        shell: powershell
+        run: |
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw "Requires Windows PowerShell 5.1" }
+          $source=(Resolve-Path 'v17/START_V22_CPU_REAL_TEXT.ps1').Path
+          $bytes=[System.IO.File]::ReadAllBytes($source)
+          if (@($bytes | Where-Object { $_ -gt 127 }).Count -gt 0) {
+            throw "Windows PowerShell 5.1 file contains non-ASCII bytes"
+          }
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile($source,[ref]$tokens,[ref]$errors)
+          if($errors.Count) { throw ($errors | Out-String) }
+          $code=[System.IO.File]::ReadAllText($source)
+          if($code -notmatch '--gpu", "off"') { throw "Launcher can run CUDA unexpectedly" }
+          if($code -notmatch 'text,cognitivemap,hypertext,maze,transform') {
+            throw "Original V17 + original text cognitive/maze/transform worlds missing"
+          }
