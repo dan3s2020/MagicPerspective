@@ -1,0 +1,21 @@
+name: V42 learned clause 3-SAT hypermaze - original shapeGraph regression and SAT/DPLL checks
+on:
+  push:
+    branches:
+      - experiment/V42-3SAT-LEARNED-CLAUSE-HYPERMAZE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-v42-clause-hypermaze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify actual original V42 Discoverer.shapeGraph, learned clause transformations, held-out SAT and DPLL
+        run: node --test v17/tests/v42_clause_hypermaze.test.mjs
+      - name: Preserve previous V42 SAT hypermaze and feedback test passes
+        run: node --test v17/tests/v42_3sat_hypermaze.test.mjs v17/tests/v42_3sat_feedback_maze.test.mjs
