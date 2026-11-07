@@ -47,7 +47,17 @@ test("NATIVE actual CPU Text+Cognitive+Hypermaze+Maze/Transform exposes entire p
   const raw=await get("/atlas?w=0&cursor=0&limit=4");
   assert.equal(raw.appendOnly,true);
   assert.equal(raw.omittedRecords,0);
-  assert.ok(raw.rows.some(x=>x.type==="rule-evidence"));
+  // Original maze & transform actions may be logged BEFORE any corpus
+  // contrast. The first four events do NOT have to be text evidence.
+  let foundOriginalRule=false,scanCursor=0;
+  for(let page=0;page<500&&!foundOriginalRule;page++){
+    const candidate=await get("/atlas?w=0&cursor="+scanCursor+"&limit=30&kind=rule-evidence");
+    foundOriginalRule=candidate.rows.length>0;
+    if(candidate.end)break;
+    assert.ok(candidate.nextCursor>scanCursor);
+    scanCursor=candidate.nextCursor;
+  }
+  assert.equal(foundOriginalRule,true,"The real corpus must contribute at least one cross-world observed contrast to the atlas");
   const evaluation=await fetch(base+"/cognitive-eval",{
    method:"POST",headers:{"content-type":"application/json"},
    body:JSON.stringify({w:0,initial:"blue irrelevant context unknown.",
