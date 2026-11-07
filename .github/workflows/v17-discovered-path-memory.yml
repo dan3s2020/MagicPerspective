@@ -33,3 +33,67 @@ jobs:
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/observed-text-paths.test.mjs
           node --test v17/tests/real-corpus-axis-gating.test.mjs
+
+  windows-powershell-real-launch:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: "Validate Windows launcher PowerShell syntax"
+        shell: pwsh
+        run: |
+          $source = Join-Path $PWD.Path 'v17\START_MAGIC_LABYRINTH.ps1'
+          $tokens = $null
+          $issues = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($source, [ref]$tokens, [ref]$issues) | Out-Null
+          if ($issues.Count) { throw ($issues | Out-String) }
+      - name: "Launch real source V17 corpus from Windows PowerShell and confirm live saved output"
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $script = Join-Path $PWD.Path 'v17\START_MAGIC_LABYRINTH.ps1'
+          $inputFile = Join-Path $PWD.Path 'v17\docs\TORUS_AETHER_ABC_20261104.md'
+          $destination = Join-Path $env:RUNNER_TEMP 'MagicLab-Win-Observation-Run'
+          $stdout = Join-Path $env:RUNNER_TEMP 'magic-windows-stdout.txt'
+          $stderr = Join-Path $env:RUNNER_TEMP 'magic-windows-stderr.txt'
+          $url = 'http://127.0.0.1:19171/api/state'
+          $args = @(
+            '-NoProfile','-ExecutionPolicy','Bypass','-File',
+            ('"' + $script + '"'),
+            '-Text',('"' + $inputFile + '"'),
+            '-Out',('"' + $destination + '"'),
+            '-Port','19171','-Rate','30','-Batch','10',
+            '-MaxRows','8','-Start','-NoBrowser'
+          )
+          $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList $args -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $ok = $false
+            for ($n=0; $n -lt 150; $n++) {
+              Start-Sleep -Milliseconds 200
+              try {
+                $state = Invoke-RestMethod -Uri $url -TimeoutSec 2
+                if ($state.state.finished -and $state.state.rows -eq 8) {
+                  $ok = $true
+                  break
+                }
+              } catch {}
+              if ($proc.HasExited) { break }
+            }
+            if (-not $ok) {
+              Write-Host 'LIVE SERVER STDOUT:'
+              if (Test-Path $stdout) { Get-Content $stdout -Tail 100 }
+              Write-Host 'LIVE SERVER STDERR:'
+              if (Test-Path $stderr) { Get-Content $stderr -Tail 100 }
+              throw 'The actual PowerShell launch did not complete eight real training observations'
+            }
+            if ($state.mode -ne 'text') { throw 'Wrong observed training mode' }
+            if ($state.model.tokens -lt 1) { throw 'No native V17 tokens were trained' }
+            if (-not (Test-Path (Join-Path $destination 'brain-live.v8'))) { throw 'Original Brain checkpoint absent' }
+            if (-not (Test-Path (Join-Path $destination 'observed-live.jsonl'))) { throw 'Real event ledger absent' }
+            Write-Host ('MAGIC_WINDOWS_POWERSHELL_PASS rows=' + $state.state.rows + ' tokens=' + $state.model.tokens + ' checkpoint=present ledger=present')
+          } finally {
+            try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}
+          }
