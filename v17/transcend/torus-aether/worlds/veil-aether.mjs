@@ -108,7 +108,7 @@ export class VeilAether {
           observed:observation,probability:guess.choices.find(x=>x.token===observation)?.p||0,
           surprise:guess.token!==observation,alternatives:guess.choices,
           remainingShape:localPlan.found?localPlan.path:[],
-          usedHistoryAxis:guess.support>0});
+          contextAvailable:guess.support>0});
       }
     }
     this.covered+=cov;this.correct+=c;this.singleCorrect+=base;
@@ -175,7 +175,9 @@ export class VeilAether {
     }
     const found=pos===to;
     return {found,reason:found?"GOAL_REACHED":"PATH_LIMIT",frozen:true,
-      start:a,goal:g,path:ids.map(i=>this.nodes[i].label),links,distance:dist[from],
+      start:a,goal:g,path:ids.map(i=>this.nodes[i].label),links,
+      routeNodes:ids.map(i=>{const n=this.nodes[i];return {id:n.id,label:n.label,count:n.count,features:this._features(n)};}),
+      distance:dist[from],
       math:{maxResidual:field.maxResidual,reachable:field.reachable,
         strictUphill:links.every(e=>e.vTo>e.vFrom),
         shortestObservedRoute:found&&links.length===dist[from],
