@@ -209,3 +209,73 @@ test("multiple separately observed language worlds retain reusable transformatio
   }));
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 });
+
+test("genuine REPLAY across distant segmented worlds discovers a transform absent from the active window and composes an unseen answer before action",{
+ timeout:100000
+},()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"mp-history-replay-"));
+ try{
+  const checkpoint=path.join(tmp,"brain.v8"),atlasFile=checkpoint+".hypermaze-atlas.jsonl";
+  const brain=trainedBrain(),model=brain.observedTransformations;
+  model.maxObserved=3; // intentionally tiny current segment memory
+  const learner=new NativeGoalTextMaze(brain,{atlasFile,maxStates:250,maxDepth:7});
+  const historic=["Alpha moon vessel is calm.","Alpha moon vessel is curious.",
+    "Alpha moon vessel is happy."];
+  for(const s of historic)learner.observe(s);
+  for(let i=0;i<7;i++)
+   learner.observe("The unrelated distant story "+i+" uses crystal markers.");
+  assert.equal(model.containsSentence(historic[0]),false);
+  assert.equal(model.containsSentence(historic[2]),false);
+  const live=learner.observe("Beta moon vessel is happy.");
+  const focusSequence=live.atlasWorldSequence;
+  const heldout="Beta moon vessel is curious.";
+  assert.equal(model.containsSentence(heldout),false);
+  const query={start:"Alpha moon vessel is calm.",
+   required:["Beta","curious"]};
+  const before=learner.plan(query);
+  assert.equal(before.found,false,
+   "This test is invalid: it should need a missing Alpha→Beta action from distant observation");
+  const realObservedBefore=model.seen;
+  const replay=learner.replayArchivedWorlds({focusSequence,after:0,limit:250});
+  assert.ok(replay.historicalWorldsScanned>=3);
+  assert.ok(replay.newlyLearnedOperators>=2,
+   "The original V17 Brain did NOT discover any missing historical action");
+  assert.equal(model.seen,realObservedBefore,
+   "Historical rehearsal must never masquerade as new actual corpus observations");
+  assert.ok(model.historicalReplays>0);
+  const newAction=[...model.operators.values()].find(op=>
+    op.kind==="replace"&&op.from==="Alpha"&&op.to==="Beta");
+  assert.ok(newAction,
+   "Cross-world cold memory must learn exact Alpha→Beta from two originally observed sentences");
+  const after=learner.plan(query,{recordAtlas:true});
+  assert.equal(after.found,true,
+   "The assembled hypermaze still cannot navigate a formerly missing dimension");
+  assert.equal(after.predicted,heldout,
+   "The original first-action shape failed a new, never-observed composition");
+  assert.ok(after.actions.length>=2,
+   "The solution should require compositional navigation, not memorized answer replay");
+  assert.equal(model.containsSentence(heldout),false);
+  const result=learner.execute(after,{trainNoise:false,enableNoise:false,maxSteps:20});
+  assert.equal(result.executedFinal,heldout);
+  assert.equal(result.solvedInternalGoal,true);
+  const atlas=learner.atlasSummary();
+  assert.equal(atlas.historicalReplayEvents,1);
+  assert.ok(atlas.learnedOperatorEvents>=replay.newlyLearnedOperators);
+  brain.save(checkpoint);learner.atlasFlush();
+  const again=new NativeGoalTextMaze(Brain.load(checkpoint),
+    {atlasFile,maxStates:250,maxDepth:7});
+  assert.equal(again.plan(query).predicted,heldout,
+   "Cross-world transformation vanished after original Brain.v8 restart");
+  console.log("REAL_CROSS_WORLD_ARCHIVE_REPLAY_DISCOVERY",JSON.stringify({
+   oldSourceWasEvicted:true,trainingWorldsBeforeFocus:10,
+   genuineHistoricWorldsRead:replay.historicalWorldsScanned,
+   newOperatorsLearned:replay.newlyLearnedOperators,
+   replayNotCountedAsNewCorpus:true,
+   firstShapeBeforeReplayFound:before.found,
+   firstShapeAfterReplay:after.predicted,
+   heldoutAnswerNeverObserved:true,
+   executedLearnedPathSteps:result.actions,
+   exactBrainAndAtlasResume:true,notGeneralNaturalLanguageUnderstanding:true
+  }));
+ }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});
