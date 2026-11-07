@@ -1,7 +1,7 @@
 {
   "version": 1,
   "date": "2026-11-07",
-  "status": "PARTIAL_STRUCTURED_EXACT_RESULTS_MEASURED_NATIVE_UI_INTEGRATION_IN_PROGRESS",
+  "status": "IN_PROGRESS_NATIVE_HTTP_INTEGRATION_NOT_PROVEN",
   "source_quotes": [
     {
       "source": "user-visible 2026-11-07 direct request in current conversation",
@@ -23,7 +23,8 @@
     "v17/transcend/torus-aether/ui/app.js",
     "v17/transcend/torus-aether/ui/index.html",
     "v17/transcend/torus-aether/devour/devour.mjs",
-    "v17/transcend/torus-aether/devour/worker.mjs"
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/research/goal-path-field/native-math-graph.mjs"
   ],
   "new_files": [
     "v17/tests/v24-longtext-independent-heldout.test.mjs",
@@ -35,7 +36,9 @@
     "v17/tests/v24-native-math-field-heldout.test.mjs",
     "v17/transcend/torus-aether/ui/cognitive-graph-live.js",
     "v17/transcend/torus-aether/worlds/cognitive-route-snapshot.mjs",
-    "v17/tests/torus-v23-exact-discoverer.test.mjs"
+    "v17/tests/torus-v23-exact-discoverer.test.mjs",
+    "v17/transcend/torus-aether/worlds/native-math-route-snapshot.mjs",
+    "v17/tests/v24-native-math-http-runtime.test.mjs"
   ],
   "scope": "Repair ONLY long-state admission with explicit opt-in size bound and TRUSTED observer-accepted action hypothesis conductance in the existing cognitive graph adapter; preserve same original 0.97 .5 .2 2N Discoverer.shape law. Original default model/test behavior unchanged; require independent-physics heldout evaluation and causal ablations, without claiming semantic general intelligence.",
   "prior_failed_test": "GitHub run 42341046064 / job 128308568926: three RED V23 tests throw 'Invalid cognitive planning limits' on 2048-token unseen text; original 84 retinas, 144 and 511 accepted edge path tests PASS.",
@@ -54,6 +57,7 @@
     "Only use observed-pair induction and apply() from research; DO NOT invoke its alternative A* plan(); original Discoverer.shape() is only path planner",
     "Reuse exact existing V23 read-only graph observer from tested branch experiment/V23-DIRECT-DISCOVERER-OBSERVABILITY-20261107 (head 5cd890e0844b2254ca851ab09ea0cb44730f91f1) without changing source semantics or existing UI buttons."
   ],
-  "additional_evaluation": "Unseen arithmetic result NOT provided in goal; learn nonlinear numeric action field from six real observed before/after pairs, generalize to new long document body and independent action physics; report hallucinated failures and ablations. Does not mean unrestricted OpenThoughts answers 100%. Add read-only native learned graph snapshots and seeded noise controls using proven V23 UI; preserve every original control and test same underlying worker HTTP and frozen state.",
-  "observed_results": "V24 run 42341683874 PASS (job 128310527157): 16/16 first-shot full 2057-token answers; average 7 observed-action steps; 866256 total exact output characters, original Discoverer.shape; 48/48 2048-token symbolic action steps; 84 original maze parity; 6/6 V22 and 19/19 cognitive tests, V19 HTTP and V21 migration. OPEN: only structured arithmetic grammar, no general Q/A or GPU certification."
+  "additional_evaluation": "Unseen arithmetic result NOT provided in goal; learn nonlinear numeric action field from six real observed before/after pairs, generalize to new long document body and independent action physics; report hallucinated failures and ablations. Does not mean unrestricted OpenThoughts answers 100%. Add read-only native learned graph snapshots and seeded noise controls using proven V23 UI; preserve every original control and test same underlying worker HTTP and frozen state. Integrate optional corpus-confirmed learned arithmetic actions into original Brain object as ONE checkpointed native field, expose HTTP observe/eval only on enabled live cognitive world; bounded labels and immutable heldout prediction; no silent changes to original free text writer/CUDA.",
+  "observed_results": "V24 run 42341683874 PASS (job 128310527157): 16/16 first-shot full 2057-token answers; average 7 observed-action steps; 866256 total exact output characters, original Discoverer.shape; 48/48 2048-token symbolic action steps; 84 original maze parity; 6/6 V22 and 19/19 cognitive tests, V19 HTTP and V21 migration. OPEN: only structured arithmetic grammar, no general Q/A or GPU certification.",
+  "native_integration_rule": "Do not instantiate a second Brain or independently replacing AligningGraph. Store only observed action-field state inside the existing Brain .v8 checkpoint; real worker adds no new source data during frozen evaluation."
 }
