@@ -187,7 +187,7 @@ export class PersistentHypermazeAtlas {
   if(!Number.isSafeInteger(searchSequence)||searchSequence<1)
    throw Error("Atlas graph needs an actual search journal ID");
   const search=this.read(searchSequence);
-  if(!search||search.type!=="search)
+  if(!search||search.type!=="search")
    throw Error("The requested graph was not explored in any recorded search");
   if(!search.graphSharded)
    return {searchSequence,sharded:false,inlineTopology:search.fullExploredTopology,
