@@ -47,7 +47,129 @@
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
 </style>
-<link rel="stylesheet" href="v27-studio.css">
+<style id="v27StandaloneStyle">
+
+/* V27 original-engine studio: layout-only, NO changes to trainer, JS engine,
+   native KPI definitions, graph states, API endpoints, actions or checkpoints. */
+:root{
+  --v27-bg:#080e1c;--v27-surface:#111b2d;--v27-stroke:#2a3b55;
+  --v27-teal:#4ce2c4;--v27-blue:#71aaff;--v27-purple:#ab90fa;
+  --v27-ink:#eaf2fd;--v27-muted:#9cafc6;
+}
+html,body.v27-new-shell{height:auto!important;min-height:100%;background:
+  radial-gradient(ellipse at 35% -220px,#162e4c 0%,transparent 66%),#090e18!important;
+  color:var(--v27-ink);font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body.v27-new-shell{padding:0 18px 36px;overflow-x:hidden}
+.v27-header{max-width:1900px;margin:0 auto;display:flex;align-items:center;
+  justify-content:space-between;gap:18px;padding:23px 4px 20px;
+  border-bottom:1px solid #2b3d53}
+.v27-brand{display:flex;align-items:center;gap:14px}
+.v27-symbol{height:48px;width:48px;display:flex;align-items:center;justify-content:center;
+  font-weight:900;letter-spacing:-.07em;color:#081c21;font-size:17px;border-radius:11px;
+  background:linear-gradient(120deg,#67f0d2,#80b9ff);box-shadow:0 0 25px #45aeab30}
+.v27-overline{font-size:10px;letter-spacing:.18em;color:#829eba;font-weight:700}
+.v27-header h1{margin:3px 0 0;font-size:clamp(20px,2vw,27px);letter-spacing:-.04em;color:#f0f6ff;line-height:1.1}
+.v27-header h1 span{color:var(--v27-teal)}
+.v27-header h1 small{font:700 10px system-ui,sans-serif;color:#879ebc;letter-spacing:.07em}
+.v27-topright{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:end}
+.v27-runtime,.v27-frozen{border-radius:30px;border:1px solid #35506c;
+  background:#132239;color:#aaccde;padding:8px 11px;font-size:10px;font-weight:700;
+  letter-spacing:.06em;max-width:min(400px,94vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v27-runtime.ok{border-color:#387b78;color:#91f3dc}
+.v27-runtime.fail{border-color:#a55362;color:#ffb3c3}
+.v27-frozen{background:#0f2527;border-color:#2d655e;color:#a0dbc5}
+.v27-nav{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  max-width:1900px;margin:0 auto;padding:13px 0 14px;position:relative;z-index:10}
+.v27-nav button{border:1px solid #2e405a;color:#a4b9ce;background:transparent;
+  padding:9px 13px;font-size:11px;font-weight:700;border-radius:8px}
+.v27-nav button:hover,.v27-nav button.v27-nav-active{border-color:#468c92;
+  background:#192d3a;color:#d2fff3}
+.v27-dashboard{max-width:1900px;margin:0 auto 16px}
+.v27-metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.v27-metric{background:linear-gradient(115deg,#142136,#10192b);border:1px solid #283a54;
+  min-height:116px;border-radius:12px;padding:16px 17px;display:flex;
+  flex-direction:column;justify-content:space-between;gap:8px}
+.v27-metric:first-child{border-color:#34817d;background:linear-gradient(115deg,#122f3a,#111b2c)}
+.v27-metric>div{font-size:10px;letter-spacing:.1em;color:#8badcb;font-weight:800}
+.v27-metric strong{font:700 clamp(23px,2vw,32px)/1.1 "Segoe UI",system-ui,sans-serif;
+  color:#f1f7ff;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+.v27-metric:first-child strong{color:var(--v27-teal)}
+.v27-metric small{font-size:10px;color:#91a9be;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v27-statusline{display:flex;gap:15px;justify-content:space-between;
+  border:1px solid #2d435b;border-radius:9px;background:#101a2c;
+  padding:10px 14px;margin:13px 0 10px;font-size:11px;color:#a9bed6;flex-wrap:wrap}
+.v27-disclosure{border-left:3px solid #437b85;padding:7px 12px;
+  color:#a8bccb;font-size:11px;background:#132131;border-radius:2px}
+body.v27-new-shell>.app{max-width:1900px;margin:0 auto;display:grid!important;
+  grid-template-columns:minmax(0,1.45fr) minmax(420px,.9fr)!important;
+  height:auto!important;gap:15px;align-items:start}
+body.v27-new-shell>.app>.graph{height:calc(100vh - 92px);min-height:620px;
+  max-height:950px;position:sticky;top:8px;overflow:hidden;
+  border:1px solid #30465d!important;border-radius:13px;background:
+    radial-gradient(ellipse at 50% 44%,#152942 0%,#090e19 65%)}
+body.v27-new-shell>.app>.graph canvas#g{width:100%;height:100%}
+body.v27-new-shell>.app .hud{left:14px;top:14px;padding:11px 14px;
+  background:#091724e3;border:1px solid #2b4157;border-radius:9px;max-width:78%;
+  pointer-events:none}
+body.v27-new-shell>.app .hud h1{color:#ecf4ff;font-size:16px}
+body.v27-new-shell>.app .hud h1 span{color:#75e1ce}
+body.v27-new-shell>.app .hud p:not(#viewerStatus){display:none}
+body.v27-new-shell>.app .legend{padding:10px 12px;
+  background:#0b1624e5;border:1px solid #2b3f57;border-radius:8px;
+  max-width:calc(100% - 24px);left:12px;bottom:11px}
+body.v27-new-shell>.app>.side{overflow:visible!important;min-height:620px;
+  background:#111a2a;border:1px solid #2e425a;border-radius:13px;
+  padding:14px!important;width:auto!important}
+body.v27-new-shell>.app>.side>h2,body.v27-new-shell #livePanel>h2,
+body.v27-new-shell #evalPane>h2{font-size:11px;color:#8ebacb;
+  letter-spacing:.11em;font-weight:800}
+body.v27-new-shell .tabs{background:#111a2a;padding:10px 0 12px;
+  border-bottom:1px solid #2c3e56;top:0}
+body.v27-new-shell .tabs button{border-radius:8px;padding:11px 14px}
+body.v27-new-shell .tabs button.on{color:#10272b;background:#63d6cb;
+  border-color:#63d6cb}
+body.v27-new-shell button{transition:background .16s,border-color .16s}
+body.v27-new-shell button:hover{background:#233f54}
+body.v27-new-shell button:focus-visible{outline:2px solid #5fe1c8;outline-offset:2px}
+body.v27-new-shell input:not([type=range]):not([type=checkbox]),
+body.v27-new-shell textarea,
+body.v27-new-shell select{
+  background:#0c1728;color:#e4f1fc;border:1px solid #314963;border-radius:7px}
+body.v27-new-shell input[type=range]{accent-color:#4bdcc5}
+body.v27-new-shell #livePanel,body.v27-new-shell #evalPane{
+  border:1px solid #34455c;border-radius:9px;padding:12px;margin:7px 0}
+body.v27-new-shell #livePanel[hidden],body.v27-new-shell #mazeBox[hidden],
+body.v27-new-shell #transBox[hidden]{display:none!important}
+body.v27-new-shell #datasetProgressBox,
+body.v27-new-shell #textMazeBox,
+body.v27-new-shell #cognitiveBox,
+body.v27-new-shell #gpuPerformanceBox,
+body.v27-new-shell #sharedBox{
+  border-color:#345271!important;background:#0f2030;border-radius:11px!important}
+body.v27-new-shell pre{font-family:Consolas,ui-monospace,monospace;
+  background:#0b1626;color:#bbd5e8;border-radius:8px;overflow:auto}
+body.v27-new-shell .lgc{border-radius:10px;border-color:#2d4563;background:#15243a}
+body.v27-new-shell .lgc.on{border-color:#51b6a9}
+body.v27-new-shell #chatPane{z-index:40;background:#121d30;border:1px solid #45617b}
+body.v27-new-shell #textMazeCanvas{background:#0a1424!important;
+  border-color:#3b5d77!important}
+@media(max-width:1180px){
+  body.v27-new-shell>.app{grid-template-columns:1fr!important}
+  body.v27-new-shell>.app>.graph{height:540px;min-height:400px;position:relative}
+  .v27-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+  body.v27-new-shell{padding:0 10px 20px}
+  .v27-header{flex-wrap:wrap;padding:15px 0}
+  .v27-topright{justify-content:flex-start}
+  .v27-metric{padding:12px;min-height:102px}
+  .v27-metric strong{font-size:22px}
+  body.v27-new-shell>.app>.graph{height:400px;min-height:380px}
+  body.v27-new-shell>.app .hud{max-width:calc(100% - 20px);font-size:10px}
+  body.v27-new-shell>.app>.side{padding:10px!important}
+}
+
+</style>
 </head>
 <body class="v27-new-shell">
 <header class="v27-header" id="v27Header">
