@@ -19,6 +19,9 @@ export function learnedHolonomy(field,start) {
   const opX=model.operators.find(o=>o.primary===xi&&o.step===1);
   const opY=model.operators.find(o=>o.primary===yi&&o.step===1);
   if(!opX||!opY)return {ready:false,reason:"need-observed-unit-increments-in-both-directions"};
+  if(!opX.evidence[yi]||!opY.evidence[xi])
+    return {ready:false,reason:"insufficient-context-contrast-for-curvature",
+      observedCrossContrasts:[opX.evidence[yi],opY.evidence[xi]]};
   if(!approx(opX.slopes[xi],0)||!approx(opY.slopes[yi],0) ||
      !approx(opX.slopes[zi],0)||!approx(opY.slopes[zi],0))
     return {ready:false,reason:"cross-coupled-field-outside-this-closed-form"};
