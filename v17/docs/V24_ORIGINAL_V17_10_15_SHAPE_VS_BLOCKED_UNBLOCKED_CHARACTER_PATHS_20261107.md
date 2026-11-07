@@ -72,6 +72,17 @@ Modul \`original-v17-answer-forensics.mjs\` si evaluatorul \`eval-worker.mjs\` f
 
 Aceasta permite sa vedem **de ce** o predictie V17 a ratat si ce tipuri de cai lipsesc, fara sa ne atribuim o crestere artificiala a scorului original.
 
+## C.1 Rezultat original V17 pe evaluarea reala a workerului CPU V24 (fixture mic)
+
+In [CI V24 (run 42357932423)](https://github.com/dan3s2020/MagicPerspective/actions/runs/42357932423), pe corpusul TEST al integrarii native cu 18 documente invatate, **doua exemple tinute separat**:
+
+- `originalV17HeldoutAnswerShapeSame=0.9252136752136753` = **92,5214%** potrivire POZITIONALA a caracterelor, dar `originalV17WholeCorrectCount=0`: **0/2 raspunsuri complete corecte**. Corpusul are raspunsuri repetitive; asta NU este OpenThoughts3. Demonstratia este tocmai de ce 92,52% caractere identice NU inseamna nici macar un raspuns integral corect.
+- `postHocCharacterErrorPositions=60` = pozitiile ratate gasite de comparatorul de raspuns original, cu referinta citita abia DUPA generare. Traseele de reparatie sunt marcate `POST_HOC`, niciodata ca „ghicite”.
+- `fullAtlasDiskBytes=534464`, descarcarea JSONL prin HTTP a fost identica octet cu octet cu jurnalul adevarat de pe disc, inclusiv observatiile de caracter, traseele positive/negative si analiza originala.
+- Testele pozitive `mat→mot→mut`, controalele negative si blocarea unui perete observat din lumea reala sunt verificabile in aceeasi executie, fara pornirea CUDA.
+
+**Nu prezentam acest test cu scorul mare de caractere ca imbunatatire a modelului semantic.** Metrica exacta a raspunsurilor intregi ramane 0/2 aici.
+
 ## D. Unde se vede in UI REAL
 
 Lansatorul ORIGINAL de CPU \`v17/START_V22_CPU_REAL_TEXT.ps1\` pornit pe aceasta ramura continua sa activeze toate cele cinci lumi native: \`text,cognitivemap,hypertext,maze,transform\`; \`--gpu off\`; checkpointurile sunt in directorul distinct \`v17/runtime-v22-cpu-real-text\`, fara modificarea vechilor checkpointuri V21.
