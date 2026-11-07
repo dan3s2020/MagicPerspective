@@ -301,12 +301,32 @@ const processGpuText = async (exs, meta) => {
   setWorkerPhase("text CUDA: working on real training batch");
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot();
   const startChars = brain.chars;
-  await brain.learnTextGPU(gpu, exs, progress => {
+  const observeProgress = progress => {
     batchNow = {phase: "text CUDA: " + progress.phase, done: progress.done, total: progress.total};
     setWorkerPhase(batchNow.phase);
-    // The real lightweight /health heartbeat carries CUDA progress; do NOT
-    // recompute and serialize the entire organ graph on every kernel tick.
-  });
+    // Lightweight /health heartbeat records actual Python progress.
+  };
+  try {
+    await brain.learnTextGPU(gpu,exs,observeProgress);
+  } catch (err) {
+    // For a dead / unresponsive Python child, the native Brain has NOT
+    // absorbed the batch: Brain.learnTextGPU mutates it only AFTER receiving
+    // a completed reply. The dead child is discarded and its text memory
+    // reloaded from the unchanged native Brain before replaying this batch.
+    // Never retry errors after the first GPU result was committed.
+    if (!/GPU RPC (idle|hard) timeout|GPU process .*ended|GPU process is not running/i.test(err.message))
+      throw err;
+    parentPort.postMessage({type:"note",w:workerData.gw,text:
+      "CUDA stalled: restarting the dead child and replaying THIS uncommitted text batch exactly once: "+err.message});
+    setWorkerPhase("CUDA: recovering stalled uncommitted text batch");
+    gpu?.close("restart after stalled uncommitted CUDA batch");
+    gpu=null;gpuInfo=null;gpuError=null;sharedLoaded=false;
+    const restarted=await gpuOn();
+    if(!restarted)throw Error("CUDA recovery failed: "+(gpuError||err.message));
+    await brain.learnTextGPU(restarted,exs,observeProgress);
+    parentPort.postMessage({type:"note",w:workerData.gw,text:
+      "CUDA recovered. Native text batch committed once after successful retry."});
+  }
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot();
   // The original V17 trace sees the first actual exercise, exactly once.
