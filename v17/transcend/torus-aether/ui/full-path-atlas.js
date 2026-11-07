@@ -313,21 +313,54 @@ export class NativeFullPathAtlasView{
   finally{this.pending=false;}
  }
  async loadLog(){
+  const kind=by("atlasLogKind")?.value==="xd"?"xd":"text";
+  const worker=this.getWorker(),offset=this.logOffset[kind]||0;
   try{
-    const r=await fetch("/atlas-log?w="+this.getWorker()+"&offset="+this.logOffset+"&limit=6"),
-      result=await r.json();
+    const r=await fetch("/atlas-log?w="+worker+"&kind="+kind+
+      "&offset="+offset+"&limit=6");
+    const result=await r.json();
     if(result.error)throw Error(result.error);
-    this.logOffset=result.nextOffset??this.logOffset;
-    this.logRecent.push(...(result.entries||[]).map(e=>({
-      episode:e.episode,question:crop(e.question,100),correct:e.teacherForcedCorrect,
-      total:e.teacherForcedTotal,missing:e.missingEdges,wrongRanking:e.wrongRanking,
+    if(worker!==this.getWorker())return;
+    this.logOffset[kind]=result.nextOffset??offset;
+    const summary=(result.entries||[]).map(e=>kind==="xd"?{
+      episode:e.episode,atChars:e.atChars,
+      trainedDimensions:e.training?.dimensions,
+      trainedSolved:e.training?.execution?.solved,
+      unseenDimensions:e.heldout?.dimensions,
+      unseenSolved:e.heldout?.execution?.solved,
+      missingAxes:e.heldout?.plan?.missingAxes,
+      physicalEdges:e.heldout?.plan?.allKnownPhysicalEdges?.length,
+      triedEdges:e.heldout?.plan?.allExploredEdges?.length,
+      path:e.heldout?.plan?.initialPredictedSolution,
+      execution:e.heldout?.execution?.frames?.map(x=>({
+        action:x.action,correct:x.correct,
+        predicted:x.predictedAfter,observed:x.observedAfter,
+        origin:x.evidence?.worlds
+      }))
+    }:{
+      episode:e.episode,question:crop(e.question,100),
+      correct:e.teacherForcedCorrect,total:e.teacherForcedTotal,
+      missing:e.missingEdges,wrongRanking:e.wrongRanking,
       firstDivergence:e.firstDivergence,
-      allCandidateEdges:e.allPreActionCandidateEdges?.length??0})));
-    this.logRecent=this.logRecent.slice(-24);
-    setText("atlasLogText","JURNAL PERMANENT: byte cursor="+this.logOffset+
-      " · "+this.logRecent.length+" episoade citite în UI · fiecare linie completă există în fișierul append-only\n"+
-      this.logRecent.map(x=>JSON.stringify(x)).join("\n"));
-  }catch(err){setText("atlasLogText","Nu se pot citi episoadele vechi: "+err.message);}
+      allCandidateEdges:e.allPreActionCandidateEdges?.length,
+      failedPositions:e.frames?.filter(f=>!f.correct)
+        .map(f=>({pos:f.position,expected:f.actual,predicted:f.predicted,
+          reason:f.reason,trueRank:f.trueActionRank,
+          scaleEvidence:f.evidence}))
+    });
+    this.logRecent[kind].push(...summary);
+    this.logRecent[kind]=this.logRecent[kind].slice(-24);
+    setText("atlasLogText","JURNAL "+(kind==="xd"?"xD":"TEXT")+
+      " · cursor real în fișier: "+this.logOffset[kind]+
+      " / "+(result.totalBytes??"—")+" bytes"+
+      " · "+this.logRecent[kind].length+" episoade în fereastra UI"+
+      " · nicio înlocuire a fișierului de pe disc\n"+
+      this.logRecent[kind].map(x=>JSON.stringify(x)).join("\n")+
+      "\n" +(result.moreAvailable?
+        "Există alte episoade: apasă «Încarcă următoarele».":
+        "Sfârșitul temporar al jurnalului; pot apărea alte episoade la antrenare."));
+  }catch(err){setText("atlasLogText",
+    "Nu se pot citi episoadele vechi: "+err.message);}
  }
  async testXD(){
   const dim=+by("atlasDimension")?.value||1024,
