@@ -89,7 +89,7 @@ export function parseActualJSONL(raw,{maxLineBytes=16777216}={}){
  if(raw.length>maxLineBytes)
   throw Error("Actual JSONL row exceeded configured safety cap: "+raw.length+" bytes");
  let row;
- try{row=JSON.parse(raw.toString("utf8").replace(/^\uFEFF/,""));}
+ try{row=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(raw).replace(/^\uFEFF/,""));}
  catch(err){throw Error("Invalid real JSONL syntax: "+err.message);}
  const text=textsFromRealJSON(row);
  return {text,empty:!text.length};
