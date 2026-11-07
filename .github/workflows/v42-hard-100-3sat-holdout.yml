@@ -1,0 +1,29 @@
+name: V42 independent MILP holdout 100-variable 3-SAT
+on:
+  push:
+    branches:
+      - experiment/V42-ADVERSARIAL-3SAT-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verified-100-variable-sat-unsat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Solve 10 fresh 100-variable 426-clause 3-SAT formulas using original V42
+        shell: bash
+        run: |
+          set -o pipefail
+          node --test v17/tests/v42_hard_holdout_100.test.mjs | tee v42-hard-100-results.log
+      - name: Upload complete 100-variable witness and UNSAT exhaustion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v42-100-variable-3sat-results
+          path: v42-hard-100-results.log
+          if-no-files-found: warn
