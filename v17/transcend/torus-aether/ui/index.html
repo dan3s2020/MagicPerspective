@@ -255,6 +255,16 @@
         <p class="streamNote">VERDE = caracter prezis corect înainte de observație. ROȘU = predicție diferită de caracterul observat. Motorul transmite TOATE predicțiile efectuate pentru fiecare chunk CUDA (prima poziție a exercițiului este context, nu se ghicește). Browserul păstrează ultimele fragmente, pentru viteză; antrenarea nu sare peste niciun caracter.</p>
         <div id="realTextRecent" role="log" aria-live="off" aria-label="Caractere reale observate și prezise de CUDA">Aștept predicțiile primei bucăți reale de text...</div>
       </section>
+      <section id="nativeGoalRoutePane" style="margin:12px 0;border:1px solid #547854;border-radius:10px;padding:12px;background:#06150e" aria-label="Traseu nativ al răspunsului complet anticipat">
+        <h2>Forma întregii soluții · traseu calculat înainte de primul caracter</h2>
+        <p class="note">ACESTA este mecanismul de navigație prin stări/transformări învățate, separat de diagnosticul TextCard. Lumea numerică observată are coordonate și axe reale; nu prezentăm o proiecție fictivă ca geometrie 5D. Un răspuns nedemonstrat este refuzat, fără generare de caractere de rezervă.</p>
+        <pre id="nativeGoalLearnedStats" class="dim" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px">Aștept observațiile din lumea reală de întrebări / răspunsuri...</pre>
+        <div class="row"><label for="nativeGoalQuestion">Întreabă organismul selectat</label><input id="nativeGoalQuestion" type="text" placeholder="Întrebare nouă; nu furniza răspunsul" style="min-width:220px;flex:1;background:#0b1820;color:var(--ink);border:1px solid #3b6555;border-radius:7px;padding:8px"/>
+          <button id="nativeGoalAsk">Prezice forma + execută traseul</button></div>
+        <div id="nativeGoalPrediction" class="note">Nicio predicție înghețată încă.</div>
+        <canvas id="nativeGoalRouteCanvas" width="920" height="280" style="width:100%;height:auto;max-height:360px;background:#041019;border:1px solid #365848;border-radius:9px" aria-label="Traseul real preacțiune și pozițiile acțiunilor învățate"></canvas>
+        <pre id="nativeGoalRouteTrace" class="dim" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto;font-size:12px">Liniile sunt generate numai din stările / acțiunile întoarse de planificatorul nativ, nu din trasee ideale sau animații simulate.</pre>
+      </section>
       <div class="row"><button id="allStart">▶ Start toate</button><button id="allPause">⏸ Pauză toate</button><button id="allSave">💾 Salvează toate</button><button id="liveReset" title="toate creierele pornesc din nou, goale (salvările vechi sunt puse deoparte)">⟲ Reset toate la 0</button></div>
       <div class="row gpuRow"><b class="dim">Lumi pe GPU:</b> <select id="gpuDev"><option value="off">oprit (CPU)</option><option>cuda:0</option><option>cuda:1</option><option>cpu</option></select>
         <label class="dim" title="0 = câte umplu memoria video dată">lumi odată (0 = umple VRAM) <input id="gpuWorlds" type="number" min="0" step="1" value="0" style="width:90px"></label>
@@ -449,8 +459,13 @@
     <div class="sl"><label for="cHist">memorie (replici)</label><input id="cHist" type="range" min="0" max="20" step="1" value="6"><span id="cHistOut" class="dim">6</span></div>
     <label class="dim"><input id="cStop" type="checkbox" checked> se oprește la rând gol (sfârșitul unui răspuns)</label>
     <label class="dim"><input id="cLearn" type="checkbox"> învață din conversație (trăiește și ce îi spui)</label>
+    <label class="dim" for="cAnswerMode">Motor de răspuns</label>
+    <select id="cAnswerMode" style="background:#0a121c;color:var(--ink);border:1px solid #29425a;border-radius:7px;padding:6px">
+      <option value="goal-path" selected>Traseu complet învățat (implicit; fără fallback)</option>
+      <option value="legacy-character">Predictor de caractere (numai comparație diagnostică)</option>
+    </select>
   </div>
-  <div id="chatLog"><div class="msg err" style="color:var(--dim)">Scrie-i ceva. Răspunde graful selectat în stânga, din ce a trăit până acum, simbol cu simbol.</div></div>
+  <div id="chatLog"><div class="msg err" style="color:var(--dim)">Scrie întrebarea. Organismul trebuie să anticipeze forma răspunsului din transformări învățate înainte de execuție; dacă nu poate, raportează limita.</div></div>
   <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
