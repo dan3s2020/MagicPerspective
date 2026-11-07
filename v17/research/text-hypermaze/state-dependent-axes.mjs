@@ -103,6 +103,14 @@ export class StateDependentTextAxes {
  plan(start,goals,{maxExpanded=this.maxExpanded,maxSteps=150}={}) {
    const initial=tokenizeObservation(start),model=this.discover(start);
    if(!model.ready)return {found:false,reason:model.reason};
+   // A heldout goal must NOT be predicted from a local field contradicted by
+   // training observations. This outlier-tolerant gate abstains for
+   // unsupported function families instead of showing a confident wrong path.
+   if(!model.operators?.length || model.operators.some(op=>op.trainingPairs<4 ||
+     !Number.isFinite(op.verifiedFraction) || op.verifiedFraction<0.9))
+     return {found:false,reason:"inconsistent-local-field-evidence",
+       weakestVerifiedFraction:Math.min(...(model.operators||[]).map(op=>op.verifiedFraction)),
+       observations:model.pairedObservations};
    const req=goals.map(x=>({index:x.index,value:Number(x.value)}));
    if(!req.length||req.some(x=>!model.numericTokenIndices.includes(x.index)||x.index===model.numericTokenIndices[model.dependent]))
      throw Error("Goal must constrain observed input dimensions, without supplying dependent answer");
