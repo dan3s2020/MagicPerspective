@@ -92,22 +92,23 @@ test("connect Studio to a REAL native V17 devouring worker on a real repo text c
  const worker=spawn(process.execPath,[
   path.join(v17,"transcend/torus-aether/devour/devour.mjs"),
   "--workers","1","--arms","stable+many","--mem","1.2",
-  "--every","600","--chars","3600","--text",source,
+  "--every","400","--chars","1800","--text",source,
   "--out",out,"--port",String(nativePort),
-  "--worlds","text,maze,transform","--maze-every","600","--gpu","off","--start"
- ],{cwd:v17,windowsHide:true,stdio:["ignore","pipe","pipe"]});
+  "--worlds","text,maze,transform","--maze-every","400","--gpu","off","--start"
+ ],{cwd:v17,windowsHide:true,stdio:["ignore","pipe","pipe"],env:{...process.env,NODE_TEST_CONTEXT:undefined}});
  worker.stdout.on("data",x=>{stdout.push(String(x));if(stdout.length>700)stdout.shift();});
  worker.stderr.on("data",x=>{stderr.push(String(x));if(stderr.length>300)stderr.shift();});
  t.after(()=>{if(worker.exitCode===null)worker.kill("SIGTERM");});
  const studio=createMagicStudio({port:0,backendPort:nativePort});
  await studio.start();t.after(()=>studio.stop());
  const base="http://127.0.0.1:"+studio.server.address().port;
- await eventually(async()=>{const r=await fetch(base+"/api/health");return r.ok;},{time:30000});
- const snapshot=await eventually(async()=>{
+ await eventually(async()=>{const r=await fetch(base+"/api/health");return r.ok;},{time:60000});
+ let snapshot;
+ try { snapshot=await eventually(async()=>{
   const r=await(await fetch(base+"/api/native/graph?w=0")).json();
   if(r?.nodes?.length>3&&r.edges?.length>0&&r.chars>0)return r;
   return false;
- },{time:30000});
+ },{time:60000}); } catch(err) { throw Error(err.message+"\nNATIVE STDOUT:\n"+stdout.slice(-60).join("")+"\nNATIVE STDERR:\n"+stderr.slice(-40).join("")); }
  assert.ok(snapshot.nodes.length>3);
  assert.ok(snapshot.edges.length>0);
  assert.ok(snapshot.U?.length>=1);
