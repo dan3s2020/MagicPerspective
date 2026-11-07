@@ -229,10 +229,10 @@ export class Brain {
   // Lived corpus is compared on multiple perspectives: whole sentence states,
   // unchanged contextual anchors, and learned editable positions. The
   // resulting actions belong to THIS original serializable Brain, not a demo.
-  learnObservedTransformations(text) {
+  learnObservedTransformations(text,{windowLong=false}={}) {
     const M=this.observedTransformations ||= new ObservedTransformations();
     const before=M.operators.size;
-    const result=M.observeText(text);
+    const result=M.observeText(text,{windowLong});
     if(M.operators.size>before){
       this.trace.node("o:diff-world","A","diferențe observate");
       this.trace.setEdge("o:self","o:diff-world","learned",
