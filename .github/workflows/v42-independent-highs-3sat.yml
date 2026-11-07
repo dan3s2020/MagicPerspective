@@ -1,0 +1,31 @@
+name: Independent SciPy HiGHS proof for V42 hard 3SAT holdout
+on:
+  push:
+    branches:
+      - experiment/V42-ADVERSARIAL-3SAT-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  independently-regenerate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install independent reference optimizer
+        run: python -m pip install numpy scipy
+      - name: Regenerate formulas independently in Python and solve exact Boolean MILP
+        shell: bash
+        run: |
+          set -o pipefail
+          python v17/tests/v42_hard_milp_reference.py --time-limit 10 | tee v42-independent-highs-results.log
+      - name: Preserve independent solver evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v42-independent-highs-results
+          path: v42-independent-highs-results.log
+          if-no-files-found: warn
