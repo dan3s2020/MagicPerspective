@@ -74,6 +74,9 @@ if ($Gpu -ne "off") {
   Write-Host "Testing the shared latent learner on the actual selected PyTorch device..."
   & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\shared_perspective.py") --selftest $Gpu 2>&1 | Out-Host
   if ($LASTEXITCODE -ne 0) { throw "Shared perspective CUDA gradient self-test FAILED. Original trainer not started." }
+  Write-Host "Checking fast native text CUDA index against the exact original index, plus actual TextCard update..."
+  & $py (Join-Path $PSScriptRoot "tests\text_index_cuda_selftest.py") $Gpu 2>&1 | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "Exact fast CUDA text learner self-test FAILED; training refused to start instead of corrupting or faking progress." }
   $env:OCTOPUS_PY = $py
   $ErrorActionPreference = "Stop"
 }
