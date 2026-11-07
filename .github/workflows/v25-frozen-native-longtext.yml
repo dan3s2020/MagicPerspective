@@ -1,0 +1,24 @@
+name: V25 frozen native long-text solution shapes (controlled experiment)
+
+on:
+  push:
+    branches:
+      - experiment/V25-FROZEN-LONGTEXT-SHAPE-EVIDENCE-20261107
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-long-text:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original Discoverer frozen 1k-2k text and shifted-axis causal controls
+        run: |
+          node --version
+          node --test v17/tests/v25-native-longtext-frozen-shape.test.mjs v17/tests/v25-shifted-longtext-observed-axis.test.mjs
