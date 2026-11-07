@@ -960,10 +960,12 @@ fetch("/corpus").then(r => r.json()).then(c => {
     const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
       : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value), strictHeldout: strictRun} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
     if (kind === "text" && strictRun) opts.maxOutput = Number($("cpuExactMaxOutput").value);
+    if(kind==="text" && strictRun){opts.forensic=true;opts.maxExplained=80;}
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
       if (kind === "text") reportStrictExact(r);
+      if(kind==="text"&&Array.isArray(r.forensics)) window.dispatchEvent(new CustomEvent("v24-original-v17-forensics",{detail:r}));
       if (r.error) $("evOut").textContent = r.error;
       else { R = r; const head = `graful #${r.w}, după ${(r.lived || 0).toLocaleString()} pași trăiți: `;
         $("evCv").hidden = kind === "text"; $("evalText").hidden = kind !== "text"; $("evT").value = r.T ?? $("evT").value;
