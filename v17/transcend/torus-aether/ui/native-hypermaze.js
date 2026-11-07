@@ -81,6 +81,10 @@ async function poll(){
     setNum("qaLearned",m.qaLearnedPairs??null);
     setNum("qaAxes",m.qaRoleWitnessedAxisEdges??null);
     setNum("qaHeldout",m.qaFrozenHeldoutQuestions??null);
+    setNum("qaLongEpisodes",m.qaLongFormEpisodes??null);
+    setNum("qaLongTokens",m.qaLongFormAnswerTokens??null);
+    setNum("qaLongEdges",m.qaLongFormSequentialEdges??null);
+    setNum("qaLongActive",m.qaLongFormActiveChunkDigests??null);
     $("qaExact").textContent=qaPercent(m.qaFrozenWholeRawExact,m.qaFrozenHeldoutQuestions);
     $("qaCanonical").textContent=qaPercent(m.qaFrozenWholeCanonicalExact,m.qaFrozenHeldoutQuestions);
     $("qaCoverage").textContent=qaPercent(m.qaFrozenGoalsFound,m.qaFrozenHeldoutQuestions);
