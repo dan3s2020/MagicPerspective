@@ -48,7 +48,7 @@ function originalDiscovererOnText(world,disc,{seed=74129,temperature=null}={}){
   // a long chain before the original 0.97 attraction reaches its start.
   // Hypothetical cognitive edges keep the prior learned/default conductance.
   const conduct=k=>k===KIND.wall?0:
-    k===KIND.floor?(world.verifiedTransitions?1:
+    k===KIND.floor?((world.verifiedTransitions||world.candidateConductanceFromObservedActions)?1:
       Math.max(.5,disc?.conduct?.(KIND.floor)??.5)):1;
   const attract=k=>k===KIND.target?1:0;
   let values=[];
@@ -64,8 +64,9 @@ function originalDiscovererOnText(world,disc,{seed=74129,temperature=null}={}){
 }
 
 export class LearnedCognitiveMap {
-  constructor({maxExamples=50000,maxRules=30000,maxNodes=768,maxDepth=12}={}){
-    this.limits={maxExamples,maxRules,maxNodes,maxDepth};
+  constructor({maxExamples=50000,maxRules=30000,maxNodes=768,maxDepth=12,maxStateTokens=96}={}){
+    if(!valid(maxStateTokens,1,4096))throw Error('Invalid cognitive state-token budget');
+    this.limits={maxExamples,maxRules,maxNodes,maxDepth,maxStateTokens};
     this.examples=new Map();this.skeletons=new Map();this.rules=new Map();this.shorterIndex=new Map();
     this.interventions=new Map();this.externalEdges=new Map();this.externalObservations=0;
     this.compactedExternalEdges=0;
@@ -329,7 +330,7 @@ export class LearnedCognitiveMap {
   }
   buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth}={}){
     const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
-    if(!start.length||start.length>96||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
+    if(!start.length||start.length>this.limits.maxStateTokens||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
     LearnedCognitiveMap.matchGoal(start,goal);
     const queue=[start],byKey=new Map([[key(start),0]]),out=[[]],depth=[0];
     let rejected=0,truncated=false,imagined=0;
@@ -363,7 +364,7 @@ export class LearnedCognitiveMap {
   // Same V17 operator, same .97 and .5 thresholds: no BFS oracle or target string.
   // Only the target PREDICATE seeds the attraction field; its successful states
   // must emerge from learned transition hypotheses.
-  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null}={}){
+  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null,trustedObservedActions=false}={}){
     const world=this.buildWorld(initial,goal,{maxNodes,maxDepth});
     if(world.targets.includes(0))return {found:true,path:[],world,field:{reason:'ALREADY_AT_GOAL',values:[]},
       goal:clone(goal),learnedRules:this.rules.size,novelGoal:false,
@@ -373,13 +374,31 @@ export class LearnedCognitiveMap {
     // This invokes the ACTUAL original Discoverer.shape method from
     // exercise.mjs with the discovered N-D text-world adjacency. No V19/V20
     // substitute field planner is used for this action path.
-    const field=originalDiscovererOnText(world,disc,{seed,temperature});
+    // Optional, explicit evidence-gated conductor: every imagined transition
+    // must correspond to a causally OBSERVED and ACCEPTED action rule. The
+    // action effect at this novel state is still a HYPOTHESIS, not a verified
+    // edge: the independent environment must validate every move.
+    const supportedByObservedActions=Boolean(trustedObservedActions) &&
+      world.neighbors.some(row=>row.length>0) &&
+      world.neighbors.every(row=>row.every(edge=>{
+        const r=this.rules.get(edge.action);
+        return r?.kind==='causally-observed-action' && r.accepted>0 &&
+          !r.ambiguous && r.rejected===0;
+      }));
+    if(trustedObservedActions&&!supportedByObservedActions)
+      return {found:false,reason:'UNSUPPORTED_OR_CONTRADICTED_ACTION_EVIDENCE',
+        world,learnedRules:this.rules.size,path:[],field:null};
+    const field=originalDiscovererOnText({
+      ...world,candidateConductanceFromObservedActions:supportedByObservedActions
+    },disc,{seed,temperature});
     const path=field.path||[];
     const reached=path.length?world.targets.includes(path.at(-1).to):world.targets.includes(0);
     return {found:reached,path,world,field,goal:clone(goal),
       learnedRules:this.rules.size,novelGoal:reached&&!this.examples.has(key(world.states[path.at(-1)?.to??0])),
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97',
-      directOriginalMethod:'Discoverer.shape',noise:field.temperature};
+      directOriginalMethod:'Discoverer.shape',noise:field.temperature,
+      conductor:'candidate_from_real_observed_actions_not_test_state_verified',
+      trustedObservedActionsUsed:supportedByObservedActions};
   }
   // The path is constructed FIRST. Every step then calls a REAL environment
   // callback; failures produce feedback (walls) and stop, never silently pass.
