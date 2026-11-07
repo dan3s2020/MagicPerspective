@@ -177,6 +177,34 @@ const stage = name => {
   }
 };
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
+// Real accounting for every existing phase; never omit a learner to inflate rate.
+const goalTimings = {startedAt:performance.now(),sourceRows:0,sourceBytes:0,
+  phases:Object.create(null)};
+const measureGoal = (name,fn) => {
+  const t0=performance.now();
+  try { return fn(); } finally {
+    const ms=performance.now()-t0;
+    const s=goalTimings.phases[name] ||= {calls:0,totalMs:0,maxMs:0};
+    s.calls++;s.totalMs+=ms;s.maxMs=Math.max(s.maxMs,ms);
+  }
+};
+const measureGoalAsync = async (name,fn) => {
+  const t0=performance.now();
+  try {return await fn();}finally{
+    const ms=performance.now()-t0;
+    const s=goalTimings.phases[name] ||= {calls:0,totalMs:0,maxMs:0};
+    s.calls++;s.totalMs+=ms;s.maxMs=Math.max(s.maxMs,ms);
+  }
+};
+const goalTelemetry = () => {
+  const elapsedMs=performance.now()-goalTimings.startedAt;
+  return {sourceRows:goalTimings.sourceRows,sourceBytes:goalTimings.sourceBytes,
+    measuredWallSeconds:+(elapsedMs/1000).toFixed(3),
+    measuredRowsPerSecond:elapsedMs>0?+(1000*goalTimings.sourceRows/elapsedMs).toFixed(3):0,
+    measuredBytesPerSecond:elapsedMs>0?+(1000*goalTimings.sourceBytes/elapsedMs).toFixed(3):0,
+    phases:Object.fromEntries(Object.entries(goalTimings.phases).map(([k,v])=>
+      [k,{calls:v.calls,totalMs:+v.totalMs.toFixed(3),maxMs:+v.maxMs.toFixed(3)}]))};
+};
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
 const mazeStats = () => { const M = brain.mazes; return {played: M.played, won: M.won, recent: M.recent.length ? M.recent.reduce((a, b) => a + b, 0) / M.recent.length : 0, test: M.test || null, knows: M.knows || null, last: M.last}; };
@@ -209,6 +237,7 @@ const report = (final = false) => {
     observedTransformations: brain.observedTransformations?.report() || null,
     goalHyperpath: brain.goalPaths?.status() || null,
     nativeGoalField: brain.numericGoalField?.report() || null,
+    goalPipeline: workerData.goalTraining ? goalTelemetry() : null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
@@ -227,6 +256,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     observedTransformations: brain.observedTransformations?.report() || null,
     goalHyperpath: brain.goalPaths?.status() || null,
     nativeGoalField: brain.numericGoalField?.report() || null,
+    goalPipeline: workerData.goalTraining ? goalTelemetry() : null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
@@ -452,7 +482,7 @@ for await (const ex of stream()) {
     if(ex.prompt&&ex.answer&&(brain.exercises||0)%32===0){
       // ONLINE blind prediction: do this BEFORE any model sees the current
       // row. The real answer is used afterwards for independent scoring.
-      const first=brain.answerByGoalPath(ex.prompt);
+      const first=measureGoal("blind-infer",()=>brain.answerByGoalPath(ex.prompt));
       parentPort.postMessage({type:"goal-live",w:workerData.gw,
         exercise:(brain.exercises||0)+1,observedBytes:ex.bytes.length,
         question:ex.prompt.slice(0,1200),
@@ -480,19 +510,20 @@ for await (const ex of stream()) {
     }
     brain.exercises=(brain.exercises||0)+1;
     brain.chars+=ex.bytes.length; // all source bytes were presented to the structural world
-    absorbLanguage(ex);
-    absorbConstructed(ex);
-    absorbObservedDifferences(ex);
-    absorbText(ex);
+    measureGoal("language-perspectives",()=>absorbLanguage(ex));
+    measureGoal("constructed-path-and-coupled-axes",()=>absorbConstructed(ex));
+    measureGoal("observed-text-transformations",()=>absorbObservedDifferences(ex));
+    measureGoal("causal-actions-shared-experience",()=>absorbText(ex));
+    goalTimings.sourceRows++;goalTimings.sourceBytes+=ex.bytes.length;
     observedPipeline.lastLoop={TEXT:true,goalTraining:true,startedAtChars:rowBefore,
       now:brain.chars,livedChars:ex.bytes.length,rowBytes:ex.bytes.length,
       completeRowObserved:true,exercises:brain.exercises};
     if((MAZE||TRANS||SELF_CODE)&&brain.chars>=nextMaze){
       nextMaze=brain.chars+mazeEvery;
-      stage("GOAL: lumi fizice labirint + transformări");await worldsOnce(false);
+      stage("GOAL: lumi fizice labirint + transformări");await measureGoalAsync("actual-maze-transform-worlds",()=>worldsOnce(false));
     }
     if(gpuSet&&shared.queue.length>=256){
-      stage("GOAL: CUDA actualizează reprezentarea comună");await flushShared();
+      stage("GOAL: CUDA actualizează reprezentarea comună");await measureGoalAsync("shared-latent-update",()=>flushShared());
     }
     if(brain.chars>=nextTest){
       while(brain.chars>=nextTest)nextTest+=every;
