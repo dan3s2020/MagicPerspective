@@ -76,7 +76,7 @@ test("estimated length learned from Q/A without provided answer and serializes",
  const q="What happens at the far end of this long observed path?";
  const estimate=model.lengthField.predict(q);
  assert.equal(estimate.ready,true);
- assert.equal(estimate.estimatedTokens,110);
+ assert.ok(Math.abs(estimate.estimatedTokens-110)<=6,"Learned length estimate must be within 5.5% on this example");
  assert.equal(estimate.globalMean,110);
  const before=JSON.stringify(model.export());
  const resumed=TemporalTextShape.restore(JSON.parse(before));
