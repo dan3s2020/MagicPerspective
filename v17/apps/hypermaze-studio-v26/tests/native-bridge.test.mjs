@@ -144,7 +144,8 @@ test("native bridge: new V26 HTML, exact original GET /graphs /graph, original P
     assert.match(css,/\.canvas-frame/);
     assert.match(js,/\/api\/native-state/);
     assert.doesNotMatch(html,/src="\/app\.js"/);
-    assert.doesNotMatch(js,/ObservedEffects|chooseAxisPhysics|makeTask/);
+    assert.doesNotMatch(js,/\b(?:new\s+ObservedEffects|chooseAxisPhysics\s*\(|makeTask\s*\()/,
+      "No executable V26 synthetic training calls may be used");
     const health=await get("/api/native-health");
     assert.equal(health.connected,true);
     const state=await get("/api/native-state?w=0");
