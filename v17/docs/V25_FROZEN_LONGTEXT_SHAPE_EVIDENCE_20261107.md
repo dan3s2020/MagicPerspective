@@ -81,3 +81,19 @@ The tests print `V25_FROZEN_LONG_TEXT_ACTUAL_ORIGINAL_DISCOVERER`, `V25_CAUSAL_N
 - **Full original V17 live UI, CUDA 3050 Ti training/inference, MB/s and saved original checkpoint migration:** **NOT TESTED** here. No user start command is justified by the positive controlled scores.
 
 **Release gate: BLOCKED.** This is a real, reproducible *restricted text-state navigation* result and a measured difference against an earlier mechanism, not the final user-requested general language navigator.
+
+
+## Seeded alternative-path noise control (additional frozen test)
+
+Source: `v17/tests/v25-shifted-longtext-observed-axis.test.mjs`, appended reproducible case `V25_SEEDED_NOISE_ALTERNATIVE_FULL_SHAPES`.
+
+One fixed unseen text state and an explicit six-word goal are held constant; **only** the random seed changes, and `Discoverer.temp=.7` enables the ORIGINAL uphill stochastic choice. Across 200 disjoint fixed seeds:
+
+- 200/200 complete pre-action routes reached the goal;
+- 200/200 routes had six steps;
+- 166 distinct full action orders, with all six action types appearing as a possible first action;
+- temperature=0 gave the same ordered path across distinct seeds.
+
+These are **valid alternative paths in a discrete commutative editing space**, not the organism autonomously learning a new Noise Space coordinate chart. The temperature is externally configured in this experiment. Neither endogenous NoiseAgency credit assignment nor better unrestricted language reasoning has been demonstrated.
+
+GitHub Actions definition for native Node 22 evidence: `.github/workflows/v25-frozen-native-longtext.yml`. Its existence is not proof of a green remote run; check the job logs and attach actual run ID before claiming GitHub CI verified it.
