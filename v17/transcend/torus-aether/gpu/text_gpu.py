@@ -63,13 +63,49 @@ class Index:                                     # suffix array of the REVERSED 
             if int(rk.max()) >= n or k >= n: break
             k *= 2
         self.sa = sa
+        # Exact lexicographic base-129 prefixes (ASCII+1, 0 = end of memory).
+        # All depths 1..8 fit signed int64: 129**8 < 2**63. Because sa
+        # is lexicographic, every prefix-code array is ALREADY sorted.
+        # 8 * n * int64 is bounded, e.g. 4 MiB for n=65536.
+        self.fast_prefix = []
+        packed = X.zeros(n, np.int64)
+        for depth in range(min(8, n)):
+            p = sa + depth
+            digit = X.where(p < n, R[X.clip(p, 0, n - 1)] + 1, X.zeros(n, np.int64))
+            packed = packed * 129 + digit
+            self.fast_prefix.append(packed)
         nxt = X.zeros(n, np.int64) - 1; pos = sa; ok = pos > 0; nxt[ok] = R[pos[ok] - 1]; self.nxt = nxt   # what followed each aligned past
     def align(self, X, ctx, maxK):
         """ctx: (Q, maxK) symbols read backwards (-2 = beyond the start). Returns lo, hi: (Q, maxK) ranges (empty = lo==hi)."""
         Q = ctx.shape[0]; n = self.n; lo = X.zeros(Q, np.int64); hi = X.zeros(Q, np.int64) + n
         LO = X.zeros((Q, maxK), np.int64); HI = X.zeros((Q, maxK), np.int64); R = self.R; sa = self.sa
+        # PREVIOUS implementation used two Python-driven binary searches
+        # at EACH depth, each checking GPU scalar booleans in an inner loop:
+        # up to 2 * 64 * ceil(log2(n)) host↔GPU synchronization barriers.
+        # The exact first eight lexicographic prefixes are now found with
+        # native batched CUDA searchsorted (or NumPy searchsorted in CPU test).
+        # The older exact suffix search remains for rare >8-character matches.
+        prefix = X.zeros(Q, np.int64)
+        alive = ctx[:, 0] >= 0
+        fast = min(maxK, len(self.fast_prefix), ctx.shape[1])
+        for k in range(fast):
+            c = ctx[:, k]
+            prefix = prefix * 129 + X.where(c >= 0, c + 1, X.zeros(Q, np.int64))
+            keys = self.fast_prefix[k]
+            if X.t:
+                nlo = torch.searchsorted(keys, prefix.contiguous(), right=False)
+                nhi = torch.searchsorted(keys, prefix.contiguous(), right=True)
+            else:
+                nlo = np.searchsorted(keys, prefix, side="left")
+                nhi = np.searchsorted(keys, prefix, side="right")
+            ok = alive & (c >= 0) & (nhi > nlo)
+            lo = X.where(ok, nlo, lo)
+            hi = X.where(ok, nhi, lo)
+            LO[:, k] = lo
+            HI[:, k] = X.where(ok, hi, lo)
+            alive = ok
         steps = max(1, int(np.ceil(np.log2(n + 1))) + 1)
-        for k in range(maxK):
+        for k in range(fast, maxK):
             c = ctx[:, k]; alive = (hi > lo) & (c >= 0)
             if not bool(alive.any()): break
             def bound(strict):
