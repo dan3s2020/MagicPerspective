@@ -19,10 +19,10 @@ export async function sourceMetadata(file) {
  return {size:stat.size,mtimeMs:stat.mtimeMs,delimiter};
 }
 function normalizedText(raw){
- const text=raw.toString("utf8").replace(/[^\x00-\x7f]/g," ")
-  .replace(/\0/g," ").trim();
- // Avoid fabricated stories; keep all observed ASCII characters as-is.
- return {text,ascii:Buffer.from(text,"ascii")};
+ const text=raw.toString("utf8").replace(/\0/g," ").trim();
+ // Preserve authentic Unicode story content. GPU learns the underlying
+ // UTF-8 octets (256-symbol vocabulary), not a destructive ASCII rewrite.
+ return {text,ascii:Buffer.from(text,"utf8")};
 }
 export async function* stories(file,{startOffset=0,metadata=null,maxStoryBytes=4*1024*1024}={}){
  const meta=metadata||await sourceMetadata(file);
