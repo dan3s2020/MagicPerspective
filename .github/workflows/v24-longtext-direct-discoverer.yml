@@ -1,0 +1,36 @@
+name: V24 observed-action longtext original Discoverer acceptance
+on:
+  push:
+    branches:
+      - experiment/V24-OBSERVED-ACTION-LONGTEXT-RESTORE-GPT6-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-2d-and-longtext:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Actual V17 exact original maze, 2048 token answer, 48 step preaction shape, ablations
+        run: node --test v17/tests/v23-observed-hyperpath-long-range.test.mjs
+      - name: Exact original source and V22 predecessor baseline
+        run: node --test v17/tests/v22-exact-original-discoverer.test.mjs
+      - name: Existing cognitive world and heldout outcomes
+        run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Native V19 worker and heldout live HTTP
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+      - name: Native V21 original action and QA checkpoint regressions
+        run: |
+          node --test v17/tests/veil-aether.observed-action-field.test.mjs
+          node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
+          node --test v17/tests/veil-aether.text-migration.test.mjs
+      - name: Syntax and original V17 UI unchanged
+        run: |
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
