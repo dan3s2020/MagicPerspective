@@ -40,6 +40,8 @@ jobs:
           node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/transcend/torus-aether/ui/v22-original-text-labyrinth-live.js
+          node --check v17/transcend/torus-aether/worlds/frozen-text-shape-observatory.mjs
   windows-original-launcher:
     name: Keep exact Windows PowerShell 5.1 launcher intact
     runs-on: windows-latest
