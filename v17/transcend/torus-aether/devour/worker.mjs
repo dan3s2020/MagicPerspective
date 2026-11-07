@@ -16,6 +16,7 @@ import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
+import {cognitiveRouteSnapshot} from "../worlds/cognitive-route-snapshot.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 
@@ -377,21 +378,15 @@ parentPort.on("message", m => {
     return;
   }
   if(m?.cognitiveEval){
-    const {id,initial,goal,maxNodes=384,maxDepth=8}=m.cognitiveEval;
+    const {id,initial,goal,maxNodes=384,maxDepth=8,seed=74129,temperature=0}=m.cognitiveEval;
     try{
       if(!cognitive)throw Error("This graph has no cognitive world");
       const pre=cognitive.report(),plan=cognitive.formSolution(initial,goal,
-        {disc:brain.disc,maxNodes,maxDepth});
-      const reply={type:"chat",id,kind:"cognitive",frozen:true,found:plan.found,
-        reason:plan.reason||plan.field?.reason||null,
-        rules:plan.learnedRules,observedSentences:plan.world?.fromObservedExamples,
-        generatedStates:plan.world?.states.length,candidateGoals:plan.world?.targets.length,
-        novelGoal:plan.novelGoal||false,
-        start:plan.world?.states[0]?.join(" "),
-        plannedPath:plan.path?.map(e=>({action:e.action,after:plan.world.states[e.to]?.join(" ")})),
-        shapeField:plan.field?.values?.slice(0,128),
-        successor:plan.found?cognitive.successor(plan.world).map(x=>({gamma:x.gamma,goalOccupancyAtStart:x.goalOccupancyAtStart})):[],
-        law:plan.planningLaw||null,truncated:plan.world?.truncated||false};
+        {disc:brain.disc,maxNodes,maxDepth,seed,temperature});
+      const reply={type:"chat",id,kind:"cognitive",frozen:true,
+        ...cognitiveRouteSnapshot(plan),
+        successor:plan.found?cognitive.successor(plan.world).map(x=>({
+          gamma:x.gamma,goalOccupancyAtStart:x.goalOccupancyAtStart})):[]};
       if(JSON.stringify(pre)!==JSON.stringify(cognitive.report()))throw Error("Frozen evaluation changed learning state");
       parentPort.postMessage(reply);
     }catch(err){parentPort.postMessage({type:"chat",id,kind:"cognitive",error:err.message});}
