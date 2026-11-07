@@ -85,6 +85,20 @@ test("REAL existing V17 documentation feeds original Brain + gated evaluation; s
   console.log("EXISTING_V17_CHECKPOINT_READONLY_IMPORT",
    JSON.stringify({sourceUnchanged:true,evaluated:importedReport.finalTest.tokens,
     native:importedReport.finalTest.originalNative.accuracy}));
+  // Extend the SAME native saved Brain over the entire actual document train split,
+  // not only a tiny fixture. Report real holdout, even if the new gate fails.
+  const full=run(0,true);
+  assert.equal(full.status,0,"complete real-document pass failed: "+full.stderr+"\n"+full.stdout);
+  const r3=JSON.parse(fs.readFileSync(path.join(out,"heldout-results.json"),"utf8"));
+  assert.ok(r3.trainingRows>=r2.trainingRows);
+  assert.ok(r3.finalTest.tokens>0);
+  assert.equal(r3.modelMutationsDuringTest,0);
+  console.log("REAL_DOCUMENTS_FULL_PARTITION",JSON.stringify({
+    rows:r3.trainingRows,observedTokens:r3.actualObservedTextTokens,
+    operators:r3.observedEditOperators,heldout:r3.finalTest.tokens,
+    native:r3.finalTest.originalNative.accuracy,
+    bigram:r3.finalTest.bigram.accuracy,gated:r3.finalTest.learnedGate.accuracy,
+    selected:r3.finalTest.preselectedPolicy,status:r3.status}));
   const final=JSON.stringify({rowsBefore:r1.trainingRows,rowsAfter:r2.trainingRows,
    testTokens:r2.finalTest.tokens,baseline:r2.finalTest.originalNative.accuracy,
    discoveredGate:r2.finalTest.learnedGate.accuracy,status:r2.status});
