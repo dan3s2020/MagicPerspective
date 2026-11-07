@@ -36,5 +36,22 @@ jobs:
           node --test v17/tests/complete-xd-maze-atlas.test.mjs
           node --test v17/tests/native-xd-brain-integration.test.mjs
           node --test v17/tests/native-evidence-gated-integration.test.mjs
+      - name: Existing GPU RPC watchdog, dead Python recovery and no silent CPU fallback
+        run: node --test v17/tests/gpu-stall-watchdog.test.mjs
       - name: Real ORIGINAL V17 server, worker, actual corpus and checkpoint recovery
         run: node --test v17/tests/complete-xd-native-live-http.test.mjs
+
+  original-atlas-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Chromium for genuine original V17 UI and path replay
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Original LIVE V17 native complete xD, genuine text-path failures and untouched UI controls
+        run: node --test v17/tests/complete-xd-atlas-browser.test.mjs
