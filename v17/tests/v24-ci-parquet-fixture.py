@@ -1,5 +1,5 @@
 # CI-only actual Parquet format; not a sample substituted into user training.
-# 28 learned Q/A episodes + 16 genuinely reserved unseen Q/A episodes.
+# 64 learned Q/A episodes + 16 genuinely reserved unseen Q/A episodes.
 import sys
 from pathlib import Path
 import pyarrow as pa
@@ -16,9 +16,9 @@ pairs=[
  ("Which way to the north bridge?", "Walk north past the green tower and cross the wooden bridge."),
 ]
 rows=[]
-for i in range(44):
+for i in range(80):
  q,a=pairs[i%len(pairs)]
- if i<28:
+ if i<64:
   question=f"{q} Observation {i}. Explain the learned exit path."
   answer=a
  else:
@@ -26,4 +26,4 @@ for i in range(44):
   answer=f"WITHHELD_UNOBSERVED_ANSWER_{i} requires a novel correct complete route beyond the training corpus."
  rows.append({"question":question,"answer":answer})
 pq.write_table(pa.Table.from_pylist(rows),root/"part-000.parquet",compression="zstd")
-print(f"Created original native parquet schema with 44 rows; last 16 are withheld from training: {root}")
+print(f"Created original native parquet schema with 80 rows; last 16 are withheld from training: {root}")
