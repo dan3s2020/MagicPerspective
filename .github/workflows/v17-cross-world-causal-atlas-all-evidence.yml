@@ -1,0 +1,100 @@
+name: V17 complete cross-world 4D causal atlas — independent evidence and ALL paths
+on:
+  push:
+    branches:
+      - experiment/V17-CROSS-WORLD-CAUSAL-ATLAS-20261107
+    paths-ignore:
+      - "v17/research/cross-world-causal-atlas/results/**"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  reproduce-and-publish-entire-atlas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax check engine, test and visual atlas
+        shell: bash
+        run: |
+          node --check v17/research/cross-world-causal-atlas/atlas-engine.mjs
+          node --check v17/research/cross-world-causal-atlas/atlas-benchmark.mjs
+          node --check v17/research/cross-world-causal-atlas/atlas-engine.test.mjs
+          node --input-type=module <<'JS'
+          import fs from "node:fs";
+          const source=fs.readFileSync("v17/research/cross-world-causal-atlas/atlas-viewer.html","utf8");
+          const match=source.match(/<script type="module">([\s\S]*?)<\/script>/);
+          if(!match)throw Error("Atlas viewer JavaScript not present");
+          fs.writeFileSync("/tmp/atlas-live-viewer.mjs",match[1]);
+          JS
+          node --check /tmp/atlas-live-viewer.mjs
+      - name: ALL nine original controlled experimental tests — no demo
+        run: node --test v17/research/cross-world-causal-atlas/atlas-engine.test.mjs
+      - name: Reproduce, preserve and validate EVERY edge, negative route and source fragment
+        shell: bash
+        run: |
+          cd v17/research/cross-world-causal-atlas
+          mkdir -p results
+          node atlas-benchmark.mjs results > results/console.json
+          node --input-type=module <<'JS'
+          import fs from "node:fs";
+          const base="results/";
+          const data=JSON.parse(fs.readFileSync(base+"results.json","utf8"));
+          const atlas=JSON.parse(fs.readFileSync(base+"atlas-2048-edges.json","utf8"));
+          const fragments=JSON.parse(fs.readFileSync(base+"training-fragments.json","utf8"));
+          const a=data.aggregate;
+          const expected={worlds:288,full:288,optimal:288,fixed:12,oneWorld:0,rank2:2};
+          if(JSON.stringify(a)!==JSON.stringify(expected))throw Error("Measured control results changed: "+JSON.stringify(a));
+          if(atlas.states!==256||atlas.edges.length!==2048||atlas.observedExact!==1429||
+             atlas.inferred!==619)throw Error("Complete 4D atlas missing edges or provenance");
+          if(data.runs.length!==3||data.runs.reduce((n,r)=>n+r.worldTraces.length,0)!==288||
+             data.runs.reduce((n,r)=>n+r.failedControlPaths.length,0)!==288)
+            throw Error("Missing some individual successful OR FAILED path controls");
+          if(data.physicsShift.wrong!==256||fragments.length!==32)
+            throw Error("Changed-rule/missing-training-provenance output incomplete");
+          if(data.curves.some(c=>c.points.length!==10))
+            throw Error("Some measured learning thresholds missing");
+          fs.writeFileSync(base+"manifest.json",JSON.stringify({
+            generatedFromCommit:process.env.GITHUB_SHA,
+            generatedAtUTC:new Date().toISOString(),
+            node:process.version,
+            roots:["results.json","atlas-2048-edges.json","training-fragments.json"],
+            measurements:a,
+            allEdges:atlas.edges.length,
+            directlyObserved:atlas.observedExact,
+            inferred:atlas.inferred,
+            allFrozenSuccessPaths:288,
+            allNegativeControlRecords:288,
+            measuredUnexpectedWorldChanges:256,
+            note:"Synthetic bounded 4D worlds; NOT natural-language generalization or original full CUDA trainer"
+          },null,2)+"\n");
+          console.log("VERIFIED_COMPLETE_ATLAS_EVIDENCE",JSON.stringify(a));
+          JS
+      - name: Original V17 path and endogenous noise regressions preserved
+        shell: bash
+        run: |
+          node --test v17/tests/constructed-paths-v17.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: Keep complete independently generated evidence as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: entire-original-4d-causal-atlas-2048-edges-288-paths
+          path: v17/research/cross-world-causal-atlas/results/
+          if-no-files-found: error
+      - name: POST complete data and negative traces INTO this isolated GitHub branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add v17/research/cross-world-causal-atlas/results/
+          if git diff --cached --quiet; then
+            echo "Evidence already committed, no changes."
+          else
+            git commit -m "data: verified 2048-edge causal atlas, 288 first paths, all negative traces, curves, 32 source-world transcripts [skip ci]"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi

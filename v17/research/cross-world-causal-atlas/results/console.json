@@ -1,0 +1,1374 @@
+{
+  "durationMs": 11368,
+  "aggregate": {
+    "worlds": 288,
+    "full": 288,
+    "optimal": 288,
+    "fixed": 12,
+    "oneWorld": 0,
+    "rank2": 2
+  },
+  "perSeed": [
+    {
+      "seed": 17,
+      "success": 96,
+      "fixed": 3,
+      "oneWorld": 0,
+      "rank2": 0,
+      "atlas": {
+        "states": 256,
+        "possibleEdges": 2048,
+        "observedExact": 1429,
+        "inferred": 619,
+        "transforms": [
+          {
+            "action": "fold",
+            "kind": "conditional",
+            "axis": 1,
+            "classes": [
+              "1,0,0,0",
+              "3,0,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              0,
+              8,
+              16,
+              24,
+              5,
+              13,
+              21,
+              29
+            ]
+          },
+          {
+            "action": "echo",
+            "kind": "conditional",
+            "axis": 2,
+            "classes": [
+              "3,0,0,0",
+              "1,0,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              1,
+              9,
+              17,
+              25,
+              6,
+              14,
+              22,
+              30
+            ]
+          },
+          {
+            "action": "lift",
+            "kind": "conditional",
+            "axis": 3,
+            "classes": [
+              "0,1,0,0",
+              "0,3,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              2,
+              10,
+              18,
+              26,
+              7,
+              15,
+              23,
+              31
+            ]
+          },
+          {
+            "action": "drift",
+            "kind": "conditional",
+            "axis": 0,
+            "classes": [
+              "0,3,0,0",
+              "0,1,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              3,
+              11,
+              19,
+              27,
+              0,
+              8,
+              16,
+              24
+            ]
+          },
+          {
+            "action": "phase",
+            "kind": "conditional",
+            "axis": 2,
+            "classes": [
+              "0,0,1,0",
+              "0,0,3,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              4,
+              12,
+              20,
+              28,
+              1,
+              9,
+              17,
+              25
+            ]
+          },
+          {
+            "action": "curl",
+            "kind": "conditional",
+            "axis": 3,
+            "classes": [
+              "0,0,3,0",
+              "0,0,1,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              5,
+              13,
+              21,
+              29,
+              2,
+              10,
+              18,
+              26
+            ]
+          },
+          {
+            "action": "arc",
+            "kind": "fixed",
+            "axis": null,
+            "classes": [
+              "0,0,0,1"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              6,
+              14,
+              22,
+              30,
+              3,
+              11,
+              19,
+              27
+            ]
+          },
+          {
+            "action": "sweep",
+            "kind": "fixed",
+            "axis": null,
+            "classes": [
+              "0,0,0,3"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              7,
+              15,
+              23,
+              31,
+              4,
+              12,
+              20,
+              28
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "seed": 29,
+      "success": 96,
+      "fixed": 6,
+      "oneWorld": 0,
+      "rank2": 1,
+      "atlas": {
+        "states": 256,
+        "possibleEdges": 2048,
+        "observedExact": 1426,
+        "inferred": 622,
+        "transforms": [
+          {
+            "action": "fold",
+            "kind": "conditional",
+            "axis": 1,
+            "classes": [
+              "1,0,0,0",
+              "3,0,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              0,
+              8,
+              16,
+              24,
+              5,
+              13,
+              21,
+              29
+            ]
+          },
+          {
+            "action": "echo",
+            "kind": "conditional",
+            "axis": 2,
+            "classes": [
+              "3,0,0,0",
+              "1,0,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              1,
+              9,
+              17,
+              25,
+              6,
+              14,
+              22,
+              30
+            ]
+          },
+          {
+            "action": "lift",
+            "kind": "conditional",
+            "axis": 3,
+            "classes": [
+              "0,1,0,0",
+              "0,3,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              2,
+              10,
+              18,
+              26,
+              7,
+              15,
+              23,
+              31
+            ]
+          },
+          {
+            "action": "drift",
+            "kind": "conditional",
+            "axis": 0,
+            "classes": [
+              "0,3,0,0",
+              "0,1,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              3,
+              11,
+              19,
+              27,
+              0,
+              8,
+              16,
+              24
+            ]
+          },
+          {
+            "action": "phase",
+            "kind": "conditional",
+            "axis": 2,
+            "classes": [
+              "0,0,1,0",
+              "0,0,3,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              4,
+              12,
+              20,
+              28,
+              1,
+              9,
+              17,
+              25
+            ]
+          },
+          {
+            "action": "curl",
+            "kind": "conditional",
+            "axis": 3,
+            "classes": [
+              "0,0,3,0",
+              "0,0,1,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              5,
+              13,
+              21,
+              29,
+              2,
+              10,
+              18,
+              26
+            ]
+          },
+          {
+            "action": "arc",
+            "kind": "fixed",
+            "axis": null,
+            "classes": [
+              "0,0,0,1"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              6,
+              14,
+              22,
+              30,
+              3,
+              11,
+              19,
+              27
+            ]
+          },
+          {
+            "action": "sweep",
+            "kind": "fixed",
+            "axis": null,
+            "classes": [
+              "0,0,0,3"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              7,
+              15,
+              23,
+              31,
+              4,
+              12,
+              20,
+              28
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "seed": 47,
+      "success": 96,
+      "fixed": 3,
+      "oneWorld": 0,
+      "rank2": 1,
+      "atlas": {
+        "states": 256,
+        "possibleEdges": 2048,
+        "observedExact": 1423,
+        "inferred": 625,
+        "transforms": [
+          {
+            "action": "fold",
+            "kind": "conditional",
+            "axis": 1,
+            "classes": [
+              "1,0,0,0",
+              "3,0,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              0,
+              8,
+              16,
+              24,
+              5,
+              13,
+              21,
+              29
+            ]
+          },
+          {
+            "action": "echo",
+            "kind": "conditional",
+            "axis": 2,
+            "classes": [
+              "3,0,0,0",
+              "1,0,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              1,
+              9,
+              17,
+              25,
+              6,
+              14,
+              22,
+              30
+            ]
+          },
+          {
+            "action": "lift",
+            "kind": "conditional",
+            "axis": 3,
+            "classes": [
+              "0,1,0,0",
+              "0,3,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              2,
+              10,
+              18,
+              26,
+              7,
+              15,
+              23,
+              31
+            ]
+          },
+          {
+            "action": "drift",
+            "kind": "conditional",
+            "axis": 0,
+            "classes": [
+              "0,3,0,0",
+              "0,1,0,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              3,
+              11,
+              19,
+              27,
+              0,
+              8,
+              16,
+              24
+            ]
+          },
+          {
+            "action": "phase",
+            "kind": "conditional",
+            "axis": 2,
+            "classes": [
+              "0,0,1,0",
+              "0,0,3,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              4,
+              12,
+              20,
+              28,
+              1,
+              9,
+              17,
+              25
+            ]
+          },
+          {
+            "action": "curl",
+            "kind": "conditional",
+            "axis": 3,
+            "classes": [
+              "0,0,3,0",
+              "0,0,1,0"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              5,
+              13,
+              21,
+              29,
+              2,
+              10,
+              18,
+              26
+            ]
+          },
+          {
+            "action": "arc",
+            "kind": "fixed",
+            "axis": null,
+            "classes": [
+              "0,0,0,1"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              6,
+              14,
+              22,
+              30,
+              3,
+              11,
+              19,
+              27
+            ]
+          },
+          {
+            "action": "sweep",
+            "kind": "fixed",
+            "axis": null,
+            "classes": [
+              "0,0,0,3"
+            ],
+            "support": 304,
+            "errors": 0,
+            "confidence": 1,
+            "evidenceWorlds": [
+              7,
+              15,
+              23,
+              31,
+              4,
+              12,
+              20,
+              28
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "physicsShift": {
+    "total": 2048,
+    "wrong": 256,
+    "examples": [
+      {
+        "at": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "actual": [
+          3,
+          0,
+          0,
+          0
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-0-0",
+          "17-13-27",
+          "17-13-47",
+          "17-21-75"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "actual": [
+          3,
+          0,
+          0,
+          1
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-5-75"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          0,
+          2
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          0,
+          2
+        ],
+        "actual": [
+          3,
+          0,
+          0,
+          2
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      },
+      {
+        "at": [
+          0,
+          0,
+          0,
+          3
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          0,
+          3
+        ],
+        "actual": [
+          3,
+          0,
+          0,
+          3
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      },
+      {
+        "at": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "actual": [
+          3,
+          0,
+          1,
+          0
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-16-18"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          1,
+          1
+        ],
+        "actual": [
+          3,
+          0,
+          1,
+          1
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-8-8"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          1,
+          2
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          1,
+          2
+        ],
+        "actual": [
+          3,
+          0,
+          1,
+          2
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      },
+      {
+        "at": [
+          0,
+          0,
+          1,
+          3
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          1,
+          3
+        ],
+        "actual": [
+          3,
+          0,
+          1,
+          3
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-13-9",
+          "17-5-25"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          2,
+          0
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          2,
+          0
+        ],
+        "actual": [
+          3,
+          0,
+          2,
+          0
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      },
+      {
+        "at": [
+          0,
+          0,
+          2,
+          1
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          2,
+          1
+        ],
+        "actual": [
+          3,
+          0,
+          2,
+          1
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      },
+      {
+        "at": [
+          0,
+          0,
+          2,
+          2
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          2,
+          2
+        ],
+        "actual": [
+          3,
+          0,
+          2,
+          2
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-29-43",
+          "17-8-46"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          2,
+          3
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          2,
+          3
+        ],
+        "actual": [
+          3,
+          0,
+          2,
+          3
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-8-32"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          3,
+          0
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          3,
+          0
+        ],
+        "actual": [
+          3,
+          0,
+          3,
+          0
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-29-61"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          3,
+          1
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          3,
+          1
+        ],
+        "actual": [
+          3,
+          0,
+          3,
+          1
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-21-31",
+          "17-0-46",
+          "17-16-54"
+        ]
+      },
+      {
+        "at": [
+          0,
+          0,
+          3,
+          2
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          3,
+          2
+        ],
+        "actual": [
+          3,
+          0,
+          3,
+          2
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      },
+      {
+        "at": [
+          0,
+          0,
+          3,
+          3
+        ],
+        "action": "fold",
+        "predicted": [
+          1,
+          0,
+          3,
+          3
+        ],
+        "actual": [
+          3,
+          0,
+          3,
+          3
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-21-15",
+          "17-29-31",
+          "17-0-40"
+        ]
+      },
+      {
+        "at": [
+          0,
+          1,
+          0,
+          0
+        ],
+        "action": "fold",
+        "predicted": [
+          3,
+          1,
+          0,
+          0
+        ],
+        "actual": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-24-2",
+          "17-13-5",
+          "17-16-68",
+          "17-29-69"
+        ]
+      },
+      {
+        "at": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "action": "fold",
+        "predicted": [
+          3,
+          1,
+          0,
+          1
+        ],
+        "actual": [
+          1,
+          1,
+          0,
+          1
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-29-51"
+        ]
+      },
+      {
+        "at": [
+          0,
+          1,
+          0,
+          2
+        ],
+        "action": "fold",
+        "predicted": [
+          3,
+          1,
+          0,
+          2
+        ],
+        "actual": [
+          1,
+          1,
+          0,
+          2
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "directly-observed",
+        "evidenceIds": [
+          "17-0-28",
+          "17-21-37",
+          "17-24-60",
+          "17-5-69"
+        ]
+      },
+      {
+        "at": [
+          0,
+          1,
+          0,
+          3
+        ],
+        "action": "fold",
+        "predicted": [
+          3,
+          1,
+          0,
+          3
+        ],
+        "actual": [
+          1,
+          1,
+          0,
+          3
+        ],
+        "why": "context-dependent-rule-changed-in-new-world",
+        "source": "inferred-from-other-worlds",
+        "evidenceIds": []
+      }
+    ],
+    "wrongByAction": {
+      "fold": 256,
+      "echo": 0,
+      "lift": 0,
+      "drift": 0,
+      "phase": 0,
+      "curl": 0,
+      "arc": 0,
+      "sweep": 0
+    }
+  },
+  "curves": [
+    {
+      "seed": 17,
+      "points": [
+        {
+          "observations": 32,
+          "correct": 34,
+          "optimal": 34,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 5
+        },
+        {
+          "observations": 64,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 96,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 128,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 192,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 320,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 512,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 768,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 1280,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 2432,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        }
+      ]
+    },
+    {
+      "seed": 29,
+      "points": [
+        {
+          "observations": 32,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 64,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 10,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 96,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 4,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 128,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 11,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 192,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 7,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 320,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 11,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 512,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 10,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 768,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 10,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 1280,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 6,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 2432,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 6,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "points": [
+        {
+          "observations": 32,
+          "correct": 30,
+          "optimal": 28,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 5
+        },
+        {
+          "observations": 64,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 1,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 96,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 1,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 128,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 1,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 192,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 1,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 320,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 1,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 512,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 768,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 1280,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 2,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        },
+        {
+          "observations": 2432,
+          "correct": 96,
+          "optimal": 96,
+          "fixed": 3,
+          "oneWorld": 0,
+          "conditionalRules": 6
+        }
+      ]
+    }
+  ]
+}
