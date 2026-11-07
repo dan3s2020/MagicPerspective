@@ -16,6 +16,7 @@
 //     the first move. Predicting the whole trajectory right from the start ends the exercise sooner: that is the
 //     reward, and the brain learns how far to trust its predicted shape versus exploring.
 import {makeMaze, nextCell, seedOf, SEEDS, RNG, ACTIONS} from "./labyrinth.mjs";
+import {observedGoalField} from "./goal-wavefront.mjs";
 
 export const KIND = {floor: 0, wall: 1, target: 2, self: 3};               // for the world and the observer only
 const SYMS = [1, 2, 3, 4];                                                   // the raw symbols the retina shows (control codes, never in text; no meaning)
@@ -46,7 +47,11 @@ export class Discoverer {
   conduct(kind) { return this.pass[kind] / (this.pass[kind] + this.block[kind]); }
   attract(kind) { return this.endIn[kind] / this.enter[kind]; }
   // ---- the shape of the solution: attraction spread over the exercise, climbed from itself ----
-  shape(ret, n, me) {
+  shape(ret, n, me, observedGraph = null) {
+    // The SAME native method now accepts an observed causal graph. Existing
+    // three-argument maze calls below remain exactly unchanged.
+    if (observedGraph !== null) return observedGoalField(observedGraph,
+      {temperature: this.temp || 0, random: () => this.r.next()});
     const att = [0, 1, 2, 3].map(k => this.attract(k)), cond = [0, 1, 2, 3].map(k => this.conduct(k)), V = new Float64Array(n * n);
     let any = false; for (let i = 0; i < n * n; i++) if (att[ret[i]] > .2 && i !== me) { V[i] = att[ret[i]]; any = true; }
     if (!any) return null;
