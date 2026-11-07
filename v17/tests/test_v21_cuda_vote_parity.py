@@ -77,7 +77,7 @@ class VoteParity(unittest.TestCase):
         # The expensive exact index/imagining are independently covered by
         # native training tests. Isolate the LIVE progress boundary here.
         card._proposals=lambda *args: []
-        card._selfidx=lambda *args: {}
+        card._selfidx=lambda *args,**kwargs: {}
         card._imagine=lambda *args,**kwargs: ({},{})
         card.append=lambda *args: None
         records=[]
