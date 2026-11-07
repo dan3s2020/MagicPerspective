@@ -28,7 +28,10 @@
     "user-intent/changes/V23-OBSERVED-RELATIONAL-HYPERMAZE-20261107.json",
     ".github/workflows/v23-observed-relational-hypermaze.yml",
     "v17/tests/v23-noisy-long-route.test.mjs",
-    "v17/docs/V23_LONG_PATH_NOISE_STRESS_EVIDENCE_20261107.md"
+    "v17/docs/V23_LONG_PATH_NOISE_STRESS_EVIDENCE_20261107.md",
+    "v17/research/relational-hypermaze/unknown-answer.mjs",
+    "v17/tests/v23-unknown-answer.test.mjs",
+    "v17/docs/V23_UNKNOWN_ANSWER_RELATIONAL_EVIDENCE_20261107.md"
   ],
   "original_unchanged": true,
   "current_hypothesis": "Witnessed state/action/next-state descriptions induce a navigable four-axis relational graph; original V17 shape operator propagates a known goal through unseen textual worlds and predicts a complete action route before physical execution.",
@@ -63,5 +66,19 @@
     "erased_15percent_single_view": 2,
     "erased_15percent_three_repeated_views": 87,
     "not_natural_semantic_proof": true
+  },
+  "additional_unknown_answer_evidence": {
+    "scope": "Frozen isolated V8 tests, source exact V23 plus original V17 Discoverer.shape",
+    "seed_range": [
+      180000,
+      180299
+    ],
+    "question_witnessed_examples": 12,
+    "answer_entity_not_given_in_question": true,
+    "heldout_unknown_entity_answers": 300,
+    "first_try_correct": 300,
+    "shortest": 300,
+    "mean_document_bytes": 22408,
+    "objective_restriction": "Only known grammatical question forms and observed relational text worlds, not unstructured OpenThoughts3 Q/A"
   }
 }
