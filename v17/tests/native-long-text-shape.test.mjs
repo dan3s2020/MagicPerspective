@@ -46,7 +46,9 @@ test("Full native 0.9MB real repository text becomes a long-dimensional state: F
  const result=model.execute(plan,{step:independentPhysics,observe:false});
  assert.equal(result.solved,true);
  assert.deepEqual(result.final,expected);
- assert.deepEqual(model.export(),before,"Frozen long test must not update learned rules");
+ assert.deepEqual(model.export().rules,before.rules,"No heldout answer enters learned rule weights");
+ assert.deepEqual(model.export().interventions,before.interventions,"No heldout environment outcome is trained during frozen evaluation");
+ assert.equal(model.last?.success,true,"Original V19 execute records honest evaluation telemetry only");
  console.log("NATIVE_LONG_TEXT",JSON.stringify({
   source:"repository archived natural Romanian/English mixed text, with two structured causal edit goals",
   originalCharacters:input.length,originalTokens:actual.length,
