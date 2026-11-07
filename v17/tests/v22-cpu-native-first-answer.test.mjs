@@ -21,7 +21,8 @@ test("exact full Q/A scoring counts COMPLETE first guesses, never individual-cha
  let decoded=[],budgets=[];
  brain.align={
    readFrozen:(ex,cb)=>{for(let i=0;i<ex.length;i++)cb(i,ex[i],ex[i],[]);},
-   write:q=>{
+   write:(q,opts)=>{
+     budgets.push(opts.max);
      const question=String.fromCharCode(...q);
      const answer=question.match(/task ([0-9]+)/)?.[1]||"0";
      decoded.push(question);
