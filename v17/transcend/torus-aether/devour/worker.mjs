@@ -44,7 +44,7 @@ const splitObservedText = source => {
   return null;
 };
 
-async function* stream() {                                                 // this brain's share of the world, once
+async function* stream(skipCommitted=0) {                                   // this brain's share of the REAL training world, once
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
@@ -54,11 +54,21 @@ async function* stream() {                                                 // th
       heldOutRows:ds.held,sourceParquetFiles:ds.files.length,
       sourceKind:"OpenThoughts Parquet",
       source:"metadata only, not counted as consumed exercises"});
-    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
+    // Resume jumps DIRECTLY to the first uncommitted Parquet row.
+    // The previous implementation decoded every already-committed exercise
+    // just to skip it, which could look like frozen training for hours.
+    for (let k = w + skipCommitted * n; k < ds.trainRows; k += n) {
+      const x=await ds.exercise(k);
+      yield {k,bytes:ascii("Q: "+x.prompt+"\nA: "+x.answer+"\n\n"),
+        prompt:x.prompt,answer:x.answer};
+    }
   } else {
-    let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
+    let k = 0,seenAssigned=0;
+    for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
       if (!para.trim()) continue;  // 4-word sentences are valid structural training observations
       if (k++ % n === w && !source.heldSet.includes(k)) {
+        // Preserve exact original train/heldout split and source row IDs.
+        if(seenAssigned++<skipCommitted)continue;
         const observed = splitObservedText(para);
         yield {k, bytes: ascii(para + "\n\n"), ...observed};
       } }
@@ -647,11 +657,10 @@ shot(true); await hold();
 // The queue can contain future exercise answers, so those bytes are
 // explicitly tagged transductive; they do NOT count as learned until commit.
 const completeTrainingStream = async function*(){
-  let index=0;
-  for await(const row of stream()){
-    if(TEXT&&index++<skip)continue;
-    yield row;
-  }
+  // Parquet source offsets are now derived from the native Brain.exercises
+  // checkpoint: no CPU/SSD re-decoding of hundreds of thousands of old
+  // learned examples before the new GPU pool can start real work.
+  for await(const row of stream(TEXT?skip:0))yield row;
 };
 const residentTrainingStream = TEXT&&gpuSet?
   residentQueue.prefetch(completeTrainingStream(),{
