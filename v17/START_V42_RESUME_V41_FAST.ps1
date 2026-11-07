@@ -60,19 +60,27 @@ if(![string]::IsNullOrWhiteSpace($SourceCheckpoint)){
       $_.Name -match '(?i)MagicPerspective|V41|V42'
     })
     foreach($project in $projects){
-      # The canonical V41 Fast runtime is always checked first.
-      $known=Join-Path $project.FullName "v17\runtime-v41-speed-profile\brains\brain-0-winner.v8"
-      if(Test-Path -LiteralPath $known -PathType Leaf){$candidates.Add((Get-Item -LiteralPath $known))}
-      # Other explicitly named outputs used by the SAME original V41 Fast repo.
-      foreach($item in @(Get-ChildItem -LiteralPath $project.FullName -Filter "brain-0-winner.v8" -File -Recurse -ErrorAction SilentlyContinue)){
-        if($item.FullName -eq $destinationBrain -or $item.FullName -eq $known){continue}
-        if($item.FullName -notmatch '(?i)[\\/]brains[\\/]brain-0-winner\.v8$'){continue}
-        $repoRoot=$item.FullName
-        $folder=$item.Directory
-        while($folder -and $folder.Name -ne "v17"){$folder=$folder.Parent}
-        if(!$folder){continue}
-        $fastKernel=Join-Path $folder.FullName "transcend\torus-aether\gpu\exact_histogram_cuda.cu"
-        if(Test-Path -LiteralPath $fastKernel -PathType Leaf){$candidates.Add($item)}
+      # Identify the ORIGINAL V41 Fast source by its actual CUDA kernel
+      # and benchmark documentation, not by a guessed folder name.
+      $v17=Join-Path $project.FullName "v17"
+      $kernel=Join-Path $v17 "transcend\torus-aether\gpu\exact_histogram_cuda.cu"
+      $fastDoc=Join-Path $v17 "docs\CUDA_SPEED_V41.md"
+      $newer=Join-Path $v17 "START_V42_RESUME_V41_FAST.ps1"
+      if(!(Test-Path -LiteralPath $kernel -PathType Leaf) -or
+         !(Test-Path -LiteralPath $fastDoc -PathType Leaf) -or
+         (Test-Path -LiteralPath $newer -PathType Leaf)){continue}
+      # Enumerate ONLY the original runtime folders, never descend into
+      # huge .venv, CUDA wheel or node_modules trees.
+      $roots=@($v17,$project.FullName)
+      foreach($parent in $roots){
+        $runtimes=@(Get-ChildItem -LiteralPath $parent -Directory -ErrorAction SilentlyContinue |
+          Where-Object {$_.Name -match '(?i)^runtime'})
+        foreach($runtime in $runtimes){
+          $checkpoint=Join-Path $runtime.FullName "brains\brain-0-winner.v8"
+          if(Test-Path -LiteralPath $checkpoint -PathType Leaf){
+            $candidates.Add((Get-Item -LiteralPath $checkpoint))
+          }
+        }
       }
     }
   }
