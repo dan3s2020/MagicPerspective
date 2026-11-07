@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import {fileURLToPath} from "node:url";
 import {spawnSync} from "node:child_process";
 import {AligningGraph} from "../transcend/torus-aether/align.mjs";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
@@ -47,7 +48,7 @@ test("native frozen same-checkpoint phase2 runs all six arms with fixed length",
   let sourceHash=null;
   for(const arm of Object.keys(POLICIES)){
     const run=spawnSync(process.execPath,[
-     path.resolve("v17/experiments/graph0-phase2.mjs"),
+     fileURLToPath(new URL("./graph0-phase2.mjs", import.meta.url)),
      "--checkpoint",cp,"--out",dir,"--policy",arm,"--max","80","--seed","20261107"
     ],{encoding:"utf8",maxBuffer:10*1024*1024,timeout:120000});
     assert.equal(run.status,0,arm+"\n"+run.stdout+"\n"+run.stderr);
