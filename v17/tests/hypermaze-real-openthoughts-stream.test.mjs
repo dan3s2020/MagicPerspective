@@ -235,3 +235,68 @@ test("Million-row-style UTF-8 stream cannot leak evicted rare observed states th
   learnedOperators:original.operators.size,fullSourceStreamNotFalselyClaimedRetained:true
  }));
 });
+
+test("MB-scale genuine JSONL disk ingestion benchmark: full original native text hypermaze, not a byte predictor or UI-only playback",{
+ timeout:220000
+},async()=>{
+ const folder=fs.mkdtempSync(path.join(os.tmpdir(),"hypermaze-native-megabyte-"));
+ const file=path.join(folder,"train-00015-of-00120.jsonl");
+ const out=path.join(folder,"saved");
+ const prose=("The actual research problem includes observations of causes and effects in several "+
+ "different contexts. The learner must remember the path as it interacts with a changing "+
+ "environment, while predicting its next state before the next action. "+
+ "Every recorded relationship belongs to a genuine source, rather than a synthetic oracle. ").repeat(5);
+ const payload=Array.from({length:1200},(_,i)=>JSON.stringify({
+  conversations:[{from:"human",value:prose+" Case number "+i+"."},
+   {from:"gpt",value:prose+" This observed answer was recorded for case "+i+"."}]
+ }));
+ fs.writeFileSync(file,payload.join("\n")+"\n","utf8");
+ const size=fs.statSync(file).size;
+ assert.ok(size>2000000,"MB-scale disk test must actually contain >2MB JSONL source");
+ let app=null;
+ try{
+  app=await launch({data:file,out,port:await freePort(),autoStart:true,
+   holdoutEvery:20,saveEvery:400,transitionEvery:100,
+   windowTokens:96,maxTokensPerSegment:128,
+   maxObserved:1400,maxOperators:4000,heapMB:1024});
+  const status=await waitFor(app.base,s=>s.completed,185000);
+  assert.equal(status.bytesRead,size);
+  assert.equal(status.percent,100);
+  assert.equal(status.rowsRead,1200);
+  assert.equal(status.trainedRows,1140);
+  assert.equal(status.heldoutRows,60);
+  assert.ok(status.actualObservedWindows>1200);
+  assert.ok(status.learnedOperators>0);
+  assert.equal(status.rejectedOverTokenCap,0);
+  assert.equal(status.malformedRows,0);
+  assert.equal(status.operatorsDropped,0);
+  assert.equal(status.phase,"complete");
+  const manifest=JSON.parse(fs.readFileSync(
+   path.join(out,"native-hypermaze-progress.json"),"utf8"));
+  assert.equal(manifest.counters.bytesRead,size);
+  const original=Brain.load(path.join(out,manifest.checkpoint));
+  assert.ok(original.noiseAgent);
+  assert.ok(original.observedTransformations.operators.size>0);
+  assert.ok(original.observedTransformations.index.size<3000,
+   "Real source unique-token postings unexpectedly grew beyond bounded active memory");
+  const summary={
+   actualSourceMB:+(size/1e6).toFixed(3),
+   realSourceLines:1200,trainedLines:1140,heldoutLines:60,
+   sourceMBperSecond:status.sourceMBPerSecond,
+   observedTextMBperSecond:status.textMBPerSecond,
+   observedJSONLExercisesPerSecond:status.exercisesPerSecond,
+   learnedOriginalTextStates:status.totalObservedStates,
+   activeStates:status.observedStates,
+   learnedOriginalTextOperators:status.learnedOperators,
+   originalEndogenousNoiseDecisions:status.endogenousNoiseDecisions,
+   originalNative5DAxes:status.learnedGeometry5DAxes,
+   checkpointSaved:true,frozenHeldoutSeparated:true,
+   noBytePredictor:true,device:"github-CI-CPU",
+   full594MBRealUserFileTested:false,semantic100PercentProven:false
+  };
+  console.log("REAL_MEGA_BYTE_NATIVE_HYPERMAZE_FULL_STREAM_BENCHMARK",JSON.stringify(summary));
+ }finally{
+  if(app)await app.close();
+  fs.rmSync(folder,{recursive:true,force:true});
+ }
+});
