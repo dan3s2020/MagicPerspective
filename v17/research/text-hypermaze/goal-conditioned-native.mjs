@@ -27,7 +27,7 @@ function validatedRequired(required){
 }
 
 export class NativeGoalTextMaze {
- constructor(brain,{maxStates=2500,maxDepth=6,geometryWeight=0,
+ constructor(brain,{maxStates=2500,maxDepth=6,geometryWeight=.025,
   sharedPolicyWeight=.01}={}){
   if(!(brain instanceof Brain))throw Error("The ACTUAL original V17 Brain is required");
   if(!Number.isSafeInteger(maxStates)||maxStates<4||maxStates>50000)
@@ -48,6 +48,7 @@ export class NativeGoalTextMaze {
   const observed=this.brain.learnObservedTransformations(text);
   let newPairs=0;
   const geo=this.brain.trace.geo;
+  const axes=this.brain.hypermazeLearnedAxes ||= new Map();
   for(const [id,op] of this.brain.observedTransformations.operators){
    if(old.has(id))continue;
    for(const evidence of op.evidence||[]){
@@ -55,6 +56,19 @@ export class NativeGoalTextMaze {
     // pair or a withheld answer. Geometry learns these very same edges.
     const from="text-state:"+evidence.from,to="text-state:"+evidence.to;
     geo.learn(from,to);
+    // Learn a reusable 5D action displacement from two REAL observed states.
+    // This is the same original Geometry.U, not a second fake embedding.
+    // It is signed on the torus, so a new unseen state can get an ephemeral
+    // predicted position from a known starting state plus this action.
+    const u=geo.U.get(from),v=geo.U.get(to);
+    if(u&&v&&u.length===5&&v.length===5){
+     const axis=axes.get(id)||{sum:[0,0,0,0,0],count:0};
+     for(let d=0;d<5;d++){
+      const delta=v[d]-u[d];
+      axis.sum[d]+=delta-Math.round(delta);
+     }
+     axis.count++;axes.set(id,axis);
+    }
     this.brain.trace.node(from,"A",evidence.from.slice(0,100));
     this.brain.trace.node(to,"A",evidence.to.slice(0,100));
     this.brain.trace.setEdge(from,to,"observed-text-transform",
@@ -75,7 +89,9 @@ export class NativeGoalTextMaze {
   const model=this.brain.observedTransformations;
   const seed=tokenizeObservation(start),normalized=renderObservation(seed);
   if(!seed.length)throw Error("Observed start text is required");
-  const nodes=[{id:normalized,tokens:seed,depth:0,kind:3}],ids=new Map([[normalized,0]]);
+  const originCoords=this.brain.trace.geo.U.get("text-state:"+normalized)||null;
+  const nodes=[{id:normalized,tokens:seed,depth:0,kind:3,
+    coordinates5D:originCoords}],ids=new Map([[normalized,0]]);
   const edges=[[]];let pending=0,operatorEdges=0,blocked=0;
   while(pending<nodes.length&&nodes.length<this.maxStates){
    const at=pending++,cur=nodes[at];
@@ -92,8 +108,18 @@ export class NativeGoalTextMaze {
      if(nodes.length>=this.maxStates)break;
      const reached=allowed&&target(choice.tokens,required)&&support.consistent;
      next=nodes.length;ids.set(dest,next);
+     const stored=this.brain.trace.geo.U.get("text-state:"+dest);
+     const axis=this.brain.hypermazeLearnedAxes?.get(choice.action.key);
+     const inferred=!stored&&axis?.count&&Array.isArray(cur.coordinates5D)&&
+      cur.coordinates5D.length===5?
+      cur.coordinates5D.map((v,d)=>{
+       const updated=v+axis.sum[d]/axis.count;
+       return updated-Math.floor(updated);
+      }):null;
      nodes.push({id:dest,tokens:choice.tokens,depth:cur.depth+1,
       kind:allowed?(reached?2:0):1,goal:reached,
+      coordinates5D:stored||inferred,
+      geometryEvidence:stored?"observed":inferred?"learned-action-axis":"unavailable",
       isPreviouslyObserved:model.containsSentence(dest)});
      edges.push([]);
     }
@@ -115,7 +141,7 @@ export class NativeGoalTextMaze {
    throw Error("Use constructor to set fixed graph budget for reproducibility");
   const w=this.world(origin,goal),b=this.brain;
   const kinds=w.nodes.map(n=>n.kind);
-  const coordinates=w.nodes.map(n=>b.trace.geo.U.get("text-state:"+n.id)||null);
+  const coordinates=w.nodes.map(n=>n.coordinates5D||null);
   const scorer=sharedPolicyWeight?((i,j,edge)=>{
    const dst=w.nodes[j].tokens,prev=w.nodes[i].tokens;
    const gained=goal.filter(t=>dst.includes(t)).length-
@@ -145,7 +171,9 @@ export class NativeGoalTextMaze {
    originalFloorConductance:b.disc.conduct(0),
    graph:{observedOperatorEdges:w.operatorEdges,states:w.nodes.length,
     blocked:w.blocked,goalNodes:w.goalNodes,
-    geometry5DObservedNodes:coordinates.filter(Boolean).length},
+    geometry5DObservedNodes:w.nodes.filter(n=>n.geometryEvidence==="observed").length,
+    geometry5DInferredNodes:w.nodes.filter(n=>n.geometryEvidence==="learned-action-axis").length,
+    shared5DActionAxes:b.hypermazeLearnedAxes?.size||0},
    initialShape:[w.source,...route.map(r=>w.nodes[r.to].id)],
    actions:route.map(e=>({...e.action,from:w.nodes[e.from].id,
     predictedNext:w.nodes[e.to].id,observedSupport:e.observedSupport})),
