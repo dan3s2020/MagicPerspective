@@ -510,7 +510,7 @@ http.createServer((req, res) => {
       const opts={maxTokens:m.maxTokens??512,
         maxNodes:Math.min(20000,Math.max(2,Math.trunc(Number(m.maxNodes)||384))),
         maxDepth:Math.min(256,Math.max(1,Math.trunc(Number(m.maxDepth)||8))),
-        includeAtlas:true};
+        includeAtlas:true,allowComposedInstructions:m.allowComposedInstructions===true};
       const saved=()=>{
         const f=saveOf(sl);
         if(!fs.existsSync(f))return {error:"No original cognitive checkpoint"};
