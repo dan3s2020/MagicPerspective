@@ -378,7 +378,14 @@
         style="width:100%;height:240px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px"
         aria-label="Traseu textual real cu muchii originale permise, muchii recuperate prin dovezi și direcții imposibile"></canvas>
       <pre id="atlasGatedResult" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:300px;overflow:auto">Alege o propoziție observată, apoi compară harta strictă cu legăturile susținute de dovezi.</pre>
-      <h2>4. Atlasul original NELIMITAT de paginile desenate: toate cele șase scale</h2>
+      <h2>4. Contextul REAL din viitorul corpusului, rezident în VRAM — mod TRANSDUCTIV</h2>
+      <p class="note">Caută exact ce transformări/caractere urmează unui fragment în exercițiile viitoare încă neprocesate, aflate pe GPU. Se afișează proveniența fiecărei potriviri. Aceste răspunsuri sunt deja vizibile prin preîncărcare: NU sunt rezultate pe text nevăzut și NU schimbă încrederea din Brain înainte de învățare.</p>
+      <div class="row">
+        <label class="dim" style="flex:1">Context de căutat în VRAM <input id="atlasFutureContext" type="text" maxlength="64" placeholder="un fragment ASCII din text" style="width:100%" /></label>
+        <button id="atlasFutureProbe">Caută căile viitoare și sursa lor reală</button>
+      </div>
+      <pre id="atlasFutureResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:290px;overflow:auto;font-size:12px">Nicio căutare: viitorul nu este numărat drept învățare sau test nevăzut.</pre>
+      <h2>5. Atlasul original NELIMITAT de paginile desenate: toate cele șase scale</h2>
       <p class="note">Fiecare pagină citește direct din <code>Brain.constructedPaths.scales</code>. Alege contextul, navighează prin toate stările memorate și vezi toate acțiunile și destinațiile lor. Orice vizualizare are limită de pixeli; datele originale nu sunt înlocuite cu o hartă inventată.</p>
       <div class="row">
         <label class="dim">Context memorat <select id="atlasScale">
@@ -392,7 +399,7 @@
       </div>
       <canvas id="atlasGraphCanvas" width="950" height="390" style="width:100%;height:325px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px" aria-label="Proiecție parțială a nodurilor grafurilor textuale native din pagina curentă"></canvas>
       <pre id="atlasPageText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:290px;overflow:auto;font-size:11px">Se vor încărca stările native, fără trunchierea memoriei originale.</pre>
-      <h2>5. Jurnalul tuturor încercărilor înregistrate, inclusiv a celor fără cale</h2>
+      <h2>6. Jurnalul tuturor încercărilor înregistrate, inclusiv a celor fără cale</h2>
       <div class="row"><label class="dim">Jurnal <select id="atlasLogKind"><option value="text">Limbaj: caractere și cauze</option><option value="xd">Labirinturi xD: căi reușite și ratate</option></select></label><button id="atlasLogMore">Încarcă următoarele episoade reale din jurnal</button></div>
       <pre id="atlasLogText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto;font-size:11px">Jurnalul este adăugat pe disc, în fișierele .path-atlas.jsonl și .xd-atlas.jsonl; aici îl poți parcurge paginat.</pre>
     </div>
