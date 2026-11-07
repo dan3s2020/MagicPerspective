@@ -48,16 +48,29 @@ export function scoreAxisPredictions(bytes,answerStart,alignDists,fieldRows,alph
     throw Error("One causal distribution must correspond to every actual byte");
   const totals=Object.fromEntries(alphas.map(a=>[String(a),{
     allCorrect:0,allTotal:0,answerCorrect:0,answerTotal:0,
-    allNLL:0,answerNLL:0,fieldCoverage:0,alpha:a
+    allNLL:0,answerNLL:0,fieldCoverage:0,alpha:a,
+    alignedTrueByteBlocked:0,geometricTrueByteRecoveryPossible:0,
+    geometricExpandedSuccessorSet:0,fieldOnlyAfterEmptyAlign:0
   }]));
   for(let i=4;i<bytes.length;i++){
     const y=bytes[i];
+    const original=normalizedAlignDistribution(alignDists[i]);
+    const pF=fieldRows[i];
+    const trueBlocked=!original.available||original.p[y]===0;
+    const fieldHasTruth=Boolean(pF&&Number(pF[y])>0);
+    const fieldAddsAny=Boolean(pF&&Array.from(pF).some((v,k)=>
+      k<128&&Number(v)>0&&original.p[k]===0));
+    const fieldAvailable=Boolean(pF&&Array.from(pF).some(v=>Number(v)>0));
     for(const alpha of alphas){
       const r=mixedPrediction(alignDists[i],fieldRows[i],alpha);
       const t=totals[String(alpha)],correct=+(r.top===y);
       const logLoss=-Math.log2(Math.max(1e-12,r.probabilities[y]));
       t.allCorrect+=correct;t.allTotal++;t.allNLL+=logLoss;
       t.fieldCoverage+=+r.fieldAvailable;
+      t.alignedTrueByteBlocked+=+trueBlocked;
+      t.geometricTrueByteRecoveryPossible+=+(trueBlocked&&fieldHasTruth);
+      t.geometricExpandedSuccessorSet+=+fieldAddsAny;
+      t.fieldOnlyAfterEmptyAlign+=+(!original.available&&fieldAvailable);
       if(i>=answerStart){t.answerCorrect+=correct;t.answerTotal++;t.answerNLL+=logLoss;}
     }
   }
@@ -66,6 +79,9 @@ export function scoreAxisPredictions(bytes,answerStart,alignDists,fieldRows,alph
     answerAccuracy:s.answerTotal?s.answerCorrect/s.answerTotal:null,
     meanAllNLL:s.allTotal?s.allNLL/s.allTotal:null,
     meanAnswerNLL:s.answerTotal?s.answerNLL/s.answerTotal:null,
-    fieldCoverageFraction:s.allTotal?s.fieldCoverage/s.allTotal:null
+    fieldCoverageFraction:s.allTotal?s.fieldCoverage/s.allTotal:null,
+    alignedTrueByteBlockedFraction:s.allTotal?s.alignedTrueByteBlocked/s.allTotal:null,
+    geometryRestoresBlockedTargetFraction:s.allTotal?s.geometricTrueByteRecoveryPossible/s.allTotal:null,
+    geometryExpandsSuccessorStepsFraction:s.allTotal?s.geometricExpandedSuccessorSet/s.allTotal:null
   }]));
 }
