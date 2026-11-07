@@ -290,8 +290,15 @@ $("atlasAudit").addEventListener("click",async()=>{
   const actual=Array.from(reference);
   const lines=Array.from({length:Math.max(actual.length,predicted.length)},(_,i)=>{
    const left=predicted[i]??null,right=actual[i]??null;
+   const origin=char.predictedCharacterOrigins?.[i]||null;
+   const cause=origin?.kind==="learned-text-transformation"?
+    " · axa="+origin.operatorKind+" "+
+     (origin.operatorFrom??"∅")+"→"+(origin.operatorTo??"∅")+
+     " · dovadă="+JSON.stringify(origin.evidence):
+    origin?.kind==="observed-start"?" · sursă=starea inițială observată":
+     " · proveniență=necunoscută";
    return String(i).padStart(5,"0")+" "+(left===right?"✓":"✗")+
-    " prezis "+JSON.stringify(left)+" · corect "+JSON.stringify(right);
+    " prezis "+JSON.stringify(left)+" · corect "+JSON.stringify(right)+cause;
   });
   $("atlasCharacters").textContent=
    "CORECTE PE POZIȚIE: "+(100*char.accuracy).toFixed(3)+"%"+
