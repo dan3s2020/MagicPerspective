@@ -35,8 +35,7 @@ export class NativeWorldAtlas{
    throw Error("Only genuine original native frozen plans with actual explored graphs may be logged");
   const id=this.store.nextId++;
   // Freeze exact original predicted structure and FULL bounded explored world.
-  const entry={id,episodeId,tag,time:new Date().toISOString(),
-   ...clone(fshape(plan)),
+  const entry={...clone(fshape(plan)),id,episodeId,tag,time:new Date().toISOString(),
    planRecordedBeforeExecution:true,
    resultAvailable:false,
    graphCompleteWithinKnownTransferredRules:plan.frontier?.closureOfAllCurrentlyAdmittedTransfers===true,
