@@ -53,7 +53,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $files=@("v17/START_V40_COMPLETE_FAST.ps1","v17/START_V17.ps1","v17/START_HYPERMAZE_REAL_CUDA.ps1")
+          $files=@("v17/START_V41_SPEED_PROFILE.ps1","v17/START_V40_COMPLETE_FAST.ps1","v17/START_V17.ps1","v17/START_HYPERMAZE_REAL_CUDA.ps1")
           foreach($file in $files){
             $tokens=$null;$errors=$null
             [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd $file),[ref]$tokens,[ref]$errors)|Out-Null
