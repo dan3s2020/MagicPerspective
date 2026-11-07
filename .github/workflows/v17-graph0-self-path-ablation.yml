@@ -1,0 +1,24 @@
+name: V17 graph0 frozen self-path ablation
+on:
+  push:
+    branches:
+      - experiment/V17-GRAPH0-SELF-PATH-ABLATION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax checks for standalone ablation only
+        run: |
+          node --check v17/experiments/graph0-ablation-core.mjs
+          node --check v17/experiments/graph0-self-path-ablation.mjs
+          node --check v17/experiments/graph0-ablation-core.test.mjs
+      - name: Native AligningGraph no-training ablation tests
+        run: node --test v17/experiments/graph0-ablation-core.test.mjs
