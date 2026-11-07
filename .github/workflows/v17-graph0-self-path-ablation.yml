@@ -29,6 +29,9 @@ jobs:
           node --check v17/experiments/graph0-heldout-axis-core.mjs
           node --check v17/experiments/graph0-heldout-axis-core.test.mjs
           node --check v17/experiments/graph0-heldout-axis.mjs
+          node --check v17/experiments/graph0-plateau-core.mjs
+          node --check v17/experiments/graph0-plateau-audit.mjs
+          node --check v17/experiments/graph0-plateau-audit.test.mjs
       - name: Native AligningGraph no-training ablation tests
         run: node --test v17/experiments/graph0-ablation-core.test.mjs
       - name: Native Brain.save Brain.load comparison across original and filtered policies
@@ -39,6 +42,8 @@ jobs:
         run: node --test v17/experiments/graph0-geometry-wall-audit.test.mjs
       - name: Native FIELD and ALIGNED predictive causal gating, no future leakage
         run: node --test v17/experiments/graph0-heldout-axis-core.test.mjs
+      - name: Native V17 time-series plateau evidence threshold and log parser
+        run: node --test v17/experiments/graph0-plateau-audit.test.mjs
   windows-launcher-smoke:
     runs-on: windows-2022
     timeout-minutes: 12
