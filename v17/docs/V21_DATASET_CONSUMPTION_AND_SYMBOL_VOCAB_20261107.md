@@ -16,6 +16,14 @@ Sursa screenshotului este mesajul din conversatia curenta; imaginea binara nu a 
 4. Implicit, `text-dataset.mjs` retine separat ultimele `HELD_OUT=16` randuri daca corpusul are suficiente exercitii. Pentru 10.000 exercitii originale, numitorul real de training este **9.984**, nu 10.000. Se calculeaza din metadatele Parquet **reale**, nu se presupune fix 10.000 pentru orice dataset.
 5. Pentru TXT, numitorul este numarul efectiv de paragrafe eligibile minus paragrafele tinute separat. Pentru mai multe workere, fiecare graf raporteaza progresul *propriei partitii*, fara sa pretinda ca progresul unuia este progresul global al tuturor.
 
+## Corectie de pozitionare ceruta explicit de utilizator (2026-11-07)
+
+Utilizatorul a cerut ca progresul si toate contoarele datasetului sa fie **exact in zona CE S-A NASCUT a screenshotului**, nu separat in "Mediu". Primul patch plasase `datasetProgressBox` sub "Mediu", unde a fost ratat de utilizator. Aceasta a fost o regresie de design fata de cerinta de localizare.
+
+Corectia muta `datasetProgressBox` in **aceeasi `<div class="grid">` cu cele patru carduri originale** (`steps`, `edges`, `symbols`, `aw`/`cw`), imediat dupa ele, sub titlul "Ce s-a nascut" si inainte de titlul "Cat ghiceste". Panoul ocupa ambele coloane ale grilei, cu carduri procesate/total, procent, ramase si held-out si bara progresului live. Nu exista a doua copie in "Mediu".
+
+In lipsa progresului din backend, panoul nu mai este ascuns: arata `--%` si instrucţiuni de verificare/restart V21. Testul nativ HTTP contine acum conditii de ORDINE DOM obligatorii pentru aceasta amplasare. Pentru rezultatul local, `git pull --ff-only` dupa oprirea workerului, `-Resume`, apoi `Ctrl+F5` in browser. Numai editarea repo-ului GitHub nu actualizeaza automat fisierele locale sau serverul deja pornit.
+
 ## Modificare nativa V21, fara reset sau UI substituit
 
 - Modul pur, testabil: `v17/transcend/torus-aether/devour/dataset-progress.mjs`, `trainingShardSize` si `trainingProgress`.
