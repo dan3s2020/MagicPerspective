@@ -181,6 +181,21 @@
       <div class="row"><label>Condiții ale țintei (poziție → simbol)<input id="cognitiveGoal" type="text" value='{"0":"She","2":"calm"}' size="40"></label></div>
       <div class="row"><button id="cognitiveEvaluate" type="button">Testează forma învățată pe o țintă nouă</button></div>
       <pre id="cognitiveResult" style="white-space:pre-wrap;overflow:auto;max-height:330px;color:#d3eedb;font:12px ui-monospace,monospace">Nicio evaluare încă.</pre>
+      <section id="nativeCognitiveBox" style="margin:12px 0;padding:10px;border:1px solid #997c44;border-radius:8px">
+        <h3>FORMA SOLUȚIEI · V19+V21 · ORIGINAL Discoverer.shape() pe transformări învățate</h3>
+        <p class="note">Acesta este graful REAL de stări și efecte V19, nu un ornament. Aur = traseul complet prezis înainte de prima acțiune, albastru = efecte confirmate, mov punctat = continuări încă ipotetice. După un test real respins, modelul își ajustează încrederea. Nu este un răspuns liber semantic verificat.</p>
+        <div class="row">
+          <button id="nativeCognitivePlan" type="button">Construiește forma originală din prima</button>
+          <span class="dim" id="nativeCognitiveStatus">Selectează un Brain cu lumea cognitivemap activă.</span>
+        </div>
+        <canvas id="nativeCognitiveCanvas" width="820" height="385" style="display:block;width:100%;background:#071019;border:1px solid #38546a;border-radius:8px;margin-top:9px"></canvas>
+        <div class="row"><button id="nativeCognitivePrev" type="button">◀</button>
+          <button id="nativeCognitivePlay" type="button">Pause path</button>
+          <button id="nativeCognitiveNext" type="button">▶</button>
+          <span id="nativeCognitiveStep" class="dim">0/0</span></div>
+        <input type="range" id="nativeCognitiveScrub" min="0" max="0" value="0" style="width:100%">
+        <pre id="nativeCognitiveOutput" style="white-space:pre-wrap;max-height:360px;overflow:auto;color:#f3dbab;font:12px ui-monospace,monospace">Aștept predicția reală.</pre>
+      </section>
       <h3>Feedback real: verificarea unui zid sau a unei transformări</h3>
       <p class="note">Înregistrează numai o acțiune executată efectiv și observația de după. Un traseu dedus din text rămâne o ipoteză până când lumea îi confirmă efectul.</p>
       <div class="row"><label>Înainte <input id="cognitiveBefore" type="text" size="30" value="He is calm."></label></div>
@@ -318,5 +333,6 @@
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
  <script type="module" src="native-goal-live.js"></script>
+ <script type="module" src="native-cognitive-live.js"></script>
 </body>
 </html>
