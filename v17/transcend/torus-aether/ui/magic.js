@@ -5,6 +5,7 @@
 const $=id=>document.getElementById(id);
 const fmt=n=>typeof n==="number"&&Number.isFinite(n)?Intl.NumberFormat("ro-RO",{maximumFractionDigits:1}).format(n):"—";
 const pct=n=>typeof n==="number"&&Number.isFinite(n)?(100*n).toFixed(1)+"%":"—";
+const trainingPctText=n=>!Number.isFinite(n)?"—":n>0&&n<0.01?n.toFixed(6)+"%":n<1?n.toFixed(4)+"%":n.toFixed(2)+"%";
 const finite=x=>typeof x==="number"&&Number.isFinite(x);
 const clamp=(x,min,max)=>Math.min(max,Math.max(min,x));
 const el=(tag,text,cls)=>{const x=document.createElement(tag);x.textContent=String(text);if(cls)x.className=cls;return x;};
@@ -321,7 +322,7 @@ function displayMetrics(){
  const D=S?.dataset||G?.dataset||null;
  $("mExercises").textContent=D?.trainingTotal!=null?
   fmt(D.processed)+" / "+fmt(D.trainingTotal):fmt(S?.exercises??G?.exercises);
- $("mDatasetPct").textContent=D?.percent!=null?D.percent.toFixed(2)+"%":"—";
+ $("mDatasetPct").textContent=D?.percent!=null?trainingPctText(D.percent):"—";
  $("datasetProgressBar").value=D?.percent!=null?clamp(D.percent,0,100):0;
  $("datasetProgressBar").setAttribute("aria-valuetext",D?.percent!=null?
   D.percent.toFixed(2)+"% din datasetul de antrenare":"Totalul exercițiilor nu este disponibil");
@@ -361,7 +362,7 @@ function displayMetrics(){
  $("workerInfo").textContent="Stare: "+status+
   "\nLumi: "+(S?.worlds?.join(" / ")||"—")+
   "\nExerciții consumate: "+fmt(D?.processed??S?.exercises)+
-  " / "+fmt(D?.trainingTotal)+" · corpus: "+(D?.percent!=null?D.percent.toFixed(2)+"%":"—")+
+  " / "+fmt(D?.trainingTotal)+" · corpus: "+(D?.percent!=null?trainingPctText(D.percent):"—")+
   " · rămase "+fmt(D?.remaining)+
   "\nNoduri: "+fmt(S?.nodeCount)+
   "\nMuchii: "+fmt(S?.edgeCount);
