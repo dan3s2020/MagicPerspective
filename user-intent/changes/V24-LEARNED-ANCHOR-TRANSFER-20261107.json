@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "RESEARCH_ONLY_NO_RELEASE",
+  "branch": "experiment/V24-LEARNED-ANCHOR-TRANSFER-20261107",
+  "base_commit": "bbe4cc41d8afb6d9b993077c8e4efd81cf4f6e9d",
+  "user_instruction": "Continue testing and document discovered solution in MagicPerspective repository with evidence; do not omit or destroy existing architecture",
+  "nonnegotiable": [
+    "Keep original Discoverer.shape and original maze unchanged",
+    "No action performed based on fabricated physics",
+    "No arbitrary source word selection if more than one match",
+    "Preserve V23 UI, checkpoints and whole training worker",
+    "No claims of natural-language semantic universal accuracy"
+  ],
+  "hypothesis": "An action with the same independently accepted local source→target effect at different text positions can induce a unique-anchor variable positional binding; it must abstain on ambiguity or contradictory physics.",
+  "files": [
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "v17/tests/v24-learned-anchor-transfer.test.mjs",
+    ".github/workflows/v24-learned-anchor-transfer.yml",
+    "v17/docs/V24_LEARNED_ANCHOR_TRANSFER_EVIDENCE.md"
+  ],
+  "approval": "No merge until scientific semantic benchmark and original hardware tests; PR draft only"
+}
