@@ -147,6 +147,27 @@ export async function launch(options={}){
    }
    // Same actual original Brain worker and same native UI, not a second
    // model, simulated demo endpoint or fabricated path.
+   if(req.method==="GET"&&url.pathname==="/native-atlas"){
+    // Read-only, paginated evidence directly from ONE original Brain
+    // checkpoint, not a decorative canvas nor a synthetic maze.
+    const view=url.searchParams.get("view")||"attempts",
+     filter=url.searchParams.get("filter")||"all",
+     search=(url.searchParams.get("search")||"").slice(0,180),
+     offset=Number(url.searchParams.get("offset")||0),
+     limit=Number(url.searchParams.get("limit")||50),
+     attemptId=url.searchParams.get("attemptId");
+    if(!["attempts","nodes","edges","motifs","motifEdges","diagnostics"].includes(view)||
+     !["all","failed","found","verified","proposed","blocked","ambiguous"].includes(filter)||
+     !Number.isSafeInteger(offset)||offset<0||
+     !Number.isSafeInteger(limit)||limit<1||limit>200||
+     (attemptId!==null&&(!Number.isSafeInteger(Number(attemptId))||
+       Number(attemptId)<1)))
+     return response(res,400,{error:"Invalid atlas view/filter, attemptId or pagination. Each page has 1..200 rows."});
+    const evidence=await rpc("atlas",{
+     view,filter,search,offset,limit,attemptId
+    },30000);
+    return response(res,200,evidence);
+   }
    if(req.method==="POST"&&url.pathname==="/native-cumulative"){
     const start=url.searchParams.get("start")||"";
     const required=(url.searchParams.get("required")||"")
