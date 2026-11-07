@@ -1,0 +1,34 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "20261107-SLICE-ATLAS-RESEARCH",
+  "mode": "ISOLATED_RESEARCH_TEST",
+  "source": {
+    "path": "verbatim/2026-11-07-USER-SLICE-ATLAS-REQUEST.md",
+    "exact_user_quote": "inseamna ca toate stiintele ca string teory sunt doar slice-uri de navigare prin acest taram hyperdimensional? si putem sa le folosim pe toate sa navigam ? testeaza pana obtii rezultate"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Discoverer.shape(ret,n,me,topology)",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/transcend/torus-aether/worlds/slice-atlas-ablations.test.mjs"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node v17/transcend/torus-aether/worlds/slice-atlas-ablations.test.mjs"
+  ],
+  "actual_observed_results": "Local standalone reproduction: 512/512 combined views, 31/512 axes 0+1, 32/512 axes 2+3, 512/512 node-permutation equivalence; native imported code CI NOT YET VERIFIED.",
+  "limitations": [
+    "This test is an isolated topology-only ablation, not a trained text solver",
+    "Goal and full graph are supplied; no semantic inference or CUDA",
+    "Main branch baseline and native source unchanged",
+    "Full historical Verbatim remains incomplete"
+  ],
+  "verification_status": "LOCAL_PROXY_MEASURED_NATIVE_CI_NOT_VERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
