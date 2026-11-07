@@ -33,6 +33,10 @@ jobs:
           python -m unittest discover -s v17/tests -p 'text_index_fast_test.py' -v
           python -m unittest discover -s v17/tests -p 'text_variant_fast_test.py' -v
           node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
+      - name: Independent pure torch-CPU tensor math parity (never mislabeled as GPU)
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python v17/transcend/torus-aether/gpu/v42_real_cuda_parity.py --device numpy
       - name: CI NO RTX, cannot assert real CUDA acceleration
         run: |
           echo 'V42_REAL_NVIDIA_GPU_ACCELERATION=NOT_MEASURED_BY_THIS_CPU_RUNNER'
@@ -47,6 +51,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Parse actual V42 hardware benchmark PowerShell before offering it to users
+        shell: pwsh
+        run: |
+          $tokens=$null;$errs=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $pwd 'v17/TEST_V42_GPU_PARITY.ps1'),
+            [ref]$tokens,[ref]$errs)|Out-Null
+          if($errs.Count){throw ($errs | Out-String)}
+          Write-Host "V42_REAL_GPU_POWERSHELL_SOURCE_PARSE_PASS"
       - name: Original NumPy suffix and native trust still run on Windows
         shell: pwsh
         run: |
