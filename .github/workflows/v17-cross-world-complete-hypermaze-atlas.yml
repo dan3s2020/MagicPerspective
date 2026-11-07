@@ -21,8 +21,13 @@ jobs:
           node --check v17/research/hypermaze-atlas/atlas-benchmark.mjs
           node --check v17/research/hypermaze-atlas/atlas-view.mjs
           node --check v17/research/hypermaze-atlas/atlas-engine.test.mjs
+          node --check v17/research/hypermaze-atlas/atlas-6d.test.mjs
       - name: Test all 288 heldout 4D worlds, support provenance, 2048-edge graph, OOD physics, noise and learning curve
         run: node --test v17/research/hypermaze-atlas/atlas-engine.test.mjs
+      - name: Independent six-dimensional world proof plus FULL 8748-edge 6D atlas export
+        env:
+          MP_EXPORT_6D: atlas-artifacts/six-dimensional
+        run: node --test v17/research/hypermaze-atlas/atlas-6d.test.mjs
       - name: Execute actual offline interactive atlas with complete real data in a simulated DOM
         run: node --test v17/research/hypermaze-atlas/atlas-view.test.mjs
       - name: Export full genuine atlas, every training observation and ALL 96 task failure traces per seed
