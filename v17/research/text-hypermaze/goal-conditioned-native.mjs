@@ -45,12 +45,13 @@ export class NativeGoalTextMaze {
   // Existing .v8 checkpoints may predate the atlas. Snapshot their actual
   // learned transformations as an explicitly labeled legacy baseline once,
   // so the atlas never pretends we witnessed historic training events.
-  if(!this.atlas.summary().journalEvents&&brain.observedTransformations.operators.size){
+  if(!this.atlas.summary().journalEvents&&brain.observedTransformations.seen>0){
    const entries=[...brain.observedTransformations.operators.values()];
    for(let j=0;j<entries.length;j+=100){
     this.atlas.append("baseline",{
      source:"preexisting-original-Brain.v8",
-     historicTrainingNotReplayed:true,
+     historicTrainingNotReplayed:true,previousObservedUnits:brain.observedTransformations.seen,
+     historicRawTextUnavailable:true,
      operators:entries.slice(j,j+100).map(op=>({
       key:op.key,kind:op.kind,from:op.from,to:op.to,
       left:op.left,right:op.right,
@@ -310,7 +311,7 @@ export class NativeGoalTextMaze {
     candidateComparisonLimit:model.maxCandidatePairs,
     observedSamplesPerOperatorStored:4,
     searchStateBudget:maxStates,searchDepthBudget:maxDepth,
-    priorCorpusOutsideAtlasNotReplayed:this.atlas.summary().counts?.baseline>0
+    priorCorpusOutsideAtlasNotReplayed:this.atlas.summary().historicCorpusUnavailableBeforeAtlas
    },
    relevantLearnedOperators:relevant.length,
    relevantOperatorsUnavailableFromExploredStates:unusedRelevant.length,
