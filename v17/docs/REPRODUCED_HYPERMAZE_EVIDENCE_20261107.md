@@ -92,3 +92,20 @@ Direct input-length acceptance tests against the unmodified `observeSentence` me
 The same source checks `start.length>96` in its `buildWorld` entry point. Thus the tested V22 action-world planner **currently refuses larger initial text states by hard-coded validation**, irrespective of GPU speed. This is a concrete, reproducible blocker for the user's long-text requirement. Simply raising the constant without making the graph memory, observations and learned action topology scale would not establish megabyte-sized answer solving.
 
 **Current decision:** source-level 2D parity and structured text-action reuse demonstrated; whole arbitrary long-text 100% first-answer architecture NOT YET VERIFIED. No user launch command released. These new measurements do not authorize substituting a next-character predictor.
+
+### Controlled speed/scale falsification: raising the 96-token limit alone does NOT meet throughput
+
+A separate **in-memory, uncommitted** A/B probe used the exact four frozen V22 source blobs listed above. To isolate the source of the limit, only the three `length>96` guard occurrences were altered in the **ephemeral V8 execution copy** to `length>8192`. The actual GitHub code, user checkpoints, and native Brain were unchanged. The same `LearnedCognitiveMap.observeSentence` and original `formSolution` were executed.
+
+Each task trained on two near-identical long observed sentences (initial token `Alice` vs `Bob`, followed by a common synthetic sequence), and requested one goal-constrained first-token edit on a heldout long sentence with a novel tail. The complete pre-action plan was found, with two learned rules and two explored world states.
+
+| Tokens per test sentence | Training + planning wall time in V8 | Pre-action goal path |
+|---:|---:|---|
+| 128 | 7 ms | found (1 action) |
+| 512 | 47 ms | found (1 action) |
+| 1,024 | 197 ms | found (1 action) |
+| 2,048 | 3,000 ms | found (1 action) |
+
+The timings are **single-run exploratory observations**, not an isolated statistically controlled throughput benchmark. Scaling was markedly non-linear. This is an actual falsification of the simplistic idea that merely increasing the constant gives usable megabyte-scale training. Training internally computes long sentence-removal/skeleton indexes and copies token arrays; an appropriate bounded local/segment/graph representation and evidence-preserving action composition must be measured and tested separately. These tasks have only one explicitly constrained local edit; they do not validate the user's 100% long-answer objective.
+
+**No scaling patch was committed, and no launch command is authorized by this experiment.**
