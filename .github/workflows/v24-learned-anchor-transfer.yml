@@ -1,0 +1,58 @@
+name: V24 learned anchor transfer on native V17 Discoverer
+
+on:
+  push:
+    branches:
+      - experiment/V24-LEARNED-ANCHOR-TRANSFER-20261107
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  observed-hyperpath:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V24 grounded cross-position transformation; native 2048-token withheld text and negative controls
+        run: node --test v17/tests/v24-learned-anchor-transfer.test.mjs
+      - name: Exact original maze parity, 144-action path, no oracle and contradiction controls
+        run: node --test v17/tests/v23-observed-hyperpath-long-range.test.mjs
+      - name: Historical cognitive text agent with observed interventions
+        run: node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Existing original V17/V21 field boundary and observed action
+        run: |
+          node --test v17/tests/veil-aether.shape-boundary-regression.test.mjs
+          node --test v17/tests/veil-aether.observed-action-field.test.mjs
+      - name: Native V19 corpus training and heldout composition through actual HTTP worker
+        run: node --test v17/tests/torus-v19-cognitive-runtime.test.mjs
+      - name: Original V21/V17 multiworld native HTTP, UI, save and checkpoint migration
+        run: |
+          node --test v17/tests/veil-aether.http.test.mjs
+          node --test v17/tests/veil-aether.text-migration.test.mjs
+      - name: Native V17 persistent Brain, 2048-token heldout full HTTP shape and all UI controls
+        run: node --test v17/tests/v23-cognitive-native-long-http.test.mjs
+      - name: Native JS syntax and existing UI
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/ui/app.js
+
+  original-launcher-windows:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unmodified original V21 native launcher parses on Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $tokens=$null; $parseErrors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './v17/START_V21_AETHER_VEIL.ps1').Path,
+            [ref]$tokens,[ref]$parseErrors) | Out-Null
+          if($parseErrors.Count -gt 0) { throw ($parseErrors | Out-String) }
+          Write-Host 'ORIGINAL_V21_WINPS51_PARSE_PASS'
