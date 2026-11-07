@@ -673,6 +673,8 @@ function renderDatasetProgress(gr, corpusInfo) {
         "TIMPI REALI, ULTIMUL LOT TEXT (" + (x.textExercises ?? text.batch ?? "--") + " exercitii)",
         "Timp total lot: " + ms(x.total) +
           " | rata reala: " + Math.round(x.charactersPerSecond || 0).toLocaleString("ro-RO") + " caractere/s",
+        "EXERCITII COMPLET ANTRENATE / SEC: " + (Number(x.exercisesPerSecond) || 0).toFixed(4) +
+          " | tinta ceruta: 100/s (NU rânduri doar citite)",
         "Python text_learn (CUDA + index/reconstructie): " + ms(x.card),
         "CPU V17 - graful original: " + ms(x.originalGraphTrace),
         "CPU V19/V20/V21 - corpus, grafuri si cai: " + ms(x.causalTextAndCode),
