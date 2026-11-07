@@ -4,6 +4,7 @@
 // The map learns each observed answer action, but limited active edge capacity
 // and goal generalization remain measurable constraints, never hidden.
 import {LatentGoalField} from "../../../../isolated/noise-space/causal_text_world.mjs";
+import {TemporalTextShape} from "./temporal-text-shape.mjs";
 import {tokenizeWorld,LearnedCognitiveMap} from "./learned-cognitive-map.mjs";
 
 const D=5, F=128, C=32, START=["<bos>","<bos>"];
@@ -41,6 +42,7 @@ export class QuestionGoalNavigator {
  constructor({seed=17,lr=0.09,maxTerminals=9000}={}){
   this.version=1;this.seed=seed;this.lr=lr;this.maxTerminals=maxTerminals;
   this.latent=new LatentGoalField(seed+31);
+  this.temporal=new TemporalTextShape();
   this.T=Array.from({length:D*2},(_,j)=>Array.from({length:F},(_,i)=>
    ((h32("t:"+seed+":"+j+":"+i)%2000)-1000)/100000));
   this.terminals=new Map();this.rows=0;this.observedActions=0;this.observedChars=0;
@@ -98,6 +100,7 @@ export class QuestionGoalNavigator {
    }
    this.geometryRows++;this.geometryChars+=phase.observed;
   }
+  this.temporal.learn(question,answer);
   this.rows++;this.observedChars+=answer.length;
   return {learned:true,rows:this.rows,observedActions:this.observedActions,
    observedAnswerChars:answer.length,allObservedWords:tokens.length,
@@ -107,6 +110,7 @@ export class QuestionGoalNavigator {
   return {version:1,rows:this.rows,goalUpdates:this.latent.updates,
    observedActions:this.observedActions,observedChars:this.observedChars,
    targets:this.terminals.size,skippedTerminalNovelty:this.skippedTerminalNovelty,
+   temporal:this.temporal.lengthField.report(),
    geometryRows:this.geometryRows,geometryChars:this.geometryChars,
    observedMapEdges:map?.externalEdges?.size??null,
    compactedMapEdges:map?.compactedExternalEdges??null,
@@ -116,6 +120,7 @@ export class QuestionGoalNavigator {
  }
  export(){return {version:1,seed:this.seed,lr:this.lr,maxTerminals:this.maxTerminals,
   T:this.T.map(row=>row.slice()),latent:this.latent.export(),terminals:[...this.terminals],
+  temporal:this.temporal.export(),
   rows:this.rows,observedActions:this.observedActions,observedChars:this.observedChars,
   geometryRows:this.geometryRows,geometryChars:this.geometryChars,
   skippedTerminalNovelty:this.skippedTerminalNovelty};}
@@ -126,6 +131,8 @@ export class QuestionGoalNavigator {
   const m=new QuestionGoalNavigator({seed:s.seed,lr:s.lr,maxTerminals:s.maxTerminals});
   m.T=s.T.map(x=>x.slice());m.latent=LatentGoalField.restore(s.latent);
   m.terminals=new Map(s.terminals);
+  if(s.temporal)m.temporal=TemporalTextShape.restore(s.temporal);
+  // Old V24 checkpoints remain readable. No fake retroactive temporal training.
   for(const k of ["rows","observedActions","observedChars","geometryRows",
    "geometryChars","skippedTerminalNovelty"])m[k]=s[k]||0;
   return m;
@@ -146,13 +153,39 @@ export class QuestionGoalNavigator {
   return rows.slice(0,cap(Math.trunc(maxCandidates),1,50));
  }
  plan(question,{map,geometry=null,disc=null,temperature=0,maxNodes=1500,
-  maxCandidates=9,geometryWeight=1.75,record=false}={}){
+  maxCandidates=9,geometryWeight=1.75,record=false,
+  navigationMode="legacy",maxTemporalStates=6000}={}){
   if(typeof question!=="string"||!question.trim()||question.length>100000)
    throw Error("A nonempty question under 100000 characters is required");
   if(!(map instanceof LearnedCognitiveMap))throw Error("Native V17 observed map required");
   const before=this.summary(map),candidates=this.candidates(question,{maxCandidates,geometryWeight});
   if(!candidates.length)return {ready:false,reason:"NOT_TRAINED",
    referenceAnswerProvided:false,training:before};
+  if(navigationMode==="temporal"){
+   const p=this.temporal.plan(question,{map,terminals:candidates,
+    maxCandidates,temperature:disc?.temp??temperature,maxStates:maxTemporalStates});
+   if(!p.ready)return {...p,training:before,navigationMode:"temporal",
+    targetEstimatedFromQuestion:!!candidates.length,question,
+    originalOperator:"Discoverer.shape",
+    predictedTargets:p.attempts||[],referenceAnswerProvided:false};
+   const full=p.initialShape.map(h=>({
+    ...h,action:h.action,after:h.context.slice(),
+    geometry5:observedPhase(h.token,geometry)?.pos??null,
+    predictedBeforeAction:true
+   }));
+   const g32=this.latent.goal(question),g5=this.goal5(question);
+   return {...p,question,navigationMode:"temporal",temporal:true,training:before,
+    predictedText:p.answer,initialFullRoute:full,
+    observedEdgesUsed:full.length,plannedSteps:full.length,
+    predictedBeforeFirstMovement:true,targetEstimatedFromQuestion:true,
+    predictedGoal:{tokens:p.target,learned5DTarget:g5,learned32DTarget:g32,
+     expectedTokens:p.predictedLength},
+    predictedTargets:p.attempts||[],noAnswerOracle:true,
+    geometryActive:!!(g5&&full.some(h=>h.geometry5)),
+    dimensions:g5?38:33,
+    originalOperator:"Discoverer.shape",
+    honestCaveat:"The exact ORIGINAL attraction law runs on time-indexed observed states. The full answer is NOT independently verified."};
+  }
   const g32=this.latent.goal(question),g5=this.goal5(question);
   const attempts=[];let chosen=null,path=null;
   for(const c of candidates){
@@ -217,6 +250,16 @@ export class QuestionGoalNavigator {
  execute(route,{map}={}){
   if(!(map instanceof LearnedCognitiveMap)||!route?.ready)
    throw Error("A successful frozen route and learned cognitive map are required");
+  if(route.temporal){
+   const trace=route.frames||[];
+   const complete=trace.length-1===route.plannedSteps&&
+     JSON.stringify(trace.at(-1)?.context)===JSON.stringify(route.predictedGoal?.tokens);
+   return {reached:complete,blocked:complete?0:1,replans:0,steps:Math.max(0,trace.length-1),
+    frames:trace.map((x,i)=>({step:i,state:x.context,action:x.action||null,token:x.token||null,
+      matched:i===0?null:true,observedCount:x.evidenceCount||0})),
+    predictedBeforeMovement:true,realWorldFeedback:false,
+    explanation:"Time-indexed frozen replay of known observed effects, no independent semantic referee."};
+  }
   let state=START.slice(),replans=0,blocked=0;
   const frames=[{step:0,state:state.slice(),token:null,
    expected:route.initialFullRoute[0]?.after||null}];
