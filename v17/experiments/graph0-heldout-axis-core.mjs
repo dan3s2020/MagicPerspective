@@ -27,10 +27,13 @@ export function mixedPrediction(alignScores,field,alpha=0){
   }
   if(z>0)for(let i=0;i<128;i++)F[i]/=z;
   const fAvailable=z>0;
-  if(!A.available&&!fAvailable){const p=new Float64Array(129);p[32]=1;
-    return {top:32,probabilities:p,fieldAvailable:false,alignAvailable:false};}
-  const aWeight=!fAvailable?1:!A.available?0:1-alpha;
-  const fWeight=!A.available?1:!fAvailable?0:alpha;
+  // alpha=0 is the EXACT unmodified AligningGraph baseline: if there is no
+  // aligned candidate, it returns byte 32, even if FIELD knows another path.
+  // Positive alpha may open that previously inaccessible geometric successor.
+  const aWeight=!A.available?0:!fAvailable?1:1-alpha;
+  const fWeight=alpha===0||!fAvailable?0:!A.available?1:alpha;
+  if(aWeight===0&&fWeight===0){const p=new Float64Array(129);p[32]=1;
+    return {top:32,probabilities:p,fieldAvailable:fAvailable,alignAvailable:A.available};}
   let top=32,best=-1,probTruth=0;
   const merged=new Float64Array(129);
   for(let i=0;i<129;i++){
