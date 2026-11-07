@@ -1,9 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Discoverer as Original, KIND as OldKind } from '../transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs';
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import { Discoverer as Original, KIND as OldKind } from '../transcend/torus-aether/worlds/exercise-v17-EXACT-ORIGINAL-SNAPSHOT.mjs';
 import { Discoverer as Current, KIND } from '../transcend/torus-aether/worlds/exercise.mjs';
 import { makeMaze } from '../transcend/torus-aether/worlds/labyrinth.mjs';
 import { LearnedCognitiveMap, tokenizeWorld } from '../transcend/torus-aether/worlds/learned-cognitive-map.mjs';
+
+test('original V17 source snapshot matches the historical Git blob byte-for-byte',()=>{
+ const bytes=readFileSync(new URL('../transcend/torus-aether/worlds/exercise-v17-EXACT-ORIGINAL-SNAPSHOT.mjs',import.meta.url));
+ const blob=createHash('sha1').update(Buffer.from('blob '+bytes.length+'\\0'.replace('\\0','\\x00'))).update(bytes).digest('hex');
+ assert.equal(blob,'df194ecb6999cce36c15fb9f4f94d3a36ae22fcb');
+});
 
 // This is a non-negotiable source-level regression gate, not a claim of
 // natural-language understanding. Any deviation from the original 2D
