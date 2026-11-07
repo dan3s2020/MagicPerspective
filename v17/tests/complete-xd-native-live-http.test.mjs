@@ -95,6 +95,23 @@ test("ORIGINAL V17 worker reads ACTUAL repository corpus, owns trained xD transf
    assert.ok(nativeFrozen.characters>0);
    assert.ok(nativeFrozen.missingEdges+nativeFrozen.wrongRanking<=
      nativeFrozen.characters);
+   console.log("REAL_NATIVE_FROZEN_LANGUAGE_RESULTS",JSON.stringify({
+     actualCorpus:"TORUS_AETHER_ABC_20261104.md",heldOutRows:nativeFrozen.rows,
+     analyzedCharacters:nativeFrozen.characters,
+     preUpdateCorrect:nativeFrozen.teacherForcedCorrect,
+     teacherForcedAccuracy:nativeFrozen.teacherForcedAccuracy,
+     missingLearnedEdges:nativeFrozen.missingEdges,
+     learnedButWronglyRanked:nativeFrozen.wrongRanking,
+     freelyGeneratedExactAnswers:nativeFrozen.exactFreeRun,
+     freeRunExactRate:nativeFrozen.freeRunExactRate,
+     nativeGraphUnchanged:nativeFrozen.nativeGraphUnchanged,
+     unseenExamples:nativeFrozen.examples.map(x=>({
+       predicted:x.predicted.slice(0,70),actual:x.actual.slice(0,70),
+       missing:x.missingEdges,ranked:x.wrongRanking,
+       correct:x.teacherForcedCorrect,total:x.analyzed,
+       firstDivergence:x.firstDivergence
+     }))
+   }));
    const frozen=await fetchJSON(base+"/xd-atlas-eval?w=0&dimensions=2048&seed=81919",
     {method:"POST"});
    assert.equal(frozen.xdAtlasTest,true,JSON.stringify(frozen));
