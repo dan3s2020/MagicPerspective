@@ -237,7 +237,8 @@ http.createServer((req, res) => {
         const body=execute&&plan.found?
           native.execute(plan,{enableNoise:true,trainNoise:false}):null;
         return json(res,{...plan,body,w:sl.w,fromSavedBrain:true,
-          verifiedLongUnseenSemanticAnswers:false});
+          verifiedLongUnseenSemanticAnswers:false,
+          exactUnseenLargeAnswerProven:false});
       }catch(err){return json(res,{error:err.message});}
     }
     const id=++chatId,timer=setTimeout(()=>{
