@@ -125,7 +125,7 @@ test("native bridge: new V26 HTML, exact original GET /graphs /graph, original P
   const source=await makeFakeNative();
   let bridge;
   try{
-    bridge=await createNativeBridge({port:0,nativePort:source.port});
+    bridge=await createNativeBridge({port:0,nativePort:source.port,inspectCuda:async()=>({ok:true,python:'test-only-fixture'})});
     const base=bridge.url;
     const txt=async p=>(await fetch(base+p)).text();
     const get=async p=>{const r=await fetch(base+p);assert.equal(r.status,200,p);return r.json();};
