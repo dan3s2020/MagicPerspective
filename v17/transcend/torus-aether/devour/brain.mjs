@@ -340,6 +340,9 @@ export class Brain {
     M.gpu = {batch: N, busy: res.busy, vramUsedGB: res.vramUsedGB ?? null, differ}; return M.gpu;
   }
   async playTransformsGPU(gpu, N, tick = async () => {}) {
+    // Same auto-world semantics already used by learnMazesGPU(). Passing 0
+    // directly made t_reset receive an empty levels array and NumPy fail.
+    if (!N || N === "auto") N = gpu.info?.autoWorlds || 4096;
     this.tWorld(); const T = this.trans, kinds = [["object"], ["self"], ["door"]], levels = [];
     while (levels.length < N) { const L = makeLevel(TSEEDS.train + T.index * 7919, {goals: kinds[T.index % 3]}); T.index++; if (L) levels.push(L); if (L && levels.length % 32 === 0) await tick("transformări: lumi generate", levels.length, N); }
     const frozen = Object.assign(Object.create(CausalOrganism.prototype), structuredClone(this.causal)); frozen.r = Object.assign(Object.create(RNG.prototype), frozen.r);
