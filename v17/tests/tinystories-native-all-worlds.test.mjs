@@ -134,6 +134,9 @@ test("Fast CUDA-architecture text feed runs in PARALLEL with true original Brain
   assert.equal(resume.native.stories,measured.native.stories);
   assert.ok(resume.native.mazes.played>=1);
   assert.ok(resume.native.transformations.played>=1);
+  assert.equal(resume.native.exam?.frozen,true,"Independent native capability scores must survive checkpoint restart");
+  assert.equal(resume.native.exam.mazes.count,4);
+  assert.equal(resume.native.exam.transforms.count,3);
   const a=await get("http://127.0.0.1:"+p2+"/api/native-start","POST");
   assert.equal(a.accepted,true);
   await delay(500);
