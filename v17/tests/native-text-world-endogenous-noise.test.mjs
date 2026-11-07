@@ -70,6 +70,26 @@ test("ORIGINAL NoiseAgency perturbs actual 4D TEXT solution route before action,
  assert.deepEqual(brain.observeTextWorldOutcome(candidate.noiseDecision,unseen.start,
   actual.at,actual.solved,{train:false}),{trained:false});
  assert.equal(brain.noiseAgent.total,beforeTest);
+ // Paired FROZEN heldout worlds, same goals/maps/physics and different
+ // organism-selected noise decisions. Compare real task success; do NOT
+ // claim endogenous noise is beneficial merely because it runs.
+ let noNoiseSuccess=0,agencyNoiseSuccess=0;
+ const frozenPolicyTotal=brain.noiseAgent.total;
+ for(let i=0;i<64;i++){
+  const w=world(510001+i*53);
+  const control=brain.predictTextWorldShape(w.document,w.start,w.goal);
+  const viaAgency=brain.planTextWorldWithNoise(w.document,w.start,w.goal);
+  noNoiseSuccess+=+brain.textGoal.execute(w,control,{physics:perform}).solved;
+  agencyNoiseSuccess+=+brain.textGoal.execute(w,viaAgency,{physics:perform}).solved;
+ }
+ assert.equal(noNoiseSuccess,64);
+ assert.equal(brain.noiseAgent.total,frozenPolicyTotal,
+  "Frozen outcomes must never train policy or see the reference path");
+ console.log("V17_ENDOGENOUS_TEXT_NOISE_PAIRED_FROZEN",JSON.stringify({
+  worlds:64,noNoiseSuccess,agencyNoiseSuccess,
+  noiseChosenDuringTraining:brain.noiseAgent.bySite,
+  policyRewardsFromFrozenTests:0
+ }));
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),"mp-real-noise-text4d-"));
  try{
   const file=path.join(directory,"native.v8");
