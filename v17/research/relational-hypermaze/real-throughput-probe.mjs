@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import {openRealSource} from "./real-data-source.mjs";
 import {RealTrainer} from "./real-trainer.mjs";
 
-const rows=12016;
+const rows=16016;
 const root=await fs.mkdtemp(path.join(os.tmpdir(),"mp-v24-load-"));
 try{
  const file=path.join(root,"measured-throughput.jsonl");
@@ -29,8 +29,8 @@ try{
  const start=performance.now();t.start();await t.loop;
  const elapsed=(performance.now()-start)/1000;
  assert.equal(t.mode,"finished");
- assert.equal(t.progress.cursor,12000);
- assert.equal(t.model.stats.experienced,12000);
+ assert.equal(t.progress.cursor,16000);
+ assert.equal(t.model.stats.experienced,16000);
  assert.equal(t.heldout.count,16);
  assert.ok(t.model.stats.compacted>0,"bounded memory must compact under load");
  const result={type:"V24_NATIVE_STREAM_STRESS_NOT_SEMANTIC_QA",
