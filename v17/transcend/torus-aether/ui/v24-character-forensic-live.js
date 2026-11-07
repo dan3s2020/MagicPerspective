@@ -111,6 +111,49 @@
   }finally{button.disabled=false;}
  };
  $("v24CharOffset").onchange=draw;
+ $("v24AnalyzeOriginalWriter").onclick=()=>{
+   const button=$("cpuExactEvaluate");
+   if(!button){
+     $("v24OriginalAnswerForensic").textContent="Eroare: evaluatorul original V17/Q&A nu este activ.";
+     return;
+   }
+   $("v24OriginalAnswerForensic").textContent=
+     "Evaluez raspunsuri complete REAL NEVAZUTE; forma originala este generata INAINTE de compararea cu adevarul...";
+   button.click();
+ };
+ window.addEventListener("v24-original-v17-forensics",ev=>{
+   const r=ev.detail,summary=r.forensicSummary||{},all=r.forensics||[];
+   const text=[
+     "V17 ORIGINAL -- raspunsuri inghetate, nu predicator nou.",
+     "Procent forma initiala (shapeSame) = "+(100*summary.originalMeanShapeSame).toFixed(3)+"%",
+     "Raspunsuri intregi corecte din prima = "+(r.firstAnswerExactCorrect??0)+"/"+(r.firstAnswerExactTotal??0),
+     "Pozitii ratate TOTAL = "+summary.totalMispositions,
+     "Pozitii analizate post-hoc = "+summary.examinedPostHocOnly,
+     "ATENTIE: reparatia POST-HOC foloseste raspunsul de referinta DOAR pentru diagnostic, NU in predictia originala!",
+     ""
+   ];
+   for(let i=0;i<all.length;i++){
+     const x=all[i];
+     text.push("=== EXERCITIUL NEVAZUT "+(i+1)+" ===");
+     text.push("Forma prezisa DIN PRIMA (V17): "+JSON.stringify(x.originalGeneratedBeforeReference));
+     text.push("Raspunsul real (citit DUPA): "+JSON.stringify(x.actualReferenceExaminedAfterGeneration));
+     text.push("Caractere corecte: "+x.correctOriginalPositions+"/"+x.referenceLength);
+     text.push("Zone gresite integrale: "+JSON.stringify(x.allMismatchSpans));
+     text.push("Pozitii gresite: "+x.totalAllMismatchedPositions+
+       "; explicate cu atlasul: "+x.explainedPositions+
+       "; neanalizate computational: "+x.unexaminedMismatchPositions);
+     for(const p of (x.examples||[])){
+       text.push("index "+p.index+" | prezis "+JSON.stringify(p.predicted)+
+         " | real "+JSON.stringify(p.expected)+" | "+p.pathStatus+
+         " | traseu POST-HOC "+JSON.stringify((p.postHocCandidatePath||[]).map(t=>t.to))+
+         " | lipsa "+JSON.stringify(p.missingCharacterPaths||[]));
+     }
+     text.push("");
+   }
+   $("v24OriginalAnswerForensic").textContent=text.join("\n");
+   // Route evidence for each original error is recorded in the ORIGINAL
+   // append-only JSONL atlas by the frozen native evaluator, not by this UI.
+ });
  window.addEventListener("resize",draw);
  // Existing app.js drives live snapshots; we merely consume the real graph.
  window.addEventListener("v24-character-status",e=>status(e.detail));
