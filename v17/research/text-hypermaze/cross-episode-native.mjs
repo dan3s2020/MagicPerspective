@@ -249,59 +249,107 @@ export class NativeCrossEpisodeTransfer {
   const nodes=[{id:0,text:originText,tokens:sourceTokens,depth:0,
    kind:kind.self,origin:true}],
    edges=[[]],indexed=new Map([[originText,0]]);
-  let index=0,blocked=0,hypothesisEdges=0;
+  let index=0,blocked=0,hypothesisEdges=0,
+   physicalTransferEdges=0,corpusContrastEdges=0,contrastsBelowEvidence=0;
   const blockers=new Map(),blockedSamples=[],
     depthFrontier=[],stateCapFrontier=[];
   const block=(reason,detail)=>{
    blocked++;blockers.set(reason,(blockers.get(reason)||0)+1);
    if(blockedSamples.length<160)blockedSamples.push({reason,...detail});
   };
+  const originalText=this.brain.observedTransformations;
+  // Reuse the original observed string transformation model from EVERY
+  // previous corpus exercise. Distinguish its noncausal sentence contrasts
+  // from the independent world-action witnesses in the same Brain.
+  const applicable=tokens=>{
+   const choices=[];
+   for(const rule of rules){
+    const effect=proposedAction(tokens,rule);
+    if(!effect){
+     block(actionInapplicable(tokens,rule),
+      {action:rule.action,type:"independent-physical-transfer"});
+     continue;
+    }
+    choices.push({
+     tokens:effect.tokens,
+     action:{name:rule.action,kind:rule.type,
+      oldToken:effect.oldToken,newToken:effect.newToken,
+      position:effect.modifiedIndex,trainingWorldCount:rule.worlds.size,
+      observedWitnesses:rule.witnesses,
+      provenance:"learned-effect-transfer; NOT observed in heldout world",
+      causalTrainingEvidence:true},
+     support:rule.witnesses,source:"independent-physical-transfer"
+    });
+   }
+   if(includeTextContrasts){
+    for(const choice of originalText.neighbors(tokens)){
+     const op=originalText.operators.get(choice.action.key);
+     const support=op?.sourceObservations||0,
+      distinct=op?.evidence?.length||0;
+     // These are observed before/after STRING CONTRASTS, not proof that
+     // a physical action caused the change in a real world.
+     if(support<this.minTextContrastSupport||distinct<2){
+      contrastsBelowEvidence++;
+      block("TEXT_CONTRAST_HAS_INSUFFICIENT_OBSERVED_PAIRS",
+       {action:choice.action.key,support,distinct});
+      continue;
+     }
+     choices.push({tokens:choice.tokens,
+      action:{name:"text-contrast:"+choice.action.key,
+       kind:choice.action.kind,
+       oldToken:choice.action.from,newToken:choice.action.to,
+       position:choice.action.index,
+       trainingWorldCount:0,observedWitnesses:support,
+       distinctSentencePairExamples:distinct,
+       evidence:op.evidence.slice(0,4),
+       provenance:"native-V17-corpus-string-contrast-NOT-causal-world-action",
+       causalTrainingEvidence:false},
+      support,source:"original-native-corpus-text-contrast"});
+    }
+   }
+   return choices;
+  };
+  // Expand the whole reachable KNOWN world to the selected budget. Never
+  // terminate graph discovery when the first goal happens to be found.
+  // All omitted KNOWN edges at depth/state budget are exported in full.
   while(index<nodes.length){
    const here=nodes[index],pos=index++;
-   if(this._goal(here.tokens,goal))continue;
+   const candidates=applicable(here.tokens);
    if(here.depth>=this.maxDepth){
-    for(const rule of rules){
-     const effect=proposedAction(here.tokens,rule);
-     if(!effect||renderObservation(effect.tokens)===here.text)continue;
-     depthFrontier.push({from:pos,action:rule.action,
-       next:renderObservation(effect.tokens),reason:"DEPTH_BUDGET_PREVENTS_EDGE"});
-     block("DEPTH_BUDGET_PREVENTS_EDGE",{from:pos,action:rule.action});
+    for(const choice of candidates){
+     const next=renderObservation(choice.tokens);
+     if(next===here.text)continue;
+     depthFrontier.push({from:pos,action:choice.action.name,next,
+      source:choice.source,reason:"DEPTH_BUDGET_PREVENTS_EDGE"});
+     block("DEPTH_BUDGET_PREVENTS_EDGE",
+      {from:pos,action:choice.action.name,source:choice.source});
     }
     continue;
    }
-   for(const rule of rules){
-    const effect=proposedAction(here.tokens,rule);
-    if(!effect){
-     block(actionInapplicable(here.tokens,rule),
-       {from:pos,action:rule.action,depth:here.depth});
-     continue;
-    }
-    const after=renderObservation(effect.tokens);
+   for(const choice of candidates){
+    const after=renderObservation(choice.tokens);
     if(after===here.text)continue;
     let next=indexed.get(after);
     if(next===undefined){
      if(nodes.length>=this.maxStates){
-      stateCapFrontier.push({from:pos,action:rule.action,next:after,
-       reason:"STATE_BUDGET_PREVENTS_EDGE"});
+      stateCapFrontier.push({from:pos,action:choice.action.name,next:after,
+       source:choice.source,reason:"STATE_BUDGET_PREVENTS_EDGE"});
       block("STATE_BUDGET_PREVENTS_EDGE",
-       {from:pos,action:rule.action,depth:here.depth});
+       {from:pos,action:choice.action.name,source:choice.source});
       continue;
      }
      next=nodes.length;indexed.set(after,next);
-     nodes.push({id:next,text:after,tokens:effect.tokens,
-      depth:here.depth+1,kind:this._goal(effect.tokens,goal)?kind.target:kind.floor});
+     nodes.push({id:next,text:after,tokens:choice.tokens,
+      depth:here.depth+1,kind:this._goal(choice.tokens,goal)?kind.target:kind.floor});
      edges.push([]);
     }
-    // Every edge is a PREDICTED transferred effect whose induction traces
-    // to at least two actual independent world outcomes.
-    const action={name:rule.action,kind:rule.type,
-     oldToken:effect.oldToken,newToken:effect.newToken,
-     position:effect.modifiedIndex,trainingWorldCount:rule.worlds.size,
-     observedWitnesses:rule.witnesses,
-     provenance:"learned-effect-transfer; NOT observed in heldout world"};
-    edges[pos].push({to:next,action,observedSupport:rule.witnesses,
-     verifiedInCurrentWorld:false});
+    // The original shapeGraph receives ONLY the expanded real observed
+    // action graph and explicitly labelled hypotheses.
+    edges[pos].push({to:next,action:choice.action,
+     observedSupport:choice.support,verifiedInCurrentWorld:false});
     hypothesisEdges++;
+    if(choice.source==="independent-physical-transfer")physicalTransferEdges++;
+    else corpusContrastEdges++;
    }
   }
   const kinds=nodes.map(n=>n.kind),traversal=this.brain.disc.shapeGraph(
