@@ -43,6 +43,11 @@ export function readAtlasPage(filepath,{cursor=0,limit=50,kind=""}={}){
  let at=cursor,partial=Buffer.alloc(0),done=false,scanned=0;
  try{
   while(at<totalBytes&&rows.length<limit){
+   // Rare categories such as failures might occur once after millions
+   // of observed edges. Never freeze the HTTP UI while filtering all
+   // historic bytes; yield another cursor after a bounded 2MB scan.
+   // Partial JSONL lines are ALWAYS completed, never cut/truncated.
+   if(at>cursor && at-cursor>=2*1024*1024 && partial.length===0)break;
    const len=fs.readSync(fd,chunk,0,Math.min(chunk.length,totalBytes-at),at);
    if(!len)break;
    const data=Buffer.concat([partial,chunk.subarray(0,len)]),newlinePositions=[];
@@ -63,7 +68,7 @@ export function readAtlasPage(filepath,{cursor=0,limit=50,kind=""}={}){
   }
   // While worker writes a final incomplete line, don't decode or skip it.
   done=at>=totalBytes;
-  return {rows,cursor,nextCursor:at,end:done,totalBytes,scanned,
+  return {rows,cursor,nextCursor:at,end:done,totalBytes,scanned,scannedBytes:at-cursor,
     kind:kind||"all",appendOnly:true,omittedRecords:0,
     preExistingUnrecorded:false};
  }finally{fs.closeSync(fd);}
