@@ -350,12 +350,13 @@ parentPort.on("message", m => {
   }
   if(m && m.nativeHypermazeAtlas){
     const {id,mode="events",after=0,limit=60,kinds=null,
-      onlyFailed=false,onlyUnused=false}=m.nativeHypermazeAtlas;
+      onlyFailed=false,onlyUnused=false,searchSequence=0}=m.nativeHypermazeAtlas;
     try{
       if(!nativeHypermaze)throw Error("No original native hypermaze atlas");
       const result=mode==="operators"?
         nativeHypermaze.atlasOperators({after,limit,onlyUnused}):
         mode==="summary"?nativeHypermaze.atlasSummary():
+        mode==="graph"?nativeHypermaze.atlasGraph({searchSequence,after,limit}):
         nativeHypermaze.atlasPage({after,limit,kinds,onlyFailed});
       parentPort.postMessage({type:"chat",id,nativeHypermazeAtlas:true,
        mode,result,originalBrain:true,fullHistoryAvailable:true});
