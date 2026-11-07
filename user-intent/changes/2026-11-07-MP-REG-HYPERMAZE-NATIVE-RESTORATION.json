@@ -19,7 +19,8 @@
     "v17/transcend/torus-aether/devour/worker.mjs",
     "v17/transcend/torus-aether/devour/devour.mjs",
     "v17/research/text-hypermaze/goal-conditioned-native.mjs",
-    "v17/research/text-hypermaze/production-release-gate.mjs"
+    "v17/research/text-hypermaze/production-release-gate.mjs",
+    "v17/transcend/torus-aether/worlds/observed-transformations.mjs"
   ],
   "added_mechanisms": [],
   "additional_user_authorization_quote": null,
@@ -29,9 +30,11 @@
     "v17/tests/native-hypermaze-goal-text.test.mjs",
     "v17/tests/native-hypermaze-original-worker-integration.test.mjs",
     "v17/tests/native-hypermaze-compositional-heldout.test.mjs",
-    "v17/tests/hypermaze-stopship-release.test.mjs"
+    "v17/tests/hypermaze-stopship-release.test.mjs",
+    "v17/tests/native-hypermaze-regression-long-index.test.mjs",
+    "v17/tests/native-hypermaze-long-multistep-heldout.test.mjs"
   ],
-  "actual_observed_results": "PARTIAL tests only, CI https://github.com/dan3s2020/MagicPerspective/actions/runs/42341701259: original Discoverer.shape parity 42/42 on unseen 2D mazes; 6/6 two-action structured heldout textual compositions, predicted globally before action; real original corpus worker integration, original NoiseAgency trained and Brain.v8 saved. Geometry 5D ablation changed 0/6 final answers and shared-policy ablation changed 0/6: NO causal efficacy demonstrated. NO long unseen natural-language exact answer benchmark, no original RTX native throughput. RELEASE BLOCKED.",
+  "actual_observed_results": "PARTIAL RESEARCH ONLY. Verified real original V17 Discoverer.shape parity on 42/42 unseen 2D maze layouts, 6/6 short two-action withheld, 100/100 completely withheld 1,273-byte structured text states with 5 learned transformations, and 1,000 different 1KB+ observed long passages: 1.274 MB processed in 0.620 s (2.0567 MB/s, 1,614.08 structurally controlled exercises/s) on GitHub Actions CPU, 60 learned original operators and 24/24 further completely withheld long states solved before first action. Real original worker plus saved Brain.v8 tested Unicode Romanian diacritics and unobserved Știința este stabilă. Frozen exact unseen OpenThoughts semantic answer benchmarks and original RTX CUDA integration are NOT tested; 5D geometry causal ablation unchanged; full no-byte-loss fidelity NOT proven. GitHub CI https://github.com/dan3s2020/MagicPerspective/actions/runs/42343690214; RELEASE BLOCKED.",
   "limitations": [
     "Full historical Verbatim is incomplete; current exact user turn is archived, original earlier images may be inaccessible",
     "No unconditional evidence exists that exact arbitrary unseen large text answers are identifiable from prompts",
@@ -39,8 +42,11 @@
     "Original GPU pretrained TinyStories model must not be overwritten by experimental hypermaze adapter",
     "Structurally heldout two-edit text cases are short with goals supplied as explicit tokens; NOT general language inference",
     "Original learned 5D geometry and path policy are present but had no measurable final-output effect in 6/6 compositional ablations",
-    "Text learned operator execution uses model-predicted effects, not an independent physical/semantic environment oracle; externally semantic correctness unverified"
+    "Text learned operator execution uses model-predicted effects, not an independent physical/semantic environment oracle; externally semantic correctness unverified",
+    "Original inverted index last 96 records erased rare long-horizon learned axes; fixed only on isolated branch, main production source untouched.",
+    "Original worker streamed non-ASCII code points as '?'; only opt-in native hypermaze receives exact raw Unicode source; legacy AligningGraph still ASCII-only.",
+    "Working limits maxTokens=256 and maxObserved=12000 mean original hypermaze does not yet preserve/reuse every byte of arbitrary long corpora."
   ],
-  "verification_status": "NOT_VERIFIED",
+  "verification_status": "PARTIAL_RESEARCH_VERIFIED_RELEASE_BLOCKED",
   "full_verbatim_gate": "BLOCKED"
 }
