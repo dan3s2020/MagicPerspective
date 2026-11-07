@@ -9,8 +9,10 @@
 // Runs CPU (original V17 CUDA text learner is unchanged, not used here).
 import fs from 'node:fs';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import crypto from 'node:crypto';
 import {Brain} from '../../transcend/torus-aether/devour/brain.mjs';
+import {KIND} from '../../transcend/torus-aether/worlds/exercise.mjs';
 import {V40OriginalBrainEvidence} from './v40-original-brain-evidence.mjs';
 import {openV40OriginalSourceMemory} from './v40-original-source-witness-memory.mjs';
 
@@ -78,7 +80,7 @@ function validateOriginal(brain){
  if(!(brain instanceof Brain)||!brain.disc||
     typeof brain.disc.shapeGraph!=='function')
   throw Error('Checkpoint is NOT an original V17/V34 Brain with original shapeGraph');
- const attraction=brain.disc.attract?.(2);
+ const attraction=brain.disc.attract?.(KIND.target);
  if(!Number.isFinite(attraction))
   throw Error('Original attractor state invalid or checkpoint broken');
 }
@@ -152,7 +154,7 @@ export async function run(argv=process.argv.slice(2)){
   throw Error('Gold validation article/source leakage!');
  let archive=null,archiveStatus=null;
  try{
-  if(opts.archive&&opts.archiveFirst>0){
+  if(opts.archive){
    archive=await openV40OriginalSourceMemory(brain,opts.archive);
    for(let i=0;i<opts.archiveFirst;i++){
     const q=training[i];
@@ -213,6 +215,6 @@ export async function run(argv=process.argv.slice(2)){
  }finally{archive?.close();}
 }
 if(process.argv[1]&&
- import.meta.url===new URL('file://'+path.resolve(process.argv[1]).replaceAll('\\','/')).href){
+ import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href){
  run().catch(e=>{console.error('V40_REAL_TRAINING_FAILED:',e.stack||String(e));process.exitCode=1;});
 }
