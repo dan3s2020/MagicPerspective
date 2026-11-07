@@ -117,6 +117,34 @@ class TextVariantsEquivalent(unittest.TestCase):
           "realTextContexts":Q,"allSixIdentical":True,
           "variantHits":outputs},flush=True)
 
+    def test_complete_original_textcard_learns_real_corpus_bytes_and_reports_true_prediction_stats(self):
+        sample=(ROOT/"docs"/"TORUS_AETHER_ABC_20261104.md").read_text(
+          encoding="utf8",errors="replace")
+        raw=[ord(c) if ord(c)<128 else 63 for c in sample[:720]]
+        X=mod.X("numpy")
+        card=mod.TextCard("numpy",max_memory=1024)
+        card.append([X.arr(raw[:256])])
+        train=raw[256:480]
+        before=card.total_seen
+        start=time.perf_counter()
+        result=card.live([train],trust=[],chunk=64)
+        elapsed=time.perf_counter()-start
+        self.assertEqual(result["seen"],len(train)-1)
+        self.assertEqual(result["totalCardChars"],before+len(train))
+        self.assertTrue(result["memory"]>0)
+        self.assertGreaterEqual(result["hits"],0)
+        self.assertLessEqual(result["hits"],result["seen"])
+        self.assertEqual(len(result["variants"]),0)
+        print("MEASURED_COMPLETE_NATIVE_TEXTCARD_CPU",{
+          "backend":"NumPy CPU, no CUDA claim",
+          "actualCorpus":"V17 docs real text",
+          "tokensGenuinelyTrained":len(train),
+          "seconds":round(elapsed,4),
+          "committedTextMBps":round(len(train)/1e6/max(elapsed,1e-9),5),
+          "preUpdateCorrect":result["hits"],
+          "preUpdateTotal":result["seen"],
+          "nativeModelUpdated":result["totalCardChars"]>before},flush=True)
+
     def test_reuse_measured_without_claiming_full_gpu_training_rate(self):
         X,props,LUT,Q,_=actual_inputs(64)
         variants=[(8,1),(4,1),(16,1),(8,.5),(8,2),(6,.75)]
