@@ -21,9 +21,11 @@
     "v17/transcend/torus-aether/ui/veil-aether-live.js (add native route overlay only)",
     "v17/tests/native-goal-wavefront.test.mjs (actual mechanism/heldout/ablation/regression)",
     ".github/workflows/v21-native-goal-wavefront.yml (CI)",
-    "v17/docs/V21_NATIVE_GOAL_WAVEFRONT_EVIDENCE_20261107.md (evidence)"
+    "v17/docs/V21_NATIVE_GOAL_WAVEFRONT_EVIDENCE_20261107.md (evidence)",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs (additive formSolutionNative that calls the SAME original Disc method over reusable learned transformations)",
+    "v17/tests/native-cognitive-goal.test.mjs (unseen text transformations, actual physics, negative controls)"
   ],
-  "mechanism": "Original Discoverer.shape called on observed directed graph with goal attraction, observed action transitions, propagated potential V(s)=gamma*max_action expected successor potential; no target-answer oracle. Original 2D implementation unchanged for legacy call.",
+  "mechanism": "Original Discoverer.shape called on observed directed graph with goal attraction, observed action transitions, propagated potential V(s)=gamma*max_action expected successor potential; no target-answer oracle. Original 2D implementation unchanged for legacy call. Phase 2 reuses V19 genuine observed sentence-contrast rules to form COUNTERFACTUAL edges, with explicit hypothesis provenance and actual action feedback; its goal is a question-derived predicate, not withheld complete answer.",
   "forbidden_substitutions": [
     "next-character predictor as solution shape",
     "invented latent semantic target",
@@ -40,6 +42,7 @@
   "limitations": [
     "Native graph can plan to a visible specified goal but cannot infer a correct arbitrary unknown natural-language answer from a question",
     "No all-CUDA proof; original device paths preserved",
-    "No direct physical xD effects asserted without causal ablation"
+    "No direct physical xD effects asserted without causal ablation",
+    "Inferred V19 future edges are HYPOTHESES from observed text transformations; they are not witnessed original text and may be rejected by real physics"
   ]
 }
