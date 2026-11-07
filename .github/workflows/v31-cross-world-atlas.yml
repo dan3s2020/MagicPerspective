@@ -1,0 +1,23 @@
+name: V31 REAL Cross-Document Transformation Atlas, Frozen Failures
+on:
+  push:
+    branches:
+      - experiment/V31-CROSS-DOCUMENT-TRANSFORMATION-ATLAS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-context-atlas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real native observed-context atlas syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/cross-world-atlas.mjs
+      - name: Cross-document learning, alternative complete routes, real withheld doc characters
+        run: |
+          node --test v17/tests/v31-cross-world-atlas.test.mjs
