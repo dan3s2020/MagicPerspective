@@ -45,8 +45,10 @@ def run(chunk):
 
 
 if __name__ == "__main__":
-    a, b = run(32), run(64)
+    a, b, c = run(32), run(64), run(128)
     assert a["hits"] == b["hits"], "Larger chunks must not change actual guesses"
     assert sorted(a["trust"]) == sorted(b["trust"]), "Larger chunks must preserve every learned trust update regardless of dictionary ordering"
-    assert a["variants"] == b["variants"], "Meta-learning cannot change with chunk size"
+    assert sorted(a["trust"]) == sorted(c["trust"]), "128-character chunks must preserve all learned trust updates"
+    assert a["hits"] == c["hits"]
+    assert a["variants"] == b["variants"] == c["variants"], "Meta-learning cannot change with chunk size"
     print("ACTUAL_TEXTCARD_CHUNK_EQUIVALENCE", {"32": a["hits"], "64": b["hits"], "correct": True})
