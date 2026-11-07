@@ -16,6 +16,109 @@ const chunkDigests=(tokens,width=96)=>{
   chunks.push(digest(JSON.stringify(tokens.slice(i,i+width))));
  return chunks;
 };
+// A repeated phrase can begin at different absolute offsets in different
+// texts. Select phrase anchors by token CONTENT, not by fixed offsets or
+// 96-token chunk boundaries. No trained weights, LLM or next-token model.
+const anchorHash=t=>{
+ let h=2166136261;
+ for(const c of String(t).normalize("NFC")){
+  h^=c.codePointAt(0);h=Math.imul(h,16777619);
+ }
+ return h>>>0;
+};
+function observeMotifWorld(L,questionTokens,answerTokens,episode){
+ const M=L.motifGraph ||= {
+  version:1,maxNodes:50000,maxEdges:90000,
+  nodes:new Map(),edges:new Map(),activeSharedAnchors:0,
+  sharedAnchorsEver:0,seenMotifs:0,
+  physicallyVerifiedActions:0,
+  sourceOnlyEdgesObserved:0,
+  observedRoleBoundaries:0,
+  evictedSingletons:0,evictedRepeated:0,evictedEdges:0,
+  observedEpisodes:0,sourceStatus:"lexical-overlap-and-text-order, NOT verified causal transitions"
+ };
+ if(M.version!==1)throw Error("Unsupported long-language motif graph schema");
+ M.observedEpisodes++;
+ const ensureMotif=(tokens,at,width,role)=>{
+  const words=tokens.slice(at,at+width);
+  const id=String(width)+":"+digest(JSON.stringify(words));
+  let node=M.nodes.get(id);
+  if(!node){
+   while(M.nodes.size>=M.maxNodes){
+    // Retain repeated cross-exercise motifs ahead of singletons whenever
+    // bounded 4GB local CPU memory forces eviction. Never pretend that
+    // evicted evidence is still fully represented in the active graph.
+    let drop=null;
+    for(const [key,candidate] of M.nodes){
+     if(candidate.episodes<2){drop=key;break;}
+    }
+    if(drop===null)drop=M.nodes.keys().next().value;
+    const stale=M.nodes.get(drop);
+    if(stale.episodes>=2){M.activeSharedAnchors--;M.evictedRepeated++;}
+    else M.evictedSingletons++;
+    M.nodes.delete(drop);
+   }
+   node={scale:width,example:renderObservation(words).slice(0,110),
+    roles:new Set([role]),firstEpisode:episode,lastEpisode:episode,
+    episodes:1,occurrences:0};
+   M.nodes.set(id,node);
+  }else{
+   node.roles.add(role);
+   if(node.lastEpisode!==episode){
+    node.lastEpisode=episode;node.episodes++;
+    if(node.episodes===2){M.activeSharedAnchors++;M.sharedAnchorsEver++;}
+   }
+  }
+  node.occurrences++;M.seenMotifs++;
+  return id;
+ };
+ const connect=(from,to,role)=>{
+  if(!from||!to||from===to)return;
+  const k=JSON.stringify([from,to,role]);
+  let e=M.edges.get(k);
+  if(!e){
+   while(M.edges.size>=M.maxEdges){
+    M.edges.delete(M.edges.keys().next().value);
+    M.evictedEdges++;
+   }
+   e={from,to,role,status:"SOURCE_SEQUENCE_ONLY",
+    episodes:0,lastEpisode:null,count:0};
+   M.edges.set(k,e);
+  }
+  e.count++;M.sourceOnlyEdgesObserved++;
+  if(e.lastEpisode!==episode){e.episodes++;e.lastEpisode=episode;}
+ };
+ const roleScan=(tokens,role)=>{
+  let prev=null,first=null,tail=null,observed=0;
+  for(let i=0;i+5<=tokens.length;i++){
+   if(i!==0&&(anchorHash(tokens[i])&31)!==0)continue;
+   // Two learned scale-views of the SAME authentic observed words.
+   // A five-token anchor may recur across unrelated 96-token passages;
+   // a twelve-token motif carries more specificity but is often rare.
+   for(const width of [5,12]){
+    if(i+width>tokens.length)continue;
+    const id=ensureMotif(tokens,i,width,role);
+    if(!first)first=id;
+    connect(prev,id,role+"-source-order");
+    prev=id;tail=id;observed++;
+   }
+  }
+  return {first,last:tail,observed};
+ };
+ const q=roleScan(questionTokens,"question");
+ const a=roleScan(answerTokens,"answer");
+ if(q.last&&a.first){
+  // Human-question→GPT-answer adjacency is a witnessed role boundary, not
+  // a learned semantic action nor a verified first-attempt solution.
+  connect(q.last,a.first,"observed-qa-role-boundary");
+  M.observedRoleBoundaries++;
+ }
+ return {multiscaleMotifEvidence:true,
+  sourceMotifsSeen:q.observed+a.observed,
+  sharedCrossEpisodeAnchors:M.activeSharedAnchors,
+  sourceOnly:true,
+  physicallyVerified:false};
+}
 const isWord=s=>/^[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*$/u.test(s);
 const equal=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
 const oneChange=(a,b)=>{
@@ -117,6 +220,9 @@ export class QARoleAxes {
    roleBoundary:{from:qs.at(-1),to:as[0]},
    evidence:"observed source-sequential, NOT externally validated semantic actions"
   };
+  // Memory accumulates across DIFFERENT Q/A episodes; exact 96-token
+  // chunk repetition is NOT needed to discover reusable shorter anchors.
+  const multiScale=observeMotifWorld(L,q,a,L.episodes);
   L.sequences.push(seq);
   L.activeChunks+=qs.length+as.length;
   while(L.activeChunks>L.maxActiveChunks||L.sequences.length>96){
@@ -129,7 +235,7 @@ export class QARoleAxes {
    questionTokens:q.length,answerTokens:a.length,
    observedSequentialEdges:qCount+aCount-1,
    retainedSegmentHashes:qs.length+as.length,
-   seen:S.seen};
+   ...multiScale,seen:S.seen};
  }
  // Connected components are formed ONLY by independently witnessed
  // one-question-axis / one-answer-axis changes in complete real Q/A outcomes.
