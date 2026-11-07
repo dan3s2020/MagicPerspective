@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070d18">
+<title>MagicPerspective • The Living Labyrinth</title>
+<style>
+:root{color-scheme:dark;--bg:#070c16;--ink:#e9efff;--muted:#8c9cb8;--line:rgba(174,188,224,.13);--glass:rgba(17,26,47,.76);--purple:#a28aff;--cyan:#64d8f4;--gold:#e5c384;--green:#67e3ad;--red:#fb95ae}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 90vw 60vw at 50% -20%,#192749 0%,transparent 70%),radial-gradient(ellipse 40vw 80vh at 98% 50%,#161738 0%,transparent 74%),#070c16;color:var(--ink);font:14px/1.48 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.32;background-image:radial-gradient(#b2c8ff .6px,transparent .8px),radial-gradient(#abcaff .8px,transparent 1px);background-size:43px 47px,163px 149px;background-position:0 0,23px 51px;mask-image:linear-gradient(to bottom,black,transparent 90%)}
+.shell{max-width:1640px;margin:auto;padding:21px 24px 48px;position:relative}
+.top{display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid var(--line);padding-bottom:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:15px}.sigil{width:47px;height:47px;border:1px solid rgba(212,190,255,.55);border-radius:50%;display:grid;place-items:center;box-shadow:0 0 28px #7965ff35,inset 0 0 19px #9785ec30;color:#d6c7ff;font-size:27px;background:linear-gradient(140deg,#28214d,#0e2034)}
+.kicker{text-transform:uppercase;font-size:10px;letter-spacing:.32em;color:var(--cyan);font-weight:800}
+h1{font:500 clamp(23px,3.5vw,36px)/1.05 Georgia,serif;letter-spacing:-.028em;margin:4px 0;color:#eff0ff}
+.sub{color:var(--muted);font-size:12px}
+.status{display:flex;align-items:center;gap:9px;background:#14213a;border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-size:12px;color:#c8d9f0}
+.status i{height:7px;width:7px;display:block;border-radius:50%;background:#f2ad75;box-shadow:0 0 10px #f2ad75}
+.status.live i{background:var(--green);box-shadow:0 0 14px var(--green)}
+.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:20px 0}
+button{appearance:none;cursor:pointer;border:1px solid #64729b42;border-radius:11px;padding:11px 17px;font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e1eaff;background:#19243d;transition:transform .16s,border .16s,background .16s}
+button:hover{transform:translateY(-1px);border-color:#b8a9f777}button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+button.primary{background:linear-gradient(120deg,#7d62ce,#494da1);border-color:#a38cf1;box-shadow:0 4px 27px #876be12b}
+button.alt{color:#cdeffb;background:rgba(44,102,124,.22)}button.neutral{background:transparent}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.smallcaps{text-transform:uppercase;font-weight:700;letter-spacing:.17em;font-size:10px;color:#9daccc}
+.speed{display:flex;align-items:center;gap:9px;margin-left:auto;color:var(--muted);font-size:12px}
+input[type=range]{accent-color:#b19aff;width:100px}
+.summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:13px}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:17px;box-shadow:0 12px 40px #03081928,inset 0 1px #f7fcff07;backdrop-filter:blur(15px);min-width:0}
+.stat{padding:18px 20px;position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;right:-30px;top:-45px;width:85px;height:85px;border:1px solid #898be12a;transform:rotate(30deg);border-radius:24px}
+.stat .number{font-size:clamp(22px,2.5vw,31px);font-weight:600;letter-spacing:-.05em;margin:7px 0 1px;font-variant-numeric:tabular-nums}
+.stat .tiny{font-size:11px;color:var(--muted)}
+.main{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(330px,1fr);gap:13px;margin-bottom:13px}
+.panel-head{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:16px 20px 13px}
+h2{font-size:15px;font-weight:650;letter-spacing:.01em;margin:0;color:#e5ebff}
+#space{width:100%;height:420px;display:block;border-top:1px solid #ffffff07;background:radial-gradient(ellipse at 50% 50%,#18254444,transparent 70%)}
+.graph-foot{display:flex;justify-content:space-between;gap:14px;padding:12px 19px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);flex-wrap:wrap}
+.pill{font-size:10px;letter-spacing:.08em;font-weight:800;border:1px solid #aabfff3b;color:#c6d8ff;padding:5px 9px;border-radius:30px}
+.pill.good{border-color:#67e3ad70;color:var(--green)}
+.console{padding:16px 20px;min-height:490px;display:flex;flex-direction:column;gap:14px}
+.entry{background:rgba(6,11,25,.55);border:1px solid #96b5e318;border-radius:11px;padding:12px 13px}
+.value{color:#cfe4fc;font:13px/1.55 ui-monospace,Consolas,monospace;word-break:break-word;white-space:pre-wrap}
+.answer{font-size:14px;color:#ede7ff;line-height:1.55}
+.signal{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.violet{color:#c0abff}.aqua{color:var(--cyan)}.gold{color:var(--gold)}
+.legend{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.dot{border-radius:50%;width:7px;height:7px;background:var(--cyan)}
+.lower{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,1fr);gap:13px;margin-bottom:13px}
+.content{padding:3px 19px 18px;max-height:370px;overflow:auto;scrollbar-color:#59638a44 transparent}
+.barrow{padding:12px 0;border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bar{width:100%;height:4px;border-radius:5px;background:#344361;margin-top:8px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#b497ff,#4ad9d9);box-shadow:0 0 8px #84cde9;width:0%;transition:width .35s}
+#feed{list-style:none;margin:0;padding:0;font-size:12px;max-height:330px;overflow:auto}
+#feed li{padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:66px 1fr;gap:10px}
+#feed span{font-size:10px;color:#7892b3}
+td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;max-width:135px;overflow-wrap:anywhere}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.07em}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.footer{margin-top:16px;border:1px solid #a69bd32a;border-radius:12px;padding:12px 16px;color:#94a3bf;font-size:11px;display:flex;gap:12px;align-items:center}
+.source{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw;direction:rtl;text-align:left}
+.goal{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:7px 0}
+.goal input{width:100%;border:1px solid #7182ad4a;border-radius:9px;background:#0d1528;color:white;padding:10px}
+.error{color:var(--red);font-size:12px}#evaluation{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:1100px){.summary{grid-template-columns:repeat(3,1fr)}.lower{grid-template-columns:1fr 1fr}.main{grid-template-columns:1fr}.console{min-height:0}}
+@media(max-width:680px){.shell{padding:14px 11px 32px}.summary{grid-template-columns:repeat(2,1fr)}.lower{grid-template-columns:1fr}.speed{margin-left:0}.top{align-items:flex-start}.sigil{width:40px;height:40px}#space{height:330px}.stat{padding:13px}.source{max-width:88vw}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+ <header class="top">
+  <div class="brand"><div class="sigil" aria-hidden="true">◇</div><div><div class="kicker">MagicPerspective / Research organism</div><h1>The Living Labyrinth</h1><div class="sub">Observe the world · Discover the axes · Remember the path</div></div></div>
+  <div class="status" id="status"><i></i><span id="statusText">CONNECTING</span></div>
+ </header>
+ <nav class="controls" aria-label="Training controls">
+  <button class="primary" id="start">▶ Start training</button><button id="pause">Ⅱ Pause</button>
+  <button class="alt" id="save">◇ Save checkpoint</button><button id="eval">◎ Frozen unseen test</button>
+  <button class="neutral" id="export">⇩ Export actual state</button>
+  <label class="speed">Training rate <input id="speed" type="range" min="1" max="30" value="6"><span id="speedValue">6 Hz</span></label>
+ </nav>
+ <section class="summary" aria-label="Real telemetry">
+  <article class="card stat"><div class="smallcaps">World observations</div><div class="number" id="rows">0</div><div class="tiny" id="worldMode">READING SOURCE</div></article>
+  <article class="card stat"><div class="smallcaps">Tokens / transitions</div><div class="number aqua" id="tokens">0</div><div class="tiny">Actually learned</div></article>
+  <article class="card stat"><div class="smallcaps">Graph states</div><div class="number" id="nodes">0</div><div class="tiny">Observed memory</div></article>
+  <article class="card stat"><div class="smallcaps">Learned operators</div><div class="number gold" id="operators">0</div><div class="tiny">Recorded causal edits / actions</div></article>
+  <article class="card stat"><div class="smallcaps">Discovered path memory</div><div class="number violet" id="memory">—</div><div class="tiny">Only when supported by action data</div></article>
+ </section>
+ <section class="main">
+  <article class="card">
+   <div class="panel-head"><div><div class="smallcaps">Actual learned relationships</div><h2>Hyperspace · Local projection</h2></div><span class="pill" id="graphSize">0 nodes</span></div>
+   <canvas id="space" aria-label="Live projection of actual graph relationships"></canvas>
+   <div class="graph-foot"><span id="graphMeaning">Waiting for observed graph</span><span>Layout is a 2D projection. Links and labels come from real training data.</span></div>
+  </article>
+  <article class="card console">
+   <div class="row"><div><div class="smallcaps">Predicted form / observed motion</div><h2>Inside the organism</h2></div><span class="pill" id="sampleTag">BEFORE ACTION</span></div>
+   <div class="entry"><div class="smallcaps">Last real observation</div><div class="answer" id="observed">The organism has not yet observed a training event.</div></div>
+   <div class="signal">
+    <div class="entry"><div class="smallcaps">Predicted</div><div class="value" id="prediction">—</div></div>
+    <div class="entry"><div class="smallcaps">Actually seen</div><div class="value" id="actual">—</div></div>
+   </div>
+   <div class="entry"><div class="smallcaps">Difference / surprise</div><div class="value" id="surprise">Requires observations. No simulated outcomes.</div></div>
+   <div class="entry"><div class="smallcaps">Predicted route from current model</div><div class="value" id="shape">—</div></div>
+   <div class="smallcaps">Exact data provenance</div><div class="sub source" id="source">Awaiting server source</div>
+  </article>
+ </section>
+ <section class="lower">
+  <article class="card"><div class="panel-head"><h2>Perspectives / gating</h2><span class="pill">REAL METRICS</span></div><div class="content" id="axes"><p class="sub">Dimensions become visible as real evidence arrives.</p></div></article>
+  <article class="card"><div class="panel-head"><h2>Living experience</h2><span class="pill">NO REPLAY FABRICATION</span></div><div class="content"><ul id="feed"><li><span>—</span>Awaiting experience</li></ul></div></article>
+  <article class="card">
+   <div class="panel-head"><h2>Unseen tests / interventions</h2><span class="pill">FROZEN</span></div>
+   <div class="content"><p class="sub">Run a held-out test without teaching the model its answers.</p>
+    <div id="evaluation" class="entry">No frozen test run yet.</div>
+    <div id="goalEditor" style="display:none;margin-top:14px">
+     <div class="smallcaps">Goal-conditioned predicted path</div>
+     <div class="goal"><input id="startState" aria-label="Start numeric state" placeholder="Start state JSON [x,y,z,...]"><input id="target" aria-label="Target two controls" placeholder="Goal [x,y]"></div>
+     <button id="plan">Predict path before acting</button>
+    </div>
+    <div class="error" id="error" role="alert" style="margin-top:10px"></div>
+   </div>
+  </article>
+ </section>
+ <div class="footer"><div class="dot"></div><div id="truth">All measurements must come from the running research engine. No fake charts, no assumed CUDA or semantic success.</div></div>
+</div>
+<script>
+"use strict";
+const id=x=>document.getElementById(x),limit=(x,n)=>String(x==null?"—":x).slice(0,n||120);
+const readable=n=>Number(n||0).toLocaleString(),pct=n=>n==null?"—":(100*n).toFixed(2)+"%";
+let latest=null,points=[],lastState=-1,connection=false,timer=0;
+const text=(key,value)=>{id(key).textContent=value;};
+async function call(command,value){
+ try{
+  const res=await fetch("/api/control",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({command,value})});
+  const data=await res.json();if(!res.ok)throw Error(data.error||"Server error");
+  update(data.state);text("error","");
+ }catch(e){text("error",String(e.message));}
+}
+id("start").onclick=()=>call("start");
+id("pause").onclick=()=>call("pause");
+id("save").onclick=()=>call("save");
+id("eval").onclick=()=>call("evaluate");
+id("speed").oninput=e=>{text("speedValue",e.target.value+" Hz");call("speed",Number(e.target.value));};
+id("export").onclick=()=>window.open("/api/export","_blank","noopener,noreferrer");
+id("plan").onclick=()=>{try{call("path",{start:JSON.parse(id("startState").value),goal:JSON.parse(id("target").value)});}
+ catch(e){text("error",e.message);}};
+function node(k,content){const n=document.createElement(k);if(content!==undefined)n.textContent=content;return n;}
+function renderAxes(data){
+ const el=id("axes");el.replaceChildren();
+ if(data.mode==="events"){
+  if(data.model.learnedControls||data.model.inputAxes){
+   const m=data.model,ax=m.inputAxes||m.learnedControls||[];
+   for(const [label,value] of [["Input movement axes",JSON.stringify(ax)],["Dependent coordinate",m.dependent??m.learnedDependent],["Irrelevant axes gated out",m.rejectedAxes?.length??m.discardedAxes],["Extra path-memory axes",m.derivedPathMemoryDimensions??m.discoveredMemoryAxes],["Explained state-transition variance",pct(m.explainedVariance??m.explained)],["Noncommuting action pairs",m.nonCommutingPairs?.length??0]]){
+    const r=node("div");r.className="barrow";const h=node("div");h.className="row";h.append(node("span",label),node("strong",limit(value,72)));r.append(h);el.append(r);
+   }
+  }else el.append(node("p","Waiting for sufficient real, action-labelled evidence to learn stable axes."));
+ }else{
+  const trust=data.model.trust||[];
+  for(const t of trust){
+   const r=node("div");r.className="barrow";const h=node("div");h.className="row";
+   h.append(node("strong",t.scale+" token history"),node("span",pct(t.accuracy)));
+   const b=node("div");b.className="bar";const fill=node("i");fill.style.width=(100*(t.accuracy||0))+"%";b.append(fill);
+   r.append(h,node("div",readable(t.seen)+" observed prediction opportunities"),b);el.append(r);
+  }
+  if(!trust.length)el.append(node("p","No real text perspectives learned yet."));
+ }
+}
+function renderFeed(events){
+ const el=id("feed");el.replaceChildren();
+ for(const e of (events||[]).slice(-23).reverse()){
+  const li=node("li"),n=node("span","#"+e.position);
+  const detail=node("div",e.kind==="text"?
+   (e.correct+"/"+e.total+" · "+limit(e.passage,170)):
+   (e.action+" · "+limit(JSON.stringify(e.before),60)+" → "+limit(JSON.stringify(e.after),60)));
+  li.append(n,detail);el.append(li);
+ }
+}
+function update(data){
+ if(!data)return;latest=data;
+ const s=data.state,m=data.model,live=s.running&&!s.fault;
+ id("status").classList.toggle("live",live);
+ text("statusText",s.fault?"PAUSED · ERROR":live?"LIVE TRAINING":s.finished?"DATASET FINISHED":"PAUSED / READY");
+ text("rows",readable(s.rows));text("tokens",readable(data.mode==="events"?m.trainingEvents:s.tokens));
+ text("nodes",readable(data.mode==="events"?data.graph.nodes.length:m.states));
+ text("operators",readable(data.mode==="events"?m.actions?.length:m.observedOperators));
+ text("memory",data.mode==="events"?(m.derivedPathMemoryDimensions??"—"):"Not measured");
+ text("worldMode",data.mode==="events"?"Causal action events":data.mode==="parquet"?"OpenThoughts3 Parquet":"Real TXT corpus");
+ text("source",data.source);
+ text("truth",data.truth);
+ text("graphMeaning",data.graph.meaning);
+ text("graphSize",data.graph.nodes.length+" nodes · "+data.graph.edges.length+" links");
+ text("speedValue",s.rate+" Hz");id("speed").value=s.rate;
+ id("start").disabled=s.running||s.finished;id("pause").disabled=!s.running;
+ id("goalEditor").style.display=data.mode==="events"?"block":"none";
+ text("error",s.fault||"");
+ const e=data.last;
+ if(e){
+  if(e.kind==="text"){
+   text("observed",e.passage);
+   const p=e.predictions?.at(-1);
+   text("prediction",p?limit(p.predicted,120):"No known continuation");
+   text("actual",p?limit(p.expected,120):"—");
+   text("surprise",e.correctBeforeTraining+"/"+e.comparedTokens+" predictions right BEFORE the paragraph was learned ("+pct(e.accuracyBeforeTraining)+")");
+   text("shape",e.shape?.length?e.shape.map(x=>x.token).join(" → "):"No predicted continuation. This is not a causal solution path.");
+  }else{
+   text("observed",e.action+" : "+JSON.stringify(e.before)+" → "+JSON.stringify(e.observed));
+   text("prediction",JSON.stringify(e.predicted));
+   text("actual",JSON.stringify(e.observed));
+   text("surprise",e.error==null?"Need more training observations":"Dependent output residual "+e.error+"; "+(e.match?"MATCH":"PREDICTION ERROR"));
+   text("shape",e.plannedShape?JSON.stringify(e.plannedShape):"Action operator discovered from observations; provide goal controls below to plan.");
+  }
+ }
+ renderAxes(data);renderFeed(data.recent);
+ if(data.frozen)text("evaluation",JSON.stringify(data.frozen,null,2));
+ let signature=JSON.stringify(data.graph);
+ if(signature!==lastState){points=layout(data.graph.nodes,data.graph.edges);lastState=signature;}
+}
+function hash(s){let h=2166136261;for(const c of String(s)){h=Math.imul(h^c.charCodeAt(0),16777619);}return h>>>0;}
+function layout(nodes,edges){
+ const n=Math.max(1,nodes.length),labels=nodes.map((x,i)=>{
+  const h=hash(x.id),a=i*Math.PI*2/n+(h%90)/500;
+  const radius=.24+.55*((h>>>8)%1000)/1000;
+  return {...x,x:.5+Math.cos(a)*radius*.42,y:.5+Math.sin(a)*radius*.44};
+ });
+ const index=new Map(labels.map(x=>[x.id,x]));return {labels,edges:edges.map(e=>({...e,a:index.get(e.from),b:index.get(e.to)})).filter(e=>e.a&&e.b)};
+}
+const canvas=id("space"),ctx=canvas.getContext("2d");
+function paint(time){
+ const rect=canvas.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+ if(canvas.width!==Math.round(rect.width*dpr)||canvas.height!==Math.round(rect.height*dpr)){
+  canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
+ }
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ const w=rect.width,h=rect.height;ctx.clearRect(0,0,w,h);
+ const midX=w*.5,midY=h*.5;const glow=ctx.createRadialGradient(midX,midY,10,midX,midY,Math.min(w,h)*.6);
+ glow.addColorStop(0,"rgba(76,87,158,.17)");glow.addColorStop(1,"rgba(6,10,24,0)");
+ ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+ for(let ring=1;ring<=4;ring++){ctx.strokeStyle="rgba(112,137,207,.08)";ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(midX,midY,w*(.09+ring*.085),h*(.08+ring*.088),.08,0,Math.PI*2);ctx.stroke();}
+ if(points.labels){
+  for(const e of points.edges){
+   const ax=e.a.x*w,ay=e.a.y*h,bx=e.b.x*w,by=e.b.y*h;
+   ctx.beginPath();ctx.moveTo(ax,ay);ctx.quadraticCurveTo((ax+bx)/2,(ay+by)/2-9,bx,by);
+   ctx.strokeStyle="rgba(112,164,221,.21)";ctx.lineWidth=Math.min(4,1+Math.log1p(e.value||1)*.4);ctx.stroke();
+   if(latest?.state.running){
+    const k=((time*.00014)+((hash(e.a.id+e.b.id)%1000)/1000))%1;
+    const px=(1-k)*(1-k)*ax+2*(1-k)*k*(ax+bx)/2+k*k*bx;
+    const py=(1-k)*(1-k)*ay+2*(1-k)*k*((ay+by)/2-9)+k*k*by;
+    ctx.beginPath();ctx.arc(px,py,2.2,0,Math.PI*2);ctx.fillStyle="rgba(118,225,255,.8)";ctx.fill();
+   }
+  }
+  for(const node of points.labels){
+   const x=node.x*w,y=node.y*h,pulse=latest?.state.running?1+Math.sin(time*.002+hash(node.id)%19)*.16:1;
+   ctx.shadowColor="#7a9de3";ctx.shadowBlur=13;ctx.beginPath();ctx.arc(x,y,4.7*pulse,0,Math.PI*2);
+   ctx.fillStyle="#a2b5f1";ctx.fill();ctx.shadowBlur=0;
+   ctx.fillStyle="rgba(218,230,255,.82)";ctx.font="11px -apple-system,Segoe UI,sans-serif";
+   ctx.fillText(node.label.slice(0,20),x+9,y-8);
+  }
+ }
+ requestAnimationFrame(paint);
+}
+requestAnimationFrame(paint);
+const events=new EventSource("/api/events");
+events.onmessage=e=>{try{connection=true;update(JSON.parse(e.data));}catch(err){text("error","Invalid streaming event: "+err.message);}};
+events.onerror=()=>{connection=false;text("statusText","RECONNECTING");};
+fetch("/api/state").then(x=>x.json()).then(update).catch(e=>text("error",e.message));
+</script>
+</body>
+</html>
