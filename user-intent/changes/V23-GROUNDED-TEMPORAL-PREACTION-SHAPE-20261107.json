@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "PARTIAL_STRUCTURED_GOAL_BLIND_SUCCESS__FULL_USER_ACCEPTANCE_BLOCKED",
+  "user_verbatim_quotes": [
+    {
+      "source": "current ChatGPT user turn 2026-11-07",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI"
+    },
+    {
+      "source": "current ChatGPT user turn 2026-11-07",
+      "literal": "NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "provenance": {
+    "parent": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107@7cd1a85d31a79bf8e7bf8cdfa112e005d59cd227",
+    "original": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "originalV17Baseline": "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "originalV17BlobSHA": "e34d787467b7238c7422a0509173b1f785eb2342",
+    "edits": "Additive new module + tests + report + CI. Existing V17/V22 code and UI untouched."
+  },
+  "mechanism": "Learn action word-positions from before/text/after physical observations. Parse grounded events in heldout whole document. Build a temporal relational causal graph with terminal *time* as goal (not the answer), invoke original Discoverer.shape directly before any action and execute against independent physics.",
+  "test_paths": [
+    "v17/tests/v23-grounded-temporal-hypermaze.test.mjs",
+    "v17/tests/v22-exact-original-discoverer.test.mjs"
+  ],
+  "internal_observations": [
+    {
+      "name": "full answers on heldout procedural texts",
+      "passed": 300,
+      "total": 300,
+      "answerGivenAsGoal": false
+    },
+    {
+      "name": "long structured text",
+      "tokens": 118882,
+      "actions": 100,
+      "complete": true
+    },
+    {
+      "name": "negative controls",
+      "noRulesAbstains": true,
+      "contradictionAbstains": true,
+      "physicalRejectionStops": true
+    }
+  ],
+  "unproven": [
+    "general unconstrained natural-language question answering",
+    "OpenThoughts3 heldout full semantic answers",
+    "a single native production V17 Brain using this graph as sole answer motor",
+    "all CUDA training or 100 completed real exercises per second",
+    "autonomous discovery of new language syntax without grounded examples",
+    "noise-space navigation itself becoming necessary to heldout goal success",
+    "physical higher dimensions rather than observed relational axes",
+    "100% outside this explicitly constructed task family"
+  ],
+  "release_gate": "BLOCKED until full independent real text native UI/Brain/RTX integration and user approval; do not merge into main or close issue 25",
+  "explicit_no_regressions": "No source file or checkpoint was deleted, overwritten or edited on original branches."
+}
