@@ -58,6 +58,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Actual original V17 atlas and all-world episodic replay run on Windows CPU
+        shell: powershell
+        run: |
+          node --test v17/tests/native-hypermaze-persistent-atlas.test.mjs
+          if($LASTEXITCODE -ne 0){throw "Windows native atlas tests failed"}
+          node --test v17/tests/native-hypermaze-worker-auto-replay.test.mjs
+          if($LASTEXITCODE -ne 0){throw "Windows original multiworld worker tests failed"}
       - name: Original Windows launchers still parse; NO new user launch command provided
         shell: powershell
         run: |
