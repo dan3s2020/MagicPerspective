@@ -27,6 +27,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 2), textChunk: +arg("gpu-text-chunk", 128), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
 const unifiedWorld = process.argv.includes("--unified-world");
+const goalTraining = process.argv.includes("--goal-training"); // full observed Q/A state transitions, not TextCard next-character objective
 for (const x of worldsArg) if (!["text", "maze", "transform", "selfcode"].includes(x)) throw Error("unknown world " + x + " (text, maze, transform, selfcode)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
@@ -52,6 +53,7 @@ if (arg("text")) {
 }
 evalText = evalText.slice(0, evalChars);
 fs.mkdirSync(out, {recursive: true}); const log = fs.createWriteStream(path.join(out, "log.jsonl"), {flags: "a"});
+if(goalTraining)console.log("CAUSAL GOAL-TRAINING: structural observed Q/A + learned world transforms (no TextCard character training); all source rows consumed.");
 console.log(`worlds: ${worldsArg.join(" + ")} in the same brains${worldsArg.includes("maze") ? ` (a labyrinth every ${mazeEvery.toLocaleString()} chars)` : ""} · saves in ${path.join(out, "brains")}${resume ? " · resuming" : ""}`);
 console.log(`GPU worlds: ${gpuSettings.device === "off" ? "off (worlds one at a time on the CPU)" : `${gpuSettings.device} · ${gpuSettings.worlds} worlds at once · VRAM ${gpuSettings.vram || "all"} GB · ${gpuSettings.util}% of the GPU`}`);
 console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name).join(", ")} · test every ${every.toLocaleString()} chars on ${evalText.length} unseen chars · memory budget ${memGB} GB each`);
@@ -131,7 +133,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
-    unifiedWorld}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    unifiedWorld,goalTraining}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
