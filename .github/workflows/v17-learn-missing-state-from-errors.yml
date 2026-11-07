@@ -21,6 +21,8 @@ jobs:
           node --check v17/tests/text-discover-missing-state.test.mjs
       - name: Holdout causal-state experiment, three seeds, negative controls, constant-memory streaming
         run: node --test v17/tests/text-discover-missing-state.test.mjs
+      - name: Original TWorld 3x3 sensory-only discovery of hidden causal bit, no future leakage
+        run: node --test v17/tests/text-discover-hidden-causal-bit.test.mjs
       - name: Original V17 text-hypermaze experiments and original edit learner remain unchanged
         run: |
           node --test v17/tests/text-hypermaze-state-dependent.test.mjs
