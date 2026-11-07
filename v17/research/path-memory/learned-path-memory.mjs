@@ -28,7 +28,7 @@ const parse=x=>{
 };
 const average=a=>a.reduce((s,x)=>s+x,0)/a.length;
 const variance=a=>a.reduce((s,x)=>s+(x-average(a))**2,0)/a.length;
-const round=x=>Math.abs(x-Math.round(x))<1e-6?Math.round(x):x;
+const round=x=>{const n=Math.round(x);return Math.abs(x-n)<1e-6?(n===0?0:n):x;};
 const copy=o=>JSON.parse(JSON.stringify(o));
 
 function linearSolve(M,Y,lambda=1e-10){
