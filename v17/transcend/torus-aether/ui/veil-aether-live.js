@@ -58,7 +58,8 @@ function render(){
   "Documente reale: "+data.documents+" | stări contextuale distincte: "+data.states+" | muchii: "+data.edges,
   "Predicții PRE-ingest: "+data.onlinePredictions+
     " | acoperire: "+pct(data.contextCoverage)+" | context corect (acoperite): "+pct(data.contextAccuracyCovered),
-  "Control 1-token (toate tranzițiile): "+pct(data.oneTokenAccuracyAll)+
+  "Control 1-token (aceleași poziții acoperite): "+pct(data.oneTokenAccuracyOnSameCovered)+
+    " | toate: "+pct(data.oneTokenAccuracyAll)+
     " | grupuri în care ISTORIA schimbă viitorul observat: "+data.historyAxisEvidence,
   "Axe observate: (simbol anterior, simbol curent) · NU afirmație despre 6 axe fizice",
   "Evenimente V17 din același Brain: "+JSON.stringify(data.domainEvents),
@@ -88,8 +89,8 @@ async function poll(){
   const o=await resp.json();
   data=o.hypermaze?.veil||null;
   if(!data){$("veilStatus").textContent="Aștept lumea hypertext sau cognitivemap din worker";render();return;}
-  const k=String(data.last?.id??"")+":"+String(data.documents)+":"+
-   String(data.last?.start?.join(" ")??"");
+  const k=String(data.last?.id??"")+":"+String(data.last?.start?.join(" ")??"")+":"+
+   String(data.last?.goal?.join(" ")??"");
   if(data.last&&k!==loaded){loaded=k;planned=null;frame=0;}
   if(!$("veilStart").value&&data.last?.start)$("veilStart").value=data.last.start.join(" ");
   if(!$("veilGoal").value&&data.last?.goal)$("veilGoal").value=data.last.goal.join(" ");
