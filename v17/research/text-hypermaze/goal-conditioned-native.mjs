@@ -89,6 +89,11 @@ export class NativeGoalTextMaze {
   return this.cumulative.planQuestion(request);
  }
  cumulativeWorldStatus(){return this.cumulative.audit();}
+ // Original one-Brain atlas is an evidence inspector, never a second
+ // navigator. Paginate every retained node, edge and attempt (including
+ // failures) and surface why action/path constraints blocked progress.
+ cumulativeAtlas(options={}){return this.cumulative.atlas(options);}
+
 
  // Experience ONLY actual observed text; no generated answer is inserted.
  // Text edit operators and their evidence come from the EXISTING Brain.
