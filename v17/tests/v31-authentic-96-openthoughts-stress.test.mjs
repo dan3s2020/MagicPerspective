@@ -157,6 +157,11 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
   assert.ok(Array.isArray(byID.sourceOnlyNeighbors));
   assert.equal(byID.physicallyVerifiedSemanticEdges,0);
   assert.ok(fs.existsSync(path.join(out,"original-native-long-language-motifs.sqlite")));
+  const dbfile=path.join(out,"original-native-long-language-motifs.sqlite");
+  const durableArchiveBytes=[dbfile,dbfile+"-wal"].reduce((sum,file)=>
+   sum+(fs.existsSync(file)?fs.statSync(file).size:0),0);
+  assert.ok(durableArchiveBytes>0,
+   "Actual historical index must occupy persistent bytes outside Brain V8");
   // Never assume or invent how many tokens a real corpus has.
   // This EXACT check uses the original model tokenizer and the genuine
   // training-only row split, no approximate duplicate regex.
@@ -242,6 +247,7 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
    evidenceRetainedMotifNodes:measured.crossMazeMemory.multiScaleActiveNodes,
    shortSharedAnchors:measured.crossMazeMemory.multiScaleSharedAnchors,
    originalOperatorDrops:measured.operatorsDropped,
+   diskArchiveActualBytes:durableArchiveBytes,
    durableArchivedMotifCount:measured.qaDiskMotifArchive.indexedExactMotifs,
    durableArchivedSharedMotifs:measured.qaDiskMotifArchive.sharedExactMotifsAcrossEpisodes,
    durableArchivedSourceEdgeTypes:measured.qaDiskMotifArchive.observedSourceOnlyEdgeTypes,
