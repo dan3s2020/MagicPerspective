@@ -75,3 +75,21 @@ The earlier line "one existing source file" remains literally true for modified 
 - **Latest completed all-green branch/noise run at this audit:** https://github.com/dan3s2020/MagicPerspective/actions/runs/42341109961 ; 9/9 V23 tests, 19/19 V19 cognitive, 2/2 V21 boundary, 5/5 observed action, V19 HTTP and two V21 native HTTP/migration tests, plus Windows PowerShell 5.1 parse.
 - No new screenshot or HTML hypergraph UI is claimed. No natural open-ended answer precision on OpenThoughts3 is measured. No release status changed. Full historical byte completeness remains explicitly unverified.
 
+
+
+## Native 2,048-token HTTP integration and V17 UI — MEASURED
+
+**GitHub Actions real-process acceptance:** https://github.com/dan3s2020/MagicPerspective/actions/runs/42341488681
+
+At branch commit `70e7a0661b2dc52bccdb39f7269f058b19d31b3f`, on GitHub-hosted Linux Node 22 and Windows PowerShell 5.1:
+
+- `v17/tests/v23-cognitive-native-long-http.test.mjs` **PASS**. Created an actual serialized original `Brain` checkpoint with 48 independently learned single-step local action effects, started the real native V17 HTTP process in `cognitivemap` world, resumed the `Brain` checkpoint, and requested a previously unobserved **2,048-token** text state through the real `POST /cognitive-eval` endpoint.
+- The server emitted the original V17 attraction-law label `ORIGINAL_V17_ATTRACTION_0.97`, its entire measured scalar field, complete **48-action** pre-action path, from/to node indices, and complete resulting text state; `shapeField[0]=0.23176254155320164`. This is **frozen planning**; do not label UI scrubbing as live physical action.
+- Verified unchanged pre-existing controls `allStart`, `allSave`, `gpuApply` and `textMazeCanvas` plus new field canvas / step inspection / max depth inputs in the real existing V17 UI; `node --check` on `app.js` also passed.
+- New `cognitivePathCanvas` uses **measured** `Discoverer.shape` scalar potential per returned path node. Its x-axis is **step number** and y-axis log of attraction, explicitly a diagnostic 2D representation of the learned graph path, **not** fabricated coordinates in 4D or an asserted true geometric hyperdimensional embedding. All complete per-step states are accessible through the native API and scrub details.
+- Frozen service safety bounds were raised from 1,024 to 131,072 initial characters, from max 12 to max 256 steps, with a hard 262,144-character POST payload cap and the `buildWorld` 8,192-token / 4,000,000 candidate token-cell bound. It is still a **bounded evaluator**, not an infinite-context engine.
+- The green CI reran baseline 84-board parity and 9/9 V23 tests (including 511 observed steps, 320 branched/noisy actions, 48 learned transformations and negative controls), 19/19 V19 tests, 2/2 V21 answer-boundary tests, 5/5 observed-action tests, actual V19 and V21 multiworld HTTP/checkpoint suites, and Windows PowerShell 5.1 parser.
+- The old note saying V23 "original UI code preserved byte-for-byte" refers to the **initial isolated V23 scaling patch**. The later optional UI extension intentionally adds controls **without deleting or changing original UI behavior**. It is not claiming the now-extended UI file hashes are identical.
+- **NOT established:** 100% semantic answers on large held-out OpenThoughts3 prompts, autonomous natural-language goal discovery, physical action success from a language-only hypothesis without external validation, 100% GPU operation, user's own Windows RTX 3050 Ti run, or 100 full exercises/s. These remain **blocking**. Never promote this draft branch to a fully verified release or close regression issue #25 on a synthetic test result.
+
+Source-to-change contract: `user-intent/changes/V23-LONG-TEXT-LIVE-UI-20261107.json`. All original V17 maze source, checkpoints, real GPU/CPU trainer and PowerShell launcher remain unmodified.
