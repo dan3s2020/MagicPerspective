@@ -24,6 +24,8 @@ jobs:
         run: node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
       - name: xD numeric-text subspace test and nonlinear failure falsification
         run: node --test v17/tests/text-hypermaze-xd-invariants.test.mjs
+      - name: Nonlinear state-dependent axes, multiplication and stochastic math-world tests
+        run: node --test v17/tests/text-hypermaze-state-dependent.test.mjs
       - name: Original unchanged V17 textual transformations regression
         run: node --test v17/tests/observed-transformations-v17.test.mjs
       - name: Original unchanged V17 maze-to-text path construction regression
