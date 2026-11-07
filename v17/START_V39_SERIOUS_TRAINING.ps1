@@ -1,4 +1,4 @@
-# MagicPerspective V39 research trainer - ONE ORIGINAL persistent V17/V34 Brain.v8.
+﻿# MagicPerspective V39 research trainer - ONE ORIGINAL persistent V17/V34 Brain.v8.
 # SQuAD real human QA (V38 averaged policy), original 2D maze experience,
 # TinyStories real UTF-8 observed-transformations in the SAME Brain, safe resume.
 # Never overwrites original Brain and never claims real NVIDIA CUDA execution.
@@ -82,7 +82,7 @@ try { $portListener.Start() } catch {
 } finally { $portListener.Stop() }
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 Write-Host ""
-Write-Host "V39 ORIGINAL MAGIC PERSPECTIVE — REAL SERIOUS TRAINING" -ForegroundColor Cyan
+Write-Host "V39 ORIGINAL MAGIC PERSPECTIVE - REAL SERIOUS TRAINING" -ForegroundColor Cyan
 Write-Host "Existing original V17 Brain, read ONLY: $OriginalBrain"
 Write-Host "New isolated V39 Brain: $Out\brains\brain-0.v8"
 Write-Host "Official SQuAD 1.1 TRAIN + heldout DEV: SHA256 verified."
