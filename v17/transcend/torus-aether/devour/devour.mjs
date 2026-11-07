@@ -412,12 +412,14 @@ http.createServer((req, res) => {
     });return;
   }
   if (req.method === "POST" && url === "/cognitive-eval") {
-    let body="";req.on("data", d => {body+=d;if(body.length>32768)req.destroy();});
+    // Full lengthy Q/A text is needed to assemble a navigable cross-world
+    // state; original 32KB HTTP cap silently destroyed actual long worlds.
+    let body="";req.on("data", d => {body+=d;if(body.length>1000000)req.destroy();});
     req.on("end", ()=>{
       let m;try{m=JSON.parse(body);}catch{return json(res,{error:"invalid cognitive evaluation JSON"});}
       const sl=slots.find(x=>x.w===+m.w);
       if(!sl||!sl.worlds.includes("cognitivemap"))return json(res,{error:"Selected graph has no trained cognitive map"});
-      if(typeof m.initial!=="string"||m.initial.length>1024||
+      if(typeof m.initial!=="string"||m.initial.length>500000||
         !m.goal||typeof m.goal!=="object"||!m.goal.slots||Object.keys(m.goal.slots).length>32)
         return json(res,{error:"Provide initial text and goal.slots constraints; no hidden target answer"});
       if(!sl.wk || sl.status === "gata"){
