@@ -67,7 +67,7 @@ class VoteParity(unittest.TestCase):
                 expected,mass=legacy_vote(ys,weights,form)
                 X=tg.X("numpy");X.t=True
                 acc=T(np.zeros((rows,129),dtype=np.float32))
-                with patch.object(tg,"torch",FakeTorch):
+                with patch.object(tg,"torch",FakeTorch,create=True):
                     got=X.cuda_add_votes(acc,T(ys),T(ys>=0),T(weights),form)
                 np.testing.assert_allclose(acc.v,expected,atol=3e-6,rtol=3e-6)
                 np.testing.assert_allclose(got.v,mass,atol=3e-6,rtol=3e-6)
