@@ -89,6 +89,10 @@ pre{white-space:pre-wrap;word-break:break-word;font:12px/1.55 ui-monospace,Conso
 <script>
 "use strict";
 const $=s=>document.getElementById(s),fmt=n=>Number(n||0).toLocaleString("ro-RO");
+const nativePort=Number(new URLSearchParams(location.search).get("nativePort")||8866);
+if(Number.isInteger(nativePort)&&nativePort>=1024&&nativePort<=65535){
+ $("oldUI").src="http://127.0.0.1:"+nativePort+"/transcend/torus-aether/ui/index.html?live=1";
+}
 let cursor=-1,eventsCursor=0,oldTime=Date.now(),oldCursor=0,lastTrace=null,working=false;
 const SVG="http://www.w3.org/2000/svg";
 function svg(tag,attrs,parent,text){const n=document.createElementNS(SVG,tag);
