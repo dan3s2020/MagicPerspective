@@ -51,6 +51,8 @@ jobs:
           node --test v17/tests/torus-cognitive-learned-map.test.mjs
       - name: Real worker, original UI, native endpoint, checkpoint persistence
         run: node --test v17/tests/native-goal-http.test.mjs
+      - name: Real original Brain V19 cognitive goal HTTP and UI integration
+        run: node --test v17/tests/native-cognitive-http.test.mjs
       - name: Existing V21 original HTTP checkpoint and corpus split regression
         run: |
           node --test v17/tests/veil-aether.http.test.mjs
@@ -64,3 +66,4 @@ jobs:
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/ui/native-goal-live.js
+          node --check v17/transcend/torus-aether/ui/native-cognitive-live.js
