@@ -136,6 +136,27 @@ test("PUBLIC REAL 96 OpenThoughts3 Q/A: stress SAME native Brain and score true 
   assert.equal(measured.crossMazeMemory.observedSequentialEdges,
    measured.qaLongFormSequentialEdges);
   assert.ok(measured.crossMazeMemory.sharedExactChunkAnchors>=0);
+  // IMPORTANT: original active 50k motif cap has already evicted >9k
+  // witnesses; the disk index MUST still contain their exact identities
+  // and source episodes, not merely claim they were once seen.
+  assert.equal(measured.qaDiskMotifArchive?.enabled,true);
+  assert.ok(measured.qaDiskMotifArchive.indexedExactMotifs>50000,
+   "Long-corpus source-only maze must survive above original RAM cap");
+  assert.ok(measured.qaDiskMotifArchive.sharedExactMotifsAcrossEpisodes>=100);
+  assert.ok(measured.qaDiskMotifArchive.observedSourceOnlyEdgeTypes>50000);
+  assert.equal(measured.qaDiskMotifArchive.sourceOnlyNoSemanticPhysics,true);
+  const archiveHTTP=await(await fetch(app.base+"/native-motif-archive?limit=20")).json();
+  assert.equal(archiveHTTP.realSqliteDiskArchive,true);
+  assert.equal(archiveHTTP.rows.length,20);
+  assert.equal(archiveHTTP.total,measured.qaDiskMotifArchive.indexedExactMotifs);
+  assert.ok(archiveHTTP.nextOffset>0);
+  const byID=await(await fetch(app.base+"/native-motif-archive?"+new URLSearchParams({
+   id:archiveHTTP.rows[0].id,limit:"50"
+  }))).json();
+  assert.equal(byID.exactOriginalWitness?.id,archiveHTTP.rows[0].id);
+  assert.ok(Array.isArray(byID.sourceOnlyNeighbors));
+  assert.equal(byID.physicallyVerifiedSemanticEdges,0);
+  assert.ok(fs.existsSync(path.join(out,"original-native-long-language-motifs.sqlite")));
   // Never assume or invent how many tokens a real corpus has.
   // This EXACT check uses the original model tokenizer and the genuine
   // training-only row split, no approximate duplicate regex.
