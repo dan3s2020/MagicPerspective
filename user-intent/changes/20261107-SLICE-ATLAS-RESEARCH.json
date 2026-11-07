@@ -20,15 +20,16 @@
   "additional_user_authorization_quote": null,
   "authorize_original_algorithm_replacement_quote": null,
   "acceptance_tests": [
-    "node v17/transcend/torus-aether/worlds/slice-atlas-ablations.test.mjs"
+    "node v17/transcend/torus-aether/worlds/slice-atlas-ablations.test.mjs",
+    "https://github.com/dan3s2020/MagicPerspective/actions/runs/42345006012"
   ],
-  "actual_observed_results": "Local standalone reproduction: 512/512 combined views, 31/512 axes 0+1, 32/512 axes 2+3, 512/512 node-permutation equivalence; native imported code CI NOT YET VERIFIED.",
+  "actual_observed_results": "Native V22 Discoverer.shape via GitHub Actions run 42345006012 (success): 512/512 full 4D, 31/512 XY, 32/512 ZW, 512/512 relabel equivalent shortest paths; hidden goal 0/512; 10% spurious 411/512; 10% spurious filtered 512/512. Does not test semantic natural-language answers.",
   "limitations": [
     "This test is an isolated topology-only ablation, not a trained text solver",
     "Goal and full graph are supplied; no semantic inference or CUDA",
     "Main branch baseline and native source unchanged",
     "Full historical Verbatim remains incomplete"
   ],
-  "verification_status": "LOCAL_PROXY_MEASURED_NATIVE_CI_NOT_VERIFIED",
+  "verification_status": "NATIVE_TOPOLOGY_ONLY_CI_VERIFIED__TEXT_LEARNING_NOT_VERIFIED",
   "full_verbatim_gate": "BLOCKED"
 }
