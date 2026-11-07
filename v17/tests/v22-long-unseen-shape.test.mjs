@@ -54,8 +54,14 @@ test("original Discoverer softmax noise explores alternative learned action path
  const stable=model.formSolution("Bob is happy.",goal,{temperature:0,seed:9876});
  assert.deepEqual(stable.path,first.path,"Temperature=0 must be deterministic");
  const before=JSON.stringify(model.export());
+ const world=model.buildWorld("Bob is happy.",goal);
+ const immediate=world.neighbors[world.start];
+ assert.ok(immediate.length>=2,"Noise test invalid: learned world has fewer than two genuine action alternatives");
  const choices=new Set();
- for(let seed=1;seed<=64;seed++){
+ // Consecutive xorshift seeds 1..64 have highly correlated first draws.
+ // Use the ORIGINAL labyrinth's spaced world-seed convention instead.
+ for(let i=1;i<=128;i++){
+  const seed=(74129+i*7919)>>>0;
   const a=model.formSolution("Bob is happy.",goal,{temperature:.6,seed});
   assert.equal(a.found,true);
   assert.equal(a.directOriginalMethod,"Discoverer.shape");
@@ -65,7 +71,7 @@ test("original Discoverer softmax noise explores alternative learned action path
  }
  assert.ok(choices.size>=2,"V17 noise must explore genuinely distinct learned alternative action paths");
  assert.equal(JSON.stringify(model.export()),before,"No observed answer may leak in seeded noise tests");
- console.log("V22_ORIGINAL_NOISE",JSON.stringify({alternativeFirstActions:choices.size,seedCount:64,seededDeterminism:true}));
+ console.log("V22_ORIGINAL_NOISE",JSON.stringify({alternativeFirstActions:choices.size,seedCount:128,seededDeterminism:true}));
 });
 
 test("real rejection blocks ONLY the rejected state/action and shape replanning cannot use it again",()=>{
