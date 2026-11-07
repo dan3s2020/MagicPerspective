@@ -108,6 +108,53 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
    <pre id="qaPrediction" aria-live="polite">Aștept transformările Q/A observate din datele reale. Dacă nu există suficiente dovezi, motorul trebuie să refuze.</pre>
   </div>
  </section>
+ <section class="panel" id="forensicAtlas" style="margin:13px 0">
+  <div class="panelHead"><h2>ATLAS CAUZAL · TOATE DOVEZILE RETINUTE ȘI CĂILE LIPSĂ</h2>
+    <small id="atlasConnection">Citire din același Brain original V17</small></div>
+  <div class="panelBody">
+   <p class="muted">Aici vedem toate nodurile, muchiile și transformările încă păstrate în memoria activă, prin paginare. Verde = efect fizic observat, roșu = efect respins, galben = propunere, gri = ordinea textului fără acțiune demonstrată. Stările eliminate de buget sunt contorizate, nu sunt afișate ca existente. Predicția rămâne exclusiv a metodei originale Discoverer.shapeGraph.</p>
+   <div class="controls" style="margin-bottom:10px">
+     <label>Start observat <input id="atlasSource" placeholder="Stare textuală inițială" autocomplete="off"></label>
+     <label>Obiectiv (tokeni) <input id="atlasRequired" placeholder="ex: exit, reached" autocomplete="off"></label>
+     <button id="atlasAnalyse" class="primary">Analizează toate frontierele</button>
+     <button id="atlasExport">Exportă întregul atlas reținut (JSON)</button>
+   </div>
+   <div class="cards" style="margin:12px 0">
+     <div class="card"><label>Stări cauzale reținute</label><strong id="atlasNodes">—</strong></div>
+     <div class="card"><label>Tranziții fizic verificate</label><strong id="atlasVerified">—</strong></div>
+     <div class="card"><label>Acțiuni refuzate / pereți</label><strong id="atlasBlocked">—</strong></div>
+     <div class="card"><label>Ipoteze din observații</label><strong id="atlasProposed">—</strong></div>
+     <div class="card"><label>Legături secvențiale, NU acțiuni</label><strong id="atlasSequential">—</strong></div>
+     <div class="card"><label>Stări/muchii pierdute din buget</label><strong id="atlasEvicted">—</strong></div>
+   </div>
+   <canvas id="atlasCanvas" width="1000" height="370" style="width:100%;height:auto;background:#061323;border:1px solid #38526d;border-radius:10px" aria-label="Atlasul real al componentelor, muchiilor și blocajelor de navigare"></canvas>
+   <pre id="atlasDiagnosis" style="max-height:250px;overflow:auto;white-space:pre-wrap">Înainte de a calcula o cale: verificăm memoria și frontierele, fără răspuns de referință.</pre>
+   <div class="controls" style="margin:10px 0">
+     <label>Compară caracter cu caracter DOAR DUPĂ predicție
+       <textarea id="atlasReference" rows="2" placeholder="Text corect de evaluare. Nu este transmis niciodată serverului." style="min-width:300px"></textarea></label>
+     <button id="atlasCompare" disabled>Analizează primul caracter greșit local</button>
+   </div>
+   <pre id="atlasCharResults" style="max-height:210px;overflow:auto;white-space:pre-wrap">Răspunsul corect nu este disponibil planificatorului. Comparația are loc numai în browser, după predicție.</pre>
+   <div class="controls" style="margin:10px 0">
+    <label>Vezi secțiunea <select id="atlasSection">
+     <option value="nodes">Stări fizice</option>
+     <option value="verified">Căi verificate + surse</option>
+     <option value="blocked">Pereți fizic respinși</option>
+     <option value="proposals">Transformări candidate</option>
+     <option value="textOnly">Ordine din corpus (netraversabilă)</option>
+     <option value="operators">Operatori text și ancore</option>
+     <option value="observations">Toate observațiile text reținute</option>
+     <option value="qaEpisodes">Segmente Q/A cu proveniență</option>
+     <option value="crossWorld">Reguli transferate din lumi diferite</option>
+    </select></label>
+    <button id="atlasPrev">◀ Pagina anterioară</button>
+    <span id="atlasPageInfo" class="muted">0 / 0</span>
+    <button id="atlasNext">Pagina următoare ▶</button>
+   </div>
+   <pre id="atlasPage" style="overflow:auto;max-height:430px;white-space:pre-wrap;font-size:11px">Nu există încă o pagină citită. Nu se folosesc exemple simulate.</pre>
+   <p class="muted" id="atlasCoverage">Atlasul reținut nu este întregul spațiu al tuturor textelor posibile. Limitele și observațiile eliminate din memorie sunt vizibile.</p>
+  </div>
+ </section>
  <div class="rowmain">
   <section class="panel">
    <div class="panelHead"><h2>Topologie reală · proiecție 5D</h2><div class="legend"><span style="--c:#f0c87a">Forma globală</span><span style="--c:#66cce7">Execuție</span><span style="--c:#67deab">Obiectiv</span><span style="--c:#f0809a">Abatere</span></div></div>
@@ -151,5 +198,6 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
  <footer>Reprezentarea din canvas este o proiecție geometrică a coordonatelor 5D învățate sau, dacă lipsesc, un layout de vizualizare derivat explicit din muchiile reale. Nu constituie dovadă de dimensionalitate fizică ori de semantică generală. Acțiunile executate sunt transformări observate de modelul intern, nu un evaluator semantic extern. <a href="https://github.com/dan3s2020/MagicPerspective/pull/58">Cod, teste și limite (PR #58)</a>.</footer>
 </main>
 <script src="./native-hypermaze.js" defer></script>
+<script src="./forensic-path-atlas.js" defer></script>
 </body>
 </html>
