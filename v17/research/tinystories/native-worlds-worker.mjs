@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {setImmediate as yieldNow} from "node:timers/promises";
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
+import {NativeSelfCodeWorld} from "../../transcend/torus-aether/devour/selfcode-native.mjs";
 import {stories,sourceMetadata} from "./story-stream.mjs";
 
 const out=workerData.out,checkpoint=path.join(out,"tinystories-native-v17.v8");
@@ -33,6 +34,7 @@ if(fs.existsSync(checkpoint)){
  worldEpisode=Number(brain.tinyWorlds)||0;
 }else brain=new Brain({rules,c,seed:11});
 brain.enableEndogenousNoise();
+const selfcode=new NativeSelfCodeWorld({brain,saveFile:checkpoint,seed:brain.seed,enableEvaluator:false});
 
 const worldStats=()=>{
  brain.tWorld();
@@ -54,7 +56,8 @@ const worldStats=()=>{
    geometryLearnedSteps:brain.trace.geo?.n||0,
    graphNodes:brain.trace.nodes.size,graphEdges:brain.trace.edges.size,
    lastNativePrediction},
-  noise:{decisions:brain.noiseAgent?.total||0,sites:brain.noiseAgent?.bySite||{}}
+  noise:{decisions:brain.noiseAgent?.total||0,sites:brain.noiseAgent?.bySite||{}},
+  selfCode:{...selfcode.status(),evaluatorEnabled:false}
  };
 };
 function status(includeGraph=false){
@@ -87,6 +90,7 @@ function commit(){
  brain.tinySymbolBytes=bytesObserved;
  brain.tinyWorlds=worldEpisode;
  brain.tinyLastSavedAt=new Date().toISOString();
+ selfcode.save();
  const size=brain.save(checkpoint);
  lastCheckpoint=since();saveFlag=false;
  send({type:"saved",path:checkpoint,bytes:size,rows:progressRows,offset:progressOffset});
@@ -132,6 +136,7 @@ function ingest(text,storyNumber){
  if((storyNumber+1)%worldEvery===0){
   brain.playMaze(true);
   brain.playTransform(true);
+  selfcode.step();
   worldEpisode++;
  }
 }
