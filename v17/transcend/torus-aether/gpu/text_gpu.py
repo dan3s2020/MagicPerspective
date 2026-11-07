@@ -103,7 +103,14 @@ class Index:                                     # suffix array of the REVERSED 
         steps = max(1, int(np.ceil(np.log2(n + 1))) + 1)
         for k in range(maxK):
             c = ctx[:, k]; alive = (hi > lo) & (c >= 0)
-            if not X.t and not bool(alive.any()): break  # avoid per-depth CUDA -> CPU synchronization
+            if not X.t and not bool(alive.any()): break  # original exact NumPy stop
+            # Most real text contexts stop matching after only a few symbols.
+            # Avoid executing thousands of masked CUDA binary-search kernels
+            # for all 64 depths after every row has stopped matching. One
+            # periodic GPU->host flag sync per 4 depths is cheaper than
+            # up to 4 * 2 * ceil(log2(history)) * many launches on dead work.
+            # This never changes the intervals: inactive rows stay empty.
+            if X.t and k > 0 and k % 4 == 0 and not bool(alive.any()): break
             def bound(strict):
                 a = lo.clone() if X.t else lo.copy(); b = hi.clone() if X.t else hi.copy()
                 for _ in range(steps):
