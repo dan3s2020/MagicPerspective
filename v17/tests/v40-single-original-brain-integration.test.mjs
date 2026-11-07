@@ -56,7 +56,7 @@ test('V40 original Brain genuinely owns witnessed goal and human QA evidence acr
  assert.equal(observed.userSpecifiedDestinationToken,false);
  assert.equal(observed.source,'Discoverer.shape');
  assert.equal(observed.path.length,1);
- const qatraining=unified.trainHumanQA(lessons,{epochs:4,snapshotEvery:4,burnIn:0});
+ const qatraining=unified.trainHumanQA(lessons,{epochs:4,snapshotEvery:20,burnIn:0});
  assert.ok(qatraining.accepted>0,'Real supervised source spans must be learned');
  const extractive=unified.answer({kind:'human-extractive',
    question:'Which city hosted the meeting?',
