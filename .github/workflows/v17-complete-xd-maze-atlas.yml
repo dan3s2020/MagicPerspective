@@ -21,6 +21,12 @@ jobs:
           node --check v17/tests/complete-xd-maze-atlas.test.mjs
       - name: Test complete FULL physical maps, learned axis transfer, all missed edges and adversarial changed rules
         run: node --test v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: Test cross-episode native language atlas with all six persistent text graphs and missing-edge reasons
+        run: |
+          node --check v17/transcend/torus-aether/worlds/native-text-path-atlas.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --test v17/tests/native-text-path-atlas.test.mjs
       - name: Native V17 upstream original graph/noise/observed language path regressions
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
