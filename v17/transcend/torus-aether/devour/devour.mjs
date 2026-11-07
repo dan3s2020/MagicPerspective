@@ -442,11 +442,14 @@ http.createServer((req, res) => {
         return json(res,{error:"Reference answer must NEVER enter the path-planning worker"});
       if(typeof m.question!=="string"||m.question.length>131072||
         !Number.isSafeInteger(m.maxTokens??512)||!(m.maxTokens??512)||
-        (m.maxTokens??512)>2048)
+        (m.maxTokens??512)>2048||
+        !Number.isSafeInteger(m.minVerifiedContexts??0)||
+        (m.minVerifiedContexts??0)<0||(m.minVerifiedContexts??0)>32)
         return json(res,{error:"Invalid bounded full-text question or token budget"});
       const opts={maxTokens:m.maxTokens??512,
         maxNodes:Math.min(20000,Math.max(2,Math.trunc(Number(m.maxNodes)||384))),
         maxDepth:Math.min(256,Math.max(1,Math.trunc(Number(m.maxDepth)||8))),
+        minVerifiedContexts:m.minVerifiedContexts??0,
         includeAtlas:true};
       const savedAnswer=()=>{
         const file=saveOf(sl);
