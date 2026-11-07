@@ -23,11 +23,15 @@ jobs:
           node --check v17/tests/v40-single-original-brain-integration.test.mjs
       - name: One original brain checkpoint, witnessed intent, real QA preference and strict refusal
         run: node --test v17/tests/v40-single-original-brain-integration.test.mjs
+      - name: Exact V32 compact source motif memory, verified replay, and saved original Brain manifest
+        run: node --test v17/tests/v40-source-memory-shared-brain.test.mjs
       - name: Original V34 integration core compatibility
         run: |
           node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
           node --test v17/tests/v31-million-original-log-attraction.test.mjs
   v40-authentic-9000-human-qa:
+    # Resource-intensive, run explicitly; previous push executions archived independently.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 22
     steps:
