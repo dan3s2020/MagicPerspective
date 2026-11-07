@@ -99,6 +99,20 @@ Generic candidate set (no lever-specific semantic label): for each sensory cente
 
 Online bit update is just XOR with (currently observed center symbol == selected symbol). Tested for 0,1,2,3,4,5,6,7,16,32,64,128 lever tours, including 1,459 sensory observations: the whole history can be discarded after maintaining one bit. This is exactly the kind of local-to-global predictive state compression that the earlier global/body-perspective audit demanded in a restricted world.
 
+### Unseen geographical transfer in actual V17 TWorld
+
+A second holdout test deliberately changed the lever's physical position while keeping the original V17 lever/door physics identical. The room and sensor mechanics are unchanged; only lever placement and the HARNESS-generated route to it change.
+
+- Train lever locations: (1,1), (5,5); train 0..3 lever tours, distance 4 from starting body position.
+- Validation lever location: (1,5), disjoint from train.
+- Holdout lever locations: (5,2), (1,4), unseen in training AND validation; distance 3 instead of 4; heldout visits 4..7.
+- Final local 3x3 patch remains identical over the entire test set.
+- Baseline current patch / last four center observations: **100/200**.
+- Selected history-sensor parity bit: **200/200**.
+- Same predictor with shuffled history: **96/200**.
+
+This is spatial generalization within the same ORIGINAL V17 rule family. The HARNESS still deliberately navigates to each lever; the learning agent has NOT autonomously discovered where to look for a lever or transferred this rule to new natural-language tasks.
+
 ### Interpretation and limitations of B
 
 This is a **real original V17 TWorld test**, which makes it stronger than a self-contained toy invented solely for the result. But the paths, the geometry of the room, the candidate feature family (parity), and the fixed two-action probe are EXPLICIT. The live V17 Brain did not learn a lever-seeking exploration policy, discover the memory-bit family autonomously, or test natural-language tasks in this experiment.
@@ -128,7 +142,7 @@ Integrate candidate discovery into the real V17 streaming language/maze Brain as
 6. show the actual pre-action predicted route, observable sensory/causal history, selected hidden-state bit/scalar, executed steps and subsequent prediction delta in the existing V17 UI.
 7. test unrelated natural-language corpora and genuinely unseen semantic transformation families; do not substitute success on numeric token puzzles.
 
-**Acceptance status:** successful GitHub Actions run checked for commit \`18e5939688c947a1b10b0238b9d5c3d2dd81dda3\`, job \`128245578616\`. Tests: 7 new generic path-state tests + 5 new original-V17 hidden-bit tests + 6 prior nonlinear-axis regressions + 8 prior V17 observed-edit regressions = **26 passes, 0 failures**.
+**Acceptance status:** updated full green GitHub Actions run for commit \`6fa33921a547f088dcabc134131efc736c5893df\`, job \`128246459182\`. Tests: 7 new generic path-state tests + **6** original-V17 hidden-bit tests (including unseen geography) + 6 prior nonlinear-axis regressions + 8 prior V17 observed-edit regressions = **27 passes, 0 failures**. Prior 26-test green run: job \`128245578616\`.
 
 Source commands:
 
