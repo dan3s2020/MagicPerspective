@@ -6,6 +6,14 @@ import assert from 'node:assert/strict';
 import {LearnedCognitiveMap} from '../transcend/torus-aether/worlds/learned-cognitive-map.mjs';
 import {answerFromOriginalPath,firstTryCharacterComparison} from '../transcend/torus-aether/worlds/path-answer-writer.mjs';
 const triples=[['tea','coffee'],['coffee','water'],['water','juice']];
+// Each operator must be witnessed in its OWN contexts. Using identical
+// skeletons for all three operators would spuriously induce a DIRECT
+// tea -> juice hypothesis, making a 3-hop claim invalid.
+const contrastWorlds=[
+ ['Mira buys tea. Mira buys coffee.','Ivo likes tea. Ivo likes coffee.'],
+ ['Nora finds coffee. Nora finds water.','Pete keeps coffee. Pete keeps water.'],
+ ['Zoe sees water. Zoe sees juice.','Eli shares water. Eli shares juice.']
+];
 const feed=(model,a,b)=>{
  const id='source-'+a+'-'+b;
  model.observeWorld('Nina sells '+a+'. Nina sells '+b+'.',{id:id+'-n'});
@@ -29,9 +37,8 @@ test('3-hop discovered path predicts complete unseen long text; frozen evaluatio
  let stage=0;
  for(const nDocs of stagesDocs){
    while(stage<nDocs){
-     const t=triples[Math.floor(stage/2)];
-     if(stage%2===0)m.observeWorld('Mira buys '+t[0]+'. Mira buys '+t[1]+'.',{id:'doc-'+stage});
-     else m.observeWorld('Ivo likes '+t[0]+'. Ivo likes '+t[1]+'.',{id:'doc-'+stage});
+     const text=contrastWorlds[Math.floor(stage/2)][stage%2];
+     m.observeWorld(text,{id:'doc-'+stage});
      stage++;
    }
    const before=JSON.stringify(m.export());
