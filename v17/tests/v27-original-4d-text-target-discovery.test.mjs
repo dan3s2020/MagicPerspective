@@ -129,3 +129,105 @@ test("native original Brain checkpoint persists learned action axes and separate
   assert.equal(typeof recovered.testMazes,"function");
  }finally{fs.rmSync(folder,{recursive:true,force:true})}
 });
+
+test("native same-Brain original shape API learns goal references and restores .v8 evidence without retraining",()=>{
+ const brain=new Brain({rules,seed:70});
+ train(17,{agent:brain.textGoal});
+ assert.equal(brain.predictOriginal4DShapeFromQuestion("","find missing",0).found,false);
+ for(let i=0;i<18;i++){
+  const id="old_marker_"+i,coord="("+dec(i).join(",")+")";
+  brain.observeGoalReferenceOutcome({question:"Locate "+id+".",
+   statement:"The archive keeps "+id+" near "+coord+".",isGoal:true});
+  brain.observeGoalReferenceOutcome({question:"Locate "+id+".",
+   statement:"The archive keeps not_this_"+i+" near "+coord+".",isGoal:false});
+ }
+ const w=world(1877),id="completely_novel_4d_destination";
+ const document=documentWith(w,id),q=query(id);
+ const first=brain.predictOriginal4DShapeFromQuestion(document,q,w.start);
+ assert.equal(first.found,true);
+ assert.equal(first.goal,w.goal);
+ assert.equal(first.originalMethod,"Discoverer.shape");
+ assert.equal(first.goalSuppliedToPlanner,false);
+ assert.equal(first.frozen,true);
+ assert.equal(first.nativeBrain,true);
+ assert.equal(first.goalFeedbackObservations,36);
+ const folder=fs.mkdtempSync(path.join(os.tmpdir(),"mp-v27-native-"));
+ try{
+  const file=path.join(folder,"brain.v8");
+  brain.save(file);
+  const resumed=Brain.load(file);
+  const second=resumed.predictOriginal4DShapeFromQuestion(document,q,w.start);
+  assert.deepEqual(second.path,first.path);
+  assert.deepEqual(second.field,first.field);
+  assert.equal(resumed.v27GoalEvidence.exampleCount,36);
+  assert.equal(typeof resumed.learnTextGPU,"function");
+  assert.equal(typeof resumed.playMaze,"function");
+ }finally{fs.rmSync(folder,{recursive:true,force:true})}
+});
+
+test("unseen stochastic physical slips: replan exact original attraction from newly observed self position",()=>{
+ const brain=new Brain({rules,seed:5});
+ const agent=train(17,{agent:brain.textGoal}),ref=trainedReference();
+ let frozenSuccess=0,feedbackSuccess=0,physicalSlips=0;
+ for(let i=0;i<16;i++){
+  const w=world(4000+i*29),id="replanning_rare_target_"+i,
+    document=documentWith(w,id),q=query(id),worldSeed=1234567+i*13;
+  const replay=replan=>{
+   let at=w.start,steps=0,slips=0;
+   const randomSeed=(function(){let s=worldSeed>>>0;return ()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296}})();
+   let route=planOriginal4DFromText({navigator:agent,disc:brain.disc,reference:ref,
+     document,question:q,start:at}).path.slice();
+   for(let t=0;t<90&&at!==w.goal&&route.length;t++){
+    const chosen=route.shift();
+    const actual=perform(at,chosen.action);
+    if(randomSeed()<.25||!w.cells[actual])slips++;
+    else at=actual;
+    steps++;
+    if(replan&&at!==w.goal)route=planOriginal4DFromText({
+      navigator:agent,disc:brain.disc,reference:ref,
+      document,question:q,start:at}).path.slice();
+   }
+   return {solved:at===w.goal,steps,slips};
+  };
+  frozenSuccess+=Number(replay(false).solved);
+  const adaptive=replay(true);
+  feedbackSuccess+=Number(adaptive.solved);
+  physicalSlips+=adaptive.slips;
+ }
+ assert.equal(feedbackSuccess,16,"Real failed moves must cause exact original field to be replanned");
+ assert.ok(physicalSlips>0);
+ assert.ok(frozenSuccess<feedbackSuccess,"Frozen shape must not know future physical slips");
+ console.log("V27_ORIGINAL_ATTRACTION_REPLAN",JSON.stringify({
+  worlds:16,frozenCompleted:frozenSuccess,feedbackCompleted:feedbackSuccess,
+  actualUnpredictableSlips:physicalSlips,firstActionPathFrozen:true,
+  correction:"original Discoverer.shape rerun from measured new state",
+  noFutureNoiseOracle:true
+ }));
+});
+
+test("learned cyclic axes form reversible 4D loops, and learned walls exclude physically blocked edges",()=>{
+ const nav=train(17),w=world(2555),decoded=nav.reconstruct(w.document);
+ const effects=ACTIONS.map(x=>nav.effect(x));
+ let reverses=0,blocked=0,cyclicReturn=0;
+ for(let i=0;i<effects.length;i++)for(let j=0;j<effects.length;j++){
+  if(i===j)continue;
+  if(effects[i].every((x,k)=>(x+effects[j][k])%4===0)){
+   reverses++;
+   for(let state=0;state<256;state++){
+    if(!decoded.map[state])continue;
+    const after=move(state,effects[i]);
+    if(!decoded.map[after]){blocked++;continue}
+    assert.equal(move(after,effects[j]),state);
+    cyclicReturn++;
+   }
+  }
+ }
+ assert.ok(reverses>=8,"Inverse directions must be DISCOVERED from independent action outcomes");
+ assert.ok(blocked>0,"Static text-inferred walls remove some proposed graph edges");
+ assert.ok(cyclicReturn>0);
+ console.log("V27_OBSERVED_TORUS_LOOPS",JSON.stringify({
+  inverseActionPairs:reverses,verifiedClosedTwoActionLoops:cyclicReturn,
+  blockedCandidateEdges:blocked,
+  interpretation:"periodic symbolic 4D state graph; not physical spacetime evidence"
+ }));
+});
