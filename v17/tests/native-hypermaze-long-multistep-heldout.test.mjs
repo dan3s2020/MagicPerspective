@@ -178,3 +178,51 @@ test("1,000 distinct >1KB corpus observations train ORIGINAL native V17 operator
  assert.equal(executed,24,"The original body's actions must actually reach the withheld long states");
  assert.equal(original.seen,1000,"Heldout test must not secretly train on answers");
 });
+
+test("same original learned text knowledge has a hidden 5-axis solution: limiting accessible dimensions/depth or state topology HIDES IT, restoring paths resolves it without one additional training example",{
+ timeout:180000
+},()=>{
+ const b=new Brain({rules:{depth:1,off:["R2","R4"],budEvery:100,
+  empty:true,maxWires:32,fold:false},seed:11});
+ for(let i=0;i<70;i++){
+  playExercise(makeMaze(seedOf(SEEDS.train,2090+i*17),[7,9,11][i%3]),b.disc);
+  if(i>=24&&b.disc.attract(KIND.target)>.2&&b.disc.conduct(KIND.floor)>=.5)break;
+ }
+ const m=new NativeGoalTextMaze(b,{maxStates:3500,maxDepth:5});
+ for(const t of observed)m.observe(t);
+ const count=b.observedTransformations.seen;
+ const ids=[1,1,1,1,1],start=passage(baseline),
+  required=ids.map((v,i)=>axes[i][v]),gold=passage(ids);
+ assert.equal(b.observedTransformations.containsSentence(gold),false);
+ const narrowDepth=m.plan({start,required,maxStates:3500,maxDepth:4});
+ assert.equal(narrowDepth.found,false);
+ assert.equal(narrowDepth.diagnostic.depthBudgetExceeded,true);
+ assert.equal(narrowDepth.diagnostic.outcome,"not-found-search-incomplete");
+ const narrowStates=m.plan({start,required,maxStates:8,maxDepth:5});
+ assert.equal(narrowStates.found,false);
+ assert.equal(narrowStates.diagnostic.stateBudgetExceeded,true);
+ assert.equal(narrowStates.diagnostic.outcome,"not-found-search-incomplete");
+ const full=m.plan({start,required,maxStates:3500,maxDepth:5});
+ assert.equal(full.found,true);
+ assert.equal(full.predicted,gold);
+ assert.equal(full.actions.length,5);
+ assert.equal(full.referenceAnswerProvided,false);
+ const out=m.execute(full,{enableNoise:false,trainNoise:false});
+ assert.equal(out.solvedInternalGoal,true);
+ assert.equal(out.executedFinal,gold);
+ assert.equal(b.observedTransformations.seen,count);
+ console.log("ORIGINAL_FIVE_AXIS_TOPOLOGY_BUDGET_ABLATION",JSON.stringify({
+  originalActualTrainingObservations:count,
+  heldoutFullTextUTF8Bytes:Buffer.byteLength(gold),
+  goalTokens:required,
+  searchedDepth4Found:narrowDepth.found,
+  searched8StatesFound:narrowStates.found,
+  fullKnownSearchFound:full.found,
+  exactHiddenGoalPredictedBeforeFirstAction:full.predicted===gold,
+  executedOriginalBodyActions:out.actions,
+  extraTrainingExamplesAfterAblation:0,
+  sameOriginalBrainSameOperators:true,
+  hiddenWayWasDueToDesignSearchLimits:true,
+  notExternalSemanticProof:true
+ }));
+});
