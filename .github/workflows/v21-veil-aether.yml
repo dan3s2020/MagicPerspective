@@ -27,6 +27,10 @@ jobs:
         run: |
           python3 -m pip install --quiet numpy
           python3 -m unittest discover -s v17/tests -p test_v21_cuda_suffix_bounds.py -v
+      - name: V21 exact CUDA context parity and CPU O(N squared) bottleneck benchmark
+        run: |
+          python3 -m pip install --quiet numpy
+          python3 -m unittest discover -s v17/tests -p test_v21_context_window_parity.py -v
       - name: V21 actual dataset consumption and percentage accounting (TXT, Parquet, workers)
         run: node --test v17/tests/veil-aether.dataset-progress.test.mjs
       - name: V21 observed contextual graph, pre-action shape, no-leak and preservation tests
