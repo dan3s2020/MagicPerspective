@@ -18,7 +18,9 @@
     "v17/transcend/torus-aether/worlds/math-observed.mjs",
     "v17/tests/math-original-shape.test.mjs",
     "v17/tests/math-observed-induction.test.mjs",
-    ".github/workflows/math-original-shape-isolated.yml"
+    ".github/workflows/math-original-shape-isolated.yml",
+    "v17/docs/MATH_ORIGINAL_SHAPE_INDUCTION_PROOF_20261107.md",
+    "verbatim/2026-11-07-MAGICPERSPECTIVE-MATHEMATICS-USER-TURNS-VERBATIM.md"
   ],
   "added_mechanisms": [
     {
@@ -34,7 +36,7 @@
     "node --test v17/tests/math-observed-induction.test.mjs",
     "node --test v17/tests/torus-organism.test.mjs"
   ],
-  "actual_observed_results": "Native CI 42342531891: trained 5 contextual transformations from 320 observed math effects; solved 512/512 holdout affine equations; 0/64 cold and 0/64 indispensable-rule ablation; original native maze tests 7/7. Out-of-distribution extrapolation is NOT VERIFIED until subsequent CI passes.",
+  "actual_observed_results": "GitHub Actions run 42342782254 / commit 6c1a3dab556f8e731abb65d5aad66e5e9f435f19: 19/19 PASS (4 original math, 8 induced, 7 original V17); 5/5 algebra rules inferred from 320 observations; unseen 512/512 original-range and 1024/1024 wider coefficient full predicted paths; 2048/2048 OOD algebra examples with 10,240 verified symbolic transitions; cold/no-essential-rules/no-original-maze-training 0/64 each. New isolated docs only; no native general math or UI claimed.",
   "limitations": [
     "Cannot claim all mathematics learned",
     "Rule hypothesis grammar and factored equation stage structure are provided",
@@ -44,6 +46,6 @@
     "No OpenThoughts3 semantic or real Windows CUDA test in this experiment",
     "Full historical Verbatim remains incomplete"
   ],
-  "verification_status": "PARTIAL_VERIFIED_NOT_GENERAL_MATH",
+  "verification_status": "REPRODUCIBLE_RESTRICTED_MATH_INDUCTION_ONLY",
   "full_verbatim_gate": "BLOCKED"
 }
