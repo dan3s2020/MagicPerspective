@@ -433,12 +433,40 @@ http.createServer((req, res) => {
     req.on("end",()=>{
       let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid character observation JSON"});}
       const sl=slots.find(x=>x.w===Number(m.w));
-      if(!sl?.worlds.includes("cognitivemap")||!sl.wk)
-        return json(res,{error:"A running original cognitive world is required for real character feedback"});
+      if(!sl?.worlds.includes("cognitivemap"))
+        return json(res,{error:"An original cognitive world is required for character feedback"});
       if(typeof m.before!=="string"||typeof m.after!=="string"||
          typeof m.action!=="string"||m.action.length>256||
          typeof m.accepted!=="boolean"||m.before.length>100000||m.after.length>100000)
         return json(res,{error:"Supply actual char-level before, action ID, after, accepted Boolean"});
+      // A finite real corpus normally exits before the user inspects a
+      // failure. Feedback on the SAVED, stopped original Brain must work
+      // too, without restarting the learner, resetting, or silently
+      // overwriting any original checkpoint bytes.
+      if(!sl.wk || sl.status==="gata"){
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))
+            return json(res,{error:"No original Brain checkpoint to preserve"});
+          const backup=file+".before-v24-character-feedback-"+Date.now();
+          fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);
+          const original=Brain.load(file);
+          const atlas=CharacterHypermaze.restore(original.characterAtlas||null);
+          if(!original.characterAtlas && original.cognitiveMap)
+            atlas.ingestLegacyRules(LearnedCognitiveMap.restore(original.cognitiveMap).rules);
+          const events=[];atlas.atlasSink=event=>events.push(event);
+          const result=atlas.observeIntervention({
+            before:m.before,after:m.after,action:m.action,accepted:m.accepted});
+          original.characterAtlas=atlas.export();
+          const savedMB=original.save(file)/1e6;
+          for(const event of events)
+            appendAtlasEvent(atlasPath(file),{...event,
+              savedOriginalCheckpointBackup:backup,
+              source:"EXPLICIT_USER_SUPPLIED_EXTERNAL_FEEDBACK_FROM_STOPPED_WORLD"});
+          return json(res,{kind:"character-observation",result,
+            atlas:atlas.status(),savedMB,backup,fromSave:true});
+        }catch(err){return json(res,{error:err.message});}
+      }
       const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Character action feedback timeout"});},60000);
       chats.set(id,x=>{clearTimeout(timer);json(res,x)});
       sl.wk.postMessage({characterObserve:{id,before:m.before,after:m.after,
