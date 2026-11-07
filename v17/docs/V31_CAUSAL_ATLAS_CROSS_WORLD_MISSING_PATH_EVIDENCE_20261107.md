@@ -1,0 +1,51 @@
+# MagicPerspective V31 — ONE Brain, cross-world transfer, FULL RETAINED atlas and causal wall investigations
+
+**Status: isolated experimental branch; production STOPSHIP still BLOCKED.**
+2026-11-07. Parent commit of V31 = 44554b7fcc58e0796420f415853f467c240e9eb9 (last-green V30 cumulative persistent hypermaze).
+**Do not merge into main, overwrite any V17 UI/checkpoint, or provide a launch command claiming 100% accuracy.**
+
+## Verbatim user requirement (scope preserved)
+All previously discovered maze paths and transformations must survive segmented exercises in one organism. Show the atlas: every retained state, transition, failed/wall path, hypothesis, evidence, noise, first wrong character, missing transformation/axis, and exact cause of failure; discover and test changes, not invent examples. Original 2D Discoverer.shape/shapeGraph must remain the route operator.
+
+## Exact code inventory
+- v17/research/text-hypermaze/cumulative-hypermaze.mjs — unchanged original V30 durable exact observed physical action graph, reused across episodes.
+- v17/research/text-hypermaze/cumulative-numeric-shape.mjs — unchanged V30 original shapeGraph applied to previously witnessed numeric axes.
+- v17/research/text-hypermaze/cross-episode-native.mjs — byte-for-byte reused from independent green V30 branch; same original Brain transfers an observed action physics hypothesis across worlds, cannot silently call it physically verified in the target world.
+- v17/research/text-hypermaze/forensic-path-atlas.mjs — NEW, READ ONLY: source-provenance, every retained actual node/edge and inferred operator via paginated APIs; component connectivity, dead ends, missing one-evidence bridges, rejected paths, target reachability and bounded simple paths; immutable model status, memory losses, Unicode first wrong character AFTER the prediction only.
+- v17/research/text-hypermaze/cross-world-bridge-experiment.mjs — NEW: predicted whole path before target actions, external callback strips expected next state, physically observed after-action effect accepted or contradicted, updates the SAME original Brain's cumulative memory; then calls the SAME original Discoverer.shapeGraph to see if the wall opened.
+- v17/research/text-hypermaze/real-corpus-worker.mjs + real-corpus-server.mjs — ADDITIVE read-only atlas RPC /api/path-atlas; strict refusal to send correct answer/reference/expected fields to planner.
+- v17/transcend/torus-aether/ui/native-hypermaze.html + forensic-path-atlas.js — ADDITIVE panel. All original controls remain. Visualizes real retained nodes/edges (actual 5D coordinates when available, explicitly labeled hash fallback when missing), failure frontiers, model restrictions, original planned path, Unicode character mismatch locally AFTER frozen plan. Nine pageable categories and stable-generation full retained evidence JSONL export.
+- Tests: v31-forensic-path-atlas.test.mjs, v31-native-atlas-http.test.mjs, v31-external-world-bridge.test.mjs. CI tests on Linux and Windows, and all V30 / V17 original solver regressions.
+
+## Reproducible verified results
+All green V31 Linux/Windows CI: https://github.com/dan3s2020/MagicPerspective/actions/runs/42356495444
+
+1. Segmented maze: 2 disconnected regions, original shapeGraph properly returns no path. A proposed text-order link or theoretical action does NOT become a walkable edge. After one actual independent physical before/action/after bridge, the same native solver produces a complete 9-action path. Before/after labels: DISCONNECTED_VERIFIED_COMPONENTS_REQUIRE_NEW_EVIDENCE -> AT_LEAST_ONE_VERIFIED_PATH_EXISTS.
+2. V30 original cumulative memory: 12 independent maze episodes construct a 12-action preaction path that no single episode contained. Uses exact native learned attraction.
+3. V30 numeric compositional example: four observed math action episodes with independent contexts compose the 4-step path from 5 * 6 = 30 to 8 * 7 = 56, with no full answer supplied. This is a controlled symbolic numeric grammar, not arbitrary new mathematics.
+4. V30 cross-world native transfer: 4 witnessed source episodes (two operations) generalize to 60 independently evaluated new numeric world challenges, 120 external steps accurate. These test worlds have a known action family; no proof for arbitrary language.
+5. V31 NEW joining proof: the SAME original Brain first predicts Ava has 17 marbles. -> Ava has 19 marbles. -> Ava has 21 marbles. from four source worlds, while the cumulative physically verified graph initially has NO route. Only after an independent target physical step confirms BOTH moves are those two edges made walkable. Original cumulative shapeGraph then independently plans two verified actions, and checkpoint preserves them.
+6. V31 negative control: target-world physics changes by +3 instead of expected +2. First wrong transition is Ava has 17 -> 19 predicted, Ava has 20 observed. The evidence becomes a blocked wall and the conflicting transfer action loses readiness; NO invented route is promoted.
+7. Native actual JSONL HTTP integration: 90 real-format records read, 81 trained rows; 18 active original text observations, 30 learned operator HYPOTHESES, **ZERO physically verified causal transitions**. This is the explicit design gap. Observed consecutive corpus text and two-token operators do not on their own constitute physical action feedback. No hidden correct reference accepted in the planner endpoint. Original Brain/checkpoint unchanged by atlas reads.
+8. Source/read-only atlas pagination shows all retained edges, their independent episodes, selected routes, rejected walls, proposals, and observed text windows. Unicode codepoints are compared only after prediction. The first mismatch and missingness are classified as *retained-memory evidence*, not proof of all possible human language.
+
+## Exact missing architecture elements / design walls
+- **Corpus text alone is not a complete TRAVERSABLE maze.** The real JSONL worker learns 30 inferred edit operators but 0 physically verified transitions in the cumulative graph. The original shape operator cannot walk through nonexistent verified edges. A full corpus of sequential text is an observation stream, not automatically a world with action/next-state feedback.
+- **Retention is bounded, not the entire lived universe.** Original ObservedTransformations supports maxTokens=256 per active observed state, maxObserved bounded and operator capacity; cumulative memory has maxStates=24,000 and maxEdges=80,000 defaults, with explicit eviction counters. Pages export every RETAINED record but not evicted history. The raw dataset remains on disk and can be re-read; automated unbounded permanent knowledge remains unimplemented.
+- **Goal is not inferred universally.** Cumulative maze receives start + explicit partial goal tokens; V30 cross-world numeric transfer receives a numericEquals target. Nothing here proves automatic discovery of the correct full answer to arbitrary unknown natural-language questions.
+- **Noise/geometry causal contribution remains unproven.** Original NoiseAgency is reported, but V31 forensic report does not allow random noise to manufacture a physical edge. Geometry coordinates in UI are observed, or absent and explicitly marked as layout-only. No 5D/NoiseAgency heldout goal success ablation has been established.
+- **Character-level correctness is separate from a symbolic maze path.** Atlas reports the exact first Unicode codepoint error after frozen path, observed supports and whether a correct reference state is retained/reachable. It does not infer new verified text-action effects from the correct reference.
+- **GPU target unmet.** Native Node text-map, Q/A, atlas and causal verification run on CPU in these tests. No RTX 3050 Ti complete hypermaze CUDA ≥1MB/s and ≥100 exercises/s evidence.
+- **Infinite cycles cannot be enumerated into finite JSON.** All retained edges are pageable and exportable; bounded enumerations include all SIMPLE routes only within explicitly stated depth/count/walk limits and expose truncation.
+
+## Research experiment map (what to change and measure next)
+1. Preserve source text as full corpus. Introduce a separately testable language interaction world whose valid transformations can be independently ACCEPTED/REJECTED (editing structured state, causal execution, arithmetic, program transformations with tests) rather than treating mere next text character as the full world.
+2. Have the ONE native organism apply already witnessed multiworld transformation effects to a new episode. Predict complete path before action, verify externally, and promote only real accepted transitions to verified cumulative memory; failure creates blocker in atlas. V31 adds exactly this bridge experiment.
+3. Continue a frozen heldout character-alignment audit and classify missing target char, absent active state, split connected components, operator context gate, failed observation, route-selection error, model memory eviction and search cutoff as separate conditions. Follow the evidence sources; do not fake 100% on a proxy task.
+4. Extend the source-backed retained graph to on-demand disk-backed evidence reconstruction with stable source offsets and hashes, or fail explicitly at RAM capacity. Do not claim millions of permanent walkable states when edges were compacted.
+5. Only after independent semantic goals and actual action-feedback exist should original 5D axes or learned noise be ablated, measuring real first-shot exact full answers on unseen long external problems vs noise/geometry off, with equal compute.
+
+## Acceptance remains BLOCKED
+Original release gate v17/research/text-hypermaze/production-release-gate.mjs requires at least 100 real disjoint long heldout answers **100% exactly correct on first try**, independent leakage audit, original maze parity, actual positive 5D and Noise causal ablations, complete CUDA throughput, and explicit user approval. Those experiments are not all passed. The V31 feature does NOT claim that arbitrary OpenThoughts3 full answers are solved.
+
+Do not merge into main, delete existing UI, or close blocking issue #25 until independently verified acceptance and user review.
