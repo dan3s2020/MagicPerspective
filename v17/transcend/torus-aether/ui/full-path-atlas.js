@@ -53,6 +53,7 @@ export class NativeFullPathAtlasView{
   click("atlasPageExport",()=>this.exportFile("original-native-scale-"+this.scale+"-offset-"+this.pageOffset+".json",this.page));
   click("atlasLogMore",()=>this.loadLog());
   click("atlasXdExport",()=>this.exportFile("full-xd-world-atlas.json",this.xd?.last));
+  click("atlasTextFrozenEval",()=>this.testFrozenText());
   click("atlasTextExport",()=>this.exportFile("native-text-episode-path-analysis.json",this.text?.last));
   by("atlasXdCanvas")?.addEventListener("pointermove",e=>this.hoverXD(e));
   window.addEventListener("resize",()=>this.draw());
@@ -361,6 +362,37 @@ export class NativeFullPathAtlasView{
         "Sfârșitul temporar al jurnalului; pot apărea alte episoade la antrenare."));
   }catch(err){setText("atlasLogText",
     "Nu se pot citi episoadele vechi: "+err.message);}
+ }
+ async testFrozenText(){
+  const out=by("atlasTextFrozenResult"),w=this.getWorker();
+  if(out)out.textContent="Evaluez modelul NATIV pe exemple reale nevăzute, fără actualizare...";
+  try{
+    const r=await fetch("/native-atlas-eval?w="+w+"&count=6",
+      {method:"POST"});
+    const d=await r.json();
+    if(d.error)throw Error(d.error);
+    if(this.getWorker()!==w)return;
+    if(out)out.textContent=[
+      "TEXT NEVĂZUT, GRAF V17 ÎNGHEȚAT",
+      "Exerciții: "+d.rows+"; caractere evaluate "+d.characters,
+      "Răspunsuri libere EXACTE: "+d.exactFreeRun+"/"+d.rows+
+        " ("+percent(d.freeRunExactRate)+")",
+      "Caractere corecte cu prefixul REAL observat: "+
+        d.teacherForcedCorrect+"/"+d.characters+
+        " ("+percent(d.teacherForcedAccuracy)+")",
+      "Transformări lipsă: "+d.missingEdges+
+        " · alternative prezente dar clasate greșit: "+d.wrongRanking,
+      "Modelul nativ nemodificat: "+d.nativeGraphUnchanged,
+      "Atlasul de antrenare înainte/după test: "+
+        d.trainingAtlasEpisodesBefore+"/"+d.trainingAtlasEpisodesAfter,
+      ...(d.examples||[]).slice(0,4).map(x=>
+        "ÎNTREBARE: "+crop(x.prompt,160)+
+        "\nFORMA PREDISĂ: "+crop(x.predicted,140)+
+        "\nRĂSPUNS REAL: "+crop(x.actual,140)+
+        "\nPRIMA EROARE: "+x.firstDivergence+
+        " · muchii lipsă "+x.missingEdges+" · clasare greșită "+x.wrongRanking)
+    ].join("\n\n");
+  }catch(err){if(out)out.textContent="Evaluarea nativă a eșuat: "+err.message;}
  }
  async testXD(){
   const dim=+by("atlasDimension")?.value||1024,
