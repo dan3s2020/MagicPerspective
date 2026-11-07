@@ -182,7 +182,7 @@ export class Brain {
   // ---- evaluation on what it never lived (the Evaluare tab; run on the CPU, on a copy loaded from the save) ----
   // whole unseen exercises, smallest to largest: the question is read, the answer guessed symbol by symbol, at the
   // temperature and noise chosen; each one scored on its answer (the solution) and on all of it
-  evalTextExercises(list, {T = 0, noise = 0, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
+  evalTextExercises(list, {T = 0, noise = 0, seed = (Math.random() * 2 ** 32) >>> 0, strictFullAnswer = false, maxGeneratedChars = 4096} = {}) {
     const rand = rngFrom(seed), out = [];
     for (const ex of list.slice().sort((a, b) => a.length - b.length)) {
       let a0 = -1; for (let i = 0; i < ex.length - 2; i++) if (ex[i] === 10 && ex[i + 1] === 65 && ex[i + 2] === 58) { a0 = i + 3; break; }
@@ -190,7 +190,14 @@ export class Brain {
       this.align.readFrozen(ex, (i, y, g, d) => { let b = 32, bv = -1; for (const [c, v] of d) if (v > bv) { bv = v; b = c; } rows.push([y, g]); ok += g === y; top += b === y; if (a0 >= 0 && i >= a0) { aok += g === y; an++; } }, {T, noise, rand});
       let old = 0, oa = 0; for (let i = 0; i < ex.length; i++) { const g = argmax(this.chain.play(this.e, this.ctxOf(ex, i), this.histOf(ex, i)).out); if (i >= a0) old += g === ex[i], oa++; }
       // the shape of the solution, before it is seen: from the question alone it writes the whole answer
-      const shape = a0 >= 0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
+      // A strict unseen-answer test cannot leak the true answer length through
+      // the generation budget! Fixed cap is chosen by evaluator/user BEFORE
+      // seeing any reference answer, and applies identically to EVERY task.
+      const budget = strictFullAnswer ? maxGeneratedChars : Math.min(3000, ex.length - a0 + 40);
+      if (!Number.isSafeInteger(budget) || budget < 1 || budget > 200000)
+        throw RangeError("Prediction budget must be 1..200000 and independent of hidden answer length");
+      const shape = a0 >= 0 ? this.align.write(ex.slice(0, a0), {max:budget, T, rand,
+        stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
       // Exact FIRST-TRY whole-answer scoring. The prediction is generated
       // using ONLY the question prefix before the held-out answer (above).
@@ -212,6 +219,8 @@ export class Brain {
       exactScored.filter(x => x.firstAnswerExact).length / exactScored.length : null;
     return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer"),
       firstAnswerExactRate,
+      strictFullAnswer,
+      maxGeneratedChars: strictFullAnswer ? maxGeneratedChars : null,
       firstAnswerExactCorrect: exactScored.filter(x=>x.firstAnswerExact).length,
       firstAnswerExactTotal: exactScored.length,
       firstAnswerTarget70Reached: firstAnswerExactRate === null ? null : firstAnswerExactRate >= .70,
