@@ -63,6 +63,20 @@
         </div>
         <div class="native-fatal" id="nativeFatal" role="alert" hidden></div>
         <div class="native-progress-message" id="nativeProgressMessage">Nu afișăm antrenare activă fără confirmarea workerului original.</div>
+        <div class="native-cuda-memory" id="v32CudaMemoryPanel">
+          <div class="native-vram-title">VRAM REAL · PYTORCH CUDA · FĂRĂ MEMORIE ARTIFICIALĂ</div>
+          <div class="native-vram-numbers">
+            <strong id="v32GpuUsed">—</strong>
+            <span id="v32GpuBudget">din limita sigură disponibilă: —</span>
+            <span id="v32GpuFree">VRAM disponibil: —</span>
+          </div>
+          <div class="native-vram-track" role="progressbar" id="v32GpuUsageBar"
+            aria-label="Memorie rezervată efectiv de PyTorch pentru antrenare" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="native-vram-fill" id="v32GpuUsageFill"></div>
+          </div>
+          <div id="v32GpuMicrochunk" class="native-vram-footnote">Dimensiunea lotului CUDA: aștept prima măsurare reală.</div>
+          <div id="v32GpuPhase" class="native-vram-footnote">Faza CUDA: aștept workerul original.</div>
+        </div>
       </section>
       <section class="panel native-history-panel" aria-label="Istoric de măsurători originale">
         <div class="panel-header"><div><span class="eyebrow">LIVE / ORIGINAL V17 METRIC HISTORY</span><h2>ALIGNED, graf, together, C și viteză reală <span class="panel-sub">/ date înregistrate fără recalculare</span></h2></div>
