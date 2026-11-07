@@ -292,3 +292,75 @@ test("genuine REPLAY across distant segmented worlds discovers a transform absen
   }));
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 });
+
+test("original Unicode long-world corpus >256 tokens yields actual reusable long-range transformations with ZERO silently rejected source tokens",{
+ timeout:120000
+},()=>{
+ const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"mp-full-long-native-"));
+ try{
+  const save=path.join(tmp,"original-brain.v8");
+  const atlasFile=save+".hypermaze-atlas.jsonl";
+  const brain=trainedBrain(),learner=new NativeGoalTextMaze(brain,{
+   atlasFile,maxStates:150,maxDepth:3});
+  const old=Array.from({length:950},(_,i)=>"cuvânt"+i);
+  old[421]="veche";
+  const revised=old.slice();revised[421]="nouă";
+  const textA=old.join(" ")+".",textB=revised.join(" ")+".";
+  const before=learner.observe(textA),after=learner.observe(textB);
+  assert.equal(before.observed.longUnitsWindowed,1);
+  assert.equal(after.observed.longUnitsWindowed,1);
+  const model=brain.observedTransformations;
+  assert.equal(model.rejectedLong,0,
+   "A real original long world was completely DROPPED instead of learned in overlapping contiguous observed contexts");
+  assert.equal(model.longUnitsWindowed,2);
+  assert.ok(model.longWindowSlices>=8);
+  assert.ok(model.operators.size>0);
+  const edit=[...model.operators.values()].find(op=>
+   op.kind==="replace"&&op.from==="veche"&&op.to==="nouă");
+  assert.ok(edit,"Real edit in the middle of 950 original Unicode tokens was not learned");
+  const extraWorld=old.slice();
+  extraWorld[17]="completNevăzut";
+  extraWorld[905]="încăNevăzut";
+  const unseenStart=extraWorld.join(" ")+".";
+  const unseenTarget=extraWorld.map(x=>x==="veche"?"nouă":x).join(" ")+".";
+  assert.ok(!model.containsSentence(unseenTarget));
+  assert.ok(!learner.atlasPage({after:0,limit:20}).events.some(x=>x.rawText===unseenTarget));
+  const plan=learner.plan({start:unseenStart,required:["nouă"],
+   maxStates:150,maxDepth:3,recordAtlas:true,includeTopology:true});
+  assert.equal(plan.found,true,JSON.stringify(plan.diagnostic));
+  assert.equal(plan.predicted,unseenTarget,
+   "Failed to travel through an entirely unseen >950-token long sentence using a verified original edit axis");
+  assert.equal(plan.referenceAnswerProvided,false);
+  assert.equal(plan.plannedBeforeFirstAction,true);
+  assert.ok(plan.initialShape.length>=2);
+  const body=learner.execute(plan,{enableNoise:false,trainNoise:false});
+  assert.equal(body.solvedInternalGoal,true);
+  assert.equal(body.executedFinal,unseenTarget);
+  const rows=learner.atlasPage({after:0,limit:250,kinds:["world"]}).events;
+  assert.equal(rows.filter(x=>x.rawText===textA).length,1);
+  assert.equal(rows.filter(x=>x.rawText===textB).length,1);
+  assert.equal(rows.find(x=>x.rawText===textA).utf8Bytes,Buffer.byteLength(textA,"utf8"));
+  assert.equal(rows.find(x=>x.rawText===textB).utf8Bytes,Buffer.byteLength(textB,"utf8"));
+  assert.equal(rows.find(x=>x.rawText===textA).observedLongUnitWindows,1);
+  brain.save(save);learner.atlasFlush();
+  const resumed=new NativeGoalTextMaze(Brain.load(save),{
+   atlasFile,maxStates:150,maxDepth:3});
+  assert.equal(resumed.plan({start:unseenStart,required:["nouă"]}).predicted,unseenTarget);
+  const rawTextFromDisk=resumed.atlasPage({after:0,limit:200,kinds:["world"]}).events
+   .filter(x=>x.world==="text").map(x=>x.rawText);
+  assert.deepEqual(rawTextFromDisk,[textA,textB],
+   "The full original Unicode long-sentence bytes must survive real atlas restart, not only small working windows");
+  console.log("ORIGINAL_LONG_UNICODE_OBSERVED_COMPLETE_WORLD",JSON.stringify({
+   observedOriginalTokensPerEpisode:950,
+   modelWorkingTokensPerWindow:model.maxTokens,
+   exactLongOriginalUTF8Bytes:Buffer.byteLength(textA)+Buffer.byteLength(textB),
+   observedRealLongWindows:model.longWindowSlices,
+   originalTextSentencesDropped:model.rejectedLong,
+   genuineLearnedMiddleReplacement:edit.from+"→"+edit.to,
+   unseenLongTextPredictedBeforeAction:true,
+   unseenLongTextExecutedInOriginalBrain:true,
+   fullOriginalLongTextReopenedAfterCheckpoint:true,
+   externalGeneralSemanticProof:false
+  }));
+ }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+});
