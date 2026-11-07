@@ -191,7 +191,7 @@ export class PersistentHypermazeAtlas {
    throw Error("The requested graph was not explored in any recorded search");
   if(!search.graphSharded)
    return {searchSequence,sharded:false,inlineTopology:search.fullExploredTopology,
-    totalParts:0,parts:[],hasMore:false,complete:true};
+    totalParts:0,parts:[],hasMore:false,complete:!!search.fullExploredTopology};
   const list=this.graphShardIds.get(searchSequence)||[];
   const expected=search.expectedShards||0,commit=this.graphCommits.get(searchSequence);
   if(!commit||!commit.allRecordedGraphPartsCommitted||
