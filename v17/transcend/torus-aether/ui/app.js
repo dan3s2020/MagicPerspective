@@ -552,6 +552,7 @@ async function pullSelectedGraph() {
           "\nIMPORTANT: un contrast între propoziții este o ipoteză, nu un zid sau o acțiune demonstrată.";
       }
     }
+    if(L) window.MPCognitiveGraph?.updateLive(L);
     const M = gs.wholeMap, mbox = $("wholeMapBox");
     if (mbox) {
       mbox.hidden = !M;
@@ -760,9 +761,11 @@ $("cognitiveEvaluate").onclick = async () => {
     const response=await fetch("/cognitive-eval",{method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify({w:liveW,initial:$("cognitiveInitial").value,
-        goal:{slots},maxNodes:384,maxDepth:8})});
+        goal:{slots},maxNodes:384,maxDepth:8,
+        ...(window.MPCognitiveGraph?.evalOptions()||{})})});
     const result=await response.json();
     if(result.error){output.textContent="EROARE: "+result.error;return;}
+    window.MPCognitiveGraph?.showPlan(result);
     output.textContent="ORGANISM: "+(result.found?"CALE CANDIDATĂ DESCOPERITĂ":"NU A GĂSIT O CALE")+
       "\nReguli deduse: "+result.rules+
       " | Propoziții observate: "+result.observedSentences+
@@ -792,6 +795,7 @@ $("cognitiveRecord").onclick = async () => {
       body:JSON.stringify({w:liveW,before,after,action,accepted})});
     const data=await response.json();
     if(data.error){out.textContent="EROARE: "+data.error;return;}
+    window.MPCognitiveGraph?.record({before,after,action,accepted,result:data.result});
     out.textContent="Feedback observat: "+JSON.stringify(data.result,null,2)+
       "\nHarta actualizată: "+JSON.stringify(data.report,null,2)+
       "\nCheckpoint: "+(data.savedMB!=null?data.savedMB.toFixed(2)+" MB":"așteaptă salvarea");
