@@ -114,7 +114,7 @@ export function makeLearnedMathWorld(a,b,c,model,{mirror=false}={}){
   const cells=new Map([[start,startState]]),edges=new Map();ret[start]=KIND.self;
   const found=pathsFromLearnedRules(startState,model);
   for(let branch=0;branch<found.length;branch++){
-    const route=found[branch],sign=(branch===0?!1:1)*(mirror?-1:1);
+    const route=found[branch],sign=(branch===0 ? -1 : 1)*(mirror ? -1 : 1);
     if(route.length>4)throw new Error("Geometry capacity exceeded");
     let previous=start;
     for(let step=0;step<route.length;step++){
