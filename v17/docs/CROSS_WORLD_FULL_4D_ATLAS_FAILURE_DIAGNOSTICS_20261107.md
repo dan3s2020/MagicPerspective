@@ -147,3 +147,61 @@ The GitHub CI workflow independently replays the tests and uploads real
 - The provenance, wrong edges, unsupported actions and OOD shift
   are intended to identify exactly the missing transformation
   representations in a subsequent evidence-driven integration.
+
+
+## Stronger text-to-atlas ingestion — validated after first proof
+
+The initial local proof used directly observed structured (state,action,successor)
+records. We then made the training genuinely arrive as **32 distinct TEXT
+documents**, with four different sentence-order templates per document.
+A source world still exposes exactly ONE action, no world individually
+contains all eight operators. A generic parser extracts two ordered
+coordinate tuples and exactly one learned action label from each
+evidence-bearing line; irrelevant note lines are ignored and counted.
+Every accepted edge stores the precise input document/line provenance.
+The core planner consumes the SAME assembled model, and all 288/288
+pre-action 4D paths remain correct. Every training document is exported
+unchanged to \`training-documents.json\` for inspection in the workflow
+artifact. This is structured document ingestion, NOT general natural
+language interpretation or unsupervised semantics from OpenThoughts.
+
+A subsequent diagnostic associates **each character in each generated
+action-string answer** with its source operator in the initial route and
+that operator's previously observed source-world evidence IDs. This is
+recorded for EVERY heldout world in \`results.json\` as
+\`attempts[*].conditional.characterAttribution\`, alongside the first
+incorrect action/character of the fixed-transform ablation. A distinct
+shortest valid route can have different characters from the reference:
+this is marked as a lexical disagreement, NOT a failed solved-world claim.
+
+## Independently confirmed GitHub Actions
+
+Latest observed green run after text ingestion and character attribution:
+https://github.com/dan3s2020/MagicPerspective/actions/runs/42357111657
+
+- **13/13** research tests: 11 initial causal/atlas/noise/learning tests plus
+  segmented text ingestion and per-character provenance.
+- **1/1** actual offline UI logic executed on complete generated data in
+  an isolated DOM harness, no substituted fake graph. The real Chromium
+  browser could not launch in the local container even for about:blank;
+  actual graphical rendering must still be checked in an end-user browser.
+- **6/6** existing PR #62 native Brain test and **1/1** native NoiseAgency
+  test, with no code alterations to those original mechanisms.
+- **21/21 Node tests passed** in CI. The workflow uploaded the full
+  \`atlas.html\`, \`atlas.json\`, \`results.json\`,
+  \`learned-transforms.json\` and \`training-documents.json\` for all 3
+  seeds. No RTX CUDA claim is made for this research branch.
+
+## Correctly bounded conclusion
+
+We can now demonstrate **a finite reusable 4D causal transformation atlas**
+that joins segmented TEXT memories, enumerates the full *modeled* 2,048-edge
+maze, detects exactly which prior-context rule is required, predicts a
+complete path before acting, and attributes wrong successor/action-string
+characters to prior source observations. With fixed operators the same
+training/evaluation procedure fails almost everywhere. This is not a
+proof of a universal language atlas: unbounded natural-language
+states/relations, word meaning, source reliability under major shifts,
+automatically discovered new kinds of transformation, the production
+OpenThoughts learner and CUDA throughput are not solved. Do not launch
+expensive training claiming these objectives have been achieved.
