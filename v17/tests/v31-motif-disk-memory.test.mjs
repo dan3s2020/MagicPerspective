@@ -4,6 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
+import {createHash} from "node:crypto";
+import {tokenizeObservation} from "../transcend/torus-aether/worlds/observed-transformations.mjs";
 import {NativeGoalTextMaze} from "../research/text-hypermaze/goal-conditioned-native.mjs";
 import {openNativeMotifArchive} from "../research/text-hypermaze/native-motif-disk-archive.mjs";
 
@@ -26,9 +28,13 @@ test("Disk index restores a previous real source phrase even AFTER its entire ac
   assert.equal(one.archiveDiskEnabled,true);
   const db1=archive.inspect({limit:200});
   assert.ok(db1.total>0);
-  const anchor=db1.rows.find(row=>row.width===5&&row.example.includes(phrase));
-  assert.ok(anchor,JSON.stringify(db1.rows.slice(0,2)));
-  const id=anchor.id;
+  // SQLite pages are sorted by hash, not by the visible phrase. Derive
+  // the EXACT original canonical token SHA256, then query its indexed id.
+  const id="5:"+createHash("sha256").update(JSON.stringify(
+   tokenizeObservation(phrase).slice(0,5))).digest("hex");
+  const anchor=archive.lookupMotif(id);
+  assert.ok(anchor,"The complete exact 5-token anchor must be indexed, even if outside the first page");
+  assert.equal(anchor.width,5);
   assert.equal(archive.lookupMotif(id).episodes,1);
   assert.equal(archive.status().sharedExactMotifsAcrossEpisodes,0);
   // Simulate what happens after many OpenThoughts3 problems: active
