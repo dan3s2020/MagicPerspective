@@ -199,6 +199,15 @@
       </div>
       <p id="languageMazeStatus">Aștept date reale din antrenamentul original.</p>
       <div id="languageMazeMetrics"></div>
+      <h2>Un singur graf al efectelor — maze + text + transformări</h2>
+      <p class="lmNote">Nodurile sunt tipuri de operatori și efecte observate, NU câte o copie pentru fiecare expresie. Datele provin din același Brain V17. Învățarea semantică generală rămâne de testat.</p>
+      <p id="languageMazeSharedStats" class="lmNote">Aștept actualizări reale.</p>
+      <canvas id="languageMazeSharedCanvas" width="620" height="245" style="width:100%;height:auto;background:#06111b;border:1px solid #274158;border-radius:9px" aria-label="Graf comun real de acțiuni și efecte învățate"></canvas>
+      <div class="lmrow">
+        <label><input id="languageMazeUnified" type="checkbox" checked> Folosește politica comună de transformări (fără să înlocuiască operatorii originali)</label>
+        <button id="languageMazeCompare">Compară A/B: V17 original vs graf comun</button>
+      </div>
+      <div id="languageMazeSharedAblation" class="lmNote" style="white-space:pre-wrap;overflow-wrap:anywhere">Nicio comparație A/B executată încă. Nu afirmăm un câștig.</div>
       <div class="lmrow">
         <button id="languageMazePlay">▶ Replay</button>
         <button id="languageMazePause">⏸ Pauză</button>
