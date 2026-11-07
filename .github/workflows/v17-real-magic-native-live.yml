@@ -23,6 +23,10 @@ jobs:
           node --check v17/research/text-hypermaze/state-dependent-axes.mjs
           node --check v17/research/text-hypermaze/coupled-axes.mjs
           node --check v17/research/text-hypermaze/path-holonomy.mjs
+          node --check v17/research/text-hypermaze/live-observed-axes.mjs
+          node --check v17/tests/live-observed-math-axes.test.mjs
+      - name: Verify discovered coupled math axes, nonlinear transformations, frozen solution paths and real checkpoint persistence
+        run: node --test v17/tests/live-observed-math-axes.test.mjs
       - name: Browser and real native V17 training acceptance test, no fake API and old UI preserved
         run: node --test v17/tests/magic-live-native-ui.test.mjs
       - name: Original V17 live observed language maze / inline body / full goal regressions
