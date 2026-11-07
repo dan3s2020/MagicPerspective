@@ -84,15 +84,24 @@ export function makeTask(corpus,effects,{kind="train",length=1024,rng=Math.rando
   if(!Array.isArray(pool)||pool.length<32)throw Error("Missing real source corpus split");
   const n=Math.min(pool.length,Math.max(32,Math.trunc(length)));
   if(n<effects.length*8)throw Error("Too few text tokens for configured axes");
-  let tokens=null;
   const reserved=new Set(effects.flatMap(x=>[x.from,x.to]));
-  for(let trial=0;trial<96;trial++){
-    const start=Math.floor(rng()*Math.max(1,pool.length-n+1));
-    const proposed=pool.slice(start,start+n);
-    const rawTerms=new Set(proposed.map(x=>x.toLocaleLowerCase("en")));
-    if([...reserved].every(x=>!rawTerms.has(x))){tokens=proposed;break;}
+  const start=Math.floor(rng()*Math.max(1,pool.length-n+1));
+  const tokens=pool.slice(start,start+n);
+  // Preserve source context except where it already contains an action token.
+  // Collisions are replaced by the nearest unreserved source-context token.
+  // This is disclosed as task construction, NOT untouched prose/semantic QA.
+  let collidingCorpusWords=0;
+  for(let j=0;j<tokens.length;j++){
+    if(!reserved.has(tokens[j].toLocaleLowerCase("en")))continue;
+    collidingCorpusWords++;
+    const replacement=pool[(start+j+31)%pool.length];
+    if(!reserved.has(replacement.toLocaleLowerCase("en")))tokens[j]=replacement;
+    else {
+      const safe=pool.find(w=>!reserved.has(w.toLocaleLowerCase("en")));
+      if(!safe)throw Error("Corpus has no word outside learned action vocabulary");
+      tokens[j]=safe;
+    }
   }
-  if(!tokens)throw Error("No clean source span; action word collisions with corpus");
   const d=effects.length,positions=[];
   for(let i=0;i<d;i++){
     const center=Math.floor((i+.5)*n/d);
@@ -112,7 +121,7 @@ export function makeTask(corpus,effects,{kind="train",length=1024,rng=Math.rando
   const required=indices.slice(0,desiredCount).sort((a,b)=>a-b);
   return {tokens,positions,required,
     goal:{requires:required.map(i=>effects[i].to)},
-    sourceSplit:kind,originalCorpusWords:n,
+    sourceSplit:kind,originalCorpusWords:n,collidingCorpusWords,
     construction:"real corpus span plus explicit controlled text-action sites",
     axisSources:effects.map(x=>x.from)};
 }
