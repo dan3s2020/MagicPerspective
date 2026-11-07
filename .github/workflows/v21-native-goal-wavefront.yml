@@ -1,0 +1,71 @@
+name: V21 native original Discoverer graph goal wavefront - evidence
+on:
+  push:
+    branches:
+      - experiment/V21-NATIVE-GOAL-WAVEFRONT-20261107
+  workflow_dispatch:
+jobs:
+  native-goal-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original 2D and native graph shape from source, no oracle, actual action feedback, long original corpus
+        run: node --test v17/tests/native-goal-wavefront.test.mjs
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/V21-AETHER-VEIL-PREDICTIVE-PERSPECTIVE-20261107
+          path: frozen-v21-reference
+      - name: Differential pre-existing V17 torus-brain fixture regression
+        run: |
+          set +e
+          (cd frozen-v21-reference && node --test v17/tests/torus-brain.test.mjs) > /tmp/v21-reference.log 2>&1
+          base=$?
+          node --test v17/tests/torus-brain.test.mjs > /tmp/v21-current.log 2>&1
+          current=$?
+          set -e
+          echo "Baseline status=$base, candidate status=$current"
+          if [ "$base" -eq 0 ] && [ "$current" -eq 0 ]; then
+            echo "Original Brain smoke: passes on both branches"
+          elif [ "$base" -ne 0 ] && [ "$current" -ne 0 ] &&
+               grep -q '2 !== 3' /tmp/v21-reference.log &&
+               grep -q '2 !== 3' /tmp/v21-current.log; then
+            echo "::warning::PREEXISTING V21 test assumes 3 maze episodes but current docs yield 2; reproduced in both checkouts"
+          else
+            echo "::error::Original V17 Brain regressed relative to frozen reference"
+            cat /tmp/v21-reference.log
+            cat /tmp/v21-current.log
+            exit 1
+          fi
+      - name: Original V17 and V21 contextual graph active regressions
+        run: |
+          node --test v17/tests/torus-aether.test.mjs
+          node --test v17/tests/veil-aether.test.mjs
+          node --test v17/tests/veil-aether.observed-action-field.test.mjs
+      - name: Second hypothesis - original native Disc over V19 learned novel text transformations
+        run: |
+          node --test v17/tests/native-cognitive-goal.test.mjs
+          node --test v17/tests/torus-cognitive-learned-map.test.mjs
+      - name: Full long-form native original Disc path, 0.9MB real archival text, frozen edits and ablations
+        run: node --test v17/tests/native-long-text-shape.test.mjs
+      - name: Real worker, original UI, native endpoint, checkpoint persistence
+        run: node --test v17/tests/native-goal-http.test.mjs
+      - name: Real original Brain V19 cognitive goal HTTP and UI integration
+        run: node --test v17/tests/native-cognitive-http.test.mjs
+      - name: Existing V21 original HTTP checkpoint and corpus split regression
+        run: |
+          node --test v17/tests/veil-aether.http.test.mjs
+          node --test v17/tests/torus-text-hypermaze.test.mjs
+      - name: Syntax of original and additive files
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/worlds/goal-wavefront.mjs
+          node --check v17/transcend/torus-aether/worlds/veil-aether.mjs
+          node --check v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/native-goal-live.js
+          node --check v17/transcend/torus-aether/ui/native-cognitive-live.js

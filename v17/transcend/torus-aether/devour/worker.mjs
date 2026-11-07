@@ -333,6 +333,20 @@ parentPort.on("message", m => {
     }
     return;
   }
+  // Native original Discoverer.shape, frozen on the ACTUAL V21 contextual memory.
+  if(m?.veilNativePlan){
+    const {id,start,goal,maxSteps=160}=m.veilNativePlan;
+    try{
+      if(!hypermaze)throw Error("Contextual veil world not enabled");
+      if(!brain.disc)throw Error("Original Discoverer missing from Brain");
+      const before=JSON.stringify(hypermaze.veil.export());
+      const plan=hypermaze.veil.planNative(brain.disc,start,goal,{maxSteps});
+      if(before!==JSON.stringify(hypermaze.veil.export()))
+        throw Error("Native frozen path mutated learned graph");
+      parentPort.postMessage({type:"chat",kind:"veil-native-plan",id,...plan,frozen:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"veil-native-plan",id,error:err.message});}
+    return;
+  }
   if(m?.veilPlan){
     const {id,start,goal,maxSteps=160}=m.veilPlan;
     try{
@@ -374,6 +388,44 @@ parentPort.on("message", m => {
       parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,
         result,report:cognitive.report(),savedMB});
     }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,error:err.message});}
+    return;
+  }
+  // V21 native: SAME original Discoverer.shape on actual V19 learned
+  // sentence/action transformations, including hypothetical unseen states.
+  if(m?.cognitiveNativeEval){
+    const {id,initial,goal,maxNodes=384,maxDepth=8}=m.cognitiveNativeEval;
+    try{
+      if(!cognitive)throw Error("This Brain has no native cognitive world");
+      const before=JSON.stringify(cognitive.report());
+      const plan=cognitive.formSolutionNative(initial,goal,
+        {disc:brain.disc,maxNodes,maxDepth});
+      if(JSON.stringify(cognitive.report())!==before)
+        throw Error("Native heldout planning changed training state");
+      parentPort.postMessage({type:"chat",kind:"cognitive-native",id,
+        frozen:true,found:plan.found,reason:plan.reason||plan.field?.reason||null,
+        originalDiscovererDirectlyUsed:plan.originalDiscovererDirectlyUsed,
+        noHiddenAnswerOracle:plan.noHiddenAnswerOracle,
+        firstAction:plan.field?.firstAction??null,
+        rules:plan.learnedRules,observedSentences:plan.world?.fromObservedExamples,
+        generatedStates:plan.world?.states.length,candidateGoals:plan.world?.targets.length,
+        novelGoal:plan.novelGoal||false,
+        start:plan.world?.states[0]?.join(" "),
+        plannedPath:plan.path?.map(e=>({action:e.action,from:plan.world.states[e.from]?.join(" "),
+          after:plan.world.states[e.to]?.join(" "),provenance:e.provenance,
+          potentialBefore:e.potentialBefore,potentialAfter:e.potentialAfter,
+          observedSupport:e.support})),
+        math:plan.field?.math??null,law:plan.planningLaw||null,
+        // Real generated V19 candidate graph, not an invented display. Full
+        // original solution path is always returned even when edges are sampled.
+        graph:plan.world?{
+          nodes:plan.world.states.map((state,i)=>({id:i,label:state.join(" ")})),
+          edges:plan.world.neighbors.flatMap((out,from)=>out.map(e=>({
+            from,to:e.to,action:e.action,support:e.support,verified:!!e.verified}))).slice(0,4096),
+          totalEdges:plan.world.neighbors.reduce((sum,row)=>sum+row.length,0),
+          sampledMaxEdges:4096
+        }:null,
+        truncated:plan.world?.truncated||false});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-native",id,error:err.message});}
     return;
   }
   if(m?.cognitiveEval){

@@ -171,6 +171,25 @@ const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||nu
   candidateGoals:r.world?.targets.length,novelGoal:r.novelGoal||false,
   start:r.world?.states[0]?.join(" "),plannedPath:r.path?.map(e=>({action:e.action,after:r.world.states[e.to]?.join(" ")})),
   shapeField:r.field?.values?.slice(0,128),law:r.planningLaw||null,truncated:r.world?.truncated||false});
+// Full native Discoverer result: actual learned hypothesis provenance, field,
+// frozen first action, and ALL planned steps (no UI-side fabricated routes).
+const nativeCognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||null,
+  rules:r.learnedRules,observedSentences:r.world?.fromObservedExamples,
+  generatedStates:r.world?.states.length,candidateGoals:r.world?.targets.length,
+  novelGoal:r.novelGoal||false,originalDiscovererDirectlyUsed:r.originalDiscovererDirectlyUsed,
+  noHiddenAnswerOracle:r.noHiddenAnswerOracle,firstAction:r.field?.firstAction??null,
+  start:r.world?.states[0]?.join(" "),plannedPath:r.path?.map(e=>({
+    action:e.action,from:r.world.states[e.from]?.join(" "),after:r.world.states[e.to]?.join(" "),
+    provenance:e.provenance,potentialBefore:e.potentialBefore,
+    potentialAfter:e.potentialAfter,observedSupport:e.support})),
+  math:r.field?.math??null,law:r.planningLaw||null,
+  graph:r.world?{
+    nodes:r.world.states.map((state,i)=>({id:i,label:state.join(" ")})),
+    edges:r.world.neighbors.flatMap((out,from)=>out.map(e=>({
+      from,to:e.to,action:e.action,support:e.support,verified:!!e.verified}))).slice(0,4096),
+    totalEdges:r.world.neighbors.reduce((sum,row)=>sum+row.length,0),
+    sampledMaxEdges:4096
+  }:null,truncated:r.world?.truncated||false});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
@@ -291,6 +310,44 @@ http.createServer((req, res) => {
   }
   // Direct read-only navigation through this worker's REAL corpus-learned graph.
   // V21: frozen contextual-state field, not an alternate next-token generator.
+  // Additive native original Discoverer path, retained old Veil endpoint below.
+  if (req.method === "POST" && url === "/veil-native-plan") {
+    let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid contextual Veil request"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.some(w=>w==="cognitivemap"||w==="hypertext"))return json(res,{error:"Select a graph with cognitivemap or hypertext enabled"});
+      if(typeof m.start!=="string"||!m.start||m.start.length>256||
+         typeof m.goal!=="string"||!m.goal||m.goal.length>256)
+        return json(res,{error:"Provide a two observed tokens per start and goal context"});
+      const maxSteps=Math.max(1,Math.min(10000,Math.trunc(+m.maxSteps||160)));
+      if(!sl.wk || sl.status === "gata"){
+        try{
+          const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No saved hypermaze"});
+          const brain=Brain.load(save);
+          if(!brain.hypermaze)return json(res,{error:"No learned hypermaze in checkpoint"});
+          // Pure read-only plan on restored graph, never train on evaluation data.
+          const result=TextHypermaze.restore(brain.hypermaze).veil.planNative(brain.disc,m.start,m.goal,{maxSteps});
+          return json(res,{...result,frozen:true,fromSave:true});
+        }catch(err){return json(res,{error:err.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);json(res,{error:"Native Discoverer contextual route timed out"});
+      },60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Worker exited before any hypermaze checkpoint was saved"});
+          const brain=Brain.load(file);
+          const result=TextHypermaze.restore(brain.hypermaze).veil.planNative(brain.disc,m.start,m.goal,{maxSteps});
+          return json(res,{...result,frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
+      sl.wk.postMessage({veilNativePlan:{id,start:m.start,goal:m.goal,maxSteps}});
+    });return;
+  }
   if (req.method === "POST" && url === "/veil-plan") {
     let body="";req.on("data",d=>{body+=d;if(body.length>4096)req.destroy();});
     req.on("end",()=>{
@@ -383,6 +440,41 @@ http.createServer((req, res) => {
       chats.set(id,x=>{clearTimeout(timer);json(res,x)});
       sl.wk.postMessage({cognitiveObserve:{id,before:m.before,action:m.action,
         after:m.after,accepted:m.accepted}});
+    });return;
+  }
+  // Additive native Discoverer evidence; old V19 endpoint remains unchanged.
+  if (req.method === "POST" && url === "/cognitive-native-eval") {
+    let body="";req.on("data", d => {body+=d;if(body.length>32768)req.destroy();});
+    req.on("end", ()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"invalid cognitive evaluation JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl||!sl.worlds.includes("cognitivemap"))return json(res,{error:"Selected graph has no trained cognitive map"});
+      if(typeof m.initial!=="string"||m.initial.length>1024||
+        !m.goal||typeof m.goal!=="object"||!m.goal.slots||Object.keys(m.goal.slots).length>32)
+        return json(res,{error:"Provide initial text and goal.slots constraints; no hidden target answer"});
+      if(!sl.wk || sl.status === "gata"){
+        try{
+          const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No cognitive checkpoint"});
+          const brain=Brain.load(save),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const result=model.formSolutionNative(m.initial,m.goal,{disc:brain.disc,maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          return json(res,{...nativeCognitiveReply(result),frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{chats.delete(id);sl.pendingFrozen?.delete(id);json(res,{error:"Native cognitive evaluation timeout"});},60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"Worker exited before any cognitive checkpoint was saved"});
+          const brain=Brain.load(file),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const result=model.formSolutionNative(m.initial,m.goal,{disc:brain.disc,maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          return json(res,{...nativeCognitiveReply(result),frozen:true,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
+      sl.wk.postMessage({cognitiveNativeEval:{id,initial:m.initial,goal:m.goal,
+        maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),
+        maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))}});
     });return;
   }
   if (req.method === "POST" && url === "/cognitive-eval") {

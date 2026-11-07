@@ -1,0 +1,110 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "V21-NATIVE-GOAL-WAVEFRONT-20261107",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-07-USER-PUZZLE-NATIVE-HYPERMAZE.txt",
+    "exact_user_quote": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI. TESTEZI IPOTEZE PANA FACI PIEZELE DE PUZZLE SA FUNCTIONEZE,NU SA LE SIMPLIFICI"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Original V17 Discoverer.shape(ret,n,me): goal attraction diffusion",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    ".github/workflows/v21-native-goal-wavefront.yml",
+    "v17/tests/native-goal-wavefront.test.mjs",
+    "v17/tests/native-cognitive-goal.test.mjs",
+    "v17/tests/native-long-text-shape.test.mjs",
+    "v17/tests/native-goal-http.test.mjs",
+    "v17/tests/native-cognitive-http.test.mjs",
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/worlds/goal-wavefront.mjs",
+    "v17/transcend/torus-aether/worlds/veil-aether.mjs",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/native-goal-live.js",
+    "v17/transcend/torus-aether/ui/native-cognitive-live.js"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "v17/tests/native-goal-wavefront.test.mjs",
+    "v17/tests/native-cognitive-goal.test.mjs",
+    "v17/tests/native-long-text-shape.test.mjs",
+    "v17/tests/native-goal-http.test.mjs",
+    "v17/tests/native-cognitive-http.test.mjs"
+  ],
+  "actual_observed_results": "CI 42342834670 SUCCESS on original V17/V19/V20/V21 worker; 11/11 graph tests, structured 100/100 exact full first-try unseen text edits, 903253-character/195604-token full-state plan and independent exact result (0 Bellman residual), 100/100 additional 128-token tasks, actual HTTP live worker UI and saved Brain reloaded. NOT general unrestricted QA and NOT NVIDIA GPU validated.",
+  "limitations": [
+    "Full historical Verbatim archive is incomplete and the source is a current exact user turn.",
+    "Original three-argument Discoverer.shape 2D body is unchanged but the source method signature received a guarded additive graph option; the original user-intent guard will require distinct approval to merge that file to main, which is NOT claimed.",
+    "Current Brain.chat still uses AligningGraph.write for unconstrained answer creation; full semantic goal discovery unproven.",
+    "100% only for constrained structural held-out text transformations with explicit positional goals, not OpenThoughts3 unseen free-answer exact-match.",
+    "New graph and V19 causal planner run on Node CPU, not full CUDA RTX3050Ti.",
+    "Baseline torus-brain fixture 2 !== 3 occurs on both frozen V21 source and new branch; not silently edited.",
+    "Noise/4D geometry causal use for semantic language remains UNVERIFIED."
+  ],
+  "verification_status": "PARTIAL",
+  "full_verbatim_gate": "BLOCKED",
+  "research_context": {
+    "id": "V21-NATIVE-GOAL-WAVEFRONT-20261107",
+    "user_quote": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI. TESTEZI IPOTEZE PANA FACI PIEZELE DE PUZZLE SA FUNCTIONEZE,NU SA LE SIMPLIFICI",
+    "source": "verbatim/2026-11-07-USER-PUZZLE-NATIVE-HYPERMAZE.txt",
+    "priority": "user's current explicit directive; original regression issue #25 remains open",
+    "scope": "Isolated, additive, original Discoverer.shape() graph extension and live known-goal native planner; do not replace old maze or text learner or silently merge main.",
+    "original_baseline": [
+      "v17/transcend/torus-aether/worlds/exercise.mjs: exact existing 2D Discoverer.shape(ret,n,me) preserved for 3-arg calls",
+      "v17/transcend/torus-aether/worlds/veil-aether.mjs: observed causal contextual states and edges; original plan unchanged",
+      "v17/transcend/torus-aether/devour/brain.mjs: same original Brain.disc",
+      "v17/transcend/torus-aether/devour/worker.mjs: same Brain and saved V21 graph",
+      "v17/transcend/torus-aether/ui/index.html: original controls preserved"
+    ],
+    "planned_changes": [
+      "v17/transcend/torus-aether/worlds/goal-wavefront.mjs (new)",
+      "v17/transcend/torus-aether/worlds/exercise.mjs (one guarded extension of original shape)",
+      "v17/transcend/torus-aether/worlds/veil-aether.mjs (native plan delegates to original Disc)",
+      "v17/transcend/torus-aether/devour/worker.mjs (read-only native plan message)",
+      "v17/transcend/torus-aether/devour/devour.mjs (read-only native plan HTTP)",
+      "v17/transcend/torus-aether/ui/index.html (add visual panel only)",
+      "v17/transcend/torus-aether/ui/veil-aether-live.js (add native route overlay only)",
+      "v17/tests/native-goal-wavefront.test.mjs (actual mechanism/heldout/ablation/regression)",
+      ".github/workflows/v21-native-goal-wavefront.yml (CI)",
+      "v17/docs/V21_NATIVE_GOAL_WAVEFRONT_EVIDENCE_20261107.md (evidence)",
+      "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs (additive formSolutionNative that calls the SAME original Disc method over reusable learned transformations)",
+      "v17/tests/native-cognitive-goal.test.mjs (unseen text transformations, actual physics, negative controls)",
+      "v17/transcend/torus-aether/ui/native-cognitive-live.js (NEW evidence viewer)",
+      "v17/tests/native-cognitive-http.test.mjs (original worker and V19 native goal test)",
+      "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs (additional formSolutionLongNative for >96-token actual text, original existing limits unchanged)",
+      "v17/tests/native-long-text-shape.test.mjs (large real text shape and exact heldout physical edits)"
+    ],
+    "mechanism": "Original Discoverer.shape called on observed directed graph with goal attraction, observed action transitions, propagated potential V(s)=gamma*max_action expected successor potential; no target-answer oracle. Original 2D implementation unchanged for legacy call. Phase 2 reuses V19 genuine observed sentence-contrast rules to form COUNTERFACTUAL edges, with explicit hypothesis provenance and actual action feedback; its goal is a question-derived predicate, not withheld complete answer. Phase 3 long text states reuse exact existing learned .predict() action effects and the original Discoverer.shape; original 96 token source path left unchanged, no pretrained answer or hidden target.",
+    "forbidden_substitutions": [
+      "next-character predictor as solution shape",
+      "invented latent semantic target",
+      "unchecked fake 100%",
+      "synthetic geometry visualization presented as causal",
+      "checkpoint or UI overwrite"
+    ],
+    "tests": [
+      "node --test v17/tests/native-goal-wavefront.test.mjs",
+      "node --test v17/tests/torus-brain.test.mjs",
+      "node --test v17/tests/veil-aether.test.mjs",
+      "node --test v17/tests/native-cognitive-http.test.mjs",
+      "node --test v17/tests/native-long-text-shape.test.mjs"
+    ],
+    "status": "OPEN - implementation and CI measurements pending; NOT approved release; no real long unseen answer 100% proof",
+    "limitations": [
+      "Native graph can plan to a visible specified goal but cannot infer a correct arbitrary unknown natural-language answer from a question",
+      "No all-CUDA proof; original device paths preserved",
+      "No direct physical xD effects asserted without causal ablation",
+      "Inferred V19 future edges are HYPOTHESES from observed text transformations; they are not witnessed original text and may be rejected by real physics",
+      "Long text 100% can only be claimed in explicit constrained reversible token edit tasks, not unrestricted questions."
+    ]
+  }
+}
