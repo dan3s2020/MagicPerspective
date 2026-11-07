@@ -22,6 +22,8 @@ jobs:
         run: node --test v17/tests/v23-observed-relational-hypermaze.test.mjs v17/tests/v23-noisy-long-route.test.mjs v17/tests/v23-unknown-answer.test.mjs
       - name: Real corpus streaming, checkpoint, heldout, HTTP, UI
         run: node --test v17/tests/v24-real-native-training.test.mjs
+      - name: Preserve legacy checkpoint bytes, reject corruption and restore segmented saves
+        run: node --test v17/tests/v24-checkpoint-recovery.test.mjs
       - name: Produce actual Parquet dataset containing 85 Q/A pairs
         run: |
           python -m pip install pyarrow
