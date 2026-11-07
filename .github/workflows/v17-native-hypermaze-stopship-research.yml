@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - fix/V17-HYPERMAZE-ARCHITECTURE-REGRESSION-20261107
+      - experiment/V17-PERSISTENT-HYPERMAZE-ATLAS-20261107
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,6 +32,8 @@ jobs:
         run: node --test v17/tests/native-hypermaze-original-worker-integration.test.mjs
       - name: Frozen withheld text compositions using SAME original maze shape, geometry and shared-policy ablations
         run: node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
+      - name: Persist full original observed-world, learned operators, successful/unsuccessful searches and finite-frontier states across checkpoint restart
+        run: node --test v17/tests/native-hypermaze-persistent-atlas.test.mjs
       - name: Original V17 maze/text/transform learning baseline must remain unchanged
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
