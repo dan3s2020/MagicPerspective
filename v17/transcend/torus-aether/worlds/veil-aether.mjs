@@ -91,7 +91,10 @@ export class VeilAether {
     for(let i=0;i<t.length-1;i++)states.push([t[i],t[i+1]]);
     const record=this.docs<4||this.docs%20===0;
     const first=states[0],goal=states.at(-1);
-    const pre=(record&&states.length>1)?this.plan(first,goal,{maxSteps:160}):null;
+    // One FROZEN goal field for every recorded document; each local repair reuses it.
+    const goalId=record&&goal?this.index.get(key(goal)):undefined;
+    const field=goalId!==undefined?this._field(goalId):null;
+    const pre=(record&&states.length>1)?this.plan(first,goal,{maxSteps:160,field}):null;
     const frames=[];let c=0,cov=0,base=0;
     for(let i=0;i<states.length-1;i++){
       const observation=t[i+2],guess=this._choice(states[i]),one=this._singleChoice(t[i+1]);
@@ -99,7 +102,7 @@ export class VeilAether {
       c+=+(guess.token!==null&&guess.token===observation);
       base+=+(one===observation);
       if(record&&i<this.frameLimit){
-        const localPlan=this.plan(states[i],goal,{maxSteps:80});
+        const localPlan=this.plan(states[i],goal,{maxSteps:80,field});
         frames.push({step:i+1,state:shown(states[i]),predicted:guess.token,
           observed:observation,probability:guess.choices.find(x=>x.token===observation)?.p||0,
           surprise:guess.token!==observation,alternatives:guess.choices,
@@ -112,7 +115,8 @@ export class VeilAether {
     const ids=states.map(pair=>this._ensure(pair));
     for(const id of ids)if(id>=0)this.nodes[id].count++;
     for(let i=0;i+1<ids.length;i++){
-      if(ids[i]>=0&&ids[i+1]>=0)this._edge(ids[i],ids[i+1]);
+      // The auxiliary one-symbol control must respect the SAME graph budget.
+      if(ids[i]<0||ids[i+1]<0||!this._edge(ids[i],ids[i+1]))continue;
       const word=t[i+1],next=t[i+2];
       if(!this.single.has(word))this.single.set(word,new Map());
       const counts=this.single.get(word);
@@ -145,15 +149,16 @@ export class VeilAether {
       let best=0;for(const j of this.out.get(i)?.keys()||[])best=Math.max(best,value[j]);
       maxResidual=Math.max(maxResidual,Math.abs(value[i]-.97*best));
     }
-    return {dist,value,maxResidual,reachable:queue.length};
+    return {target,dist,value,maxResidual,reachable:queue.length};
   }
-  plan(start,goal,{maxSteps=160}={}){
+  plan(start,goal,{maxSteps=160,field=null}={}){
     const a=normPair(start),g=normPair(goal);
     maxSteps=safeInt(maxSteps,1,10000);
     const from=this.index.get(key(a)),to=this.index.get(key(g));
     if(from===undefined||to===undefined)
       return {found:false,reason:"UNKNOWN_CONTEXT",path:[],frozen:true};
-    const field=this._field(to),{dist,value}=field;
+    field=field?.target===to?field:this._field(to);
+    const {dist,value}=field;
     if(dist[from]<0)return {found:false,reason:"NO_OBSERVED_ROUTE",path:[],frozen:true,
       math:{maxResidual:field.maxResidual,reachable:field.reachable}};
     const ids=[from],links=[],seen=new Set([from]);let pos=from;
