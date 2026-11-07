@@ -399,7 +399,7 @@ def exercise_learn_batch(B, worlds, K, seed):
 
 # ---------------------------------------------------------------- the server: settings, throttle, commands
 class Server:
-    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.shared = None; self.text_limit = 32768; self.text_chunk = 128
+    def __init__(self): self.B = Back("numpy" if not HAVE_TORCH else "cpu"); self.util = 100; self.tb = None; self.text = None; self.fast_text = None; self.shared = None; self.text_limit = 32768; self.text_chunk = 128
     def init(self, m):
         dev = m.get("device", "cuda:0"); self.B = Back(dev); self.util = max(1, min(100, float(m.get("util", 100))))
         info = {"device": self.B.device, "torch": HAVE_TORCH}
@@ -472,6 +472,28 @@ class Server:
                     torch.cuda.empty_cache()
                     chunk = max(32, chunk // 2)
                     text_progress(0, 1, "retry-smaller-cuda-chunk")
+        elif c == "text_fast_init":
+            from fast_text import StreamingFastText
+            self.fast_text = StreamingFastText(self.B.device if self.B.torch else "numpy",
+                                               checkpoint=m.get("checkpoint"),
+                                               resume=bool(m.get("resume", False)))
+            r = self.fast_text.status()
+        elif c == "text_fast_train":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_train")
+            r = self.fast_text.train(m["rows"])
+        elif c == "text_fast_eval":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_eval")
+            r = self.fast_text.evaluate(m["rows"])
+        elif c == "text_fast_save":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_save")
+            r = self.fast_text.save()
+        elif c == "text_fast_status":
+            if self.fast_text is None:
+                raise RuntimeError("text_fast_init required before text_fast_status")
+            r = self.fast_text.status()
         elif c == "t_reset": self.tb = TBatch(self.B, m["levels"], m["moves"]); r = {"boards": self.tb.boards()}
         elif c == "t_step": self.tb.step(m["outputs"]); r = {"boards": self.tb.boards()}
         elif c in ("shared_load", "shared_train", "shared_eval", "shared_save"):
