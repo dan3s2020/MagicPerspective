@@ -11,6 +11,7 @@ The original full V17 C/A/maze simulator is NOT falsely claimed to run here.
 This file does not generate synthetic training text or know the answer in advance.
 """
 import numpy as np
+from unified_worlds import UnifiedWorlds
 
 try:
     import torch
@@ -86,6 +87,7 @@ class UnifiedHeads:
                       if self.use_torch else value)
             setattr(self, key, tensor)
         self.extended_from_saved_brain = arrays is not None and "unified_format" not in arrays
+        self.worlds = UnifiedWorlds(device, arrays)
 
     def _tensor(self, a):
         return torch.as_tensor(a, dtype=torch.int64, device=self.device) if self.use_torch else a
@@ -173,6 +175,10 @@ class UnifiedHeads:
         self.rows += len(stories)
         self.bytes += n
         self.updates += 1
+        # Real original-V17 procedural world physics, sampled on the SAME
+        # GPU training command. No second worker, no separate model.
+        if self.updates % 8 == 0:
+            self.worlds.observe(count=1)
         return self.report()
 
     def predict(self, raw):
@@ -268,13 +274,15 @@ class UnifiedHeads:
                         "conditional-observed-transformations", "observed-edges",
                         "learned-torus-5D", "conditional-path-branches"],
                     "sameModelAsOriginalTinyStories": True,
-                    "nativeOldBrainWorker": False}
+                    "nativeOldBrainWorker": False,
+                    "worlds": self.worlds.report()}
         return {"rows": self.rows, "bytes": self.bytes, "updates": self.updates,
                 "device": self.device, "onGPU": False, "perspectives": list(SCALES),
                 "transformationCategories": 4, "dimension": POS_DIM,
                 "models": ["context-multiscale", "conditional-observed-transformations",
                            "observed-edges", "learned-torus-5D", "conditional-path-branches"],
-                "sameModelAsOriginalTinyStories": True, "nativeOldBrainWorker": False}
+                "sameModelAsOriginalTinyStories": True, "nativeOldBrainWorker": False,
+                "worlds": self.worlds.report()}
 
     def serialize(self):
         def host(value):
@@ -288,4 +296,5 @@ class UnifiedHeads:
             "unified_edges": host(self.edges),
             "unified_torus": host(self.torus),
             "unified_actions": host(self.actions),
+            **self.worlds.serialize(),
         }
