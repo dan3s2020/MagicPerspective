@@ -154,6 +154,8 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    ],{encoding:"utf8",timeout:20000,maxBuffer:10*1024*1024});
    assert.equal(result.status,0,"Chromium runtime failed to render magic UI: "+result.stderr?.slice(-2500));
    assert.match(result.stdout, /id="mChars"/);
+   assert.match(result.stdout, /Perechi observate:/,
+    "Predictive-state panel did not render measurements from actual V17 worker graph");
    assert.match(result.stdout,/Where the solution takes shape/);
    const connected=/data-magic-connected="true"/.test(result.stdout);
    const observed=+(result.stdout.match(/data-magic-observed-chars="(\d+)"/)?.[1]||0);
