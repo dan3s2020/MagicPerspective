@@ -110,17 +110,28 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
    new URLSearchParams({view:"attempts",offset:"0",limit:"2"}));
   assert.equal(atlas.sameNativeBrain,true);
   assert.equal(atlas.originalPlanner,"Discoverer.shapeGraph");
-  assert.equal(atlas.memory.attemptsTotal,4);
+  assert.equal(atlas.memory.qaEvaluationsTotal,4);
+  assert.equal(atlas.memory.qaExactWholeAnswersTotal,0);
+  assert.equal(atlas.memory.attemptsTotal,8);
   assert.equal(atlas.memory.successesTotal,Number(plan.found));
-  assert.equal(atlas.memory.failuresTotal,4-Number(plan.found));
-  assert.equal(atlas.total,4);
+  assert.equal(atlas.memory.failuresTotal,8-Number(plan.found));
+  assert.equal(atlas.total,8);
   assert.equal(atlas.rows.length,2);
   assert.equal(atlas.nextOffset,2);
-  const later=await call(app.base+"/native-atlas?"+
-   new URLSearchParams({view:"attempts",offset:"2",limit:"2"}));
-  assert.equal(later.rows.length,2);
-  assert.equal(later.nextOffset,null);
-  assert.equal(new Set([...atlas.rows,...later.rows].map(x=>x.id)).size,4);
+  const complete=atlas.rows.slice();
+  for(let offset=2;offset<atlas.total;offset+=2){
+   const page=await call(app.base+"/native-atlas?"+
+    new URLSearchParams({view:"attempts",offset:String(offset),limit:"2"}));
+   assert.equal(page.rows.length,2);
+   complete.push(...page.rows);
+   assert.equal(page.nextOffset,offset+2<atlas.total?offset+2:null);
+  }
+  assert.equal(new Set(complete.map(x=>x.id)).size,8);
+  const evaluated=complete.filter(x=>x.kind==="frozen-real-natural-language-qa");
+  assert.equal(evaluated.length,4);
+  assert.ok(evaluated.every(x=>x.withheldGoldAnswerNotPersisted===true));
+  assert.ok(evaluated.every(x=>
+   x.diagnostics.some(y=>y.code==="NO_GENERAL_QA_TRANSFORMATION_AXIS")));
   const missing=await call(app.base+"/native-atlas?"+
    new URLSearchParams({view:"attempts",filter:"failed",limit:"10"}));
   assert.equal(missing.rows.length,atlas.memory.failuresTotal);
@@ -143,8 +154,8 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
    new URLSearchParams({view:"nodes",limit:"50"}));
   assert.equal(atlasNodes.memory.physicalNodes,0);
   const onWorker=await call(app.base+"/api/status");
-  assert.equal(onWorker.status.atlasTotals.attemptsTotal,4);
-  assert.equal(onWorker.status.atlasTotals.failuresTotal,4-Number(plan.found));
+  assert.equal(onWorker.status.atlasTotals.attemptsTotal,8);
+  assert.equal(onWorker.status.atlasTotals.failuresTotal,8-Number(plan.found));
   // Explicit native checkpoint SAVE after planning, before reading from
   // disk. A checkpoint written at corpus completion alone could not prove
   // that later route failures are persisted.
@@ -181,10 +192,12 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
   const brain=Brain.load(path.join(out,progress.checkpoint));
   assert.ok(brain.hypermazeCumulativeExperience);
   assert.equal(brain.hypermazeCumulativeExperience.edges.size,0);
-  assert.equal(brain.hypermazeCumulativeExperience.atlas.attemptsTotal,4);
+  assert.equal(brain.hypermazeCumulativeExperience.atlas.attemptsTotal,8);
   assert.equal(brain.hypermazeCumulativeExperience.atlas.failuresTotal,
-   4-Number(plan.found));
-  assert.equal(brain.hypermazeCumulativeExperience.atlas.events.length,4);
+   8-Number(plan.found));
+  assert.equal(brain.hypermazeCumulativeExperience.atlas.events.length,8);
+  assert.equal(brain.hypermazeCumulativeExperience.atlas.qaEvaluationsTotal,4);
+  assert.equal(brain.hypermazeCumulativeExperience.atlas.qaExactWholeAnswersTotal,0);
   assert.ok(brain.observedTransformations.operators.size>0);
   console.log("V30_NATIVE_REAL_CORPUS_HTTP",JSON.stringify({
    actualSourceRows:m.rowsRead,originalLearnedOperators:m.learnedOperators,
@@ -196,6 +209,8 @@ test("V30 actual one-Brain real JSONL HTTP: accumulated topology routes + origin
    liveUIOriginalControlsPresent:true,
    originalBrainCheckpointSaved:true,
    originalBrainAtlasAttempts:atlas.memory.attemptsTotal,
+   frozenNaturalLanguageQAEvaluations:atlas.memory.qaEvaluationsTotal,
+   frozenNaturalLanguageFullAnswerCorrect:atlas.memory.qaExactWholeAnswersTotal,
    originalBrainAtlasFailed:atlas.memory.failuresTotal,
    allRetainedAttemptPagesVerified:true,
    exactFailedReasonDiagnosticsVerified:true,
