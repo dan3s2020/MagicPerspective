@@ -92,3 +92,24 @@ In **sectiunea cognitiva originala**:
 5. **Identitate arhitecturala**: aceeasi clasa \`Brain\` detine V17 original plus V19/V23/V24; ramura ramane experimentala, Issue #25 **OPEN** pana la validare independentă pe corpus real si unificarea functionala a generarii cu planificarea.
 
 **Concluzie verificabila:** am gasit exact doua muchii de caractere absent-permise la nivel de cuvânt, am indus permisiunea de a calca pe ele din dovezi observate in alte lumi si am demonstrat deblocarea controlată, inclusiv ziduri si alternative; nu pretind ca asta a crescut automat shapeSame pe OpenThoughts3.
+
+
+## F. Validarea finală de integrare CPU și concluziile numerice (aditiv)
+
+**Dovada de CI, run complet GREEN:** [V24 GitHub Actions #42357932423](https://github.com/dan3s2020/MagicPerspective/actions/runs/42357932423) (Windows PowerShell 5.1 + motorul V17 original + cele cinci lumi CPU native + harta textuală V23 + nivelul Unicode V24 + evaluarea pe Q/A înghețate).
+
+Ieșirile brute din testul de integrare păstrate în log:
+
+- `V24_REAL_NATIVE_CAUSAL_PATH_FORENSICS`: **18 documente observate** de harta cognitivă, **1.528 caractere învățate de V17**, **6 clase de reguli transferabile**, `mat→mot→mut` înainte de prima mișcare; `mat→met` rămâne negăsit (ținta `e` nu este în transformările disponibile); **534.464 octeți** în jurnalul atlas exportat identic cu fișierul de pe disc în acest run.
+- Comparația frozen V17 în **acest mic fixture diferit**: `originalV17HeldoutAnswerShapeSame=0.9252136752136753` (92,52% **potrivire pozițională pe caractere**) **dar `originalV17WholeCorrectCount=0` răspunsuri întregi corecte din prima**. Valorile sunt compatibile: răspunsuri repetitive au multe caractere comune și totuși pot fi complet greșite. Nu raportăm 92,52% drept acuratețe semantică.
+- `V24_ORIGINAL_V17_SHAPE_NOT_REPLACED`: test independent, `shapeSame=0.16666666666666666` (**16,67%**), 46 caractere generate, 45 poziții greșite raportate; modelul original a rămas neînlocuit.
+- `V21_NATIVE_QA_RESCUE`: recuperarea scorului original `shapeSame=0.17647058823529413` (**17,65%**), fără ținta ascunsă în prompt; `V21_MISSING_A_BOUNDARY_NOT_FALSE_ZERO`: **14,29%** pe alt fixture complet, dar scor nul/neevaluabil pentru prefixul din care lipsește markerul răspunsului.
+- `V24_ACTUAL_BLOCKED_VS_UNLOCKED`: vechiul strat pe cuvinte nu poate face mutația `mat→mut`; cu transferul caracterelor din **două contexte independente per regulă**, planul original `Discoverer.shape()` conține exact două acțiuni. Nu s-a inventat o muchie directă `mat→mut`.
+- `V24_UNSEEN_CHARACTER_COMPOSITIONS`: **100/100** probleme structurale noi de 76 de caractere cu *condiția de țintă dată explicit*, comparate cu 0 accesibile fără transfer. Niciuna nu validează răspunsuri semantice arbitrare.
+- Testul de regresie extins în `v24-native-character-forensics.test.mjs` transmite **feedback de zid** prin endpointul nativ după epuizarea corpusului finit: checkpointul original primește o copie de siguranță; transformarea `a→o` este blocată numai în starea `mat`, rămâne disponibilă pentru `bat`, iar eroarea și noul traseu negăsit sunt scrise în jurnal. Acest feedback este **injectat explicit de test ca observație externă controlată**, nu inventat ca experiență reală a utilizatorului.
+- Noul `character-gap-diagnostics.mjs` identifică indexul exact, dovezile `a→o` și `o→u`, numărul surselor independente și cauza: `TRANSFER_ABLATED_IN_THIS_RUN`, `RULE_WITHOUT_SUFFICIENT_INDEPENDENT_CONTEXTS`, `NO_OBSERVED_CHARACTER_RULE_CHAIN` sau `REAL_WALL_OBSERVED_AT_THIS_POSITION`. Separă clar ipotezele bazate pe contrast de acțiunile efectiv confirmate.
+- Optimizare CPU: `character-hypermaze.mjs` pregătește setul de reguli admise o singură dată per căutare. Nu mai reevaluează întregul catalog pentru **fiecare muchie candidată**; ordinea exactă a muchiilor, zgomotul și metoda V17 rămân neschimbate. **Nu există încă un benchmark verificat de sute de exerciții complete/s**.
+
+Acest rezultat este **o deblocare verificabilă a unei căi învățate între exerciții**, NU dovada că V17 poate ghici răspunsul necunoscut OpenThoughts3 cu 70% sau 100%. Evaluările post-hoc pot consulta referința doar DUPĂ predicția inițială; nu au voie să ridice retrospectiv scorul `shapeSame`.
+
+**Statut final: V24 experimental, Issue #25 încă deschis.** Nu se alterează `main`, originalul V17, V23 sau vechile checkpointuri; actualul atlas persisită noi experiențe fără să pretindă că reconstruiește evenimentele istorice deja compactate.
