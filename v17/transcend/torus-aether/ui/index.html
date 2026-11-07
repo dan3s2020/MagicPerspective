@@ -207,6 +207,29 @@
         <canvas id="v23AtlasCanvas" width="940" height="440" style="width:100%;height:440px;background:#06121c;border:1px solid #2c536a;border-radius:9px" aria-label="Nodurile, muchiile, forma prezisa si zidurile reale ale unui atlas hiperdimensional"></canvas>
         <pre id="v23AtlasRaw" style="white-space:pre-wrap;max-height:380px;overflow:auto;color:#bfdce8;font:11px ui-monospace,monospace">Alege orice eveniment pentru tot continutul lui, fara rezumare.</pre>
       </section>
+      <section id="v24CharacterBox" style="border:1px solid #697ab5;border-radius:10px;background:#0a1b2b;padding:12px;margin:12px 0">
+        <h2>V24 - LABIRINT PE CARACTERE Unicode, nu numai cuvinte</h2>
+        <p class="note">Nu este un demo: toate muchiile provin din diferente observate intre lumi text reale. Sunt ipoteze pana la confirmarea unei actiuni. Navigatorul este <code>Discoverer.shape()</code> ORIGINAL V17. Nivelul de cuvinte V23 si generatorul original V17 <code>AligningGraph.write()</code> raman active si NU sunt confundate cu acest traseu. Scopul este un predicat declarat, NU raspunsul ascuns.</p>
+        <pre id="v24CharacterStatus" style="white-space:pre-wrap;color:#bad4f0">Astept statistici reale de la corpusul live. Niciun graf de proba nu este introdus automat.</pre>
+        <label>Text integral de navigat (caractere, inclusiv spatii, diacritice si punctuatie):
+          <textarea id="v24CharInitial" rows="3" style="width:100%" placeholder="Introdu un text REAL; niciun exemplu presetat."></textarea>
+        </label>
+        <div class="row" style="flex-wrap:wrap">
+          <label>Conditii ale scopului, index caracter Unicode → caracter dorit
+            <input id="v24CharGoal" type="text" size="25" placeholder='{"1":"u"}'>
+          </label>
+          <label>Noduri max <input id="v24CharNodes" type="number" min="2" max="20000" value="4096" style="width:90px"></label>
+          <label>Adancime max <input id="v24CharDepth" type="number" min="1" max="256" value="8" style="width:75px"></label>
+          <label>Noise V17 <input id="v24CharNoise" type="number" min="0" max="1" step="0.05" value="0" style="width:75px"></label>
+          <button id="v24CharEvaluate" type="button">COMPARA BLOCAT VS DEBLOCAT (TEST FROZEN REAL)</button>
+        </div>
+        <pre id="v24CharBefore" style="white-space:pre-wrap;max-height:175px;overflow:auto;color:#f4a1a1">INAINTE: nu a fost efectuat un test.</pre>
+        <pre id="v24CharAfter" style="white-space:pre-wrap;max-height:240px;overflow:auto;color:#b7f3d2">DUPA: nu a fost efectuat un test.</pre>
+        <pre id="v24CharMissing" style="white-space:pre-wrap;max-height:260px;overflow:auto;color:#eecb84">CAI / CARACTERE / TRANSFORMARI LIPSA: vezi diagnosticul dupa planificare.</pre>
+        <label>Vizualizare noduri de la indexul <input id="v24CharOffset" type="number" min="0" value="0" style="width:90px"></label>
+        <canvas id="v24CharacterCanvas" width="960" height="450" style="width:100%;height:450px;background:#08141e;border:1px solid #435876;border-radius:8px" aria-label="Graf real de caractere si traseu inghetat original Discoverer.shape"></canvas>
+        <p class="note">Auriu = forma pre-actiune; indigo = ipoteza neconfirmata; verde = transformare confirmata prin feedback extern. Fereastra grafica este o proiectie a nodurilor reale; exportul JSONL al atlasului V23/V24 contine toate inregistrarile, inclusiv esecurile.</p>
+      </section>
       <h3>Feedback real: verificarea unui zid sau a unei transformări</h3>
       <p class="note">Înregistrează numai o acțiune executată efectiv și observația de după. Un traseu dedus din text rămâne o ipoteză până când lumea îi confirmă efectul.</p>
       <div class="row"><label>Înainte <input id="cognitiveBefore" type="text" size="30" value="He is calm."></label></div>
@@ -357,5 +380,6 @@
  <script type="module" src="veil-aether-live.js"></script>
  <script type="module" src="v22-original-text-labyrinth-live.js"></script>
  <script type="module" src="v23-full-atlas-live.js"></script>
+ <script type="module" src="v24-character-forensic-live.js"></script>
 </body>
 </html>
