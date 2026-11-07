@@ -58,7 +58,6 @@ export class NativeGoalTextMaze {
   return this.qaRole.plan(question,this.brain);
  }
  executeQA(plan){return this.qaRole.execute(plan);}
- }
  // Experience ONLY actual observed text; no generated answer is inserted.
  // Text edit operators and their evidence come from the EXISTING Brain.
  observe(text){
