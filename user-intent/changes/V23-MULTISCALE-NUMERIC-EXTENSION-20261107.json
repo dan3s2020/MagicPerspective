@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "OPEN_FULL_USER_ACCEPTANCE_BLOCKED",
+  "source_quotes": [
+    {
+      "source": "current user request 2026-11-07",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI"
+    },
+    {
+      "source": "current user request 2026-11-07",
+      "literal": "NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "startingSource": "experiment/V23-GROUNDED-TEMPORAL-PREACTION-SHAPE-20261107",
+  "oldCore": "v17/transcend/torus-aether/worlds/exercise.mjs",
+  "additions": [
+    "v17/transcend/torus-aether/worlds/multiscale-grounded-hypermaze.mjs",
+    "v17/transcend/torus-aether/worlds/learned-numeric-causal-shape.mjs",
+    "v17/tests/v23-multiscale-grounded-hypermaze.test.mjs",
+    "v17/tests/v23-learned-numeric-causal-shape.test.mjs",
+    "v17/docs/V23_MULTISCALE_NUMERIC_EVIDENCE_20261107.md",
+    "v17/docs/V23_MULTISCALE_NUMERIC_PROOFS_20261107.json"
+  ],
+  "original_source_unchanged": true,
+  "direct_original_shape_every_scale": true,
+  "proof": {
+    "ciRun": 42342352414,
+    "status": "success",
+    "testsPassed": 37,
+    "testsFailed": 0,
+    "structuredUnknownAnswers": "300/300",
+    "numericUnknownAnswers": "300/300",
+    "longNumericSteps": 100000,
+    "lastAnswerNotInQuestionOrDocument": true
+  },
+  "open_limits": [
+    "OpenThoughts and real unconstrained long answers unverified",
+    "same native V17 Brain control incomplete",
+    "no RTX 3050 Ti CUDA profile or 100 exercises/sec proof",
+    "Noise Space not causally validated",
+    "do not merge to main or close issue #25"
+  ]
+}
