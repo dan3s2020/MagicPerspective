@@ -1,0 +1,8 @@
+test_linear_weights_are_independently_usable (test_weight_devour.WeightDevourArchiveTests.test_linear_weights_are_independently_usable) ... ok
+test_nonlinear_weight_derived_field_is_independent (test_weight_devour.WeightDevourArchiveTests.test_nonlinear_weight_derived_field_is_independent) ... ok
+test_random_initial_weights_cannot_solve_same_tasks (test_weight_devour.WeightDevourArchiveTests.test_random_initial_weights_cannot_solve_same_tasks) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 3.554s
+
+OK

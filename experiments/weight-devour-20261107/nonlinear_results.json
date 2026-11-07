@@ -1,0 +1,98 @@
+{
+  "seed": 17,
+  "parameter_count": 8354,
+  "training_losses": [
+    {
+      "step": 1,
+      "mse": 0.2808828353881836
+    },
+    {
+      "step": 400,
+      "mse": 7.431233098031953e-05
+    },
+    {
+      "step": 800,
+      "mse": 3.520023528835736e-05
+    },
+    {
+      "step": 1200,
+      "mse": 3.256388663430698e-05
+    },
+    {
+      "step": 1600,
+      "mse": 9.459580905968323e-05
+    },
+    {
+      "step": 2000,
+      "mse": 2.004572525038384e-05
+    },
+    {
+      "step": 2200,
+      "mse": 2.2198481019586325e-05
+    }
+  ],
+  "local_field": {
+    "mean_l2": 0.005089792725537903,
+    "accuracy_l2_lt_0.05": 1.0,
+    "nonlinear_only_mean_l2": 0.005832786660213284,
+    "three_step_mean_l2": 0.009418277016349934,
+    "three_step_accuracy_l2_lt_0.10": 1.0
+  },
+  "global_affine_field": {
+    "mean_l2": 0.034612274982138695,
+    "accuracy_l2_lt_0.05": 0.7890625,
+    "nonlinear_only_mean_l2": 0.0631367612577824,
+    "three_step_mean_l2": 0.028132801904044994,
+    "three_step_accuracy_l2_lt_0.10": 0.97265625
+  },
+  "random_weight_field": {
+    "mean_l2": 0.5676542748669094,
+    "accuracy_l2_lt_0.05": 0.00390625,
+    "nonlinear_only_mean_l2": 0.5814517588181166,
+    "three_step_mean_l2": 0.3572133038658771,
+    "three_step_accuracy_l2_lt_0.10": 0.05859375
+  },
+  "local_field_jacobian_coefficients": 1568,
+  "round_trip_dreams": [
+    {
+      "op": 0,
+      "best_reverse": 0,
+      "round_trip_l2": 0.017438600433178103
+    },
+    {
+      "op": 1,
+      "best_reverse": 2,
+      "round_trip_l2": 0.009393077379937751
+    },
+    {
+      "op": 2,
+      "best_reverse": 1,
+      "round_trip_l2": 0.009539893345535006
+    },
+    {
+      "op": 3,
+      "best_reverse": 4,
+      "round_trip_l2": 0.010263197814686856
+    },
+    {
+      "op": 4,
+      "best_reverse": 3,
+      "round_trip_l2": 0.010675283434616668
+    },
+    {
+      "op": 5,
+      "best_reverse": 6,
+      "round_trip_l2": 0.005604754165438901
+    },
+    {
+      "op": 6,
+      "best_reverse": 5,
+      "round_trip_l2": 0.00569477185909109
+    },
+    {
+      "op": 7,
+      "best_reverse": 7,
+      "round_trip_l2": 0.0060698377956538594
+    }
+  ]
+}

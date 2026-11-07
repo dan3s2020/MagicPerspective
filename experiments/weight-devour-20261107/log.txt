@@ -1,0 +1,367 @@
+{
+  "seed": 17,
+  "steps": 1400,
+  "hidden": 24,
+  "parameter_count": 4730,
+  "train_s": 4.27,
+  "donor_heldout_mean_l2": 0.003451955321276649,
+  "donor_heldout_accuracy_l2_lt_0.10": 1.0,
+  "trained_atlas": {
+    "dreams": 256,
+    "jacobian_variation_mean": 0.009652977379079723,
+    "per_operator_variation": [
+      0.01002667676894183,
+      0.008971866448786359,
+      0.009455911330024073,
+      0.011946115095094911,
+      0.009212994173013862,
+      0.009898640672676753,
+      0.007960434069775863,
+      0.009751180474324139
+    ],
+    "no_teacher_outputs": true,
+    "no_source_training_samples": true,
+    "no_student_gradient_training": true,
+    "method": "exact chain-rule through donor weights, averaged over imagined coordinates",
+    "single_mean_l2": 0.003292842012045818,
+    "single_accuracy_l2_lt_0.10": 1.0,
+    "composition_mean_l2": {
+      "2": 0.004799905220076417,
+      "3": 0.0057614826195454775,
+      "5": 0.0074644539827550226
+    },
+    "composition_accuracy_l2_lt_0.10": {
+      "2": 1.0,
+      "3": 1.0,
+      "5": 1.0
+    },
+    "discovered_composition_match_to_d4": 1.0,
+    "closure_residual_mean": 0.004845524798920122,
+    "group_table": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      [
+        1,
+        2,
+        3,
+        0,
+        7,
+        4,
+        5,
+        6
+      ],
+      [
+        2,
+        3,
+        0,
+        1,
+        6,
+        7,
+        4,
+        5
+      ],
+      [
+        3,
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        4
+      ],
+      [
+        4,
+        5,
+        6,
+        7,
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        5,
+        6,
+        7,
+        4,
+        3,
+        0,
+        1,
+        2
+      ],
+      [
+        6,
+        7,
+        4,
+        5,
+        2,
+        3,
+        0,
+        1
+      ],
+      [
+        7,
+        4,
+        5,
+        6,
+        1,
+        2,
+        3,
+        0
+      ]
+    ],
+    "goal_plans": 72,
+    "goals_ready": 72,
+    "goals_solved_l2_lt_0.085": 72,
+    "goal_mean_l2_when_ready": 0.003392022402101207,
+    "goal_mean_actions_when_ready": 1.0
+  },
+  "random_weight_control": {
+    "dreams": 256,
+    "jacobian_variation_mean": 0.03661927644976294,
+    "per_operator_variation": [
+      0.025814116247081045,
+      0.04012132084867826,
+      0.03869318631918911,
+      0.03249893688699425,
+      0.043925647476278855,
+      0.03958951344244227,
+      0.028488440501227855,
+      0.04382304987621184
+    ],
+    "no_teacher_outputs": true,
+    "no_source_training_samples": true,
+    "no_student_gradient_training": true,
+    "method": "exact chain-rule through donor weights, averaged over imagined coordinates",
+    "single_mean_l2": 0.5983197580755903,
+    "single_accuracy_l2_lt_0.10": 0.013671875,
+    "composition_mean_l2": {
+      "2": 0.6207033387404853,
+      "3": 0.6150491530237401,
+      "5": 0.6290257690460791
+    },
+    "composition_accuracy_l2_lt_0.10": {
+      "2": 0.0078125,
+      "3": 0.017578125,
+      "5": 0.01953125
+    },
+    "discovered_composition_match_to_d4": 0.109375,
+    "closure_residual_mean": 0.10895476076086447,
+    "group_table": [
+      [
+        3,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        3,
+        2,
+        2,
+        2,
+        6,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        6,
+        2,
+        2,
+        2,
+        6,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2,
+        6,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    ],
+    "goal_plans": 72,
+    "goals_ready": 0,
+    "goals_solved_l2_lt_0.085": 0,
+    "goal_mean_l2_when_ready": null,
+    "goal_mean_actions_when_ready": null
+  },
+  "wiring_scramble_control": {
+    "dreams": 256,
+    "jacobian_variation_mean": 0.11545420597015857,
+    "per_operator_variation": [
+      0.0898251307874979,
+      0.10474680661492124,
+      0.09639970136067319,
+      0.2331289407010326,
+      0.08851214312616636,
+      0.12298558041369595,
+      0.07932197200704286,
+      0.10871337275023837
+    ],
+    "no_teacher_outputs": true,
+    "no_source_training_samples": true,
+    "no_student_gradient_training": true,
+    "method": "exact chain-rule through donor weights, averaged over imagined coordinates",
+    "single_mean_l2": 0.676038344662061,
+    "single_accuracy_l2_lt_0.10": 0.01171875,
+    "composition_mean_l2": {
+      "2": 0.6898931738925023,
+      "3": 0.7290194181294094,
+      "5": 0.6957243920927288
+    },
+    "composition_accuracy_l2_lt_0.10": {
+      "2": 0.015625,
+      "3": 0.0078125,
+      "5": 0.0078125
+    },
+    "discovered_composition_match_to_d4": 0.078125,
+    "closure_residual_mean": 0.249011918493126,
+    "group_table": [
+      [
+        2,
+        5,
+        5,
+        7,
+        5,
+        5,
+        5,
+        5
+      ],
+      [
+        5,
+        7,
+        7,
+        5,
+        7,
+        5,
+        7,
+        5
+      ],
+      [
+        5,
+        7,
+        7,
+        2,
+        7,
+        5,
+        7,
+        2
+      ],
+      [
+        0,
+        4,
+        2,
+        5,
+        2,
+        5,
+        4,
+        5
+      ],
+      [
+        5,
+        5,
+        7,
+        2,
+        7,
+        5,
+        7,
+        2
+      ],
+      [
+        5,
+        2,
+        0,
+        5,
+        5,
+        5,
+        0,
+        5
+      ],
+      [
+        4,
+        7,
+        7,
+        2,
+        7,
+        5,
+        7,
+        2
+      ],
+      [
+        5,
+        2,
+        2,
+        5,
+        2,
+        5,
+        2,
+        7
+      ]
+    ],
+    "goal_plans": 72,
+    "goals_ready": 4,
+    "goals_solved_l2_lt_0.085": 4,
+    "goal_mean_l2_when_ready": 0.06065548650011321,
+    "goal_mean_actions_when_ready": 1.5
+  },
+  "scope": "isolated CPU PyTorch donor + weight algebra, MagicPerspective V17-style goal-wave port; no original V17 run"
+}

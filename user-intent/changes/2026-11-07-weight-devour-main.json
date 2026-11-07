@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-07",
+  "priority": "literal current-conversation user instructions; isolated opt-in research",
+  "request_quotes": [
+    "I'm not talking about distilling it. I'm talking about giving the weights and let it devour it",
+    "And use something like meditate() that will allow our organism to dream about itself and learn the transformations it can do with the absorbed brain?  Maybe it finds the intelligence hidden in his latent space or something ,but in such way that we don't just add the weights of qwen into our organism",
+    "Go train a small neural network and use MagicPerspective go find a way to produce results . See what we can do",
+    "Post and document everything on main on magic Perspective and post all test files and results !"
+  ],
+  "request_source": "ChatGPT conversation user turns, 2026-11-07; user-authored verbatim text",
+  "source_policy": "AGENTS.md; VERBATIM_ROOT.md; verbatim/SOURCE_POLICY.md; REGRESSION_USER_DIRECTIVE_2026-11-07-V22-NO-SUBSTITUTION.md",
+  "original_baseline_paths_referenced_not_modified": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs on experiment/V17-NATIVE-COUPLED-GOAL-ROUTES-20261107",
+    "v17/transcend/torus-aether/devour/brain.mjs on experiment/V17-NATIVE-COUPLED-GOAL-ROUTES-20261107"
+  ],
+  "requested_minimum_change_scope": "Publish the already-run weight-devour research experiment, its exact archived test scripts, checkpoints, weight-only reconstructed atlases, JSON results and logs on main; add evidence report and validation test, preserve all previous code exactly.",
+  "changed_paths_prefixes": [
+    "experiments/weight-devour-20261107/",
+    "docs/WEIGHT_DEVOUR_MEDITATE_20261107.md",
+    "user-intent/changes/2026-11-07-weight-devour-main.json"
+  ],
+  "actual_original_maze_implementation_preserved": true,
+  "original_V17_replaced": false,
+  "extra_mechanism_literal_user_authorization": "User explicitly asked for weight ingestion, meditate(), a small trained donor and publishing test/results; this is an isolated addition and does not replace the original V17 organism.",
+  "test_files": [
+    "experiments/weight-devour-20261107/test_weight_devour.py",
+    "experiments/weight-devour-20261107/experiment.py",
+    "experiments/weight-devour-20261107/robustness.py",
+    "experiments/weight-devour-20261107/generator_compression.py",
+    "experiments/weight-devour-20261107/nonlinear.py",
+    "experiments/weight-devour-20261107/nonlinear_robustness.py"
+  ],
+  "observed_replay_results": "python -m unittest -v test_weight_devour.py: 3 cases passed on 2026-11-07, output in validation.log; archived seed-controlled results in robustness.json and nonlinear_results.json",
+  "open_limitations": [
+    "Isolated Python adaptation of attraction-wave planning, not the actual original JavaScript Discoverer.shape / V17 Brain execution.",
+    "No Qwen weights used; operation IDs and architecture known; controlled 2D toy tasks only.",
+    "Nonlinear robustness multi-seed run was interrupted; no unrecorded results claimed.",
+    "Original V22 and issue #25 regressions remain open; no native V17/CUDA/UI acceptance or general-language 100% result."
+  ],
+  "blocking_regression_resolved": false
+}

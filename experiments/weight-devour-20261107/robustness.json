@@ -1,0 +1,147 @@
+[
+  {
+    "seed": 17,
+    "train_seconds": 4.36,
+    "train_mse": 1.5235343198582996e-05,
+    "single_correct": 512,
+    "composition_5_correct": 512,
+    "table_correct": 64,
+    "goal_success": 72,
+    "random_goal_success": 0,
+    "ood_l2_mean": 0.003948996068182435,
+    "ood_acc_l2_lt_0.10": 1.0,
+    "dream_ablation": {
+      "1": {
+        "single_mean_l2": 0.004725109181522661,
+        "closure_residual_mean": 0.013488629278513792,
+        "five_step_acc": 1.0
+      },
+      "16": {
+        "single_mean_l2": 0.003528782683719198,
+        "closure_residual_mean": 0.0063786868622990635,
+        "five_step_acc": 1.0
+      },
+      "256": {
+        "single_mean_l2": 0.0032950919378433073,
+        "closure_residual_mean": 0.004847732329731406,
+        "five_step_acc": 1.0
+      }
+    }
+  },
+  {
+    "seed": 29,
+    "train_seconds": 4.06,
+    "train_mse": 1.026225527311908e-05,
+    "single_correct": 512,
+    "composition_5_correct": 512,
+    "table_correct": 64,
+    "goal_success": 72,
+    "random_goal_success": 0,
+    "ood_l2_mean": 0.004903014969865754,
+    "ood_acc_l2_lt_0.10": 1.0,
+    "dream_ablation": {
+      "1": {
+        "single_mean_l2": 0.0043843819146078735,
+        "closure_residual_mean": 0.009834245263368463,
+        "five_step_acc": 1.0
+      },
+      "16": {
+        "single_mean_l2": 0.004654924106089353,
+        "closure_residual_mean": 0.007670755037145368,
+        "five_step_acc": 1.0
+      },
+      "256": {
+        "single_mean_l2": 0.004004482660439972,
+        "closure_residual_mean": 0.0051800971307251085,
+        "five_step_acc": 1.0
+      }
+    }
+  },
+  {
+    "seed": 43,
+    "train_seconds": 4.23,
+    "train_mse": 3.060362723772414e-05,
+    "single_correct": 512,
+    "composition_5_correct": 512,
+    "table_correct": 64,
+    "goal_success": 72,
+    "random_goal_success": 1,
+    "ood_l2_mean": 0.009693595657780999,
+    "ood_acc_l2_lt_0.10": 1.0,
+    "dream_ablation": {
+      "1": {
+        "single_mean_l2": 0.01674667895428661,
+        "closure_residual_mean": 0.04138007976104695,
+        "five_step_acc": 0.845703125
+      },
+      "16": {
+        "single_mean_l2": 0.008491369409742253,
+        "closure_residual_mean": 0.012640190700073436,
+        "five_step_acc": 1.0
+      },
+      "256": {
+        "single_mean_l2": 0.008082571887411053,
+        "closure_residual_mean": 0.01012576217446538,
+        "five_step_acc": 1.0
+      }
+    }
+  },
+  {
+    "seed": 67,
+    "train_seconds": 4.16,
+    "train_mse": 3.5176653909729794e-05,
+    "single_correct": 512,
+    "composition_5_correct": 512,
+    "table_correct": 64,
+    "goal_success": 72,
+    "random_goal_success": 1,
+    "ood_l2_mean": 0.00932090367093175,
+    "ood_acc_l2_lt_0.10": 1.0,
+    "dream_ablation": {
+      "1": {
+        "single_mean_l2": 0.009343037523526936,
+        "closure_residual_mean": 0.01297688769490328,
+        "five_step_acc": 1.0
+      },
+      "16": {
+        "single_mean_l2": 0.008740374958761397,
+        "closure_residual_mean": 0.009328176934603447,
+        "five_step_acc": 1.0
+      },
+      "256": {
+        "single_mean_l2": 0.0088055166646482,
+        "closure_residual_mean": 0.009208310256281283,
+        "five_step_acc": 1.0
+      }
+    }
+  },
+  {
+    "seed": 101,
+    "train_seconds": 4.19,
+    "train_mse": 2.9439557692967355e-05,
+    "single_correct": 512,
+    "composition_5_correct": 512,
+    "table_correct": 64,
+    "goal_success": 72,
+    "random_goal_success": 0,
+    "ood_l2_mean": 0.006610587427427659,
+    "ood_acc_l2_lt_0.10": 1.0,
+    "dream_ablation": {
+      "1": {
+        "single_mean_l2": 0.006844803077423462,
+        "closure_residual_mean": 0.011335756049003665,
+        "five_step_acc": 1.0
+      },
+      "16": {
+        "single_mean_l2": 0.00578067244591841,
+        "closure_residual_mean": 0.007565994533926635,
+        "five_step_acc": 1.0
+      },
+      "256": {
+        "single_mean_l2": 0.005779407364865203,
+        "closure_residual_mean": 0.007617891763815272,
+        "five_step_acc": 1.0
+      }
+    }
+  }
+]
