@@ -88,21 +88,26 @@ const neighbour=(n,p,a)=>{
   return x<0||y<0||x>=n||y>=n?-1:pos(n,x,y);
 };
 const goal=s=>s.stage==="isolated"&&s.a===1&&s.b===0;
-function pathsFromLearnedRules(start,model,maxDepth=4){
-  const found=[],seen=new Set();
-  const visit=(s,route,stageTrail)=>{
-    if(goal(s)){found.push(route);return;}
-    if(route.length>=maxDepth)return;
-    const actions=[...model.rules.keys()].filter(k=>k.startsWith(s.stage+"|")).map(k=>k.split("|")[1]).sort();
-    for(const action of actions){
-      const next=model.predict(s,action);
-      if(!next||stageTrail.has(next.stage))continue;
-      visit(next,[...route,{action,from:s,to:next}],new Set([...stageTrail,next.stage]));
+// Enumerate every observed stage-action chain from the initial state.
+// Deliberately DO NOT search for successful routes or sort by goal distance.
+// The genuine original Discoverer.shape must find the goal after this
+// strictly goal-agnostic construction of observed possible transitions.
+function observedActionChains(start,model,maxDepth=4){
+  const available = stage => [...model.rules.keys()]
+    .filter(k=>k.startsWith(stage+"|")).map(k=>k.split("|")[1]).sort();
+  return available(start.stage).slice(0,2).map(firstAction=>{
+    const route=[],visitedStages=new Set([start.stage]);let state=start;
+    for(let depth=0;depth<maxDepth;depth++){
+      const candidates=available(state.stage);
+      const action=depth===0?firstAction:candidates[0];
+      if(!action)break;
+      const next=model.predict(state,action);
+      if(!next||visitedStages.has(next.stage))break;
+      route.push({action,from:state,to:next});
+      visitedStages.add(next.stage);state=next;
     }
-  };
-  visit(start,[],new Set([start.stage]));
-  found.sort((a,b)=>a.length-b.length);
-  return found.slice(0,2);
+    return route;
+  });
 }
 export function makeLearnedMathWorld(a,b,c,model,{mirror=false}={}){
   if(!Number.isSafeInteger(a)||Math.abs(a)<2||Math.abs(a)>1000||
@@ -112,7 +117,7 @@ export function makeLearnedMathWorld(a,b,c,model,{mirror=false}={}){
   const n=11,start=pos(n,5,5),startState={stage:"factored",a,b,c:rational(c)};
   const ret=new Array(n*n).fill(KIND.wall);
   const cells=new Map([[start,startState]]),edges=new Map();ret[start]=KIND.self;
-  const found=pathsFromLearnedRules(startState,model);
+  const found=observedActionChains(startState,model);
   for(let branch=0;branch<found.length;branch++){
     const route=found[branch],sign=(branch===0 ? -1 : 1)*(mirror ? -1 : 1);
     if(route.length>4)throw new Error("Geometry capacity exceeded");
@@ -127,7 +132,7 @@ export function makeLearnedMathWorld(a,b,c,model,{mirror=false}={}){
       previous=nextPos;
     }
   }
-  return {n,start,ret,cells,edges,availableRoutes:found.length,
+  return {n,start,ret,cells,edges,availableRoutes:[...cells].filter(([p,s])=>goal(s)).length,
     question:a+"(x + "+b+") = "+c,groundTruthNotProvidedToShape:true};
 }
 export function inspectPredictedMathPath(world,discoverer,verify){
