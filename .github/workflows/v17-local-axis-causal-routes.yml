@@ -1,0 +1,33 @@
+name: V17 node-local frames and causal route experiments
+on:
+  push:
+    branches:
+      - experiment/V17-LEARNED-LOCAL-AXES-CAUSAL-ROUTES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  learned-local-axes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Native V17 ConstructedTransitionGraph + node-local xD route tests
+        run: node --test v17/tests/local-axis-transport-shapes.test.mjs
+      - name: Learn symbolic mathematical transformations and multi-action forms on unseen textual math goals
+        run: node --test v17/tests/math-language-transformation-shapes.test.mjs
+      - name: Prove mathematical action words + per-node learned frame transport compose into actual unseen goal paths
+        run: node --test v17/tests/coupled-symbolic-local-axes.test.mjs
+      - name: Extend local frame and learned symbolic action words up to 11D, 2048 states
+        run: node --test v17/tests/xd-2048-states-local-language.test.mjs
+      - name: Direct native V17 text candidate reranking on frozen unseen text (geometry causal test)
+        run: node --test v17/tests/native-geometry-hybrid-text.test.mjs
+      - name: Probe actual native text-context geometry on frozen heldout character predictions
+        run: node --test v17/tests/native-context-axis-geometry.test.mjs
+      - name: Baseline regression tests for original V17 are unchanged
+        run: |
+          node --test v17/tests/observed-text-paths.test.mjs
+          node --test v17/tests/xd-gauge-collapse.test.mjs
