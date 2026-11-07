@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - fix/V29-REAL-START-STATUS-DATASET-PROGRESS-20261107
+  pull_request:
+    branches:
+      - fix/V28-V26-UI-REAL-V17-TRAINING-METRIC-PARITY-20261107
   workflow_dispatch:
 permissions:
   contents: read
