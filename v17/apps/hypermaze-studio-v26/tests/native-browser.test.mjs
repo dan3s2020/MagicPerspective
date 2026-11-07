@@ -80,7 +80,16 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
              hostMs:{sustainedExercisesPerSecond:11.48,
                sustainedCharactersPerSecond:98765}}}}]
      }));
-     if(u.pathname==="/graph")return res.end(JSON.stringify({
+     if(u.pathname==="/health")return res.end(JSON.stringify({
+        w:0,status:"antrenează",lastError:null,
+        health:{state:"running",phase:"CPU: Brain.live exact original symbolic consolidation",
+          phaseSince:Date.now()-4500,heartbeatAgeMs:250,
+          batch:{phase:"CPU: Brain.live exact original symbolic consolidation",
+            done:2048,total:43935},
+          lastReportedChars:43935,lastReportedExercises:1,
+          textMBps:0,exercisesPerSecond:0}
+      }));
+      if(u.pathname==="/graph")return res.end(JSON.stringify({
        w:0,nodes:[["a","symbol","a",2,0,0],["b","symbol","b",3,0,0],
          ["c","perspective","c",4,0,0]],
        edges:[["a","b","follows",1],["b","c","align",.8]],
@@ -174,6 +183,15 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    assert.match(progressUI.counts,/4 \/ 1\.209\.984/);
    assert.equal(progressUI.fatal,true);
    assert.ok(parseFloat(progressUI.color)>0,"Actual original training progress must be drawn");
+    const cpuPhase=await c.eval("({phase:document.querySelector('#v32GpuPhase').textContent,"+
+      "rate:document.querySelector('#nativeProgressHeartbeat').textContent,"+
+      "banner:document.querySelector('#nativeProgressMessage').textContent})");
+    assert.match(cpuPhase.phase,/CPU ORIGINAL: CPU: Brain.live/);
+    assert.match(cpuPhase.phase,/2\\.048\\/43\\.935/);
+    assert.match(cpuPhase.rate,/0,0 caractere\\/s COMMISE/);
+    assert.match(cpuPhase.banner,/Faza REALĂ: CPU: Brain.live/);
+    assert.ok(calls.some(x=>x.url==="/health"),"Native live heartbeat must be queried separately from cached /graph");
+
    const cudaReality=await c.eval("({used:document.querySelector('#v32GpuUsed').textContent,"+
      "budget:document.querySelector('#v32GpuBudget').textContent,"+
      "free:document.querySelector('#v32GpuFree').textContent,"+
