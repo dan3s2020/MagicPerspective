@@ -231,3 +231,23 @@ test("learned cyclic axes form reversible 4D loops, and learned walls exclude ph
   interpretation:"periodic symbolic 4D state graph; not physical spacetime evidence"
  }));
 });
+
+test("V27 negative semantic counterevidence: learn from outcomes that a same-name document claim can deny a target",()=>{
+ const ref=trainedReference();
+ for(let i=0;i<24;i++){
+  const marker="prior_effect_"+i,question=query(marker);
+  ref.observe({question,statement:"Archive confirms "+marker+
+    " at ("+dec(i).join(",")+").",isGoal:true});
+  ref.observe({question,statement:"Archive denies "+marker+
+    " at ("+dec((i+7)%N).join(",")+").",isGoal:false});
+ }
+ const w=world(2061),id="completely_new_marker_320",q=query(id);
+ const negative="Archive denies "+id+" at ("+dec((w.goal+9)%N).join(",")+").";
+ const safe=ref.resolve(documentWith(w,id,w.goal,[negative]),q);
+ assert.equal(safe.found,true,JSON.stringify(safe));
+ assert.equal(safe.goal,w.goal,"Learned negative evidence must not hijack the world target");
+ const onlyNegative=ref.resolve(w.document+"\n"+negative,q);
+ assert.equal(onlyNegative.found,false,"A known negative declaration is not a valid destination");
+ const checkpoint=LearnedTargetReference.restore(JSON.parse(JSON.stringify(ref.export())));
+ assert.deepEqual(checkpoint.resolve(documentWith(w,id,w.goal,[negative]),q),safe);
+});
