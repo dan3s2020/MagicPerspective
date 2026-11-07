@@ -4,6 +4,9 @@
 param(
   [string]$OriginalBrain = "",
   [string]$Events = "",
+  [string]$ParquetData = "",
+  [int]$TextSaveEvery = 5000,
+  [int]$TextLimit = 0,
   [string]$Out = "runtime-v30",
   [int]$Port = 8901,
   [int]$MaxStates = 256,
@@ -50,6 +53,16 @@ if ($Resume) {
     }
     $arguments += @("--brain", (Resolve-Path -LiteralPath $OriginalBrain).Path)
 }
+if ($ParquetData) {
+    if (-not (Test-Path -LiteralPath $ParquetData -PathType Container)) {
+        throw "OpenThoughts3 Parquet dataset directory missing: $ParquetData"
+    }
+    if ($TextSaveEvery -lt 1 -or $TextLimit -lt 0) {
+        throw "Invalid real text training interval or limit."
+    }
+    $arguments += @("--parquet", (Resolve-Path -LiteralPath $ParquetData).Path)
+    $arguments += @("--text-save-every", [string]$TextSaveEvery, "--text-limit", [string]$TextLimit)
+}
 if ($Events) {
     if (-not (Test-Path -LiteralPath $Events -PathType Leaf)) {
         throw "Event log is missing: $Events"
@@ -59,7 +72,8 @@ if ($Events) {
 Write-Host "MagicPerspective V30 - native V17 Brain, all-world hypermaze atlas" -ForegroundColor Cyan
 Write-Host "Original V17 checkpoint: $OriginalBrain"
 Write-Host "Isolated checkpoint: $checkpoint"
-Write-Host "Only genuinely witnessed world transitions are admitted." -ForegroundColor Yellow
+Write-Host "Action-labelled physical witnesses and noncausal corpus text contrasts remain distinct." -ForegroundColor Yellow
+if ($ParquetData) { Write-Host "Real text training dataset: $ParquetData (last 16 held out)" }
 Write-Host "Known search frontier is EXPLICIT; this is not all of natural language." -ForegroundColor Yellow
 Write-Host "Native atlas UI: http://127.0.0.1:$Port/"
 & $node @arguments
