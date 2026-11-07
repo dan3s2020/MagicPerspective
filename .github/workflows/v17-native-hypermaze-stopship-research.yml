@@ -34,6 +34,8 @@ jobs:
           node --test v17/tests/constructed-paths-v17.test.mjs
           node --test v17/tests/observed-transformations-v17.test.mjs
           node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: 100 strictly heldout long text passages via original native value-propagation, 5 learned body transforms, real CPU timings
+        run: node --test v17/tests/native-hypermaze-long-multistep-heldout.test.mjs
       - name: Production exact long-heldout semantics + actual native RTX must remain STOPSHIP until independently proven
         run: node --test v17/tests/hypermaze-stopship-release.test.mjs
       - name: Explicit release blocker must remain documented
