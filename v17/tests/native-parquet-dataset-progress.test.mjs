@@ -14,7 +14,7 @@ const freePort=()=>new Promise((ok,no)=>{
   const port=listener.address().port;listener.close(()=>ok(port));
  });
 });
-test("original V17 live server on ACTUAL Parquet: 40 rows, 24 train, 16 heldout, exact progress",{timeout:120000},async()=>{
+test("original V17 live server on ACTUAL Parquet: 40 rows, 32 train, 8 heldout, exact progress",{timeout:120000},async()=>{
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),"magic-real-parquet-progress-"));
  const root=path.join(temp,"data"),out=path.join(temp,"run");fs.mkdirSync(root,{recursive:true});
  const py=[
@@ -50,31 +50,31 @@ test("original V17 live server on ACTUAL Parquet: 40 rows, 24 train, 16 heldout,
     if(r.ok){
      const data=await r.json(),g=data.graphs[0],D=g?.dataset;
      assert.equal(data.dataset.rows,40);
-     assert.equal(data.dataset.trainRows,24);
-     assert.equal(data.dataset.heldOutRows,16);
+     assert.equal(data.dataset.trainRows,32);
+     assert.equal(data.dataset.heldOutRows,8);
      assert.equal(data.dataset.files,2);
-     assert.equal(D.trainingTotal,24);
+     assert.equal(D.trainingTotal,32);
      assert.equal(D.datasetRows,40);
-     assert.equal(D.heldOutRows,16);
-     if(D.processed>0&&D.processed<24)hadPartial=true;
-     if(D.processed===24&&D.percent===100){result={data,g,D};break;}
+     assert.equal(D.heldOutRows,8);
+     if(D.processed>0&&D.processed<32)hadPartial=true;
+     if(D.processed===32&&D.percent===100){result={data,g,D};break;}
     }
    }catch(e){
     if(e?.code==="ERR_ASSERTION")throw e;
    }
    await sleep(120);
   }
-  assert.ok(result,"Original Parquet trainer did not consume all 24/24 training rows: "+logs);
-  assert.ok(hadPartial||result.g.exercises===24,"Training counter did not advance");
-  assert.equal(result.data.dataset.processed.total,24);
-  assert.equal(result.data.dataset.processed.processed,24);
+  assert.ok(result,"Original Parquet trainer did not consume all 32/32 training rows: "+logs);
+  assert.ok(hadPartial||result.g.exercises===32,"Training counter did not advance");
+  assert.equal(result.data.dataset.processed.total,32);
+  assert.equal(result.data.dataset.processed.processed,32);
   const snapResp=await fetch(base+"/graph?w=0");
   assert.equal(snapResp.status,200);
   const snap=await snapResp.json();
-  assert.equal(snap.dataset.trainingTotal,24);
-  assert.equal(snap.dataset.heldOutRows,16);
+  assert.equal(snap.dataset.trainingTotal,32);
+  assert.equal(snap.dataset.heldOutRows,8);
   assert.equal(snap.dataset.percent,100);
-  assert.equal(snap.exercises,24);
+  assert.equal(snap.exercises,32);
   assert.ok(snap.chars>100);
   const page=await(await fetch(base+"/transcend/torus-aether/ui/magic.html?live=1")).text();
   assert.match(page,/id="datasetProgressBar"/);
@@ -82,7 +82,7 @@ test("original V17 live server on ACTUAL Parquet: 40 rows, 24 train, 16 heldout,
   const original=await(await fetch(base+"/transcend/torus-aether/ui/index.html?live=1")).text();
   assert.match(original,/id="trainingDatasetBar"/);
   console.log("LIVE_FULL_REAL_PARQUET_DATASET_PROGRESS",JSON.stringify({
-   parquetFiles:2,realRows:40,training:24,heldout:16,
+   parquetFiles:2,realRows:40,training:32,heldout:8,
    committed:result.D.processed,percent:result.D.percent,
    characters:snap.chars,originalAndMagicUI:true}));
  }finally{
