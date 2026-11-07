@@ -51,6 +51,31 @@ def histogram_test(device):
     assert torch.equal(original, optimized), "V42 changed the original class-vote histogram or tie-break"
     return {"cases": len(ys_cpu), "samplesPerCase": 64, "exactAllTopVotes": True}
 
+def cpu_torch_vote_math_proof():
+    try:
+        import torch
+    except ImportError:
+        return {"torchCpuAvailable": False, "originalVoteMathChecked": False,
+                "reason": "Install PyTorch CPU for independent tensor math verification"}
+    rng = torch.Generator(device="cpu").manual_seed(20261107)
+    old = v41.TextCard("cpu", S=64)
+    proven = 0
+    for width in (2, 3, 16, 32, 64, 128):
+        samples = torch.randint(-1, 129, (257, width),
+                                generator=rng, dtype=torch.long)
+        samples[0] = -1
+        samples[1] = 48
+        samples[2, :width // 2] = 35
+        samples[2, width // 2:] = 36
+        before = old._top(samples)
+        after = current._torch_exact_top_vote(samples)
+        assert torch.equal(before, after), (
+            "Torch vectorized exact-vote arithmetic differs from immutable V41")
+        proven += samples.shape[0]
+    return {"torchCpuAvailable": True, "originalVoteMathChecked": True,
+            "sequencesCompared": proven, "includingTiesAndAbsentSymbols": True}
+
+
 def real_lived_batch(cls, device, memory, exercise):
     card = cls(device, maxK=64, S=64, max_memory=2048)
     # Real memory from an existing repository document, not a toy new learner.
@@ -87,6 +112,8 @@ def main():
     if device.startswith("cuda") and not cuda:
         print("V42_PHYSICAL_CUDA_UNAVAILABLE: no fallback to fake CUDA", flush=True)
         return 77
+    math = cpu_torch_vote_math_proof()
+    print("V42_INDEPENDENT_TORCH_CPU_EXACT_VOTE_MATH", json.dumps(math), flush=True)
     memory = source_bytes()
     exercise = memory[64:320].copy()
     print("V42_SOURCE_AND_DEVICE", json.dumps({
