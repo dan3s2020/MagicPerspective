@@ -43,3 +43,61 @@ jobs:
           path: v28-native-ui-real-chrome.png
           if-no-files-found: warn
           retention-days: 7
+
+  windows-v26-ui-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run supplied PowerShell script on Windows against native API transport fixture
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $probe=Join-Path $pwd 'v17\apps\hypermaze-studio-v26\tests\native-windows-fixture.mjs'
+          $script=Join-Path $pwd 'v17\START_V28_REAL_TRAINING_UI.ps1'
+          $tmp=$env:RUNNER_TEMP
+          $upstream=Start-Process -FilePath 'node.exe' -ArgumentList @(
+            ('"'+$probe+'"'), '8908'
+          ) -PassThru -RedirectStandardOutput (Join-Path $tmp 'fixture.txt') -RedirectStandardError (Join-Path $tmp 'fixture.err')
+          $ui=$null
+          try {
+            $ready=$false
+            for($i=0;$i -lt 25;$i++){
+              Start-Sleep -Milliseconds 250
+              try{
+                $native=Invoke-RestMethod 'http://127.0.0.1:8908/graphs' -TimeoutSec 2
+                if($native.world -eq 'WINDOWS_LAUNCHER_FIXTURE'){$ready=$true;break}
+              }catch{}
+            }
+            if(!$ready){throw 'Test-only original API transport fixture did not start'}
+            $ui=Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+              '-NoProfile','-ExecutionPolicy','Bypass','-File',
+              ('"'+$script+'"'),'-NativePort','8908','-UIPort','8909','-NoBrowser'
+            ) -PassThru -RedirectStandardOutput (Join-Path $tmp 'v28-ui.txt') -RedirectStandardError (Join-Path $tmp 'v28-ui.err')
+            $live=$false
+            for($i=0;$i -lt 70;$i++){
+              Start-Sleep -Milliseconds 300
+              try{
+                $response=Invoke-RestMethod 'http://127.0.0.1:8909/api/native-state' -TimeoutSec 2
+                if($response.version -eq 'V28_NATIVE_V17_UI'){$live=$true;break}
+              }catch{}
+              if($ui.HasExited){break}
+            }
+            if(!$live){
+              if(Test-Path (Join-Path $tmp 'v28-ui.txt')){Get-Content (Join-Path $tmp 'v28-ui.txt')}
+              if(Test-Path (Join-Path $tmp 'v28-ui.err')){Get-Content (Join-Path $tmp 'v28-ui.err')}
+              throw 'V28 Windows PowerShell real launcher failed'
+            }
+            if($response.original.arm -ne 'winner'){throw 'Wrong native worker routed'}
+            Write-Host ('V28_WINDOWS_REAL_POWERSHELL '+(@{
+              launcherPassed=$true;bridgeCorrect=$true;
+              nativeOriginalWorker=$response.original.arm;
+              trainingRunTested=$false
+            } | ConvertTo-Json -Compress))
+          }finally{
+            if($ui){Stop-Process -Id $ui.Id -Force -ErrorAction SilentlyContinue}
+            Stop-Process -Id $upstream.Id -Force -ErrorAction SilentlyContinue
+          }
