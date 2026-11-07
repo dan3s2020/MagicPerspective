@@ -13,6 +13,23 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: CRITICAL - preserve every original V21 tracked byte and original V17 blob
+        run: |
+          set -euo pipefail
+          BASE=f06d845d6c3e54772ec13933147d478cdfd2b748
+          git cat-file -e "$BASE^{commit}"
+          git merge-base --is-ancestor "$BASE" HEAD
+          deleted="$(git diff --name-only --diff-filter=DR "$BASE" HEAD)"
+          if [ -n "$deleted" ]; then
+            echo "FAIL: original V21 paths removed/renamed:"; echo "$deleted"; exit 1
+          fi
+          original="$(git rev-parse "$BASE:v17/transcend/torus-aether/worlds/exercise.mjs")"
+          copied="$(git rev-parse HEAD:v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs)"
+          test "$original" = "e34d787467b7238c7422a0509173b1f785eb2342"
+          test "$original" = "$copied"
+          echo "PASS: pinned ancestor V21 commit preserved; no paths removed; byte-exact V17 original blob unchanged."
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
