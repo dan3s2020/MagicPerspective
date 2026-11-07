@@ -2,6 +2,7 @@
 // Observed Q/A transitions are facts; question similarity links are hypotheses.
 // No next-character loss and no hidden validation answers during prediction.
 import {Discoverer,KIND} from "../../transcend/torus-aether/worlds/exercise.mjs";
+import {projectObservedWorld} from "./real-hypergeometry.mjs";
 const STOP=new Set("the a an and or but if then for from with about into to of on in at is are was were been be do does did can could should would what why who how where when which this that these those it its their they them we you your i my as by than have has had not no yes please explain give find there any between also more some all each".split(" "));
 export const normalize=s=>String(s??"").normalize("NFC").toLowerCase().replace(/\s+/gu," ").trim();
 export const terms=s=>[...new Set((normalize(s).match(/[\p{L}\p{M}\p{N}_]+/gu)||[]).filter(t=>t.length>1&&!STOP.has(t)))].slice(0,256);
@@ -81,6 +82,7 @@ export class RealTextAtlas{
   const shape=actor.shape(kinds,0,0,{neighbors,conduct:()=>1,
     attract:k=>k===KIND.target?1:0,onField:v=>{field=v;}})||[];
   const node=nodes[shape.at(-1)?.to],record=node?.kind==="observed-answer"?this.records.get(node.recordId):null;
+  const geometry=projectObservedWorld(nodes,field,this.records,this.nextId,terms);
   const route=shape.map(x=>({from:x.from,to:x.to,action:x.action,verified:!!x.verified,
     type:nodes[x.to].kind,label:nodes[x.to].label}));
   return {found:!!record,answer:record?.answer||"",
@@ -88,7 +90,9 @@ export class RealTextAtlas{
     answerPreviouslyObserved:true,method:"Discoverer.shape",beforeAction:true,
     selectedSourceRow:record?.sourceRow??null,candidates:c.length,
     learnedContexts:c.map(x=>({id:x.id,score:x.score,question:x.record.prompt.slice(0,140)})),
-    route:route.slice(0,traceLimit),nodes:nodes.slice(0,traceLimit),
+    route:route.slice(0,traceLimit),nodes:geometry.nodes.slice(0,traceLimit),
+    dimensions:geometry.dimensions,axisLabels:geometry.axisLabels,
+    axisProvenance:geometry.origin,
     edges:neighbors.flatMap((a,i)=>a.map(e=>({from:i,to:e.to,action:e.action,verified:e.verified}))).slice(0,traceLimit*2),
     field:field.slice(0,traceLimit),totalNodes:nodes.length};
  }
