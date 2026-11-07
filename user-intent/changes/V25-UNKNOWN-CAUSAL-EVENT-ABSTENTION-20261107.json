@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "user_literal_quotes": [
+    {
+      "source": "current conversation user turn 2026-11-07",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI"
+    },
+    {
+      "source": "current conversation user turn 2026-11-07",
+      "literal": "NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "scope": "Additive isolated V25 branch only. Original V17 engine, V23/V24 source, UI controls and old learning objectives untouched.",
+  "originalSource": [
+    "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "v17/transcend/torus-aether/devour/brain.mjs",
+    "v17/transcend/torus-aether/worlds/grounded-temporal-hypermaze.mjs",
+    "v17/transcend/torus-aether/worlds/learned-numeric-causal-shape.mjs"
+  ],
+  "additivePaths": [
+    "v17/transcend/torus-aether/worlds/observed-no-effect-gate.mjs",
+    "v17/transcend/torus-aether/devour/v25-strict-adapter.mjs",
+    "v17/transcend/torus-aether/ui/v25-uncertainty-live.js",
+    "v17/tests/v25-unknown-causal-abstention.test.mjs",
+    "v17/tests/v25-native-unknown-http.test.mjs",
+    ".github/workflows/v25-observed-uncertainty.yml"
+  ],
+  "existingFilesModifiedOnlyByAdditions": [
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/ui/index.html",
+    "v17/transcend/torus-aether/ui/v23-grounded-live.js"
+  ],
+  "acceptanceEvidence": {
+    "ciRunId": 42343645683,
+    "status": "success",
+    "tests": 44,
+    "failed": 0,
+    "previouslyOverclaimedAnswer": 15,
+    "independentPhysicalTruth": 10,
+    "strictUnknownAbstains": true,
+    "neutralLearnedFromIndependentExperience": 8,
+    "sameBrainCheckpointPreserved": true,
+    "originalLongPath100000Retested": true
+  },
+  "limitations": [
+    "Reference recognition currently uses exact entity tokens and a conservative subset of sentence-initial coreference signals; arbitrary anaphora and omitted actors cannot be ruled out.",
+    "A user-provided before==after may be wrong; formal external ground-truth provenance is not authenticated automatically.",
+    "Training grammar and numerical operator basis remain observed constrained forms, not generic natural-language understanding.",
+    "Abstention does NOT prove the correct unknown answer is found; it prevents overclaiming.",
+    "V25 strict mode is opt-in and does not change old V17 Answer writer or automatically consume OpenThoughts3 semantic action feedback.",
+    "100% observed scores refer to structured heldout tasks, not all arbitrary text, natural language, or full mathematical problems.",
+    "No benchmark on original RTX 3050 Ti, no all-CUDA cognitive training, no 100 full OpenThoughts exercises/sec.",
+    "HTML/script checks and native HTTP controls are not browser pixel/render verification.",
+    "No universal 4D/5D intrinsic physical hyperdimensional world or real Noise Space semantics proved.",
+    "Main branch and original user checkpoint untouched, full historical exact VERBATIM remains incomplete."
+  ],
+  "fullAcceptance": "OPEN_BLOCKING_DO_NOT_MERGE_DO_NOT_REDEFINE_ORIGINAL"
+}
