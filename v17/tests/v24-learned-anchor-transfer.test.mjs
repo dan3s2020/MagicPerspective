@@ -22,7 +22,7 @@ test("V24: repeated accepted action physics induces a unique occurrence binding 
   const m=new LearnedCognitiveMap();
   teach(m,"rewrite-A","A","B");
   const rule=m.rules.get("rewrite-A");
-  assert.equal(rule.ambiguous,false);
+  assert.ok(!rule.ambiguous,"Same observed action effect at two offsets must remain unambiguous");
   assert.equal(rule.positionMode,"unique-anchor");
   assert.deepEqual(m.predict(["other","novel","context","A","ending"],"rewrite-A"),
     ["other","novel","context","B","ending"]);
