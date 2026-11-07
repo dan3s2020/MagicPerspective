@@ -106,6 +106,17 @@ function updateLog(s){
 }
 function renderLast(record){
   if(!record)return;
+  // Every selectable axis corresponds to an ACTUAL learned graph dimension.
+  const dimension=record.graph?.dimension||0;
+  const axisPicker=$("axisSelect");
+  if(dimension&&axisPicker.options.length!==dimension){
+    axisPicker.innerHTML=Array.from({length:dimension},(_,i)=>
+      '<option value="'+i+'">Axa '+i+' · '+
+      escape(record.graph.axes?.[i]?.from||"")+' → '+
+      escape(record.graph.axes?.[i]?.to||"")+'</option>').join("");
+    axisSlice=Math.min(axisSlice,dimension-1);
+    axisPicker.value=String(axisSlice);
+  }
   text("graphBadge",record.found?"PATH READY · "+record.learnedAxes+" AXE":
     "NO PATH · "+record.reason);
   text("graphLiveText","EXERCIȚIUL #"+record.id+" · "+record.kind.toUpperCase()+
