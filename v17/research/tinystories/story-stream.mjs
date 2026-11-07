@@ -31,7 +31,7 @@ export async function* stories(file,{startOffset=0,metadata=null,maxStoryBytes=4
  const sep=meta.delimiter==="tiny-mark"?MARK:meta.delimiter==="crlf"?CRLF:meta.delimiter==="blank"?LF:null;
  if(!sep&&meta.size-startOffset>maxStoryBytes)
   throw Error("Too large for one story without a story separator");
- let base=startOffset,carry=Buffer.alloc(0);
+ let base=startOffset,carry=Buffer.alloc(0),pending=null;
  for await(const chunk of fs.createReadStream(file,{start:startOffset,highWaterMark:1024*1024})){
   carry=carry.length?Buffer.concat([carry,chunk]):chunk;
   if(sep){
@@ -42,7 +42,12 @@ export async function* stories(file,{startOffset=0,metadata=null,maxStoryBytes=4
     base=endOffset;
     if(raw.length){
      const item=normalizedText(raw);
-     if(item.ascii.length)yield {...item,endOffset,sourceBytes:raw.length};
+     if(item.ascii.length){
+      // Keep the most recent item until we know its exact EOF boundary.
+      // TinyStories TXT often has a final newline after <|endoftext|>.
+      if(pending)yield pending;
+      pending={...item,endOffset,sourceBytes:raw.length};
+     }
     }
    }
   }
@@ -52,6 +57,14 @@ export async function* stories(file,{startOffset=0,metadata=null,maxStoryBytes=4
  }
  if(carry.length){
   const item=normalizedText(carry);
-  if(item.ascii.length)yield {...item,endOffset:meta.size,sourceBytes:carry.length};
+  if(item.ascii.length){
+   if(pending)yield pending;
+   pending={...item,endOffset:meta.size,sourceBytes:carry.length};
+  }else if(pending){
+   // Only trailing whitespace remains: no new story. Consume its real
+   // bytes as part of the last confirmed source boundary (100%, not 99.996%).
+   pending.endOffset=meta.size;
+  }
  }
+ if(pending)yield pending;
 }
