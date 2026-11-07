@@ -87,6 +87,22 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
   await page.waitForFunction(()=>
     (document.getElementById("atlasPageText")?.textContent||"").includes("Scara 2"),
     null,{timeout:20000});
+  // Switch from context-prefix graph to the actual OBSERVED single-edit
+  // transformation atlas. A page may legitimately be empty if the corpus
+  // has no compatible minimal edit witnesses; that must be explicit.
+  await page.locator("#atlasScale").selectOption("edits");
+  await page.waitForFunction(()=>
+    (document.getElementById("atlasPageText")?.textContent||"").includes("ORIGINAL V17"),
+    null,{timeout:20000});
+  assert.match(await page.locator("#atlasPageText").textContent(),
+    /editări învățate/);
+  await page.locator("#atlasGatedStart").fill("the moon is bright");
+  await page.locator("#atlasGatedGoal").fill("moon,bright");
+  await page.locator("#atlasGatedGo").click();
+  await page.waitForFunction(()=>
+    /STRICT original:/.test(document.getElementById("atlasGatedResult")?.textContent||""),
+    null,{timeout:20000});
+  assert.equal(await page.locator("#atlasGatedCanvas").isVisible(),true);
   await page.locator("#atlasLogMore").click();
   await page.waitForFunction(()=>
     (document.getElementById("atlasLogText")?.textContent||"").includes("byte cursor="),
