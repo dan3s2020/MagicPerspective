@@ -67,7 +67,7 @@ export class Discoverer {
   // to shape(). A graph node may be an entire textual state in 5D, not a grid.
   // geometryWeight=0 is the strictly parity-preserving default; optional
   // geometric tie-breaking requires separate causal ablation and heldout proof.
-  shapeGraph(kinds, neighbors, me, {geometry=null, geometryWeight=0, details=false}={}) {
+  shapeGraph(kinds, neighbors, me, {geometry=null, geometryWeight=0, edgePreference=null, details=false}={}) {
     if(!Array.isArray(kinds)||!Array.isArray(neighbors)||kinds.length!==neighbors.length||
        !Number.isInteger(me)||me<0||me>=kinds.length||
        kinds.some(k=>!Number.isInteger(k)||k<0||k>3))
@@ -129,6 +129,11 @@ export class Discoverer {
           const dd=targets.map(target=>torusDist(geometry[j],target))
             .filter(Number.isFinite);
           if(dd.length)score-=geometryWeight*Math.min(...dd);
+        }
+        if(edgePreference){
+          const bonus=edgePreference(p,j,edge,V[j],V[p]);
+          if(!Number.isFinite(bonus)||Math.abs(bonus)>1)throw Error("Shared path preference must be finite and bounded");
+          score+=bonus;
         }
         options.push({to:j,value:V[j],score,action:edge.action??null});
         // For geometryWeight=0, identical >= strict and first-action ordering
