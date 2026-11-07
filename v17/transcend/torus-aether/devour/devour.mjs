@@ -15,6 +15,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
+import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -329,10 +330,32 @@ http.createServer((req, res) => {
   // and outgoing transition. Querying does not trigger teacher training.
   if(req.method==="GET"&&url==="/atlas-graph"){
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
-    if(!sl?.wk)return json(res,{error:"Original Brain worker unavailable"});
+    if(!sl)return json(res,{error:"Original V17 Brain slot missing"});
     const scale=Math.max(0,Math.min(5,Math.trunc(+(q.get("scale")||0))));
     const offset=Math.max(0,Math.trunc(+(q.get("offset")||0)));
     const limit=Math.max(1,Math.min(200,Math.trunc(+(q.get("limit")||80))));
+    // The ORIGINAL trainer may have consumed EVERY row and finished while
+    // the user is browsing its thousands of learned graph edges. Page the
+    // exact checkpoint after completion instead of waiting on an exited
+    // worker. This is NOT a reconstructed/demo graph; NativeTextPathAtlas
+    // is a read-only view over the ORIGINAL saved V17 Brain.
+    if(sl.status==="gata"||!sl.wk){
+      const saved=saveOf(sl);
+      if(!fs.existsSync(saved))
+        return json(res,{error:"Original saved Brain unavailable for atlas paging",
+          status:sl.status,checkpoint:saved});
+      try{
+        const original=Brain.load(saved);
+        const view=new NativeTextPathAtlas();
+        const result=q.get("family")==="edits"?
+          view.operatorPage(original.observedTransformations,{offset,limit}):
+          view.page(original.constructedPaths,{scale,offset,limit});
+        return json(res,{w,...result,fromOriginalSavedBrain:true,
+          originalGraphNotMutated:true});
+      }catch(err){
+        return json(res,{error:"Original saved Brain atlas read failed: "+err.message});
+      }
+    }
     const id=++chatId,timer=setTimeout(()=>{
       chats.delete(id);json(res,{error:"Worker busy; no fabricated empty atlas response"});
     },25000);
