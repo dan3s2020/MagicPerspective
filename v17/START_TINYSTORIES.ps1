@@ -12,6 +12,7 @@ param(
  [int]$BatchStories = 180,
  [int]$SaveSeconds = 45,
  [string]$Cuda = "cu126",
+ [string]$PythonExe = "",
  [switch]$Download
 )
 $ErrorActionPreference = "Stop"
@@ -71,7 +72,16 @@ try { $listen.Start() }
 catch { throw "TinyStories port $Port is occupied. Choose another -Port." }
 finally { $listen.Stop() }
 $venv = Join-Path $scriptDir "transcend\torus-aether\gpu\.venv"
-$py = Join-Path $venv "Scripts\python.exe"
+$knownV17 = "D:\MagicPerspective-Magic-Live\v17\transcend\torus-aether\gpu\.venv\Scripts\python.exe"
+if (-not $PythonExe -and (Test-Path -LiteralPath $knownV17 -PathType Leaf)) {
+ $PythonExe = $knownV17
+ Write-Host "Reusing the already installed V17 CUDA PyTorch. No 2.6GB re-download." -ForegroundColor Green
+}
+$py = if ($PythonExe) { [System.IO.Path]::GetFullPath($PythonExe) }
+      else { Join-Path $venv "Scripts\python.exe" }
+if ($PythonExe -and -not (Test-Path -LiteralPath $py -PathType Leaf)) {
+ throw "Provided Python executable does not exist: $py"
+}
 if (-not (Test-Path -LiteralPath $py -PathType Leaf)) {
  Write-Host "Creating isolated V17 CUDA Python environment (only if missing)..." -ForegroundColor Cyan
  if (Get-Command py -ErrorAction SilentlyContinue) {
