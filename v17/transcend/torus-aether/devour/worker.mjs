@@ -321,9 +321,18 @@ parentPort.on("message", m => {
   }
   if(m && m.nativeHypermazeGoal){
     const {id,start,required,execute=false,trainNoise=false,topology=false,
-      atlas=false,maxPaths=256}=m.nativeHypermazeGoal;
+      atlas=false,maxPaths=256,maxStates=1500,maxDepth=6}=m.nativeHypermazeGoal;
     try{
       if(!nativeHypermaze)throw Error("Original native hypermaze experiment was not activated");
+      // The observed graph has FINITE exploration budgets, not a magical
+      // complete model of all language. The user can widen the search on the
+      // SAME original Brain without changing previously learned operators.
+      const stateBudget=Math.min(10000,Math.max(4,Math.trunc(Number(maxStates)||1500))),
+        depthBudget=Math.min(12,Math.max(1,Math.trunc(Number(maxDepth)||6)));
+      if(nativeHypermaze.maxStates!==stateBudget||nativeHypermaze.maxDepth!==depthBudget){
+        nativeHypermaze.maxStates=stateBudget;nativeHypermaze.maxDepth=depthBudget;
+        nativeHypermaze._topologyCache=null;
+      }
       // PREACTION BARRIER: no reference answer is accepted in this command.
       const initial=nativeHypermaze.plan({start,required,
         includeTopology:!!topology||!!atlas});
