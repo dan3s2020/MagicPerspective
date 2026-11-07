@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-07",
+  "scope": "finite procedural 4D text-world atlas; not full natural-language reasoning or production OpenThoughts training",
+  "observedLocallyBeforePublication": true,
+  "independentCI": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42357111657",
+  "nativeV17Modified": false,
+  "training": {
+    "documents": 32,
+    "operatorDefinitionsPerDocument": 1,
+    "observations": 2432,
+    "conditionalRulesLearned": 6,
+    "operatorKinds": 8,
+    "coordinateDimensions": 4,
+    "coordinateValuesPerAxis": 4,
+    "randomTransitionCorruption": 0.055
+  },
+  "heldout": {
+    "threeSeeds": [
+      {
+        "seed": 1181,
+        "worlds": 96,
+        "optimal": 96,
+        "fixed": 0,
+        "singleWorld": 0,
+        "failedFixedNoPath": 0,
+        "failedFixedWrongSuccessor": 96,
+        "chars": 2729322
+      },
+      {
+        "seed": 3837,
+        "worlds": 96,
+        "optimal": 96,
+        "fixed": 0,
+        "singleWorld": 0,
+        "failedFixedNoPath": 82,
+        "failedFixedWrongSuccessor": 14,
+        "chars": 2729321
+      },
+      {
+        "seed": 7731,
+        "worlds": 96,
+        "optimal": 96,
+        "fixed": 1,
+        "singleWorld": 0,
+        "failedFixedNoPath": 0,
+        "failedFixedWrongSuccessor": 95,
+        "chars": 2729719
+      }
+    ],
+    "totalWorlds": 288,
+    "optimalPreAction": 288,
+    "fixedOperatorSuccess": 1,
+    "singleEpisodeOnlySuccess": 0,
+    "totalTextCharacters": 8188362,
+    "referenceUsedOnlyForPosthocEvaluation": true
+  },
+  "fullFiniteAtlasExample": {
+    "states": 256,
+    "candidateEdges": 2048,
+    "directlyObservedStateActionEdges": 1402,
+    "inferredFromPriorWorlds": 646,
+    "unsupportedActionsWithOnePriorWorld": 1792,
+    "firstWrongStep": {
+      "action": "phase",
+      "state": 20,
+      "predictedState": 24,
+      "actualState": 28,
+      "wrongActionStringCharacterAtOffset": 5
+    },
+    "eachEdgeHasEvidenceIdsAndSourceWorlds": true,
+    "eachCharacterHasActionAndEvidenceChain": true,
+    "all96HeldoutAttemptsStoredPerSeed": true,
+    "trainingTextDocumentsExported": true
+  },
+  "learningCurve": [
+    {
+      "observations": 32,
+      "correct": 4
+    },
+    {
+      "observations": 64,
+      "correct": 2
+    },
+    {
+      "observations": 96,
+      "correct": 12
+    },
+    {
+      "observations": 128,
+      "correct": 202
+    },
+    {
+      "observations": 192,
+      "correct": 288
+    },
+    {
+      "observations": 320,
+      "correct": 288
+    },
+    {
+      "observations": 512,
+      "correct": 288
+    },
+    {
+      "observations": 768,
+      "correct": 288
+    },
+    {
+      "observations": 1280,
+      "correct": 288
+    },
+    {
+      "observations": 2432,
+      "correct": 288
+    }
+  ],
+  "noiseControl": "288/288 success at each tested training corruption level 0%,5.5%,15%,30%,50%; no proof noise improved learning",
+  "unknownPhysicsShift": "256/2048 edge predictions wrong when one learned operator is changed in unseen world",
+  "actualExternalBrowserTested": false,
+  "offlineJSAndDOMStubTested": true,
+  "actualRTXCUDAThroughputMeasured": false,
+  "limitations": [
+    "language input is structured numeric coordinate/action observation text",
+    "fixed grammatical coordinate extraction and explicit finite BFS",
+    "natural-language OpenThoughts Q/A answers and self-supervised state extraction unproven",
+    "4D atlas complete only within enumerated modeled world, not all language",
+    "cannot guarantee first-attempt 100% under changed physics/unknown walls",
+    "original native V17 Brain and CUDA generator not driven by this new planner"
+  ],
+  "command": "node --test v17/research/hypermaze-atlas/atlas-engine.test.mjs && node v17/research/hypermaze-atlas/atlas-benchmark.mjs atlas-output && node v17/research/hypermaze-atlas/atlas-view.mjs atlas-output"
+}
