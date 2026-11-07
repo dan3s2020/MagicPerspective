@@ -55,6 +55,17 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
   },null,{timeout:65000});
   assert.equal(await page.locator("#tabTrain").getAttribute("class"),"on");
   assert.equal(await page.locator("#fullAtlasPanel").isVisible(),true);
+  // V34 must render the ORIGINAL Brain telemetry inside the SAME existing
+  // page, not just a plausible static panel or hidden mock/canned graph.
+  assert.equal(await page.locator("#v34ResearchPanel").isVisible(),true);
+  await page.waitForFunction(()=>
+    (document.getElementById("v34Health")?.textContent||"").includes("ACELAȘI Brain V17"),
+    null,{timeout:20000});
+  assert.ok(Number((await page.locator("#v34Chars").textContent()).replace(/[^0-9]/g,""))>0);
+  await page.locator("#v34CharStatus").click();
+  await page.waitForFunction(()=>
+    (document.getElementById("v34RuleInfo")?.textContent||"").includes("ipoteze Unicode"),
+    null,{timeout:20000});
   assert.equal(await page.locator("#textMazeBox").isVisible(),true);
   assert.equal(await page.locator("#g").isVisible(),true);
   assert.equal(await page.locator("#hypermazeBox").isVisible(),true);
