@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {openTextDataset} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
+import {LiveHyperMaze,parseHeldoutText} from "./live-hypermaze.mjs";
 import {GpuWorlds} from "../gpu/client.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
@@ -59,6 +60,25 @@ if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(sa
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
 if (workerData.endogenousNoise) brain.enableEndogenousNoise(); // policy is saved with the original Brain
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
+// Bounded additional text-transition learner on real, never repeated V17 rows.
+// The original Brain, CUDA model and existing UI remain authoritative.
+const hyperFile=saveFile?saveFile+".hypermaze.json":null;
+let hyperMaze=new LiveHyperMaze({maxContexts:5000,maxAnswerTokens:2048,previewSteps:24});
+if(resume&&hyperFile&&fs.existsSync(hyperFile)){
+ try{hyperMaze=LiveHyperMaze.restore(JSON.parse(fs.readFileSync(hyperFile,"utf8")));}
+ catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
+  text:"Hypermaze checkpoint not loaded: "+err.message});}
+}
+const absorbHyperMaze=row=>{
+ if(!TEXT||!Array.isArray(row?.bytes)||!row.bytes.length)return;
+ const observed=typeof row.prompt==="string"&&typeof row.answer==="string"&&
+   row.prompt.trim()&&row.answer.trim()?
+   {prompt:row.prompt,answer:row.answer,source:"qa"}:
+   splitObservedText(Buffer.from(row.bytes).toString("latin1"));
+ if(!observed?.prompt||!observed?.answer)return;
+ hyperMaze.learn(observed.prompt,observed.answer,
+   {episode:row.k,source:observed.source||"prose"});
+};
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
 const shared = new SharedExperience({capacity: 384, seed: brain.seed});
 const traceFile = workerData.traceTransformations && saveFile ? saveFile + ".transitions.jsonl" : null;
@@ -99,6 +119,10 @@ const saveText = () => {
   fs.mkdirSync(path.dirname(textFile), {recursive: true});
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
+  if(hyperFile){
+    fs.writeFileSync(hyperFile+".tmp",JSON.stringify(hyperMaze.export()));
+    fs.renameSync(hyperFile+".tmp",hyperFile);
+  }
 };
 // The very same corpus, already lived by the original AligningGraph, is also
 // learned at token/phrase/sentence scales within the SAME Brain and checkpoint.
@@ -176,6 +200,7 @@ const report = (final = false) => {
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
+    hypermaze: TEXT ? hyperMaze.report() : null,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
@@ -186,6 +211,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 1100) ret
     observedTransformations: brain.observedTransformations?.report() || null,
     observedPipeline: {...observedPipeline},
     textMaze: textMazeLive,
+    hypermaze: TEXT ? hyperMaze.report() : null,
     language: brain.language?.report() || null,
     selfcode: selfcode?.status() || null, perspective: perspectiveStats(), selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
     maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, endogenousNoise: brain.noiseAgent?.status() || null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(shots++ % 5 === 0)}); };
@@ -245,7 +271,7 @@ const processGpuText = async (exs, meta) => {
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot(true);
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) for (const y of exs[0]) brain.live(y, brain.lived % 50 === 0, {old: true});
-  for(const row of meta){absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
+  for(const row of meta){absorbHyperMaze(row);absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
@@ -256,6 +282,22 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m && m.hyperMazeConfig){
+    if(Number.isFinite(+m.hyperMazeConfig.noise))
+      hyperMaze.noise=Math.max(0,Math.min(1,+m.hyperMazeConfig.noise));
+    shot(true);return;
+  }
+  if(m && m.hyperMazeEval){
+    const id=m.hyperMazeEval.id;
+    try{
+      const held=Array.isArray(m.hyperMazeEval.rows)?
+        m.hyperMazeEval.rows.map(parseHeldoutText).filter(Boolean):[];
+      parentPort.postMessage({type:"chat",id,hyperMazeEval:true,
+        ...(held.length?hyperMaze.evaluateFrozen(held,{max:60}):
+           {error:"No held-out text available from the real source"})});
+    }catch(err){parentPort.postMessage({type:"chat",id,hyperMazeEval:true,error:err.message});}
+    return;
+  }
   if(m && m.languageMaze){
     const {id,required,start,maxDepth=4,localPolicy=true,auto=false}=m.languageMaze;
     try{
@@ -374,7 +416,7 @@ for await (const ex of stream()) {
     for (let j = 0; j < textBatch.length; j++) {
       brain.beginExercise(); for (const y of textBatch[j]) { brain.live(y, brain.chars % 50 === 0); brain.chars++; }
       brain.exercises = (brain.exercises || 0) + 1;
-      absorbLanguage(textMeta[j]);absorbConstructed(textMeta[j]);
+      absorbHyperMaze(textMeta[j]);absorbLanguage(textMeta[j]);absorbConstructed(textMeta[j]);
       absorbObservedDifferences(textMeta[j]);absorbText(textMeta[j]);
     }
     textBatch = []; textMeta = []; shot(true);
@@ -401,7 +443,7 @@ for await (const ex of stream()) {
     const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars)};
     absorbObservedDifferences(livedRow);
     if(livedChars===ex.bytes.length&&!stop){
-      absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
+      absorbHyperMaze(ex);absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
       await flushShared();
     }
   }

@@ -92,6 +92,21 @@
   #languageMazeFrame{padding:9px;background:#0a121c;border:1px solid #223a50;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 ui-monospace,monospace;max-height:300px;overflow:auto}
   #languageMazePath{padding:8px;border-left:2px solid var(--gold);color:#dceefa;max-height:270px;overflow:auto;white-space:pre-wrap;font:11px/1.6 ui-monospace,monospace}
   .lmNote{color:var(--dim);font-size:11px;line-height:1.6}
+  #hypermazeBox{background:#06101c;border:1px solid #315a78;border-radius:12px;padding:12px;margin:12px 0 16px;min-width:0}
+  #hypermazeBox[hidden]{display:none!important}
+  #hypermazeBox canvas{width:100%;display:block;background:#07111c;border:1px solid #25445d;border-radius:8px;margin:9px 0}
+  #hypermazeCanvas{height:365px;touch-action:pan-y}
+  #hypermazeTimeline{height:165px}
+  .hmgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .hmmetric{background:#0a1928;border:1px solid #274259;border-radius:8px;padding:8px;min-width:0}
+  .hmmetric small{display:block;color:#8da6b8;font-size:11px}
+  .hmmetric b{display:block;font:600 17px/1.4 ui-monospace,monospace;color:#e6f3ff;overflow-wrap:anywhere}
+  #hypermazeBox .hmrow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  #hypermazeBox .hmrow button{font-size:12px;padding:5px 9px}
+  #hypermazeBox input[type=range]{accent-color:#f5bd50;min-width:100px}
+  #hypermazeBox .hmnote{font-size:11px;color:#8da6b8;line-height:1.6;margin:6px 0}
+  #hypermazeFrame,#hypermazeEvalOut{font:11.5px/1.7 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1927;border:1px solid #1e3a53;padding:9px;border-radius:7px;max-height:290px;overflow:auto}
+  #hypermazeWorker,#hypermazeInfo{color:#91bddc;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
@@ -263,6 +278,46 @@
         </div>
         <p class="note">Forma este calculată înainte de învățarea răspunsului curent. Pozițiile sunt o proiecție a stărilor și coordonatelor simbolurilor din graful original, nu geometrie semantică 5D dovedită. Mișcările sunt rezultate reale ale politicii locale, redate vizual la viteză reglabilă.</p>
         <pre id="textMazeFrame">Fără episod de predicție încă.</pre>
+      </div>
+      <div id="hypermazeBox" hidden>
+        <h2>Labirintul textului · antrenare reală, predicție și corecții LIVE</h2>
+        <p id="hypermazeWorker" class="hmnote">Se conectează la workerul V17...</p>
+        <p class="hmnote">Date autentice din OpenThoughts/text: înainte de fiecare răspuns, modelul auxiliar prezice un traseu; apoi compară cu caracterele/cuvintele efectiv observate și învață. Auriu = forma anticipată, albastru = răspunsul real, roșu = eroare, gri = alternative. Predicția pe context este distinctă de modelul original și nu dovedește semantică xD.</p>
+        <div class="hmgrid">
+          <div class="hmmetric"><small>Exerciții reale procesate</small><b id="hypermazeRows">0</b></div>
+          <div class="hmmetric"><small>Tokenuri observate / antrenate</small><b id="hypermazeTokens">0</b></div>
+          <div class="hmmetric"><small>Predicții corecte · context (pre-update)</small><b id="hypermazeAccuracy">—</b></div>
+          <div class="hmmetric"><small>Control fără context · unigram</small><b id="hypermazeBaseline">—</b></div>
+          <div class="hmmetric"><small>Surpriză medie (biți/token)</small><b id="hypermazeBits">—</b></div>
+          <div class="hmmetric"><small>Adâncime selectată din erori</small><b id="hypermazeDepth">—</b></div>
+          <div class="hmmetric"><small>Stări de context învățate</small><b id="hypermazeStates">0</b></div>
+          <div class="hmmetric"><small>Tranziții observate, păstrate</small><b id="hypermazeEdges">0</b></div>
+        </div>
+        <canvas id="hypermazeCanvas" width="760" height="365" aria-label="Traseul prezis față de răspunsul real, pe fiecare pas, cu alternativele observate"></canvas>
+        <div class="hmrow">
+          <button id="hypermazePlay">▶ Redare live</button>
+          <button id="hypermazePause">⏸ Pauză</button>
+          <button id="hypermazePrev">◀</button>
+          <button id="hypermazeNext">▶</button>
+          <button id="hypermazeRestart">↺ Reia</button>
+          <label class="dim">Viteză <input id="hypermazeSpeed" type="range" min="80" max="1500" step="20" value="380"></label>
+          <span id="hypermazeSpeedOut" class="dim">380 ms</span>
+        </div>
+        <div class="hmrow"><label style="width:100%" class="dim">Pasul curent
+          <input type="range" id="hypermazeScrub" min="0" max="0" step="1" value="0" style="width:80%"></label>
+          <span id="hypermazeFrameNo" class="dim">0 / 0</span>
+        </div>
+        <pre id="hypermazeFrame">Așteaptă un episod autentic din backend. Nu sunt afișate trasee fabricate.</pre>
+        <canvas id="hypermazeTimeline" width="760" height="165" aria-label="Evoluția măsurată a preciziei în timpul antrenamentului"></canvas>
+        <div class="hmrow">
+          <button id="hypermazeEval">Testează ÎNGHEȚAT pe text nevăzut</button>
+          <button id="hypermazeExport">Exportă traseul real JSON</button>
+          <label class="dim">Noise de explorare (numai previzualizare)
+            <input id="hypermazeNoise" type="range" min="0" max="1" step="0.05" value="0"></label>
+          <span id="hypermazeNoiseOut" class="dim">0.00</span>
+        </div>
+        <p id="hypermazeInfo" class="hmnote">Antrenarea originală rămâne activă. Modelul de tranziții auxiliar este CPU; CUDA rămâne responsabil de componentele GPU ale V17.</p>
+        <pre id="hypermazeEvalOut">Evaluarea înghețată nu antrenează pe exemplele nevăzute.</pre>
       </div>
     </div>
     <div id="sharedBox" hidden style="margin:12px 0;border:1px solid #24405d;border-radius:10px;padding:12px">
