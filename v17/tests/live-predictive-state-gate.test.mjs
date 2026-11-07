@@ -123,3 +123,30 @@ test("new live sidecar persists prediction state; old v1 checkpoints still resto
   assert.equal(migrated.report().predictiveState.testScored,0);
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 });
+
+test("the REAL learned mathematical path exposes a second independent pre-action prediction from its validated contextual axis",()=>{
+ const data=curriculum(product),x=new LiveObservedMathAxes();
+ for(const row of [...data.train,...data.validation,...data.test])
+  x.consume(row.before+"\n"+row.after);
+ const before=x.report(),originalStart="15 * 91 = 1365";
+ const outcome=x.plan(originalStart,[{index:0,value:16}]);
+ assert.ok(outcome.found,JSON.stringify(outcome));
+ assert.equal(outcome.field,"state-dependent");
+ assert.equal(outcome.referenceAnswerProvided,false);
+ assert.equal(outcome.preActionEffect.available,true,JSON.stringify(outcome.preActionEffect));
+ assert.equal(outcome.preActionEffect.selectedAxis,"context-axis");
+ assert.equal(outcome.preActionEffect.predictedDependent,1456);
+ assert.equal(outcome.preActionEffect.referenceAnswerProvided,false);
+ assert.equal(outcome.plan.states[0],originalStart);
+ assert.equal(outcome.plan.states[1],"16 * 91 = 1456");
+ const after=x.report();
+ assert.equal(after.predictiveState.testScored,before.predictiveState.testScored,
+  "A real frozen path MUST NEVER update the held-out scoring record");
+ assert.equal(after.predictiveState.training,before.predictiveState.training);
+ console.log("LIVE_FIRST_ACTION_PERSPECTIVE_ALIGNMENT",JSON.stringify({
+  nativeInitial:outcome.plan.states[0],nativeFirst:outcome.plan.states[1],
+  independentPredictedNumericEffect:outcome.preActionEffect.predictedChange,
+  independentNumericNext:outcome.preActionEffect.predictedDependent,
+  selectedContext:outcome.preActionEffect.selectedAxis,
+  answerProvidedInGoal:false,frozen:true}));
+});
