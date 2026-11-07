@@ -49,7 +49,7 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
  <div><div class="eyebrow">Original V17 · actual observed transformations · no demonstration data</div>
  <h1>The Native Hyperdimensional Labyrinth</h1>
  <div class="muted">Atracție originală → formă globală înainte de primul pas → mișcare → efect → replanificare</div></div>
- <nav><a href="./index.html?live=1">V17 original</a><a href="./magic.html?live=1">Magic Observatory</a></nav>
+ <nav><a href="./index.html?live=1">V17 original</a><a href="./magic.html?live=1">Magic Observatory</a><a id="atlasLink" href="./native-hypermaze-atlas.html">Atlas complet: căi + eșecuri + operatori</a></nav>
 </header>
 <main>
  <div class="notice">Acest observator afișează <b>numai stările și transformările calculate de motorul original V17</b>. Are nevoie de un obiectiv explicit în termeni de tokeni; nu folosește răspunsul ascuns ca țintă. Exactitatea semantică generală de 100%, utilizarea integrală CUDA și beneficiul cauzal al geometriei 5D nu sunt demonstrate. Interfața este izolată și nu modifică versiunea veche.</div>
@@ -85,6 +85,18 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
     <textarea id="source" placeholder="Introduceți un text din lumea observată de organism; nu răspunsul de referință"></textarea>
     <label class="formlabel" for="required">Tokeni necesari în starea-țintă (separați prin virgulă)</label>
     <input id="required" placeholder="de exemplu: tokenA,tokenB" autocomplete="off">
+    <div class="controls" style="margin-top:12px">
+     <label for="states">Stări explorate <select id="states">
+      <option value="1500">1.500 (inițial)</option>
+      <option value="5000">5.000</option>
+      <option value="15000">15.000</option>
+      <option value="50000">50.000 (poate dura mult)</option>
+     </select></label>
+     <label for="depth">Adâncime <select id="depth">
+      <option value="6">6</option><option value="10">10</option>
+      <option value="16">16</option><option value="20">20</option>
+     </select></label>
+    </div>
     <div class="controls" style="margin-top:12px">
      <button id="plan" class="primary">◈ Prezice forma și execută</button>
     </div>
