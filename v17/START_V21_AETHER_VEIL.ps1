@@ -89,7 +89,7 @@ $selectedWorlds = if ($IncludeCognitive) {
 }
 if ($selectedWorlds -notmatch '(^|,)text(,|$)') { throw "Refusing V21 startup without native text training." }
 
-Write-Host "MAGICPERSPECTIVE V21 — REAL TEXT + AETHER/VEIL + MAZE/TRANSFORM" -ForegroundColor Cyan
+Write-Host "MAGICPERSPECTIVE V21 - REAL TEXT + AETHER/VEIL + MAZE/TRANSFORM" -ForegroundColor Cyan
 Write-Host "Native V17 AligningGraph.write trains on ACTUAL Q/A corpus. V20/V21 observe same documents." -ForegroundColor Green
 Write-Host "Worlds: $selectedWorlds"
 Write-Host "GPU: $Gpu | worlds/batch: $GpuWorlds | text-batch: $GpuTextBatch | VRAM GB: $Vram"
