@@ -85,7 +85,7 @@ test("NATIVE CPU V22: real V17 Q/A + V19 original Discoverer.shape + V20/21 + 2D
    // FROZEN copy. No hidden answer is supplied to align.write().
    let result=await fetch(base+"/eval",{
      method:"POST",headers:{"content-type":"application/json"},
-     body:JSON.stringify({w:0,kind:"text",opts:{count:2,max:0,T:0,noise:0,strictHeldout:true}})
+     body:JSON.stringify({w:0,kind:"text",opts:{count:2,max:0,maxOutput:128,T:0,noise:0,strictHeldout:true}})
    });
    assert.equal(result.status,200);
    const strict=await result.json();
