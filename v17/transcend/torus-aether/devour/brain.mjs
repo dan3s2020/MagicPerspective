@@ -185,15 +185,18 @@ export class Brain {
   evalTextExercises(list, {T = 0, noise = 0, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
     const rand = rngFrom(seed), out = [];
     for (const ex of list.slice().sort((a, b) => a.length - b.length)) {
-      let a0 = 0; for (let i = 0; i < ex.length - 2; i++) if (ex[i] === 10 && ex[i + 1] === 65 && ex[i + 2] === 58) { a0 = i + 3; break; }
+      let a0 = -1; for (let i = 0; i < ex.length - 2; i++) if (ex[i] === 10 && ex[i + 1] === 65 && ex[i + 2] === 58) { a0 = i + 3; break; }
       const rows = []; let ok = 0, aok = 0, an = 0, top = 0;
-      this.align.readFrozen(ex, (i, y, g, d) => { let b = 32, bv = -1; for (const [c, v] of d) if (v > bv) { bv = v; b = c; } rows.push([y, g]); ok += g === y; top += b === y; if (i >= a0) { aok += g === y; an++; } }, {T, noise, rand});
+      this.align.readFrozen(ex, (i, y, g, d) => { let b = 32, bv = -1; for (const [c, v] of d) if (v > bv) { bv = v; b = c; } rows.push([y, g]); ok += g === y; top += b === y; if (a0 >= 0 && i >= a0) { aok += g === y; an++; } }, {T, noise, rand});
       let old = 0, oa = 0; for (let i = 0; i < ex.length; i++) { const g = argmax(this.chain.play(this.e, this.ctxOf(ex, i), this.histOf(ex, i)).out); if (i >= a0) old += g === ex[i], oa++; }
       // the shape of the solution, before it is seen: from the question alone it writes the whole answer
-      const shape = a0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
+      const shape = a0 >= 0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
       out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
-        shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null}); }
+        shape: a0 >= 0 ? String.fromCharCode(...shape) : null,
+        shapeSame: an ? same / an : null,
+        answerBoundaryFound: a0 >= 0,
+        invalidShapeReason: a0 >= 0 ? null : "NO_ANSWER_BOUNDARY_IN_EVALUATED_PREFIX"}); }
     const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
     return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer")};
   }
