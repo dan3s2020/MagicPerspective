@@ -162,7 +162,7 @@ const worldsOnce = async (record) => {                                     // on
   if (MAPTEXT) wholeText.play((brain.seed * 7919 + brain.wholeText.episodes * 31337) >>> 0);
   const G = await gpuOn();
   if (G) { try { if (MAZE) await brain.learnMazesGPU(G, gpuSet.worlds, tick); if (TRANS) await brain.playTransformsGPU(G, gpuSet.worlds, tick); await flushShared(); batchNow = null; return; } catch (err) { gpuError = err.message; batchNow = null; parentPort.postMessage({type: "note", w: workerData.gw, text: "GPU ERROR: " + err.message}); } }
-  if (gpuSet) { shot(true); return; }                                      // the card was asked for and does not work: the error is on the page, no CPU fallback
+  if (gpuSet) { shot(true); throw Error("CUDA world execution stopped: " + (gpuError || "CUDA backend was not initialized") + ". Refusing to continue only hypertext while selected maze/transform worlds stall."); } // fail closed
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 8)));
@@ -317,7 +317,21 @@ parentPort.on("message", m => {
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
 const doSave = () => { saveNow = false; if (saveFile) try { parentPort.postMessage({type: "saved", w: workerData.gw, MB: (saveCognitive(), saveText(), brain.save(saveFile) / 1e6)}); } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "save failed: " + err.message}); } };
 let k = 0, textBatch = [], textMeta = [];
-shot(true); await hold();
+shot(true);
+// V21 safeguard: when GPU worlds are requested, verify the selected Python
+// and actual device BEFORE absorbing the first training document. Otherwise
+// CPU-only Python makes maze/transform stop while hypertext appears to run.
+if (gpuSet) {
+  const validatedGpu = await gpuOn();
+  if (!validatedGpu) {
+    const message = "CUDA PRE-FLIGHT FAILED BEFORE TRAINING: " + (gpuError || "GPU unavailable") +
+      ". No corpus ingestion or checkpoint write; fix OCTOPUS_PY / START_V21_AETHER_VEIL.ps1.";
+    parentPort.postMessage({type:"fatal", w:workerData.gw, text:message});
+    parentPort.close();
+    throw Error(message);
+  }
+}
+await hold();
 for await (const ex of stream()) {
   await hold();
   if (TEXT && k++ < skip) continue;
