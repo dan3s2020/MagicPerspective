@@ -365,17 +365,22 @@ export class NativeCrossEpisodeTransfer {
   const deltaGcd=deltas.reduce((g,d)=>gcd(g,d),0);
   const gap=goal?.numericEquals!==undefined&&startValue?
     goal.numericEquals-startValue.value:null;
-  const impossibleResidue=Number.isInteger(gap)&&deltaGcd>0&&
+  const impossibleResidue=!includeTextContrasts&&Number.isInteger(gap)&&deltaGcd>0&&
     Math.abs(gap)%deltaGcd!==0;
   const cutoff=depthFrontier.length>0||stateCapFrontier.length>0;
   const frontier={
     closureOfAllCurrentlyAdmittedTransfers:!cutoff,
     completeLanguageKnown:false,
-    explicitlyObservedVsHypothesized:"All planned edges extrapolate rules witnessed in other worlds",
+    explicitlyObservedVsHypothesized:"Physical rules are witnessed before/action/after in other worlds; corpus contrasts are text-difference HYPOTHESES until physically tested",
+    contrastExplorationEnabled:includeTextContrasts===true,
+    contrastMinSupport:this.minTextContrastSupport,
+    nativeTextContrastCandidatesBelowSupport:contrastsBelowEvidence,
     counts:{
       depthCutoff:depthFrontier.length,
       stateCutoff:stateCapFrontier.length,
-      exploredStates:nodes.length,exploredEdges:hypothesisEdges
+      exploredStates:nodes.length,exploredEdges:hypothesisEdges,
+      independentPhysicalTransferEdges:physicalTransferEdges,
+      corpusContrastHypothesisEdges:corpusContrastEdges
     },
     budget:{maxStates:this.maxStates,maxDepth:this.maxDepth},
     missingLabels,withheldRules,
@@ -401,7 +406,7 @@ export class NativeCrossEpisodeTransfer {
   };
   return {
    kind:"cross-episode-unified-original-native-shapeGraph",
-   found:reached,reason:reached?null:!rules.length?
+   found:reached,reason:reached?null:!rules.length&&corpusContrastEdges===0?
     "NO_ACTION_WITNESSED_IN_MULTIPLE_INDEPENDENT_WORLDS":
     impossibleResidue?"NUMERIC_RESIDUE_UNREACHABLE_WITH_LEARNED_ACTIONS":
     cutoff?"SEARCH_CUTOFF_BEFORE_CLOSURE":
@@ -418,6 +423,9 @@ export class NativeCrossEpisodeTransfer {
     states:nodes.length,edges:hypothesisEdges,
     closureOfKnownAdmittedActions:!cutoff,
     completeNaturalLanguageWorld:false,
+    originalCorpusContrastHypothesisEdges:corpusContrastEdges,
+    independentPhysicalTransferEdges:physicalTransferEdges,
+    originalNativeTextOperatorsAvailable:this.brain.observedTransformations?.operators?.size||0,
     blockedUnknownTransitions:blocked,
     learnedIndependentActions:rules.length,
     sourceWorldCount:new Set(rules.flatMap(r=>[...r.worlds])).size,
@@ -431,6 +439,8 @@ export class NativeCrossEpisodeTransfer {
     originalV17AttractionField:values
    },
    algorithm:"SAME original Discoverer.shapeGraph",
+   corpusContrastsAllowedAsHypothesis:includeTextContrasts===true,
+   corpusContrastsAreVerifiedCausalWorldActions:false,
    arbitraryTextSemanticsProven:false,
    generalNaturalLanguageAccuracyProven:false,
    noNextCharacterSubstitute:true
