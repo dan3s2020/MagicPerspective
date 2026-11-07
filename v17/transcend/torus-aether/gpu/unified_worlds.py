@@ -127,9 +127,19 @@ class UnifiedWorlds:
         succeeded = 0
         total_steps = 0
         optimal_steps = 0
+        effect_hit = 0
+        effect_trials = 0
+        learned_effects = self.effects.detach().cpu().numpy() if self.use_torch else self.effects
         for j in range(cases):
             maze = world(start_seed + j * 137)
             pos = maze["start"]
+            _, _, checks = observable(maze, pos)
+            for action, destination in enumerate(checks):
+                dx, dy = DIRECTIONS[action]
+                actual = (0,0) if destination is None else (dx,dy)
+                predicted = np.unravel_index(int(np.argmax(learned_effects[action])), (3,3))
+                effect_hit += (predicted == (actual[0]+1, actual[1]+1))
+                effect_trials += 1
             visits = np.zeros((maze["n"]*maze["n"]), dtype=np.int32)
             steps = 0
             optimal_steps += maze["dist"][maze["start"]]
@@ -151,7 +161,10 @@ class UnifiedWorlds:
                 "avgSteps": round(total_steps/cases, 2) if cases else None,
                 "optimalTrainingOracleNotUsedDuringTest": True,
                 "teacherPaths": self.episodes,
-                "nativeFullV17Solver": False}
+                "nativeFullV17Solver": False,
+                "effectAccuracy": round(effect_hit/effect_trials,6) if effect_trials else None,
+                "effectTrials": effect_trials,
+                "unseenTransformations": True}
 
     def report(self):
         return {"mazeWorldsTrained": self.episodes,
