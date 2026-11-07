@@ -13,6 +13,19 @@ const ruleId=(at,from,to)=>JSON.stringify([at,from,to]);
 const valid=(n,lo,hi)=>Number.isInteger(n)&&n>=lo&&n<=hi;
 const clone=x=>JSON.parse(JSON.stringify(x));
 const unkey=s=>s?String(s).split(SEP):[];
+// Count literal contiguous source anchors. With two possible bindings, a
+// language action has no observed basis to choose one over the other.
+const countAnchors=(tokens,needle)=>{
+  if(!needle?.length)return [];
+  const hits=[];
+  for(let i=0;i<=tokens.length-needle.length;i++){
+    let same=true;
+    for(let j=0;j<needle.length;j++)if(tokens[i+j]!==needle[j]){same=false;break;}
+    if(same)hits.push(i);
+    if(hits.length>1)break; // only uniqueness matters; bound repeated scans
+  }
+  return hits;
+};
 const contextOf=(at,before,kind='replace')=>{
  const tokens=unkey(before),right=kind==='insert'?tokens[at]:tokens[at+1];
  return {left:tokens[at-1]??null,right:right??null,
@@ -209,10 +222,34 @@ export class LearnedCognitiveMap {
         observations:0,accepted:0,rejected:0,
         sources:[],kind:'causally-observed-action'};
       this.rules.set(action,r);
-    }else if(r.operation==='span'&&(r.at!==prefix||JSON.stringify(r.from)!==JSON.stringify(from)||JSON.stringify(r.to)!==JSON.stringify(to))){
-      // Do not claim one action has a single known effect when observed
-      // results contradict that hypothesis; abstain until disambiguated.
-      r.ambiguous=true;
+    }else if(r.operation==='span'){
+      const sameEffect=JSON.stringify(r.from)===JSON.stringify(from)&&
+        JSON.stringify(r.to)===JSON.stringify(to);
+      if(!sameEffect){
+        // The same physical output produced two incompatible effects.
+        // Never reinterpret this as harmless movement of the word anchor.
+        r.ambiguous=true;
+      }else if(r.at!==prefix){
+        // Two actually accepted interventions can abstract their location
+        // ONLY if the same nonempty input span was unique in BOTH examples.
+        // This is an induced binding hypothesis, not a semantic grammar.
+        if(r.anchorUniqueAtObservation&&countAnchors(b,from).length===1){
+          r.positionMode='unique-anchor';
+          r.observedPositions||=[r.at];
+          if(!r.observedPositions.includes(prefix))r.observedPositions.push(prefix);
+        }else r.ambiguous=true;
+      }
+    }
+    if(r.operation==='span'){
+      const unique=countAnchors(b,from).length===1;
+      if(r.anchorUniqueAtObservation===undefined)r.anchorUniqueAtObservation=unique;
+      // A single fixed-position intervention can still be valid with a
+      // repeated or empty source. Only a *generalized* binding must abstain.
+      // Preserve the original fixed-offset behavior for those cases.
+      if(!unique){
+        r.anchorUniqueAtObservation=false;
+        if(r.positionMode==='unique-anchor')r.ambiguous=true;
+      }
     }
     r.observations++;r.accepted++;
     record.accepted++;this.interventions.set(key(b)+'|'+action,record);
@@ -243,8 +280,19 @@ export class LearnedCognitiveMap {
     }else if(op==='delete'||op==='replace'){
       if(r.at>=t.length||t[r.at]!==r.from)return null;
     }else if(op==='span'){
-      if(r.at>t.length||r.at+r.from.length>t.length||
-        JSON.stringify(t.slice(r.at,r.at+r.from.length))!==JSON.stringify(r.from))return null;
+      // Absolute-position models remain unchanged on one observed context.
+      // Variable position is permitted only after two consistent accepted
+      // outcomes at different positions; a non-unique source abstains.
+      if(r.positionMode==='unique-anchor'){
+        const matches=countAnchors(t,r.from);
+        if(matches.length!==1)return null;
+        // The actual offset is bound to this new complete observed world.
+        // It is never copied from the training example's offset.
+        var boundAt=matches[0];
+      }
+      const at=boundAt===undefined?r.at:boundAt;
+      if(at>t.length||at+r.from.length>t.length||
+        JSON.stringify(t.slice(at,at+r.from.length))!==JSON.stringify(r.from))return null;
     }else return null;
     if(!contextMatches(r,t,op))return null;
     const observed=this.interventions.get(key(t)+'|'+action);
@@ -252,7 +300,7 @@ export class LearnedCognitiveMap {
     if(r.rejected>r.accepted+Math.max(1,r.observations))return null;
     if(op==='insert')t.splice(r.at,0,r.to);
     else if(op==='delete')t.splice(r.at,1);
-    else if(op==='span')t.splice(r.at,r.from.length,...r.to);
+    else if(op==='span')t.splice(boundAt===undefined?r.at:boundAt,r.from.length,...r.to);
     else t[r.at]=r.to;
     return t;
   }
