@@ -95,3 +95,6 @@ jobs:
             throw ("Launcher refused to start for wrong reason: " + $errors)
           }
           Write-Host "WINDOWS_SAFE_REFUSAL_OK Existing data byte-identical"
+          # The child deliberately failed as a safety test. Reset native exit code
+          # so GitHub Runner does not mistake the EXPECTED refusal for CI failure.
+          $global:LASTEXITCODE = 0
