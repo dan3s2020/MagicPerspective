@@ -139,13 +139,25 @@ export async function createNativeBridge({
         const worker=u.searchParams.get("w");
         const graphs=await nativeGet("/graphs");
         const selected=pickNativeGraph(graphs,worker);
-        let graph=null,graphError=null;
+        let graph=null,graphError=null,liveHealth=null,liveHealthError=null;
         if(selected){
-          try{graph=await nativeGet("/graph?w="+selected.w,7000);}
-          catch(e){graphError=String(e.message||e);}
+          // Actual V34 /health is updated by independent 5-second worker
+          // heartbeats, even while /graph is intentionally not redrawn.
+          // Never infer "paused" from absent graph updates or cached score.
+          const [graphResult,healthResult]=await Promise.allSettled([
+            nativeGet("/graph?w="+selected.w,7000),
+            nativeGet("/health?w="+selected.w,7000)]);
+          if(graphResult.status==="fulfilled")graph=graphResult.value;
+          else graphError=String(graphResult.reason?.message||graphResult.reason);
+          if(healthResult.status==="fulfilled")liveHealth=healthResult.value;
+          else liveHealthError=String(healthResult.reason?.message||healthResult.reason);
         }
         send(res,{...nativeSnapshot(graphs,graph,worker),
           workerHealth:nativeWorkerHealth(selected),
+          liveHealth:liveHealth?.health||null,
+          liveHealthStatus:liveHealth?.status||null,
+          liveLastError:liveHealth?.lastError||null,
+          liveHealthError,
           graphError,nativeCudaError:isCudaStartupFailure(selected)?selected.error:null,
           upstream:base,receivedAt:new Date().toISOString()});return;
       }
