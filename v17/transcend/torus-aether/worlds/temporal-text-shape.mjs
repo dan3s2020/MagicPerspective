@@ -210,7 +210,7 @@ export class TemporalTextShape{
     source:"V25 time-lifted ONLY observed text transitions + original V17 solver",
     referenceAnswerProvided:false,plannedBeforeFirstMovement:true,
     predictedLength:desired,predictedMinLength:minLength,predictedHorizon:horizon,
-    actualPlannedLength:tokens.length,answer:textOf(tokens),initialShape:original,
+    actualPlannedLength:tokens.length,answer:fmt(tokens),initialShape:original,
     frames,fullPathField:values,
     target:target.slice(),trainingLengthEstimate:estimate,
     negativeControls:{observedEdgesOnly:true,cyclesCannotJumpTime:true},
