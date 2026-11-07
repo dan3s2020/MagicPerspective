@@ -162,12 +162,22 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
   const chromeNames=["google-chrome","chromium","chromium-browser"];
   const browser=chromeNames.find(name=>spawnSync("which",[name],{encoding:"utf8"}).status===0);
   if(browser){
-   const result=spawnSync(browser,[
-    "--headless","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
-    "--dump-dom","--virtual-time-budget=3500",
-    url+"/transcend/torus-aether/ui/magic.html?live=1"
-   ],{encoding:"utf8",timeout:20000,maxBuffer:10*1024*1024});
+   // Chromium occasionally exits 0 with empty --dump-dom when its headless
+   // process races another CI browser startup. Retry the SAME real live page:
+   // never replace it with a synthetic DOM or skip the observability check.
+   let result=null;
+   for(let attempt=0;attempt<3;attempt++){
+    result=spawnSync(browser,[
+     "--headless","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
+     "--dump-dom","--virtual-time-budget=3500",
+     url+"/transcend/torus-aether/ui/magic.html?live=1"
+    ],{encoding:"utf8",timeout:20000,maxBuffer:10*1024*1024});
+    if(result.status===0&&result.stdout?.includes('id="mChars"'))break;
+    await sleep(300);
+   }
    assert.equal(result.status,0,"Chromium runtime failed to render magic UI: "+result.stderr?.slice(-2500));
+   assert.ok(result.stdout?.includes('id="mChars"'),
+    "Real Chrome returned empty/incomplete DOM after retries. stderr: "+result.stderr?.slice(-1000));
    assert.match(result.stdout, /id="mChars"/);
    assert.match(result.stdout, /id="datasetProgressBar"/);
    assert.match(result.stdout, /id="mDatasetPct"/);
