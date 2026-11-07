@@ -120,7 +120,24 @@ class Index:                                     # suffix array of the REVERSED 
                     less = (v <= c) if strict else (v < c)
                     a = X.where(go & less, m + 1, a); b = X.where(go & ~less, m, b)
                 return a
-            nlo = bound(False); nhi = bound(True)
+            if X.t:
+                # Search the lower and upper ends at once. The two lanes
+                # use the SAME original binary predicates (v < c and
+                # v <= c) on the SAME sorted suffix array, but issue
+                # substantially fewer separate Python/CUDA dispatches.
+                aa = torch.stack((lo, lo), dim=1)
+                bb = torch.stack((hi, hi), dim=1)
+                for _ in range(steps):
+                    go = aa < bb
+                    mm = (aa + bb) // 2
+                    pp = sa[mm.clamp(0, n - 1)] + k
+                    vv = torch.where(pp < n, R[pp.clamp(0, n - 1)], torch.zeros_like(pp) - 1)
+                    less = torch.stack((vv[:, 0] < c, vv[:, 1] <= c), dim=1)
+                    aa = torch.where(go & less, mm + 1, aa)
+                    bb = torch.where(go & ~less, mm, bb)
+                nlo, nhi = aa[:, 0], aa[:, 1]
+            else:
+                nlo = bound(False); nhi = bound(True)
             ok = alive & (nhi > nlo)
             lo = X.where(ok, nlo, lo); hi = X.where(ok, nhi, lo)        # a query whose alignment ends keeps an empty range
             LO[:, k] = lo; HI[:, k] = X.where(ok, hi, lo)
