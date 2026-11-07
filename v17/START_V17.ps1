@@ -70,6 +70,13 @@ if ($Gpu -ne "off") {
   Write-Host "Testing the shared latent learner on the actual selected PyTorch device..."
   & $py (Join-Path $PSScriptRoot "transcend\torus-aether\gpu\shared_perspective.py") --selftest $Gpu 2>&1 | Out-Host
   if ($LASTEXITCODE -ne 0) { throw "Shared perspective CUDA gradient self-test FAILED. Original trainer not started." }
+  # V32 opt-in ONLY: actually train the ORIGINAL TEXT on CUDA before reading
+  # massive Parquet. A maze-only GPU readiness check is not sufficient.
+  if ($env:MP_V32_TEXT_SELFTEST -eq "1") {
+    Write-Host "V32 REAL CUDA TEXT selftest: ORIGINAL alignment/index/trust on RTX, compared to CPU reference..." -ForegroundColor Cyan
+    & $py -u (Join-Path $PSScriptRoot "transcend\\torus-aether\\gpu\\v32_cuda_text_selftest.py") $Gpu 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "REAL CUDA TEXT selftest FAILED. The V32 ORIGINAL trainer will NOT start or overwrite checkpoint. Read exact Python error above." }
+  }
   $env:OCTOPUS_PY = $py
   $ErrorActionPreference = "Stop"
 }
