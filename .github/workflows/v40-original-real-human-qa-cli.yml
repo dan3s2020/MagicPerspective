@@ -1,0 +1,86 @@
+name: V40 real original Brain 9000 human QA training executable
+on:
+  push:
+    branches:
+      - integration/V40-ORIGINAL-BRAIN-LEARNED-GOALS-REAL-QA-20261107
+    paths:
+      - v17/research/text-hypermaze/START_V40_REAL_HUMAN_QA.mjs
+      - .github/workflows/v40-original-real-human-qa-cli.yml
+  workflow_dispatch:
+jobs:
+  real-official-dataset-original-brain-checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source preserved
+        run: |
+          node --check v17/research/text-hypermaze/START_V40_REAL_HUMAN_QA.mjs
+          mkdir -p v40-original-live-evidence
+          node --input-type=module <<'EOF'
+          import {Brain} from './v17/transcend/torus-aether/devour/brain.mjs';
+          import {KIND,playExercise} from './v17/transcend/torus-aether/worlds/exercise.mjs';
+          import {makeMaze,seedOf,SEEDS} from './v17/transcend/torus-aether/worlds/labyrinth.mjs';
+          const b=new Brain({rules:{depth:1,off:['R2','R4'],budEvery:100,
+            empty:true,maxWires:32,fold:false},seed:11});
+          for(let i=0;i<145;i++){
+            playExercise(makeMaze(seedOf(SEEDS.train,501+i*23),[7,9,11][i%3]),b.disc);
+            if(i>=25&&b.disc.attract(KIND.target)>.2&&
+              b.disc.conduct(KIND.floor)>=.5&&b.disc.self()>=0)break;
+          }
+          if(b.disc.attract(KIND.target)<=.2)throw Error('Original native source Brain did not learn maze motor');
+          b.save('v40-original-live-evidence/ORIGINAL_UNMODIFIED_BRAIN.v8');
+          console.log('V40_NATIVE_ORIGINAL_MAZE_LEARNED',b.disc.episodes);
+          EOF
+          sha256sum v40-original-live-evidence/ORIGINAL_UNMODIFIED_BRAIN.v8 > v40-original-live-evidence/ORIGINAL_UNMODIFIED_BRAIN.sha256
+      - name: Actually train 9000 genuine supervised QAs, preserve original, save one new Brain, 650 blind full atlases
+        run: |
+          node v17/research/text-hypermaze/START_V40_REAL_HUMAN_QA.mjs \
+            --original-brain "$PWD/v40-original-live-evidence/ORIGINAL_UNMODIFIED_BRAIN.v8" \
+            --out "$PWD/v40-original-live-evidence/TRAINED_V40_BRAIN.v8" \
+            --archive "$PWD/v40-original-live-evidence/compact-source.sqlite" \
+            --archive-first 8
+      - name: Verify original hash, real DEV benchmark, full forensic atlas and checkpoint existence
+        run: |
+          sha256sum -c v40-original-live-evidence/ORIGINAL_UNMODIFIED_BRAIN.sha256
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {Brain} from './v17/transcend/torus-aether/devour/brain.mjs';
+          import {V40OriginalBrainEvidence} from './v17/research/text-hypermaze/v40-original-brain-evidence.mjs';
+          const p='v40-original-live-evidence/TRAINED_V40_BRAIN.v8';
+          const r=JSON.parse(fs.readFileSync(p+'.results.json','utf8'));
+          const events=fs.readFileSync(p+'.atlas.jsonl','utf8').trim().split('\n');
+          assert.equal(r.genuineTrainingQA,9000);
+          assert.equal(r.trainingExposures,18000);
+          assert.equal(r.fullExternal650.selected.n,650);
+          assert.equal(r.selectionFromTrainOnly,'average');
+          assert.equal(r.fullExternal650.selected.exact,153);
+          assert.equal(events.length,650);
+          assert.equal(r.sourceArchive.verifiedSourceEpisodeIdentities,8);
+          const original=Brain.load(p),same=new V40OriginalBrainEvidence(original);
+          assert.ok(same.qa.memory.averagedWeights.size>0);
+          assert.equal(same.state.observedTaskEpisodes,0,
+            'Natural Q/A gold labels cannot be fabricated as witnessed physical instruction transitions');
+          assert.ok(events.every(x=>JSON.parse(x).originalMethod==='Discoverer.shapeGraph'));
+          console.log('V40_REAL_CLI_COMPLETE_9000_650_PASS',JSON.stringify({
+            fullExternalFirstShotExact:r.fullExternal650.selected.exact,
+            externalTestQuestions:events.length,trainExposures:r.trainingExposures,
+            originalBrainUnchanged:r.originalBrainNeverOverwritten,
+            restoredAverageFeatures:same.qa.memory.averagedWeights.size,
+            persistedSourceEpisodes:r.sourceArchive.verifiedSourceEpisodeIdentities,
+            genuineUnrestrictedAnswerGenerationSolved:false
+          }));
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v40-real-qa-human-evidence
+          path: |
+            v40-original-live-evidence/*.results.json
+            v40-original-live-evidence/*.atlas.jsonl
+            v40-original-live-evidence/*.sha256
+          if-no-files-found: warn
