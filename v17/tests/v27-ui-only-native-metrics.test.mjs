@@ -37,7 +37,7 @@ test("new studio includes every original control, id, input and original native 
   assert.match(fresh,new RegExp('<script type="module" src="'+oldScript.replaceAll(".","\\.")+'"></script>'));
  }
  // Original legacy view and new shell use separate paths, neither overwritten.
- assert.match(fresh,/<link rel="stylesheet" href="v27-studio.css">/);
+ assert.match(fresh,/<style id="v27StandaloneStyle">/,"Inline CSS avoids original server MIME mismatch");
  assert.match(fresh,/<script type="module" src="v27-studio.js">/);
  assert.match(fresh,/id="evGo"/);
  assert.match(fresh,/id="allStart"/);
