@@ -42,6 +42,8 @@ jobs:
           node-version: '22'
       - name: Official real SQuAD 1.1 LIVE download pinned SHA, original maze + human QA train/valid/test article split and V38 averaged shapeGraph native checkpoint proof
         run: node --test v17/tests/v38-real-averaged-evidence-validation.test.mjs
+      - name: Full new V39 SERIOUS production-mode training over genuine 2400*2 human QA plus 650 independent DEV, resume and actual original Brain preserved
+        run: node --test v17/tests/v39-official-full-serious-original-training.test.mjs
   windows-real-launcher-parsing:
     runs-on: windows-latest
     timeout-minutes: 8
