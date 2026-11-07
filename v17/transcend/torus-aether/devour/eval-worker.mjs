@@ -9,7 +9,9 @@ parentPort.on("message", m => { let r;
     if (m.kind === "maze") r = brain.examMazes(m.opts.sizes, m.opts.per, m.opts.seed ?? undefined, {T: m.opts.T, noise: m.opts.noise});
     else if (m.kind === "transform") r = brain.evalTransforms(m.opts.count, m.opts.impossible, m.opts.seed ?? undefined, {noise: m.opts.noise});
     else if (m.kind === "text") {
-      r = brain.evalTextExercises(m.opts.list, {T: m.opts.T, noise: m.opts.noise});
+      r = brain.evalTextExercises(m.opts.list, {T: m.opts.T, noise: m.opts.noise,
+        strictFullAnswer: m.opts.verifiedUniqueHeldout === true,
+        maxGeneratedChars: m.opts.maxOutput});
       // Do NOT certify a 70% complete-answer test when the evaluator was
       // given only a 20k-prefix of an unknown-length Q/A exercise.
       if (m.opts.fullAnswerRequested !== true || m.opts.verifiedUniqueHeldout !== true) {
