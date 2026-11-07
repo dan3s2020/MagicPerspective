@@ -26,7 +26,12 @@ async function freePort(){
 }
 const record=(i)=>JSON.stringify({messages:[
  {role:"user",content:"Explain the initial observed state "+i+" and choose evidence."},
- {role:"assistant",content:"Observed source state "+i+" transforms through a verified environment only when an actual action was independently tested. The answer is sentence "+i+"."}
+ // The REAL original Q/A teacher enables long-form motif observations
+ // ONLY after 128 native tokens; a short reply cannot test the archive.
+ // 210 independently witnessed original tokens make the test meaningful.
+ {role:"assistant",content:"Observed source state "+i+
+  " transforms through a verified environment only when an actual action was independently tested. "+
+  Array.from({length:210},(_,j)=>"episode"+i+"evidence"+j).join(" ")}
 ]});
 async function training(data,out){
  const app=await launch({data,out,port:await freePort(),autoStart:true,
