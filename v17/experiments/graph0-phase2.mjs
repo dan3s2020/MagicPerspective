@@ -45,8 +45,7 @@ export function summarizeText(output) {
 }
 
 const argv=process.argv.slice(2);
-if(import.meta.url===new URL("file://"+path.resolve(process.argv[1]||"")).href ||
-  (process.argv[1] && path.basename(process.argv[1])==="graph0-phase2.mjs")) {
+if (process.argv[1] && path.basename(process.argv[1])==="graph0-phase2.mjs") {
   const opt={};
   for(let i=0;i<argv.length;i+=2){
     if(!argv[i]?.startsWith("--")||!argv[i+1]) throw Error("Expected --arg value pairs");
