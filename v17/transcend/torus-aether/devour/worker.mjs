@@ -17,6 +17,7 @@ import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {AtlasJournal,atlasPath} from "./atlas-journal.mjs";
+import {answerFromOriginalPath} from '../worlds/path-answer-writer.mjs';
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
@@ -382,6 +383,35 @@ parentPort.on("message", m => {
       parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,
         result,report:cognitive.report(),savedMB});
     }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,error:err.message});}
+    return;
+  }
+  if(m?.pathAnswer){
+    const {id,question,maxTokens=512,maxNodes=384,maxDepth=8}=m.pathAnswer;
+    try{
+      if(!cognitive)throw Error("Native cognitive world is disabled");
+      if(typeof question!=="string"||question.length>131072)
+        throw Error("Invalid bounded complete-text question");
+      const pre=JSON.stringify(cognitive.export());
+      const answer=answerFromOriginalPath(cognitive,question,{
+        maxTokens,maxNodes,maxDepth,includeAtlas:true
+      });
+      if(JSON.stringify(cognitive.export())!==pre)
+        throw Error("Frozen original path-answer readout mutated the cognitive memory");
+      const {fullAtlas,terminalTokens,...minimal}=answer;
+      atlasJournal?.record({type:"planning-attempt",world:"text",frozen:true,
+        input:question,goal:answer.goalPredicate||null,found:!!answer.found,
+        reason:answer.reason||null,fullAtlas:fullAtlas||{states:[],neighbors:[],targets:[]},
+        diagnostics:answer.diagnostics||null,fullPredictedPath:answer.path||[],
+        originalMethod:"Discoverer.shape",pathDrivenAnswer:answer.answer??null,
+        hypothesisNotVerifiedAsCorrectAnswer:true,
+        evidenceLevel:"FROZEN_PATH_DRIVEN_OUTPUT_NOT_SEMANTIC_ORACLE"});
+      atlasJournal?.sync();
+      parentPort.postMessage({type:"chat",id,kind:"path-answer",frozen:true,
+        ...minimal,fullAtlasRecorded:!!fullAtlas,originalMethod:"Discoverer.shape",
+        trainingModified:false,referenceWasNotProvided:true});
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,kind:"path-answer",error:err.message});
+    }
     return;
   }
   if(m?.cognitiveEval){
