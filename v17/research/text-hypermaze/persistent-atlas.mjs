@@ -156,6 +156,8 @@ export class PersistentHypermazeAtlas {
    persisted:!!this.file,recoveredExisting:this.recoveredExisting,
    totalWorlds:this.counts.world||0,worldsByDomain:{...this.worldsByDomain},
    learnedOperatorEvents:this.counts.operator||0,
+   legacyOperatorBaselineEvents:this.counts.baseline||0,
+   historicCorpusUnavailableBeforeAtlas:(this.counts.baseline||0)>0,
    searches:this.counts.search||0,executions:this.counts.execution||0,
    searchesFailed:Object.values(this.failedReasons).reduce((a,b)=>a+b,0),
    searchesFound:(this.counts.search||0)-
