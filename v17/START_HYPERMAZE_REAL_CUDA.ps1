@@ -11,6 +11,7 @@
 # sidecar remain on CPU; NEVER claim 100% GPU-only execution.
 param(
   [string]$Data = "D:\training\OpenThoughts3-1.2M",
+  [string]$Worlds = "text,maze,transform",
   [string]$Out = "",
   [string]$ResumeFrom = "",
   [int]$Port = 8877,
@@ -39,6 +40,9 @@ if (-not (Test-Path -LiteralPath $Data -PathType Container)) {
   throw "Training data not found: $Data. Specify the REAL OpenThoughts folder with -Data."
 }
 if ($Port -lt 1024 -or $Port -gt 65535) { throw "Port must be 1024..65535" }
+if ($Worlds -notin @("text","text,maze","text,transform","text,maze,transform")) {
+  throw "Use only real native world subsets: text, text,maze, text,transform or text,maze,transform"
+}
 if ($Workers -lt 1 -or $Workers -gt 16) { throw "Workers must be 1..16" }
 if ($GpuWorlds -lt 0) { throw "GpuWorlds must be nonnegative" }
 if ($Mem -lt 0.5) { throw "Mem must be at least 0.5 GB" }
@@ -96,7 +100,7 @@ $launchParams = @{
   Data = $Data
   Out = $Out
   Port = $Port
-  Worlds = "text,maze,transform"
+  Worlds = $Worlds
   MazeEvery = $MazeEvery
   Mem = $Mem
   Gpu = $Gpu
