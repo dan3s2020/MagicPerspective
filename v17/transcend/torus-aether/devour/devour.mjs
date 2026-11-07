@@ -274,6 +274,7 @@ http.createServer((req, res) => {
   // An EXHAUSTIVE paged view of every stored learned native context state
   // and outgoing transition. Querying does not trigger teacher training.
   if(req.method==="GET"&&url==="/gpu-future-path"){
+    if(gpuSettings.device==="off")return json(res,{error:"CUDA pool inactive: no selected GPU process. No fabricated future text evidence."});
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
     if(!sl?.wk)return json(res,{error:"Original native Brain worker is not running"});
     const context=q.get("context")||"";
