@@ -36,7 +36,7 @@ function train(){
  return m;
 }
 function heldout(seed,index){
- const rand=random(seed*971+index*733+11),entity="unseen_numeric_"+seed+"_"+index;
+ const rand=random(seed*971+index*733+11),entity="unseen_numeric_"+String(seed).replace(/\d/g,d=>"abcdefghij"[+d])+"_"+String(index).replace(/\d/g,d=>"abcdefghij"[+d]);
  let balance=100000+Math.floor(rand()*700000);
  const initial=balance,steps=15+Math.floor(rand()*50);
  const lines=[starting(entity,initial)],truth=[];
