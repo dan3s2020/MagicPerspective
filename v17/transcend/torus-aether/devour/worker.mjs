@@ -15,6 +15,7 @@ import {SelfCodeWorld} from "../worlds/self-code.mjs";
 import {NativeWholeTextWorld} from "../worlds/whole-map-text.mjs";
 import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
+import {QuestionGoalNavigator} from "../worlds/question-goal-navigation.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
@@ -52,6 +53,12 @@ const wholeText = MAPTEXT ? new NativeWholeTextWorld(brain, {dimensions: 6}) : n
 const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
+// V24 additive question->goal model. It is never a substitute for Discoverer.shape.
+const questionGoal = COGNITIVE ? (brain.questionGoalNavigator ?
+  QuestionGoalNavigator.restore(brain.questionGoalNavigator) :
+  new QuestionGoalNavigator({seed:brain.seed})) : null;
+let questionGoalLatest = null;
+let questionGoalGeoChars = 0;
 const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
 // A V21 hypertext-only checkpoint can have 200 observed documents but ZERO
 // native text exercises. When enabling the previously omitted 'text' world on
@@ -69,6 +76,7 @@ brain.setSharedObserver(sample => {
 });
 const saveCognitive = () => {
   if(cognitive)brain.cognitiveMap = cognitive.export();
+  if(questionGoal)brain.questionGoalNavigator = questionGoal.export();
   if(hypermaze)brain.hypermaze = hypermaze.export();
 };
 const absorbCognitive = row => {
@@ -85,6 +93,40 @@ const absorbCognitive = row => {
   const result=takeCognitive?cognitive.observeWorld(row.worldText,{id:row.k}):null;
   // Freeze prediction on previous graph, then learn only NEW V20/V21 documents.
   if(takeHyper)hypermaze.observeWorld(row.worldText,{id:row.k});
+  if(questionGoal && takeCognitive && typeof row.prompt==="string" &&
+      typeof row.answer==="string" && row.prompt.trim() && row.answer.trim()){
+    // Plan the *entire* candidate solution before this observed training answer
+    // is absorbed. Every new pair then contributes its actual observed text
+    // transitions, 32D goal evidence and native learned 5D symbol locations.
+    const q=row.prompt,a=row.answer;
+    let predicted=null;
+    if(questionGoal.rows && (questionGoal.rows<4 || questionGoal.rows%20===0)){
+      const planned=questionGoal.plan(q,{map:cognitive,geometry:brain.trace.geo,
+        disc:brain.disc,maxNodes:1000,maxCandidates:4});
+      const movement=planned.ready?questionGoal.execute(planned,{map:cognitive}):null;
+      // The answer is consulted only AFTER full planning.
+      const actual=String(a).normalize("NFC").trim();
+      predicted={ready:planned.ready,
+        predictedBeforeLearning:true,fullAnswerNotSuppliedToPlanner:true,
+        guessed:planned.ready?planned.predictedText:"",originalMethod:planned.originalOperator||null,
+        plan:planned.ready?planned.initialFullRoute.slice(0,160):[],
+        steps:planned.plannedSteps||0,execution:movement?.frames?.slice(0,160)||[],
+        exactMatch:planned.ready&&planned.predictedText.normalize("NFC").trim()===actual,
+        observedReferenceChars:actual.length,reason:planned.reason,
+        sourceRow:row.k,source:"pre-ingest real training row, NOT held-out accuracy"};
+    }
+    // Each UTF-16 code unit is an actual observed symbol in the original
+    // V17 Geometry.learn state. No fabricated coordinates or label oracle.
+    let prev=32;
+    for(let i=0;i<row.worldText.length;i++){
+      const next=row.worldText.charCodeAt(i);
+      brain.trace.geo.learn(prev,next);prev=next;questionGoalGeoChars++;
+    }
+    const learned=questionGoal.learn(q,a,{map:cognitive,geometry:brain.trace.geo});
+    questionGoalLatest={...predicted,trainedRows:questionGoal.rows,
+      geometryCharacters:questionGoalGeoChars,goalUpdates:questionGoal.latent.updates,
+      originalMazeMethod:"Discoverer.shape",learning:learned};
+  }
   // This original aggregate counter counts unique corpus documents, not
   // duplicate ingestion by an additional native world during resumption.
   if(!(TEXT && resume && observedIndex < cognitionStart)){
@@ -161,7 +203,8 @@ const report = (final = false) => {
   const msg = {type: "test", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, exercises: brain.exercises || 0, progress: corpusProgress(), dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT ? brain.test(H) : null, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
-    shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
+    shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null,
+    questionGoal:questionGoal?{...questionGoal.summary(cognitive),last:questionGoalLatest}:null, hypermaze: hypermaze ? {documents:hypermaze.documents,nodes:hypermaze.nodes.length,edges:hypermaze.edges.size,onlinePredictions:hypermaze.onlineTested} : null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try { saveCognitive(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
@@ -172,7 +215,7 @@ const shot = (force) => { if (!force && performance.now() - lastShot < 3000) ret
   const includeText = (shots++ % 5 === 0) || currentTextLength !== lastSentTextLength;
   if (includeText) lastSentTextLength = currentTextLength;
   parentPort.postMessage({type: "graph", w: workerData.gw, arm: arm.name, worlds, chars: brain.chars, lived: brain.lived, progress: corpusProgress(), controls: brain.controls, shapeAudit:lastShapeAudit, shared: shared.status(), cognitive: cognitive?.report() || null, hypermaze: hypermaze?.snapshot() || null, selfCode: codeWorld?.status() || null, wholeMap: wholeText?.status() || null, selfModel: brain.align ? brain.align.selfModel() : null, accAlign: brain.align ? brain.align.accuracy() : null, exercises: brain.exercises || 0, form: brain.chain.A[0].form(),
-    maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
+    maze: MAZE ? mazeStats() : null, transform: TRANS ? transStats() : null, questionGoal:questionGoal?{...questionGoal.summary(cognitive),last:questionGoalLatest}:null, gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null, ...brain.trace.snapshot(includeText)}); };
 let stop = false, paused = !!workerData.paused, saveNow = false;
 // many worlds at once on the GPU (gpu/worlds_gpu.py) for this brain, with the settings chosen on the page or the command line
 let gpuSet = !MAP_ONLY && workerData.gpu && workerData.gpu.device && workerData.gpu.device !== "off" ? workerData.gpu : null, gpu = null, gpuInfo = null, gpuError = null, sharedLoaded = false, gpuResetPending = false, gpuHotPending = false;
@@ -322,6 +365,21 @@ const processGpuText = async (exs, meta) => {
   shot(true);
 };
 parentPort.on("message", m => {
+  if(m?.questionGoalPlan){
+    const {id,question,maxNodes=1500,temperature=0}=m.questionGoalPlan;
+    try{
+      if(!cognitive||!questionGoal)throw Error("The V24 question-goal map is not active on this worker");
+      const before=JSON.stringify([cognitive.report(),questionGoal.export()]);
+      const plan=questionGoal.plan(question,{map:cognitive,geometry:brain.trace.geo,
+        disc:{temp:Math.max(0,Number(temperature)||0)},maxNodes});
+      const movement=plan.ready?questionGoal.execute(plan,{map:cognitive}):null;
+      if(before!==JSON.stringify([cognitive.report(),questionGoal.export()]))
+        throw Error("Frozen question->goal inference mutated native cognitive learning");
+      parentPort.postMessage({type:"chat",kind:"question-goal",id,
+        ...plan,movement,frozen:true,source:"V24 exact original Discoverer.shape"});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"question-goal",id,error:err.message});}
+    return;
+  }
   if(m?.hypermazeEval){
     const {id,texts}=m.hypermazeEval;
     try{
