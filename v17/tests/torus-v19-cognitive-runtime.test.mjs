@@ -60,7 +60,7 @@ test('native V19 worker ingests complete documents, persists learned graph, and 
   assert.ok(!text.includes('She is calm.'));
   const resp=await fetch(base+'/cognitive-eval',{
    method:'POST',headers:{'content-type':'application/json'},
-   body:JSON.stringify({w:0,initial:'He is calm.',goal:{slots:{0:'She',2:'calm'}}})
+   body:JSON.stringify({w:0,initial:'He is calm.',goal:{slots:{0:'She',2:'calm'}},seed:8031,temperature:0.65})
   });
   assert.equal(resp.status,200);
   const answer=await resp.json();
@@ -69,6 +69,15 @@ test('native V19 worker ingests complete documents, persists learned graph, and 
   assert.equal(answer.novelGoal,true);
   assert.ok(answer.plannedPath.length>=1);
   assert.equal(answer.law,'ORIGINAL_V17_ATTRACTION_0.97');
+  assert.equal(answer.originalMethod,'Discoverer.shape');
+  assert.equal(answer.noiseTemperature,0.65,'Original actor noise temperature must round-trip HTTP');
+  assert.equal(answer.observedTopology.goalBeforeFirstAction,true);
+  assert.ok(answer.observedTopology.nodes.length>0,'Read-only UI must receive the real state graph');
+  assert.ok(answer.observedTopology.edges.length>0,'Read-only UI must receive real transformation edges');
+  assert.deepEqual(answer.observedTopology.path.slice(1),
+    answer.plannedPath.map(h=>h.to),'Displayed path must be exact original source path');
+  assert.equal(answer.observedTopology.completeNodes,answer.generatedStates);
+  assert.ok(answer.observedTopology.completeEdges>=answer.observedTopology.displayedEdges);
   const tooMany=await fetch(base+'/add?arm=stable%2Bmany&worlds=maptext',{method:'POST'});
   assert.equal(tooMany.status,200,'Original nontext graph can still be added without source corruption');
   const after=await get(base+'/graphs');
