@@ -152,7 +152,10 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    assert.equal(result.status,0,"Chromium runtime failed to render magic UI: "+result.stderr?.slice(-2500));
    assert.match(result.stdout, /id="mChars"/);
    assert.match(result.stdout,/Where the solution takes shape/);
-   console.log("REAL_HEADLESS_BROWSER_MAGIC_UI",JSON.stringify({browser,rendered:true}));
+   const connected=/data-magic-connected="true"/.test(result.stdout);
+   const observed=+(result.stdout.match(/data-magic-observed-chars="(\d+)"/)?.[1]||0);
+   console.log("REAL_HEADLESS_BROWSER_MAGIC_UI",JSON.stringify({browser,rendered:true,connected,observed}));
+   assert.ok(connected&&observed>0,"The Chromium DOM must reflect an actual live /graph snapshot, not only static HTML");
   }else console.log("BROWSER_NOT_INSTALLED: HTTP and native training were still verified");
   console.log("REAL_NATIVE_MAGIC_TRAINING_ACCEPTANCE",JSON.stringify({
    port,originalControlsPreserved:true,magicUIAccessible:true,graphLive:true,
