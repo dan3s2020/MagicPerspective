@@ -125,9 +125,10 @@ export class CharacterHypermaze{
      r.blocked<=r.accepted+r.observed).sort((a,b)=>b.sourcePairs.length-a.sourcePairs.length||a.key.localeCompare(b.key));
  }
  allEvidence(){return [...this.evidence.values()];}
- predict(state,action){
+ predict(state,action,admittedKeys=null){
   const op=parseCharAction(action);if(!op)return null;
-  const possible=this.transferable().some(r=>r.op===op.op&&r.from===op.from&&r.to===op.to);
+  const possible=admittedKeys ? admittedKeys.has(JSON.stringify([op.op,op.from,op.to])) :
+    this.transferable().some(r=>r.op===op.op&&r.from===op.from&&r.to===op.to);
   if(!possible)return null;
   const current=Array.isArray(state)?state:cp(state),id=stateKey(current)+"|"+action;
   const blocked=this.interventions.get(id);
@@ -158,6 +159,11 @@ export class CharacterHypermaze{
     throw Error("maxNodes must be 2..20000 and maxDepth 1..256");
   goalMet(start,goal); // validate before expansion, not an oracle answer.
   const rules=transfer?this.transferable():[];
+  // Use the exact original admitted transforms frozen at the beginning of
+  // this candidate world search. The former implementation re-scanned and
+  // re-sorted every rule for every hypothetical edge; this preserves EXACT
+  // V17 route order, action sequence, seeds and all observed walls.
+  const admittedKeys=new Set(rules.map(r=>r.key));
   const states=[start],neighbors=[[]],depth=[0],index=new Map([[stateKey(start),0]]);
   let projected=0,blocked=0,frontier=0,truncated=false,rejected=0;
   // This enumerates the entire reachable learned graph UNDER explicit resource
@@ -170,7 +176,7 @@ export class CharacterHypermaze{
      const id=charActionId(r.op,at,r.from,r.to);
      if(!parseCharAction(id))continue;
      if(!applyAction(state,id))continue;
-     const next=this.predict(state,id);
+     const next=this.predict(state,id,admittedKeys);
      if(!next){blocked++;continue;}
      const k=stateKey(next);
      let to=index.get(k);
