@@ -18,6 +18,7 @@ import {makeMaze,seedOf,SEEDS}
  from "../../transcend/torus-aether/worlds/labyrinth.mjs";
 import {NativeGoalTextMaze} from "./goal-conditioned-native.mjs";
 import {openNativeMotifArchive} from "./native-motif-disk-archive.mjs";
+import {openCompactNativeMotifArchive} from "./native-motif-compact-archive.mjs";
 import {rawJSONLLines,parseActualJSONL} from "./openthoughts-jsonl-source.mjs";
 
 const opts=workerData.opts,files=workerData.files,out=workerData.out;
@@ -31,6 +32,7 @@ const windowTokens=opts.windowTokens||96;
 const startedAt=performance.now();
 let sessionTrainingBytes=0,sessionRows=0,sessionSourceBytes=0;
 let brain,engine,motifArchive=null,seq=0,stop=false,paused=!opts.autoStart,saveRequested=false,saving=false,done=false,fatal=false;
+let resumedManifest=null;
 const yieldTurn=()=>new Promise(resolve=>setImmediate(resolve));
 const time=()=>performance.now();
 const counters={
@@ -117,6 +119,7 @@ async function init(){
  await fsp.mkdir(out,{recursive:true});
  if(fs.existsSync(statePath)){
   const previous=JSON.parse(await fsp.readFile(statePath,"utf8"));
+  resumedManifest=previous;
   if(previous.version!==1||JSON.stringify(previous.inputFiles)!==JSON.stringify(inputFiles))
    throw Error("Dataset file paths/sizes/dates changed since checkpoint. Refuse unsafe resume.");
   const checkpoint=path.join(out,previous.checkpoint);
@@ -163,11 +166,36 @@ async function init(){
  // never sees heldout rows, only actual observeQA() training evidence.
  if(opts.disableMotifDiskArchive!==true){
   try{
-   motifArchive=await openNativeMotifArchive(path.join(out,
-    "original-native-long-language-motifs.sqlite"));
+   // Exact original memory format selection, NEVER an in-place
+   // reinterpretation/overwrite of a V31 SQLite source-history file.
+   // New jobs use the proven compact disk format. Old jobs continue to
+   // use EXACT legacy files. A saved manifest takes absolute precedence.
+   const legacy=path.resolve(out,"original-native-long-language-motifs.sqlite");
+   const compact=path.resolve(out,"original-native-long-language-motifs-compact.sqlite");
+   const declared=resumedManifest?.sourceMotifDiskArchive;
+   let selected;
+   if(declared){
+    selected=path.resolve(declared);
+    if(selected!==legacy&&selected!==compact)
+     throw Error("Checkpoint identifies an unexpected source archive path; refuse unsafe original Brain resume: "+selected);
+    if(!fs.existsSync(selected))
+     throw Error("Original Brain's checkpoint archive has disappeared: "+selected+
+      " . Refuse to silently start an empty maze history.");
+   }else{
+    const oldExists=fs.existsSync(legacy),
+     newExists=fs.existsSync(compact);
+    if(oldExists&&newExists)
+     throw Error("Both original V31 and compact V32 archives exist without a checkpoint declaring which one is authoritative; refuse to merge/overwrite independent histories.");
+    selected=oldExists?legacy:compact;
+   }
+   motifArchive=selected===legacy?
+    await openNativeMotifArchive(selected):
+    await openCompactNativeMotifArchive(selected);
    engine.qaRole.attachMotifArchive(motifArchive);
-   send("note",{text:"Same native original Brain attached durable exact witnessed source motif disk index: "+
-    motifArchive.filename});
+   send("note",{text:"Same ORIGINAL native Brain attached "+
+    (selected===legacy?"existing V31 legacy":"parity-tested V32 compact")+
+    " indexed source evidence: "+motifArchive.filename+
+    " (no older DB overwritten; no second model)"});
   }catch(error){
    // The existing released native launcher explicitly supports Node20+.
    // Older Node20 lacks node:sqlite. Preserve that WORKING legacy training,
