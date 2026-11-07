@@ -76,7 +76,7 @@ async function route(req,res,session,clients){
       version:"V26-native-live"});return;
   }
   if(req.method==="GET"&&url.pathname==="/api/export"){
-    const data=JSON.stringify(session.snapshot(),null,2);
+    const data=JSON.stringify(session.fullExport(),null,2);
     res.writeHead(200,{"Content-Type":"application/json; charset=utf-8",
       "Content-Disposition":"attachment; filename=V26_LAST_EXPERIMENT.json",
       "Content-Length":Buffer.byteLength(data),"Cache-Control":"no-store"});
