@@ -1,0 +1,51 @@
+name: 1000-variable hard 3SAT 120-second identical-input showdown
+on:
+  push:
+    branches:
+      - benchmark/V42-UNMODIFIED-VS-KISSAT-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  longest-head-to-head:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build pinned unchanged upstream Kissat
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/arminbiere/kissat.git /tmp/kissat-original
+          git -C /tmp/kissat-original checkout 8af8e56f174b778aef3aa45af9f739b2a5f492c2
+          (cd /tmp/kissat-original && ./configure && make -j2)
+          /tmp/kissat-original/build/kissat --version
+      - name: Run exact same 1000-variable random near-threshold 3SAT under 120s each
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/longest-sat.log
+          node v17/benchmarks/v42_vs_kissat.mjs generate 1000 20261115 120000 > /tmp/input.cnf
+          head -n3 /tmp/input.cnf | tee -a /tmp/longest-sat.log
+          start=$(date +%s%3N)
+          set +e
+          timeout --signal=TERM --kill-after=3s 120s /tmp/kissat-original/build/kissat /tmp/input.cnf > /tmp/kissat-output.log 2>&1
+          ec=$?
+          set -e
+          end=$(date +%s%3N)
+          if [[ $ec -ne 10 && $ec -ne 20 && $ec -ne 124 ]]; then
+            echo "Unexpected Kissat exit code: $ec"; tail -n50 /tmp/kissat-output.log; exit 1
+          fi
+          echo "LONGEST_KISSAT_EXIT_CODE $ec LONGEST_KISSAT_WALL_MS $((end-start))" | tee -a /tmp/longest-sat.log
+          node v17/benchmarks/v42_vs_kissat.mjs kissat-verify 1000 20261115 120000 /tmp/kissat-output.log | tee -a /tmp/longest-sat.log
+          timeout --signal=TERM --kill-after=3s 135s node v17/benchmarks/v42_vs_kissat.mjs v42 1000 20261115 120000 | tee -a /tmp/longest-sat.log
+      - name: Preserve 120s exact comparison evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kissat-v42-1000-variable-120s
+          path: /tmp/longest-sat.log
+          if-no-files-found: warn
