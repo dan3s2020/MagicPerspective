@@ -354,7 +354,11 @@ class Server:
             # reserve meaningless dummy tensors or change any model weights.
             # Driver/display/headroom is necessary on a 4.29 GB laptop GPU.
             headroom = max(192 * 1024 * 1024, total * .045)
-            capacity = max(256 * 1024 * 1024, free - headroom)
+            # A live UI GPU reconfiguration keeps real tensors from previous
+            # batches. Account for PyTorch's existing reserved allocation,
+            # otherwise the cap can be lowered BELOW the live original brain.
+            existing = torch.cuda.memory_reserved(idx)
+            capacity = max(256 * 1024 * 1024, free + existing - headroom)
             vram = min(requested if requested > 0 else capacity, capacity, total)
             self.vram_budget = vram
             torch.cuda.set_per_process_memory_fraction(min(.995, vram / total), idx)
