@@ -253,7 +253,7 @@ export class ForensicPathAtlas{
      "VERIFIED_PATH_EXISTS_BUT_ORIGINAL_POLICY_FAILED_TO_SELECT":
    reachedGoal?"AT_LEAST_ONE_VERIFIED_PATH_EXISTS":
    "DISCONNECTED_VERIFIED_COMPONENTS_REQUIRE_NEW_EVIDENCE";
-  if(A.S&&(A.S.evictedNodes||A.S.evictedEdges)&&!reachedGoal)
+  if(rootKnown&&A.S&&(A.S.evictedNodes||A.S.evictedEdges)&&!reachedGoal)
    diagnosis="POSSIBLE_MEMORY_EVICTION_OR_MISSING_CAUSAL_BRIDGE";
   const attempts=[],add=(kind,from,to,action,reason,provenance=null)=>{
    if(!fset.has(from)||fset.has(to)||attempts.length>=maxExamples)return;
@@ -329,8 +329,8 @@ export class ForensicPathAtlas{
     retainedTopologyNotEverLivedCorpus:!!(A.S?.evictedNodes||A.S?.evictedEdges)
    },
    verifiedPathAlternatives:routes,
-   deadEnds:frontier,deadEndsTruncated:frontier.length<=[...forward].filter(
-    ([s])=>!(adjacency.get(s)||[]).length).length?false:true,
+   deadEnds:frontier,deadEndsTruncated:[...forward].filter(
+    ([s])=>!(adjacency.get(s)||[]).length).length>maxExamples,
    missingBridgeCandidates:preview,
    candidateCountTruncated:attempts.length>=maxExamples,
    oneEvidenceBridgeCandidates:candidateRoutes,
