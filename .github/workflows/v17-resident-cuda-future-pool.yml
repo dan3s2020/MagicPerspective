@@ -58,3 +58,29 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Original V17 whole atlas/maze/text UI with real worker path replay and zero JavaScript errors
         run: node --test v17/tests/complete-xd-atlas-browser.test.mjs
+
+  native-windows-powershell-validation:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse original full Windows launchers (no simulated GPU pass)
+        shell: pwsh
+        run: |
+          $files = @(
+            "v17/START_V17.ps1",
+            "v17/START_HYPERMAZE_REAL_CUDA.ps1",
+            "v17/WATCH_TRAINING_THROUGHPUT.ps1"
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file), [ref]$tokens, [ref]$errors
+            )
+            if ($errors.Count -gt 0) {
+              $errors | Format-List | Out-String | Write-Error
+              throw "Native Windows launcher parse FAILED: $file"
+            }
+            Write-Host "VALID_NATIVE_WINDOWS_PS_AST $file"
+          }
