@@ -200,14 +200,20 @@ function sizeCanvas(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   return{w,h};
 }
-function redraw(){
+let previousFrameAt=0;
+function redraw(ts=0){
+  // UI presentation is limited to 20fps. Native V17 training threads are
+  // more important than decorative rendering and retain all CPU/GPU time.
+  requestAnimationFrame(redraw);
+  if(ts-previousFrameAt<48)return;
+  previousFrameAt=ts;
   const {w,h}=sizeCanvas();ctx.clearRect(0,0,w,h);
-  if(!w||!h){requestAnimationFrame(redraw);return;}
+  if(!w||!h)return;
   const g=lastGraph;
   if(!g){
     ctx.fillStyle="#90a6be";ctx.font="12px system-ui";ctx.textAlign="center";
     ctx.fillText("Aștept nodurile reale ale trainerului original V17...",w/2,h/2);
-    requestAnimationFrame(redraw);return;
+    return;
   }
   const scale=Math.min(w,h)*.38*view.zoom;
   const points=g.pts.map(p=>({x:w/2+view.x+p.x*scale,
@@ -236,7 +242,6 @@ function redraw(){
       ctx.beginPath();ctx.arc(p.x,p.y,10,0,7);ctx.stroke();
     }
   }
-  requestAnimationFrame(redraw);
 }
 function graphUpdate(raw){
   const next=buildGraph(raw);
