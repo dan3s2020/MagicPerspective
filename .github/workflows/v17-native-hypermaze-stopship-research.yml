@@ -34,6 +34,8 @@ jobs:
         run: node --test v17/tests/native-hypermaze-compositional-heldout.test.mjs
       - name: Persist full original observed-world, learned operators, successful/unsuccessful searches and finite-frontier states across checkpoint restart
         run: node --test v17/tests/native-hypermaze-persistent-atlas.test.mjs
+      - name: Original V17 worker automatically recalls real separate text worlds after 32 episodes and persists full history
+        run: node --test v17/tests/native-hypermaze-worker-auto-replay.test.mjs
       - name: Original V17 maze/text/transform learning baseline must remain unchanged
         run: |
           node --test v17/tests/constructed-paths-v17.test.mjs
