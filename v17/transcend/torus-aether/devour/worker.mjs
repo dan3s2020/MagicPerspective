@@ -14,7 +14,7 @@ import {TextActionPaths} from "../../../../isolated/noise-space/text_action_path
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 import {LiveObservedMathAxes} from "../../../research/text-hypermaze/live-observed-axes.mjs";
 
-const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveFile, resume} = workerData;
+const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, saveEveryChars = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
 const TEXT = worlds.includes("text"), MAZE = worlds.includes("maze"), TRANS = worlds.includes("transform"), SELF_CODE = worlds.includes("selfcode");
 // A real text corpus may be Q/A pairs OR free prose. Both contain observed
@@ -58,6 +58,7 @@ async function* stream() {                                                 // th
 let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
+let lastPersistedChars = brain.chars||0;
 if (workerData.endogenousNoise) brain.enableEndogenousNoise(); // policy is saved with the original Brain
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Original V17 decisions remain unchanged; this observes TRAINING results only.
@@ -191,7 +192,7 @@ const report = (final = false) => {
     textMaze: textMazeLive,
     language: brain.language?.report() || null,
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
-  if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); } catch (err) { msg.saveError = err.message; } }
+  if (saveFile) { try { selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText(); lastPersistedChars=brain.chars; } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
 };
 const shot = (force) => { if (!force && performance.now() - lastShot < 1100) return; lastShot = performance.now(); try { brain.organismView(); } catch {}
@@ -316,6 +317,15 @@ const processGpuText = async (exs, meta) => {
     await worldsOnce(false);
   }
   batchNow = null;
+  if(saveFile && saveEveryChars>0 && brain.chars-lastPersistedChars>=saveEveryChars){
+    // Full original Brain and all observers have completed their batch.
+    // Save at a SAFE batch boundary without forcing a costly full heldout exam.
+    const checkpointStarted=performance.now();
+    doSave();
+    if(brain.textGpu)brain.textGpu.checkpointMs=
+      +(performance.now()-checkpointStarted).toFixed(1);
+    lastPersistedChars=brain.chars;
+  }
   // Report the first committed batch immediately, not only after 60,000 bytes.
   if (brain.exercises <= exs.length || Math.floor(brain.chars / every) > Math.floor(startChars / every)) {
     batchNow={phase:"evaluare si checkpoint original V17",done:0,total:1};
@@ -481,6 +491,10 @@ for await (const ex of stream()) {
       absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
       await flushShared();
     }
+  }
+  if(TEXT&&!gpuSet&&saveFile&&saveEveryChars>0 &&
+     brain.chars-lastPersistedChars>=saveEveryChars){
+    doSave();lastPersistedChars=brain.chars;
   }
   if (!TEXT) { brain.episodes = (brain.episodes || 0) + 1;
     await worldsOnce(false);
