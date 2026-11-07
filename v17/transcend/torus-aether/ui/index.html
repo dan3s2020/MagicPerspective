@@ -310,6 +310,33 @@
     <h2>Dovada</h2>
     <div class="sl"><label for="ttemp">temperatura la test</label><input id="ttemp" type="range" min="0" max="1.5" step="0.05" value="0.6"><span id="ttempOut" class="dim">0.6</span><small>0 = determinist, mereu același rezultat; peste 0 graful alege prin tragere la sorți, deci halucinează și fiecare test diferă</small></div>
     <div id="evalOut">—</div>
+    <section id="v30AtlasPanel" style="margin:14px 0;padding:12px;border:1px solid #5484a2;border-radius:10px;background:#071826">
+      <h2>ATLASUL COMPLET · CĂI, TRANSFORMĂRI, EȘECURI — JURNAL REAL</h2>
+      <p class="note">Numai evenimentele persistate de organismul original, fără trasee simulate. Graful de mai jos conține TOATE muchiile candidate ale încercării selectate; auriu = traseul prezis înainte de acțiune, mov = transfer ipotetic, turcoaz = tranziție confirmată, roșu în diagnostic = blocaj sau limită. Proiecția 2D este o vedere topologică, nu o dovadă a unor coordonate 4D învățate.</p>
+      <div class="row">
+        <label>Worker <input id="v30AtlasWorker" type="number" min="0" step="1" value="0" style="width:60px"></label>
+        <label>Tip <select id="v30AtlasKind"><option value="">Toate dovezile</option><option value="planning-attempt">Planificări (tot graful)</option><option value="rule-evidence">Transformări învățate</option><option value="observed-action">Acțiuni observate</option><option value="observed-external-transition">Alte lumi</option></select></label>
+        <label>Rezultat <select id="v30AtlasResult"><option value="">Toate</option><option value="found">Cu traseu</option><option value="missing">Fără traseu</option><option value="blocked">Pereți și limite</option><option value="evidence">Dovezi transformări</option></select></label>
+      </div>
+      <div class="row" style="margin:8px 0">
+        <button id="v30AtlasLoad" type="button">Citește următoarele 50 evenimente</button>
+        <button id="v30AtlasReload" type="button">Reîncarcă jurnalul</button>
+        <a id="v30AtlasExport" href="/atlas-export?w=0" download style="color:#8edcff">Descarcă TOATE evenimentele brute JSONL</a>
+      </div>
+      <p class="note" id="v30AtlasStatus" aria-live="polite">Alege un worker cu lumea cognitivă activă, apoi citește jurnalul.</p>
+      <pre id="v30AtlasStats" style="white-space:pre-wrap;color:#9dc9de">Nu a fost citit niciun eveniment.</pre>
+      <div id="v30AtlasList" style="overflow:auto;max-height:210px;background:#08121d;padding:6px;border-radius:6px">Nicio încercare încărcată.</div>
+      <canvas id="v30AtlasCanvas" width="880" height="410" aria-label="Toate muchiile reale și ipotetice ale grafului original" style="display:block;width:100%;height:auto;background:#06131f;border:1px solid #30546d;margin:10px 0"></canvas>
+      <label class="dim">Zoom/pan atlas <input id="v30AtlasZoom" type="range" min="0.35" max="4" step="0.05" value="1"></label>
+      <pre id="v30AtlasDetail" style="white-space:pre-wrap;max-height:300px;overflow:auto;font:12px ui-monospace,monospace;background:#0b1825;padding:8px">Selectează o încercare din jurnal.</pre>
+      <h3>Răspunsul prezis întreg înaintea acțiunii</h3>
+      <pre id="v30AtlasPredicted" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:170px;overflow:auto;color:#f8cf80">Nicio predicție selectată.</pre>
+      <label>Răspuns corect de referință, introdus numai DUPĂ predicție (comparare locală, niciodată trimis la worker):
+        <textarea id="v30AtlasReference" rows="3" style="display:block;width:100%;background:#06121c;color:#e8f3ff;border:1px solid #456880;border-radius:6px" placeholder="Lipește aici răspunsul de verificat; nu modifică antrenarea."></textarea>
+      </label>
+      <pre id="v30AtlasChars" style="white-space:pre-wrap;max-height:240px;overflow:auto;font:12px ui-monospace,monospace;color:#e1b8ab">Compară caracterele, prima divergență și toate diferențele.</pre>
+      <p class="note">„Traseu găsit” înseamnă numai atingerea unei ținte specificate pe topologia modelată. Nu echivalează cu înțelegere semantică sau cu răspunsuri corecte la probleme naturale. Jurnalul expune înregistrări de la activarea instrumentării; nu poate reconstrui evenimente istorice neînregistrate.</p>
+    </section>
   </aside>
 </div>
 <button id="chatTab">💬 Vorbește cu el</button>
@@ -325,6 +352,7 @@
   <form id="chatForm"><textarea id="chatIn" placeholder="scrie… (Enter trimite, Shift+Enter rând nou)"></textarea><button id="chatSend">Trimite</button></form>
 </div>
 <script type="module" src="app.js"></script>
+<script type="module" src="atlas-explorer.js"></script>
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
  <script type="module" src="v22-original-text-labyrinth-live.js"></script>
