@@ -74,7 +74,7 @@ export class NativeMathGoalField {
     if(!Array.isArray(goalConstraints)||goalConstraints.length===0||
        goalConstraints.some(g=>!Number.isInteger(g?.index)||!assertNumber(g?.value)||
          !induced.numericTokenIndices.includes(g.index)||
-         g.index===induced.numericTokenIndices[induced.dependent])))
+         g.index===induced.numericTokenIndices[induced.dependent]))
       throw Error("Goal must constrain learned independent coordinates, never the unknown dependent answer");
     const goals=goalConstraints.map(g=>({index:g.index,value:g.value}));
     const goalMet=t=>goals.every(g=>Number(t[source.offset+g.index])===g.value);
