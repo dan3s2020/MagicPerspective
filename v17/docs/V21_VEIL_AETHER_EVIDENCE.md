@@ -1,5 +1,8 @@
 # MagicPerspective V21 — Aether / Veil research implementation (2026-11-07)
 
+> **UPDATE 2026-11-07 — this is the original V21 implementation note, preserved for provenance, not the current runbook.** The initial V21 launcher omitted the native `text` world; that caused a real regression of the original V17 `AligningGraph.write()` answer-training path. The current launcher enables `text,hypertext,maze,transform` plus optional `cognitivemap`. The original 200-character evaluation limit also created false zeroes when it omitted the `A:` marker. A Windows PowerShell 5.1 UTF-8 em dash parse failure was corrected and verified on a real Windows CI runner. For **current behavior, commands, test logs, backup instructions and transfer limits**, use [the consolidated V17-V21 audit](./V21_CONSOLIDATED_RESEARCH_REGRESSION_TRANSFER_ARCHIVE_20261107.md), [the 0% regression audit](./V21_REGRESSION_DISCOVERY_TRANSFER_AUDIT_20261107.md) and [the Windows PowerShell postmortem](./V21_WINDOWS_POWERSHELL51_POSTMORTEM_20261107.md). Historic claims below are retained, not silently rewritten.
+
+
 **Branch:** `experiment/V21-AETHER-VEIL-PREDICTIVE-PERSPECTIVE-20261107`  
 **Unmodified base commit:** V20 `b6a5d3aba4784fe7643509f03906ec4bb1752199`.  
 **Research status:** native, additive experimental implementation; **NOT** demonstrated natural-language semantic planning, 4D/6D physical cognition, an all-GPU model, or closure of canonical blocking issue [#25](https://github.com/dan3s2020/MagicPerspective/issues/25).  
