@@ -59,3 +59,16 @@ Every=1,000,000 reduces the frequency of this full (still expensive) evaluation;
 An end-to-end CI run exposed an actual 30s timeout for /real-math-plan when the training worker was busy in a frozen evaluation. Each completed original CUDA batch now atomically saves the REAL observed-math-axis state independently of the expensive test. The existing server /real-math-plan endpoint reads the latest completed native observation snapshot directly when present, reporting fromSave=true and savedSnapshotAt, and does not wait on a busy train worker. If no completed snapshot exists, the original worker route remains. This is not a demo or a fabricated answer. A snapshot saving error does not invalidate a previously committed GPU text batch.
 
 The original 30s timeout is therefore avoided for requests that can be answered from committed learned evidence; it is not replaced with an unbounded wait. The user-facing UI still shows live updated exercise and text counters and unchanged original paths.
+## Final CI acceptance — all green
+Workflow run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42338142987
+Latest completed source CI on commit 27b3923e6cf2906284508437027d4903852009f3: BOTH `exact-original-model` and `windows-original-launchers` succeeded.
+- PyTorch reference 3/3: 1000 seeded exact suffix boundaries, all 64 context depths and complete TextCard.live output/variants/trust/imagination identical.
+- Node tests 15/15: original real worker+headless browser, Python protocol progress, second/third original GPU-protocol text batches, all original frozen text evaluation metrics unchanged, inactive GPU watchdog, previous predictive math regressions.
+- Multi-batch original worker: 6 genuine training exercises, 1,470 characters, 101 graph nodes / 506 edges, complete original imagination 958.7ms and original CPU graph replay 33ms on CPU NumPy protocol. This is NOT NVIDIA CUDA benchmark.
+- Native browser/worker: original math path and 8 real numeric transformations produced from observed data; no 30s math UI timeout.
+- Frozen original evaluation parity: full 412 heldout chars, all 9 metrics exactly equal, 8 real progress signals, no training leakage.
+- Windows checks: original launcher, full dataset installer and START_V17 PowerShell scripts parsed successfully.
+
+**CORRECTION of an earlier screenshot interpretation**: UI 'ultima actualizare worker 429.1s' is time SINCE last graph snapshot, not the total length of training. Therefore dividing 104,473 chars or 2 exercises by 429.1 seconds would NOT be a valid throughput estimate. The new worker rate telemetry uses actual elapsed time since resumed process start and excludes previously trained checkpoint exercises from its numerator.
+
+The actual RTX3050 Ti throughput remains unmeasured in CI; do not claim target achieved. The original CPU visual/legacy Brain is still replayed for the first exercise in each CUDA batch, as was already the V17 behavior. The full original CUDA TextCard absorbs every real character of each batch with alignment/48-step imagination/trust; moving the entire old CPU graph to CUDA for ALL examples is a separate architectural task, not achieved by this exact suffix optimization.
