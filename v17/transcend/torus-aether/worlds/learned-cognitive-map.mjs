@@ -369,6 +369,12 @@ export class LearnedCognitiveMap {
         const support=Math.max(1,Math.trunc(hop.support||1));
         edges.push({from,to:hop.to,action:hop.action,count:support,
           provenance:hop.verified?"observed":"learned-rule-hypothesis"});
+        // A witnessed blocked action is a self-loop of the SAME real action.
+        // Keep the successful hypothesis, but lower its probability instead
+        // of silently repeating a failed path at full confidence.
+        const intervention=this.interventions.get(key(world.states[from])+"|"+hop.action);
+        if(intervention?.blocked>0)edges.push({from,to:from,action:hop.action,
+          count:Math.trunc(intervention.blocked),provenance:"observed"});
       }
     }
     const baseConduct=Math.max(.5,disc.conduct?.(KIND.floor)??.5);
