@@ -92,7 +92,7 @@ export function firstTryCharacterComparison(predicted,reference){
 // phrases, NOT a claim of general language comprehension.
 export function answerFromObservedInstructionPath(model,{instruction,source}={},
  {maxDepth=8,maxNodes=384,maxTokens=512,seed=74129,includeAtlas=false,
- minEpisodes=2,allowComposedInstructions=false}={}){
+ minEpisodes=2,allowComposedInstructions=false,externalStep=null}={}){
  if(!(model instanceof LearnedCognitiveMap))
   throw Error('The ORIGINAL LearnedCognitiveMap is required');
  const inference=(allowComposedInstructions?inferComposedInstructionGoal:inferObservedInstructionGoal)
@@ -128,6 +128,10 @@ export function answerFromObservedInstructionPath(model,{instruction,source}={},
   return {...initial,reason:'PATH_LENGTH_DIFFERS_FROM_OBSERVED_INTENT_SEQUENCE'};
  const tokens=inference.initialTokens;
  let cursor=tokens.slice();
+ const externallyExecuted=[];
+ if(externalStep!==null&&typeof externalStep!=="function")
+  return {...initial,reason:"INVALID_EXTERNAL_ACTION_OBSERVER"};
+ // World actions can ONLY happen after the original full shape is frozen.
  for(let i=0;i<plan.path.length;i++){
   const hop=plan.path[i],wanted=inference.supportedSequence[i];
   if(cursor[inference.sourceCoordinate]!==wanted.from)
@@ -140,11 +144,36 @@ export function answerFromObservedInstructionPath(model,{instruction,source}={},
   if(changed.length!==1||changed[0]!==inference.sourceCoordinate||
       predicted[inference.sourceCoordinate]!==wanted.to)
    return {...initial,reason:'PATH_ACTION_DIFFERS_FROM_WITNESSED_INTENT',rejectedStep:i};
-  cursor=predicted;
+  if(externalStep){
+   let actual;
+   try{
+    actual=externalStep({before:cursor.slice(),action:hop.action,
+     stepIndex:i,proposedNext:predicted.slice()});
+   }catch(err){
+    return {...initial,reason:"EXTERNAL_ACTION_CALLBACK_FAILED",
+     rejectedStep:i,externalError:err.message,externallyExecuted};
+   }
+   if(!actual||typeof actual.accepted!=="boolean"||
+      !Array.isArray(actual.after)||actual.after.some(x=>typeof x!=="string"))
+    return {...initial,reason:"EXTERNAL_ACTION_RESULT_INVALID",
+     rejectedStep:i,externallyExecuted};
+   const accurate=actual.accepted&&JSON.stringify(actual.after)===JSON.stringify(predicted);
+   externallyExecuted.push({stepIndex:i,action:hop.action,
+    predicted:predicted.slice(),observed:actual.after.slice(),
+    accepted:actual.accepted,accurate});
+   if(!accurate)return {...initial,
+    reason:actual.accepted?"EXTERNAL_ACTION_EFFECT_DIFFERS_FROM_FROZEN_PATH":
+     "EXTERNAL_WALL_REJECTED_FROZEN_PATH",
+    rejectedStep:i,externallyExecuted,
+    externallyConfirmedFirstShape:false};
+   cursor=actual.after.slice();
+  }else cursor=predicted;
  }
  if(!LearnedCognitiveMap.matchGoal(cursor,inference.goal))
   return {...initial,reason:'ORIGINAL_PATH_FAILED_INFERRED_GOAL'};
  return {...initial,found:true,reason:null,answer:render(cursor),
   terminalTokens:cursor,firstTry:true,completedOriginalActions:plan.path.length,
+  externallyExecuted,externallyConfirmedFirstShape:externalStep!==null,
+  externalObserverIsCallerProvidedNotPhysicsProof:externalStep!==null,
   learnedGoalNotCopiedFromHeldoutAnswer:true};
 }
