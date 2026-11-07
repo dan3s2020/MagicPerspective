@@ -249,12 +249,15 @@ http.createServer((req, res) => {
     if(!sl||!sl.worlds.includes("text"))
       return json(res,{error:"Select an original Brain learning text"});
     const mode=q.get("mode")||"events";
-    if(!["events","summary","operators"].includes(mode))
-      return json(res,{error:"Atlas mode must be events, summary, or operators"});
+    if(!["events","summary","operators","graph"].includes(mode))
+      return json(res,{error:"Atlas mode must be events, summary, operators, or graph"});
     const after=Number(q.get("after")||0),limit=Number(q.get("limit")||60);
     if(!Number.isSafeInteger(after)||after<0||!Number.isSafeInteger(limit)||limit<1||limit>250)
       return json(res,{error:"Atlas pagination requires 0+ cursor and 1..250 events"});
     const kinds=q.getAll("kind").filter(Boolean);
+    const searchSequence=Number(q.get("searchSequence")||0);
+    if(mode==="graph"&&(!Number.isSafeInteger(searchSequence)||searchSequence<1))
+      return json(res,{error:"An actual recorded search sequence is required for graph pages"});
     const onlyFailed=q.get("onlyFailed")==="1",onlyUnused=q.get("onlyUnused")==="1";
     if(!sl.wk){
       const f=saveOf(sl);
@@ -266,6 +269,7 @@ http.createServer((req, res) => {
         const result=mode==="operators"?
           native.atlasOperators({after,limit,onlyUnused}):
           mode==="summary"?native.atlasSummary():
+          mode==="graph"?native.atlasGraph({searchSequence,after,limit}):
           native.atlasPage({after,limit,kinds,onlyFailed});
         return json(res,{mode,result,fromSavedOriginalBrain:true});
       }catch(err){return json(res,{error:err.message});}
@@ -274,7 +278,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Original native atlas worker did not respond"});
     },30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({nativeHypermazeAtlas:{id,mode,after,limit,kinds,onlyFailed,onlyUnused}});
+    sl.wk.postMessage({nativeHypermazeAtlas:{id,mode,after,limit,kinds,onlyFailed,onlyUnused,searchSequence}});
     return;
   }
   if(req.method==="POST"&&url==="/native-hypermaze"){
