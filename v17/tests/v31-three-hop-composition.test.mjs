@@ -8,8 +8,8 @@ import {answerFromOriginalPath,firstTryCharacterComparison} from '../transcend/t
 const triples=[['tea','coffee'],['coffee','water'],['water','juice']];
 const feed=(model,a,b)=>{
  const id='source-'+a+'-'+b;
- model.observeWorld('Mira buys '+a+'. Mira buys '+b+'.',{id:id+'-m'});
- model.observeWorld('Ivo likes '+a+'. Ivo likes '+b+'.',{id:id+'-i'});
+ model.observeWorld('Nina sells '+a+'. Nina sells '+b+'.',{id:id+'-n'});
+ model.observeWorld('Omar finds '+a+'. Omar finds '+b+'.',{id:id+'-o'});
 };
 const question=(from,to,src)=>'Replace "'+from+'" with "'+to+'" in:\n'+src;
 const words=(n,i,seed)=>{
