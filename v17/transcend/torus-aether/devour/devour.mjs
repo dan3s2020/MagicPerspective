@@ -20,6 +20,7 @@ import {evaluateWholeMapBaseline} from "../worlds/whole-map-audit.mjs";
 import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
+import {atlasPath,readAtlasPage,appendAtlasEvent} from "./atlas-journal.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -177,6 +178,11 @@ const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||nu
   directOriginalMethod:r.directOriginalMethod||null,noiseTemperature:r.noise??null,
   preActionShape:r.field?.nodes?.slice(0,192)||[],
   topology:frozenTextShapeTopology(r),
+  diagnostics:r.world?.diagnostics||null,
+  usedCrossWorld:r.usedCrossWorld||false,
+  projectedCrossWorldEdges:r.projectedCrossWorldEdges||0,
+  fullAtlasAvailableThrough:"/atlas?w=<graph>&cursor=<byte_offset>",
+  fullAtlasExport:"/atlas-export?w=<graph>",
   truncated:r.world?.truncated||false});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
@@ -418,7 +424,21 @@ http.createServer((req, res) => {
         try{
           const save=saveOf(sl);if(!fs.existsSync(save))return json(res,{error:"No cognitive checkpoint"});
           const brain=Brain.load(save),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
-          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(20000,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(256,Math.max(1,+m.maxDepth||8)),transfer:true});
+          // This fallback is used when the worker is stopped; still save
+          // EVERY observed candidate corridor and failure on a separate
+          // append-only atlas, never modify the original frozen Brain.
+          appendAtlasEvent(atlasPath(save),{
+            type:"planning-attempt",world:"text",frozen:true,
+            input:m.initial,goal:m.goal,found:result.found,
+            reason:result.reason||null,
+            fullAtlas:{states:result.world?.states||[],
+              neighbors:result.world?.neighbors||[],
+              targets:result.world?.targets||[]},
+            diagnostics:result.world?.diagnostics||null,
+            fullPredictedPath:result.path||[],field:result.field?.values||[],
+            originalMethod:result.directOriginalMethod||null,
+            hypothesisNotVerifiedAsCorrectAnswer:true});
           return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
         }catch(e){return json(res,{error:e.message});}
       }
@@ -430,13 +450,27 @@ http.createServer((req, res) => {
           const file=saveOf(sl);
           if(!fs.existsSync(file))return json(res,{error:"Worker exited before any cognitive checkpoint was saved"});
           const brain=Brain.load(file),model=LearnedCognitiveMap.restore(brain.cognitiveMap);
-          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))});
+          const result=model.formSolution(m.initial,m.goal,{maxNodes:Math.min(20000,Math.max(2,+m.maxNodes||384)),maxDepth:Math.min(256,Math.max(1,+m.maxDepth||8)),transfer:true});
+          // This fallback is used when the worker is stopped; still save
+          // EVERY observed candidate corridor and failure on a separate
+          // append-only atlas, never modify the original frozen Brain.
+          appendAtlasEvent(atlasPath(save),{
+            type:"planning-attempt",world:"text",frozen:true,
+            input:m.initial,goal:m.goal,found:result.found,
+            reason:result.reason||null,
+            fullAtlas:{states:result.world?.states||[],
+              neighbors:result.world?.neighbors||[],
+              targets:result.world?.targets||[]},
+            diagnostics:result.world?.diagnostics||null,
+            fullPredictedPath:result.path||[],field:result.field?.values||[],
+            originalMethod:result.directOriginalMethod||null,
+            hypothesisNotVerifiedAsCorrectAnswer:true});
           return json(res,{...cognitiveReply(result),frozen:true,fromSave:true});
         }catch(e){return json(res,{error:e.message});}
       });
       sl.wk.postMessage({cognitiveEval:{id,initial:m.initial,goal:m.goal,
-        maxNodes:Math.min(768,Math.max(2,+m.maxNodes||384)),
-        maxDepth:Math.min(12,Math.max(1,+m.maxDepth||8))}});
+        maxNodes:Math.min(20000,Math.max(2,+m.maxNodes||384)),
+        maxDepth:Math.min(256,Math.max(1,+m.maxDepth||8))}});
     });return;
   }
   if (url === "/maptext-audit") {
@@ -446,6 +480,26 @@ http.createServer((req, res) => {
       const count = +(q.get("count") || 16), seed = +(q.get("seed") || 1729);
       return json(res, {w: sl.w, ...evaluateWholeMapBaseline({count,seed})});
     } catch (err) { return json(res, {error: err.message}); }
+  }
+  if (url === "/atlas" || url === "/atlas-export") {
+    const wid=Number(q.get("w")||0);
+    if(!Number.isSafeInteger(wid)||wid<0)return json(res,{error:"Invalid graph number"});
+    const sl=slots.find(x=>x.w===wid);
+    if(!sl||!sl.worlds.includes("cognitivemap"))
+      return json(res,{error:"Select a real cognitive world for full atlas access"});
+    const file=atlasPath(saveOf(sl));
+    if(url==="/atlas-export"){
+      if(!fs.existsSync(file))return json(res,{error:"Atlas journal not created for this checkpoint"});
+      res.writeHead(200,{"content-type":"application/x-ndjson; charset=utf-8",
+        "content-disposition":'attachment; filename="magicperspective-atlas-'+wid+'.jsonl"',
+        "cache-control":"no-store"});
+      return fs.createReadStream(file).pipe(res);
+    }
+    try{
+      return json(res,{w:wid,...readAtlasPage(file,{
+        cursor:Number(q.get("cursor")||0),limit:Number(q.get("limit")||50),
+        kind:q.get("kind")||""})});
+    }catch(err){return json(res,{error:err.message});}
   }
   if (url === "/graphs") return json(res, {world, every, corpus: source.kind === "none" ? null : {kind: source.kind, totalRows: source.totalRows, trainRows: source.trainRows, heldOut: source.heldRows}, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
