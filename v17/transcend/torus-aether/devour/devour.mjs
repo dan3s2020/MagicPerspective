@@ -170,7 +170,10 @@ const cognitiveReply = r => ({found:r.found,reason:r.reason||r.field?.reason||nu
   rules:r.learnedRules,observedSentences:r.world?.fromObservedExamples,generatedStates:r.world?.states.length,
   candidateGoals:r.world?.targets.length,novelGoal:r.novelGoal||false,
   start:r.world?.states[0]?.join(" "),plannedPath:r.path?.map(e=>({action:e.action,after:r.world.states[e.to]?.join(" ")})),
-  shapeField:r.field?.values?.slice(0,128),law:r.planningLaw||null,truncated:r.world?.truncated||false});
+  shapeField:r.field?.values?.slice(0,128),law:r.planningLaw||null,
+  directOriginalMethod:r.directOriginalMethod||null,noiseTemperature:r.noise??null,
+  preActionShape:r.field?.nodes?.slice(0,192)||[],
+  truncated:r.world?.truncated||false});
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
