@@ -21,9 +21,21 @@ jobs:
         env:
           V33_EVIDENCE_FILE: ${{ runner.temp }}/v33-first-shot-forensic-evidence.json
         run: node --test v17/tests/v33-first-shot-path-forensics.test.mjs
+      - name: Controlled native Chat baseline vs path-driven real character output
+        run: node --test v17/tests/v33-native-chat-shape-bridge.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: v33-first-shot-original-v17-actual-forensic-evidence
           path: ${{ runner.temp }}/v33-first-shot-forensic-evidence.json
           if-no-files-found: warn
+  authentic-open-thoughts-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Authentic official OpenThoughts3 24 sampled rows, 4 genuinely held-out full answers
+        run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
