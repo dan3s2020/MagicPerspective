@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "date": "2026-11-07",
+  "status": "ISOLATED_EXPERIMENT_NOT_ACCEPTED_PRODUCTION",
+  "source_quotes": [
+    {
+      "source": "Current conversation, 2026-11-07, user literal",
+      "literal": "NU TE OPRESTI PANA NU GASESTI SOLUTIA SI O SCRII IN REPO CU DOVEZI . testezi TOT,IPOTEZE,INCERCARI,TOT,PANA NU FACI LABIRINTUL HYPERDIMENASIONAL DE TEXT SA PREZICA 70+% FORMA SOLUTIEI DIN PRIMA NU TE OPRESTI"
+    },
+    {
+      "source": "Current conversation, preceding request, 2026-11-07, user literal",
+      "literal": "REZULTATELE TREBUIE SA FIE CLARE ! NU NEXT CHARACTER PREDICTOR!!! FACI EXACT CE S-A CERUT!"
+    }
+  ],
+  "precedence": "Literal user demands take priority; 70% constrained benchmark must not be advertised as open-domain accuracy",
+  "originals": {
+    "native_original": "v17/transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs",
+    "native_lift": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "exact_shape_call": "Discoverer.shape()",
+    "source_branch": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107",
+    "frozen_base_commit": "669449d45a7a04dbd780c5ab4ec800c49fe593fd"
+  },
+  "changed_files_only": [
+    "v17/research/relational-hypermaze/engine.mjs",
+    "v17/research/relational-hypermaze/benchmark.mjs",
+    "v17/tests/v23-observed-relational-hypermaze.test.mjs",
+    "v17/docs/V23_OBSERVED_RELATIONAL_HYPERMAZE_EVIDENCE_20261107.md",
+    "user-intent/changes/V23-OBSERVED-RELATIONAL-HYPERMAZE-20261107.json",
+    ".github/workflows/v23-observed-relational-hypermaze.yml"
+  ],
+  "original_unchanged": true,
+  "current_hypothesis": "Witnessed state/action/next-state descriptions induce a navigable four-axis relational graph; original V17 shape operator propagates a known goal through unseen textual worlds and predicts a complete action route before physical execution.",
+  "experimental_auxiliaries": "Generator/test harness isolated from V17 original runtime, not an architectural replacement.",
+  "tests": [
+    "v17/tests/v23-observed-relational-hypermaze.test.mjs",
+    "v17/tests/v22-exact-original-discoverer.test.mjs"
+  ],
+  "actual_result_precommit": {
+    "scope": "Isolated V8 execution of original V22 source with ESM syntax conversion",
+    "heldout_worlds": 300,
+    "full_first_plan_verified": 300,
+    "physical_execution_verified": 300,
+    "negative_unknown_surface_abstains": 300
+  },
+  "limitations": [
+    "Not arbitrary natural-language question understanding",
+    "Goal state explicitly supplied; hidden route not supplied",
+    "No independent OpenThoughts3 answer exact-match proof",
+    "Four observed axes are not self-discovered dimensions",
+    "Native Node CI and CUDA remain separate",
+    "Issue #25 OPEN"
+  ],
+  "provenance_note": "Written after isolated proof and source creation in this session, not falsely backdated.",
+  "no_checkpoints_or_existing_engines_changed": true
+}
