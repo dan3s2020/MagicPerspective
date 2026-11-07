@@ -50,7 +50,8 @@ async function poll(){
     if(!Array.isArray(body.graphs))throw Error("Nu este API-ul original V17 /graphs");
     // When the ORIGINAL selector changes, show the exact same native worker.
     const w=new URLSearchParams(location.search).get("w");
-    activeWorker=w===null?null:w;
+    const originalSelection=document.querySelector("#liveList .lgc.on")?.dataset.w;
+    activeWorker=w!==null?w:(originalSelection??null);
     update(body);
   }catch(e){error(e)}
   finally{pending=false}
