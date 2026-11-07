@@ -17,7 +17,8 @@ import {validateWorldSource} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {AtlasJournal,atlasPath} from "./atlas-journal.mjs";
-import {answerFromOriginalPath} from '../worlds/path-answer-writer.mjs';
+import {answerFromOriginalPath,answerFromObservedInstructionPath} from '../worlds/path-answer-writer.mjs';
+import {observeInstructionTrajectory} from '../worlds/observed-instruction-goals.mjs';
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
@@ -383,6 +384,70 @@ parentPort.on("message", m => {
       parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,
         result,report:cognitive.report(),savedMB});
     }catch(err){parentPort.postMessage({type:"chat",kind:"cognitive-observation",id,error:err.message});}
+    return;
+  }
+  // V36: same original Brain, same V19 cognitive corpus and original V17
+  // Discoverer.shape. Training episodes are ACTUAL before/action/after
+  // states supplied by an environment; never fabricate outcome from a goal.
+  if(m?.instructionObserve){
+    const {id,instruction,states,episodeId,executedTransitionsObserved}=m.instructionObserve;
+    try{
+      if(!cognitive)throw Error("Original V17 cognitive world is disabled");
+      if(!Array.isArray(states)||states.length<2||states.length>9||
+         !states.every(x=>typeof x==="string"&&x.length<=131072))
+        throw Error("Need 2..9 complete observed state texts, each bounded to 131072 chars");
+      if(executedTransitionsObserved!==true)
+        throw Error("Environment must attest the transitions were actually observed");
+      // Adjacent known states are observed like other REAL corpus worlds.
+      // No extra teacher answer is injected at inference time.
+      const sourceReports=[];
+      for(let i=1;i<states.length;i++)
+        sourceReports.push(cognitive.observeWorld(states[i-1]+"\n"+states[i],
+          {id:episodeId+":"+i}));
+      const evidence=observeInstructionTrajectory(cognitive,{
+        instruction,states,episodeId,executedTransitionsObserved});
+      atlasJournal?.record({type:"instruction-effect-observed",
+        world:"text",instruction,episodeId,
+        actualExternallyReportedSequence:states,evidence,
+        independentlyVerifiedPhysicalTruth:false,
+        originalBrain:true,trainingEvent:true});
+      saveCognitive();
+      const checkpointMB=saveFile?brain.save(saveFile)/1e6:null;
+      shot(true);
+      parentPort.postMessage({type:"chat",kind:"instruction-observation",id,
+        ...evidence,sourceReports,checkpointMB,originalBrain:true});
+    }catch(err){parentPort.postMessage({type:"chat",kind:"instruction-observation",
+      id,error:err.message});}
+    return;
+  }
+  if(m?.instructionAnswer){
+    const {id,instruction,source,maxTokens=512,maxNodes=384,maxDepth=8}=m.instructionAnswer;
+    try{
+      if(!cognitive)throw Error("Original V17 cognitive world is disabled");
+      const before=JSON.stringify(cognitive.export());
+      const answer=answerFromObservedInstructionPath(cognitive,{instruction,source},{
+        maxTokens,maxNodes,maxDepth,includeAtlas:true});
+      if(JSON.stringify(cognitive.export())!==before)
+        throw Error("Frozen V36 answer mutated the original Brain's learned memory");
+      const {fullAtlas,terminalTokens,...safe}=answer;
+      atlasJournal?.record({type:"planning-attempt",world:"text",
+        intent:instruction,input:source,goalWasInferred:true,
+        frozen:true,referenceEnteredBeforePlan:false,
+        fullPredictedPath:answer.path||[],reason:answer.reason||null,
+        found:answer.found,
+        observedIntentEpisodes:answer.evidence?.sourceTrainingEpisodes||[],
+        originalMethod:"Discoverer.shape",
+        fullAtlas:fullAtlas||{states:[],neighbors:[],targets:[]},
+        pathDrivenAnswer:answer.answer??null,
+        semanticCorrectnessNotEstablished:true,
+        evidenceLevel:"FROZEN_OBSERVED_INTENT_GOAL_ORIGINAL_SHAPE"});
+      atlasJournal?.sync();
+      parentPort.postMessage({type:"chat",id,kind:"instruction-answer",
+        ...safe,fullAtlasRecorded:!!fullAtlas,
+        originalMethod:"Discoverer.shape",trainingModified:false,
+        referenceWasNotProvided:true});
+    }catch(err){parentPort.postMessage({type:"chat",id,kind:"instruction-answer",
+      error:err.message});}
     return;
   }
   if(m?.pathAnswer){
