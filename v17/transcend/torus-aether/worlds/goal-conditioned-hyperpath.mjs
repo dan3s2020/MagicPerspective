@@ -18,7 +18,7 @@ export class GoalConditionedHyperpath {
     this.questions=new Map(); // learned source-axis activity on actual questions
     this.answers=new Map(); // learned target-axis activity on actual answers
     this.bridge=new Map(); // genuine co-observation of question axis -> answer axis
-    this.rows=0;this.bytesObserved=0;this.skippedFeatures=0;
+    this.rows=0;this.bytesObserved=0;this.skippedFeatures=0;this.relationCount=0;
     this.lastPlan=null;this.predicted=0;this.planned=0;this.executed=0;
     this.goalReached=0;this.failed=0;this.causalAblations=0;
   }
@@ -48,14 +48,14 @@ export class GoalConditionedHyperpath {
       }
       for(const y of a){
         if(!this.answers.has(y))continue;
-        if(!map.has(y)&&this.maxPairFeatures<=this.featureCount()){this.skippedFeatures++;continue;}
+        if(!map.has(y)){if(this.relationCount>=this.maxPairFeatures){this.skippedFeatures++;continue;}this.relationCount++;}
         map.set(y,(map.get(y)||0)+1);
       }
     }
     return {learned:true,sourceAxes:q.length,targetAxes:a.length,
       observedAnswerWords:A.length,rows:this.rows,features:this.featureCount()};
   }
-  featureCount(){let n=0;for(const m of this.bridge.values())n+=m.size;return n;}
+  featureCount(){return this.relationCount;}
   // Local axes are question terms whose empirically observed answer-term
   // associations have the most predictive specificity, not fixed 6 axes.
   inferGoal(question,{maxRequired=2,minimumSupport=2,ablate=false}={}){
@@ -102,10 +102,25 @@ export class GoalConditionedHyperpath {
       this.failed++;this.lastPlan={ready:false,reason:"no-learned-goal-axes"};
       return {...this.lastPlan,goalInference:inferred,plannedBeforeFirstAction:true};
     }
+    // Case-sensitive lexical surface forms are grounded in actual observed
+    // world states; no hidden reference answer or arbitrary casing is added.
+    const targetsSurface=new Map();
+    if(learnedWorld?.records instanceof Map){
+      for(const entry of learnedWorld.records.values())for(const t of entry.tokens||[]){
+        const norm=t.toLowerCase();if(!inferred.required.includes(norm))continue;
+        let surface=targetsSurface.get(norm);if(!surface){surface=new Map();targetsSurface.set(norm,surface);}
+        surface.set(t,(surface.get(t)||0)+1);
+      }
+    }
+    if(!required?.length)inferred.required=inferred.required.map(token=>{
+      const surfaces=targetsSurface.get(token);if(!surfaces)return token;
+      return [...surfaces].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0][0];
+    });
     // A planner receives ONLY the question, learned model, target features and
     // its chosen source state. It never sees reference heldout answer.
     // Use actual observed corpus sentences as potential starting states.
     const targets=new Set(inferred.required.map(x=>x.toLowerCase()));
+    const questionTerms=new Set(lex(question));
     let choices=[];
     if(start!==null)choices=[start];
     else if(learnedWorld?.records instanceof Map){
@@ -113,7 +128,7 @@ export class GoalConditionedHyperpath {
         const toks=record.tokens||[],lower=toks.map(x=>x.toLowerCase());
         const matched=lower.filter(x=>targets.has(x)).length;
         if(matched===targets.size)continue;
-        const lexical=lower.filter(x=>lex(question).includes(x)).length;
+        const lexical=lower.filter(x=>questionTerms.has(x)).length;
         choices.push({text:renderObservation(toks),
           score:matched*3+lexical*.3-Math.abs(toks.length-7)*.02});
       }
@@ -156,11 +171,11 @@ export class GoalConditionedHyperpath {
     this.lastPlan={...report,search:null};
     return report;
   }
-  execute(plan,learnedWorld,{localPolicy=false,noiseAgent=null}={}){
+  execute(plan,learnedWorld,{localPolicy=false,noiseAgent=null,worldCore=null}={}){
     if(!plan?.ready||!plan?.found)return {executed:false,reason:"no-frozen-shape"};
     // Frozen evaluator uses ONLY learned operators and sensor feedback.
     const body=learnedWorld.embody(plan,{localPolicy,noiseAgent,maxSteps:64,
-      worldCore:plan.usesNativeSharedWorld?learnedWorld.worldCore:null});
+      worldCore:plan.usesNativeSharedWorld?worldCore:null});
     this.executed++;this.goalReached+=+body.success;
     return {...body,executed:true,plannedState:plan.fullPredictedStateBeforeExecution,
       initialShape:plan.initialShape,correctByInternalWorldModel:body.success,
