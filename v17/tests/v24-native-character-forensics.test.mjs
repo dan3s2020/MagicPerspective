@@ -72,10 +72,18 @@ test("V24 native actual CPU 5-world training builds persistent unicode character
   assert.deepEqual(r.after.predictedActions.map(e=>e.to),["mot","mut"]);
   assert.equal(r.after.predictionBeforeAnyAction,true);
   assert.equal(r.after.completeKnownGraph,true);
+  assert.equal(r.before.diagnostics.exactLocationBlockers[0].obstacleClassification,
+    "TRANSFER_ABLATED_IN_THIS_RUN");
+  assert.deepEqual(
+    r.before.diagnostics.exactLocationBlockers[0].observedEvidenceOnlySymbolChain.map(x=>x.from+"->"+x.to),
+    ["a->o","o->u"]);
+  assert.equal(r.after.diagnostics.exactLocationBlockers[0].targetCharacterVisitedInAnActualCandidateState,true);
   const miss=await post("/character-eval",{w:0,initial:"mat",
     goal:{charSlots:{1:"e"}},maxNodes:120,maxDepth:6});
   assert.equal(miss.after.found,false);
   assert.ok(miss.after.diagnostics.missingGoalCharacterPaths.some(e=>e.wanted==="e"));
+  assert.equal(miss.after.diagnostics.exactLocationBlockers[0].obstacleClassification,
+    "NO_OBSERVED_CHARACTER_RULE_CHAIN");
   const dir=path.join(save,"brains");
   const ck=path.join(dir,"brain-0-stable+many.v8");
   // A native snapshot may take an additional periodic report to persist.
@@ -108,6 +116,25 @@ test("V24 native actual CPU 5-world training builds persistent unicode character
     assert.equal(forensic.hiddenAnswerWasUsedOnlyForPostHocDiagnostic,true);
     assert.ok(forensic.examples.every(x=>x.postHocOnly));
   }
+  // Input contains REAL observed training, while this rejected action is
+  // a controlled EXTERNAL feedback event. Do not confuse it with a hidden
+  // answer or a semantic language task.
+  const wall=await post("/character-observe",{w:0,before:"mat",after:"mat",
+    action:charActionId("replace",1,"a","o"),accepted:false});
+  assert.ok(!wall.error,JSON.stringify(wall));
+  assert.equal(wall.result.blocked,true);
+  const replanned=await post("/character-eval",{w:0,initial:"mat",
+    goal:{charSlots:{1:"u"}},maxNodes:120,maxDepth:6,temperature:0,seed:74129});
+  assert.ok(!replanned.error,JSON.stringify(replanned));
+  assert.equal(replanned.after.found,false);
+  assert.equal(replanned.after.diagnostics.exactLocationBlockers[0].obstacleClassification,
+    "REAL_WALL_OBSERVED_AT_THIS_POSITION");
+  assert.equal(replanned.after.diagnostics.exactLocationBlockers[0].actualWallExamplesAtThisPosition[0].originalState,"mat");
+  const savedAfterWall=CharacterHypermaze.restore(Brain.load(ck).characterAtlas);
+  assert.equal(savedAfterWall.predict("mat",charActionId("replace",1,"a","o")),null,
+    "Rejected action effect must persist in the original Brain checkpoint");
+  assert.ok(savedAfterWall.predict("bat",charActionId("replace",1,"a","o")),
+    "Wall in one state cannot erase valid transformations in other worlds");
   const files=readdirSync(dir).filter(x=>x.endsWith(".atlas.jsonl"));
   assert.equal(files.length,1);
   const exported=await fetch(base+"/atlas-export?w=0");
@@ -121,6 +148,9 @@ test("V24 native actual CPU 5-world training builds persistent unicode character
   assert.ok(attempts.some(x=>!x.found&&x.reason==="NO_INDEPENDENT_CHARACTER_TRANSFORM_EVIDENCE"));
   assert.ok(attempts.some(x=>x.found&&x.completePredictedPath?.length===2));
   assert.ok(attempts.some(x=>!x.found&&x.diagnostics?.missingGoalCharacterPaths.some(p=>p.wanted==="e")));
+  assert.ok(parsed.some(x=>x.type==="character-real-action"&&x.correct===false));
+  assert.ok(attempts.some(x=>!x.found&&
+    x.diagnostics?.exactLocationBlockers?.some(p=>p.obstacleClassification==="REAL_WALL_OBSERVED_AT_THIS_POSITION")));
   const ui=await(await fetch(base+"/transcend/torus-aether/ui/index.html")).text();
   assert.match(ui,/v24CharacterCanvas/);assert.match(ui,/v24-character-forensic-live.js/);
   assert.match(await(await fetch(base+"/transcend/torus-aether/ui/v24-character-forensic-live.js")).text(),
