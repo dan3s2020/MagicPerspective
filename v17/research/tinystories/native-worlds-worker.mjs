@@ -21,6 +21,7 @@ const since=()=>Date.now();
 let brain,paused=true,stop=false,started=false,running=false,saveFlag=false;
 let lastSent=0,lastCheckpoint=0,progressRows=0,progressOffset=0;
 let worldEpisode=0,failed=null,evalBusy=false,exams=null,firstStart=0,bytesObserved=0;
+let lastNativePrediction=null;
 const send=(message)=>parentPort.postMessage(message);
 const errors=e=>String(e?.stack||e?.message||e).slice(0,2400);
 
@@ -51,7 +52,8 @@ const worldStats=()=>{
    observedTransformations:brain.observedTransformations?.report()?.learnedOperators||0,
    sampledGraphBytes:bytesObserved,
    geometryLearnedSteps:brain.trace.geo?.n||0,
-   graphNodes:brain.trace.nodes.size,graphEdges:brain.trace.edges.size},
+   graphNodes:brain.trace.nodes.size,graphEdges:brain.trace.edges.size,
+   lastNativePrediction},
   noise:{decisions:brain.noiseAgent?.total||0,sites:brain.noiseAgent?.bySite||{}}
  };
 };
@@ -99,7 +101,20 @@ function ingest(text,storyNumber){
  const sentences=str.match(/[^.!?]+[.!?]+/gu)?.map(x=>x.trim()).filter(Boolean)||[];
  if(sentences.length>=2){
   const question=sentences[0].slice(0,240),answer=sentences[1].slice(0,320);
-  if(question&&answer)brain.learnConstructedText(question,answer);
+  if(question&&answer){
+   // FROZEN forecast before reading the answer from this story.
+   // Run only occasionally: constant latency cannot stall the fast CUDA lane.
+   if(storyNumber%worldEvery===0){
+    try{
+     const found=brain.constructedPaths.imagineText(question,{maxChars:90,beamWidth:2});
+     lastNativePrediction={storyNumber,question,actualNext:answer,
+       predicted:found.predicted?.slice(0,160)||"",
+       actions:found.path?.slice(0,24)||[],source:"before-learning-this-story",
+       heldout:false};
+    }catch(e){lastNativePrediction={storyNumber,error:String(e.message)};}
+   }
+   brain.learnConstructedText(question,answer);
+  }
  }
  // Full original per-symbol C/A/5D/AligningGraph is expensive.
  // Sample explicit, measured prefixes; do NOT claim every byte learned
@@ -114,7 +129,7 @@ function ingest(text,storyNumber){
    bytesObserved++;
   }
  }
- if(storyNumber%worldEvery===0){
+ if((storyNumber+1)%worldEvery===0){
   brain.playMaze(true);
   brain.playTransform(true);
   worldEpisode++;
@@ -161,7 +176,7 @@ async function run(){
    progressRows++;
    progressOffset=item.endOffset;
    if(saveFlag||since()-lastCheckpoint>=saveSeconds*1000)commit();
-   publish(false,progressRows%Math.max(1,worldEvery)===0);
+   publish(false,progressRows%8===0);
    await yieldNow();
   }
   if(!stop){paused=true;send({type:"finished",rows:progressRows,offset:progressOffset});}
