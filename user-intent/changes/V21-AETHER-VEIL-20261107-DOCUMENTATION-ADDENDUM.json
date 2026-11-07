@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "contract_id": "V21-AETHER-VEIL-DOCUMENTATION-ADDENDUM-20261107",
+  "source_authority": [
+    {
+      "role": "USER",
+      "quote": "Documentează tot în repo",
+      "source": "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md#user-06--document-the-repository"
+    },
+    {
+      "role": "USER",
+      "quote": "sper ca acum nu te intorci pur si simplu la acele versiuni vechi,ci implementezi toate descoperirile si testezi sa vezi ca inca se obtin rezultatele descopeririilor,altfel nu ai implementat transferul bine",
+      "source": "user-intent/2026-11-07-V21-REGRESSION-DIRECTIVE-verbatim.md"
+    },
+    {
+      "role": "USER",
+      "quote": "The string is missing the terminator: \".",
+      "source": "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md#user-07--v21-powershell-parser-error-after-successful-git-pull"
+    }
+  ],
+  "scope": "Archive recoverable user directives, native and historical test outcomes, current code/branch status and Windows PowerShell 5.1 failure/fix. Add docs-only source links on main. No merge of experimental runtime code to main. No claim of byte-exact complete transcript.",
+  "original_contract": "user-intent/changes/V21-AETHER-VEIL-20261107.json",
+  "code_exception": {
+    "path": "v17/START_V21_AETHER_VEIL.ps1",
+    "change": "replace exactly one Unicode em dash with ASCII hyphen to restore Windows PowerShell 5.1 syntax",
+    "commit": "8ca3ddbb6da459a37dcc78ce54f6fba20bad40fb"
+  },
+  "ci_exception": {
+    "path": ".github/workflows/v21-veil-aether.yml",
+    "change": "add ASCII gate + real WinPS5.1 job; fix test's ${file}: interpolation",
+    "commits": [
+      "c4c9c7a9bb753cea2073323ba6ee0177a323213b",
+      "e79343dc14bdd9876d6a76b49adfa6d572a96c64"
+    ]
+  },
+  "new_documents": [
+    "v17/docs/V21_CONSOLIDATED_RESEARCH_REGRESSION_TRANSFER_ARCHIVE_20261107.md",
+    "v17/docs/V21_WINDOWS_POWERSHELL51_POSTMORTEM_20261107.md",
+    "v17/docs/V21_TRANSFER_EVIDENCE_LEDGER_20261107.json",
+    "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md",
+    "user-intent/changes/V21-AETHER-VEIL-20261107-DOCUMENTATION-ADDENDUM.json"
+  ],
+  "evidence": {
+    "frozen_text_migration": 0.17647058823529413,
+    "native_tests_passed": 42,
+    "native_tests_failed": 0,
+    "ci_native_and_historic": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42324536831",
+    "windows_parser_51": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42326210472",
+    "no_Openthoughts3_GPU_retest": true
+  },
+  "status": "DOCUMENTED_PARTIAL_NO_UNIVERSAL_COMPLETENESS",
+  "scope_limitations": [
+    "No original screenshot image binaries committed",
+    "No full byte-exact assistant history available in this visible conversation",
+    "All underlying historical discoveries' standalone CI pass is not full integration",
+    "Original Discoverer.shape not directly transferred to navigable semantic language policy",
+    "User-specific Windows CUDA training not verified",
+    "Issue #25 remains OPEN/BLOCKING"
+  ]
+}
