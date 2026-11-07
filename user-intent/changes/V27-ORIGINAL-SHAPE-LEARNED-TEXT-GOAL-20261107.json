@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-07",
+  "version": 1,
+  "branch": "experiment/V27-LEARNED-4D-GOAL-ORIGINAL-SHAPE-20261107",
+  "base_ref": "experiment/V17-GROUNDED-4D-TEXT-GOAL-BRAIN-20261107",
+  "base_commit": "aea578453b25cb4763cf641383d76576b2d2d02d",
+  "user_intent": "Try again: discover 4D world topology, axes, walls, loops and the answer target from text; use the ORIGINAL Discoverer.shape() instead of a substitute BFS. Keep all working native Brain, CUDA, UI, checkpoints unchanged.",
+  "original_2d_snapshot": "v17/transcend/torus-aether/worlds/exercise-v27-PR62-IMMUTABLE-SNAPSHOT.mjs",
+  "original_source_blob_sha": "36ab59ada59b28b56b7c0c8bef4d5e6d7460dcd2",
+  "scope": [
+    "optional topology adapter in exactly existing Discoverer.shape, 2D parity must be exact",
+    "new learned reference goal matcher using observed goal feedback",
+    "new glue reads existing native trained TextWorldNavigator world/axes/wall graph then supplies it to actual native original shape",
+    "no edits to native Brain, NoiseAgency, CUDA, original UI, original training/checkpoints/launcher",
+    "no merge and no release without natural heldout semantic precision"
+  ],
+  "attestations": [
+    "No invented universal 4D physics",
+    "4D coordinates/source vocabulary remain pre-specified ontology",
+    "Goal-reference classifier needs witnessed supervision; no unrestricted language-understanding claim",
+    "Independent true physics used only AFTER frozen path for scoring",
+    "Any failure or regression must be reported as discovered"
+  ]
+}
