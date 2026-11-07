@@ -64,3 +64,15 @@ Verbatim directive: `verbatim/2026-11-07-COMPLETE-HYPERMAZE-ATLAS-USER-VERBATIM.
 Workflow: `.github/workflows/v17-native-full-atlas.yml`. Tests include actual original maze parity, 100/100 long structured compositions, 1,000 long corpus observations, real TXT worker/Chromium integration, frozen two-phase before-action vs after-action reference, Unicode byte-cursor ledger paging, learned-operator causal deletion, ambiguous goal diagnosis and real frontiers.
 
 **Do not provide a user-facing final CUDA training launch command or call the problem solved until the full original model passes the independent natural-language and hardware release gates.**
+
+## New experiment: transfer between different textual coordinate frames, with causal ablation
+
+A further hypothesis tests an architectural restriction: the original `ObservedTransformations` applies a learned `He→She` replacement only when the immediate neighboring tokens match its original observation. That prevents navigation from `He was ready.` when it has only observed `He is tired.→She is tired.`, even though this edit may be a reusable axis.
+
+This branch now derives an **explicitly marked HYPOTHESIS**, not an arbitrary invented rule, inside the SAME original persistent Brain: only after it has actually observed the SAME token replacement in **TWO distinct local contexts** `He is tired.→She is tired.` and `He feels calm.→She feels calm.`. The original context-bound learned operators remain unchanged. The new axis then provides a potential edge for `He was ready.→She was ready.`, a previously unseen third context. It is used by the exact same `Discoverer.shapeGraph` value propagation before the first action and by the original text-body move executor. Source evidence, original operator key, observed context pairs, inferred state and the fact that the new transfer is a **hypothesis** are visible in the same actual path atlas. The `Brain.v8` save/load preserves the original learned abstraction.
+
+**Verified ablations in GitHub Actions:** one observed context alone fails; two independent contexts succeed; disabling the hypothesized cross-context axis fails; restoring the saved Brain succeeds. Exact heldout third-state first-shape is `She was ready.`. The answer was not observed during training. The audit now also flags an **unverified cross-context axis contributing to a wrong Unicode character**, and credits each predicted character to either the observed starting state or the exact learned context-changing action and its original corpus evidence.
+
+**Critical limitation:** two observed grammatical contexts do not mathematically prove universal correctness of an edit in all other contexts. These are original-Brain structural transformations, not a full semantic understanding oracle. The 5D coordinate and noise-policy benefit on independent goals remains unproven; the model still uses the explicitly disclosed bounded graph. Full release still blocked.
+
+Test file: `v17/tests/native-hypermaze-cross-context-axis.test.mjs`; branch workflow: `.github/workflows/v17-native-full-atlas.yml`.
