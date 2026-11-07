@@ -56,7 +56,7 @@ Write-Host "No demo: actual source rows train the original V17 Brain, with live 
 Write-Host ""
 # Checkpoints belong to THIS isolated folder. Existing checkpoints are
 # resumed instead of deleted, unless -Fresh was explicitly requested.
-$args = @{
+$launchParams = @{
   Workers = $Workers
   Arms = $Arms
   Data = $Data
@@ -73,8 +73,8 @@ $args = @{
   GpuUtil = $GpuUtil
   Every = 50000
 }
-if ($TraceTransformations) { $args.TraceTransformations = $true }
-$args.Start = $true
-if (-not $Fresh) { $args.Resume = $true }
-& $launcher @args
+if ($TraceTransformations) { $launchParams.TraceTransformations = $true }
+$launchParams.Start = $true
+if (-not $Fresh) { $launchParams.Resume = $true }
+& $launcher @launchParams
 if ($LASTEXITCODE -ne 0) { throw "Native V17 training returned exit code $LASTEXITCODE" }
