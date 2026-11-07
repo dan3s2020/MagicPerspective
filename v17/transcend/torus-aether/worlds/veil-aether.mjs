@@ -187,6 +187,37 @@ export class VeilAether {
         law:"V(goal)=1; V(s)=0.97 max_{observed successors} V(next)",
         caveat:"Only witnessed contextual token routes; NOT solved language semantics"}};
   }
+
+  // CRITICAL: this invokes the ORIGINAL Brain.disc.shape() itself, not a
+  // separate word-graph planner. Only observed contextual edges are included.
+  // Goal is explicitly user-visible; withheld answers never supply a goal.
+  planNative(discoverer,start,goal,{maxSteps=160}={}){
+    if(typeof discoverer?.shape!=="function")throw Error("Original Discoverer.shape required");
+    const a=normPair(start),g=normPair(goal);
+    const from=this.index.get(key(a)),to=this.index.get(key(g));
+    if(from===undefined||to===undefined)return {found:false,frozen:true,
+      reason:"UNKNOWN_CONTEXT",path:[],links:[],originalDiscovererDirectlyUsed:true};
+    const space={
+      nodes:this.nodes,
+      edges:[...this.edges.values()].map(e=>({
+        from:e.from,to:e.to,count:e.count,
+        action:"observed-next-symbol:"+this.nodes[e.to].state[1]})),
+      start:from,goals:[to],maxSteps
+    };
+    const native=discoverer.shape(null,0,-1,space);
+    const path=native.nodes.map(id=>this.nodes[id].label);
+    const links=native.path.map(e=>({
+      from:this.nodes[e.from].label,to:this.nodes[e.to].label,
+      action:e.action,count:e.observedCount,vFrom:e.potentialBefore,
+      vTo:e.potentialAfter,empiricalOutcomeProbability:e.empiricalOutcomeProbability
+    }));
+    return {...native,path,links,start:a,goal:g,routeNodes:native.nodes.map(
+      id=>{const n=this.nodes[id];return {id,label:n.label,count:n.count,features:this._features(n)};}),
+      originalMethod:"Brain.disc.shape()",
+      semanticGoalVerified:false,
+      hiddenAnswerUsed:false,
+      caveat:"Known-goal observed contextual path. NOT independent open-loop semantic answer writing."};
+  }
   _features(n){
     return [Math.min(1,Math.log1p(n.count)/12),
       Math.min(1,Math.log1p(n.degreeIn)/9),
