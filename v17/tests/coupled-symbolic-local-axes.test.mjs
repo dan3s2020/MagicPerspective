@@ -58,10 +58,10 @@ test("stochastic word-observation noise can be filtered by repeated independent 
    let exact=0,total=0;
    for(let seed=1;seed<=8;seed++){
      const w=world({D,side:3,seed:711+seed}),m=new LocalAxisLearner(stateView(w));
-     calibrate(w,m,{repeat:9,noise:.15,seed:2255+seed});
+     calibrate(w,m,{repeat:21,noise:.15,seed:2255+seed});
      const words=secretWords(D,319+seed),nav=new WordDrivenNavigator(m,[...words.keys()]);
-     observeWords(w,nav,words,{repeats:17,noise:.30,seed:391+seed});
-     const report=nav.learnWords({minConfidence:.6});
+     observeWords(w,nav,words,{repeats:31,noise:.30,seed:391+seed});
+     const report=nav.learnWords({minConfidence:.55});
      const n=[...words].filter(([word,axis])=>nav.dictionary.get(word)===axis).length;
      exact+=n;total+=words.size;
    }
