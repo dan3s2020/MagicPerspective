@@ -22,6 +22,7 @@ import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {frozenTextShapeTopology} from "../worlds/frozen-text-shape-observatory.mjs";
 import {atlasPath,readAtlasPage,appendAtlasEvent} from "./atlas-journal.mjs";
 import {answerForensics} from "./atlas-answer-forensics.mjs";
+import {answerFromOriginalPath} from '../worlds/path-answer-writer.mjs';
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -426,6 +427,60 @@ http.createServer((req, res) => {
       sl.wk.postMessage({cognitiveObserve:{id,before:m.before,action:m.action,
         after:m.after,accepted:m.accepted}});
     });return;
+  }
+  // V31 isolated, read-only, path-CAUSED answer via actual ORIGINAL Discoverer.shape.
+  // This is distinct from legacy AligningGraph.write() and cannot accept a reference answer.
+  if(req.method==="POST"&&url==="/path-answer"){
+    let body="";req.on("data",part=>{body+=part;if(body.length>160000)req.destroy();});
+    req.on("end",()=>{
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid path-answer JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl||!sl.worlds.includes("cognitivemap"))
+        return json(res,{error:"A real V17 cognitive world with learned rule memory is required"});
+      if(Object.hasOwn(m,"reference")||Object.hasOwn(m,"expected")||
+         Object.hasOwn(m,"answer"))
+        return json(res,{error:"Reference answer must NEVER enter the path-planning worker"});
+      if(typeof m.question!=="string"||m.question.length>131072||
+        !Number.isSafeInteger(m.maxTokens??512)||!(m.maxTokens??512)||
+        (m.maxTokens??512)>2048)
+        return json(res,{error:"Invalid bounded full-text question or token budget"});
+      const opts={maxTokens:m.maxTokens??512,
+        maxNodes:Math.min(20000,Math.max(2,Math.trunc(Number(m.maxNodes)||384))),
+        maxDepth:Math.min(256,Math.max(1,Math.trunc(Number(m.maxDepth)||8))),
+        includeAtlas:true};
+      const savedAnswer=()=>{
+        const file=saveOf(sl);
+        if(!fs.existsSync(file))return {error:"No native cognitive checkpoint"};
+        try{
+          const brain=Brain.load(file);
+          if(!brain.cognitiveMap)return {error:"No cognitive map in the saved Brain"};
+          const map=LearnedCognitiveMap.restore(brain.cognitiveMap);
+          const result=answerFromOriginalPath(map,m.question,opts);
+          const {fullAtlas,terminalTokens,...response}=result;
+          appendAtlasEvent(atlasPath(file),{type:"planning-attempt",world:"text",
+            frozen:true,input:m.question,goal:result.goalPredicate||null,
+            found:!!result.found,reason:result.reason||null,
+            fullAtlas:fullAtlas||{states:[],neighbors:[],targets:[]},
+            diagnostics:result.diagnostics||null,fullPredictedPath:result.path||[],
+            pathDrivenAnswer:result.answer??null,
+            originalMethod:"Discoverer.shape",
+            hypothesisNotVerifiedAsCorrectAnswer:true,
+            evidenceLevel:"FROZEN_PATH_DRIVEN_OUTPUT_NOT_SEMANTIC_ORACLE"});
+          return {...response,kind:"path-answer",frozen:true,fromSave:true,
+            fullAtlasRecorded:!!fullAtlas,originalMethod:"Discoverer.shape",
+            trainingModified:false,referenceWasNotProvided:true};
+        }catch(e){return {error:e.message};}
+      };
+      if(!sl.wk||sl.status==="gata")return json(res,savedAnswer());
+      const id=++chatId,timeout=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);
+        json(res,{error:"Original shape-driven answer timed out"});
+      },90000);
+      chats.set(id,result=>{clearTimeout(timeout);json(res,result)});
+      sl.pendingFrozen?.set(id,()=>{clearTimeout(timeout);json(res,savedAnswer());});
+      sl.wk.postMessage({pathAnswer:{id,question:m.question,...opts}});
+    });
+    return;
   }
   if (req.method === "POST" && url === "/cognitive-eval") {
     let body="";req.on("data", d => {body+=d;if(body.length>32768)req.destroy();});
