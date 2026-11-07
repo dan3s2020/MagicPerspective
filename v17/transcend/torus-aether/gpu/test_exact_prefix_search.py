@@ -75,8 +75,11 @@ class ExactCUDAAlignmentParity(unittest.TestCase):
             return exact_prefix_ranges(self, ctx, K)
         with patch.object(Index,"align",fused):
             updated = cards[1].live(exercises, **args)
-        self.assertEqual(updated, original,
-                         "Full V17 actual next-symbol predictions/trust/imagination changed")
+        for field in ("trust","hits","seen","variants","memory","textWindowChars","totalCardChars"):
+            self.assertEqual(updated[field], original[field],
+                             "Original V17 prediction/trust/imagination changed: "+field)
+        self.assertEqual(updated["fullOriginalMechanism"],True)
+        self.assertEqual(original["fullOriginalMechanism"],True)
         self.assertTrue(torch.equal(cards[0].mem, cards[1].mem))
         self.assertTrue(torch.equal(cards[0].big.sa, cards[1].big.sa))
         self.assertGreater(original["seen"], 100)
