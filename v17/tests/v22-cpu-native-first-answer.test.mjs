@@ -29,7 +29,7 @@ test("exact full Q/A scoring counts COMPLETE first guesses, never individual-cha
    }
  };
  const prompts=Array.from({length:10},(_,i)=>bytes("Q: task "+i+"\nA: result "+i+"\n\n"));
- const r=brain.evalTextExercises(prompts,{T:0,noise:0,seed:42});
+ const r=brain.evalTextExercises(prompts,{T:0,noise:0,seed:42,strictFullAnswer:true,maxGeneratedChars:128});
  assert.equal(r.firstAnswerExactTotal,10);
  assert.equal(r.firstAnswerExactCorrect,7);
  assert.equal(r.firstAnswerExactRate,.7);
