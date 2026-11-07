@@ -145,7 +145,7 @@ export class NativeGoalTextMaze {
    originalFloorConductance:b.disc.conduct(0),
    graph:{observedOperatorEdges:w.operatorEdges,states:w.nodes.length,
     blocked:w.blocked,goalNodes:w.goalNodes,
-    5DGeometryObservedNodes:coordinates.filter(Boolean).length},
+    geometry5DObservedNodes:coordinates.filter(Boolean).length},
    initialShape:[w.source,...route.map(r=>w.nodes[r.to].id)],
    actions:route.map(e=>({...e.action,from:w.nodes[e.from].id,
     predictedNext:w.nodes[e.to].id,observedSupport:e.observedSupport})),
