@@ -69,7 +69,15 @@ export class ObservedNoEffectEvidence {
     let recognizedEffects=0,recognizedInitials=0,recognizedNeutral=0;
     for(let i=0;i<all.length;i++){
       const sentence=all[i],tokens=tokenize(sentence);
-      if(!tokens.includes(tkn))continue; // independent pronoun/coreference remains unresolved.
+      if(!tokens.includes(tkn)){
+        // A pronoun may point back to the target without naming it. We do
+        // NOT pretend to know the referent or to have parsed its effect.
+        // Conservative V25 abstention is safer than silently ignoring it.
+        if(/^(it|they|he|she|this|that)\b/i.test(sentence.trim()))
+          unknown.push({sentenceIndex:i,excerpt:sentence.trim().slice(0,180),
+            meaning:"possible unresolved coreference event; referent not learned"});
+        continue;
+      }
       const event=typeof model.inferEvent==="function"?model.inferEvent(sentence):null;
       const effect=typeof model.parseEffect==="function"?model.parseEffect(sentence):null;
       const initial=typeof model.parseInitial==="function"?model.parseInitial(sentence):null;
