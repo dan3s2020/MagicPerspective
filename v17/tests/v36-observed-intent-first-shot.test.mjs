@@ -256,7 +256,10 @@ test('Compositional unseen instruction wording: prior phrasing-only fails, two s
  const ask=(instruction,sourceText=source)=>answerFromObservedInstructionPath(m,{
   instruction,source:sourceText},{allowComposedInstructions:true});
  live(0);
- const firstBrew=ask(targetFree.brew);
+ // At this stage 'the' has NOT been witnessed in any instruction.
+ // A source that uses only previously observed words fails specifically
+ // because one witnessed wording is insufficient, not because of OOD text.
+ const firstBrew=ask('This brew drink');
  assert.equal(firstBrew.found,false);
  assert.equal(firstBrew.reason,'NO_TWO_WITNESSED_INSTRUCTION_PHRASINGS');
  live(1);
