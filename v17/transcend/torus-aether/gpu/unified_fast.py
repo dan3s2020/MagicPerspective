@@ -274,6 +274,7 @@ class UnifiedHeads:
                         "conditional-observed-transformations", "observed-edges",
                         "learned-torus-5D", "conditional-path-branches"],
                     "sameModelAsOriginalTinyStories": True,
+                    "extendedLegacyCheckpoint": self.extended_from_saved_brain,
                     "nativeOldBrainWorker": False,
                     "worlds": self.worlds.report()}
         return {"rows": self.rows, "bytes": self.bytes, "updates": self.updates,
@@ -281,7 +282,8 @@ class UnifiedHeads:
                 "transformationCategories": 4, "dimension": POS_DIM,
                 "models": ["context-multiscale", "conditional-observed-transformations",
                            "observed-edges", "learned-torus-5D", "conditional-path-branches"],
-                "sameModelAsOriginalTinyStories": True, "nativeOldBrainWorker": False,
+                "sameModelAsOriginalTinyStories": True, "extendedLegacyCheckpoint": self.extended_from_saved_brain,
+                "nativeOldBrainWorker": False,
                 "worlds": self.worlds.report()}
 
     def serialize(self):
