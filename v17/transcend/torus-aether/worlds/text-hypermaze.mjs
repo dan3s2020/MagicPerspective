@@ -1,3 +1,4 @@
+import {VeilAether} from "./veil-aether.mjs";
 // Text Hypermaze V20: observed transition graph; no per-occurrence phrase nodes.
 // Each word/punctuation symbol has one reusable node. All edges come from corpus
 // observations. Prediction is measured BEFORE each document is absorbed.
@@ -12,6 +13,7 @@ export class TextHypermaze {
    observedTokens:0,observedTransitions:0,skippedNewTokens:0,skippedNewEdges:0,
    onlineCorrect:0,onlineTested:0,onlineBaselineCorrect:0,onlineTransitions:0,last:null,frequentId:-1});
   this.index=new Map();this.nodes=[];this.edges=new Map();
+  this.veil=new VeilAether(); // V21 opt-in contextual evidence; original model untouched
  }
  intern(token){
   const label=String(token).normalize("NFC");let id=this.index.get(label);
@@ -81,6 +83,8 @@ export class TextHypermaze {
  observeWorld(document,{id=null}={}){
   if(typeof document!=="string")throw Error("Expected complete original text");
   const words=textTokens(document);
+  // V21: score PRE-INGEST contextual futures, then learn observed transitions.
+  this.veil.observeTokens(words,{id});
   const record=this.documents<4||this.documents%20===0;
   const window=record?words.slice(0,this.frameLimit+1):[];
   const oldN=this.nodes.length,oldE=this.edges.size;
@@ -184,7 +188,7 @@ export class TextHypermaze {
    onlinePreIngestAccuracy:this.onlineTested?this.onlineCorrect/this.onlineTested:null,
    onlinePredictions:this.onlineTested,onlineBaselineAccuracy:this.onlineTransitions?
     this.onlineBaselineCorrect/this.onlineTransitions:null,
-   last,geometry:{axes:["frequency","in_degree","out_degree","transition_entropy","outgoing_mass"],
+   last,veil:this.veil.snapshot(),geometry:{axes:["frequency","in_degree","out_degree","transition_entropy","outgoing_mass"],
     isTrainedLatentManifold:false},sample:{nodes,edges}};
  }
  export(){
@@ -194,7 +198,7 @@ export class TextHypermaze {
    skippedNewTokens:this.skippedNewTokens,skippedNewEdges:this.skippedNewEdges,
    onlineCorrect:this.onlineCorrect,onlineTested:this.onlineTested,
    onlineBaselineCorrect:this.onlineBaselineCorrect,onlineTransitions:this.onlineTransitions,
-   frequentId:this.frequentId,last:this.last};
+   frequentId:this.frequentId,last:this.last,veil:this.veil.export()};
  }
  static restore(data){
   if(data?.version!==1||!Array.isArray(data.nodes)||!Array.isArray(data.edges))
@@ -206,6 +210,8 @@ export class TextHypermaze {
    "skippedNewEdges","onlineCorrect","onlineTested","onlineBaselineCorrect","onlineTransitions"])
    m[k]=data[k]||0;
   m.frequentId=Number.isInteger(data.frequentId)?data.frequentId:-1;
-  m.last=data.last||null;return m;
+  m.last=data.last||null;
+  m.veil=data.veil?VeilAether.restore(data.veil):new VeilAether();
+  return m;
  }
 }
