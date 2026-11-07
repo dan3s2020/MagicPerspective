@@ -118,3 +118,16 @@ test("V24: actual Parquet source uses existing V17 OpenThoughts reader if fixtur
  const held=await src.heldOut();assert.equal(held.length,16);
  assert.ok(!first.some(x=>held.some(y=>x.index===y.index)));
 });
+
+
+test("V24: Windows UTF-8 BOM input preserves first real Q/A row",async t=>{
+ const f=await fixture(14);t.after(()=>fs.rm(f.root,{recursive:true,force:true}));
+ for(const [kind,file] of [["qaTxt",f.txt],["jsonl",f.file]]){
+  const text=await fs.readFile(file,"utf8");
+  await fs.writeFile(file,"\uFEFF"+text,"utf8");
+  const source=await openRealSource({[kind]:file,held:2});
+  assert.equal(source.totalRows,14);assert.equal(source.trainRows,12);
+  const rows=[];for await(const row of source.trainingFrom(0)){rows.push(row);if(rows.length>=2)break;}
+  assert.equal(rows[0].index,0);assert.equal(rows[0].prompt,f.rows[0].prompt);
+ }
+});
