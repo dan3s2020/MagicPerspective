@@ -75,6 +75,16 @@ export class Discoverer {
     if(!Number.isFinite(geometryWeight)||geometryWeight<0||geometryWeight>1)
       throw Error("Geometry influence must be finite and between 0 and 1");
     const N=kinds.length;
+    // Validate ALL observed topology before seeking a goal. No hidden invalid
+    // edge may pass silently merely because no goal has been learned yet.
+    for(const list of neighbors){
+      if(!Array.isArray(list))throw Error("Invalid learned graph adjacency");
+      for(const edge of list){
+        const to=typeof edge==="number"?edge:edge?.to;
+        if(!Number.isInteger(to)||to<0||to>=N)
+          throw Error("Invalid learned graph edge");
+      }
+    }
     const att=[0,1,2,3].map(k=>this.attract(k));
     const cond=[0,1,2,3].map(k=>this.conduct(k));
     const V=new Float64Array(N);
