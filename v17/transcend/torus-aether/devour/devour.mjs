@@ -21,6 +21,7 @@ import {validateWorldSource, WORLD_TYPES} from "./world-source.mjs";
 import {LearnedCognitiveMap} from "../worlds/learned-cognitive-map.mjs";
 import {TextHypermaze} from "../worlds/text-hypermaze.mjs";
 import {runV23Lab} from "./v23-lab-adapter.mjs";
+import {runV25StrictLab} from "./v25-strict-adapter.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -371,6 +372,45 @@ http.createServer((req, res) => {
   }
   // V24: optional measured V23 research inside the SAME original Brain.
   // No override of /chat, /eval, CUDA or original worlds.
+  // V25: truly unknown relevant event causes refusal, not a fake 100% answer.
+  if (req.method === "POST" && url === "/v25-strict") {
+    let body="",tooLarge=false;
+    req.on("data",d=>{body+=d;if(body.length>8400000){tooLarge=true;req.destroy();}});
+    req.on("end",()=>{
+      if(tooLarge)return;
+      let m;try{m=JSON.parse(body);}catch{return json(res,{error:"Invalid V25 JSON"});}
+      const sl=slots.find(x=>x.w===+m.w);
+      if(!sl?.worlds.includes("cognitivemap"))
+        return json(res,{error:"Enable native V17 cognitivemap world for strict original-shape tests"});
+      if(!["numeric","temporal"].includes(m.kind)||!["teach-neutral","audit","plan","page"].includes(m.command))
+        return json(res,{error:"Unknown strict evidence command or world"});
+      if(!sl.wk||sl.status==="gata"){
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"No native original Brain checkpoint exists"});
+          if(m.command==="teach-neutral"&&sl.wk)return json(res,{error:"Worker finishing; retry after checkpoint save"});
+          const brain=Brain.load(file),result=runV25StrictLab(brain,m);
+          if(result.changed)brain.save(file);
+          return json(res,{...result,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      }
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);sl.pendingFrozen?.delete(id);
+        json(res,{error:"Native V25 evidence check timed out"});
+      },60000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,result)});
+      if(m.command!=="teach-neutral")sl.pendingFrozen.set(id,()=>{
+        clearTimeout(timer);
+        try{
+          const file=saveOf(sl);
+          if(!fs.existsSync(file))return json(res,{error:"No checkpoint to finish frozen V25 audit"});
+          const brain=Brain.load(file),result=runV25StrictLab(brain,m);
+          return json(res,{...result,fromSave:true});
+        }catch(e){return json(res,{error:e.message});}
+      });
+      sl.wk.postMessage({v25Strict:{...m,id}});
+    });return;
+  }
   if (req.method === "POST" && url === "/v23-lab") {
     let body="",tooLarge=false;
     req.on("data",d=>{
