@@ -24,9 +24,10 @@ test("heldout answer-only score respects true starting answer boundary",()=>{
  const result=scoreAxisPredictions(bytes,answerStart,d,F);
  assert.equal(result["0"].answerCorrect,0);
  assert.equal(result["1"].answerCorrect,4);
- assert.equal(result["1"].alignedTrueByteBlocked,4);
- assert.equal(result["1"].geometricTrueByteRecoveryPossible,4);
- assert.equal(result["1"].geometricExpandedSuccessorSet,4);
+ assert.equal(result["1"].answerAlignedTrueByteBlocked,4);
+ assert.equal(result["1"].answerGeometricTrueByteRecoveryPossible,4);
+ assert.equal(result["1"].alignedTrueByteBlocked,10);
+ assert.equal(result["1"].geometricTrueByteRecoveryPossible,10);
  assert.equal(result["1"].answerTotal,4);
  assert.equal(result["1"].fieldCoverageFraction,1);
  assert.equal(result["0"].allTotal,bytes.length-4);
