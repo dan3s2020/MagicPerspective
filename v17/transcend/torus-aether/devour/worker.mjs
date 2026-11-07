@@ -51,6 +51,13 @@ const cognitive = COGNITIVE ?
   (brain.cognitiveMap ? LearnedCognitiveMap.restore(brain.cognitiveMap) : new LearnedCognitiveMap()) : null;
 const cognitionStart = brain.cognitiveDocuments || 0, cognitiveT0 = performance.now();
 const hypermaze = (COGNITIVE || HYPER) ? (brain.hypermaze ? TextHypermaze.restore(brain.hypermaze) : new TextHypermaze()) : null;
+// A V21 hypertext-only checkpoint can have 200 observed documents but ZERO
+// native text exercises. When enabling the previously omitted 'text' world on
+// resume, replay original corpus into the native AligningGraph from exercise 0
+// while avoiding duplicate V20/V21 observations of those first 200 documents.
+// The original shape model is NOT replaced or reset.
+let cognitiveReplayCursor = skip;
+
 brain.setSharedObserver(sample => {
   shared.observe(sample);
   if(cognitive)cognitive.observeExternalTransition(sample);
@@ -62,6 +69,8 @@ const saveCognitive = () => {
 };
 const absorbCognitive = row => {
   if(!cognitive && !hypermaze)return null;
+  if(TEXT && resume && cognitiveReplayCursor++ < cognitionStart) return null; // preexisting V20/V21 data already learned
+
   if(typeof row?.worldText !== "string")throw Error("Cognitive world requires complete original text, not ASCII token predictions");
   const before=cognitive?.rules.size||0;
   const result=cognitive?.observeWorld(row.worldText,{id:row.k})||null;
