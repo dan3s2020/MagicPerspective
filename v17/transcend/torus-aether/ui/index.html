@@ -159,6 +159,19 @@
         <label>Țintă (2 simboluri): <input id="veilGoal" type="text" size="19" placeholder="is calm"></label>
         <button type="button" id="veilPlan">Construiește ruta înainte de acțiune</button></div>
       <pre id="veilPlanOut" style="white-space:pre-wrap;max-height:190px;overflow:auto;color:#f3d6a2;font:12px ui-monospace,monospace">Rutele sunt calculate doar pe muchii observate și nu schimbă memoria.</pre>
+      <section id="nativeGoalBox" style="margin-top:14px;padding:10px;border:1px solid #94793c;border-radius:9px">
+        <h3>V21 · Discoverer.shape() ORIGINAL · graf contextual observat</h3>
+        <p class="note">Acesta este codul original al organismului V17, apelat direct peste muchiile contextuale observate în antrenarea REALĂ V21. Aurul = forma planificată înainte de acțiune. Albastrul = tranzițiile observate separat în corpus, NU execuția generatorului liber de răspunsuri. Nu există pretinsă inteligență semantică 100%.</p>
+        <div class="row"><button type="button" id="nativeGoalPlan">Construiește forma cu Discoverer.shape()</button>
+          <label class="dim"><input type="checkbox" id="nativeGoalAuto"> Actualizează automat pe măsură ce crește corpusul</label>
+          <span id="nativeGoalStatus" class="dim" aria-live="polite">Aștept stările reale...</span>
+        </div>
+        <canvas id="nativeGoalCanvas" width="820" height="390" style="display:block;width:100%;margin-top:8px;background:#070f19;border-radius:8px" aria-label="Traseu real învățat, atracție originală, proiecție diagnostică"></canvas>
+        <div class="row"><button id="nativeGoalPrev">◀</button><button id="nativeGoalPlay">Pause path</button>
+          <button id="nativeGoalNext">▶</button><span id="nativeGoalStep" class="dim">0/0</span></div>
+        <input type="range" id="nativeGoalScrub" min="0" max="0" value="0" style="width:100%">
+        <pre id="nativeGoalStats" style="white-space:pre-wrap;font:12px ui-monospace,monospace;color:#efddb5;max-height:360px;overflow:auto">Aștept stări și tranziții din antrenarea originală.</pre>
+      </section>
     </section>
     <div id="cognitiveBox" hidden style="margin:12px 0;border:1px solid #25887e;border-radius:10px;padding:12px">
       <h2>Harta cognitivă a limbajului · ORIGINAL Discoverer.shape()</h2>
@@ -304,5 +317,6 @@
 <script type="module" src="app.js"></script>
 <script type="module" src="text-hypermaze-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
+ <script type="module" src="native-goal-live.js"></script>
 </body>
 </html>
