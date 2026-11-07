@@ -16,6 +16,8 @@ jobs:
         with: {node-version: '22'}
       - name: Character-level complete source V24 forensic blocked/unlocked paths and negative controls
         run: node --test v17/tests/v24-character-forensics.test.mjs
+      - name: Original V17 frozen generated answer vs every wrong character, post-hoc missing/repairable edges no false first-try claims
+        run: node --test v17/tests/v24-original-v17-answer-forensics.test.mjs
       - name: Actual native five-world CPU character atlas, frozen original V17 shape, and exact full disk journal
         run: node --test v17/tests/v24-native-character-forensics.test.mjs
       - name: Preserve original V17 full 2D maze source and 84 noise parity episodes
@@ -31,6 +33,8 @@ jobs:
       - name: Source syntax and no deletions
         run: |
           node --check v17/transcend/torus-aether/worlds/character-hypermaze.mjs
+          node --check v17/transcend/torus-aether/worlds/original-v17-answer-forensics.mjs
+          node --check v17/transcend/torus-aether/devour/eval-worker.mjs
           node --check v17/transcend/torus-aether/ui/v24-character-forensic-live.js
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/devour.mjs
