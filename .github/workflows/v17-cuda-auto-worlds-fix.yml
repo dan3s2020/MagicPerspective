@@ -1,0 +1,56 @@
+name: V17 - CUDA auto worlds no empty batches - real native protocol
+on:
+  push:
+    branches:
+      - fix/V17-CUDA-AUTO-WORLDS-EMPTY-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cuda-worlds-protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the real NumPy GPU-protocol parity dependency
+        run: python3 -m pip install "numpy>=2,<3"
+      - name: Confirm Python and NumPy (CPU parity of the original GPU engine)
+        run: |
+          python3 -c "import numpy, sys; print('NUMPY', numpy.__version__, 'PYTHON', sys.version)"
+      - name: Syntax check actual original GPU worker, client, Brain and magic V17 runner
+        run: |
+          python3 -m py_compile v17/transcend/torus-aether/gpu/worlds_gpu.py
+          node --check v17/transcend/torus-aether/gpu/client.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/tests/cuda-auto-gpu-worlds.test.mjs
+      - name: Reproduce exact zero-batch bug then prove actual fixed maze + transformation learning through Python backend
+        run: node --test v17/tests/cuda-auto-gpu-worlds.test.mjs
+      - name: Keep original V17 native GPU and data-protocol tests passing
+        run: |
+          node --test v17/tests/torus-gpu-text-progress.test.mjs
+          node --test v17/tests/torus-unified-gpu-text-boot.test.mjs
+      - name: Verify original REAL magic UI and observed math axes still work
+        run: |
+          node --test v17/tests/live-observed-math-axes.test.mjs
+          node --test v17/tests/magic-live-native-ui.test.mjs
+  windows-launcher-compatibility:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure original PowerShell V17 and Magic launcher both parse unmodified
+        shell: powershell
+        run: |
+          foreach ($p in @("v17/START_V17.ps1","v17/START_MAGIC_REAL.ps1")) {
+            $tok = $null; $err = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p).Path, [ref]$tok, [ref]$err) | Out-Null
+            if ($err.Count) { throw ("PowerShell parse errors: " + ($err | Out-String)) }
+            Write-Host "WINDOWS_MAGIC_LAUNCHER_SYNTAX_OK $p"
+          }

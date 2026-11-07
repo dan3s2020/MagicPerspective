@@ -53,7 +53,7 @@ if (arg("text")) {
 evalText = evalText.slice(0, evalChars);
 fs.mkdirSync(out, {recursive: true}); const log = fs.createWriteStream(path.join(out, "log.jsonl"), {flags: "a"});
 console.log(`worlds: ${worldsArg.join(" + ")} in the same brains${worldsArg.includes("maze") ? ` (a labyrinth every ${mazeEvery.toLocaleString()} chars)` : ""} · saves in ${path.join(out, "brains")}${resume ? " · resuming" : ""}`);
-console.log(`GPU worlds: ${gpuSettings.device === "off" ? "off (worlds one at a time on the CPU)" : `${gpuSettings.device} · ${gpuSettings.worlds} worlds at once · VRAM ${gpuSettings.vram || "all"} GB · ${gpuSettings.util}% of the GPU`}`);
+console.log(`GPU worlds: ${gpuSettings.device === "off" ? "off (worlds one at a time on the CPU)" : `${gpuSettings.device} · ${gpuSettings.worlds === 0 ? "AUTO (CUDA decides after measuring free VRAM)" : gpuSettings.worlds + " worlds at once"} · VRAM ${gpuSettings.vram || "all"} GB · ${gpuSettings.util}% of the GPU`}`);
 console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name).join(", ")} · test every ${every.toLocaleString()} chars on ${evalText.length} unseen chars · memory budget ${memGB} GB each`);
 
 // Every graph is a slot you control from the page: start, pause, reset (from nothing), save, remove; new graphs can be
@@ -189,15 +189,20 @@ http.createServer((req, res) => {
        !Number.isSafeInteger(value)||value<0||value>100000)
       return json(res,{error:"A start expression and valid numeric index/value constraint are required"});
     const goals=[{index,value}];
-    if(!sl.wk){
-      const file=saveOf(sl)+".observed-math-axes.v8";
-      if(!fs.existsSync(file))return json(res,{found:false,reason:"No saved observed math axes"});
+    // Training can be inside a long original CUDA/Node batch. The real
+    // atomic math sidecar is a frozen learned model, so the HTTP server can
+    // plan immediately without waiting for the busy worker message queue.
+    const file=saveOf(sl)+".observed-math-axes.v8";
+    if(fs.existsSync(file)){
       try{
-        // Loaded statically at module start; no asynchronous handler or fake fallback.
-        return json(res,{...LiveObservedMathAxes.restore(file).plan(start,goals),w:sl.w,fromSave:true});
-      }catch(e){return json(res,{error:e.message});}
+        const snapshot=LiveObservedMathAxes.restore(file);
+        return json(res,{...snapshot.plan(start,goals),w:sl.w,
+          fromSave:true,liveWorkerBusySafe:true,
+          learnedRowsAtSnapshot:snapshot.rows});
+      }catch(e){return json(res,{error:"Saved observed math-axis snapshot invalid: "+e.message});}
     }
-    const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Real math axis plan timed out"});},30000);
+    if(!sl.wk)return json(res,{found:false,reason:"No saved observed math axes"});
+    const id=++chatId,timer=setTimeout(()=>{chats.delete(id);json(res,{error:"Real math axis plan timed out; no saved model yet"});},30000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
     sl.wk.postMessage({realMathGoal:{id,start,goals}});
     return;

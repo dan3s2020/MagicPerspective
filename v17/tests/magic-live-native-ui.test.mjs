@@ -127,9 +127,14 @@ test("native V17 actually trains and serves living MAGIC UI plus original V17 5D
    await sleep(120);
   }
   assert.ok(learnedMath,"Original native worker failed to absorb observed math lines: "+logs);
+  const beforeMathPlan=Date.now();
   const planned=await (await fetch(url+"/real-math-plan?w=0&start="+encodeURIComponent("5 * 6 = 30")+
    "&index=0&value=6",{method:"POST"})).json();
   assert.equal(planned.frozen,true,JSON.stringify(planned));
+  assert.equal(planned.fromSave,true,"Real plan should use committed evidence without waiting for the busy GPU worker");
+  assert.equal(planned.liveWorkerBusySafe,true);
+  assert.ok(planned.learnedRowsAtSnapshot>0);
+  assert.ok(Date.now()-beforeMathPlan<10000,"Real mathematical plan must not wait for training worker event loop");
   assert.equal(planned.referenceAnswerProvided,false);
   assert.ok(planned.plan?.states?.length>=2,JSON.stringify(planned));
   const checkpoint=path.join(out,"brains","brain-0-stable+many.v8.observed-math-axes.v8");

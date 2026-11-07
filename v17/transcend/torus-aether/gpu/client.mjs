@@ -18,7 +18,7 @@ export class GpuWorlds {
     this.p.stdout.on("data", d => { this.buf += d; let k; while ((k = this.buf.indexOf("\n")) >= 0) { const line = this.buf.slice(0, k); this.buf = this.buf.slice(k + 1);
       let m; try { m = JSON.parse(line); } catch { continue; } const w = this.wait.get(m.id); if (w) {
         if (m.type === "progress") { try { w.onProgress?.(m); } catch {} continue; }
-        this.wait.delete(m.id); m.error ? w.reject(new Error(m.error)) : w.resolve(m);
+        this.wait.delete(m.id); m.error ? w.reject(new Error(m.error + (m.traceback ? "\nPython GPU traceback:\n" + m.traceback : ""))) : w.resolve(m);
       } } });
     this.p.stderr.on("data", d => { this.error = String(d).slice(-400); });
     this.p.on("exit", code => fail("GPU process " + py + " ended (" + code + "): " + (this.error || "")));
