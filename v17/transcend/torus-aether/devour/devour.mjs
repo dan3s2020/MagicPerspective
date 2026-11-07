@@ -225,8 +225,22 @@ http.createServer((req, res) => {
     if(req.headers.origin&&req.headers.origin!=="http://"+req.headers.host)
       return json(res,{error:"Cross-origin original Brain modifications refused"});
     const w=Number(q.get("w")||0),sl=slots.find(x=>x.w===w);
-    if(!Number.isSafeInteger(w)||!sl?.wk)
-      return json(res,{error:"Choose a living original V17 Brain worker"});
+    if(!Number.isSafeInteger(w)||!sl)
+      return json(res,{error:"Choose an existing original V17 Brain slot"});
+    // An authentic finite corpus can finish and the worker exits normally,
+    // leaving a COMPLETE, SAVED original native Brain. A user must still
+    // inspect every learned path after it finishes. Reopen its exact saved
+    // Brain in a PAUSED original worker, not a replacement simulator.
+    // Never mask crashes, train in this inspection path, or reset weights.
+    if(!sl.wk&&sl.status==="gata"&&fs.existsSync(saveOf(sl))){
+      launch(sl,{fresh:false,paused:true,fromSave:true});
+      sl.status="gata";
+      sl.inspectionFromSavedBrain=true;
+    }
+    if(!sl.wk)
+      return json(res,{error:"Original Brain worker not currently available",
+        state:sl.status,checkpoint:saveOf(sl),
+        note:"No dummy Brain or fabricated final graph was substituted"});
     const send=request=>{
       const id=++chatId,timer=setTimeout(()=>{
         chats.delete(id);
