@@ -39,6 +39,16 @@ jobs:
           if ($launcher -notmatch 'text,hypertext,maze,transform') {
             throw "Native V17 text world not selected with V20/V21"
           }
+      - name: Block any non-ASCII byte in Windows PowerShell 5.1 entrypoints
+        shell: pwsh
+        run: |
+          foreach ($file in @('v17/START_V21_AETHER_VEIL.ps1', 'v17/ENSURE_V21_CUDA.ps1')) {
+            $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path $file).Path)
+            $bad = @($bytes | Where-Object { $_ -gt 127 })
+            if ($bad.Count -gt 0) {
+              throw "Windows PowerShell 5.1 parses UTF-8 without BOM as system ANSI; forbid non-ASCII bytes in $file : $($bad.Count)"
+            }
+          }
       - name: V21 requested CUDA must fail closed if Python does not have CUDA
         run: node --test v17/tests/veil-aether.cuda-failclosed.test.mjs
       - name: V21 client JavaScript syntax
@@ -125,3 +135,34 @@ jobs:
           path: evidence/real-gating
       - name: Native original research — real-document gating and negative/positive frozen controls
         run: node --test evidence/real-gating/v17/tests/real-corpus-axis-gating.test.mjs
+
+  windows-powershell-51:
+    name: Real Windows PowerShell 5.1 syntax and ANSI regression
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse launchers in Windows PowerShell 5.1 itself
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $edition = $PSVersionTable.PSVersion
+          Write-Host "PowerShell version $edition"
+          if ($edition.Major -ne 5 -or $edition.Minor -ne 1) {
+            throw "Expected Windows PowerShell 5.1, not PowerShell Core."
+          }
+          foreach ($file in @("v17/START_V21_AETHER_VEIL.ps1", "v17/ENSURE_V21_CUDA.ps1")) {
+            $path = (Resolve-Path $file).Path
+            $bytes = [System.IO.File]::ReadAllBytes($path)
+            if (@($bytes | Where-Object { $_ -gt 127 }).Count -gt 0) {
+              throw "Non-ASCII bytes in $file: Windows PowerShell 5.1 may misread UTF-8 em dash as a smart quotation mark."
+            }
+            $tokens = $null
+            $problems = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$problems)
+            if ($problems.Count -gt 0) {
+              $problems | ForEach-Object { Write-Host $_.Message }
+              throw "Windows PowerShell 5.1 parser regression in $file"
+            }
+          }
+          Write-Host "PASS: V21 launcher and GPU preflight parsed in native Windows PowerShell 5.1"
