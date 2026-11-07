@@ -15,6 +15,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Exact native V17 UI and archive JavaScript syntax
+        run: |
+          node --check v17/transcend/torus-aether/ui/native-hypermaze.js
+          node --check v17/research/text-hypermaze/native-motif-disk-archive.mjs
+          node --check v17/research/text-hypermaze/qa-role-axes.mjs
       - name: Persistence of same-Brain real long text motifs on SQLite disk beyond RAM capacity, checkpoint and crash-replay idempotence
         run: node --test v17/tests/v31-motif-disk-memory.test.mjs
       - name: V31 red/green original alternative path and goal underdetermination tests
