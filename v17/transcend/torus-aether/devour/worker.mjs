@@ -370,12 +370,13 @@ const processGpuText = async (exs, meta) => {
 };
 parentPort.on("message", m => {
   if(m?.questionGoalPlan){
-    const {id,question,maxNodes=1500,temperature=0}=m.questionGoalPlan;
+    const {id,question,maxNodes=1500,temperature=0,temporal=false,maxTemporalStates=6000}=m.questionGoalPlan;
     try{
       if(!cognitive||!questionGoal)throw Error("The V24 question-goal map is not active on this worker");
       const before=JSON.stringify([cognitive.report(),questionGoal.export()]);
       const plan=questionGoal.plan(question,{map:cognitive,geometry:brain.trace.geo,
-        disc:{temp:Math.max(0,Number(temperature)||0)},maxNodes});
+        disc:{temp:Math.max(0,Number(temperature)||0)},maxNodes,
+        navigationMode:temporal?"temporal":"legacy",maxTemporalStates});
       const movement=plan.ready?questionGoal.execute(plan,{map:cognitive}):null;
       if(before!==JSON.stringify([cognitive.report(),questionGoal.export()]))
         throw Error("Frozen question->goal inference mutated native cognitive learning");
