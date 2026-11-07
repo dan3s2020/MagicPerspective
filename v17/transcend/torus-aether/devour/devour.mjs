@@ -96,7 +96,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const samples = telemetry.get(sl.w) || [];
   const newer = samples.at(-1), prior = [...samples].reverse().find(p => newer && newer.at - p.at >= 3000);
   const dt = prior && newer && newer.at > prior.at ? (newer.at - prior.at) / 1000 : 0;
-  const perSecond = key => dt ? Math.max(0, (newer[key] - prior[key]) / dt) : null;
+  const perSecond = key => dt ? (Date.now() - newer.at > 15000 ? 0 : Math.max(0, (newer[key] - prior[key]) / dt)) : null;
   const progress = {done: committed, total: trainTotal,
     percent: trainTotal ? 100 * Math.min(committed, trainTotal) / trainTotal : null,
     exercisesPerSec: perSecond("exercises"), charsPerSec: perSecond("chars"),
