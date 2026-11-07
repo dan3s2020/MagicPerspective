@@ -442,7 +442,7 @@ parentPort.on("message",m=>{
    }});
    const digest=String(m.digest||"");
    if(digest){
-    if(!/^\\d+:[a-f0-9]{64}$/.test(digest))
+    if(!/^\d+:[a-f0-9]{64}$/.test(digest))
      throw Error("Motif lookup requires exact original SHA256 motif id");
     return send("rpc",{id,result:{
      enabled:true,queryId:digest,
