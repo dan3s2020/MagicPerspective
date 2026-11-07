@@ -257,9 +257,8 @@ test("semantic distribution shifts remain falsifiable even with true original at
  const agent=train(17,{agent:brain.textGoal}),ref=trainedReference();
  const independent=worldState=>{
   const id="disjoint_lexical_reference_"+worldState.seed,doc=documentWith(worldState,id);
-  const p=brain.predictOriginal4DShapeFromQuestion?.(doc,query(id),worldState.start);
-  // Use the exact same learned state and reference across all regimes,
-  // without requiring the optional native Brain API in this audit.
+  // Use identical frozen learned state and goal-reference evidence across
+  // all regimes; physics is read only by the independent execution below.
   const result=planOriginal4DFromText({navigator:agent,disc:brain.disc,
    reference:ref,document:doc,question:query(id),start:worldState.start});
   let pos=worldState.start;
