@@ -315,6 +315,9 @@ function displayMetrics(){
  document.documentElement.dataset.magicObservedChars=String(S?.chars??G?.chars??0);
  const language=G?.language||S?.language||{},op=G?.observedTransformations||S?.observedTransformations||{};
  $("mChars").textContent=fmt(S?.chars??G?.chars);
+ const liveRate=S?.rate||G?.rate||null;
+ $("mMBps").textContent=Number.isFinite(liveRate?.megabytesPerSecond)?liveRate.megabytesPerSecond.toFixed(4):"—";
+ $("mExps").textContent=Number.isFinite(liveRate?.exercisesPerSecond)?liveRate.exercisesPerSecond.toFixed(3):"—";
  const D=S?.dataset||G?.dataset||null;
  $("mExercises").textContent=D?.trainingTotal!=null?
   fmt(D.processed)+" / "+fmt(D.trainingTotal):fmt(S?.exercises??G?.exercises);
