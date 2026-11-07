@@ -19,6 +19,8 @@ jobs:
         run: node --test v17/tests/v30-orthogonal-transform-original-motors.test.mjs
       - name: Five-seed original 5D text-metric replication and 480 native route geometric choices
         run: node --test v17/tests/v30-orthogonality-replication.test.mjs
+      - name: ORIGINAL native solution-shape on observed noncommutative text action paths (no replacement engine)
+        run: node --test v17/tests/v30-native-path-holonomy-bridge.test.mjs
       - name: Existing original maze path parity and actual learned causal axes remain unchanged
         run: |
           node --test v17/tests/native-hypermaze-shape-parity.test.mjs
