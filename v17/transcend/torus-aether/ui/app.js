@@ -871,7 +871,19 @@ function renderWorkerHealth(summary,error=null) {
       "Verifică operația CUDA și numărătorile, nu considera instantaneul vechi drept progres.":
     status==="paused"?"PAUZĂ — modelul nu se antrenează acum.":
     status==="completed"?"GATA — datele au fost procesate.":"Worker monitorizat separat de grafic.";
-  target.textContent=warning+"\n"+heartbeat+" · "+snapshot+" · "+task+rpc;
+  const rate="DEBIT REAL (ultimul interval ~5s): "+
+    (Number.isFinite(H.exercisesPerSecond)?H.exercisesPerSecond.toFixed(2):"—")+
+    " exerciții/s · "+
+    (Number.isFinite(H.textMBps)?H.textMBps.toFixed(3):"—")+
+    " MB/s text EFECTIV COMIS în Brain (NU doar citit)";
+  const D=summary.dataset;
+  const progress=D?
+    "Dataset OpenThoughts: "+D.completedTrainingRows+" / "+
+    D.assignedTrainingRows+" exerciții train · "+
+    D.percent.toFixed(3)+"% din partea acestui worker (held-out excluse)":
+    "Progres dataset: metadate încă neprimite";
+  target.textContent=warning+"\n"+heartbeat+" · "+snapshot+
+    " · "+task+rpc+"\n"+rate+"\n"+progress;
   target.style.borderColor=status==="error"||status==="unresponsive"?"#e65b6c":
     status==="stale-snapshot"?"#d49b43":"#30485f";
 }
