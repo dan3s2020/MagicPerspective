@@ -99,6 +99,7 @@ function info(){
   // Distinguish witnessed real operators/observed sequence from validated
   // physical paths; a text-adjacent segment is NOT a semantic wall crossing.
   crossMazeMemory:engine?.cumulativeWorldStatus?.()||null,
+  atlasTotals:engine?.cumulativeAtlas?.({view:"attempts",limit:1})?.memory||null,
   crossMazeTopologicalCompleteness:"bounded by retained observations; cannot assume unknown language connections exist",
   saturated:o?.droppedOperators>0,
   boundedMemoryWarning:"Observed text-window states are bounded; evicted states are not permanently retained as individual observations. All source bytes are streamed, not all bytes become unique persistent nodes."
@@ -396,6 +397,24 @@ parentPort.on("message",m=>{
    return send("rpc",{id,result:{...plan,body,originalBrain:true,
     realTrainingCorpus:files.map(x=>x.path),
     withheldAnswerSupplied:false,generalNaturalLanguageAccuracyProven:false}});
+  }
+  if(m.cmd==="atlas"){
+   // The atlas is the SAME saved native Brain. It is a read-only factual
+   // inspector, paginated so tens of thousands of nodes/edges do not
+   // overwhelm the original UI or a 4GB VRAM Windows laptop.
+   const evidence=engine.cumulativeAtlas({
+    view:String(m.view||"attempts"),
+    offset:Number(m.offset||0),limit:Number(m.limit||50),
+    filter:String(m.filter||"all"),
+    search:String(m.search||""),
+    attemptId:m.attemptId??null
+   });
+   return send("rpc",{id,result:{
+    ...evidence,sameNativeBrain:true,
+    originalPlanner:"Discoverer.shapeGraph",
+    allUnknownWorldsMapped:false,
+    historicalSamplesBounded:true
+   }});
   }
   if(m.cmd==="cumulative"){
    const start=String(m.start||"");
