@@ -84,6 +84,15 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
          identityBaselineLoss:.721,
          trace:{before:[0,.1],predicted:[.1,.2],observed:[.1,.1]}}}
      }));
+     if(u.pathname==="/eval"&&JSON.parse(body).kind==="maze"){
+       const wall=Array(49).fill(0);
+       const p=[0,1,2,3,4,5,6,13,20,27,34,41,48];
+       return res.end(JSON.stringify({w:0,mazes:[{
+         n:7,start:0,goal:48,wall,path:p,
+         shapes:[[1,1,1,1,1,1,2,2,2,2,2,2]],steps:12,optimal:12,
+         solved:true,first:1
+       }]}));
+     }
      if(u.pathname==="/eval")return res.end(JSON.stringify({
        w:0,T:.4,noise:0,answer:.625,all:.7,oldAnswer:.55,
        exercises:[{n:6,a0:2,answer:.625,all:.7,shape:"BCDE",
@@ -149,6 +158,16 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    assert.equal(before.progress,"4");
    assert.match(before.source,/OpenThoughts3-1.2M/);
    assert.equal(before.connected,true);
+   const nativeGeometry=await c.eval("({history:document.querySelector('#nativeHistoryCanvas').width, "+
+     "status:document.querySelector('#nativeHistoryInfo').textContent, "+
+     "gpu:document.querySelector('#nativeGpuDevice').value})");
+   assert.ok(nativeGeometry.history>200);
+   assert.match(nativeGeometry.status,/ORIGINAL V17/);
+   assert.equal(nativeGeometry.gpu,"cuda:0");
+   await c.eval("document.querySelector('#nativeGpuApply').click()");
+   await sleep(170);
+   assert.ok(calls.some(x=>x.url==="/gpu"&&x.query.includes("device=cuda%3A0")),
+     "Original GPU control should not be cosmetic");
    await c.eval("document.querySelector('#evalBtn').click()");
    let accurate=false;
    for(let i=0;i<90;i++){
@@ -159,6 +178,13 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
      await sleep(100);
    }
    assert.equal(accurate,true,"Frozen original Q/A must render actual wrong vs correct characters");
+   await c.eval("document.querySelector('#nativeKind').value='maze';document.querySelector('#evalBtn').click()");
+   let mazeVisible=false;
+   for(let i=0;i<65;i++){
+     mazeVisible=await c.eval("!document.querySelector('#nativeMazeBox').hidden");
+     if(mazeVisible)break;await sleep(100);
+   }
+   assert.equal(mazeVisible,true,"Original maze first-shape overlay must be available");
    await c.eval("document.querySelector('#pauseBtn').click()");
    await sleep(170);
    assert.ok(calls.some(x=>x.url==="/control"&&x.query.includes("do=pause")));
@@ -173,6 +199,8 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
      originalSustainedThroughput:before.throughput,
      actualCorpusName:true,originalGraphNodes:before.nodes,
      originalFrozenTextQACorrectWrongShown:true,
+     originalMazeInitialShapeOverlay:true,nativeGpuSettingsForwarded:true,
+     nativeMetricsHistory:true,
      originalPauseForwarded:true,screenshot:"v28-native-ui-real-chrome.png",
      browserExceptions:0}));
  }finally{
