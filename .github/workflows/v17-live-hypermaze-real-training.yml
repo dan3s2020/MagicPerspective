@@ -1,0 +1,33 @@
+name: V17 Live Hypermaze real dataset training and original UI acceptance
+on:
+  push:
+    branches:
+      - feature/V17-LIVE-HYPERMAZE-REAL-CORPUS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-v17-text-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax of original integration + live UI modules
+        run: |
+          node --check v17/transcend/torus-aether/devour/live-hypermaze.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/corpus-hypermaze-live.js
+          node --check v17/transcend/torus-aether/ui/app.js
+      - name: Learning, no hidden target, frozen holdout, durable model save, complete UI wiring
+        run: node --test v17/tests/live-corpus-hypermaze.test.mjs
+      - name: Actual original V17 server + actual real text-file training with HTTP and checkpoint verification
+        run: node --test v17/tests/live-corpus-hypermaze-http.test.mjs
+      - name: Verify original live text and browser UIs are not replaced
+        run: |
+          node --test v17/tests/inline-language-maze-native.test.mjs
+          node --test v17/tests/observed-transformations-live.test.mjs
+          node --test v17/tests/torus-live-observability.test.mjs
