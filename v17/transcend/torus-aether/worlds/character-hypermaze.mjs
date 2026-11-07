@@ -243,8 +243,20 @@ export class CharacterHypermaze{
   const kinds=world.states.map((s,i)=>i===0?KIND.self:world.targets.includes(i)?KIND.target:KIND.floor);
   const conduct=k=>k===KIND.wall?0:k===KIND.floor?Math.max(.5,disc?.conduct?.(KIND.floor)??.5):1;
   const attract=k=>k===KIND.target?1:0;
-  let vals=[];
-  const path=d.shape(kinds,0,0,{neighbors:world.neighbors,conduct,attract,onField:v=>{vals=v;}})||[];
+  // V34 compatibility: retain the existing V17 2D shape() source verbatim.
+  // The V31 native Discoverer.shapeGraph evaluates the SAME learned
+  // attraction relation on this actually witnessed directed character graph.
+  // V24's explicit task-goal predicate supplies only its observable target
+  // kind: never a hidden reference answer or a new language model.
+  d.attract=attract;d.conduct=conduct;
+  const shaped=d.shapeGraph(kinds,world.neighbors,0,{details:true});
+  const vals=shaped?.values||[];
+  const path=(shaped?.path||[]).map(step=>{
+    const edge=world.neighbors[step.from].find(e=>
+      e.to===step.to&&e.action===step.action);
+    return {...step,transformation:edge?.transformation??null,
+      verified:!!edge?.verified};
+  });
   const nodes=[0,...path.map(x=>x.to)];
   const found=path.length>0&&world.targets.includes(path.at(-1).to);
   const result={found,world,path,field:{values:vals,nodes},
