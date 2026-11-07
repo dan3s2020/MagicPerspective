@@ -22,6 +22,7 @@ const since=()=>Date.now();
 let brain,paused=true,stop=false,started=false,running=false,saveFlag=false;
 let lastSent=0,lastCheckpoint=0,progressRows=0,progressOffset=0;
 let worldEpisode=0,failed=null,evalBusy=false,exams=null,firstStart=0,bytesObserved=0;
+let startRows=0;
 let lastNativePrediction=null;
 const send=(message)=>parentPort.postMessage(message);
 const errors=e=>String(e?.stack||e?.message||e).slice(0,2400);
@@ -34,6 +35,7 @@ if(fs.existsSync(checkpoint)){
  worldEpisode=Number(brain.tinyWorlds)||0;
 }else brain=new Brain({rules,c,seed:11});
 brain.enableEndogenousNoise();
+exams=brain.tinyLastExam||null;
 const selfcode=new NativeSelfCodeWorld({brain,saveFile:checkpoint,seed:brain.seed,enableEvaluator:false});
 
 const worldStats=()=>{
@@ -67,7 +69,7 @@ function status(includeGraph=false){
   source:"same-real-TinyStories-train-file-independent-stream",
   gpuOriginal:false,workIndependentOfFastCuda:true,
   stories:progressRows,bytesRead:progressOffset,storiesPerSecond:firstStart?
-   Number((progressRows/Math.max(.001,(since()-firstStart)/1000)).toFixed(2)):0,
+   Number(((progressRows-startRows)/Math.max(.001,(since()-firstStart)/1000)).toFixed(2)):0,
   nativeTextSymbolEvery:symbolEvery,nativeTextBytesPerSelectedStory:symbolBytes,
   nativeGraphSamplingExplicit:true,worldIntervalStories:worldEvery,
   lastUpdate:since(),lastCheckpoint:brain.tinyLastSavedAt||null,
@@ -161,13 +163,15 @@ async function evaluate(){
    transforms:{count:transforms.n,solvedRate:transforms.solved,
     stepsOptimal:transforms.ratio,predictionError:transforms.failedRate,
     impossible:transforms.impossible,recognizedImpossible:transforms.saidLimitation}};
+  brain.tinyLastExam=exams;
+  commit();
   publish(true);
  }catch(e){send({type:"exam-error",error:errors(e)});}
  finally{evalBusy=false;}
 }
 async function run(){
  if(running||failed||stop)return;
- running=true;paused=false;firstStart=since();
+ running=true;paused=false;firstStart=since();startRows=progressRows;
  try{
   const meta=await sourceMetadata(workerData.train);
   for await(const item of stories(workerData.train,{startOffset:progressOffset,metadata:meta})){
