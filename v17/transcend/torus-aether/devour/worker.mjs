@@ -164,6 +164,13 @@ const absorbText = row => {
     {maxActions: 12, seed: ((row.k || 0) + brain.seed) >>> 0, emit: event => shared.observeText(event, row.prompt)});
 };
 const H = Array.from(evalText, ch => { const c = ch.charCodeAt(0); return c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63; });
+let currentPhase = "";
+const stage = name => {
+  if (currentPhase !== name) {
+    currentPhase = name;
+    parentPort.postMessage({type: "phase", w: workerData.gw, phase: name});
+  }
+};
 let lastShot = 0, shots = 0, dissolved = 0, nextTest = (brain.chars || 0) + every, nextMaze = (brain.chars || 0) + 1; const t0 = performance.now(), c0 = brain.chars || 0;
 const transStats = () => { brain.tWorld(); const T = brain.trans; return {played: T.played, won: T.won, test: T.test, last: T.last}; };
 const perspectiveStats = () => brain.perspective?.summary() || null;
