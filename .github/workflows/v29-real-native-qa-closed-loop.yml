@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
       - name: Same original native Brain learns witnessed Q/A axes, plans entire heldout answer before output, checkpoint
         run: node --test v17/tests/v29-real-qa-closed-loop.test.mjs
+      - name: Complete original native HTTP JSONL Q/A training, 10 unseen whole answers, graph, exact checkpoint and existing UI
+        run: node --test v17/tests/v29-real-qa-native-http.test.mjs
       - name: Real OpenThoughts source stream, complete original worker, checkpoint, browser and CPU throughput
         run: node --test v17/tests/hypermaze-real-openthoughts-stream.test.mjs
       - name: Exact original Discoverer 2D maze parity and existing compositional long text shape
