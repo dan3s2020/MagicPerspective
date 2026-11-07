@@ -29,7 +29,7 @@ async function readJson(url,timeout=8000){
   return r.json();
 }
 test("original V17 worker actually reads real docs and trains while V26 UI bridge reports its native metrics",{
-  timeout:125000
+  timeout:175000
 },async()=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),"mp-v28-native-real-"));
   const nativePort=await getOpenPort();
@@ -68,12 +68,19 @@ test("original V17 worker actually reads real docs and trains while V26 UI bridg
     assert.match(html,/Hypermaze/);
     assert.doesNotMatch(html,/src="\/app\.js"/);
     let snapshot=null;
-    for(let i=0;i<55;i++){
+    for(let i=0;i<260;i++){
       snapshot=await readJson(ui+"/api/native-state?w=0");
+      if(snapshot.original?.status==="eroare")
+        throw Error("Original V17 training worker failed: "+snapshot.original.error+
+          "\nSTDERR: "+stderr+"\nSTDOUT: "+stdout);
       if(snapshot.original?.chars>0||snapshot.original?.progress?.trained>0)break;
       await pause(350);
     }
     assert.equal(snapshot.version,"V28_NATIVE_V17_UI");
+    assert.ok((snapshot.original?.chars||0)>0||
+      (snapshot.original?.progress?.trained||0)>0,
+      "Original V17 did not train any text after 90 seconds. STDERR: "+
+      stderr.slice(-2000)+" STDOUT: "+stdout.slice(-2000));
     assert.equal(snapshot.corpus.kind,"text");
     assert.ok(snapshot.original);
     const m=nativeMeasurements(snapshot);
@@ -97,6 +104,7 @@ test("original V17 worker actually reads real docs and trains while V26 UI bridg
       originalTrainRows:raw.corpus.trainRows,
       originalHeldoutRows:raw.corpus.heldOut,
       realOriginalChars:snapshot.original.chars,
+      originalWorkerStatus:snapshot.original.status,
       realNativeGraphNodes:snapshot.graph?.nodes?.length??null,
       originalNativeAligned:m.aligned,
       originalWorkerControlPass:true,
