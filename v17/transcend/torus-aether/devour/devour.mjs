@@ -94,6 +94,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
+    nativeHypermaze: t?.final ? t.nativeHypermaze : g?.nativeHypermaze || t?.nativeHypermaze || null,
     realMathAxes: t?.final ? t.realMathAxes : g?.realMathAxes || t?.realMathAxes || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
