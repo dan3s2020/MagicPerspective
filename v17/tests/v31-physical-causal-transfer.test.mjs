@@ -68,13 +68,16 @@ test('2 physically verified independent contexts allow exact first-answer 3-hop 
      m.execute(m.formSolution(src,goal,{minVerifiedContexts:2}),{step:observe,observe:false}):null;
    adversarial.push({proposed:prediction.found,physicallyCorrect:sim?.solved||false});
  }
+ assert.equal(adversarial.filter(x=>x.proposed).length,0,
+   'Unverified new verb contexts must be ABSTAIN, not assumed safe');
  console.log('V31_CAUSAL_SUPPORT_TRANSFER_CURVE',JSON.stringify({
    beforePhysicalFeedbackCorrect:0,afterOneVerifiedContext:0,
    afterTwoVerifiedContexts:100,total:100,
    sampleActions:answerFromOriginalPath(m,question('Novel_0'),{minVerifiedContexts:2}).path.map(x=>x.action),
    physicallyExecutedAndCorrect:100,localTrainingAttempts:first.length+second.length,
    noTestLeak:true,originalDiscoverer:true,
-   adversarialDifferentVerb:adversarial
+   adversarialDifferentVerb:adversarial,
+   abstainedOutsideVerifiedContexts:adversarial.every(x=>!x.proposed)
  }));
  assert.equal(adversarial.filter(x=>x.physicallyCorrect).length,0,
    'Must not claim general language understanding from controlled context transfer');
