@@ -48,3 +48,9 @@ Full historic Verbatim remains **BLOCKED / incomplete**. Neither this file nor a
 ## Scope
 
 This is a contributor instruction, not a claim of power over independently configured bots or contributors. To prevent noncompliant GitHub merges, make the `user-intent-guard` status a **required** check in main branch rules, require human review, and restrict direct pushes/admin bypass. Never silently claim those repository settings were enabled if they have not been verified.
+
+## Additional critical 2026-11-07 learning regressions (still BLOCKED)
+
+**MANDATORY for every coding assistant:** [Permanent TinyStories/long-text/Unicode regression incident](./docs/INCIDENT_TINYSTORIES_UNAUTHORIZED_MOTOR_REPLACEMENT_20261107.md), [2026-11-07 exact user directive](./verbatim/2026-11-07-TINYSTORIES-CRITICAL-REGRESSION-USER-VERBATIM.txt), [isolated original-motor research PR #58](https://github.com/dan3s2020/MagicPerspective/pull/58).
+
+Do NOT count 100% correctness on explicitly goal-constrained synthetic text templates as open-ended semantic correctness. Do NOT count 5D display coordinates as causal 5D inference. Do NOT call controlled CPU-only long-text throughput full CUDA training. **Do not discard old observed transitions:** the original token index used to forget any rare axis absent from its last 96 word-associated observations. **Do not discard Unicode:** the original worker's ASCII conversion replaced non-ASCII code points with `?`. All three regressions need actual end-to-end native worker tests, frozen heldout proof, and explicit human-approved release evidence. Main executable code remains preserved until separately accepted.
