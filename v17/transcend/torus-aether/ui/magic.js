@@ -291,6 +291,8 @@ function renderLiveMath(){
 }
 function displayMetrics(){
  const G=state.graph,S=state.summary;
+ document.documentElement.dataset.magicConnected=String(!!G);
+ document.documentElement.dataset.magicObservedChars=String(S?.chars??G?.chars??0);
  const language=G?.language||S?.language||{},op=G?.observedTransformations||S?.observedTransformations||{};
  $("mChars").textContent=fmt(S?.chars??G?.chars);
  $("mTokens").textContent=fmt(language.observedTokens);
