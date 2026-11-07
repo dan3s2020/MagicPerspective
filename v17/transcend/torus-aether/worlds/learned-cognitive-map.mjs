@@ -366,9 +366,9 @@ export class LearnedCognitiveMap {
     if(!entries.length)throw Error('Goal must constrain at least one position');
     return entries.every(([i,token])=>valid(Number(i),0,tokens.length-1)&&tokens[Number(i)]===token);
   }
-  buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth,transfer=true}={}){
+  buildWorld(initial,goal,{maxNodes=this.limits.maxNodes,maxDepth=this.limits.maxDepth,transfer=true,maxTokens=96}={}){
     const start=Array.isArray(initial)?initial.slice():tokenizeWorld(initial);
-    if(!start.length||start.length>96||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
+    if(!start.length||start.length>maxTokens||!valid(maxTokens,1,2048)||!valid(maxNodes,2,20000)||!valid(maxDepth,1,256))throw Error('Invalid cognitive planning limits');
     LearnedCognitiveMap.matchGoal(start,goal);
     const queue=[start],byKey=new Map([[key(start),0]]),out=[[]],depth=[0];
     let rejected=0,truncated=false,imagined=0,portableCount=0;
@@ -378,7 +378,7 @@ export class LearnedCognitiveMap {
       portableClasses,observedActionRules:this.rules.size,
       sourceExamplesActive:this.examples.size,
       compactedExamples:this.compactedExamples,compactedRules:this.compactedRules,
-      maxNodes,maxDepth,transfer,excludedByDesign:[],
+      maxNodes,maxDepth,maxTokens,transfer,excludedByDesign:[],
       pathSource:"observed local changes + multiple independent world contexts",
       goalKnownOnlyAsPredicate:true
     };
@@ -452,8 +452,8 @@ export class LearnedCognitiveMap {
   // Same V17 operator, same .97 and .5 thresholds: no BFS oracle or target string.
   // Only the target PREDICATE seeds the attraction field; its successful states
   // must emerge from learned transition hypotheses.
-  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null,transfer=true}={}){
-    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth,transfer});
+  formSolution(initial,goal,{disc=null,maxNodes,maxDepth,seed=74129,temperature=null,transfer=true,maxTokens=96}={}){
+    const world=this.buildWorld(initial,goal,{maxNodes,maxDepth,transfer,maxTokens});
     if(world.targets.includes(0))return {found:true,path:[],world,field:{reason:'ALREADY_AT_GOAL',values:[]},
       goal:clone(goal),learnedRules:this.rules.size,novelGoal:false,
       plannedBeforeAction:true,planningLaw:'ORIGINAL_V17_ATTRACTION_0.97'};
