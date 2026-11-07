@@ -46,7 +46,7 @@ export class GpuWorlds {
         for(const waiter of waits) waiter.reject(new Error(why));
         this.close();
       }, inactivityMs);
-      timer.unref?.();
+      // Keep this deadline referenced until the pending GPU request resolves.
     };
     this.wait.set(id, {
       resolve: value => { clear(); resolve(value); },
