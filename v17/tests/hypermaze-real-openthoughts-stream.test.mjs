@@ -155,7 +155,7 @@ test("Full actual JSONL training (not legacy byte predictor), pause/save/resume,
   // Actual same-Brain original global shape, not a prewritten answer:
   const task=new URLSearchParams({w:"0",start:"He is calm.",
    required:"She,calm",execute:"1",topology:"1"});
-  const inferred=await get(again.base+"/native-hypermaze?"+task,{method:"POST"});
+  const inferred=await get(again.base+"/native-hypermaze?"+task,"POST");
   // If the learned 120-line corpus did not contain enough compositional
   // evidence, report that honestly; do not make a fabricated 100% pass.
   assert.equal(inferred.plannedBeforeFirstAction,true);
