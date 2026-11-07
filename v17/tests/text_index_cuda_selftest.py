@@ -19,7 +19,8 @@ def main():
     from text_index_fast_test import old_align
     X=mod.X(device)
     raw=(root/"docs"/"TORUS_AETHER_ABC_20261104.md").read_bytes()
-    corpus=np.frombuffer(raw[:3200],dtype=np.uint8).astype(np.int64)
+    # Mirror native V17 worker ASCII sanitization; bytes >=128 become 63.
+    corpus=np.asarray([int(x) if x<128 else 63 for x in raw[:3200]],dtype=np.int64)
     mem=X.arr(corpus[:2000])
     idx=mod.Index(X,mem)
     Q=48;K=20;query=np.full((Q,K),-2,dtype=np.int64)
