@@ -1,0 +1,32 @@
+name: V21 native original Discoverer graph goal wavefront - evidence
+on:
+  push:
+    branches:
+      - experiment/V21-NATIVE-GOAL-WAVEFRONT-20261107
+  workflow_dispatch:
+jobs:
+  native-goal-shape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original 2D and native graph shape from source, no oracle, actual action feedback, long original corpus
+        run: node --test v17/tests/native-goal-wavefront.test.mjs
+      - name: Original V17 brain regression and V21 contextual graph native regression
+        run: |
+          node --test v17/tests/torus-brain.test.mjs
+          node --test v17/tests/torus-aether.test.mjs
+          node --test v17/tests/veil-aether.test.mjs
+          node --test v17/tests/veil-aether.observed-action-field.test.mjs
+      - name: Existing V21 original HTTP checkpoint and corpus split regression
+        run: |
+          node --test v17/tests/veil-aether.http.test.mjs
+          node --test v17/tests/torus-text-hypermaze.test.mjs
+      - name: Syntax of original and additive files
+        run: |
+          node --check v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check v17/transcend/torus-aether/worlds/goal-wavefront.mjs
+          node --check v17/transcend/torus-aether/worlds/veil-aether.mjs
