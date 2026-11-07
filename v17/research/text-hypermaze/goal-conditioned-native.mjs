@@ -158,7 +158,8 @@ export class NativeGoalTextMaze {
   const before=model.seen;
   const old=new Set(model.operators.keys());
   const pages=this.atlas.page({after,limit,kinds:["world"]});
-  let historicEvents=0,rehearsed=0,discardedLong=0;
+  let historicEvents=0,rehearsed=0,discardedLong=0,
+      historicalWindowSlices=0,longUnitsRevisited=0;
   // The genuinely observed current-state evidence is refreshed between
   // historical candidates, allowing comparisons even with a tiny rolling
   // active-state window (3 or 4 records).
@@ -167,15 +168,13 @@ export class NativeGoalTextMaze {
       typeof event.rawText!=="string")continue;
    historicEvents++;
    for(const historic of units(event.rawText)){
-    if(tokenizeObservation(historic).length>model.maxTokens){
-     discardedLong++;continue;
-    }
-    model.revisitArchivedSentence(historic);rehearsed++;
+    if(tokenizeObservation(historic).length>model.maxTokens)longUnitsRevisited++;
+    const historical=model.revisitArchivedSentence(historic,{windowLong:true});
+    rehearsed++;historicalWindowSlices+=historical.slices;
     for(const wanted of targets){
-     if(tokenizeObservation(wanted).length>model.maxTokens){
-      discardedLong++;continue;
-     }
-     model.revisitArchivedSentence(wanted);rehearsed++;
+     if(tokenizeObservation(wanted).length>model.maxTokens)longUnitsRevisited++;
+     const current=model.revisitArchivedSentence(wanted,{windowLong:true});
+     rehearsed++;historicalWindowSlices+=current.slices;
     }
    }
   }
@@ -186,6 +185,8 @@ export class NativeGoalTextMaze {
    focusSequence,after,nextCursor:pages.nextCursor,
    historicalWorldsScanned:historicEvents,
    genuineOldSentencesRehearsed:rehearsed,
+   fullCorpusLongUnitsRevisited:longUnitsRevisited,
+   contiguousObservedWindowSlicesRehearsed:historicalWindowSlices,
    tooLongToRehearse:discardedLong,
    originalBrainCorpusObservationsUnchanged:true,
    newlyLearnedOperators:novel.map(op=>op.key),
@@ -203,6 +204,8 @@ export class NativeGoalTextMaze {
    nextCursor:pages.nextCursor,hasMoreHistory:pages.nextCursor<focusSequence-1,
    historicalWorldsScanned:historicEvents,
    genuineOldSentencesRehearsed:rehearsed,
+   fullCorpusLongUnitsRevisited:longUnitsRevisited,
+   contiguousObservedWindowSlicesRehearsed:historicalWindowSlices,
    newlyLearnedOperators:novel.length,keys:novel.map(op=>op.key),
    originalBrainCorpusObservationsBefore:before,
    originalBrainCorpusObservationsAfter:model.seen,
