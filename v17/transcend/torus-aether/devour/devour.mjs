@@ -107,6 +107,10 @@ function workerHealth(sl, graph = graphs.get(sl.w)) {
     gpuRequest,batch:sl.lastHeartbeat?.batch??null,
     lastReportedChars:sl.lastHeartbeat?.chars??0,
     lastReportedExercises:sl.lastHeartbeat?.exercises??0,
+    textMBps:sl.lastHeartbeat?.textMBps??null,
+    exercisesPerSecond:sl.lastHeartbeat?.exercisesPerSecond??null,
+    rawTextMB:sl.lastHeartbeat?.rawTextMB??null,
+    throughputIntervalSeconds:sl.lastHeartbeat?.throughputIntervalSeconds??null,
     workerResponsive:!noHeartbeat,
     staleSnapshot:snapshotStale,
     message:sl.status==="eroare"?sl.lastError:
@@ -118,7 +122,15 @@ function workerHealth(sl, graph = graphs.get(sl.w)) {
 }
 function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
   const G = g?.gpu || t?.gpu || null;
+  const assigned=sl.dataset?.assignedTrainingRows??null;
+  const completed=Math.max(sl.lastHeartbeat?.exercises||0,
+    g?.exercises||0,t?.exercises||0);
+  const dataset=assigned==null?null:{...sl.dataset,
+    completedTrainingRows:Math.min(assigned,completed),
+    percent:assigned?100*Math.min(assigned,completed)/assigned:100,
+    countsAreCompletedExercises:true};
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
+    dataset,
     nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
     health:workerHealth(sl,g),
     snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
@@ -150,6 +162,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (m.type === "heartbeat") {
       sl.lastHeartbeatAt=Date.now();sl.lastHeartbeat=m;return;
     }
+    if (m.type === "dataset") {sl.dataset=m;return;}
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old=graphs.get(sl.w);
       if(!m.text&&old?.text)m.text=old.text;
@@ -443,7 +456,8 @@ http.createServer((req, res) => {
       checkpoint:saveOf(sl),lastError:sl.lastError||null,
       lastNote:sl.lastNote||null,
       snapshotAt:graphs.get(w)?.snapshotAt||null,
-      lastGraphChars:graphs.get(w)?.chars??null});
+      lastGraphChars:graphs.get(w)?.chars??null,
+      dataset:slotInfo(sl).dataset});
   }
   if (url === "/graphs") return json(res, {world, every, graphs: slots.map(slotInfo), worlds: worldsArg, gpu: gpuSettings, arms: [...Object.keys(ARMS), ...Object.keys(CLAWS)]});
   if (url === "/graph") { const w = +q.get("w") || 0, g = graphs.get(w);
