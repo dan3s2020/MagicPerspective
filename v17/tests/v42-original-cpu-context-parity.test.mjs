@@ -22,8 +22,13 @@ test("V42 optimized Brain history exactly equals original Array.from in every co
   }
 });
 test("V42 same original Brain.live, learned states and exact V8 checkpoint after text+maze observations",()=>{
-  const ref=new Brain({rules,seed:77});
-  const opt=new Brain({rules,seed:77});
+  // To compare a checkpoint byte-for-byte, both contenders must start
+  // from the exact SAME serialized original Brain, not two independently
+  // constructed instances with potentially different timestamps/identities.
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"v42-original-context-"));
+  const initialFile=path.join(root,"initial.v8");
+  new Brain({rules,seed:77}).save(initialFile);
+  const ref=Brain.load(initialFile),opt=Brain.load(initialFile);
   ref.ctxOf=function(b,i){return originalCtx(b,i,this.CTX)};
   ref.histOf=function(b,i){return originalHist(b,i)};
   const corpus=Array.from({length:180},(_,i)=>(i*i*13+i*17+32)%128);
@@ -38,7 +43,6 @@ test("V42 same original Brain.live, learned states and exact V8 checkpoint after
   assert.deepEqual(opt.align.trustForCard(),ref.align.trustForCard());
   assert.deepEqual(opt.constructedPaths.summary(),ref.constructedPaths.summary());
   assert.deepEqual(opt.observedTransformations.report(),ref.observedTransformations.report());
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),"v42-original-context-"));
   try{
     const f1=path.join(root,"before.v8"),f2=path.join(root,"after.v8");
     ref.save(f1);opt.save(f2);
