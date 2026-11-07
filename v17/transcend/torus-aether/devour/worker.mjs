@@ -9,6 +9,7 @@ import {openTextDataset} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {LiveHyperMaze,parseHeldoutText} from "./live-hypermaze.mjs";
 import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
+import {v34LiveResearch} from "../../../research/text-hypermaze/v34-live-research.mjs";
 import {CompleteXDWorld} from "../worlds/full-xd-maze-atlas.mjs";
 import {once} from "node:events";
 import {GpuWorlds} from "../gpu/client.mjs";
@@ -433,6 +434,18 @@ const processGpuText = async (exs, meta) => {
   shot();
 };
 parentPort.on("message", m => {
+  // V34 OPTIONAL research panel: exactly SAME mutable original Brain
+  // worker, no second agent or generated performance metrics.
+  if(m?.v34Research){
+    const {id,request}=m.v34Research;
+    try{
+      const result=v34LiveResearch(brain,request);
+      parentPort.postMessage({type:"chat",id,v34Research:true,result});
+    }catch(err){
+      parentPort.postMessage({type:"chat",id,v34Research:true,error:err.message});
+    }
+    return;
+  }
   // On-demand PAGE through the ORIGINAL persistent six-scale graph. No
   // static 220-edge cap, no answer generated and no native memory update.
   if(m?.evidenceGatedText){
