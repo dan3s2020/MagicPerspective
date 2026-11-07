@@ -62,7 +62,10 @@ function aggregate(rows,key){
       answerAccuracy:answerTotal?sum("answerCorrect")/answerTotal:null,
       meanAllNLL:allTotal?sum("allNLL")/allTotal:null,
       meanAnswerNLL:answerTotal?sum("answerNLL")/answerTotal:null,
-      fieldCoverageFraction:allTotal?sum("fieldCoverage")/allTotal:null
+      fieldCoverageFraction:allTotal?sum("fieldCoverage")/allTotal:null,
+      alignedTrueByteBlockedFraction:allTotal?sum("alignedTrueByteBlocked")/allTotal:null,
+      geometryRestoresBlockedTargetFraction:allTotal?sum("geometricTrueByteRecoveryPossible")/allTotal:null,
+      geometryExpandsSuccessorStepsFraction:allTotal?sum("geometricExpandedSuccessorSet")/allTotal:null
     };
   }
   return results;
@@ -128,5 +131,8 @@ console.log("AXIS_SCORE_SUMMARY "+JSON.stringify({sha256:beforeHash,heldoutRows:
   collapsedMix025AnswerAccuracy:collapsed["0.25"].answerAccuracy,
   originalMix05AnswerAccuracy:normal["0.5"].answerAccuracy,
   collapsedMix05AnswerAccuracy:collapsed["0.5"].answerAccuracy,
-  fieldAnswerCoverage:normal["1"].fieldCoverageFraction}));
+  fieldAnswerCoverage:normal["1"].fieldCoverageFraction,
+  alignedTrueByteBlocked:normal["0"].alignedTrueByteBlockedFraction,
+  geometricallyRecoverableTrueByte:normal["0.25"].geometryRestoresBlockedTargetFraction,
+  geometryExpandsNextByteChoices:normal["0.25"].geometryExpandsSuccessorStepsFraction}));
 console.log("SAVED: "+target);
