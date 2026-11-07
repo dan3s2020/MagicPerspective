@@ -185,6 +185,15 @@ export class ForensicPathAtlas{
  page({section="nodes",offset=0,limit=200}={}){
   const A=this._all(),S=A.S,O=A.operatorMemory;
   const lists={
+   observations:[...(O?.records.values()||[])].map(x=>({
+    observedId:x.id,rawText:renderObservation(x.tokens),
+    completeActiveTokenCount:x.tokens.length,seen:x.count,
+    provenance:"original native ObservedTransformations retained corpus observation",
+    status:"OBSERVED_TEXT_NOT_AUTOMATICALLY_WALKABLE"})),
+   qaEpisodes:[...(this.brain.qaRoleEvidence?.longForm?.sequences||[])].map((e,i)=>({
+    retainedIndex:i,questionChunkDigests:e.questionChunks||[],
+    answerChunkDigests:e.answerChunks||[],
+    status:"OBSERVED_CHUNKS_SEQUENTIAL_NOT_VERIFIED_ACTIONS"})),
    nodes:[...A.nodes.values()].map(x=>({
     text:x.text,firstEpisode:x.firstEpisode,lastEpisode:x.lastEpisode,
     support:x.seen,lastSourceCount:x.sourceCount,
@@ -298,6 +307,20 @@ export class ForensicPathAtlas{
     maxDepth:cap(maxDepth,1,256),maxWalk:50000}):
    {routes:[],enumerated:0,exhaustiveWithinLimits:false,maxRoutes,maxDepth};
   const candidateRoutes=attempts.filter(e=>e.reachesKnownGoalComponent);
+  // The original text operator can still propose a candidate from a source
+  // absent in cumulative physical evidence. Keep this separate from the
+  // verified reachable graph rather than manufacturing a causal start node.
+  const orphanOperators=[];
+  if(!rootKnown&&source&&O){
+   for(const choice of O.neighbors(tokenizeObservation(source)).slice(0,maxExamples)){
+    orphanOperators.push({from:source,
+     to:renderObservation(choice.tokens),
+     action:choice.action?.key??choice.action?.kind??"unknown",
+     evidence:choice.action?.learnedFrom??null,
+     reason:"TEXT_OPERATOR_HYPOTHESIS_ONLY; NO VERIFIED CAUSAL START",
+     verified:false,walkable:false});
+   }
+  }
   const frontier=[...forward].filter(([s])=>!(adjacency.get(s)||[]).length)
    .slice(0,maxExamples).map(([text,dist])=>({text,stepsFromStart:dist,
     goalTokenOverlap:tokenizeObservation(text).filter(t=>goal.includes(t)).length}));
@@ -331,7 +354,7 @@ export class ForensicPathAtlas{
    verifiedPathAlternatives:routes,
    deadEnds:frontier,deadEndsTruncated:[...forward].filter(
     ([s])=>!(adjacency.get(s)||[]).length).length>maxExamples,
-   missingBridgeCandidates:preview,
+   missingBridgeCandidates:preview,unanchoredTextOperatorHypotheses:orphanOperators,
    candidateCountTruncated:attempts.length>=maxExamples,
    oneEvidenceBridgeCandidates:candidateRoutes,
    nextExperiment:candidateRoutes.length?{
