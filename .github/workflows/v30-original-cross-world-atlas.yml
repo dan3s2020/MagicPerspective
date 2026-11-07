@@ -116,3 +116,9 @@ jobs:
           mkdir -p "$V30_TEST_PARQUET"
           python v17/tests/v30-parquet-fixture.py "$V30_TEST_PARQUET"
           node --test v17/tests/v30-real-parquet-resume.test.mjs
+      - name: Generate REAL 16032-row nested ZSTD Parquet fixture
+        run: python v17/tests/v30-parquet-fixture.py /tmp/v30-real-large-parquet 16032
+      - name: Cross 15k user crash boundary with native V17 Brain, resume and preserve 16 heldout
+        env:
+          V30_STRESS_PARQUET: /tmp/v30-real-large-parquet
+        run: node --max-old-space-size=2048 --test v17/tests/v30-real-parquet-16000-stress.test.mjs
