@@ -51,33 +51,36 @@ class CDP {
   }
 }
 test("real headless Chromium UI: render graph, controls, evaluations, replay and actual canvas screenshot",{
-  timeout:90000
+  timeout:150000
 },async()=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),"v26-real-chrome-"));
   let runtime=null,chrome=null,ws=null;
   try{
     runtime=await startServer({host:"127.0.0.1",port:0,corpus:DEFAULT_CORPUS,
-      checkpointDir:path.join(dir,"checkpoints"),auto:true,
+      checkpointDir:path.join(dir,"checkpoints"),auto:false,
       config:{axes:6,words:1024,noise:.2,batch:3,recordEvery:1}});
     const url="http://127.0.0.1:"+runtime.server.address().port+"/";
     const binary=browserBinary();
     const chromeData=path.join(dir,"chrome");
     await fs.mkdir(chromeData,{recursive:true});
+    let chromeError="";
     chrome=spawn(binary,[
       "--headless=new","--no-sandbox","--disable-dev-shm-usage",
       "--disable-gpu","--no-first-run","--no-default-browser-check",
       "--remote-allow-origins=*","--window-size=1440,900",
       "--user-data-dir="+chromeData,"--remote-debugging-port=0",
       "about:blank"
-    ],{stdio:"ignore"});
+    ],{stdio:["ignore","ignore","pipe"]});
+    chrome.stderr?.on("data",x=>{chromeError=(chromeError+x.toString()).slice(-6000)});
     let port=null;
-    for(let i=0;i<100;i++){
+    for(let i=0;i<200;i++){
+      if(chrome.exitCode!==null||chrome.signalCode!==null)break;
       try{
         const text=await fs.readFile(path.join(chromeData,"DevToolsActivePort"),"utf8");
         port=Number(text.split("\n")[0]);break;
       }catch{await sleep(100);}
     }
-    assert.ok(port>0,"Chrome debugging port did not start");
+    assert.ok(port>0,"Chrome debugging port did not start. Browser stderr: "+chromeError.slice(-2000));
     const response=await fetch("http://127.0.0.1:"+port+"/json/new?"+
       encodeURIComponent(url),{method:"PUT"});
     assert.equal(response.ok,true);
@@ -100,8 +103,11 @@ test("real headless Chromium UI: render graph, controls, evaluations, replay and
       await sleep(100);
     }
     assert.equal(loaded,true,"New HTML did not load in real Chromium");
+    // START training from the REAL user-visible button only AFTER browser
+    // startup. This prevents a busy Node training loop starving Chrome init.
+    await client.eval("document.querySelector('#startBtn').click()");
+    await sleep(1100);
     // Real browser must actually receive live SSE, have graph, and draw nodes.
-    await sleep(900);
     const measured=await client.eval("({canvas:document.querySelector('#graphCanvas').width,worlds:document.querySelector('#mWorlds').textContent,axisOptions:document.querySelector('#axisSelect').options.length,route:document.querySelectorAll('.route-step').length,graphNodes:document.querySelector('#mStates').textContent,conn:document.querySelector('#connection').classList.contains('connected')})");
     assert.ok(measured.canvas>200,"Graph canvas has no backing pixels");
     assert.ok(measured.conn,"Live event stream not connected");
