@@ -235,7 +235,19 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    const longSourceAtPrefix=m.byScale.slice(3).map((scale,i)=>
     m.scales[i+3].choices(m.textState(row.question,"<think> ",scale))
       .reduce((acc,x)=>acc+x.total,0));
+   // Record the COMPLETE 128-action first-shot path including every
+   // alternative branch considered by ORIGINAL V17 at each position.
+   // No heldout truth is consulted to build any of these candidates.
    attempts.push({name,prediction:prediction.predicted,
+    frozenFullActionSequence:prediction.path.map(st=>({
+     position:st.position,chosenActionCode:st.action,
+     chosenCharacter:st.action===256?"<END>":String.fromCharCode(st.action),
+     scaleEvidence:st.scaleEvidence,alternatives:st.alternatives.map(a=>({
+      actionCode:a.character,
+      character:a.character===256?"<END>":String.fromCharCode(a.character),
+      originalLearnedWeight:a.weight,originalPathPolicyScore:a.transferableScore
+     }))
+    })),
     longSourceAtStart,longSourceAtPrefix});
   }
   const expected=Array.from(row.answer);
@@ -245,7 +257,23 @@ test("ORIGINAL V17 first-shot six-scale path on REAL unseen OpenThoughts3: exact
    const postTemplateCorrect=T.slice(genericPrefixChars)
     .filter((c,i)=>P[genericPrefixChars+i]===c).length;
    let prefix=0;while(prefix<T.length&&P[prefix]===T[prefix])prefix++;
+   const fullPathDiagnostics=a.frozenFullActionSequence.map((st,i)=>{
+    const gold=T[i]??null;
+    const option=st.alternatives.find(x=>x.character===gold);
+    return {...st,
+     referenceCharacterOnlyAfterFrozenPrediction:gold,
+     chosenMatchesReference:gold===st.chosenCharacter,
+     correctCharAlreadyInOriginalAlternatives:!!option,
+     referenceRankAmongPreviouslyConsideredAlternatives:option?
+      st.alternatives.indexOf(option)+1:null,
+     pathBlockedAtPosition:gold===st.chosenCharacter?null:
+      option?"RANKING_OR_GLOBAL_SEARCH_CHOSE_WRONG_KNOWN_EDGE":
+       "NEEDED_CHARACTER_NOT_IN_ORIGINAL_TOP_FOUR_AVAILABLE_EDGES",
+     referenceNotUsedForPlanning:true
+    };
+   });
    return {...a,
+    fullFrozenActionTraceAndAfterOnlyComparison:fullPathDiagnostics,
     positionCorrect,postTemplateCorrect,longestCorrectPrefix:prefix,
     answerWholeExact:a.prediction===row.answer,
     terminalShapeExactFirst128:prefix===cap,
