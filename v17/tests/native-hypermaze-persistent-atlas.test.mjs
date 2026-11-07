@@ -106,6 +106,16 @@ test("all observed edits, full explored paths and genuinely missing routes survi
   assert.equal(known.totalOperators,b.observedTransformations.operators.size);
   assert.ok(known.operators.some(op=>used.includes(op.key)&&op.pathsUsedSuccessful>0));
   assert.ok(known.operators.some(op=>op.pathsUsedSuccessful===0));
+  assert.ok(known.operators.some(op=>op.exploredDuringUnsuccessfulSearches>=1),
+   "Original failed search explored actual known operator edges, but atlas forgot them");
+  assert.ok(known.operators.some(op=>op.executedNativeBodySteps>0),
+   "Original body executed real internal learned actions but atlas did not count them");
+  assert.ok(known.operators.some(op=>op.exploredDuringSuccessfulSearches>0));
+  assert.ok(known.operators.every(op=>
+   Number.isSafeInteger(op.blockedByStructuralInvariant)&&
+   Number.isSafeInteger(op.exploredDuringUnsuccessfulSearches)));
+  assert.ok(orig.exploredInFailedSearchesByOperator);
+  assert.ok(orig.executedStepsByOperator);
   m.atlasFlush();
   const exactBytes=fs.readFileSync(file);
   const reloaded=new NativeGoalTextMaze(b,{atlasFile:file,
@@ -114,6 +124,9 @@ test("all observed edits, full explored paths and genuinely missing routes survi
   assert.equal(restored.journalEvents,orig.journalEvents);
   assert.equal(restored.searchesFound,1);
   assert.equal(restored.searchesFailed,2);
+  const counted=reloaded.atlasOperators({limit:250});
+  assert.deepEqual(counted.operators,known.operators,
+   "Atlas must reconstruct exact executed/explored/blocked action counts from journal on restart");
   assert.equal(reloaded.livedTexts,1);
   assert.deepEqual(reloaded.atlasPage({after:5,limit:2}).events,
    m.atlasPage({after:5,limit:2}).events);
