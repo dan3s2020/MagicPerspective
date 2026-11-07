@@ -16,6 +16,7 @@ import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
+import {V40OriginalBrainEvidence} from "../../../research/text-hypermaze/v40-original-brain-evidence.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -220,6 +221,87 @@ const chats = new Map(); let chatId = 0;                                     // 
 const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
+  // V40 OPTIONAL ORIGINAL-BRAIN HUMAN / LEARNED GOAL INFERENCE.
+  // The expected answer/goal may not enter the planner. Exactly the native
+  // saved Brain and native LIVE worker are used, not a simulated response.
+  if(req.method==="POST"&&url==="/v40/answer"){
+    if(req.headers.origin&&req.headers.origin!=="http://"+req.headers.host)
+      return json(res,{error:"Cross-origin native Brain access refused"});
+    const w=Number(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!Number.isSafeInteger(w)||!sl)return json(res,{error:"Choose an existing original Brain slot"});
+    let bytes=0,parts=[],tooBig=false;
+    req.on("data",chunk=>{
+      bytes+=chunk.length;if(bytes>131072){tooBig=true;parts=[];}
+      else if(!tooBig)parts.push(chunk);
+    });
+    req.on("end",()=>{
+      if(tooBig)return json(res,{error:"V40 full question/source context exceeds explicit 128 KiB POST bound"});
+      let data;try{data=JSON.parse(Buffer.concat(parts).toString("utf8"));}
+      catch{return json(res,{error:"Invalid UTF-8 V40 request JSON"});}
+      if(!data||typeof data!=="object"||Array.isArray(data)||
+         ["reference","expected","answer","goal","target","correct"].some(k=>
+           Object.hasOwn(data,k)))
+        return json(res,{error:"Reference answer, hidden goal, target or oracle data must never enter frozen original Brain"});
+      const allowed=data.kind==="human-extractive"||data.kind==="instruction-goal";
+      if(!allowed)return json(res,{error:"Unsupported V40 task kind; no automatic semantic fallback"});
+      const mainText=data.kind==="human-extractive"?data.context:data.source;
+      const mainQuestion=data.kind==="human-extractive"?data.question:data.instruction;
+      if(typeof mainQuestion!=="string"||!mainQuestion.trim()||
+         mainQuestion.length>4096||typeof mainText!=="string"||
+         !mainText.trim()||mainText.length>65536)
+        return json(res,{error:"V40 requires a bounded genuine question and complete observed source"});
+      const request=data.kind==="human-extractive"?
+        {kind:data.kind,question:mainQuestion,context:mainText,
+         weightMode:"average",includeAtlas:data.includeAtlas!==false}:
+        {kind:data.kind,instruction:mainQuestion,source:mainText,
+         allowComposedInstructions:data.allowComposedInstructions===true,
+         maxTokens:Math.min(512,Math.max(1,Number(data.maxTokens)||96))};
+      const logResponse=payload=>{
+        // Preserved original-native saved path. Append all successes and
+        // failures for exact source-backed postmortem; never write gold data.
+        const file=saveOf(sl)+".v40-native-frozen-answer-atlas.jsonl";
+        try{fs.mkdirSync(path.dirname(file),{recursive:true});
+          fs.appendFileSync(file,JSON.stringify({
+            time:new Date().toISOString(),w,
+            originalNativeBrain:true,request,result:payload
+          })+"\n");
+        }catch(err){payload.atlasJournalError=err.message;}
+        return json(res,{w,...payload});
+      };
+      if(sl.wk){
+        const id=++chatId,timer=setTimeout(()=>{
+          chats.delete(id);
+          logResponse({error:"V40 original Brain worker busy; no fabricated result"});
+        },45000);
+        chats.set(id,reply=>{
+          clearTimeout(timer);
+          logResponse(reply.error?{error:reply.error}:{
+            ...reply.result,originalNativeLiveWorker:true
+          });
+        });
+        sl.wk.postMessage({v40FrozenAnswer:{id,request}});
+        return;
+      }
+      const saved=saveOf(sl);
+      if(!fs.existsSync(saved))
+        return logResponse({error:"No saved original V40 Brain or live worker for this slot"});
+      try{
+        const original=Brain.load(saved);
+        if(!original.v40UnifiedEvidence||!original.realEvidencePathMemory)
+          throw Error("No genuine V40 learned evidence in original checkpoint");
+        const integrated=new V40OriginalBrainEvidence(original),
+          before=integrated.qa.memory.updates,
+          result=integrated.answer(request);
+        if(integrated.qa.memory.updates!==before)
+          throw Error("Frozen saved Brain QA inference mutated training");
+        return logResponse({...result,originalSavedBrain:true});
+      }catch(err){return logResponse({error:err.message});}
+    });
+    req.on("error",err=>{
+      if(!res.writableEnded)json(res,{error:"V40 request connection: "+err.message});
+    });
+    return;
+  }
   // V34 native research inspection/typed evidence in the SAME original Brain.
   // Existing training and all previous V17 HTTP routes remain untouched.
   if(url==="/v34/status"||url==="/v34/research"){
