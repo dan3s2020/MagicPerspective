@@ -1,0 +1,27 @@
+name: V17 predictively learned missing state — endpoint versus path history
+on:
+  push:
+    branches:
+      - experiment/V17-LEARN-MISSING-PERSPECTIVE-FROM-ERRORS-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  missing-state:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Research module and test syntax
+        run: |
+          node --check v17/research/text-hypermaze/discover-missing-state.mjs
+          node --check v17/tests/text-discover-missing-state.test.mjs
+      - name: Holdout causal-state experiment, three seeds, negative controls, constant-memory streaming
+        run: node --test v17/tests/text-discover-missing-state.test.mjs
+      - name: Original V17 text-hypermaze experiments and original edit learner remain unchanged
+        run: |
+          node --test v17/tests/text-hypermaze-state-dependent.test.mjs
+          node --test v17/tests/observed-transformations-v17.test.mjs
