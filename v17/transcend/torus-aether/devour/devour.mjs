@@ -26,6 +26,7 @@ const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), 
 // --vram GB (split among the brains), --gpu-util % (the card works, then rests, so its average use is this)
 let gpuSettings = {device: arg("gpu", "off"), worlds: +arg("gpu-worlds", 0), textBatch: +arg("gpu-text-batch", 2), textChunk: +arg("gpu-text-chunk", 128), vram: +arg("vram", 0), util: +arg("gpu-util", 100)};
 const worldsArg = arg("worlds", "text").split(",").map(x => x.trim()).filter(Boolean), mazeEvery = +arg("maze-every", 4000), resume = process.argv.includes("--resume");
+const unifiedWorld = process.argv.includes("--unified-world");
 for (const x of worldsArg) if (!["text", "maze", "transform", "selfcode"].includes(x)) throw Error("unknown world " + x + " (text, maze, transform, selfcode)");
 const BASE = {depth: 1, off: ["R2", "R4"], budEvery: 100, empty: true, maxWires: 32};
 const ARMS = {winner: {...BASE, fold: false}, log: {...BASE, fold: "log"}, event: {...BASE, fold: "event"}, concepts: {...BASE, fold: "blend"}};
@@ -110,6 +111,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     perspective: g?.perspective || t?.perspective || null,
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
+    worldCore: t?.final?t.worldCore:g?.worldCore||t?.worldCore||null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
     language: g?.language || t?.language || null, endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
@@ -126,7 +128,8 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
-    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
+    unifiedWorld}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
@@ -222,6 +225,8 @@ http.createServer((req, res) => {
     if(start&&start.length>500)return json(res,{error:"Starea de pornire este prea lungă"});
     const maxDepth=Math.max(1,Math.min(7,Math.trunc(+(q.get("maxDepth")||4))));
     const localPolicy=q.get("local")!=="off";
+    const useUnified=q.get("unified")!=="off";
+    const compare=q.get("compare")==="1";
     if(!sl.wk){
       const file=saveOf(sl);
       if(!fs.existsSync(file))return json(res,{error:"Nu există un checkpoint pentru acest graf."});
@@ -233,7 +238,23 @@ http.createServer((req, res) => {
         const actualGoal=selfGoal?{required:selfGoal.required,start:selfGoal.start,maxDepth}:
           {required,start,maxDepth};
         return json(res,{...brain.planObservedTransformation(actualGoal,
-          {trace:true,embodied:true,localPolicy}),
+          {trace:true,embodied:true,localPolicy,useUnified}),
+          comparison:compare&&brain.unifiedEnabled?(()=>{
+            const original=brain.planObservedTransformation(actualGoal,
+              {trace:false,embodied:true,localPolicy,useUnified:false});
+            const shared=brain.planObservedTransformation(actualGoal,
+              {trace:false,embodied:true,localPolicy,useUnified:true});
+            return {actuallyCompared:true,sameStartAndGoal:true,
+              withoutShared:{found:original.found,steps:original.steps?.length??0,
+                predicted:original.predicted??null,bodySteps:original.body?.executed??0,
+                bodySuccess:original.body?.success??false},
+              withShared:{found:shared.found,steps:shared.steps?.length??0,
+                predicted:shared.predicted??null,bodySteps:shared.body?.executed??0,
+                bodySuccess:shared.body?.success??false},
+              changedInitialRoute:JSON.stringify(original.initialShape)!==JSON.stringify(shared.initialShape),
+              changedLocalExecution:JSON.stringify(original.body?.frames?.map(x=>x.chosen))!==
+                JSON.stringify(shared.body?.frames?.map(x=>x.chosen)),
+              caution:"Structural internal goal, not independent language correctness"};})():null,
           w:sl.w,fromSave:true,selfProbe:!!selfGoal,selfGoal:selfGoal||null});
       }catch(err){return json(res,{error:err.message});}
     }
@@ -242,7 +263,7 @@ http.createServer((req, res) => {
       chats.delete(id);json(res,{error:"Căutarea reală a depășit 60 secunde"});
     },60000);
     chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
-    sl.wk.postMessage({languageMaze:{id,required,start,maxDepth,localPolicy,auto}});
+    sl.wk.postMessage({languageMaze:{id,required,start,maxDepth,localPolicy,auto,useUnified,compare}});
     return;
   }
   // Native V17: the original Brain constructs a NEW sentence by composing
