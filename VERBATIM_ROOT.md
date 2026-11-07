@@ -1,5 +1,7 @@
 # MAGIC PERSPECTIVE — Verbatim is the binding source, not an optional specification
 
+> **2026-11-07 additional exact user directive:** [V22 full literal no-byte-omission / original maze-to-language BLOCKING regression](./REGRESSION_USER_DIRECTIVE_2026-11-07-V22-NO-SUBSTITUTION.md). Additive source record only. The full historic conversation plus original screenshots/audio remain incomplete; no generated assistant paraphrase may replace them. Main release status remains BLOCKED, issue #25 remains OPEN.
+
 > **URGENT / OPEN / BLOCKING — MP-REG-2026-11-06-001:** The USER explicitly forbids assistant-imposed definitions and unauthorized substitute architectures. Read [AGENTS.md](./AGENTS.md), [exact corrective user message](./verbatim/2026-11-06-USER-REGRESSION-NO-REDEFINITION.md) and [regression record](./REGRESSION_USER_DIRECTIVE_2026-11-06.md) ([Issue #25](https://github.com/dan3s2020/MagicPerspective/issues/25)). A 32D latent/token predictor is not the same as the original 2D maze mechanism for predicting the solution shape. Never label such a substitution as fulfillment. Keep full Verbatim gate BLOCKED until its real requirements are verified.
 
 
