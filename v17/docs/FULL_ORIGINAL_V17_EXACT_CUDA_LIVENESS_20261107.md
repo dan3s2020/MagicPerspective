@@ -49,3 +49,9 @@ Do not reset the UI; original .v8 checkpoint format is unchanged, and the inheri
 - python reference uses actual Torch CPU (no claim to CUDA hardware), native Node-to-Python tests use actual NumPy code rather than fake progress.
 
 Full hosted CI: .github/workflows/v17-exact-cuda-full-context.yml.
+## Additional frozen-evaluation liveness — SAME mathematical test
+The old report() on the worker was entirely synchronous. On reaching --Every it performed the full unseen H test, including Original AligningGraph.readFrozen() and original C/graph/field/mask calculations, followed by 30 unseen maze episodes and 24 unseen transform episodes, then saved the whole Brain. The original UI could show a very stale worker timestamp during this calculation even when the algorithm was still running.
+
+New AligningGraph.readFrozenAsync() and Brain.testAsync() run the exact same steps and calculate all original heldout characters, with cooperative yield after each 128 actual observed comparisons, so a heartbeat and UI update is possible during evaluation. The original synchronous methods remain unchanged for other callers. The worker's report() awaits the full evaluation instead of omitting or approximating it, and records the actual current phase. A strict regression compares every original metric with async results and checks frozen evaluation does not update Brain trust or counters.
+
+Every=1,000,000 reduces the frequency of this full (still expensive) evaluation; SaveEveryChars=200,000 saves native .v8 checkpoints independently at completed batch boundaries, without losing testability or restarting the original trainer. The exact timing is exposed; the 4GB CUDA hardware result still requires verification.
