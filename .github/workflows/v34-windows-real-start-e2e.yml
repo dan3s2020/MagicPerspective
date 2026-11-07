@@ -29,6 +29,8 @@ jobs:
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           node v17/tests/v34-windows-real-brain-fixture.mjs $original
           if ($LASTEXITCODE -ne 0) { throw 'Original V17 checkpoint training failed' }
+          node v17/tests/v34-windows-standalone-character-probe.mjs (Join-Path (Join-Path $original 'brains') 'brain-0-winner.v8')
+          if ($LASTEXITCODE -ne 0) { throw 'Native character-index probe independently failed' }
           $env:V34_E2E_ROOT=$root
           @'
           from pathlib import Path
