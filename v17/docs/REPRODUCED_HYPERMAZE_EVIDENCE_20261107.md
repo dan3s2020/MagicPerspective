@@ -60,3 +60,35 @@ Learned-axes CI log: `LATENT_AXIS_RECOVERY` identified six causal coordinates am
 **Integrity decision:** no release command; no merge to `main`; no source replacement; no modification of original UI, trained checkpoints or CUDA installation. First develop a *source-identical, goal-conditioned, learned-transform graph inside the ONE native Brain* on a separate branch with long-answer heldout goal success, causal geometry/noise ablations, actual action physics and full V17 UI/CUDA throughput regression. Keep any failing test visible, never force 100% by inserting a known target answer or by reducing the task.
 
 **Traceability:** all four test URLs point to the exact controlled code SHA and re-run attempt 2. The complete GitHub job logs, not a prose interpretation, are the authority for the measured values. Full historical VERBATIM and all user machine checkpoint bytes remain incomplete/unverified.
+
+## Additional direct in-session execution of actual repository source (independent of GitHub CI)
+
+For this check, I retrieved the exact ORIGINAL JavaScript source blobs via the connected GitHub source API and evaluated them **unmodified** inside an isolated JavaScript V8 runtime in the current session (not GitHub Actions, not an independent paraphrased implementation). The source module imports/exports were wrapped only by the execution harness to link the modules. No native Brain weights, original repository file or user checkpoint was modified.
+
+### Actual 2D trained motor versus generalized observed adjacency (fix branch)
+
+Sources:
+- `v17/transcend/torus-aether/worlds/labyrinth.mjs` blob SHA `96877ee6537c9ceb34239fc20f85909d0e3237fd`;
+- `v17/transcend/torus-aether/worlds/exercise.mjs` blob SHA `7d2f8c4b536af00b7b66ad984c2b9c7bf563007e`.
+
+Actual `new Discoverer(11)` with real `playExercise`, trained for **25** lived training episodes before the measured attraction/conductance condition held. It discovered `attract(KIND.target)=0.9565217391304348`, `conduct(KIND.floor)=0.996309963099631`, and `self()=3`. Across **42 distinct unseen** generated mazes of sizes 7, 9 and 11, `D.shape(ret,n,start)` and `D.shapeGraph(kinds,observedEdges,start,{details:true})` returned **identical full ordered action paths, 42/42**. Both emitted nonempty paths in 42/42. This is exactly **algorithm parity**, not measured first-move optimality or unrestricted-language success. The test harness preserved the original `labyrinth.mjs` and `exercise.mjs` logic, but does not prove PowerShell or CUDA behavior.
+
+### V22 real original text-action model independently executed in-session
+
+Sources from frozen V22:
+- `labyrinth.mjs` SHA `96877ee6537c9ceb34239fc20f85909d0e3237fd`
+- `exercise.mjs` SHA `739d6c5cc36e8d43b83dc66f499c5140aca414d3`
+- `language-maze/shape-topology.mjs` SHA `cc080d463065de7edbd16fd94285de42ae2e531f`
+- `worlds/learned-cognitive-map.mjs` SHA `b32c6d9a8329b10fdf7a2f772793d0e29c466820`.
+
+The actual V22 `LearnedCognitiveMap` absorbed `She is happy.`, `She is tired.`, `He is tired.`, `He is calm.`, inducing six observed edit rules. Its unmodified `formSolution` returned `found=true` for **50/50 repeated checks** alternating two explicitly constrained slot goals. These are **repeated checks of just two goal types, NOT 50 different unseen semantic tests**, NOT natural-language full-answer accuracy.
+
+Direct input-length acceptance tests against the unmodified `observeSentence` method showed:
+- 75 tokens: accepted;
+- 96 tokens: accepted;
+- **97 tokens: rejected**;
+- **200 tokens: rejected**.
+
+The same source checks `start.length>96` in its `buildWorld` entry point. Thus the tested V22 action-world planner **currently refuses larger initial text states by hard-coded validation**, irrespective of GPU speed. This is a concrete, reproducible blocker for the user's long-text requirement. Simply raising the constant without making the graph memory, observations and learned action topology scale would not establish megabyte-sized answer solving.
+
+**Current decision:** source-level 2D parity and structured text-action reuse demonstrated; whole arbitrary long-text 100% first-answer architecture NOT YET VERIFIED. No user launch command released. These new measurements do not authorize substituting a next-character predictor.
