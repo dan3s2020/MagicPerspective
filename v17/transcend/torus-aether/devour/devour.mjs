@@ -63,7 +63,7 @@ console.log(`${workers} graphs devouring at once · arms ${arms.map(a => a.name)
 const slots = [], last = new Map(), history = new Map(), graphs = new Map(), telemetry = new Map(), sharedJobs = new Map();
 const realTextStreams = new Map(); // bounded real observed CUDA predictions, not generated demo
 const streamFor = w => {
-  if (!realTextStreams.has(w)) realTextStreams.set(w, {seq: 0, events: [], phase: "pregătire", phaseAt: Date.now()});
+  if (!realTextStreams.has(w)) realTextStreams.set(w, {seq: 0, events: [], goalSeq:0, goalEvents:[], phase: "pregătire", phaseAt: Date.now()});
   return realTextStreams.get(w);
 }; let started = new Date().toISOString(), stopping = false;
 const root = path.resolve(here, "../../..");
@@ -114,6 +114,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     constructedPaths: g?.constructedPaths || t?.constructedPaths || null,
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     nativeGoalField: t?.final ? t.nativeGoalField : g?.nativeGoalField || t?.nativeGoalField || null,
+    nativeGoalHeldout: t?.nativeGoalHeldout || null,goalTraining,
     goalHyperpath: t?.final ? t.goalHyperpath : g?.goalHyperpath || t?.goalHyperpath || null,
     worldCore: t?.final?t.worldCore:g?.worldCore||t?.worldCore||null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
@@ -139,6 +140,13 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     if (gen !== sl.gen) return;
     if (m.type === "phase") {
       const q = streamFor(sl.w); q.phase = String(m.phase || "necunoscut"); q.phaseAt = Date.now();
+      return;
+    }
+    if(m.type==="goal-live"){
+      const q=streamFor(sl.w);
+      q.goalEvents.push({...m,seq:++q.goalSeq,at:Date.now()});
+      if(q.goalEvents.length>32)q.goalEvents.splice(0,q.goalEvents.length-32);
+      q.phase="GOAL: inferență blind pe întrebări reale + învățare";q.phaseAt=Date.now();
       return;
     }
     if (m.type === "text-live") {
@@ -409,6 +417,14 @@ http.createServer((req, res) => {
       shared:graphs.get(w)?.shared||null,
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null});
+  }
+  if(url==="/goal-stream"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl)return json(res,{error:"Graph not found",w});
+    const g=streamFor(w),after=Math.max(0,+(q.get("after")||0));
+    return json(res,{w,goalTraining,sequence:g.goalSeq,
+      events:g.goalEvents.filter(x=>x.seq>after).slice(-32),
+      actualFullAnswersNotSentWhenLong:true});
   }
   if (url === "/text-stream") {
     const w = +(q.get("w") || 0), sl = slots.find(x => x.w === w);
