@@ -68,11 +68,8 @@ function features(question,tokens,sentence,entry) {
  const bow=q.content,bridge=relationBefore(tokens,i,bow);
  const win=tokens.slice(Math.max(0,i-12),Math.min(tokens.length,j+13)).filter(t=>t.word);
  const near=win.filter(t=>bow.has(t.v)).length;
- let sentMatches=0,sentLength=0;
- for(let p=0;p<tokens.length;p++){
-  if(sentence[p]!==sid)continue;
-  if(tokens[p].word){sentLength++;if(bow.has(tokens[p].v))sentMatches++;}
- }
+ const sentenceStat=q.sentenceStats.get(sid)||{match:0,length:0,first:i};
+ const sentMatches=sentenceStat.match,sentLength=sentenceStat.length;
  const st=shapeLabel(text),len=j-i+1,cap=/^\p{Lu}/u.test(word.text);
  const inside=spanVal.filter(v=>bow.has(v)).length;
  const left=before.at(-1)?.v??"BEGIN",left2=before.at(-2)?.v??"BEGIN";
@@ -106,7 +103,7 @@ function features(question,tokens,sentence,entry) {
  fAdd(arr,"WH_ANCHOR_BRIDGE="+q.wh+"|"+bridge.anchor+"|"+relName);
  fAdd(arr,"WH_MATCH_NEXT="+q.wh+"|"+(bow.has(right)?"yes":"no"));
  fAdd(arr,"WH_MATCH_LEFT="+q.wh+"|"+(bow.has(left)?"yes":"no"));
- fAdd(arr,"SENT_FIRST="+(tokens.findIndex((t,z)=>sentence[z]===sid)===i));
+ fAdd(arr,"SENT_FIRST="+(sentenceStat.first===i));
  fAdd(arr,"FIRST_TOK="+roundBin(i/30,9));
  if(has(spanVal,bow))fAdd(arr,"CONTAINS_QUESTION_WORD");
  if(/^[\p{Lu}]/u.test(word.text)&&span.length===1)fAdd(arr,"PROPER_ONE");
@@ -146,6 +143,13 @@ function buildExamples(sample) {
  if(typeof question!=="string"||typeof context!=="string"||!question.trim()||!context.trim())
   throw Error("Original full source question and context required");
  const q=questionState(question),c=allCandidates(context);
+ q.sentenceStats=new Map();
+ for(let i=0;i<c.tokens.length;i++){
+  const token=c.tokens[i],sid=c.sentence[i];
+  let stat=q.sentenceStats.get(sid);
+  if(!stat){stat={match:0,length:0,first:i};q.sentenceStats.set(sid,stat);}
+  if(token.word){stat.length++;stat.match+=+(q.content.has(token.v));}
+ }
  return {q,...c};
 }
 export class NativeRealTextEvidencePaths {
