@@ -20,14 +20,14 @@ export async function inspectOriginalCuda({python=GPU_PY,run=runFile}={}){
     const {stdout}=await run(python,["-c",
       "import sys, json, torch; print(json.dumps({'python':sys.executable,'torch':torch.__version__,'cuda':torch.version.cuda,'available':bool(torch.cuda.is_available()),'device':torch.cuda.get_device_name(0) if torch.cuda.is_available() else None}))"
     ],{timeout:15000,windowsHide:true,maxBuffer:256*1024});
-    const data=JSON.parse(stdout.trim().split(/\\r?\\n/).at(-1));
+    const data=JSON.parse(stdout.trim().split(/\r?\n/).at(-1));
     return {...data,ok:!!data.available&&!!data.cuda,
       python,reason:data.available&&data.cuda?null:
       "PyTorch CUDA is not usable in the ORIGINAL dedicated V17 Python environment"};
   }catch(e){return {ok:false,python,reason:String(e.message||e).slice(0,400)};}
 }
 export function isCudaStartupFailure(graph){
-  return /cuda|torch\\.cuda|GPU process|PyTorch|python|OCTOPUS_PY/i.test(
+  return /cuda|torch\.cuda|GPU process|PyTorch|python|OCTOPUS_PY/i.test(
     String(graph?.error||graph?.gpu?.error||""))&&graph?.status==="eroare";
 }
 const FILES={
