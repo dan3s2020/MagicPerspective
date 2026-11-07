@@ -354,7 +354,7 @@ export class NativeFullPathAtlasView{
     this.logRecent[kind].push(...summary);
     this.logRecent[kind]=this.logRecent[kind].slice(-24);
     setText("atlasLogText","JURNAL "+(kind==="xd"?"xD":"TEXT")+
-      " · cursor real în fișier: "+this.logOffset[kind]+
+      " · byte cursor="+this.logOffset[kind]+
       " / "+(result.totalBytes??"—")+" bytes"+
       " · "+this.logRecent[kind].length+" episoade în fereastra UI"+
       " · nicio înlocuire a fișierului de pe disc\n"+
