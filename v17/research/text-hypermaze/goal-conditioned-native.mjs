@@ -276,9 +276,17 @@ export class NativeGoalTextMaze {
     goalReached:reached,causalEffectFrom:"original learned operator",
     externalSemanticOracleUsed:false});
    text=after;
-   // Recompute only from the new observed state; same original propagation.
-   route=this.plan({start:text,required:goal});
    if(reached)break;
+   if(!matched){
+    // Only a REAL departure from the frozen global solution shape warrants
+    // a new search. Preserve the original plan when actual effects agree.
+    // Previous code rebuilt the ENTIRE long-text hypermaze after EVERY
+    // successful body action, which stalled large corpus evaluations.
+    route=this.plan({start:text,required:goal});
+   }else{
+    route={...route,start:text,actions:route.actions.slice(1),
+      initialShape:route.initialShape?.slice(1)||[text]};
+   }
   }
   const endTokens=tokenizeObservation(text);
   return {attempted:true,firstShape:plan.initialShape.slice(),
