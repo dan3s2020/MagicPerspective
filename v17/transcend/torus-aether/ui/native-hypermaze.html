@@ -152,6 +152,61 @@ footer{color:#93abbf;font-size:11px;line-height:1.7;padding:16px 0 0}
    <pre id="cumEvidence" aria-live="polite">Aștept observațiile originale ale organismului. Dacă o conexiune lipsește, sistemul va indica lipsa ei, nu o va inventa.</pre>
   </div>
  </section>
+ <section class="panel" id="allPathsAtlas" style="margin-bottom:14px">
+  <div class="panelHead"><h2>ATLAS · toate căile și transformările păstrate de organism</h2>
+   <small>Același Brain V17 · dovezi istorice, trasee găsite/eșuate, ce a lipsit, ce a blocat designul</small></div>
+  <div class="panelBody">
+   <div class="cards" style="margin-bottom:10px">
+    <div class="card"><label>Încercări totale</label><strong id="atlasAttempts">—</strong></div>
+    <div class="card"><label>Căi găsite</label><strong id="atlasFound">—</strong></div>
+    <div class="card"><label>Căi negăsite</label><strong id="atlasFailed">—</strong></div>
+    <div class="card"><label>Conexiuni fizic valide în memorie</label><strong id="atlasPhysical">—</strong></div>
+    <div class="card"><label>Ipoteze de drum</label><strong id="atlasGuesses">—</strong></div>
+    <div class="card"><label>Ancore textuale comune</label><strong id="atlasAnchors">—</strong></div>
+   </div>
+   <p class="muted">Atlasul conține <strong>toate datele reținute în memoria limitată a Brain-ului</strong>, disponibile pe pagini, nu toate căile matematice posibile. Conexiunile neobservate nu sunt inventate; legăturile textuale și ipotezele nu devin automat coridoare fizice. Încercările vechi pot fi scoase din jurnal la limita de retenție; numărul lor rămâne contorizat.</p>
+   <div class="axisbar">
+    <label for="atlasView">Ce vrei să vezi?</label>
+    <select id="atlasView">
+     <option value="attempts">Toate traseele încercate</option>
+     <option value="diagnostics">De ce NU a găsit traseul</option>
+     <option value="nodes">Toate stările cunoscute</option>
+     <option value="edges">Muchii: acțiuni, pereți și ipoteze</option>
+     <option value="motifs">Ancore reutilizabile din alte texte</option>
+     <option value="motifEdges">Transformări candidate dintre fragmente de text</option>
+    </select>
+    <label for="atlasFilter">Filtru</label>
+    <select id="atlasFilter">
+     <option value="all">Toate</option>
+     <option value="found">Căi găsite</option>
+     <option value="failed">Căi eșuate</option>
+     <option value="verified">Verificate</option>
+     <option value="proposed">Propuse, neverificate</option>
+     <option value="blocked">Blocate</option>
+     <option value="ambiguous">Rezultate contradictorii</option>
+    </select>
+    <label for="atlasSearch">Caută</label>
+    <input id="atlasSearch" placeholder="Stare, transformare, motiv, episod, eșec..." maxlength="180" autocomplete="off"/>
+   </div>
+   <div class="controls" style="margin-top:9px">
+    <button id="atlasLoad" class="primary">Încarcă atlasul real</button>
+    <button id="atlasPrev" disabled>◀ Pagina anterioară</button>
+    <button id="atlasNext" disabled>Pagina următoare ▶</button>
+    <button id="atlasExport">Exportă întregul atlas reținut în JSON</button>
+    <span id="atlasPage" class="muted">Nicio pagină încărcată</span>
+   </div>
+   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:9px">
+    <div><label>Ce a găsit vs. ce nu a găsit</label>
+     <pre id="atlasComparison" aria-live="polite">Aștept rezultatele și motivele reale din Brain.</pre></div>
+    <div><label>De ce nu putea merge pe acolo</label>
+     <pre id="atlasMissing" aria-live="polite">Pereți confirmați, axe indisponibile, limite ale grafului, stare ascunsă, dovezi lipsă.</pre></div>
+   </div>
+   <label>Intrări reale, cu proveniență și ID</label>
+   <div id="atlasRows" style="max-height:390px;overflow:auto;border:1px solid var(--line, #334455);border-radius:8px" aria-live="polite">Nu există încă o pagină.</div>
+   <label>Traseul selectat: formă, fiecare acțiune, suport, sursă și motivul eșecului</label>
+   <pre id="atlasSelected" aria-live="polite">Selectează o încercare din atlas. Graful original 5D de mai jos poate afișa traseul istoric reținut, dacă acesta există.</pre>
+  </div>
+ </section>
  <div class="rowmain">
   <section class="panel">
    <div class="panelHead"><h2>Topologie reală · proiecție 5D</h2><div class="legend"><span style="--c:#f0c87a">Forma globală</span><span style="--c:#66cce7">Execuție</span><span style="--c:#67deab">Obiectiv</span><span style="--c:#f0809a">Abatere</span></div></div>
