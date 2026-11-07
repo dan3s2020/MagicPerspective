@@ -45,10 +45,11 @@ const extractResults=output=>{
  }
  return entries.slice(-60);
 };
-export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1"}={}){
+export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1",archiveDir=null}={}){
  if(!Number.isInteger(+port)||+port<0||+port>65535||
     !Number.isInteger(+backendPort)||+backendPort<1||+backendPort>65535)throw Error("Invalid ports");
  const target="http://127.0.0.1:"+backendPort;
+ if(archiveDir)fs.mkdirSync(archiveDir,{recursive:true});
  const state={job:null,last:[],seq:0};
  const staticMap=new Map([
   ["/","magic-studio.html"],["/magic-studio.html","magic-studio.html"],
@@ -96,19 +97,30 @@ export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1"}=
      const job={id:++state.seq,kind,label:spec.label,status:"running",started:Date.now(),
        ended:null,exitCode:null,stdout:"",stderr:"",metrics:[],error:null,source:spec.file};
      state.job=job;
+     if(archiveDir){
+       const basename=Date.now()+"-"+job.id+"-"+kind;
+       job.stdoutFile=path.join(archiveDir,basename+".out.log");
+       job.stderrFile=path.join(archiveDir,basename+".err.log");
+       fs.writeFileSync(job.stdoutFile,"");fs.writeFileSync(job.stderrFile,"");
+     }
      const child=spawn(process.execPath,["--test",file],{
        cwd:v17,windowsHide:true,stdio:["ignore","pipe","pipe"],
        env:{...process.env,NODE_TEST_CONTEXT:undefined,FORCE_COLOR:"0"}
      });
      const timeout=setTimeout(()=>{if(job.status==="running"){job.error="Research time limit exceeded";child.kill();}},120000);
-     child.stdout.on("data",buf=>{job.stdout=append(job.stdout,buf);job.metrics=extractResults(job.stdout);});
-     child.stderr.on("data",buf=>job.stderr=append(job.stderr,buf,150000));
+     child.stdout.on("data",buf=>{if(job.stdoutFile)fs.appendFileSync(job.stdoutFile,buf);job.stdout=append(job.stdout,buf);job.metrics=extractResults(job.stdout);});
+     child.stderr.on("data",buf=>{if(job.stderrFile)fs.appendFileSync(job.stderrFile,buf);job.stderr=append(job.stderr,buf,150000);});
      child.on("error",err=>{job.error=err.message;});
      child.on("close",code=>{
        clearTimeout(timeout);job.exitCode=code;job.ended=Date.now();
        job.metrics=extractResults(job.stdout);
        job.status=code===0&&!job.error?"passed":"failed";
        state.last.unshift({...job});state.last=state.last.slice(0,8);
+       if(archiveDir){
+         const record={id:job.id,kind,label:job.label,status:job.status,started:job.started,ended:job.ended,
+           exitCode:job.exitCode,error:job.error,metrics:job.metrics,stdoutFile:job.stdoutFile,stderrFile:job.stderrFile};
+         fs.appendFileSync(path.join(archiveDir,"research-index.jsonl"),JSON.stringify(record)+"\n");
+       }
      });
      return json(res,{ok:true,id:job.id,status:job.status,label:job.label});
    }
@@ -139,7 +151,8 @@ export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1"}=
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const port=+(process.argv[2]||8872),backendPort=+(process.argv[3]||8871);
- createMagicStudio({port,backendPort}).start().then(()=>{
+ const archiveDir=process.argv[4]?path.resolve(process.argv[4]):null;
+ createMagicStudio({port,backendPort,archiveDir}).start().then(()=>{
    console.log("MAGIC V17 STUDIO: http://127.0.0.1:"+port+"/");
    console.log("Original native V17: http://127.0.0.1:"+backendPort+"/");
    console.log("REAL training only; experimental tests are independently labeled.");
