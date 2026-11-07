@@ -62,7 +62,7 @@ test("V24: genuine streaming, freeze-before-observation, checkpoint resume and h
  const snap=JSON.parse(await fs.readFile(trainer.checkpoint,"utf8"));
  assert.equal(snap.progress.cursor,7);
  assert.equal(snap.sourceFingerprint,src.fingerprint);
- await assert.rejects(new RealTrainer({source:src,out,maxRecords:40}).initialize(),/Existing checkpoint/);
+ await assert.rejects(new RealTrainer({source:src,out,maxRecords:40}).initialize(),/Existing V24 checkpoint/);
  const second=await new RealTrainer({source:src,out,maxRecords:40,saveEvery:2,onlineEvery:1,resume:true}).initialize();
  assert.equal(second.progress.cursor,7);
  second.start();await second.loop;
