@@ -185,6 +185,45 @@ export class Brain {
       frozen:true,actionsLearned:this.textGoal.transitions,
       lexicalExamples:this.textGoal.claims,sourceReliabilityExamples:this.textGoal.reliabilitySeen};
   }
+  // The ORIGINAL organism-owned NoiseAgency chooses a genuine intervention
+  // into the goal-conditioned 4D plan. Only copied internal beliefs change;
+  // hidden world physics, observed texts and learned weights are untouched.
+  // A frozen examination MUST NOT call observeTextWorldOutcome(...,train=true).
+  planTextWorldWithNoise(document,start,goal,{allowNoise=true}={}) {
+    const base=this.predictTextWorldShape(document,start,goal);
+    if(!allowNoise||!this.noiseAgent)return {...base,noiseDecision:null,noiseApplied:false};
+    const decision=this.noiseAgent.decide({
+      domain:"text",known:this.textGoal.transitions>=32,planned:!!base.shape
+    });
+    const internalMap=base.map.slice();
+    let perturbed=0;
+    if(decision.site==="perception"&&base.conflicts.length){
+      const available=base.conflicts.filter(p=>p!==start&&p!==goal);
+      const n=Math.min(available.length,Math.max(1,Math.ceil(available.length*decision.strength*.08)));
+      for(let i=0;i<n;i++){
+        const j=this.noiseAgent.int(available.length);
+        const p=available.splice(j,1)[0];
+        internalMap[p]^=1;perturbed++;
+      }
+    }
+    const noiseSeed=decision.site==="imagination"
+      ? 1+this.noiseAgent.int(0x7fffffff):0;
+    const shape=this.textGoal.path(start,goal,internalMap,{seed:noiseSeed});
+    return {...base,map:internalMap,shape,initialActions:shape?.map(x=>x.action)||[],
+      noiseDecision:decision,noiseApplied:perturbed>0||noiseSeed>0,
+      noisePerturbedCells:perturbed,noiseImaginationSeed:noiseSeed,
+      noisePolicyOwnedByOriginalBrain:true};
+  }
+  observeTextWorldOutcome(decision,before,after,solved,{train=true}={}) {
+    // Real physical before/after; NO ideal path or hidden map is accepted.
+    if(!train)return {trained:false};
+    if(!this.noiseAgent)throw Error("Enable the original NoiseAgency first");
+    if(!Number.isInteger(before)||!Number.isInteger(after))
+      throw Error("Observed before/after world states required");
+    return this.noiseAgent.learn(decision,{
+      before:[before],after:[after],solved:!!solved
+    });
+  }
   // what the brain expects next, after everything it has lived (the graph's own distribution over the next symbol)
   predict(past = this.past) { const i = past.length; return this.chain.play(this.e, this.ctxOf(past, i), this.histOf(past, i)).out; }
   // the shape of the solution: it writes its next K moves ahead, imagining also what it will perceive after each one,
