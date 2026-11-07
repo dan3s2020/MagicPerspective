@@ -65,7 +65,8 @@ function textOf(entry){
   return "#"+entry.seq+" · "+(entry.kind||"operator")+
    " · "+(entry.from||"∅")+" → "+(entry.to||"∅");
  if(entry.key)return entry.kind+" · "+(entry.from||"∅")+" → "+(entry.to||"∅")+
-  " · folosit în "+entry.pathsUsedSuccessful+" reușite";
+  " · folosit în "+entry.pathsUsedSuccessful+" rute reușite · explorat în "+
+  entry.exploredDuringUnsuccessfulSearches+" căutări nereușite";
  return "#"+(entry.seq||"?")+" · "+entry.type;
 }
 function detailOf(entry){
@@ -96,9 +97,13 @@ function diagnostic(entry){
  if(entry.type!=="search"){
   el.textContent=entry.key?
    "Operator din memoria originală. "+
-   "Folosit în rute reușite: "+fmt(entry.pathsUsedSuccessful)+
-   "\nFolosit în rute nereușite: "+fmt(entry.pathsUsedUnsuccessful)+
-   "\nExemple originale: "+JSON.stringify(entry.supportingExamples||[]):
+   "Pe trasee reușite: "+fmt(entry.pathsUsedSuccessful)+
+   "\nExecutat efectiv de corpul V17: "+fmt(entry.executedNativeBodySteps)+
+   "\nExplorat în căutări nereușite: "+fmt(entry.exploredDuringUnsuccessfulSearches)+
+   "\nExplorat în căutări reușite: "+fmt(entry.exploredDuringSuccessfulSearches)+
+   "\nBlocat de invariante structurale: "+fmt(entry.blockedByStructuralInvariant)+
+   "\nExplorat ≠ executat."+
+   "\nDovezi originale: "+JSON.stringify(entry.supportingExamples||[]):
    "Acest eveniment este dovadă observată, nu o căutare cu o țintă.";
   return;
  }
@@ -120,6 +125,9 @@ function diagnostic(entry){
   "\nLimită de adâncime: "+String(!!d.depthBudgetExceeded)+
   "\nRestricții structurale: "+fmt(d.unresolvedEdges)+
   "\nCapete fără continuări: "+fmt(d.deadEnds)+
+  "\nRestricții de design și memorie: "+JSON.stringify(d.designRestrictions||{},null,2)+
+  "\nOperatori globali cunoscuți, inaccesibili în acest graf: "+fmt(d.relevantOperatorsUnavailableFromExploredStates)+
+  "\nExemple: "+JSON.stringify(d.sampleUnavailableOperators||[],null,2)+
   "\nNu putem deduce «imposibil» dintr-o căutare trunchiată.";
 }
 function select(entry){
