@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective · Living Devour Studio</title>
+<link rel="stylesheet" href="/magic-studio.css">
+<script src="/magic-studio.js" type="module"></script>
+</head>
+<body>
+<div class="ambient a1" aria-hidden="true"></div><div class="ambient a2" aria-hidden="true"></div>
+<div class="shell">
+<aside class="sidebar">
+  <a class="brand" href="#observator" aria-label="MagicPerspective studio">
+    <span class="brand-glyph">✧</span><span><b>MAGIC<span class="brand-bright">PERSPECTIVE</span></b><small>V17 / LIVING DEVOUR STUDIO</small></span>
+  </a>
+  <div class="side-label">NAVIGAȚIE</div>
+  <nav aria-label="Secțiuni">
+    <button class="nav active" data-view="observator"><span class="nav-mark">◈</span> Observator live</button>
+    <button class="nav" data-view="trasee"><span class="nav-mark">⌁</span> Trasee &amp; soluții</button>
+    <button class="nav" data-view="research"><span class="nav-mark">✧</span> Laboratorul descoperirilor</button>
+  </nav>
+  <div class="side-label">CREIERE REALE <span id="brainCount">0</span></div>
+  <div id="brainList" class="brain-list" aria-live="polite">
+    <span class="muted small">Se conectează la motor...</span>
+  </div>
+  <div class="sidebar-foot">
+    <div id="connectionDot" class="connection"><i></i><span id="connectionStatus">Conectare...</span></div>
+    <div class="small muted">Backend nativ V17 • Nu este o simulare</div>
+    <a id="originalUi" target="_blank" rel="noopener">Interfața originală ↗</a>
+  </div>
+</aside>
+
+<main class="main">
+<header class="top">
+ <div>
+   <div class="eyebrow">LIVING OBSERVATORY <span class="sep">/</span> <span id="snapshotTime">fără snapshot</span></div>
+   <h1>Devour the <em>unknown.</em></h1>
+   <p class="intro">Un creier real. Lumi diferite. Predicții, erori, transformări și evoluție măsurată.</p>
+ </div>
+ <div class="top-actions">
+   <button id="startAll" class="primary">▶ Start training</button>
+   <button id="pauseAll" class="soft">Ⅱ Pauză</button>
+   <button id="saveAll" class="soft">↧ Save</button>
+ </div>
+</header>
+
+<div id="feedback" class="feedback" role="status" aria-live="polite">Aștept date reale de la antrenarea V17.</div>
+
+<section class="control-shelf panel" aria-label="Control antrenare">
+ <div class="shelf-group">
+  <div class="shelf-title">01 <span>ALEGE LUMILE DE DEVORAT</span></div>
+  <div class="world-picks" id="worldPicks">
+   <label class="world-pill"><input name="world" type="checkbox" value="text" checked><span>✒ Text</span></label>
+   <label class="world-pill"><input name="world" type="checkbox" value="maze" checked><span>◈ Labirinte</span></label>
+   <label class="world-pill"><input name="world" type="checkbox" value="transform" checked><span>⟡ Transformări</span></label>
+   <label class="world-pill"><input name="world" type="checkbox" value="selfcode"><span>⌘ Self-code</span></label>
+  </div>
+ </div>
+ <div class="shelf-group new-brain">
+  <div class="shelf-title">02 <span>CREIER NOU, ACELEAȘI REGULI V17</span></div>
+  <div class="inline-controls">
+   <label class="sr-only" for="arm">Tip de creier</label>
+   <select id="arm"><option value="stable+many">stable+many</option><option value="winner">winner</option><option value="stable+grow">stable+grow</option><option value="many">many</option><option value="grow">grow</option><option value="log">log</option><option value="event">event</option><option value="concepts">concepts</option></select>
+   <button class="accent" id="addBrain">+ Creează &amp; antrenează</button>
+  </div>
+ </div>
+</section>
+
+<section id="observator" class="view active" aria-label="Observator live">
+ <div class="stats">
+  <div class="stat panel"><div class="stat-label">CARACTERE TRĂITE</div><strong id="metricChars">—</strong><small id="metricSpeed">viteză —</small></div>
+  <div class="stat panel"><div class="stat-label">NODURI / LEGĂTURI</div><strong id="metricNodes">—</strong><small id="metricEdges">— conexiuni</small></div>
+  <div class="stat panel"><div class="stat-label">TEXT NEVĂZUT</div><strong id="metricAligned">—</strong><small id="metricBaseline">original / alternative</small></div>
+  <div class="stat panel"><div class="stat-label">LABIRINTE NEVĂZUTE</div><strong id="metricMaze">—</strong><small id="metricMazeSub">test: —</small></div>
+  <div class="stat panel"><div class="stat-label">OPERATORI ÎNVĂȚAȚI</div><strong id="metricOps">—</strong><small id="metricOpsSub">relații observate</small></div>
+  <div class="stat panel"><div class="stat-label">DISPOZITIV</div><strong id="metricDevice">—</strong><small id="metricVram">CUDA —</small></div>
+ </div>
+
+ <div class="stage-grid">
+  <div class="stage panel">
+   <div class="panel-heading"><div><div class="section-kicker">MĂSURAT DIN NODURI ȘI CONEXIUNI</div><h2>Graful organismului <span class="shine">✧</span></h2></div>
+    <div class="stage-actions"><button class="mini selected" data-layer="all">Toate</button><button class="mini" data-layer="sym">Simboluri</button><button class="mini" data-layer="A">Percepții</button><button class="mini" data-layer="C">Perspective</button></div>
+   </div>
+   <div class="graph-area">
+    <canvas id="graphCanvas" aria-label="Graful real al organismului, cu noduri și legături din antrenare"></canvas>
+    <div class="graph-floating top-left"><span class="live-dot"></span> <span id="graphCaption">WAITING FOR NATIVE GRAPH</span></div>
+    <div class="graph-floating bottom-left">Proiecție 5D pentru simboluri; layout determinist pentru alte noduri. Numai legături observate.</div>
+    <div class="graph-floating bottom-right"><span id="graphCount">0 noduri</span> · <span id="graphLinkCount">0 legături</span></div>
+   </div>
+   <div class="graph-bottom">
+    <div><b id="selectedNode">Selectează un nod din graf</b><span id="nodeDescription">Vezi tipul, activarea, istoricul și conexiunile măsurate.</span></div>
+    <label class="zoom-label" for="perspectiveSlider">PERSPECTIVĂ <input type="range" min="0" max="100" value="25" id="perspectiveSlider"></label>
+   </div>
+  </div>
+
+  <div class="inspector panel">
+   <div class="panel-heading"><div><div class="section-kicker">UN SINGUR CREIER SELECTAT</div><h2>Control &amp; senzori</h2></div></div>
+   <label class="field-label" for="selectedBrain">CREIER OBSERVAT</label>
+   <select id="selectedBrain" class="wide"><option value="">Aștept...</option></select>
+   <div class="button-row">
+    <button id="startSelected" class="accent">▶ Start</button>
+    <button id="pauseSelected" class="soft">Ⅱ Pause</button>
+    <button id="saveSelected" class="soft">↧ Save</button>
+   </div>
+   <div class="readout"><span>Stare</span><b id="stateReadout">—</b></div>
+   <div class="readout"><span>Lumi active</span><b id="worldReadout">—</b></div>
+   <div class="readout"><span>CUDA / erori</span><b id="gpuReadout">—</b></div>
+   <div class="readout"><span>Etapa de batch</span><b id="batchReadout">—</b></div>
+   <div class="readout"><span>Axele limbajului (context)</span><b id="axisReadout">—</b></div>
+   <div class="section-kicker gap-top">CONTROALE NATIV V17</div>
+   <div class="control-line"><label for="noise">Noise geometric</label><output id="noiseValue">3</output></div>
+   <input id="noise" type="range" min="0" max="12" value="3" step=".2">
+   <div class="control-line"><label for="temperature">Temperatura textului</label><output id="temperatureValue">0.6</output></div>
+   <input id="temperature" type="range" min="0" max="1.5" value=".6" step=".05">
+   <button id="applyControls" class="outline wide">Aplică controalele în creier</button>
+   <div class="control-line gap-top"><label for="gpuMode">Dispozitiv GPU</label></div>
+   <div class="inline-controls">
+    <select id="gpuMode"><option value="cuda:0">CUDA 0</option><option value="off">CPU</option></select>
+    <button class="outline" id="applyGpu">Aplică</button>
+   </div>
+   <div class="danger-zone"><button id="resetSelected" class="text-danger">Reset creier selectat (arhivează salvarea)</button></div>
+  </div>
+ </div>
+
+ <div class="two-cols">
+  <div class="panel plot-panel">
+   <div class="panel-heading"><div><div class="section-kicker">EVOLUȚIE REALĂ ÎN TIMP</div><h2>Curbele învățării</h2></div>
+   <select id="chartMetric" class="compact" aria-label="Metrică grafic"><option value="accuracy">Precizie pe text nevăzut</option><option value="nodes">Creștere graf</option><option value="operators">Operatori învățați</option><option value="chars">Caractere trăite</option></select></div>
+   <canvas id="chartCanvas" aria-label="Evoluția numerică a metricilor din evaluări"></canvas>
+   <div id="chartLegend" class="legend"><i class="legend-gold"></i> Original · <i class="legend-green"></i> Aligned · <i class="legend-purple"></i> Field</div>
+  </div>
+  <div class="panel">
+   <div class="panel-heading"><div><div class="section-kicker">DIN EXPERIENȚELE MOTORULUI</div><h2>Ce învață acum?</h2></div></div>
+   <div class="inspect-grid">
+    <div class="micro"><b id="textStates">—</b><span>stări text de context</span></div>
+    <div class="micro"><b id="observedPairs">—</b><span>comparații reale</span></div>
+    <div class="micro"><b id="perspectiveCount">—</b><span>perspective lingvistice</span></div>
+    <div class="micro"><b id="noiseDecisions">—</b><span>decizii noise proprii</span></div>
+   </div>
+   <div class="section-kicker gap-top">TRANSFORMĂRI OBSERVATE</div>
+   <div id="operators" class="operator-list"><span class="muted small">Nicio transformare observată încă.</span></div>
+  </div>
+ </div>
+</section>
+
+<section id="trasee" class="view" aria-label="Trasee și soluții">
+ <div class="section-header"><div><div class="section-kicker">PREDICȚIE ÎNAINTE DE ACȚIUNE · EXECUȚIE · DIFERENȚĂ</div><h2>Labirinturile limbajului și ale lumii</h2><p class="muted">Fiecare evaluare vine din creierul nativ selectat, pe probleme reale din checkpoint sau pe obiective specificate.</p></div></div>
+ <div class="two-cols path-grid">
+  <div class="panel">
+    <div class="panel-heading"><div><div class="section-kicker">GOAL-CONDITIONED TEXT GRAPH</div><h2>Traseu textual</h2></div></div>
+    <label class="field-label" for="goalWords">SIMBOLURI DE ATINS · 1–8, SEPARATE PRIN VIRGULĂ</label>
+    <input id="goalWords" placeholder="de ex. cerc, verde" maxlength="400">
+    <label class="field-label" for="goalStart">STARE DE PORNIRE · OPȚIONAL</label>
+    <textarea id="goalStart" rows="2" placeholder="Propoziție de pornire observată"></textarea>
+    <div class="button-row wrap">
+      <button id="runLanguageMaze" class="primary">⟡ Prezice și execută traseul</button>
+      <button id="runSelfChallenge" class="soft">Test autonom</button>
+    </div>
+    <p class="small muted">Folosește operatorii învățați efectiv de V17. Nu furniza răspunsul complet ca obiectiv.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-heading"><div><div class="section-kicker">TESTE ÎNGHEȚATE · LUMI NEVĂZUTE</div><h2>Evaluare independentă</h2></div></div>
+    <div class="button-stack">
+      <button data-eval="maze" class="eval-button"><span>◈ Labirinte nevăzute</span><small>Traseu orb, complet vs local</small></button>
+      <button data-eval="perspective" class="eval-button"><span>⌁ Schimbarea perspectivei</span><small>Global → senzori locali</small></button>
+      <button data-eval="text" class="eval-button"><span>✒ Text nevăzut</span><small>Predicție originală vs formă</small></button>
+      <button data-eval="transform" class="eval-button"><span>⟡ Transformări nevăzute</span><small>Acțiuni și obiective noi</small></button>
+      <button data-eval="shared" class="eval-button"><span>◉ Componente CUDA împărțite</span><small>Evaluare asynchronă nativă</small></button>
+    </div>
+  </div>
+ </div>
+ <div class="panel path-panel">
+  <div class="panel-heading"><div><div class="section-kicker">TRASEUL PREZIS / TRAVERSAREA REALĂ</div><h2>Forma soluției</h2></div><span id="pathProvenance" class="pill-state">Fără evaluare</span></div>
+  <canvas id="pathCanvas" aria-label="Traseul, nodurile și ramificațiile rezultate din ultima evaluare"></canvas>
+  <div class="replay-bar"><button id="playPath" class="soft">▶ Replay real</button><input type="range" id="pathStep" min="0" max="0" value="0" aria-label="Pasul traseului evaluat"><span id="pathStepLabel">0/0</span><label class="truth-toggle"><input id="showEvaluatorWalls" type="checkbox"> Harta completă (doar evaluator)</label></div>
+  <div id="pathSummary" class="trace-summary">Selectează o evaluare sau urmărește antrenarea live.</div>
+  <div id="pathSteps" class="path-steps"></div>
+  <details class="raw"><summary>Rezultatul numeric complet din motor</summary><pre id="rawEval">Nicio evaluare.</pre></details>
+ </div>
+</section>
+
+<section id="research" class="view" aria-label="Laborator de cercetare">
+ <div class="section-header"><div><div class="section-kicker">EXPERIMENTE REAL EXECUTATE · SEPARATE DE TRAININGUL NATIV</div><h2>Descoperiri care pot fi repetate</h2><p class="muted">Rezultatele din acest laborator sunt experimente controlate. Nu sunt confundate cu îmbunătățiri deja integrate în generarea limbajului.</p></div></div>
+ <div id="researchCards" class="research-grid"></div>
+ <div class="panel result-panel">
+  <div class="panel-heading"><div><div class="section-kicker">PROVENIENȚĂ · FIȘIER TEST · SEED · METRICI</div><h2>Ultimul experiment rulat</h2></div><span id="researchStatus" class="pill-state">Nerulat</span></div>
+  <div id="researchMetrics" class="research-metrics">Apasă „Rulează testul” pentru rezultate obținute acum pe calculator, nu valori inventate.</div>
+  <details class="raw"><summary>Output complet al testului</summary><pre id="researchRaw">Niciun test rulat.</pre></details>
+ </div>
+ <div class="panel evidence">
+  <h3>Alte descoperiri păstrate în ramurile de cercetare</h3>
+  <div class="evidence-links">
+   <a href="https://github.com/dan3s2020/MagicPerspective/pull/33" target="_blank" rel="noopener"><b>Axe funcționale ascunse / gating</b><span>6 axe relevante în 2.048 de canale; test controlat, încă neconectat la textul nativ</span></a>
+   <a href="https://github.com/dan3s2020/MagicPerspective/pull/34" target="_blank" rel="noopener"><b>Limbaj ca labirint matematic</b><span>Operatori cuplați, invarianți, înmulțire dependentă de stare și ordine necomutativă</span></a>
+   <a href="https://github.com/dan3s2020/MagicPerspective/pull/30" target="_blank" rel="noopener"><b>Scalarea geometriei până la 1.024D</b><span>Normalizare și comparații cuantificate; nu a demonstrat un avantaj pe limbaj natural</span></a>
+  </div>
+  <p>Aceste rezultate există în alte ramuri. Nu sunt prezentate drept mecanisme deja integrate în V17 sau drept rezultate ale sesiunii curente.</p>
+ </div>
+ <div class="panel evidence">
+  <h3>Ce rămâne de demonstrat</h3>
+  <p>Axe locale învățate pe **stări contextuale reale**, efect cauzal pozitiv asupra răspunsurilor pe un corpus nevăzut și antrenare integrată într-un singur motor. Rezultatele sintetice pot dovedi mecanismul matematic, dar nu și acest transfer.</p>
+ </div>
+</section>
+
+<footer class="footer">MAGICPERSPECTIVE · REAL V17 BACKEND <span>•</span> Fără graf decorativ sau date fabricate <span>•</span> Checkpointurile originale nu sunt suprascrise de Studio.</footer>
+</main>
+</div>
+</body>
+</html>
