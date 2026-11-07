@@ -1,0 +1,43 @@
+name: V31 actual original Brain all-path alternatives, ambiguity and real corpus
+on:
+  push:
+    branches:
+      - experiment/V31-ALTERNATE-PATHS-MISSING-EDGES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-alternates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: V31 red/green original alternative path and goal underdetermination tests
+        run: node --test v17/tests/v31-original-alternate-paths.test.mjs
+      - name: Preserve original cumulative V30 field, genuine native HTTP and actual full frozen Q/A diagnostics
+        run: |
+          node --test v17/tests/v30-cumulative-hypermaze.test.mjs
+          node --test v17/tests/v30-real-corpus-cumulative-http.test.mjs
+      - name: Preserve original separate new PR research discovered axes and holonomy
+        run: |
+          node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
+          node --test v17/tests/text-hypermaze-state-dependent.test.mjs
+          node --test v17/tests/text-path-holonomy-memory.test.mjs
+      - name: Authentic 24 source public OpenThoughts Q/A heldout with failure retained in original atlas
+        run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
+  windows-native-original:
+    runs-on: windows-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Original native Windows PowerShell launcher parses (not GPU performance)
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'v17/START_REAL_OPENTHOUGHTS_HYPERMAZE.ps1').Path,
+            [ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){throw ($errors|Out-String)}
