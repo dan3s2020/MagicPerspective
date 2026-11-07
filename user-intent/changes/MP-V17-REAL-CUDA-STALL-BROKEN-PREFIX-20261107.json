@@ -15,7 +15,9 @@
   },
   "changed_code_paths": [
     "v17/transcend/torus-aether/gpu/text_gpu.py",
-    "v17/transcend/torus-aether/gpu/worlds_gpu.py"
+    "v17/transcend/torus-aether/gpu/worlds_gpu.py",
+    "v17/transcend/torus-aether/gpu/client.mjs",
+    "v17/tests/gpu-stall-watchdog.test.mjs"
   ],
   "added_mechanisms": [
     "Bounded exact same context copy only, with native progress during existing self-index and suffix indexing; no new decoder or token model"
@@ -25,16 +27,20 @@
   "acceptance_tests": [
     "v17/tests/test_v17_full_atlas_cuda_hang.py",
     "v17/tests/text_index_fast_test.py",
+    "v17/tests/text_variant_fast_test.py",
+    "v17/tests/gpu-stall-watchdog.test.mjs",
     "v17/tests/native-xd-brain-integration.test.mjs",
-    "v17/tests/complete-xd-native-live-http.test.mjs"
+    "v17/tests/native-evidence-gated-integration.test.mjs",
+    "v17/tests/complete-xd-native-live-http.test.mjs",
+    "v17/tests/complete-xd-atlas-browser.test.mjs"
   ],
-  "actual_observed_results": "Root defect verified in branch source: e[i-1::-1][:L] copies an entire long prefix (quadratic over the document) twice, also in imagination. GPU request #3 idle at 180 seconds per user screenshot. Tests and speed evidence pending.",
+  "actual_observed_results": "GitHub Actions native CPU/Linux+Chromium CI PASS for both jobs on commit ce14c294ce01831da7e8c89fe780efebe42d546a. 190000-char, 271-context exact copy 0.10677s vs 0.000268s (398.56x copy microbench ONLY); all original context symbols, SelfMem, suffix arrays, trust, 6 variant choices, native Brain save/reload, 4 watchdog tests and Chromium original UI pass. Actual RTX3050Ti throughput and resolution of exact user's Python hang still unverified.",
   "limitations": [
     "Root cause of specific RTX3050Ti hang cannot be conclusively attributed without its Python process trace",
     "CPU/Linux CI cannot prove RTX CUDA throughput",
     "Never substitute original Discoverer.shape or train on heldout answer",
     "Original V17 solution-shape goal regression MP-REG-2026-11-06-001 remains OPEN"
   ],
-  "verification_status": "NOT_VERIFIED",
+  "verification_status": "PASS_SOURCE_AND_CPU_CI; NVIDIA_CUDA_HARDWARE_AND_FULL_SEMANTIC_RELEASE_UNVERIFIED",
   "full_verbatim_gate": "BLOCKED"
 }
