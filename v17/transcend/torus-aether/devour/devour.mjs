@@ -20,6 +20,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
 const workers = +arg("workers", Math.max(1, os.cpus().length - 1)), every = +arg("every", 200000), maxChars = +arg("chars", 0) || Infinity;
 const checkpointEvery = Math.max(0,Math.trunc(+arg("checkpoint-every",0)));
+const xdAtlasEvery=Math.max(0,Math.trunc(+arg("xd-atlas-every",0)));
 // 0 preserves the native behavior; nonzero decouples atomic saves from expensive frozen evaluations.
 const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), evalChars = +arg("eval", 4000);
 // worlds the same brains live: text (the corpus) and/or maze (the 2D maps); brains are saved in <out>/brains and
@@ -141,12 +142,14 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     observedTransformations: t?.final ? t.observedTransformations : g?.observedTransformations || t?.observedTransformations || null,
     observedPipeline: t?.final ? t.observedPipeline : g?.observedPipeline || t?.observedPipeline || null,
     language: g?.language || t?.language || null, hypermaze:g?.hypermaze || t?.hypermaze || null,
+    nativePathAtlas:g?.nativePathAtlas || t?.nativePathAtlas || null,
+    xdAtlas:g?.xdAtlas || t?.xdAtlas || null,
     endogenousNoise: g?.endogenousNoise || t?.endogenousNoise || null, final: !!t?.final}; }
 function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) {          // a worker thread holds one brain
   sl.lastError = null;sl.launchedAt=Date.now();sl.lastHeartbeatAt=null;sl.lastHeartbeat=null;
   if (sl.wk) { sl.gen++; sl.wk.terminate(); }
   if (fresh && fs.existsSync(saveOf(sl))) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true}); fs.renameSync(saveOf(sl), path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(saveOf(sl)))); }
-  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".hypermaze.json"]) {
+  if (fresh) for (const suffix of [".shared.pt", ".causal.json", ".transitions.jsonl", ".hypermaze.json", ".native-paths.json", ".path-atlas.jsonl", ".xd-atlas.jsonl"]) {
     const old = saveOf(sl) + suffix;
     if (fs.existsSync(old)) { fs.mkdirSync(path.join(out, "brains-before-reset"), {recursive: true});
       fs.renameSync(old, path.join(out, "brains-before-reset", Date.now() + "-" + path.basename(old))); }
@@ -155,7 +158,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, checkpointEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
+    worlds: sl.worlds, mazeEvery, checkpointEvery, xdAtlasEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
@@ -448,7 +451,9 @@ http.createServer((req, res) => {
       shared:graphs.get(w)?.shared||null,
       endogenousNoise:graphs.get(w)?.endogenousNoise||null,
       constructedPaths:graphs.get(w)?.constructedPaths||null,
-      hypermaze:graphs.get(w)?.hypermaze||null});
+      hypermaze:graphs.get(w)?.hypermaze||null,
+      nativePathAtlas:graphs.get(w)?.nativePathAtlas||null,
+      xdAtlas:graphs.get(w)?.xdAtlas||null});
   }
   if (url === "/health") {
     const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
