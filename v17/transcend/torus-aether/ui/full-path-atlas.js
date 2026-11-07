@@ -47,6 +47,7 @@ export class NativeFullPathAtlasView{
   by("atlasXdScrub")?.addEventListener("input",e=>{this.playing=false;this.xdFrame=+e.target.value;this.draw();});
   click("atlasXdEval",()=>this.testXD());
   click("atlasGatedGo",()=>this.testGatedText());
+  click("atlasFutureProbe",()=>this.testFutureCuda());
   click("atlasPageNext",()=>this.loadPage(this.page?.nextOffset??0));
   click("atlasPagePrev",()=>this.loadPage(this.pageHistory.pop()??0,false));
   by("atlasScale")?.addEventListener("change",e=>{this.scale=e.target.value==="edits"?"edits":+e.target.value;this.pageHistory=[];
@@ -395,6 +396,49 @@ export class NativeFullPathAtlasView{
         " · muchii lipsă "+x.missingEdges+" · clasare greșită "+x.wrongRanking)
     ].join("\n\n");
   }catch(err){if(out)out.textContent="Evaluarea nativă a eșuat: "+err.message;}
+ }
+ async testFutureCuda(){
+  const w=this.getWorker(),q=by("atlasFutureContext")?.value||"";
+  if(!q||q.length>64||[...q].some(ch=>ch.charCodeAt(0)>127)){
+    setText("atlasFutureResult","Introdu 1..64 caractere ASCII originale, fără trunchiere.");
+    return;
+  }
+  setText("atlasFutureResult",
+    "Caută exact în memoria REALĂ a exercițiilor încă neprocesate de pe CUDA...");
+  try{
+    const response=await fetch("/gpu-future-path?w="+w+
+      "&context="+encodeURIComponent(q),{cache:"no-store"});
+    if(!response.ok)throw Error("HTTP "+response.status);
+    const body=await response.json();
+    if(body.error)throw Error(body.error);
+    if(w!==this.getWorker())return;
+    const result=body.result||{},e=result.futureEvidence||{},
+      pool=result.textPool||{},counts=e.counts||{};
+    const symbols=Object.entries(counts)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([k,v])=>JSON.stringify(String.fromCharCode(+k))+
+        " (ASCII "+k+") : "+v+" potriviri")
+      .join("\n");
+    const sources=(e.provenance||[]).map(x=>
+      "EXERCIȚIU VIITOR "+x.id+" · offset real "+x.offset+
+      " · următorul caracter "+JSON.stringify(String.fromCharCode(x.symbol)))
+      .join("\n");
+    setText("atlasFutureResult",
+      "CONTEXT: "+JSON.stringify(q)+"\n"+
+      "TRANSFORMĂRI VIITOARE EXPLICIT TRANSDUCTIVE (NU NEVĂZUTE)\n"+
+      "Potriviri reale: "+(e.hits||0)+
+      "\nSurse încă neprocesate: "+(pool.residentExercises??0)+
+      "\nDate efectiv rezidente GPU: "+(pool.residentMB??0)+" MB"+
+      " · GPU real="+String(pool.physicallyCudaResident)+
+      "\nAlegeri următoare disponibile din fragmentele viitoare:\n"+
+      (symbols||"Nicio cale pentru acest context în bufferul curent.")+
+      "\n\nDOVEZI SURSA:\n"+(sources||"Nu au fost găsite potriviri.")+
+      "\nIMPORTANT: Brain.trust NU este actualizat. Orice răspuns bazat pe"+
+      " viitoarele exemple deja preîncărcate TREBUIE evaluat ca transductiv.");
+  }catch(err){
+    setText("atlasFutureResult","Nu pot citi memoria VRAM viitoare: "+err.message+
+      "\nNu afișez căi inventate.");
+  }
  }
  async testGatedText(){
   const w=this.getWorker(),start=by("atlasGatedStart")?.value?.trim(),

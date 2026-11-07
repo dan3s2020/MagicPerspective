@@ -82,7 +82,7 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
     el.value="0";el.dispatchEvent(new Event("input",{bubbles:true}));
   });
   await page.locator("#atlasXdForward").click();
-  assert.match(await page.locator("#atlasXdStep").textContent(),/Acțiune 1\//);
+  assert.match(await page.locator("#atlasXdStep").textContent(),/Acțiune [1-7]\/7/, "A real original finite xD action must be visible, even if live trainer updates it concurrently");
   await page.locator("#atlasScale").selectOption("1");
   await page.waitForFunction(()=>
     (document.getElementById("atlasPageText")?.textContent||"").includes("Scara 2"),
@@ -103,6 +103,16 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
     /STRICT original:/.test(document.getElementById("atlasGatedResult")?.textContent||""),
     null,{timeout:20000});
   assert.equal(await page.locator("#atlasGatedCanvas").isVisible(),true);
+  assert.equal(await page.locator("#atlasFutureContext").isVisible(),true);
+  await page.locator("#atlasFutureContext").fill("hope");
+  await page.locator("#atlasFutureProbe").click();
+  // This acceptance page runs original V17 WITHOUT CUDA: a REAL error
+  // must be shown, not a fabricated GPU answer from nonexistent memory.
+  await page.waitForFunction(()=>
+    (document.getElementById("atlasFutureResult")?.textContent||"").includes("Nu pot citi memoria VRAM viitoare"),
+    null,{timeout:20000});
+  assert.match(await page.locator("#atlasFutureResult").textContent(),
+    /CUDA pool inactive|Native GPU process unavailable/);
   await page.locator("#atlasLogMore").click();
   await page.waitForFunction(()=>
     (document.getElementById("atlasLogText")?.textContent||"").includes("byte cursor="),
