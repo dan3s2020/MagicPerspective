@@ -89,6 +89,8 @@ export class ConstructedPathLearner {
     this.scales=this.byScale.map(()=>new ConstructedTransitionGraph({maxStates:Math.floor(maxTextStates/6)}));
     this.first=new Map();this.endCounts=new Map();
     this.lastMaze=null;this.lastText=null;this.lastPair=null;
+    // Set by the owning Brain only in the isolated unified experiment.
+    this.worldCore=null;
   }
   features(map,n,pos,action,goal,visited=null) {
     const j=nextCell({n},pos,action),v=j<0?1:map[j];
@@ -135,8 +137,11 @@ export class ConstructedPathLearner {
         const transfer=this.transferableScore(this.transferableFeatures({
           progress:f[1],support:f[2],uncertainty:f[3],novelty:f[5],
           terminal:Number(j===goal&&map[j]===0)}));
+        const shared=this.worldCore?.scoreMaze({
+          progress:f[1],support:f[2],uncertainty:f[3]===1?1:0,
+          novelty:f[5],terminal:Number(j===goal&&map[j]===0)})||0;
         const cost=1+(map[j]===-1?uncertaintyCost:0)+
-          clip(-learned*.16-transfer*.06,-.65,.65)+(visited?.[j]||0)*.03;
+          clip(-learned*.16-transfer*.06-shared*.24,-.65,.65)+(visited?.[j]||0)*.03;
         if(dist[p]+cost<dist[j]){
           dist[j]=dist[p]+cost;prev[j]=p;prevAction[j]=a;
         }
@@ -270,7 +275,12 @@ export class ConstructedPathLearner {
       }
       if(live)live(moved?30:31);
       if(onTransition)onTransition({domain:'maze',before:beforeBelief,after:Array.from(belief),
-        action:'move:'+a,context:'mask:'+n,worldSeed:world.seed});
+        action:'move:'+a,context:'mask:'+n,worldSeed:world.seed,
+        actualMoved:moved,actualProgress:clip((Math.abs(before%n-world.goal%n)+
+          Math.abs(Math.floor(before/n)-Math.floor(world.goal/n)))-
+          (Math.abs(pos%n-world.goal%n)+Math.abs(Math.floor(pos/n)-Math.floor(world.goal/n))),-1,1),
+        actualTerminal:pos===world.goal,
+        sensedUncertainty:j<0?1:Number(beforeBelief[j]===-1)});
       if(portal&&train)noiseAgent.learn(portal,{before:[before],after:[pos],solved:pos===world.goal});
       if(record)trace.push({step:steps,from:before,to:pos,proposed,action:a,moved,
         sensedCells:belief.filter(x=>x!==-1).length,portal:portal?.site||'none',
