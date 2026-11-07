@@ -23,3 +23,13 @@ jobs:
         run: |
           node --test v17/tests/native-hypermaze-shape-parity.test.mjs
           node --test v17/tests/v29-real-qa-closed-loop.test.mjs
+  real-natural-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Read 144 authentic public OpenThoughts3 rows, train 120 original Brain Q/A experiences, score 24 frozen complete answers
+        run: node --test v17/tests/v31-real-openthoughts3-144-native-answers.test.mjs
