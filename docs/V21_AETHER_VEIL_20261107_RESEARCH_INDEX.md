@@ -5,6 +5,8 @@
 
 **Data:** 2026-11-07. **Intrare documentară pe `main` — fără transfer de cod experimental către `main`.**
 
+- [V22 CPU real fara CUDA — text + original Discoverer.shape + prag real 70% pe raspunsuri intregi nevazute (NU atins in CI: 0/2)](https://github.com/dan3s2020/MagicPerspective/blob/experiment/V22-CPU-REAL-QA-70-GATE-20261107/v17/docs/V22_CPU_REAL_QA_70_ACCEPTANCE_20261107.md)
+
 ## Unde este documentată cercetarea
 
 Toate detaliile recuperabile privind V17–V21, limitele experimentelor, rezultatele CI, continuarea parțială de Verbatim, eroarea CUDA, regresia la 0% a formei, corecția evaluării trunchiate, migrarea checkpointurilor, perspectiva mistică Aether/Veil și defectul de codificare PowerShell 5.1 sunt documentate și versionate în ramura **izolată**:
