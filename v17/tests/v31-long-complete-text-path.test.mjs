@@ -58,7 +58,7 @@ test('original 96-token planner default is not silently changed; longer inputs r
  assert.equal(r.found,false);
  assert.match(r.reason,/DESIGN_WALL_MAX_TOKENS/);
  console.log('V31_EXPLICIT_DESIGN_LIMIT',JSON.stringify({
-  originalDefault96Preserved:true,explicit201TokensPassed:true,2051TokensBlocked:true}));
+  originalDefault96Preserved:true,explicit201TokensPassed:true,longText2051TokensBlocked:true}));
 });
 test('unknown transformation, missing question grammar, and disabled path do not output goal text',()=>{
  const m=train();
