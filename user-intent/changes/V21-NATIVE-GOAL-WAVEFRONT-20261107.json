@@ -25,9 +25,11 @@
     "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs (additive formSolutionNative that calls the SAME original Disc method over reusable learned transformations)",
     "v17/tests/native-cognitive-goal.test.mjs (unseen text transformations, actual physics, negative controls)",
     "v17/transcend/torus-aether/ui/native-cognitive-live.js (NEW evidence viewer)",
-    "v17/tests/native-cognitive-http.test.mjs (original worker and V19 native goal test)"
+    "v17/tests/native-cognitive-http.test.mjs (original worker and V19 native goal test)",
+    "v17/transcend/torus-aether/worlds/learned-cognitive-map.mjs (additional formSolutionLongNative for >96-token actual text, original existing limits unchanged)",
+    "v17/tests/native-long-text-shape.test.mjs (large real text shape and exact heldout physical edits)"
   ],
-  "mechanism": "Original Discoverer.shape called on observed directed graph with goal attraction, observed action transitions, propagated potential V(s)=gamma*max_action expected successor potential; no target-answer oracle. Original 2D implementation unchanged for legacy call. Phase 2 reuses V19 genuine observed sentence-contrast rules to form COUNTERFACTUAL edges, with explicit hypothesis provenance and actual action feedback; its goal is a question-derived predicate, not withheld complete answer.",
+  "mechanism": "Original Discoverer.shape called on observed directed graph with goal attraction, observed action transitions, propagated potential V(s)=gamma*max_action expected successor potential; no target-answer oracle. Original 2D implementation unchanged for legacy call. Phase 2 reuses V19 genuine observed sentence-contrast rules to form COUNTERFACTUAL edges, with explicit hypothesis provenance and actual action feedback; its goal is a question-derived predicate, not withheld complete answer. Phase 3 long text states reuse exact existing learned .predict() action effects and the original Discoverer.shape; original 96 token source path left unchanged, no pretrained answer or hidden target.",
   "forbidden_substitutions": [
     "next-character predictor as solution shape",
     "invented latent semantic target",
@@ -39,13 +41,15 @@
     "node --test v17/tests/native-goal-wavefront.test.mjs",
     "node --test v17/tests/torus-brain.test.mjs",
     "node --test v17/tests/veil-aether.test.mjs",
-    "node --test v17/tests/native-cognitive-http.test.mjs"
+    "node --test v17/tests/native-cognitive-http.test.mjs",
+    "node --test v17/tests/native-long-text-shape.test.mjs"
   ],
   "status": "OPEN - implementation and CI measurements pending; NOT approved release; no real long unseen answer 100% proof",
   "limitations": [
     "Native graph can plan to a visible specified goal but cannot infer a correct arbitrary unknown natural-language answer from a question",
     "No all-CUDA proof; original device paths preserved",
     "No direct physical xD effects asserted without causal ablation",
-    "Inferred V19 future edges are HYPOTHESES from observed text transformations; they are not witnessed original text and may be rejected by real physics"
+    "Inferred V19 future edges are HYPOTHESES from observed text transformations; they are not witnessed original text and may be rejected by real physics",
+    "Long text 100% can only be claimed in explicit constrained reversible token edit tasks, not unrestricted questions."
   ]
 }
