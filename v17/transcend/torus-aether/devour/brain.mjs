@@ -516,6 +516,37 @@ export class Brain {
     const aligned = this.align ? this.align.readFrozen(H.slice(4)) : null;   // the aligning graph, frozen, on the same unseen text
     return {C: c / N, live: live / N, masked: masked / N, bits: bits / N, field: fld / N, together: tog / N, tbits: tbits / N, n: N, aligned};
   }
+  // The identical frozen evaluation as test(), with ONLY cooperative
+  // scheduler yields so the UI/controls cannot freeze during long exams.
+  // All heldout characters, C/graph/field/mask and full AligningGraph
+  // predictions are still computed, in the same order, with no learning.
+  async testAsync(textBytes,onProgress=null) {
+    const {e,chain}=this,H=textBytes;
+    let c=0,live=0,masked=0,bits=0,N=0,fld=0,tog=0,tbits=0;
+    const F=this.field.read(H,this.place);
+    for(let i=4;i<H.length;i++,N++){
+      const ctx=this.ctxOf(H,i),h=this.histOf(H,i),y=H[i],
+        L=chain.play(e,ctx,h).out,p=F[i];
+      c+=argmax(distC(e.c,ctx))===y;
+      live+=argmax(L)===y;
+      masked+=argmax(chain.play(e,ctx,h,true).out)===y;
+      bits-=Math.log2(L[y]);
+      const T=p?L.map((v,j)=>.5*v+.5*p[j]):L;
+      fld+=p?argmax(p)===y:0;
+      tog+=argmax(T)===y;
+      tbits-=Math.log2(Math.max(1e-9,T[y]));
+      if((i&127)===127||i===H.length-1){
+        await onProgress?.("frozen original C+graph+field",i-3,Math.max(0,H.length-4));
+        await new Promise(resolve=>setImmediate(resolve));
+      }
+    }
+    const aligned=this.align?await this.align.readFrozenAsync(
+      H.slice(4),null,{},
+      (done,total)=>onProgress?.("frozen original AligningGraph",done,total)
+    ):null;
+    return {C:c/N,live:live/N,masked:masked/N,bits:bits/N,field:fld/N,
+      together:tog/N,tbits:tbits/N,n:N,aligned};
+  }
   // the organism in its own graph: itself (the symbol its outputs move, in every world), its body (what each output does),
   // what attracts and what repels it (learned in the labyrinths), drawn as nodes and links of the same graph
   organismView() { const T = this.trace, S = [1, 2, 3, 4], O = [5, 6, 7, 8, 11, 12, 14, 15]; T.node("o:self", "self", "eu");
