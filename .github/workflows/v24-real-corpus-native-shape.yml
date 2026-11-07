@@ -54,6 +54,8 @@ jobs:
           node --check v17/research/relational-hypermaze/real-corpus-core.mjs
           node --check v17/research/relational-hypermaze/real-data-source.mjs
           node --check v17/research/relational-hypermaze/real-trainer.mjs
+      - name: Load stability with 12000 complete observed dialogue transitions
+        run: node v17/research/relational-hypermaze/real-throughput-probe.mjs
 
   windows-ps51:
     runs-on: windows-latest
