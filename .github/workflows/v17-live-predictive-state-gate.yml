@@ -58,3 +58,28 @@ jobs:
             if ($errors.Count -gt 0) { throw ("PowerShell syntax: " + $path + " " + ($errors | Out-String)) }
             Write-Host "WINDOWS_PS_OK $path"
           }
+      - name: Refuse cross-branch checkpoint mixing without touching existing user data
+        shell: powershell
+        run: |
+          $data = Join-Path $env:RUNNER_TEMP "isolated-dataset"
+          $out = Join-Path $env:RUNNER_TEMP "protected-other-branch"
+          New-Item -ItemType Directory -Force -Path $data,$out | Out-Null
+          $sentinel = Join-Path $out "DO_NOT_DELETE.txt"
+          Set-Content -LiteralPath $sentinel -Value "MUST REMAIN EXACTLY INTACT" -NoNewline
+          $expected = (Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash
+          [pscustomobject]@{
+            kind = "magic-native-v17"
+            corpus = [System.IO.Path]::GetFullPath($data)
+            branch = "feature/V17-REAL-LIVE-AXES-MAZE-20261107"
+          } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $out "magic-native-v17-run.json")
+          $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "v17/START_MAGIC_REAL.ps1" -Data $data -Out $out -Gpu off -Port 8894 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          if ($code -eq 0) { throw "Cross-branch native checkpoint contamination was allowed" }
+          if ($output -notmatch "Refusing to resume a DIFFERENT MagicPerspective branch") {
+            throw ("Launcher refused for the wrong reason: " + $output)
+          }
+          if ((Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash -ne $expected) {
+            throw "Original user file was modified"
+          }
+          Write-Host "SAFE_CROSS_BRANCH_REFUSAL_OK"
+          $global:LASTEXITCODE = 0
