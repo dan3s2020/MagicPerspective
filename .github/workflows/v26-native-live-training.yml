@@ -1,0 +1,94 @@
+name: V26 native fresh UI and live corpus training acceptance
+
+on:
+  push:
+    branches:
+      - experiment/V26-NEW-LIVE-TEXT-HYPERMAZE-TRAINING-20261107
+  pull_request:
+    branches:
+      - experiment/V25-FROZEN-LONGTEXT-SHAPE-EVIDENCE-20261107
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax acceptance
+        run: |
+          node --version
+          node --check v17/apps/hypermaze-studio-v26/engine.mjs
+          node --check v17/apps/hypermaze-studio-v26/corpus.mjs
+          node --check v17/apps/hypermaze-studio-v26/session.mjs
+          node --check v17/apps/hypermaze-studio-v26/server.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/app.js
+      - name: Original native frozen hypermaze and complete HTTP live UI acceptance
+        run: |
+          node --test v17/apps/hypermaze-studio-v26/tests/engine.test.mjs v17/apps/hypermaze-studio-v26/tests/session-server.test.mjs
+      - name: Actual Chromium browser live canvas and controls acceptance
+        run: |
+          which google-chrome || which chromium
+          node --test v17/apps/hypermaze-studio-v26/tests/browser-ui.test.mjs
+      - name: Archive real browser UI screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v26-real-browser-ui
+          path: v26-real-browser-ui.png
+          if-no-files-found: warn
+          retention-days: 7
+
+  windows-launch:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real Windows PowerShell startup and native live training HTTP health
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $script=Join-Path $pwd 'v17\apps\hypermaze-studio-v26\START_V26_LIVE_TRAINING.ps1'
+          $stdout=Join-Path $env:RUNNER_TEMP 'v26-windows-out.txt'
+          $stderr=Join-Path $env:RUNNER_TEMP 'v26-windows-err.txt'
+          $p=Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+            '-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $script + '"'),
+            '-Port','8907','-Axes','6','-Words','512','-Noise','0.37','-Batch','3'
+          ) -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $health=$null
+            for($i=0;$i -lt 50;$i++) {
+              Start-Sleep -Milliseconds 400
+              try { $health=Invoke-RestMethod -Uri 'http://127.0.0.1:8907/api/health' -TimeoutSec 2;break }
+              catch {}
+              if($p.HasExited) {break}
+            }
+            if(!$health) {
+              if(Test-Path $stdout){Get-Content $stdout}
+              if(Test-Path $stderr){Get-Content $stderr}
+              throw 'Windows PowerShell V26 real startup failed'
+            }
+            $state=Invoke-RestMethod -Uri 'http://127.0.0.1:8907/api/state' -TimeoutSec 3
+            if([Math]::Abs([double]$state.config.noise-0.37) -gt 0.000001) {
+              throw ('Wrong decimal handling: '+$state.config.noise)
+            }
+            if(!$state.source.trainTokens -or !$state.running) {throw 'Real training not running'}
+            Write-Host ('V26_WINDOWS_REAL_POWERSHELL '+(@{
+              healthy=$health.ok;running=$state.running;
+              corpusWords=$state.source.trainTokens;
+              noise=$state.config.noise;axes=$state.config.axes;
+              words=$state.config.words
+            } | ConvertTo-Json -Compress))
+          }
+          finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          }

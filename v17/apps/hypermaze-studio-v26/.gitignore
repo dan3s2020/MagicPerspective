@@ -1,0 +1,4 @@
+V26_CHECKPOINTS/
+*.tmp
+__pycache__/
+*.pyc

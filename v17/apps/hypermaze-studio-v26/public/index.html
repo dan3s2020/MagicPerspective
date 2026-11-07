@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>MagicPerspective V26 · Live Hypermaze Laboratory</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="identity">
+        <div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div><div class="eyebrow">MAGICPERSPECTIVE / OBSERVATION SYSTEM</div>
+          <h1>Hypermaze <span>Laboratory</span><sup>V26</sup></h1></div>
+      </div>
+      <div class="topright">
+        <div class="connection" id="connection"><span class="led"></span><span id="connectionText">Conectare…</span></div>
+        <div class="device">NATIVE V17 <strong>CPU</strong> <span title="CUDA nu este validat în acest experiment">CUDA NEVALIDAT</span></div>
+      </div>
+    </header>
+    <div class="toolbar">
+      <div class="controls-primary">
+        <button class="main-btn" id="startBtn"><span class="symbol">▶</span> Start Training</button>
+        <button class="action-btn" id="pauseBtn"><span class="symbol">Ⅱ</span> Pauză</button>
+        <button class="action-btn" id="stepBtn"><span class="symbol">⇥</span> Un exercițiu</button>
+        <button class="action-btn" id="evalBtn"><span class="symbol">◎</span> Frozen Test</button>
+      </div>
+      <div class="controls-secondary">
+        <button class="action-btn subtle" id="saveBtn">Salvează</button>
+        <button class="action-btn subtle" id="restoreBtn">Reia checkpoint</button>
+        <button class="action-btn subtle danger" id="resetBtn">Reset training</button>
+        <a class="action-btn subtle" href="/api/export" download>Export dovezi</a>
+      </div>
+    </div>
+    <main>
+      <section class="stats-grid" aria-label="Metrici de antrenare">
+        <article class="stat-card"><span class="stat-label">LUMI TRĂITE</span><strong id="mWorlds">—</strong><small id="mWorldSub">Exerciții reale</small></article>
+        <article class="stat-card primary"><span class="stat-label">PRIMA FORMĂ / HOLDOUT</span><strong id="mAccuracy">—</strong><small id="mAccSub">Răspuns integral, înainte de acțiune</small></article>
+        <article class="stat-card"><span class="stat-label">TRANZIȚII ÎNVĂȚATE</span><strong id="mLearned">—</strong><small id="mLearnedSub">Efecte observate efectiv</small></article>
+        <article class="stat-card"><span class="stat-label">TEXT PROCESAT</span><strong id="mThroughput">—</strong><small id="mTotal">MB procesați de exerciții</small></article>
+        <article class="stat-card"><span class="stat-label">GRAF REAL</span><strong id="mStates">—</strong><small id="mEdges">Stări / legături</small></article>
+      </section>
+      <div class="workspace">
+        <section class="panel graph-panel" aria-label="Graf hiperdimensional cauzal">
+          <div class="panel-header">
+            <div><span class="eyebrow">01 / SPATIUL REAL AL STĂRILOR</span>
+              <h2>Topologia învățată <span class="panel-sub">/ predicție înainte de acțiune</span></h2></div>
+            <span class="chip" id="graphBadge">Nicio lume încă</span>
+          </div>
+          <div class="graph-controls">
+            <label class="compact-control">Proiecție
+              <select id="projection">
+                <option value="full">Toate axele · orbită</option>
+                <option value="layers">Straturi · Hamming</option>
+                <option value="slice">Secțiune de axe</option>
+              </select>
+            </label>
+            <label class="compact-control">Axa secțiunii
+              <select id="axisSelect"><option value="0">Axa 0</option></select>
+            </label>
+            <label class="check-mini"><input type="checkbox" id="showEdges" checked> Legături</label>
+            <label class="check-mini"><input type="checkbox" id="showField" checked> Atracție</label>
+            <button class="tiny-btn" id="fitBtn">Încadrează</button>
+          </div>
+          <div class="canvas-frame" id="canvasFrame">
+            <canvas id="graphCanvas" aria-label="Graf animat: noduri, legături și drumul soluției"></canvas>
+            <div class="canvas-corner top-left"><span class="live-dot"></span> <span id="graphLiveText">Așteptare prima lume</span></div>
+            <div class="canvas-corner bottom-left" id="graphHover">Mișcă cursorul peste noduri / scroll pentru zoom / trage pentru pan</div>
+            <div class="canvas-corner bottom-right"><span class="legend-item"><b class="line yellow"></b> Forma prezisă</span><span class="legend-item"><b class="line green"></b> Executat</span><span class="legend-item"><b class="dot violet"></b> Țintă</span></div>
+          </div>
+          <div class="under-graph">
+            <div><span class="label-lite">CÂMP LA START</span><strong id="gField">—</strong></div>
+            <div><span class="label-lite">PAȘI PLANIFICAȚI</span><strong id="gPlanned">—</strong></div>
+            <div><span class="label-lite">PAȘI EXECUTAȚI</span><strong id="gExecuted">—</strong></div>
+            <div><span class="label-lite">OBIECTIV</span><strong id="gGoal" class="goal-short">—</strong></div>
+          </div>
+        </section>
+        <aside class="panel inspector-panel">
+          <div class="panel-header"><div><span class="eyebrow">02 / EXPERIMENTUL ACTUAL</span>
+            <h2>Organism &amp; acțiuni</h2></div><span class="chip" id="worldKind">—</span></div>
+          <div class="inspector-metas">
+            <div><span>STARE</span><strong id="iState">—</strong></div>
+            <div><span>TEXT</span><strong id="iWords">—</strong></div>
+            <div><span>PRIMA PREDICȚIE</span><strong id="iCorrect">—</strong></div>
+          </div>
+          <div class="panel-title-inline"><h3>Forma soluției</h3><small id="routeCount">0 pași</small></div>
+          <div class="route-list" id="routeList"><div class="empty">Aici apar acțiunile reale din <code>Discoverer.shape()</code>.</div></div>
+          <div class="replay-controls">
+            <div class="replay-buttons">
+              <button class="tiny-btn" id="replayPrev">‹</button>
+              <button class="tiny-btn strong" id="replayPlay">▶ Replay</button>
+              <button class="tiny-btn" id="replayNext">›</button>
+              <span id="replayLabel">0 / 0</span>
+            </div>
+            <input id="replayRange" type="range" min="0" max="0" value="0" aria-label="Poziție replay">
+          </div>
+          <div class="panel-title-inline"><h3>Efecte învățate</h3><small id="rulesCount">0 axe</small></div>
+          <div class="effects-table" id="effectsList"><div class="empty">Observațiile apar după primele acțiuni fizice.</div></div>
+        </aside>
+      </div>
+      <div class="secondary-grid">
+        <section class="panel text-panel">
+          <div class="panel-header"><div><span class="eyebrow">03 / TEXTUL EFECTIV</span><h2>Înainte → formă → realitate</h2></div><span class="chip">Fragmente live; export JSON integral</span></div>
+          <div class="text-columns">
+            <div class="text-col"><h3><span class="little-square source"></span> Text inițial</h3><pre id="textBefore">Așteptare corpus și prima lume…</pre></div>
+            <div class="text-col"><h3><span class="little-square predicted"></span> Text prezis înainte de mișcare</h3><pre id="textPredicted">Nicio formă calculată încă.</pre></div>
+            <div class="text-col"><h3><span class="little-square actual"></span> Efecte executate</h3><pre id="textActual">Nicio acțiune executată încă.</pre></div>
+          </div>
+          <div class="measured-note">Valorile sunt produse de modelul și fizica acestui experiment. Editările de tokenuri au obiective explicite; această precizie NU măsoară întrebări semantice libere din OpenThoughts.</div>
+        </section>
+        <section class="panel settings-panel">
+          <div class="panel-header"><div><span class="eyebrow">04 / CONTROL LIVE</span><h2>Configurație antrenare</h2></div></div>
+          <div class="slider-stack">
+            <label class="slider-control"><span>Axe cauzale <output id="axesVal">6</output></span><input id="axes" type="range" min="2" max="10" step="1" value="6"></label>
+            <label class="slider-control"><span>Lungime text solicitată <output id="wordsVal">1024</output></span><input id="words" type="range" min="128" max="8192" step="128" value="1024"></label>
+            <label class="slider-control"><span>Noise original V17 <output id="noiseVal">0.22</output></span><input id="noise" type="range" min="0" max="1" step=".01" value=".22"></label>
+            <label class="slider-control"><span>Max. lumi / iterație <output id="batchVal">4</output></span><input id="batch" type="range" min="1" max="64" step="1" value="4"></label>
+            <label class="slider-control"><span>Înregistrare graf la fiecare <output id="recordEveryVal">3</output></span><input id="recordEvery" type="range" min="1" max="50" step="1" value="3"></label>
+          </div>
+          <button class="action-btn block" id="applyBtn">Aplică parametrii</button>
+          <div class="dataset-section">
+            <div class="panel-title-inline"><h3>Corpus real</h3><small>TXT / MD / JSONL</small></div>
+            <div class="dataset-path" id="datasetInfo">Așteptare încărcare…</div>
+            <label class="label-lite" for="corpusPath">CALE FIȘIER LOCAL PE CALCULATOR</label>
+            <div class="inline-input"><input type="text" id="corpusPath" placeholder="D:\datasets\text.jsonl"><button class="tiny-btn strong" id="loadCorpusBtn">Încarcă</button></div>
+            <div class="file-upload"><input type="file" id="fileUpload" accept=".txt,.md,.json,.jsonl,text/*"><button class="tiny-btn" id="uploadBtn">Încarcă fișier în server</button></div>
+            <label class="label-lite" for="checkpointPath">CALE CHECKPOINT SALVAT</label>
+            <input type="text" id="checkpointPath" placeholder="Calea din jurnalul salvării">
+            <label class="label-lite" for="evalCount">EVALUARE ÎNGHEȚATĂ</label>
+            <div class="inline-input"><input id="evalCount" type="number" min="1" max="10000" step="1" value="100"><span class="small-muted">lumi nevăzute</span></div>
+          </div>
+        </section>
+      </div>
+      <section class="panel journal">
+        <div class="panel-header"><div><span class="eyebrow">05 / AUDIT ÎN TIMP REAL</span><h2>Jurnal, dovezi și erori</h2></div><span id="runSummary" class="chip">Fără înlocuitori / fără predictor de caractere</span></div>
+        <div id="logList" class="log-list"><div class="empty">Jurnalul experimentelor va apărea aici.</div></div>
+      </section>
+    </main>
+    <footer><span>MagicPerspective V26 · New isolated interface · Native V17 shape field</span><span>Test: transformări textuale controlate · CUDA nevalidat · OpenThoughts semantic QA nevalidat</span></footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
