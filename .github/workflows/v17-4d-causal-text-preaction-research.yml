@@ -1,0 +1,52 @@
+name: V17 4D textual causal world — BEFORE-ACTION solution-shape falsification
+on:
+  push:
+    branches:
+      - experiment/V17-4D-TEXT-WORLD-BEFORE-ACTION-SHAPE-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-experiment-reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check exact isolated experiment and test
+        run: |
+          node --check v17/research/text-hypermaze/causal-text-4d-study.mjs
+          node --check v17/research/text-hypermaze/causal-text-4d-study.test.mjs
+      - name: Repeat five exact 4D before-action tests incl negative/OOD/noise controls
+        run: node --test v17/research/text-hypermaze/causal-text-4d-study.test.mjs
+      - name: Reproduce full 3 x 64 unseen >20M-character observation
+        run: |
+          node v17/research/text-hypermaze/causal-text-4d-study.mjs > observed.json
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const j=JSON.parse(fs.readFileSync("observed.json","utf8"));
+            const a=j.aggregate;
+            if(a.worlds!==192 || a.full!==192 || a.optimal!==192 ||
+               a.ablate2D!==0 || a.shuffledActions!==0 ||
+               a.withoutLearnedTrust!==29 ||
+               a.stochasticFixedPlan!==48 || a.stochasticFeedbackRepair!==192 ||
+               a.adversarialReliabilityShift!==57 ||
+               a.totalDocumentCharacters!==22283706)
+              throw Error("Observed results differ from local evidence: "+JSON.stringify(a));
+            console.log("VERIFIED_REPRODUCIBLE_4D_TEXT_WORLD",JSON.stringify(a));
+          '
+      - name: Upload exact actual test output without altering original project
+        uses: actions/upload-artifact@v4
+        with:
+          name: actual-4d-text-preaction-observations
+          path: observed.json
+      - name: Regress existing V17 explicit noise and 2048 tools
+        run: |
+          node --test v17/tests/2048-stochastic-world.test.mjs
+          node --test v17/tests/torus-endogenous-noise.test.mjs
+      - name: Confirm native V17 CUDA/Brain remain syntactically untouched
+        run: |
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
