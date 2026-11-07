@@ -462,6 +462,20 @@ for await (const ex of stream()) {
         wholePlanReady:first.ready===true,
         stepCount:first.planSteps?.length||0,
         noNextCharacterFallback:first.noNextCharacterFallback===true,
+        frozenRoute:{
+          mode:first.mode,ready:!!first.ready,reason:first.reason||null,
+          predictedFullAnswerBeforeFirstCharacter:first.predictedFullAnswerBeforeFirstCharacter||"",
+          initialShape:first.initialShape?.slice(0,120)||[],
+          stepAxes:first.stepAxes?.slice(0,120)||[],
+          planSteps:first.planSteps?.slice(0,120)||[],
+          execution:first.execution?{
+            actual:first.execution.actual||first.text||"",
+            frames:first.execution.frames?.slice(0,121)||[],
+            internalMatch:first.execution.internalMatch??first.execution.success??false,
+            executedSteps:first.execution.executedSteps??first.execution.executed??0
+          }:null,
+          noNextCharacterFallback:first.noNextCharacterFallback===true
+        },
         trainedBeforeRow:brain.exercises||0});
     }
     brain.exercises=(brain.exercises||0)+1;
