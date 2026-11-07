@@ -63,7 +63,7 @@ test("NATIVE V17 V20 V21 multiworld: live frames + frozen route + original UI + 
   assert.ok(chosen.progress.trained>0 && chosen.progress.trained<=59);
   assert.ok(chosen.progress.percent>0 && chosen.progress.percent<=100);
   assert.equal(g.progress.total,59,"Individual /graph reports the same actual corpus size");
-  assert.equal(g.progress.percent,Number((100*g.progress.trained/59).toFixed(2)));
+  assert.equal(g.progress.percent,Number((100*g.progress.trained/59).toFixed(6)));
 
   assert.ok(g.hypermaze.veil.states>0 && g.hypermaze.veil.edges>0);
   assert.ok(g.hypermaze.veil.last?.frames?.length>0);
