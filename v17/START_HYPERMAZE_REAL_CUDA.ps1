@@ -26,6 +26,9 @@ param(
   [int]$GpuWorlds = 4,
   [int]$GpuTextBatch = 8,
   [int]$GpuTextChunk = 256,
+  [double]$GpuPoolMB = 384,
+  [int]$GpuPrefetchExercises = 32,
+  [int]$GpuPrefetchBytes = 32000000,
   [int]$GpuUtil = 100,
   [switch]$Fresh,
   [switch]$TraceTransformations
@@ -41,6 +44,9 @@ if (-not (Test-Path -LiteralPath $Data -PathType Container)) {
 if ($Port -lt 1024 -or $Port -gt 65535) { throw "Port must be 1024..65535" }
 if ($Workers -lt 1 -or $Workers -gt 16) { throw "Workers must be 1..16" }
 if ($GpuWorlds -lt 0) { throw "GpuWorlds must be nonnegative" }
+if ($GpuPoolMB -lt 1 -or $GpuPoolMB -gt 2048) { throw "GpuPoolMB must be between 1 and 2048 MiB (capped automatically by actual CUDA free memory)" }
+if ($GpuPrefetchExercises -lt 2 -or $GpuPrefetchExercises -gt 256) { throw "GpuPrefetchExercises must be 2..256" }
+if ($GpuPrefetchBytes -lt 100000 -or $GpuPrefetchBytes -gt 256000000) { throw "GpuPrefetchBytes must be 100000..256000000" }
 if ($Mem -lt 0.5) { throw "Mem must be at least 0.5 GB" }
 if ($Every -lt 1000) { throw "Every must be at least 1000" }
 if ($CheckpointEvery -lt 0) { throw "CheckpointEvery cannot be negative" }
@@ -84,6 +90,7 @@ Write-Host "CUDA: $Gpu, world batch: $GpuWorlds, VRAM budget: $Vram GB, GPU util
 Write-Host "Original CPU JavaScript Graph + CPU text maze sidecar remain CPU: 100% of all code on CUDA is NOT asserted." -ForegroundColor Yellow
 Write-Host "No demo: actual source rows train the original V17 Brain, with live pre-update text-route observations."
 Write-Host "CUDA throughput: text batch $GpuTextBatch, chunk $GpuTextChunk, world batch $GpuWorlds, VRAM budget $Vram GB."
+Write-Host "Persistent REAL future corpus VRAM pool up to $GpuPoolMB MB (further capped by actual GPU budget), $GpuPrefetchExercises queued exercises, $GpuPrefetchBytes source bytes maximum. NEVER pretrain from future answer labels."
 Write-Host "Expensive frozen evaluation every $Every committed text chars; independent Brain checkpoint every $CheckpointEvery committed chars."
 Write-Host "Complete finite xD world + unseen holdout every $XdAtlasEvery committed chars; real learned physics stored in ORIGINAL Brain."
 Write-Host "Real status endpoint: http://127.0.0.1:$Port/health?w=0" -ForegroundColor Cyan
@@ -104,6 +111,9 @@ $launchParams = @{
   GpuWorlds = $GpuWorlds
   GpuTextBatch = $GpuTextBatch
   GpuTextChunk = $GpuTextChunk
+  GpuPoolMB = $GpuPoolMB
+  GpuPrefetchExercises = $GpuPrefetchExercises
+  GpuPrefetchBytes = $GpuPrefetchBytes
   GpuUtil = $GpuUtil
   Every = $Every
   CheckpointEvery = $CheckpointEvery
