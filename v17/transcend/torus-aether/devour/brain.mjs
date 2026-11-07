@@ -19,11 +19,12 @@ import {TextPerspectives} from "../language-universe/perspectives.mjs";
 import {ConstructedTransitionGraph,ConstructedPathLearner} from "../worlds/constructed-paths.mjs";
 import {ObservedTransformations,setObservedOperatorHook} from "../worlds/observed-transformations.mjs";
 import {SharedTransformationCore} from "../worlds/shared-transformation-core.mjs";
+import {GoalConditionedHyperpath} from "../worlds/goal-conditioned-hyperpath.mjs";
 import {CausalOrganism, liveTask} from "../worlds/causal.mjs";
 import {NoiseAgency} from "../worlds/noise-agency.mjs";
 import {makeLevel, TWorld, TSEEDS} from "../worlds/transform.mjs";
 
-const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore};
+const CLASSES = {AligningGraph, Memory: AlignMemory, Index: AlignIndex, SelfMem, LeanC, SparseCounter, EmergentChain, EmergentA, Wire, Trust, EventClock, Geometry, LivedField, MomentSpace, GraphTrace, Precedent, Discoverer, RNG, CausalOrganism, NoiseAgency, PerspectiveLearner, TextPerspectives,ConstructedTransitionGraph,ConstructedPathLearner,ObservedTransformations,SharedTransformationCore,GoalConditionedHyperpath};
 const rngFrom = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
 
 const SHARED_HOOKS = new WeakMap(); // runtime-only, never placed in an existing .v8 checkpoint
@@ -68,7 +69,7 @@ export class Brain {
   }
   constructor({rules, c = {}, seed = 11} = {}) {
     this.e = {c: new LeanC(c)}; this.chain = new EmergentChain({...rules, seed}); this.trace = new GraphTrace(); this.field = new LivedField();
-    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
+    this.precedent = new Precedent(); this.disc = Object.assign(new Discoverer(seed), {body: this.body ||= {}}); this.perspective = new PerspectiveLearner(); this.language = new TextPerspectives({maxStates:85000}); this.constructedPaths = new ConstructedPathLearner({seed}); this.observedTransformations = new ObservedTransformations(); this.goalPaths = new GoalConditionedHyperpath(); this.worldCore=new SharedTransformationCore(); this.unifiedEnabled=false; this.past = []; this.chars = 0; this.lived = 0; this.seed = seed; this.mazes = {played: 0, won: 0, recent: [], index: 0, last: null};
     this.revive();
   }
   // determinism ↔ randomness, noise, hallucination: the person's sliders, acting on the living brain itself
@@ -89,6 +90,7 @@ export class Brain {
     this.language ||= new TextPerspectives({maxStates:85000});
     this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}); // native checkpoint compatibility
     this.observedTransformations ||= new ObservedTransformations(); // old checkpoints remain readable
+    this.goalPaths ||= new GoalConditionedHyperpath(); // legacy checkpoints regain learned goal path capacity
     this.worldCore ||= new SharedTransformationCore();
     if(this.unifiedEnabled)this.enableUnifiedWorldLearning();
     else {this.constructedPaths.worldCore=null;setObservedOperatorHook(this.observedTransformations,null);}
@@ -125,7 +127,18 @@ export class Brain {
   // talking to it: the conversation in the shape of what it devoured ("Q: …\nA: …"), and it writes the answer symbol by
   // symbol from its own graph (chain.play → chain.pick at temperature T: the same way "Scrie liber" writes on the page).
   // learn = it also lives the words it is told (and its own answer), like any other world; otherwise it only answers.
-  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, observePath = false, scanTemperatures = null, seed = (Math.random() * 2 ** 32) >>> 0} = {}) {
+  chat(history, {T = .6, max = 400, stopBlank = true, learn = false, observePath = false,
+    scanTemperatures = null, seed = (Math.random() * 2 ** 32) >>> 0,
+    mode = "legacy-character", required = null, start = null, maxDepth = 5,
+    ablateAxes = false} = {}) {
+    // A real native goal-plan can now produce the COMPLETE planned answer
+    // before the first output; it NEVER calls AligningGraph.write().
+    if(mode === "goal-path"){
+      const last=[...history].reverse().find(x=>x?.[0]==="you");
+      const question=last?.[1]||"";
+      return this.answerByGoalPath(question,{required,start,maxDepth,ablateAxes});
+    }
+    if(mode !== "legacy-character")throw Error("Unknown native answer mode: "+mode);
     const asc = s => { const o = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; o.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return o; };
     const prompt = asc(history.map(([who, text]) => (who === "you" ? "Q: " : "A: ") + text + "\n" + (who === "you" ? "" : "\n")).join("") + "A: ");
     if (learn) for (const y of prompt) this.live(y);
@@ -257,6 +270,42 @@ export class Brain {
       meanStepsToGoal:success.length?success.reduce((n,r)=>n+r.steps,0)/success.length:null,
       initialBlindPathLengths:rows.map(r=>r.firstShapeLength),
       completeViewComparisons:full,frozen:true};
+  }
+  // Raw OpenThoughts Q/A observations train goal-axis associations ON THE SAME
+  // Brain. No frozen heldout answer enters the model, and no char predictor
+  // decides the goal-directed output of answerByGoalPath().
+  learnGoalPathPair(question,answer) {
+    return (this.goalPaths ||= new GoalConditionedHyperpath()).observePair(question,answer);
+  }
+  answerByGoalPath(question,{required=null,start=null,maxDepth=5,ablateAxes=false,
+    useUnified=true}={}) {
+    const M=this.observedTransformations ||=new ObservedTransformations();
+    const model=this.goalPaths ||=new GoalConditionedHyperpath();
+    const shared=useUnified&&this.unifiedEnabled?this.worldCore:null;
+    const before={observed:M.newObservations,operators:M.operators.size,
+      learnedGoals:model.rows,examples:model.bytesObserved};
+    const shape=model.plan(String(question),M,{required,start,maxDepth,
+      ablateAxes,worldCore:shared,recordSearch:true});
+    if(!shape.ready){
+      return {text:"",mode:"goal-path",ready:false,reason:shape.reason,
+        goalInference:shape.goalInference,plannedBeforeFirstAction:true,
+        noNextCharacterFallback:true,modelCoverage:before};
+    }
+    const execution=model.execute(shape,M,{localPolicy:false,worldCore:shared});
+    if(M.newObservations!==before.observed||M.operators.size!==before.operators||
+       model.rows!==before.learnedGoals||model.bytesObserved!==before.examples)
+      throw Error("Frozen goal-path answer mutated trained world observations");
+    return {text:execution.final||"",mode:"goal-path",ready:true,
+      predictedFullAnswerBeforeFirstCharacter:shape.fullPredictedStateBeforeExecution,
+      initialShape:shape.initialShape,
+      stepAxes:shape.stepAxes,goalInference:shape.goalInference,
+      planSteps:shape.steps,execution,learnedStateCount:M.records.size,
+      learnedOperatorCount:M.operators.size,
+      sharedWorldUsed:shape.usesNativeSharedWorld,
+      plannedBeforeFirstAction:true,noNextCharacterFallback:true,
+      verifiedAgainstLearnedActionWorld:execution.success,
+      externallySemanticallyVerified:false,referenceAnswerUsed:false,
+      modelCoverage:before};
   }
   learnConstructedText(question,answer) {
     return (this.constructedPaths ||= new ConstructedPathLearner({seed:this.seed}))
