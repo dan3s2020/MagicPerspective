@@ -89,6 +89,10 @@ class Index:                                     # suffix array of the REVERSED 
         alive = ctx[:, 0] >= 0
         fast = min(maxK, len(self.fast_prefix), ctx.shape[1])
         for k in range(fast):
+            # Preserve exact old LO/HI padding semantics: once the entire
+            # batch loses its matching prefix, untouched depths stay ZERO.
+            # At most eight scalar checks, versus hundreds per query before.
+            if not bool(alive.any()): break
             c = ctx[:, k]
             prefix = prefix * 129 + X.where(c >= 0, c + 1, X.zeros(Q, np.int64))
             keys = self.fast_prefix[k]
