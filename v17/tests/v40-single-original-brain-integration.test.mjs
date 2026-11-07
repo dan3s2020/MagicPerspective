@@ -10,6 +10,7 @@ import {Brain} from '../transcend/torus-aether/devour/brain.mjs';
 import {KIND,playExercise} from '../transcend/torus-aether/worlds/exercise.mjs';
 import {makeMaze,seedOf,SEEDS} from '../transcend/torus-aether/worlds/labyrinth.mjs';
 import {V40OriginalBrainEvidence} from '../research/text-hypermaze/v40-original-brain-evidence.mjs';
+import {openV40OriginalSourceMemory} from '../research/text-hypermaze/v40-original-source-witness-memory.mjs';
 
 function nativeBrain(){
  const b=new Brain({rules:{depth:1,off:['R2','R4'],budEvery:100,
@@ -32,7 +33,7 @@ const lessons=[
  {question:'In which year was the lab established?',context:'The lab was established in 2018.',
   answer:'2018',answerStart:27}
 ];
-test('V40 original Brain genuinely owns witnessed goal and human QA evidence across save/restore; no instruction target in heldout',()=>{
+test('V40 original Brain owns V36 learned goal, V39 real QA and V32 exact durable source witnesses through ONE checkpoint',async()=>{
  const brain=nativeBrain(),unified=new V40OriginalBrainEvidence(brain);
  const unknown=unified.answer({kind:'instruction-goal',
    instruction:'Brew the refreshment',source:'Ada keeps tea.'});
@@ -77,6 +78,19 @@ test('V40 original Brain genuinely owns witnessed goal and human QA evidence acr
  assert.equal(unified.qa.memory.updates,weights);
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'mp-v40-original-'));
  try{
+  const sourceFile=path.join(dir,'authentic-source-witnesses.sqlite');
+  let store=await openV40OriginalSourceMemory(brain,sourceFile);
+  const common=Array.from({length:43},(_,i)=>'identical_evidence_word_'+i).join(' ');
+  const first='Introduction from independent source A. '+Array.from({length:50},(_,i)=>'A_'+i).join(' ')+
+    ' '+common+' The original source continues.';
+  const second='Independent B text '+Array.from({length:15},(_,i)=>'B_'+i).join(' ')+
+    ' '+common+' Different final paragraph.';
+  store.recordEpisode({episode:1,question:'What was observed in source A?',context:first});
+  store.recordEpisode({episode:2,question:'What was observed in source B?',context:second});
+  const matching=store.matchingAnchors({text:common});
+  assert.ok(matching.matches.length>0,'V32 same source motif must be remembered across different offsets');
+  const firstArchiveStatus=store.status();
+  store.close();store=null;
   const checkpoint=path.join(dir,'brain.v8'),size=brain.save(checkpoint);
   assert.ok(size>2000);
   const loaded=Brain.load(checkpoint),again=new V40OriginalBrainEvidence(loaded);
@@ -89,6 +103,12 @@ test('V40 original Brain genuinely owns witnessed goal and human QA evidence acr
   assert.equal(qarestored.predicted,extractive.predicted);
   assert.equal(again.qa.memory.averagedWeights.size,unified.qa.memory.averagedWeights.size);
   assert.equal(again.report().originalMazeEpisodes,before.originalMazeEpisodes);
+  const reopened=await openV40OriginalSourceMemory(loaded,sourceFile);
+  const resurrected=reopened.matchingAnchors({text:common});
+  assert.ok(resurrected.matches.length>0);
+  assert.equal(reopened.status().indexedExactMotifs,firstArchiveStatus.indexedExactMotifs);
+  assert.equal(loaded.v40UnifiedEvidence.sourceArchiveManifest.indexedEpisodes,2);
+  reopened.close();
   const refused=again.answer({kind:'instruction-goal',
    instruction:'Completely unwitnessed magic',
    source:'Ada keeps tea.'});
@@ -99,6 +119,8 @@ test('V40 original Brain genuinely owns witnessed goal and human QA evidence acr
    witnessedTaskEpisodes:2,humanQALearnedFeatures:before.learnedHumanQAFeatures,
    singleSavedBrain:true,restoredInstructionAnswer:observed.answer,
    restoredHumanAnswer:extractive.predicted,
+   sourceMotifsAcrossIndependentDocuments:matching.matches.length,
+   archivedSourceEpisodes:2,threeDiscoveryMemoriesRestoredInSameBrain:true,
    bothOriginalShapeTypes:['Discoverer.shape','Discoverer.shapeGraph'],
    unknownQuestionRefused:true,genuineOpenDomainSemanticQAProved:false}));
  }finally{fs.rmSync(dir,{force:true,recursive:true});}
