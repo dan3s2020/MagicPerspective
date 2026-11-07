@@ -1,0 +1,62 @@
+name: V39 ONE original Brain serious training - real QAs, story bytes, maze, resumable checkpoint
+on:
+  push:
+    branches:
+      - experiment/V39-ORIGINAL-UNIFIED-SERIOUS-TRAIN-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-original-single-brain-windows-safety-and-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static parse and original native brain source integrity
+        run: |
+          node --check v17/research/v39/real-unified-trainer.mjs
+          node --check v17/research/text-hypermaze/real-squad-evidence-paths.mjs
+          node --check v17/tests/v39-original-unified-training-e2e.test.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/research/text-hypermaze/v34-live-research.mjs
+      - name: Complete original native Brain actual QA plus unicode stories plus maze learning checkpoint, restart with zero duplicated input, SHA mismatch prevention, live UI
+        run: node --test v17/tests/v39-original-unified-training-e2e.test.mjs
+      - name: V34 original real HTTP single Brain xD and native Unicode motor regressions
+        run: |
+          node --test v17/tests/v34-native-real-live-http.test.mjs
+          node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
+      - name: Original maze and text world first-shot parity
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+  official-external-human-answer-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Official real SQuAD 1.1 LIVE download pinned SHA, original maze + human QA train/valid/test article split and V38 averaged shapeGraph native checkpoint proof
+        run: node --test v17/tests/v38-real-averaged-evidence-validation.test.mjs
+  windows-real-launcher-parsing:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell preflight validates V39 launcher without changing old V17/V34 scripts
+        shell: powershell
+        run: |
+          foreach ($file in @("v17/START_V39_SERIOUS_TRAINING.ps1","v17/START_V34_VERIFIED.ps1","v17/START_V17.ps1")) {
+            $tokens = $null
+            $issues = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path -LiteralPath $file).Path,[ref]$tokens,[ref]$issues) | Out-Null
+            if ($issues.Count) { throw ($issues | Out-String) }
+            Write-Host "POWERSHELL_SOURCE_VERIFIED $file"
+          }
+          if ((Get-Content "v17/START_V39_SERIOUS_TRAINING.ps1" -Raw) -notmatch "Get-FileHash") { throw "Official SQuAD SHA verification missing" }
+          if ((Get-Content "v17/START_V39_SERIOUS_TRAINING.ps1" -Raw) -notmatch "OriginalBrain") { throw "Old original trained Brain requirement missing" }
+          if ((Get-Content "v17/START_V39_SERIOUS_TRAINING.ps1" -Raw) -match "Remove-Item") { throw "Destructive cleanup is forbidden in launcher" }
+          Write-Host "V39_WINDOWS_REAL_LAUNCHER_PRESERVES_OLD_CHECKPOINTS_AND_OLD_UI"
