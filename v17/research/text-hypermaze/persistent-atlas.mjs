@@ -25,6 +25,12 @@ export class PersistentHypermazeAtlas {
   this.counts=Object.create(null);
   this.usedInSuccess=new Map();
   this.usedInFailure=new Map();
+  // Actual route CHOSEN differs from every operator CONSIDERED in a failed
+  // exploration and from real internal body execution. Keep each distinct.
+  this.consideredOnFailure=new Map();
+  this.consideredOnSuccess=new Map();
+  this.blockedByInvariant=new Map();
+  this.executedByBody=new Map();
   this.failedReasons=Object.create(null);
   this.worldsByDomain=Object.create(null);
   this.lastReplayCursor=0;
@@ -54,6 +60,23 @@ export class PersistentHypermazeAtlas {
    const used=entry.actions||[];
    const target=entry.found?this.usedInSuccess:this.usedInFailure;
    for(const a of used)if(a?.key)target.set(a.key,(target.get(a.key)||0)+1);
+   const topology=entry.fullExploredTopology;
+   const edges=topology?.edges||[],nodes=topology?.nodes||[];
+   // One count per observed operator per original search, regardless of
+   // how many copies of the learned edge appear in visited graph states.
+   const considered=new Set(edges.map(e=>e.operatorKey).filter(Boolean));
+   const where=entry.found?this.consideredOnSuccess:this.consideredOnFailure;
+   for(const k of considered)where.set(k,(where.get(k)||0)+1);
+   const blocked=new Set(edges.filter(e=>nodes[e.to]?.kind===1)
+    .map(e=>e.operatorKey).filter(Boolean));
+   for(const k of blocked)
+    this.blockedByInvariant.set(k,(this.blockedByInvariant.get(k)||0)+1);
+  }
+  if(entry.type==="execution"){
+   for(const frame of entry.frames||[]){
+    const k=frame.action?.key;
+    if(k)this.executedByBody.set(k,(this.executedByBody.get(k)||0)+1);
+   }
   }
   this.last={seq:entry.seq,type:entry.type,found:entry.found??null,
    reason:entry.diagnostic?.reason??null};
@@ -175,6 +198,10 @@ export class PersistentHypermazeAtlas {
    failuresByReason:{...this.failedReasons},
    successesByOperator:Object.fromEntries(this.usedInSuccess),
    failedSearchesByOperator:Object.fromEntries(this.usedInFailure),
+   exploredInFailedSearchesByOperator:Object.fromEntries(this.consideredOnFailure),
+   exploredInFoundSearchesByOperator:Object.fromEntries(this.consideredOnSuccess),
+   invariantBlockedByOperator:Object.fromEntries(this.blockedByInvariant),
+   executedStepsByOperator:Object.fromEntries(this.executedByBody),
    last:this.last,
    contents:"only actually OBSERVED corpus text, learned edit evidence, "+
     "explored finite search graphs, attempted paths, and their failures",
@@ -189,6 +216,10 @@ export class PersistentHypermazeAtlas {
    supportingExamples:op.evidence||[],
    pathsUsedSuccessful:this.usedInSuccess.get(op.key)||0,
    pathsUsedUnsuccessful:this.usedInFailure.get(op.key)||0,
+   exploredDuringUnsuccessfulSearches:this.consideredOnFailure.get(op.key)||0,
+   exploredDuringSuccessfulSearches:this.consideredOnSuccess.get(op.key)||0,
+   blockedByStructuralInvariant:this.blockedByInvariant.get(op.key)||0,
+   executedNativeBodySteps:this.executedByBody.get(op.key)||0,
   })).filter(x=>!onlyUnused||!x.pathsUsedSuccessful);
   return {operators:data.slice(offset,offset+size),
    totalOperators:data.length,after:offset,nextCursor:Math.min(data.length,offset+size),
