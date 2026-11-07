@@ -31,3 +31,18 @@ jobs:
           node --test v17/tests/inline-language-maze-native.test.mjs
           node --test v17/tests/observed-transformations-live.test.mjs
           node --test v17/tests/torus-live-observability.test.mjs
+
+  real-browser-view:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated Chromium browser acceptance dependencies
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Actually boot V17 native backend with repository corpus, validate full existing UI and new live graph in browser
+        run: node --test v17/tests/live-corpus-hypermaze-browser.test.mjs
