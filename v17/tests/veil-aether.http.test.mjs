@@ -57,9 +57,15 @@ test("NATIVE V17 V20 V21 multiworld: live frames + frozen route + original UI + 
   assert.ok(g.hypermaze.veil.sample.nodes.length>0);
   assert.ok(g.maze?.played>0,"Original maze world not trained together: "+logs);
   assert.ok(g.transform?.played>0,"Original transformation world not trained together: "+logs);
+  assert.ok(g.hypermaze.veil.causalField,"Native V17 action graph absent from real V21 snapshot");
+  assert.ok(g.hypermaze.veil.causalField.counts.maze>0,
+    "Original maze effect transitions not wired into the shared action graph: "+logs);
+  assert.ok(g.hypermaze.veil.causalField.counts.transform>0,
+    "Original transformation outcomes not wired into the shared action graph: "+logs);
   const html=await(await read("/transcend/torus-aether/ui/index.html?live=1")).text();
   assert.match(html,/id="veilCanvas"/);
   assert.match(html,/id="veilScrub"/);
+  assert.match(html,/id="veilActionCanvas"/);
   assert.match(html,/src="veil-aether-live.js"/);
   assert.match(html,/src="text-hypermaze-live.js"/);
   assert.match(html,/src="app.js"/);
