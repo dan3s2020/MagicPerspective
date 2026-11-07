@@ -98,6 +98,7 @@ test("original V17 Q/A learning resumes ON TOP OF intact V20 and V21 hypermaze e
   assert.ok(x.a0>0,"Test must contain genuine Q/A separation");
   assert.ok(x.shape.length>0,"Original native V17 open-loop generation must produce a shape");
   assert.ok(Number.isFinite(x.shapeSame),"Must score generated text, not contextual route reachability");
+  assert.ok(x.shapeSame>=0.10,"Regression: frozen original V17 free-run solution shape fell below 10% on the fixed synthetic Q/A acceptance corpus: "+x.shapeSame);
   console.log("V21_NATIVE_QA_RESCUE",JSON.stringify({
    checkpointMigrated:true,
    originalChars:recovered.chars,originalExercises:recovered.exercises,
