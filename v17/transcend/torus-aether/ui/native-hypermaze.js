@@ -108,13 +108,19 @@ $("plan").addEventListener("click",async()=>{
  say("Solicit traseul original Discoverer.shapeGraph de la Brain. Referința nu este transmisă.");
  try{
   const q=new URLSearchParams({w:String(state.worker),start,
-   required:required.join(","),execute:"1",topology:"1"});
+   required:required.join(","),execute:"1",topology:"1",
+   maxStates:$("states").value,maxDepth:$("depth").value});
   const result=await getJson("/native-hypermaze?"+q.toString(),
    {method:"POST"});
   if(!result.plannedBeforeFirstAction||result.referenceAnswerProvided!==false)
    throw Error("Sursa nu a confirmat planificarea înainte de acțiune, fără răspuns de referință");
   state.plan=result;
   state.topology=result.topology||null;
+  if(result.atlasSequence){
+   $("atlasLink").href="./native-hypermaze-atlas.html?w="+state.worker+
+     "&searchSequence="+result.atlasSequence;
+   $("atlasLink").textContent="Deschide atlasul acestei căutări #"+result.atlasSequence;
+  }
   state.frame=0;state.playing=!!result.body?.frames?.length;
   state.lastTick=performance.now();
   state.dataVersion++;
@@ -126,6 +132,9 @@ $("plan").addEventListener("click",async()=>{
   $("goal").textContent=result.found?"Găsit":"Negăsit";
   document.documentElement.dataset.nativeNodeCount=String(topology?.nodes?.length??0);
   document.documentElement.dataset.nativeBeforeAction=String(result.plannedBeforeFirstAction);
+  document.documentElement.dataset.nativeSearchComplete=
+    String(result.graph?.completeKnownOperatorClosure===true);
+  document.documentElement.dataset.nativeAtlasSequence=String(result.atlasSequence||0);
   $("truth").textContent="Fără referință ascunsă · semantică externă: NEDOVEDITĂ";
   $("replans").textContent="Replanificări: "+nfmt(result.body?.replans??null);
   const frames=result.body?.frames||[];
@@ -142,8 +151,16 @@ $("plan").addEventListener("click",async()=>{
   refreshFrame();
   draw();
   say(result.found?
-    "Traseul nativ a fost construit din observații reale. Evaluarea semantică externă rămâne nedovedită.":
-    "Niciun traseu spre obiectiv nu a fost descoperit în graful actual.");
+    "Traseu nativ din operatori real învățați. "+
+    (result.graph?.completeKnownOperatorClosure?
+      "Explorarea finită este completă.":
+      "ATENȚIE: există o frontieră încă neexplorată.")+
+    " Exactitatea semantică externă rămâne nedemonstrată.":
+    "NU CONFUNDA ABSENȚA CĂII CU IMPOSIBILITATEA. Motiv: "+
+     (result.diagnostic?.reason||"neprecizat")+
+     ". Frontieră neexplorată: "+
+     (result.diagnostic?.unexpandedFrontier??0)+
+     ". Compară legăturile lipsă în Atlas.");
  }catch(e){
   say(e.message,true);
  }finally{state.busy=false;$("plan").disabled=false;}
