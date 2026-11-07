@@ -395,8 +395,13 @@ export class LearnedCognitiveMap {
     const admittedIds=new Set();
     if(minVerifiedContexts>0)for(const [id,o] of outcomes)
       if(o.accepted.size>=minVerifiedContexts&&o.blocked.size===0)admittedIds.add(id);
-    const portable=minVerifiedContexts===0?allPortable:allPortable.filter(rule=>
-      [...admittedIds].some(x=>{const [at,from,to]=JSON.parse(x);return from===rule.from&&to===rule.to;}));
+    const portable=minVerifiedContexts===0?allPortable:allPortable.flatMap(rule=>{
+      const positions=[...admittedIds].flatMap(x=>{
+        const [at,from,to]=JSON.parse(x);
+        return from===rule.from&&to===rule.to?[at]:[];
+      });
+      return positions.length?[{...rule,causallySupportedPositions:positions}]:[];
+    });
     const portableClasses=portable.length,diagnostics={
       causalTransferMinAcceptedContexts:minVerifiedContexts,
       portableClassesBeforeCausalEvidenceFilter:allPortable.length,
