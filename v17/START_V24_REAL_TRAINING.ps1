@@ -38,11 +38,13 @@ if ($Jsonl) {
   $sourceArgs = @("--data", (Resolve-Path -LiteralPath $Data).Path)
 }
 $dest = if ([IO.Path]::IsPathRooted($Out)) { $Out } else { Join-Path $PSScriptRoot $Out }
-$checkpoint = Join-Path $dest "atlas-v24.json"
-if ((Test-Path -LiteralPath $checkpoint) -and -not $Resume) {
+$checkpoint = Join-Path $dest "atlas-v24.index.json"
+$legacyCheckpoint = Join-Path $dest "atlas-v24.json"
+$checkpointExists = (Test-Path -LiteralPath $checkpoint) -or (Test-Path -LiteralPath $legacyCheckpoint)
+if ($checkpointExists -and -not $Resume) {
   throw "Existing checkpoint must be resumed explicitly with -Resume: $checkpoint"
 }
-if ($Resume -and -not (Test-Path -LiteralPath $checkpoint)) {
+if ($Resume -and -not $checkpointExists) {
   throw "-Resume was requested, but checkpoint not found: $checkpoint"
 }
 $argsNative = @(
@@ -58,7 +60,8 @@ Write-Host "Source: $($sourceArgs[0]) $($sourceArgs[1])"
 Write-Host "New observational graph: CPU Node.js (no false CUDA claim)." -ForegroundColor Yellow
 Write-Host "The original V17 UI and trained brains remain unchanged."
 Write-Host "V24 live UI: http://127.0.0.1:$Port/"
-Write-Host "Checkpoint: $checkpoint"
+Write-Host "Checkpoint index: $checkpoint"
+if (Test-Path -LiteralPath $legacyCheckpoint) { Write-Host "Legacy checkpoint preserved: $legacyCheckpoint" }
 Write-Host "The original V17 page is embedded on the left when its existing server runs at port 8866."
 & $exe @argsNative
 if ($LASTEXITCODE -ne 0) { throw "V24 real training exited with code $LASTEXITCODE" }
