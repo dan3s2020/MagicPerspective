@@ -26,7 +26,7 @@ test("Ablating an actually learned cross-world action destroys the goal path, re
  const req={start:"He is calm.",required:["She","calm"]};
  const before=model.plan({...req,includeTopology:true});
  assert.equal(before.predicted,"She is calm.");
- const op=before.actions.find(x=>x.kind==="replace"&&x.from==="He"&&x.to==="She");
+ const op=before.actions.find(x=>x.kind==="replace"&&x.operatorFrom==="He"&&x.operatorTo==="She");
  assert.ok(op,"Need a genuine reusable original observed subject-edit axis");
  assert.ok(op.learnedFrom?.from&&op.learnedFrom?.to);
  const snapshot=fs.mkdtempSync(path.join(os.tmpdir(),"mp-v17-original-axis-ablation-"));
