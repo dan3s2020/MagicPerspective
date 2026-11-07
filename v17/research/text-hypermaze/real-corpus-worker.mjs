@@ -29,7 +29,7 @@ const transitionEvery=Math.max(1,opts.transitionEvery||128);
 const windowTokens=opts.windowTokens||96;
 const startedAt=performance.now();
 let sessionTrainingBytes=0,sessionRows=0,sessionSourceBytes=0;
-let brain,engine,seq=0,stop=false,paused=!opts.autoStart,saveRequested=false,saving=false,done=false;
+let brain,engine,seq=0,stop=false,paused=!opts.autoStart,saveRequested=false,saving=false,done=false,fatal=false;
 const yieldTurn=()=>new Promise(resolve=>setImmediate(resolve));
 const time=()=>performance.now();
 const counters={
@@ -66,7 +66,7 @@ function info(){
   originalMazeEpisodes:brain?.disc?.episodes??0,
   originalMazeAttraction:brain?.disc?.attract(KIND.target)??0,
   originalFloorConductance:brain?.disc?.conduct(KIND.floor)??0,
-  phase:done?"complete":saving?"saving":paused?"paused":"training",
+  phase:fatal?"error":done?"complete":saving?"saving":paused?"paused":"training",
   completed:done,checkpointFile:counters.checkpointFile||null,
   checkpointWritten:!!counters.lastSavedAt,
   nativePolicy:"actual-original-Discoverer.shapeGraph",
@@ -89,6 +89,13 @@ async function init(){
   const checkpoint=path.join(out,previous.checkpoint);
   if(!fs.existsSync(checkpoint))throw Error("Checkpoint listed in durable cursor manifest is missing: "+checkpoint);
   brain=Brain.load(checkpoint);
+  // Legitimate capacity increase is safe on restart because every committed
+  // source cursor names the EXACT atomically saved original Brain state.
+  // Never shrink saved learning capacity or discard previously learned ops.
+  brain.observedTransformations.maxOperators=Math.max(
+   brain.observedTransformations.maxOperators,opts.maxOperators||80000);
+  brain.observedTransformations.maxObserved=Math.max(
+   brain.observedTransformations.maxObserved,opts.maxObserved||12000);
   Object.assign(counters,previous.counters);
   seq=previous.seq;
   counters.checkpointFile=previous.checkpoint;
@@ -275,6 +282,12 @@ async function train(){
      counters.trainedRows++;
      counters.bytesForLearning+=bytes;
      absorbLine(result.text);
+     if(brain.observedTransformations.droppedOperators>0)
+      throw Error("REAL hypermaze action capacity reached after "+
+       brain.observedTransformations.operators.size+" learned operators. "+
+       "Stopping BEFORE claiming full dataset consumption. "+
+       "The last committed original Brain checkpoint is intact; "+
+       "restart with a larger -MaxOperators or a differently partitioned corpus.");
     }
     rowsSinceYield++;
     const now=time();
@@ -293,8 +306,14 @@ async function train(){
   publish();
   send("note",{text:done?"Entire selected real JSONL file set consumed, native Brain checkpointed":"Stopped and checkpointed at exact source byte offset"});
  }catch(err){
-  paused=true;send("fatal",{error:errText(err),status:info()});
-  try{await checkpoint();}catch(e){send("fatal",{error:"Checkpoint ALSO failed: "+errText(e)});}
+  paused=true;fatal=true;
+  // A corrupt JSONL record, invalid UTF-8 or exceeded model capacity may
+  // have partially changed the CURRENT unsaved row. NEVER persist that
+  // partial row with an advanced source cursor: that would lose training
+  // data. Preserve the last successfully committed Brain generation and
+  // exact source offset for a clean, reproducible restart.
+  send("fatal",{error:errText(err)+"\nUncommitted partial batch discarded "+
+   "on restart; previous atomic checkpoint remains intact.",status:info()});
  }
 }
 let running=null;
