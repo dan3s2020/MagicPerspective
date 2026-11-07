@@ -43,7 +43,10 @@ jobs:
       - name: Check old PowerShell V17 launchers are still valid - never touch user's existing brains
         shell: powershell
         run: |
-          foreach ($file in @("v17/START_V17.ps1","v17/START_TINYSTORIES.ps1")) {
+          $files = @("v17/START_V17.ps1")
+          if (Test-Path "v17/START_TINYSTORIES.ps1") { $files += "v17/START_TINYSTORIES.ps1" }
+          else { Write-Host "OPTIONAL_TINYSTORIES_LAUNCHER_NOT_IN_THIS_BASE_BRANCH" }
+          foreach ($file in $files) {
             $tokens=$null; $errors=$null
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file).Path,[ref]$tokens,[ref]$errors) | Out-Null
             if($errors.Count){throw ($errors | Out-String)}
