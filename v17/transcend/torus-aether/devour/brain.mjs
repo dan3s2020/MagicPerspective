@@ -76,6 +76,42 @@ export class Brain {
     const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;
     this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null, textChunk: R.textChunk ?? null, cardWindowChars: R.memory ?? null, historyChars: A.mem.n};
     return this.textGpu; }
+  // Experimental throughput path. All original bytes train a persistent
+  // CUDA character-context head, while the legacy deep suffix/imagination
+  // algorithm remains available and unchanged in normal mode.
+  // Never call its 0..3 context head identical to the original long-context V17.
+  async learnFastTextGPU(gpu, exs, checkpoint) {
+    if (!gpu?.info?.torch) throw Error("Fast text mode requires actual PyTorch device");
+    const trained = await gpu.call({cmd:"fast_text_learn",exercises:exs,
+      checkpoint,sampleStride:16});
+    const n = exs.reduce((sum,e)=>sum+e.length,0);
+    if (trained.trainedChars!==n || trained.exercises!==exs.length)
+      throw Error("Fast text trained fewer characters than supplied: "+
+        trained.trainedChars+" != "+n);
+    this.chars+=n;
+    this.exercises=(this.exercises||0)+exs.length;
+    this.fastContext={
+      engine:trained.engine,device:trained.device,
+      cumulativeChars:trained.cumulativeChars,
+      cumulativeExercises:trained.cumulativeExercises,
+      batches:trained.batches,checkpoint
+    };
+    this.textGpu={
+      engine:"vector-context-0to3",fastMode:true,
+      batch:exs.length,chars:n,
+      cardMs:Math.round(trained.seconds*1000),
+      busy:trained.busy??trained.seconds,
+      acc:trained.preUpdateAccuracy,
+      sampledAccuracy:true,
+      accuracySamples:trained.preUpdateTested,
+      charsPerSecond:trained.charsPerSecond,
+      megabytesPerSecond:trained.megabytesPerSecond,
+      vramUsedGB:trained.vramUsedGB??null,
+      algorithm:"GPU vectorized 0..3 previous-char counter; legacy suffix/imagination not executed on every symbol",
+      checkpointSynced:!!trained.checkpoint
+    };
+    return this.textGpu;
+  }
   live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
     const prev = this.past.length ? this.past[this.past.length - 1] : null, al = old ? {guess: -1, src: null} : (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
