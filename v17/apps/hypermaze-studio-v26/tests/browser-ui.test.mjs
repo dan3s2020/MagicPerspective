@@ -139,8 +139,19 @@ test("real headless Chromium UI: render graph, controls, evaluations, replay and
       screenshot:artifact,jsExceptions:0}));
   }finally{
     try{ws?.close()}catch{}
-    if(chrome)chrome.kill("SIGTERM");
+    if(chrome){
+      if(chrome.exitCode===null&&chrome.signalCode===null){
+        const exited=new Promise(resolve=>{
+          chrome.once("close",resolve);
+          const timeout=setTimeout(resolve,2500);timeout.unref?.();
+        });
+        chrome.kill("SIGTERM");await exited;
+        if(chrome.exitCode===null&&chrome.signalCode===null)chrome.kill("SIGKILL");
+      }
+    }
     if(runtime)await runtime.close();
-    await fs.rm(dir,{recursive:true,force:true});
+    // Chrome may flush profile files after it exits; ENOTEMPTY is a race,
+    // not an application test failure. Retry until Chrome's handles close.
+    await fs.rm(dir,{recursive:true,force:true,maxRetries:12,retryDelay:250});
   }
 });
