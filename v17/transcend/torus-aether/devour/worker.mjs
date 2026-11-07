@@ -45,13 +45,13 @@ async function* stream() {                                                 // th
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
-    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer}; }
+    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer,\n      ...(workerData.nativeHypermaze?{rawText:"Q: "+x.prompt+"\nA: "+x.answer+"\n\n"}:{})}; }
   } else {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
       if (!para.trim()) continue;  // 4-word sentences are valid structural training observations
       if (k++ % n === w && !source.heldSet.includes(k)) {
         const observed = splitObservedText(para);
-        yield {k, bytes: ascii(para + "\n\n"), ...observed};
+        yield {k, bytes: ascii(para + "\n\n"), ...observed,\n          ...(workerData.nativeHypermaze?{rawText:para+"\n\n"}:{})};
       } }
   }
 }
@@ -155,7 +155,15 @@ const absorbObservedDifferences = row => {
   if(!row.prompt)previewCurrentLanguageWorld(row);
   // Exactly the text already lived by AligningGraph, including short
   // unlabeled sentences; do not invent teacher classes or complete goals.
-  const observedText=Buffer.from(row.bytes).toString("latin1");
+  // The legacy AligningGraph receives its historic ASCII byte stream
+  // unchanged. The opted-in native learned TEXT-WORLD must additionally see
+  // the exact ORIGINAL Unicode source, including Romanian characters,
+  // punctuation and accents. A '?' replacement is not a genuine observed
+  // transformation of the world. No second data read or worker is added.
+  // On a truncated CPU episode, rawText is NULL, so an unobserved suffix
+  // never leaks into the native hypermaze planner or training.
+  const observedText=nativeHypermaze&&typeof row.rawText==="string"?
+    row.rawText:Buffer.from(row.bytes).toString("latin1");
   // The original actual text-stream worker owns the SAME Brain and trained
   // discovered-edit operators. No second training model or independent worker.
   const learned=nativeHypermaze?nativeHypermaze.observe(observedText):
@@ -456,7 +464,7 @@ for await (const ex of stream()) {
     // depend on a training budget that can end at the same moment as a row.
     // If a row is truncated, only use the observed PREFIX, never the
     // unobserved continuation (strict no-leak partial-observation rule).
-    const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars)};
+    const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars),\n      rawText:livedChars===ex.bytes.length?(ex.rawText??null):null};
     absorbObservedDifferences(livedRow);
     if(livedChars===ex.bytes.length&&!stop){
       absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
