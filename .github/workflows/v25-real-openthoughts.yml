@@ -1,0 +1,47 @@
+name: V25 REAL OpenThoughts3 Long-Answer Audit
+on:
+  push:
+    branches:
+      - experiment/V25-ORIGINAL-DISCOVERER-TEMPORAL-TEXT-SHAPES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-openthoughts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate live trial modules and source downloader
+        run: |
+          node --check v17/transcend/torus-aether/worlds/temporal-text-shape.mjs
+          node --check v17/transcend/torus-aether/worlds/question-goal-navigation.mjs
+          node --check v17/tests/v25-http-openthoughts-real.test.mjs
+          python -m py_compile v17/tests/v25-fetch-real-openthoughts.py
+      - name: Install Parquet writer ONLY for provenance-preserving original data
+        run: python -m pip install --quiet pyarrow
+      - name: Read authentic complete rows from public OpenThoughts3 via datasets-server; FAIL if truncated/unavailable
+        run: python v17/tests/v25-fetch-real-openthoughts.py "$RUNNER_TEMP/v25-real"
+      - name: Original V17 worker and Discoverer.shape on 64 real long QAs, test 16 unseen
+        timeout-minutes: 24
+        run: |
+          MP_V25_REAL_DATA="$RUNNER_TEMP/v25-real" MP_V25_EVIDENCE="$RUNNER_TEMP/v25-real-results.json" node --test v17/tests/v25-http-openthoughts-real.test.mjs
+      - name: Preserve provenance + exact metrics; NEVER upload original full answers
+        if: always()
+        run: |
+          mkdir -p v25-artifacts
+          test ! -f "$RUNNER_TEMP/v25-real/_PROVENANCE.json" || cp "$RUNNER_TEMP/v25-real/_PROVENANCE.json" v25-artifacts/provenance.json
+          test ! -f "$RUNNER_TEMP/v25-real-results.json" || cp "$RUNNER_TEMP/v25-real-results.json" v25-artifacts/metrics.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: V25-real-OpenThoughts3-no-oracle-evidence
+          path: v25-artifacts/*.json
+          if-no-files-found: warn
+          retention-days: 90
