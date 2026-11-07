@@ -12,6 +12,7 @@ import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
 import {CompleteXDWorld} from "../worlds/full-xd-maze-atlas.mjs";
 import {once} from "node:events";
 import {GpuWorlds} from "../gpu/client.mjs";
+import {ResidentCudaExerciseQueue} from "./resident-cuda-queue.mjs";
 import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
@@ -335,7 +336,10 @@ const heartbeat = setInterval(()=>{
     rawTextMB:committedChars/1e6,
     throughputDefinition:"COMMITTED text characters in original Brain / wall-clock seconds (NOT Parquet file I/O bytes)",
     activeGpuRpc:gpu?.activeCommand||null,
-    gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9});
+    gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9,
+    residentText:residentReport,
+    prefetchedRowsInNode:residentQueue.queued,
+    prefetchedBytesInNode:residentQueue.queuedBytes});
 },5000);
 heartbeat.unref?.();
 const flushShared = async (force = false) => {
@@ -374,6 +378,13 @@ const worldsOnce = async (record) => {                                     // on
   if (MAZE) brain.playMaze(record || brain.mazes.played % 10 === 0); if (TRANS) { brain.tWorld(); brain.playTransform(record || brain.trans.played % 5 === 0); } if (selfcode) selfcode.step(); await flushShared(); };
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
+const residentQueue = new ResidentCudaExerciseQueue({
+  maxExercises:gpuSet?.prefetchExercises||32,
+  maxBytes:gpuSet?.prefetchMaxBytes||24_000_000,
+  warmExercises:Math.max(2,Math.min(8,selectedTextBatch())),
+  maxRpcBytes:Math.min(16_000_000,gpuSet?.prefetchMaxBytes||24_000_000)
+});
+let residentReport=null;
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   setWorkerPhase("text CUDA: working on real training batch");
@@ -385,7 +396,13 @@ const processGpuText = async (exs, meta) => {
     // Lightweight /health heartbeat records actual Python progress.
   };
   try {
-    await brain.learnTextGPU(gpu,exs,observeProgress);
+    // Most of these bytes were already transferred while reading the next
+    // untouched OpenThoughts exercises. Guarantee current batch is staged
+    // if CUDA restarted or user switched device. Native TextCard remains
+    // unchanged and receives EXACT old exercise bytes via their IDs.
+    const ids=await residentQueue.stage(gpu,meta,{onProgress:observeProgress});
+    residentReport=residentQueue.stats;
+    await brain.learnTextGPU(gpu,exs,observeProgress,ids);
   } catch (err) {
     // For a dead / unresponsive Python child, the native Brain has NOT
     // absorbed the batch: Brain.learnTextGPU mutates it only AFTER receiving
@@ -401,10 +418,16 @@ const processGpuText = async (exs, meta) => {
     gpu=null;gpuInfo=null;gpuError=null;sharedLoaded=false;
     const restarted=await gpuOn();
     if(!restarted)throw Error("CUDA recovery failed: "+(gpuError||err.message));
-    await brain.learnTextGPU(restarted,exs,observeProgress);
+    const ids=await residentQueue.stage(restarted,meta,{onProgress:observeProgress});
+    residentReport=residentQueue.stats;
+    await brain.learnTextGPU(restarted,exs,observeProgress,ids);
     parentPort.postMessage({type:"note",w:workerData.gw,text:
       "CUDA recovered. Native text batch committed once after successful retry."});
   }
+  // CUDA's persistent prefetch evicts NOTHING until native original Brain
+  // acknowledges success. Even if later UI drawing is slow, these samples
+  // have already been committed to the native learning history exactly once.
+  residentReport=await residentQueue.commit(gpu,meta);
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
   batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot();
   // The original V17 trace sees the first actual exercise, exactly once.
@@ -598,11 +621,28 @@ const doSave = () => { saveNow = false; if (saveFile) try {
   setWorkerPhase(paused?"paused":"checkpoint saved; resume training");
 } catch(err){parentPort.postMessage({type:"note",w:workerData.gw,
   text:"Checkpoint save FAILED: "+err.message});} };
-let k = 0, textBatch = [], textMeta = [];
+let textBatch = [], textMeta = [];
 shot(true); await hold();
-for await (const ex of stream()) {
-  await hold();
-  if (TEXT && k++ < skip) continue;                                         // a resumed brain does not live the same exercises twice
+// Only original TRAINING rows are prefetched, never held-out corpus.
+// The queue can contain future exercise answers, so those bytes are
+// explicitly tagged transductive; they do NOT count as learned until commit.
+const completeTrainingStream = async function*(){
+  let index=0;
+  for await(const row of stream()){
+    if(TEXT&&index++<skip)continue;
+    yield row;
+  }
+};
+const residentTrainingStream = TEXT&&gpuSet?
+  residentQueue.prefetch(completeTrainingStream(),{
+    skip:0,getGpu:async()=>gpuOn(),
+    onProgress:msg=>{
+      batchNow={phase:msg.phase,done:msg.done,total:msg.total};
+      setWorkerPhase(msg.phase);
+    }
+  }):completeTrainingStream();
+for await (const ex of residentTrainingStream) {
+  await hold();                                         // a resumed brain does not live the same exercises twice
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
