@@ -166,6 +166,21 @@ export async function launch(options={}){
     },120000);
     return response(res,200,data);
    }
+   if(req.method==="POST"&&url.pathname==="/native-cumulative-question"){
+    const question=url.searchParams.get("question")||"";
+    if(!question.trim()||question.length>4000)
+     return response(res,400,{error:"Real question is required; do not send its answer or target output"});
+    const depth=Number(url.searchParams.get("depth")||18),
+     budget=Number(url.searchParams.get("budget")||2200);
+    if(!Number.isSafeInteger(depth)||depth<1||depth>32||
+      !Number.isSafeInteger(budget)||budget<10||budget>8000)
+     return response(res,400,{error:"Native question-only graph budget is 10..8000 nodes, depth 1..32"});
+    const data=await rpc("cumulativeQuestion",{
+     question,maxExpansionDepth:depth,maxGraphNodes:budget,
+     topology:url.searchParams.get("topology")==="1"
+    },120000);
+    return response(res,200,data);
+   }
    if(req.method==="POST"&&url.pathname==="/native-cumulative-numeric"){
     const start=url.searchParams.get("start")||"";
     const raw=(url.searchParams.get("inputs")||"").split(",").map(x=>x.trim()).filter(Boolean);
