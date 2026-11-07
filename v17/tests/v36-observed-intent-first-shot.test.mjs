@@ -226,3 +226,96 @@ test('Long unseen 1,800-token inputs, genuine Unicode comparison, incomplete/unk
   maxTokens:1800,originalMemoryUnchangedByEvaluation:true,
   unlearnedSemanticsNeverInvented:true}));
 });
+
+
+test('Compositional unseen instruction wording: prior phrasing-only fails, two supported phrase surfaces unlock NEW arrangements; ambiguity, negation and unknown synonyms are rejected',()=>{
+ const m=new LearnedCognitiveMap();
+ const effects=[
+  {to:'coffee',phrases:['Brew this drink','Please brew the refreshment']},
+  {to:'water',phrases:['Dilute this drink','Please dilute the refreshment']}
+ ];
+ const contexts=['Mira buys ','Ivo finds '];
+ function live(variant){
+  for(const effect of effects)for(let j=0;j<contexts.length;j++){
+   const before=contexts[j]+'tea.',after=contexts[j]+effect.to+'.';
+   m.observeWorld(before+'\n'+after,
+    {id:'training-'+variant+'-'+effect.to+'-'+j});
+   const witnessed=observeInstructionTrajectory(m,{
+    instruction:effect.phrases[variant],states:[before,after],
+    episodeId:'training-'+variant+'-'+effect.to+'-'+j,
+    executedTransitionsObserved:true});
+   assert.equal(witnessed.ok,true);
+  }
+ }
+ const corpusSnapshot=()=>JSON.stringify(m.export());
+ const source='Never_seen keeps tea.';
+ const targetFree={
+  brew:'Brew the drink',
+  dilute:'Dilute the refreshment'
+ };
+ const ask=(instruction,sourceText=source)=>answerFromObservedInstructionPath(m,{
+  instruction,source:sourceText},{allowComposedInstructions:true});
+ live(0);
+ const firstBrew=ask(targetFree.brew);
+ assert.equal(firstBrew.found,false);
+ assert.equal(firstBrew.reason,'NO_TWO_WITNESSED_INSTRUCTION_PHRASINGS');
+ live(1);
+ const before=corpusSnapshot();
+ const samples=[];
+ for(const seed of [31,47,73]){
+  for(let i=0;i<20;i++){
+   const s='Unseen_'+seed+'_'+i+' keeps tea.';
+   samples.push({source:s,instruction:targetFree.brew,
+    reference:'Unseen_'+seed+'_'+i+' keeps coffee.'});
+   samples.push({source:s,instruction:targetFree.dilute,
+    reference:'Unseen_'+seed+'_'+i+' keeps water.'});
+  }
+ }
+ let full=0;
+ for(const sample of samples){
+  const p=ask(sample.instruction,sample.source);
+  assert.equal(p.answer,sample.reference,JSON.stringify(p).slice(0,1000));
+  assert.ok(p.evidence.unobservedInstructionPhrase===true);
+  assert.equal(p.evidence.recognitionMechanism,
+   'COMPOSITION_OF_PREVIOUSLY_WITNESSED_INSTRUCTION_WORDS');
+  assert.equal(p.referenceAnswerProvided,false);
+  assert.ok(p.path.length===1&&p.path[0].crossWorld);
+  full++;
+ }
+ assert.equal(full,120);
+ assert.equal(corpusSnapshot(),before,'Observed memory MUST remain frozen across withheld instructions');
+ const a=ask('Brew dilute the drink');
+ assert.equal(a.found,false);assert.equal(a.reason,'AMBIGUOUS_COMPOSED_GOAL_AXES');
+ const negated=ask('Do not brew this drink');
+ assert.equal(negated.found,false);
+ assert.equal(negated.reason,'UNKNOWN_INSTRUCTION_WORDS');
+ const notLearned=ask('Please ferment this drink');
+ assert.equal(notLearned.found,false);
+ assert.equal(notLearned.reason,'UNKNOWN_INSTRUCTION_WORDS');
+ const unknownContent=ask('Brew a drink');
+ assert.equal(unknownContent.found,false);
+ assert.equal(unknownContent.reason,'UNKNOWN_INSTRUCTION_WORDS');
+ const restored=LearnedCognitiveMap.restore(m.export());
+ const afterRestore=answerFromObservedInstructionPath(restored,{
+  instruction:targetFree.brew,source},{allowComposedInstructions:true});
+ assert.equal(afterRestore.answer,'Never_seen keeps coffee.');
+ // Original words at ALL training surfaces remain in evidence; the exact
+ // unseen phrasing is never stored in memory as a teacher example.
+ assert.equal([...m.instructionGoalMemory.keys()].includes('brew the drink'),false);
+ // Learned motor remains causally necessary despite identifying the goal.
+ const ablated=LearnedCognitiveMap.restore(m.export());
+ for(const [key,rule] of [...ablated.rules])
+  if(rule.from==='tea'&&rule.to==='coffee')ablated.rules.delete(key);
+ assert.equal(answerFromObservedInstructionPath(ablated,{
+  instruction:targetFree.brew,source},{allowComposedInstructions:true}).found,false);
+ console.log('V36_COMPOSED_UNSEEN_INSTRUCTION_WORDS',JSON.stringify({
+  beforeTwoPhrasingsFound:firstBrew.found,
+  observedTaskPhrasings:4,observedEpisodeWitnesses:8,
+  heldoutUnseenQuestionWordingExact:full,total:samples.length,
+  distinctGoalsOnSameSource:2,
+  removedOriginalActionBreaksAbility:true,
+  unknownContentAndNegationCorrectlyAbstain:true,
+  unchangedOriginalDiscoverer:true,
+  commonWordsOnlyNoGeneralSynonymUnderstanding:true
+ }));
+});
