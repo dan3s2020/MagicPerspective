@@ -89,6 +89,7 @@ const mathAxesFile = saveFile ? saveFile + ".observed-math-axes.v8" : null;
 const liveMathAxes = workerData.mathAxes ? (resume
   ? LiveObservedMathAxes.restore(mathAxesFile)
   : new LiveObservedMathAxes({saveFile:mathAxesFile})) : null;
+let lastMathSnapshotPairs = liveMathAxes?.coupledAccepted || 0;
 let textPaths = new TextActionPaths(), causalText = new CausalTextAgent({seed: brain.seed});
 if (resume && textFile && fs.existsSync(textFile)) {
   try {
@@ -105,6 +106,7 @@ const saveText = () => {
   fs.writeFileSync(textFile + ".tmp", JSON.stringify({version: 1, paths: textPaths.export(), causal: causalText.export()}));
   fs.renameSync(textFile + ".tmp", textFile);
   liveMathAxes?.save();
+  if(liveMathAxes) lastMathSnapshotPairs=liveMathAxes.coupledAccepted;
 };
 // The very same corpus, already lived by the original AligningGraph, is also
 // learned at token/phrase/sentence scales within the SAME Brain and checkpoint.
@@ -154,7 +156,16 @@ const absorbObservedDifferences = row => {
   const observedText=Buffer.from(row.bytes).toString("latin1");
   const learned=brain.learnObservedTransformations(observedText);
   observedPipeline.accepted+=learned.newSentences;
+  // Persist a frozen, atomic learner snapshot during long CUDA batches so
+  // the live HTTP UI can answer without waiting in the training worker queue.
+  const beforeMathPairs=liveMathAxes?.coupledAccepted||0;
   liveMathAxes?.consume(observedText);
+  if(liveMathAxes && liveMathAxes.coupledAccepted>beforeMathPairs &&
+    (!mathAxesFile || !fs.existsSync(mathAxesFile) ||
+      liveMathAxes.coupledAccepted-lastMathSnapshotPairs>=4)){
+    liveMathAxes.save();
+    lastMathSnapshotPairs=liveMathAxes.coupledAccepted;
+  }
   observedPipeline.last=learned;
 };
 const absorbConstructed = row => {
