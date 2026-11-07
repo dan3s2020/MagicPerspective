@@ -160,6 +160,40 @@
         <button type="button" id="veilPlan">Construiește ruta înainte de acțiune</button></div>
       <pre id="veilPlanOut" style="white-space:pre-wrap;max-height:190px;overflow:auto;color:#f3d6a2;font:12px ui-monospace,monospace">Rutele sunt calculate doar pe muchii observate și nu schimbă memoria.</pre>
     </section>
+    <section id="questionGoalBox" hidden style="margin:12px 0;border:1px solid #6486b5;border-radius:12px;padding:14px">
+      <h2>V24 · Labirint textual către ținta prezisă · EXACT Discoverer.shape</h2>
+      <p class="note">Ținta este dedusă din întrebarea curentă și lumea învățată, NU furnizată ca răspuns. Linia aurie este forma soluției calculată ÎNAINTE de primul pas; albastru este reluarea validată a tranzițiilor observate. Nu este feedback dintr-o lume semantică externă. Precizia pe răspunsuri noi este măsurată separat.</p>
+      <div class="row" style="gap:12px;align-items:center">
+        <label>Brain # <input id="questionGoalWorker" type="number" min="0" step="1" value="0" style="width:65px"></label>
+        <span id="questionGoalStatus" class="dim" aria-live="polite">Aștept modelul învățat...</span>
+      </div>
+      <div class="row">
+        <label style="flex:1">Întrebare completă (fără răspuns furnizat)
+          <textarea id="questionGoalQuestion" rows="3" style="display:block;width:100%;background:#071622;color:#e3efff;border:1px solid #44627e;border-radius:8px;padding:8px" placeholder="Introdu întrebarea nevăzută..."></textarea>
+        </label>
+      </div>
+      <div class="row">
+        <label>Noise/T <input id="questionGoalNoise" type="range" min="0" max="2" value="0" step="0.05"></label>
+        <span id="questionGoalNoiseOut" class="dim">0</span>
+        <label>Buget stări <input id="questionGoalNodes" type="number" min="100" max="4000" value="1500" step="100" style="width:88px"></label>
+        <button id="questionGoalPlan" type="button">Prezice forma integrală înainte de prima mișcare</button>
+      </div>
+      <canvas id="questionGoalCanvas" width="900" height="390" style="display:block;width:100%;background:#051321;border:1px solid #305874;border-radius:8px" aria-label="Traseul prezis în spațiul 5D proiectat și reluarea acțiunilor observate"></canvas>
+      <div class="row">
+        <label>Axa X <select id="questionGoalX"></select></label>
+        <label>Axa Y <select id="questionGoalY"></select></label>
+        <button type="button" id="questionGoalPrev">◀ Pas</button>
+        <button type="button" id="questionGoalPlay">⏸ Replay</button>
+        <button type="button" id="questionGoalNext">Pas ▶</button>
+        <span id="questionGoalFrame" class="dim">0 / 0</span>
+      </div>
+      <input type="range" id="questionGoalScrub" min="0" max="0" value="0" style="width:100%" aria-label="Cadrul execuției observate">
+      <label class="dim">Viteză animație (ms/pas) <input type="range" id="questionGoalSpeed" min="60" max="1200" step="20" value="240"></label>
+      <pre id="questionGoalMetrics" style="white-space:pre-wrap;overflow:auto;max-height:240px;font:12px/1.6 Consolas,monospace;color:#bcdef9">Fără rezultate inventate: aștept un traseu real.</pre>
+      <div class="row"><label>Exerciții OpenThoughts3 nevăzute <input id="questionGoalHeldN" type="number" min="1" max="16" value="4" style="width:62px"></label>
+        <button id="questionGoalHeldTest" type="button">Testează răspunsurile exacte din prima</button></div>
+      <pre id="questionGoalHeldResults" style="white-space:pre-wrap;overflow:auto;max-height:260px;font:12px/1.55 Consolas,monospace;color:#d5ebb9">Niciun test înghețat executat.</pre>
+    </section>
     <div id="cognitiveBox" hidden style="margin:12px 0;border:1px solid #25887e;border-radius:10px;padding:12px">
       <h2>Harta cognitivă a limbajului · ORIGINAL Discoverer.shape()</h2>
       <p class="note">Absoarbe observații complete, deduce transformări din contraste și propagă forma soluției înainte de acțiune. Regulile deduse sunt ipoteze până la verificarea efectelor într-o lume reală. Propoziția-țintă NU este transmisă creierului.</p>
@@ -303,6 +337,7 @@
 </div>
 <script type="module" src="app.js"></script>
 <script type="module" src="text-hypermaze-live.js"></script>
+  <script type="module" src="question-goal-live.js"></script>
  <script type="module" src="veil-aether-live.js"></script>
 </body>
 </html>
