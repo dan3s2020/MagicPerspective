@@ -136,6 +136,18 @@ The string is missing the terminator: ".
 
 **Important:** The user executed `git pull --ff-only` even though an earlier `git status --porcelain` showed local changes. The pull completed as a fast-forward and did not itself demonstrate data loss. The cause of the later parser error is recorded separately in the V21 Windows PowerShell 5.1 postmortem.
 
+## USER-08 — clean install after repository removal
+
+> INSTALEAZA DE LA  0 CA AMS TERS TOT
+
+This was followed by a fresh-install command and an active V21 UI screenshot. The literal USER message is preserved; the original executable session log after that message is not present here.
+
+## USER-09 — distinct symbol count and dataset progress request
+
+> DE CE RAMAN SIMBOLURILE ABSORBITE BLOCATE SI NU MAI CRESC?? VREAU SA SI VAD CAT DIN DATASETUL DE TRAINING A CONSUMAT %
+
+Accompanied by a screenshot showing approximately 194,790 lived steps and 100 distinct symbols. Screenshot binary remains in original chat, NOT in Git. Scientific resolution: `v17/docs/V21_DATASET_CONSUMPTION_AND_SYMBOL_VOCAB_20261107.md`.
+
 ## Archival limitation
 
 This is an exact-text attempt for visible USER text and terminal output; it is NOT a full chronological assistant+user+image export, and it does NOT certify content before this visible conversation. Retain the original screenshots in the chat and mark their archive status `MISSING_BINARY` until actual source assets become available.
