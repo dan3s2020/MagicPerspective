@@ -54,6 +54,80 @@ export function recordOriginalHypermazeAttempt(state,plan,query={}){
  if(a.events.length>a.maxEvents){a.events.shift();a.evictedEvents++;}
  return id;
 }
+// Frozen heldout natural-language answer audit. The real withheld answer
+// NEVER enters this function or checkpoint, only boolean exact-match from a
+// separate scorer that already compared after the original plan was frozen.
+export function recordOriginalFrozenQA(state,{question,plan,exact,canonical,
+ source="real-corpus-heldout"}={}){
+ if(typeof question!=="string"||typeof exact!=="boolean"||
+    typeof canonical!=="boolean")
+  throw Error("V30 heldout evidence needs a question and scorer booleans only");
+ const a=atlasState(state),id=a.nextId++;
+ const routeFound=!!plan?.found;
+ a.attemptsTotal++;
+ a.qaEvaluationsTotal=(a.qaEvaluationsTotal||0)+1;
+ if(exact){a.successesTotal++;a.qaExactWholeAnswersTotal=
+  (a.qaExactWholeAnswersTotal||0)+1;}
+ else a.failuresTotal++;
+ if(canonical)a.qaCanonicalWholeAnswersTotal=
+  (a.qaCanonicalWholeAnswersTotal||0)+1;
+ if(routeFound)a.qaPlannedRoutesTotal=(a.qaPlannedRoutesTotal||0)+1;
+ const motifs=state._qaMotifStatsHint||null;
+ const issues=[];
+ if(!routeFound)issues.push({
+  code:"NO_GENERAL_QA_TRANSFORMATION_AXIS",
+  kind:"missing-language-transformations",
+  explanation:"The original Brain has no learned reusable question-to-complete-answer action for this heldout question; source-order segments are not executable semantic corridors.",
+  observed:true
+ });
+ if(routeFound&&!exact)issues.push({
+  code:"ORIGINAL_ROUTE_DID_NOT_YIELD_CORRECT_FULL_ANSWER",
+  kind:"independent-answer-mismatch",
+  explanation:"A pre-action route existed, but its entire generated answer disagreed with the withheld reference on the independent exact scorer.",
+  observed:true
+ });
+ if(!routeFound&&String(plan?.reason||"").includes("unsupported-query"))
+  issues.push({code:"QUERY_ONTOLOGY_NOT_IDENTIFIED",
+   kind:"design-gate",explanation:"Known Q/A role learner supports a bounded grammar; this different question lacks transferable semantic action axes.",
+   observed:true});
+ issues.push({code:"TEXT_SEGMENT_ORDER_IS_NOT_ACTION_PHYSICS",
+  kind:"structural-vs-causal-gap",
+  explanation:"Cross-exercise lexical motif matches or consecutive chunks are structural observations, not independently confirmed semantic before/action/after transitions.",
+  observed:true});
+ const event={id,kind:"frozen-real-natural-language-qa",
+  outcome:exact?"answer-correct":routeFound?"answer-incorrect":"path-missing",
+  reason:plan?.reason||"no-native-semantic-QA-path",
+  start:sliceText(question),goalTerms:[],
+  originalPlanner:"Discoverer.shapeGraph",
+  originalPlannerActuallyInvoked:routeFound,
+  priorReferenceAnswerProvided:false,
+  withheldGoldAnswerNotPersisted:true,
+  comparedAfterFrozenPrediction:true,heldoutSemanticAccuracyEstablished:false,
+  rawWholeAnswerExact:exact,canonicalWholeAnswerExact:canonical,
+  found:routeFound,inferred:routeFound,actions:plan?.actions?.length||0,
+  predictionsAreNotIndependentPhysicalExecution:true,
+  trace:(plan?.trace||[]).slice(0,128).map((step,i)=>({
+   order:i,from:sliceText(step.from),to:sliceText(step.to),
+   action:sliceText(step.action?.kind||step.action||"observed-qa-axis"),
+   status:"learned-unverified-semantic-action",
+   episode:null,source:"historical-q-a-outcome-witness",
+   observedSupport:step.action?.actualObservedContrastSupport??null,
+   value:Number.isFinite(step.value)?step.value:null
+  })),
+  diagnostics:issues,
+  graph:{reachableStates:plan?.graph?.nodes??null,
+   goalNodes:routeFound?1:0,expansionTruncated:false,
+   nodesRetained:state.nodes?.size||0,observedEdges:state.edges?.size||0,
+   proposedEdges:state.proposed?.size||0},
+  source,
+  modelPredictionPreview:sliceText(routeFound?plan.predicted:"",160),
+  stateOfEvidence:"real heldout question; no gold answer words stored in original Brain"
+ };
+ a.events.push(event);
+ if(a.events.length>a.maxEvents){a.events.shift();a.evictedEvents++;}
+ return {id,answerCorrect:exact,preactionRouteFound:routeFound,
+  withheldAnswerNeverStored:true};
+}
 function diagnoseNoPath(state,plan,query) {
  const issues=[];
  const m=plan.memory||{},reasons=String(plan.reason||"");
@@ -104,8 +178,8 @@ function diagnoseNoPath(state,plan,query) {
 
 function listFiltered(records,filter,search){
  let rows=records;
- if(filter==="failed")rows=rows.filter(x=>x.found===false||x.outcome==="path-missing");
- if(filter==="found")rows=rows.filter(x=>x.found===true||x.outcome==="path-found");
+ if(filter==="failed")rows=rows.filter(x=>x.found===false||x.outcome==="path-missing"||x.outcome==="answer-incorrect");
+ if(filter==="found")rows=rows.filter(x=>x.outcome==="path-found"||x.outcome==="answer-correct");
  if(filter==="verified")rows=rows.filter(x=>x.status==="physically-verified");
  if(filter==="proposed")rows=rows.filter(x=>x.status==="hypothesis"||x.status==="inferred-unverified");
  if(filter==="blocked")rows=rows.filter(x=>String(x.status).includes("block"));
@@ -191,7 +265,12 @@ export function originalHypermazeAtlas(brain,{view="attempts",offset=0,limit=50,
   rows:rows.slice(from,from+count),selectedAttempt:selected,
   comparison:{
    foundRetained:a.events.filter(x=>x.found).length,
-   failedRetained:a.events.filter(x=>!x.found).length,
+   failedRetained:a.events.filter(x=>x.outcome==="path-missing"||
+    x.outcome==="answer-incorrect").length,
+   wholeAnswerEvaluationsRetained:a.events.filter(x=>
+    x.kind==="frozen-real-natural-language-qa").length,
+   wholeAnswerExactRetained:a.events.filter(x=>
+    x.kind==="frozen-real-natural-language-qa"&&x.rawWholeAnswerExact).length,
    withInferredEdges:a.events.filter(x=>x.found&&x.inferred).length,
    fullyPhysicalRoutes:a.events.filter(x=>x.found&&!x.inferred).length,
    reasons:[...a.events.reduce((map,event)=>{
@@ -211,6 +290,10 @@ export function originalHypermazeAtlas(brain,{view="attempts",offset=0,limit=50,
   memory:{
    originalNativeBrain:true,version:state.version,
    attemptsTotal:a.attemptsTotal,successesTotal:a.successesTotal,
+   qaEvaluationsTotal:a.qaEvaluationsTotal||0,
+   qaExactWholeAnswersTotal:a.qaExactWholeAnswersTotal||0,
+   qaCanonicalWholeAnswersTotal:a.qaCanonicalWholeAnswersTotal||0,
+   qaPlannedRoutesTotal:a.qaPlannedRoutesTotal||0,
    failuresTotal:a.failuresTotal,attemptsRetained:a.events.length,
    attemptsEvicted:a.evictedEvents,
    physicalNodes:state.nodes.size,
