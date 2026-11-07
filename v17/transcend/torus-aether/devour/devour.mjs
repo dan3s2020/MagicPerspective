@@ -122,6 +122,19 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
+    if(m.type==="heartbeat"){
+      const existing=graphs.get(sl.w);
+      if(existing){
+        const gpu=existing.gpu||{settings:gpuFor()};
+        gpu.batch={phase:m.phase,done:m.done,total:m.total,
+          noProgressSeconds:m.noProgressSeconds,heartbeatAt:m.at};
+        existing.gpu=gpu;
+        existing.snapshotAt=m.at;
+        existing.chars=m.chars;existing.exercises=m.exercises;
+        recordTelemetry(existing);
+      }
+      return;
+    }
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old=graphs.get(sl.w);
