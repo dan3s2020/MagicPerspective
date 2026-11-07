@@ -266,6 +266,92 @@ http.createServer((req, res) => {
     sl.wk.postMessage({nativeHypermazeGoal:{id,start,required,execute,topology,atlas,maxPaths,trainNoise:false}});
     return;
   }
+  // Read the append-only atlas WITHOUT making up paths from a new model.
+  // Byte cursor avoids reading unlimited training history into RAM.
+  if(req.method==="GET"&&url==="/native-hypermaze-atlas"){
+    if(!process.argv.includes("--native-hypermaze"))
+      return json(res,{error:"Original native atlas not activated"});
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl)return json(res,{error:"Unknown original Brain"});
+    try{
+      return json(res,{w:sl.w,...readNativeAtlasLedger(atlasFile(sl),{
+        cursor:Number(q.get("cursor")||0),limit:Number(q.get("limit")||20)})});
+    }catch(err){return json(res,{error:err.message});}
+  }
+  // Every learned transformation class remains in the SAME Brain, including
+  // evidence from earlier, fragmented corpus episodes. Page the entire
+  // catalogue rather than returning only a handpicked "top 24".
+  if(req.method==="GET"&&url==="/native-hypermaze-operators"){
+    if(!process.argv.includes("--native-hypermaze"))
+      return json(res,{error:"Original native atlas not activated"});
+    const sl=slots.find(x=>x.w===+(q.get("w")||0));
+    if(!sl)return json(res,{error:"Unknown original Brain"});
+    const offset=Math.min(1e8,Math.max(0,Math.trunc(Number(q.get("offset"))||0))),
+      limit=Math.min(200,Math.max(1,Math.trunc(Number(q.get("limit"))||50)));
+    if(!sl.wk){
+      try{
+        const f=saveOf(sl);
+        if(!fs.existsSync(f))throw Error("Original Brain checkpoint not yet saved");
+        const brain=Brain.load(f),model=brain.observedTransformations;
+        const all=[...model.operators.values()];
+        return json(res,{w:sl.w,total:all.length,offset,
+          nextOffset:Math.min(all.length,offset+limit),
+          complete:offset+limit>=all.length,
+          source:"same original saved Brain.v8",
+          droppedOperatorFamilies:model.droppedOperators,
+          rejectedLongObservations:model.rejectedLong,
+          evictedActiveObservations:model.evicted,
+          operators:all.slice(offset,offset+limit).map(op=>({key:op.key,
+            kind:op.kind,from:op.from,to:op.to,left:op.left,right:op.right,
+            sourceObservations:op.sourceObservations,evidence:op.evidence}))});
+      }catch(err){return json(res,{error:err.message});}
+    }
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Original Brain worker busy: operator catalogue timeout"});
+    },30000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+    sl.wk.postMessage({nativeHypermazeOperators:{id,offset,limit}});
+    return;
+  }
+  // Strict TWO-PHASE EVALUATION: the gold response is supplied only here,
+  // after /native-hypermaze has frozen and persisted its pre-action shape.
+  if(req.method==="POST"&&url==="/native-hypermaze-audit"){
+    if(!process.argv.includes("--native-hypermaze"))
+      return json(res,{error:"Original native atlas not activated"});
+    let body="",bytes=0,tooLarge=false;
+    req.on("data",d=>{
+      bytes+=d.length;
+      if(bytes>256*1024){tooLarge=true;return;}
+      body+=d;
+    });
+    req.on("end",()=>{
+      if(tooLarge)return json(res,{error:"Reference payload too large"});
+      let m;
+      try{m=JSON.parse(body);}catch{return json(res,{error:"Expected JSON reference AFTER pre-action path"});}
+      const sl=slots.find(x=>x.w===+(m.w||0));
+      if(!sl)return json(res,{error:"Unknown original Brain"});
+      if(typeof m.planId!=="string"||typeof m.reference!=="string"||m.reference.length>100000)
+        return json(res,{error:"Audit requires a prior plan ID and separate withheld reference"});
+      const saved=savedNativeAtlasPlans.get(m.planId);
+      if(saved&&saved.sl===sl){
+        try{
+          const audit=auditNativePath({plan:saved.plan,atlas:saved.atlas,
+            reference:m.reference,brain:saved.brain});
+          appendNativeAtlasLedger(atlasFile(sl),{event:"postmortem",planId:m.planId,
+            audit,reference:m.reference,body:saved.body,fromSavedBrain:true});
+          return json(res,{w:sl.w,planId:m.planId,audit,
+            referenceEnteredAfterPathFrozen:true});
+        }catch(err){return json(res,{error:err.message});}
+      }
+      if(!sl.wk)return json(res,{error:"Original Brain worker stopped; this plan ID is not in the live session. Earlier records remain in the append-only atlas ledger."});
+      const id=++chatId,timer=setTimeout(()=>{
+        chats.delete(id);json(res,{error:"Original worker audit timeout"});
+      },30000);
+      chats.set(id,result=>{clearTimeout(timer);json(res,{...result,w:sl.w});});
+      sl.wk.postMessage({nativeHypermazeAudit:{id,planId:m.planId,reference:m.reference}});
+    });
+    return;
+  }
   if(req.method==="POST"&&url==="/language-maze"){
     const sl=slots.find(x=>x.w===+(q.get("w")||0));
     if(!sl||!sl.worlds.includes("text"))
