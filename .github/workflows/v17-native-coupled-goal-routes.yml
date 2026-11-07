@@ -1,0 +1,47 @@
+name: V17 native whole-answer coupled goal routes (isolated research)
+on:
+  push:
+    branches: [experiment/V17-NATIVE-COUPLED-GOAL-ROUTES-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-causal-not-character:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse all changed native source and UI without substituting a demo
+        run: |
+          node --check v17/transcend/torus-aether/worlds/native-coupled-goal-field.mjs
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/research/text-hypermaze/state-dependent-axes.mjs
+      - name: Native Brain 45 blind whole answers, ablation, V8 checkpoint and long-form negative
+        run: node --test v17/tests/native-goal-coupled-whole-answer.test.mjs
+      - name: Existing source-integrated native tests
+        run: |
+          node --test v17/tests/shared-world-core-v17.test.mjs
+          node --test v17/tests/shared-world-core-http.test.mjs
+          node --test v17/tests/torus-unified-http.test.mjs
+          node --test v17/tests/torus-live-observability.test.mjs
+      - name: Source-level local axis and shared state-world invariants
+        run: |
+          node --test v17/tests/text-hypermaze-state-dependent.test.mjs
+  windows-entrypoint:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse exact PowerShell scripts
+        shell: powershell
+        run: |
+          $ErrorActionPreference="Stop"
+          foreach ($f in @("v17/START_V17.ps1","v17/START_NATIVE_V17_TRAINING_LIVE.ps1")) {
+            $t=$null;$e=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f),[ref]$t,[ref]$e)|Out-Null
+            if($e.Count){throw "$f parse failed $($e|Out-String)"}
+          }
