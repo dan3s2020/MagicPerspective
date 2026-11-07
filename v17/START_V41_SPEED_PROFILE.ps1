@@ -13,7 +13,8 @@ param(
   [int]$XdAtlasEvery=16000,
   [int]$MazeEvery=4000,
   [int]$Mem=2,
-  [switch]$NoBrowser
+  [switch]$NoBrowser,
+  [switch]$EndogenousNoise
 )
 $ErrorActionPreference="Stop"
 $Root=$PSScriptRoot
@@ -79,6 +80,7 @@ $parameters=@(
   "-MazeEvery","$MazeEvery"
 )
 if($fresh){$parameters+="-Fresh"}
+if($EndogenousNoise){$parameters+="-EndogenousNoise"}
 $native=Start-Process -FilePath "powershell.exe" -WorkingDirectory $Root -ArgumentList $parameters -PassThru
 $ready=$false
 for($i=0;$i -lt 1800;$i++){
