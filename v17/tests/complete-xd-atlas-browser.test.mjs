@@ -78,11 +78,15 @@ test("ORIGINAL browser renders the ENTIRE finite maze + genuine cross-episode te
   // The original UI is auto-playing before Chromium clicks Pause: the
   // animation can already be at step 1, 2 or 7. Explicitly scrub to zero
   // before asserting the effect of the NEXT ONE real action.
-  await page.locator("#atlasXdScrub").evaluate(el=>{
+  // Browser scheduled redraws may reset the frame between two Playwright
+  // remote commands even after Pause. Scrub + exactly one click + assertion
+  // happen within a single browser event turn; we still examine real UI.
+  const oneStep=await page.locator("#atlasXdScrub").evaluate(el=>{
     el.value="0";el.dispatchEvent(new Event("input",{bubbles:true}));
+    document.getElementById("atlasXdForward").click();
+    return document.getElementById("atlasXdStep").textContent;
   });
-  await page.locator("#atlasXdForward").click();
-  assert.match(await page.locator("#atlasXdStep").textContent(),/Acțiune 1\//);
+  assert.match(oneStep,/Acțiune 1\//);
   await page.locator("#atlasScale").selectOption("1");
   await page.waitForFunction(()=>
     (document.getElementById("atlasPageText")?.textContent||"").includes("Scara 2"),
