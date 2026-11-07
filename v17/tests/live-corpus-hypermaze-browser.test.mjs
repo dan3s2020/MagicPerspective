@@ -52,6 +52,13 @@ test("Chromium sees genuine pre-action predicted route, observed answer and nonb
   },null,{timeout:50000});
   assert.equal(await page.locator("#tabTrain").getAttribute("class"),"on");
   assert.equal(await page.locator("#hypermazeBox").isVisible(),true);
+  assert.equal(await page.locator("#workerHealth").isVisible(),true,
+   "Worker health must remain on the original training page");
+  await page.waitForFunction(()=>
+    (document.getElementById("workerHealth")?.textContent||"").includes("Ultimul graf"),
+    null,{timeout:15000});
+  assert.match(await page.locator("#workerHealth").textContent(),
+    /Heartbeat: .*Ultimul graf: .*Fază raportată:/);
   assert.equal(await page.locator("#textMazeBox").isVisible(),true,
    "Native original V17 text maze must not disappear");
   assert.equal(await page.locator("#g").isVisible(),true,
