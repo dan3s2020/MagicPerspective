@@ -69,3 +69,25 @@ When genuine evidence is absent, \`--gate\` returns nonzero and
 \`v17/tests/hypermaze-stopship-release.test.mjs\` verifies that the release is blocked.
 Never rename component tests to "100% solved" or disable the gate to report success.
 Research CI: https://github.com/dan3s2020/MagicPerspective/actions/workflows/v17-native-hypermaze-stopship-research.yml.
+
+## 2026-11-07: three additional regressions and verified research remediation
+
+### R1 — repeated words caused ZERO learned text transitions
+The old original `ObservedTransformations._candidateSentences` required `tokens.length-2` shared entries even though the inverted index stores only UNIQUE tokens. On real-style long repeated prose, 16 passages of 1,273 UTF-8 bytes produced **0 learned operators**; the strict 100-target long-text test failed **0/100**. Fixed in isolated source by calculating overlap on distinct real contextual anchors, with exact `oneEdit` proof of every inferred operation. Real one-word insert/delete operations now have separate regression tests.
+
+### R2 — original inverted index silently forgot distant learning
+After 1,000 distinct 1.27KB observations, the old `last-96 IDs / last-80 queried` token index learned only **42 operators** and failed **0/24** remaining held-out long textual combinations. Root cause: a rare earlier axis appeared 256+ observations before its later corresponding state and was no longer retrievable. The original model now retains all **active** source observations in its bounded `maxObserved` window and considers rare shared anchors across the complete active history. It still checks exact real before/after one-edit sequences before learning anything.
+
+**Verified after correction in GitHub Actions on CPU:** 1,000 distinct observed passages totaling 1.274 MB in **0.620 seconds**, **1,614.08 structured exercises/sec**, **2.0567 MB/sec**, 60 learned operators, **24/24** strictly withheld full 1KB+ passages correct before first action and completed by the original learned body; 42.27 MiB reported Node heap. These are reproducible controlled tests, **NOT OpenThoughts, NOT RTX CUDA, and NOT proof of general semantic understanding**. The smaller 16-observation 100-target benchmark remains **100/100**, with 5 original learned action steps per output and independent answer masking.
+
+### R3 — legacy training stream erased Unicode
+`devour/worker.mjs` historically mapped code points outside ASCII to `?` in its byte stream, discarding Romanian diacritics before the native textual-world learned transformations. On this isolated branch, ONLY the opt-in `--native-hypermaze` original worker additionally passes the exact original corpus string to the original `ObservedTransformations` motor, while preserving the legacy AligningGraph byte stream unchanged and forbidding a truncated/unseen suffix from entering a partial row. The actual original V17 worker test now trains on `Știința este calmă.` / `Știința este rapidă.` / `Experiența este rapidă.` / `Experiența este stabilă.` and predicts the never-observed `Știința este stabilă.` before acting. The Unicode text is verified in the checkpoint as actually observed; the predicted target was not provided during training.
+
+### Further limitations still blocking release
+- **100/100 above refers to explicitly constrained structural composition**, not exact open-ended solutions of long unfamiliar mathematical/semantic questions.
+- Original V17 `AligningGraph` and some UI/byte operations still use historical ASCII treatment, so full Unicode/byte preservation through every subsystem has NOT been established. `ObservedTransformations` still has `maxTokens=256` and `maxObserved=12000` working-window caps; rejected/evicted data are tracked but archival reuse for native hypermaze is NOT implemented. Do not claim every byte is learned or permanently preserved.
+- Measured CPU performance includes THIS controlled observed-operator learning path, not every concurrently running V17 organism/generation/world/GPU component. Real full-stack RTX CUDA proof remains missing.
+- Disabling/shuffling geometry 5D and disabling transferred path policy did not change the final answer in these structured tasks. Their **causal benefit remains unproven**. Independent semantic and stochastic noise benefits have NOT been shown.
+- `v17/research/text-hypermaze/production-release-gate.mjs --gate` must remain **BLOCKED**.
+
+Verified current research CI: https://github.com/dan3s2020/MagicPerspective/actions/runs/42343690214
