@@ -8,6 +8,8 @@ param(
   [int]$Mem=3,
   [string]$Worlds="text,maze",
   [string]$Gpu="off",
+  [string]$Cuda="cu126",
+  [string]$PythonExe="",
   [switch]$NoBrowser
 )
 $ErrorActionPreference="Stop"
@@ -22,6 +24,20 @@ function Test-Native {
     $response=Invoke-RestMethod -Uri $Probe -TimeoutSec 3
     return $null -ne $response.graphs -and $null -ne $response.world
   }catch{return $false}
+}
+# Do not mask a fatal CUDA worker as a successfully started trainer.
+try {
+  $Existing = Invoke-RestMethod -Uri $Probe -TimeoutSec 3
+  $Crashed = @($Existing.graphs | Where-Object { $_.status -eq "eroare" -and
+    ("$($_.error)" -match "CUDA|torch|PyTorch|Python|GPU") })
+  if ($Crashed.Count -gt 0) {
+    Write-Warning ("Original V17 CUDA training has failed: "+$Crashed[0].error)
+    if ($StartOriginal) {
+      throw "An original V17 process already occupies port $NativePort but its CUDA worker has failed. Stop that ORIGINAL trainer using Ctrl+C first, then launch again with -StartOriginal -Gpu cuda:0 -OriginalOut SAME_CHECKPOINT_FOLDER. Restarting only this UI cannot fix Python."
+    }
+  }
+} catch {
+  if ($_.Exception.Message -like "*already occupies port*") { throw }
 }
 if (-not (Test-Native)) {
   if (-not $StartOriginal) {
@@ -52,8 +68,13 @@ Exemplu: -OriginalOut "D:\your-original-checkpoint-folder"
     "-Out",('"'+$OriginalOut+'"'),
     "-Workers","$Workers","-Mem","$Mem",
     "-Worlds",('"'+$Worlds+'"'),"-Port","$NativePort",
-    "-Gpu",('"'+$Gpu+'"'),"-Resume","-Start"
+    "-Gpu",('"'+$Gpu+'"'),"-Cuda",('"'+$Cuda+'"'),"-Resume","-Start"
   )
+  if ($PythonExe) { $launch += @("-PythonExe",('"'+$PythonExe+'"')) }
+  if ($Gpu -like "cuda:*") {
+    Write-Host "V17 CUDA preflight: original launcher prepares dedicated gpu\.venv and validates actual torch.cuda.is_available()" -ForegroundColor Cyan
+    Write-Host "DO NOT USE the Hermes-agent venv. The original Python interpreter is selected by START_V17.ps1." -ForegroundColor Yellow
+  }
   Write-Host "Pornesc MOTORUL ORIGINAL V17 cu datele OpenThoughts Parquet, direct." -ForegroundColor Green
   Write-Host "Checkpoint original: $OriginalOut"
   Write-Host "Niciun model V26 cu substitutii de cuvinte nu porneste."
