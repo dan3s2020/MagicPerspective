@@ -1,0 +1,43 @@
+name: V32 coexistence - never stop V24 or other isolated trainers
+on:
+  push:
+    branches:
+      - fix/V32-ISOLATED-CHECKPOINT-COEXISTENCE-20261107
+  pull_request:
+    branches:
+      - experiment/V32-REAL-CUDA-TEXT-THROUGHPUT-VRAM-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-isolation:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Windows PowerShell isolated scripts parse
+        shell: pwsh
+        run: |
+          $ErrorActionPreference="Stop"
+          foreach ($file in @(
+            "v17/START_V32_REAL_CUDA_FULL_VRAM.ps1",
+            "v17/apps/hypermaze-studio-v26/checkpoint-process-scope.ps1",
+            "v17/tests/v32-independent-trainer-coexistence.ps1"
+          )) {
+            $tokens=$null;$errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd $file),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){throw "$file parse failed: $($errors|Out-String)"}
+          }
+          Write-Host "V32_WINDOWS_SYNTAX_PASS"
+      - name: Reproduce EXACT user V24 process vs V32 checkpoint; allow concurrent isolated trainings
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File v17/tests/v32-independent-trainer-coexistence.ps1
+      - name: Verify exact user's V24 checkpoint/port kept untouched
+        shell: pwsh
+        run: |
+          $source=Get-Content v17/START_V32_REAL_CUDA_FULL_VRAM.ps1 -Raw
+          if($source -match "Stop-Process|taskkill|TerminateProcess|kill\("){throw "Cross-agent process termination prohibited"}
+          if($source -notmatch "SameCheckpoint" -or $source -notmatch "Independent"){throw "Scope check missing"}
+          if($source -match "if \(\$Running.Count -gt 0\)"){throw "Global cross-agent blocking regression returned"}
+          Write-Host "V32_NO_CROSS_AGENT_INTERFERENCE_PASS"
