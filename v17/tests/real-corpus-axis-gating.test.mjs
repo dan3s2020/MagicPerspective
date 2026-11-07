@@ -66,6 +66,25 @@ test("REAL existing V17 documentation feeds original Brain + gated evaluation; s
   assert.ok(["PASS_MORE_THAN_NATIVE_AND_BIGRAM","NOT_YET_DEMONSTRATED"].includes(r2.status));
   assert.ok(r2.observedEditOperators>=0);
   assert.ok(r2.gate.validation.tokens>0);
+  // Import an existing saved original Brain into a distinct directory.
+  // Its bytes must remain strictly READ-ONLY even when evaluating that Brain.
+  const preservedSave=path.join(out,"brain-real-text.v8");
+  const digestBefore=fs.readFileSync(preservedSave);
+  const importedOut=path.join(tmp,"imported-checkpoint-evaluation");
+  const imported=spawnSync(process.execPath,[
+   command,"--text",corpus,"--out",importedOut,
+   "--import-brain",preservedSave,"--eval-only","--eval-chars","3000"
+  ],{encoding:"utf8",timeout:110000,maxBuffer:1024*1024*8});
+  assert.equal(imported.status,0,"imported native Brain eval failed: "+imported.stderr+"\n"+imported.stdout);
+  const importedReport=JSON.parse(fs.readFileSync(path.join(importedOut,"heldout-results.json"),"utf8"));
+  assert.equal(importedReport.importedCheckpoint,preservedSave);
+  assert.equal(importedReport.modelMutationsDuringTest,0);
+  assert.ok(importedReport.actualObservedTextTokens>0);
+  assert.deepEqual(fs.readFileSync(preservedSave),digestBefore,
+   "Import evaluation must not modify the existing native V17 checkpoint");
+  console.log("EXISTING_V17_CHECKPOINT_READONLY_IMPORT",
+   JSON.stringify({sourceUnchanged:true,evaluated:importedReport.finalTest.tokens,
+    native:importedReport.finalTest.originalNative.accuracy}));
   const final=JSON.stringify({rowsBefore:r1.trainingRows,rowsAfter:r2.trainingRows,
    testTokens:r2.finalTest.tokens,baseline:r2.finalTest.originalNative.accuracy,
    discoveredGate:r2.finalTest.learnedGate.accuracy,status:r2.status});
