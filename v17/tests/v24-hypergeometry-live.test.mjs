@@ -5,7 +5,8 @@ import path from "node:path";
 import os from "node:os";
 import {RealTextAtlas} from "../research/relational-hypermaze/real-corpus-core.mjs";
 import {openRealSource} from "../research/relational-hypermaze/real-data-source.mjs";
-import {RealTrainer} from "../research/relational-hypermaze/real-trainer.mjs";
+import {RealTrainer,makeHTTP} from "../research/relational-hypermaze/real-trainer.mjs";
+import http from "node:http";
 
 test("16D visible node positions derive from actual observed terms, V17 goal field, evidence and time",()=>{
  const atlas=new RealTextAtlas({maxRecords:20});
@@ -62,7 +63,7 @@ test("legacy frozen path is reprojected for interactive 16D display without modi
 });
 test("hyper-dimensional path UI is foreground, selectable, rotatable, sliced and offline old UI is hidden",async()=>{
  const html=await fs.readFile(new URL("../research/relational-hypermaze/real-live.html",import.meta.url),"utf8");
- for(const id of ["axisX","axisY","axisZ","axisW","rotationXY","rotationZW",
+ for(const id of ["showAtlas","showPredictedRoute","axisX","axisY","axisZ","axisW","rotationXY","rotationZW",
   "sliceW","sliceWidth","traceChoice","axisDetail","togglePlayback","actualAnswer",
   "foundBefore","exactBefore","segments"]){
   assert.match(html,new RegExp('id="'+id+'"'));
@@ -77,4 +78,54 @@ test("hyper-dimensional path UI is foreground, selectable, rotatable, sliced and
  const script=html.match(/<script>([\s\S]*?)<\/script>/);
  assert.ok(script);
  assert.doesNotThrow(()=>new Script(script[1]),"actual inline visualizer syntax must parse");
+});
+
+test("global atlas reflects only witnessed learned relations and separately declared similarity hypotheses",()=>{
+ const atlas=new RealTextAtlas({maxRecords:20});
+ for(let i=0;i<11;i++)atlas.observe("What do auroras and particles reveal for entity "+i+"?",
+  "Experienced answer from actual entity "+i,{sourceRow:i});
+ const old=JSON.stringify(atlas.snapshot());
+ const graph=atlas.atlasView({count:8});
+ assert.equal(graph.view,"observed-atlas");
+ assert.equal(graph.method.startsWith("observed memory only"),true);
+ assert.equal(graph.beforeAction,false);
+ assert.equal(graph.found,false);
+ assert.equal(graph.nodes.length,16);
+ assert.equal(graph.dimensions,16);
+ assert.equal(graph.observedEdges,8);
+ assert.equal(graph.edges.filter(e=>e.verified).length,8);
+ assert.ok(graph.nodes.every(n=>Array.isArray(n.axes)&&n.axes.length===16));
+ assert.ok(graph.edges.every(e=>e.verified||e.action.startsWith("hypothesis:")));
+ assert.deepEqual(JSON.stringify(atlas.snapshot()),old,"Atlas read must be completely frozen");
+});
+test("missing original V17 service is detected instead of loading a dead iframe; running V17 graphs is detected correctly",async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),"mp-v24-native-probe-"));
+ t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const file=path.join(root,"text.jsonl");
+ await fs.writeFile(file,Array.from({length:11},(_,i)=>
+  JSON.stringify({prompt:"Question "+i+"?",answer:"Answer "+i})).join("\n")+"\n");
+ const source=await openRealSource({jsonl:file,held:2});
+ const trainer=await new RealTrainer({source,out:path.join(root,"out")}).initialize();
+ const server=await makeHTTP(trainer,{port:0});
+ t.after(()=>new Promise(ok=>server.close(ok)));
+ const original=http.createServer((req,res)=>{
+  if(req.url==="/graphs"){
+    res.setHeader("Content-Type","application/json");
+    return res.end(JSON.stringify({graphs:[{w:0},{w:1}],worlds:["text","maze"]}));
+  }
+  res.writeHead(404);res.end();
+ });
+ await new Promise(ok=>original.listen(0,"127.0.0.1",ok));
+ t.after(()=>new Promise(ok=>original.close(ok)));
+ const nativePort=original.address().port,base="http://127.0.0.1:"+server.address().port;
+ const result=await (await fetch(base+"/api/native?port="+nativePort)).json();
+ assert.equal(result.online,true);
+ assert.equal(result.port,nativePort);
+ assert.equal(result.graphs,2);
+ assert.ok(result.url.endsWith("/transcend/torus-aether/ui/index.html?live=1"));
+ const bad=await (await fetch(base+"/api/native?port=1")).json();
+ assert.equal(typeof bad.online,"boolean");
+ const atlas=await (await fetch(base+"/api/atlas?count=15")).json();
+ assert.equal(atlas.view,"observed-atlas");
+ assert.equal(atlas.nodes.length,0);
 });
