@@ -280,6 +280,26 @@ function drawMath(){
 function renderLiveMath(){
  const x=state.graph?.realMathAxes||state.summary?.realMathAxes;
  if(!x){$("mathStats").textContent="Cercetarea axelor numerice nu este activă în worker (pornește cu START_MAGIC_REAL.ps1).";return;}
+ const prediction=x.predictiveState||null;
+ if(prediction){
+  const f=n=>n==null?"—":Number(n).toFixed(3);
+  $("predictiveState").textContent=
+   "Perechi observate: "+fmt(prediction.pairs)+
+   " · utilizabile: "+fmt(prediction.usable)+
+   " · învățare: "+fmt(prediction.training)+
+   " · validare: "+fmt(prediction.validationScored)+
+   " · test nevăzut: "+fmt(prediction.testScored)+
+   " · axe contextuale selectate: "+fmt(prediction.selectedContextAxes)+
+   "\nMAE test: constant "+f(prediction.prequentialTestBaselineMAE)+
+   " / contextual "+f(prediction.prequentialTestContextMAE)+
+   " / selectat "+f(prediction.prequentialTestSelectedMAE)+
+   "\n"+(prediction.last?.scorable?
+     "Predicție anterioară: "+f(prediction.last.predictedBaseline)+
+     " / contextual "+f(prediction.last.predictedContextual)+
+     " · observat "+prediction.last.delta+" · set "+prediction.last.split:
+     "Insuficiente observații pentru o predicție înainte de învățare.")+
+   "\nAsocieri observate în text; cauzalitatea și limbajul general nu sunt demonstrate.";
+ }else $("predictiveState").textContent="Aștept măsurători reale din worker.";
  $("mathStats").textContent=
   "Rânduri reale observate: "+fmt(x.rows)+
   " · perechi numerice extrase: "+fmt(x.candidatePairs)+
