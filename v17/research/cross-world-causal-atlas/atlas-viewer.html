@@ -1,0 +1,79 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MagicPerspective | Atlas cauzal 4D</title>
+<style>
+:root{color-scheme:dark;font:14px/1.5 system-ui,sans-serif;background:#0b1421;color:#edf4fc}
+body{margin:0 auto;max-width:1450px;padding:25px}h1{font-size:25px}h2{font-size:18px}
+main{display:grid;grid-template-columns:350px 1fr;gap:14px}
+section{padding:17px;margin:12px 0;border:1px solid #2b415c;border-radius:14px;background:#111e30}
+p,small{color:#bacadf}label{margin:8px;display:inline-block}
+select,input,button{background:#203750;color:#fff;border:1px solid #49637c;border-radius:8px;padding:8px}
+button{cursor:pointer}button:hover{background:#315271}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metrics div{border:1px solid #324d66;border-radius:10px;padding:12px}
+.metrics strong{font-size:24px;display:block}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.grid button{height:52px}.grid button.active{border:2px solid turquoise;background:#1b5554}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;background:#08111d;border-radius:10px;padding:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td,th{padding:8px;text-align:left;border-bottom:1px solid #31465f}
+tr:hover{background:#26415c;cursor:pointer}.table{max-height:390px;overflow:auto}
+@media(max-width:850px){main{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<h1>MagicPerspective — Atlas persistent al transformărilor 4D</h1>
+<p>Explorează dovezile reale: 2.048 de muchii, regulile condiționale, cele 288 de trasee prezise înainte de acțiune și cauzele eșecurilor. Nu generează demonstrații sau răspunsuri inventate.</p>
+<section><label>Încarcă datele reale <input id="files" type="file" multiple accept=".json"></label><button id="auto">Încarcă JSON din directorul web</button> <span id="status">Aștept fișierele results.json și atlas-2048-edges.json</span></section>
+<section class="metrics" id="metrics"><div>Fără date</div></section>
+<main><div><section><h2>Secțiune 4D</h2>
+<label>Axa Z <select id="z"></select></label><label>Axa W <select id="w"></select></label>
+<div id="slice" class="grid"></div><p id="coords"></p></section>
+<section><h2>Filtre muchii</h2><label>Acțiune <select id="action"></select></label>
+<label>Dovadă <select id="source"><option value="">Toate</option><option value="directly-observed">Observate</option><option value="inferred-from-other-worlds">Inferate</option></select></label>
+<label>Stare (0–255) <input type="number" min="0" max="255" id="state" placeholder="Toate"></label><button id="clear">Reset filtre</button></section>
+<section><h2>Toate regulile învățate</h2><pre id="rules"></pre></section>
+</div><div>
+<section><h2>Muchiile din atlas și proveniența lor</h2><div class="table"><table><thead><tr><th>De la</th><th>Acțiune</th><th>La</th><th>Dovadă</th><th>Încredere</th></tr></thead><tbody id="edges"></tbody></table></div>
+<pre id="edgeInfo">Selectează o muchie. Vei vedea evenimentele-sursă, lumile de antrenare, regulile alternative și diferența observată/inferată.</pre></section>
+<section><h2>Traseul complet înainte de prima acțiune</h2><label>Sămânță <select id="seed"></select></label><label>Lume nevăzută <select id="world"></select></label><pre id="pathInfo"></pre></section>
+<section><h2>Ce nu a funcționat și de ce</h2><pre id="failureInfo"></pre></section>
+</div></main>
+<script type="module">
+const el=id=>document.getElementById(id),j=x=>JSON.stringify(x,null,2),coord=n=>{let p=[];for(let i=0;i<4;i++){p.unshift(n%4);n=Math.floor(n/4)}return p},state=p=>p.reduce((n,v)=>n*4+v,0);
+let atlas=null,results=null,chosen=0;
+function show(){
+ if(!atlas||!results){el('status').textContent='Sunt necesare ambele fișiere JSON';return;}
+ const a=results.aggregate;el('status').textContent='Dovezi verificate: '+atlas.edges.length+' muchii, '+a.worlds+' lumi';
+ el('metrics').replaceChildren();
+ for(const [name,v] of [['Lumi nevăzute',a.worlds],['Trasee optime',a.optimal],['Muchii totale',atlas.edges.length],['Muchii inferate',atlas.inferred]]){
+  const d=document.createElement('div'),b=document.createElement('strong');b.textContent=v;d.append(b,document.createTextNode(name));el('metrics').append(d);}
+ for(const name of ['z','w']){el(name).replaceChildren();for(let i=0;i<4;i++)el(name).add(new Option(i,i));}
+ el('action').replaceChildren(new Option('Toate',''));for(const a of [...new Set(atlas.edges.map(x=>x.action))])el('action').add(new Option(a,a));
+ el('seed').replaceChildren();for(const run of results.runs)el('seed').add(new Option(run.seed,run.seed));
+ el('rules').textContent=j(atlas.transforms);fillWorlds();drawSlice();drawEdges();drawPaths();
+}
+function fillWorlds(){const r=results.runs.find(x=>String(x.seed)===el('seed').value);el('world').replaceChildren();
+ if(r)r.worldTraces.forEach((x,i)=>el('world').add(new Option('Lumea '+(i+1),i)));}
+function drawSlice(){const z=+el('z').value,w=+el('w').value;el('slice').replaceChildren();
+ for(let x=0;x<4;x++)for(let y=0;y<4;y++){const n=state([x,y,z,w]);let b=document.createElement('button');b.textContent=x+','+y;
+  if(n===chosen)b.className='active';b.onclick=()=>{chosen=n;el('state').value=n;drawSlice();drawEdges()};el('slice').append(b);}
+ el('coords').textContent='Starea selectată: '+chosen+' = ('+coord(chosen).join(',')+')';
+}
+function drawEdges(){if(!atlas)return;const s=el('state').value,action=el('action').value,source=el('source').value;
+ const edges=atlas.edges.filter(e=>(s===''||e.from===+s)&&(!action||e.action===action)&&(!source||e.source===source));
+ el('edges').replaceChildren();for(const e of edges.slice(0,800)){const tr=document.createElement('tr');
+  for(const c of [coord(e.from).join(','),e.action,coord(e.to).join(','),e.source==='directly-observed'?'observată':'inferată',(e.confidence*100).toFixed(1)+'%']){
+   const td=document.createElement('td');td.textContent=c;tr.append(td);}
+  tr.onclick=()=>{el('edgeInfo').textContent=j(e);chosen=e.from;drawSlice()};el('edges').append(tr);}
+ if(edges.length>800)el('edgeInfo').textContent='Se afișează primele 800 din '+edges.length+'. Filtrează o acțiune sau stare pentru inspectare completă.';
+}
+function drawPaths(){if(!results)return;const run=results.runs.find(x=>String(x.seed)===el('seed').value),index=+el('world').value;
+ const trace=run?.worldTraces[index],failed=run?.failedControlPaths?.[index];if(!trace)return;
+ el('pathInfo').textContent=j({seed:trace.worldSeed,start:trace.start,goal:trace.goal,correct:trace.correct,optimal:trace.optimal,
+  entirePreActionShape:trace.shape,everyTransition:trace.route.map(e=>({from:coord(e.from),action:e.action,to:coord(e.to),source:e.source,evidenceIds:e.evidenceIds,confidence:e.confidence})),blockedAlternatives:trace.blockedEdges});
+ el('failureInfo').textContent=failed?j(failed):'Nu există detalii pentru această lume.';
+}
+el('files').onchange=async e=>{try{for(const f of e.target.files){const o=JSON.parse(await f.text());if(o.edges&&o.possibleEdges)atlas=o;if(o.runs&&o.aggregate)results=o;}show()}catch(err){el('status').textContent=err.message}};
+el('auto').onclick=async()=>{try{const [a,b]=await Promise.all(['atlas-2048-edges.json','results.json'].map(async f=>{const r=await fetch(f);if(!r.ok)throw Error(f+' HTTP '+r.status);return r.json()}));atlas=a;results=b;show()}catch(err){el('status').textContent=err.message+'; folosește selectorul de fișiere.'}};
+for(const x of ['z','w'])el(x).onchange=drawSlice;for(const x of ['state','action','source'])el(x).onchange=drawEdges;
+el('seed').onchange=()=>{fillWorlds();drawPaths()};el('world').onchange=drawPaths;
+el('clear').onclick=()=>{el('state').value='';el('action').value='';el('source').value='';drawEdges()};
+</script></body></html>
