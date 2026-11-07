@@ -1,0 +1,28 @@
+name: V27 UI ONLY and EXACT original native metric parity
+
+on:
+  push:
+    branches:
+      - fix/V27-UI-ONLY-PRESERVE-NATIVE-TRAINING-20261107
+  pull_request:
+    branches:
+      - experiment/V25-FROZEN-LONGTEXT-SHAPE-EVIDENCE-20261107
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-ui-only-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native unchanged code and metric parity
+        run: |
+          node --check v17/transcend/torus-aether/ui/v27-studio.js
+          node --check v17/transcend/torus-aether/ui/v27-native-metrics.mjs
+          node --test v17/tests/v27-ui-only-native-metrics.test.mjs
