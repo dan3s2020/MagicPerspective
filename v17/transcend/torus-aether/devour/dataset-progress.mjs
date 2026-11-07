@@ -25,7 +25,7 @@ export function trainingProgress(source, {w = 0, n = 1, learned = 0, mode = "tex
   if (assigned === null) return null;
   const raw = nonneg(learned);
   const processed = Math.min(assigned, raw);
-  const percent = assigned ? Number((100 * processed / assigned).toFixed(2)) : 100;
+  const percent = assigned ? Number((100 * processed / assigned).toFixed(6)) : 100;
   return {
     kind: source.kind,
     mode, // "native-text" = Brain.exercises, "observed-only" = brain.cognitiveDocuments
