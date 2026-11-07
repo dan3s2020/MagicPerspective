@@ -19,6 +19,8 @@ jobs:
         run: node --test v17/tests/v24-native-math-field-heldout.test.mjs
       - name: Native one-Brain real HTTP action training, original checkpoint and long heldout full answer
         run: node --test v17/tests/v24-native-math-http-runtime.test.mjs
+      - name: True independent physical feedback, contextual walls and original solution-shape replanning
+        run: node --test v17/tests/v24-native-math-live-feedback.test.mjs
       - name: Actual V17 exact original maze, 2048 token answer, 48 step preaction shape, ablations
         run: node --test v17/tests/v23-observed-hyperpath-long-range.test.mjs
       - name: Exact original source and V22 predecessor baseline
