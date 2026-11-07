@@ -429,3 +429,95 @@ test("no known goal grammar, no physically observed world effects, or contradict
  n.observeQA("Compute 2 times 3.","An unrelated contradictory outcome.");
  assert.equal(n.planCumulativeQuestion({question:"Compute 8 times 7."}).found,false);
 });
+
+test("atlas records EVERY found/missing original path in one Brain: paginate all attempts, compare missing axes, inspect edge evidence, reload checkpoint",()=>{
+ const b=brain(),n=new NativeGoalTextMaze(b);
+ const atlas=()=>n.cumulativeAtlas({view:"attempts",limit:200});
+ const failures=[];
+ for(let i=0;i<12;i++){
+  n.observeVerifiedWorldTransition({
+   episode:"isolated-atlas-world-"+i,before:node(i),after:node(i+1),
+   action:action(i),accepted:true,source:"actual-independent-movement"
+  });
+  const attempt=n.planCumulativeWorld({start:node(0),required:["exit"],
+   includeTopology:true});
+  if(i<11){
+   assert.equal(attempt.found,false);
+   failures.push(attempt.atlasAttemptId);
+  }else{
+   assert.equal(attempt.found,true);
+   assert.equal(attempt.actions.length,12);
+  }
+ }
+ const whole=atlas();
+ assert.equal(whole.ok,true);
+ assert.equal(whole.memory.attemptsTotal,12);
+ assert.equal(whole.memory.failuresTotal,11);
+ assert.equal(whole.memory.successesTotal,1);
+ assert.equal(whole.rows.length,12);
+ assert.ok(whole.rows.some(r=>r.outcome==="path-found"));
+ assert.ok(whole.rows.some(r=>r.outcome==="path-missing"));
+ assert.ok(whole.rows.some(r=>r.diagnostics.some(x=>x.code==="INFERRED_AXES_DISABLED_BY_DESIGN")));
+ const failed=n.cumulativeAtlas({view:"attempts",filter:"failed",offset:0,limit:5});
+ assert.equal(failed.total,11);
+ assert.equal(failed.rows.length,5);
+ assert.equal(failed.nextOffset,5);
+ const next=n.cumulativeAtlas({view:"attempts",filter:"failed",offset:5,limit:5});
+ assert.equal(next.rows.length,5);
+ const last=n.cumulativeAtlas({view:"attempts",filter:"failed",offset:10,limit:5});
+ assert.equal(last.rows.length,1);
+ assert.equal(last.nextOffset,null);
+ const selected=n.cumulativeAtlas({view:"attempts",attemptId:failures[3]});
+ assert.equal(selected.selectedAttempt.id,failures[3]);
+ assert.equal(selected.selectedAttempt.found,false);
+ const nodes=n.cumulativeAtlas({view:"nodes",offset:0,limit:10});
+ assert.equal(nodes.total,13);
+ assert.equal(nodes.rows.length,10);
+ assert.equal(nodes.nextOffset,10);
+ assert.equal(n.cumulativeAtlas({view:"nodes",offset:10,limit:10}).rows.length,3);
+ const edges=n.cumulativeAtlas({view:"edges",filter:"verified",limit:20});
+ assert.equal(edges.total,12);
+ assert.ok(edges.rows.every(x=>x.physicallyVerifiedOriginally&&x.traversableNow));
+ const details=n.cumulativeAtlas({view:"attempts",attemptId:whole.rows[0].id});
+ assert.equal(details.selectedAttempt.trace.length,12);
+ assert.equal(new Set(details.selectedAttempt.trace.map(x=>x.episode)).size,12);
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"mp-v30-atlas-"));
+ try{
+  const file=path.join(dir,"original-Brain.v8");b.save(file);
+  const restored=new NativeGoalTextMaze(Brain.load(file));
+  const copy=restored.cumulativeAtlas({view:"attempts",limit:200});
+  assert.deepEqual(copy.rows,whole.rows);
+  assert.deepEqual(copy.memory,whole.memory);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
+ console.log("V30_ATLAS_FOUND_VS_MISSING",JSON.stringify({
+  trainingEpisodes:12,retainedAttemptCount:whole.rows.length,
+  successes:whole.memory.successesTotal,failures:whole.memory.failuresTotal,
+  allPhysicalEdges:edges.total,
+  explicitDesignGateCodes:[...new Set(failed.rows.flatMap(x=>x.diagnostics.map(d=>d.code)))],
+  restoredExactNativeCheckpoint:true,allEvidenceAccessibleByPagination:true
+ }));
+});
+
+test("atlas refuses to turn contradictory axes, failed physical steps, or similar source text into traversable edges",()=>{
+ const b=brain(),n=new NativeGoalTextMaze(b);
+ n.observeVerifiedWorldTransition({episode:"one",before:"door state",
+  after:"door open",action:"use",accepted:true});
+ n.observeVerifiedWorldTransition({episode:"two",before:"door state",
+  after:"door locked",action:"use",accepted:true});
+ n.observeVerifiedWorldTransition({episode:"three",before:"door state",
+  after:"door closed",action:"invalid",accepted:null});
+ n.observeNonCausalTextAdjacency({episode:"long-language",
+  beforeText:"A question word occurs",afterText:"A different paragraph word occurs"});
+ const refused=n.planCumulativeWorld({start:"door state",required:["open"]});
+ assert.equal(refused.found,false);
+ const audit=n.cumulativeAtlas({view:"edges",limit:20});
+ assert.equal(audit.memory.ambiguousStateActionTypes,1);
+ assert.equal(n.cumulativeAtlas({view:"edges",filter:"ambiguous"}).total,2);
+ assert.equal(n.cumulativeAtlas({view:"edges",filter:"proposed"}).total,1);
+ assert.equal(audit.rows.filter(e=>e.status==="source-order-only").length,1);
+ assert.equal(audit.rows.filter(e=>e.traversableNow).length,0);
+ const fails=n.cumulativeAtlas({view:"diagnostics",filter:"failed"});
+ assert.ok(fails.rows.some(e=>e.code==="HIDDEN_STATE_ALIASING"));
+ assert.ok(fails.rows.some(e=>e.code==="UNTESTED_HYPOTHESIS_EDGES"));
+ assert.ok(fails.rows.some(e=>e.code==="DISCONNECTED_OR_MISSING_GOAL"));
+});
