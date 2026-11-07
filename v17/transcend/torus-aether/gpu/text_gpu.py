@@ -302,14 +302,36 @@ class TextCard:
                         for k_, r_, t_ in zip(u, rr, tt): W_right[int(k_)] = W_right.get(int(k_), 0) + int(r_); W_tried[int(k_)] = W_tried.get(int(k_), 0) + int(t_)
                 dig = Sx[:, 48:58]; dz = dig.sum(1); has = dz > 0
                 Sx[:, 48:58] = dig + dmass[:, None] * X.where(has[:, None], dig / X.where(has, dz, dz + 1)[:, None], X.zeros(dig.shape, np.float32))
-                guess = X.tonp(X.argmax1(Sx[:, :128]))
+                # Preserve the exact original argmax and trust/feedback rule.
+                # CUDA used to copy the ENTIRE (Rn, maxK) context to CPU and
+                # upload it again at EVERY imagination step just to prepend
+                # the already-resident GPU guess. Keep its 64-column history
+                # on the card; only the small guess vector is read back for
+                # the original NumPy-side alive/feedback decision.
+                predicted = X.argmax1(Sx[:, :128])
+                guess = X.tonp(predicted)
                 ok = ok & ~((guess != real) & (step >= 2))                      # once its imagination left reality (after the first 3), the rest says nothing
-                cn = X.tonp(CX); cn = np.concatenate([guess[:, None], cn[:, :-1]], axis=1); CX = X.arr(cn)
+                if X.t and str(X.dev).startswith("cuda"):
+                    CX = torch.cat((predicted[:, None], CX[:, :-1]), dim=1)
+                else:
+                    cn = X.tonp(CX); cn = np.concatenate([guess[:, None], cn[:, :-1]], axis=1); CX = X.arr(cn)
         if progress is not None: progress(len(starts) * K, len(starts) * K, 'imagination')
         return W_right, W_tried
     def _top(self, ys):                          # the most frequent symbol among what followed (the proposal's guess)
         X = self.X; Q, S = ys.shape
         if S == 1: return ys[:, 0]
+        # Exact integer count histogram. The old code launched S (up to 64)
+        # separate GPU scatter/update kernels for EVERY proposal, in EVERY
+        # imagination step. CUDA index_add_ sums only 0/1 contributions;
+        # counts <= S are exactly representable as float32, so the original
+        # tie-breaking argmax (first/lower symbol) and prediction are unchanged.
+        # Preserve both existing NumPy and torch-CPU paths byte-for-byte.
+        if X.t and str(X.dev).startswith("cuda"):
+            offsets = torch.arange(Q, device=ys.device, dtype=torch.long)[:, None] * 129
+            keys = (offsets + ys.clamp(0, 128)).reshape(-1)
+            counts = torch.zeros(Q * 129, dtype=torch.float32, device=ys.device)
+            counts.index_add_(0, keys, (ys >= 0).to(torch.float32).reshape(-1))
+            return counts.view(Q, 129)[:, :128].argmax(dim=1)
         oh = X.zeros((Q, 129), np.float32);
         for j in range(S): oh[X.arange(Q), X.clip(ys[:, j], 0, 128)] += X.f32(ys[:, j] >= 0)
         return X.argmax1(oh[:, :128])
