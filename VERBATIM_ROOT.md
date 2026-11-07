@@ -48,3 +48,17 @@ These are source records, not claims that the architecture has been implemented,
 ## 2026-11-06: USER-only exact maze→language world / recursive character submaze continuation
 
 [Exact visible USER messages about the global-local 2D maze mechanism, no-substitution regression, hierarchical hyperdimensional character mazes and implementation request](./verbatim/2026-11-06-MAZE-LANGUAGE-MYSTIC-PERSPECTIVE-USER-TURNS-VERBATIM-PARTIAL.md) are preserved **literally** as a partial USER-only ordered sequence. This is not the full native conversation; intermediate assistant/tool turns and source media are not present. The full Verbatim completion release gate remains **BLOCKED**. For implementation scope and limitations, see [blocking regression #25](https://github.com/dan3s2020/MagicPerspective/issues/25) and the independent V18 experimental branch, not an implied approval to add substitute architectures.
+
+
+## 2026-11-07: Global-body perspective / V17 original LIVE UI — recoverable continuation
+
+The user requested **all not-yet-recorded conversation added verbatim on main alongside the existing archives**, and **all discoveries, demonstrations, assumptions and unresolved limits documented separately**. The following are **additive records**; none overwrites any existing 2026-11-03/05/06 source transcript:
+
+- [Chronological/source-gap navigation for this addition](./verbatim/2026-11-07-GLOBAL-BODY-PERSPECTIVE-LIVE-ARCHIVE-INDEX.md) — how this segment relates to the pre-existing 2026-11-06 user verbatim and the unavailable native transcript.
+- [24 recoverable original USER-visible entries, partial](./verbatim/2026-11-07-HYPERDIMENSIONAL-PERSPECTIVE-V17-LIVE-USER-VERBATIM-PARTIAL.md) — noise-space/Grassmann/DUST research, UI performance, global→body transformation, Termux, Windows PowerShell and the explicit correction demanding the ORIGINAL 8862 V17 live UI rather than a demo.
+- [ASSISTANT exact-source excerpts, partial](./verbatim/2026-11-07-GLOBAL-BODY-V17-LIVE-ASSISTANT-EXACT-EXCERPTS-PARTIAL.md) — short unmodified visible spans only; unavailable complete assistant messages are **not** recreated.
+- [Measured research, implementation audit, demonstrations, hypotheses and falsification tests](./docs/RESEARCH_GLOBAL_BODY_PERSPECTIVE_V17_LIVE_EVIDENCE_HYPOTHESES_20261107.md) — separate scientific interpretation, with exact links to real V17 branch, CI measurements and known limitations. Do not mistake it for literal user messages.
+
+**What is actually verified:** The isolated \`experiment/V17-LIVE-BODY-PERSPECTIVE-20261106\` branch passed V17 integration, held-out, checkpoint and original HTTP UI tests on GitHub Windows/Linux. These are *limited software claims*; the personal Windows/CUDA machine was not used here and no universal transfer-to-text or discovered physical hyperdimension is proven.
+
+**Full transcript still UNVERIFIED / release gate BLOCKED.** Some older and intervening USER/ASSISTANT turns, original screenshots, tool/UI artifacts, native IDs and exact timestamp/binary fidelity remain unavailable. Do not change \`verbatim/coverage.json\`, \`verbatim/continuation-index.json\` or \`implementation-mirror.json\` to declare completeness without the authentic source and clause-level verification. No code is merged onto \`main\` by these documentation additions.
