@@ -238,6 +238,7 @@
    // and FAIL, rather than silently mixing different model generations.
    const initial=await fetchPage({section:"nodes",offset:0,limit:1,withGoal:false});
    const stamp=x=>JSON.stringify({
+    generation:x.summary?.atlasGeneration,
     observed:x.summary?.designLimits?.observationMemory,
     causal:x.summary?.designLimits?.causalMemory,
     nodes:x.summary?.retainedNodes,
