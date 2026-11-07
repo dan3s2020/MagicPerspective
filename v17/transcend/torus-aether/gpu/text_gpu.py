@@ -118,9 +118,16 @@ class Index:                                     # suffix array of the REVERSED 
             if not bool(alive.any()): break
             def bound(strict):
                 a = lo.clone() if X.t else lo.copy(); b = hi.clone() if X.t else hi.copy()
+                # The original per-step bool(go.any()) synchronizes CUDA to
+                # the CPU in EVERY binary-search iteration. For a 43k-char
+                # document and hundreds of batches this causes large amounts
+                # of idle GPU time. On CUDA, execute the exact fixed upper
+                # bound of steps asynchronously; inactive lanes are masked
+                # and preserve EXACT original lo/hi results. NumPy and
+                # CPU-Torch retain the previous early-exit behavior.
                 for _ in range(steps):
                     go = a < b
-                    if not bool(go.any()): break
+                    if not (X.t and str(X.dev).startswith("cuda")) and not bool(go.any()): break
                     m = (a + b) // 2; p = sa[X.clip(m, 0, n - 1)] + k; v = X.where(p < n, R[X.clip(p, 0, n - 1)], X.zeros(Q, np.int64) - 1)
                     less = (v <= c) if strict else (v < c)
                     a = X.where(go & less, m + 1, a); b = X.where(go & ~less, m, b)

@@ -203,18 +203,36 @@ function renderNativeDataset(d,m){
   $("nativeProgressTrack").setAttribute("aria-valuenow",String(pct??0));
   // Phase and processed microchunk counters come ONLY from the original
   // V17 GPU worker's real PyTorch progress packets, not from a timer.
-  const phase=m.gpuPhase;
-  const phaseProgress=m.gpuPhaseTotal>0?
-    " "+fmt(m.gpuPhaseDone)+"/"+fmt(m.gpuPhaseTotal):"";
-  const phaseTime=m.gpuPhaseElapsedSeconds!==null?
-    " · "+fmt(m.gpuPhaseElapsedSeconds,1)+"s":"";
-  value("nativeCudaPhase",phase?"CUDA: "+phase+phaseProgress+phaseTime:
+  // The /graph snapshot is allowed to remain unchanged throughout a
+  // giant 43k-character Brain.live CPU replay. The ORIGINAL V17 /health
+  // endpoint emits a heartbeat every five seconds and owns the true phase.
+  const live=d.liveHealth||null;
+  const phase=live?.phase||m.gpuPhase;
+  const liveBatch=live?.batch||null;
+  const done=liveBatch?.done??m.gpuPhaseDone;
+  const total=liveBatch?.total??m.gpuPhaseTotal;
+  const phaseProgress=total>0?" "+fmt(done)+"/"+fmt(total):"";
+  const since=Number.isFinite(live?.phaseSince)?
+    Math.max(0,(Date.now()-live.phaseSince)/1000):m.gpuPhaseElapsedSeconds;
+  const phaseTime=Number.isFinite(since)?" · "+fmt(since,1)+"s":"";
+  const cpuPhase=String(phase||"").startsWith("CPU:")||
+    String(phase||"").startsWith("text: integrare");
+  const label=cpuPhase?"CPU ORIGINAL: ":"FAZĂ ORIGINALĂ: ";
+  value("nativeCudaPhase",phase?label+phase+phaseProgress+phaseTime:
     "GPU: "+String(m.nativeDevice||"—")+
     " · "+fmt(m.completedExercisesPerSecond,2)+" ex/s");
-  value("v32GpuPhase",phase?"FAZĂ ACTUALĂ: "+phase+phaseProgress+phaseTime+
-    (m.gpuPhaseWaitingSeconds!==null?
-      " · fără microchunk finalizat de "+fmt(m.gpuPhaseWaitingSeconds,1)+"s":""):
-    "Faza CUDA nu a fost încă raportată.");
+  value("v32GpuPhase",phase?label+phase+phaseProgress+phaseTime+
+    (cpuPhase?" · GPU poate rămâne liber: consolidare Brain simbol cu simbol":""):
+    "Aștept prima măsurătoare reală de la worker.");
+  if(live){
+    const realCps=Number.isFinite(live.textMBps)?live.textMBps*1e6:null;
+    const realEps=Number.isFinite(live.exercisesPerSecond)?live.exercisesPerSecond:null;
+    value("nativeProgressHeartbeat","HEARTBEAT ORIGINAL: "+
+      (Number.isFinite(live.heartbeatAgeMs)?
+        fmt(live.heartbeatAgeMs/1000,1)+"s în urmă":"aștept")+
+      " · "+fmt(realCps,1)+" caractere/s COMMISE"+
+      " · "+fmt(realEps,3)+" ex/s");
+  }
   const budget=m.gpuActualBudgetGB??m.gpuSafeBudgetGB;
   const used=m.gpuActualPeakReservedGB;
   const peak=m.gpuActualPeakAllocatedGB;
@@ -231,7 +249,9 @@ function renderNativeDataset(d,m){
     fmt(m.gpuMicrochunkUsed)+" caractere · următorul chunk "+fmt(m.gpuNextMicrochunk)+
     " · VRAM rezervat/buget: "+(vrampct===null?"—":fmt(vrampct,1)+"%")+
     " (nu alocăm memorie artificială)");
-  value("nativeProgressHeartbeat","Verificat "+new Date().toLocaleTimeString("ro-RO"));
+  if(!live)value("nativeProgressHeartbeat",
+    "Aștept /health de la workerul original · UI verificat "+
+      new Date().toLocaleTimeString("ro-RO"));
   const connection=$("connection");
   connection.classList.toggle("error",failed);
   connection.classList.toggle("connected",!failed);
@@ -268,6 +288,14 @@ function renderNativeDataset(d,m){
       "; CUDA poate procesa un batch lung.":"Worker activ; fără exercițiu finalizat confirmat.";
   if(h.active&&lastTrainingProgressAt&&Date.now()-lastTrainingProgressAt>60000)
     message+=" Niciun exercițiu finalizat în 60s: verifică faza CUDA în terminal.";
+  if(live?.state==="paused"||d.liveHealthStatus==="pauză")
+    message="WORKERUL ESTE PAUZAT EXPLICIT (nu este pauză CUDA).";
+  else if(live?.state==="unresponsive")
+    message="WORKER FĂRĂ HEARTBEAT: "+fmt(live.heartbeatAgeMs/1000,1)+
+      "s · verifică procesul original, nu graful cache.";
+  else if(live?.phase)
+    message="Faza REALĂ: "+live.phase+
+      phaseProgress+phaseTime+" · "+message;
   value("nativeProgressMessage",message);
   $("startBtn").disabled=failed||h.active;
   $("pauseBtn").disabled=!h.active;

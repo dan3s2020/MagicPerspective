@@ -377,6 +377,21 @@ const worldsOnce = async (record) => {                                     // on
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
 const processGpuText = async (exs, meta) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
+  // V41 observability: this measures original CUDA and CPU work separately.
+  // NO exercise, Brain, prediction, queue or checkpoint change.
+  const batchStart=performance.now();
+  let profileAt=batchStart;
+  const timed=(phase)=>{
+    const now=performance.now(),deltaMs=now-profileAt;
+    profileAt=now;
+    parentPort.postMessage({type:"note",w:workerData.gw,
+      text:"V41_PHASE_REAL "+JSON.stringify({phase,
+        milliseconds:Math.round(deltaMs),
+        elapsedSinceBatchStartMs:Math.round(now-batchStart),
+        originalSourceRows:exs.length,actualCharacters:total,
+        originalExercisesSoFar:brain.exercises||0,
+        device:gpuSet?.device||"off"})});
+  };
   setWorkerPhase("text CUDA: working on real training batch");
   batchNow = {phase: "text CUDA: aliniere", done: 0, total}; shot();
   const startChars = brain.chars;
@@ -406,8 +421,9 @@ const processGpuText = async (exs, meta) => {
     parentPort.postMessage({type:"note",w:workerData.gw,text:
       "CUDA recovered. Native text batch committed once after successful retry."});
   }
+  timed("ORIGINAL_PYTORCH_TEXT_CARD_FINISHED");
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
-  batchNow = {phase: "text: integrare în graful V17", done: 0, total: exs[0]?.length || 0}; shot();
+  batchNow = {phase: "CPU: legacy Brain.live original graph consolidation", done: 0, total: exs[0]?.length || 0}; shot();
   // The original V17 trace sees the first actual exercise, exactly once.
   if (exs.length) {
     let progressed = 0;
@@ -416,18 +432,41 @@ const processGpuText = async (exs, meta) => {
       // Allow actual live original Brain UI and controls to respond even
       // while CUDA's batch is being absorbed by the CPU old organs.
       // Strict source order and every original weight update are preserved.
-      if (++progressed % 32 === 0) await new Promise(r => setImmediate(r));
+      ++progressed;
+      if (progressed % 2048 === 0) {
+        batchNow={phase:"CPU: Brain.live exact original symbolic consolidation",
+          done:progressed,total:exs[0]?.length||0};
+        setWorkerPhase("CPU: Brain.live exact original symbolic consolidation "+
+          progressed+"/"+(exs[0]?.length||0));
+      }
+      if (progressed % 32 === 0) await new Promise(r => setImmediate(r));
     }
   }
-  for(const row of meta){absorbHyperMaze(row);absorbLanguage(row);absorbConstructed(row);absorbObservedDifferences(row);}
+  timed("CPU_ORIGINAL_BRAIN_LIVE_FULL_REPLAY");
+  setWorkerPhase("CPU: learning cross-world causal and language atlas");
+  for(const row of meta){
+    absorbHyperMaze(row);
+    timed("CPU_HYPERMAZE_OBSERVATION");
+    absorbLanguage(row);
+    timed("CPU_MULTISCALE_LANGUAGE");
+    absorbConstructed(row);
+    timed("CPU_NATIVE_CAUSAL_ATLAS");
+    absorbObservedDifferences(row);
+    timed("CPU_OBSERVED_EDIT_TRANSFORMATIONS");
+  }
   for (let j = 0; j < meta.length; j += Math.max(1, Math.floor(meta.length / 8))) absorbText(meta[j]);
+  timed("CPU_TEXT_ACTION_PATHS");
   setWorkerPhase("CUDA: training shared transition model");
   batchNow = {phase: "CUDA: model comun de transformări", done: 0, total: shared.queue.length};
   await flushShared();
+  timed("CUDA_SHARED_ORIGINAL_TRANSFORM_LEARNER");
   if ((MAZE || TRANS || SELF_CODE) && brain.chars >= nextMaze) { nextMaze = brain.chars + mazeEvery; await worldsOnce(false); }
+  timed("CUDA_MAZE_AND_TRANSFORM_EPISODES");
   // The full xD world executes in the SAME native Brain after real text is committed.
   await liveXdWorld();
+  timed("CPU_FULL_XD_CAUSAL_ATLAS");
   await atlasFlush();
+  timed("CPU_ATLAS_JOURNAL_DRAIN");
   batchNow = null;
   setWorkerPhase("completed text batch; preparing next exercises");
   // Heavy frozen evaluation and serializing the entire native Brain must
@@ -438,9 +477,18 @@ const processGpuText = async (exs, meta) => {
     report();
     if(checkpointEvery>0)nextAutoSave=brain.chars+checkpointEvery;
   }else autonomousCheckpoint();
+  timed("ORIGINAL_SAVING_OR_FROZEN_EVAL");
   // Limit expensive full-size UI graph snapshots; return counts via /health
   // every 5 seconds even when the Brain is in a long CUDA batch.
   shot();
+  timed("GRAPH_SNAPSHOT_ORIGINAL");
+  parentPort.postMessage({type:"note",w:workerData.gw,
+    text:"V41_BATCH_END_TO_END_REAL "+JSON.stringify({
+      seconds:+((performance.now()-batchStart)/1000).toFixed(3),
+      originalExerciseCount:exs.length,
+      characters:total,
+      realEndToEndCharactersPerSecond:
+        +((total*1000)/Math.max(1,performance.now()-batchStart)).toFixed(2)})});
 };
 parentPort.on("message", m => {
   // V34 OPTIONAL research panel: exactly SAME mutable original Brain
