@@ -13,6 +13,7 @@ param(
   [int]$GpuTextChunk=4096,
   [int]$GpuWorlds=3,
   [switch]$NoBrowser,
+  [switch]$EndogenousNoise,
   [switch]$ImportOnly
 )
 $ErrorActionPreference="Stop"
@@ -33,7 +34,7 @@ if(Test-Path -LiteralPath $Out){
     }
     Write-Host "V42 existing isolated Brain found, resuming IT; source checkpoint not copied again." -ForegroundColor Green
     if($ImportOnly){Write-Host "V42_IMPORT_ONLY_PASS_ALREADY_PRESENT";exit 0}
-    & $NewLauncher -Data $Data -Out $Out -NativePort $NativePort -UIPort $UIPort -Gpu $Gpu -Vram $Vram -GpuTextBatch $GpuTextBatch -GpuTextChunk $GpuTextChunk -GpuWorlds $GpuWorlds -NoBrowser:$NoBrowser
+    & $NewLauncher -Data $Data -Out $Out -NativePort $NativePort -UIPort $UIPort -Gpu $Gpu -Vram $Vram -GpuTextBatch $GpuTextBatch -GpuTextChunk $GpuTextChunk -GpuWorlds $GpuWorlds -NoBrowser:$NoBrowser -EndogenousNoise:$EndogenousNoise
     exit $LASTEXITCODE
   }
 }
@@ -167,5 +168,5 @@ try{
 Write-Host "V41 Fast Brain AND sidecars imported into V42, original intact." -ForegroundColor Green
 Write-Host "Import evidence: $manifest" -ForegroundColor Green
 if($ImportOnly){Write-Host "V42_IMPORT_ONLY_PASS_COPIED_REAL_V8_AND_SIDECARS";exit 0}
-& $NewLauncher -Data $Data -Out $Out -NativePort $NativePort -UIPort $UIPort -Gpu $Gpu -Vram $Vram -GpuTextBatch $GpuTextBatch -GpuTextChunk $GpuTextChunk -GpuWorlds $GpuWorlds -NoBrowser:$NoBrowser
+& $NewLauncher -Data $Data -Out $Out -NativePort $NativePort -UIPort $UIPort -Gpu $Gpu -Vram $Vram -GpuTextBatch $GpuTextBatch -GpuTextChunk $GpuTextChunk -GpuWorlds $GpuWorlds -NoBrowser:$NoBrowser -EndogenousNoise:$EndogenousNoise
 if($LASTEXITCODE -ne 0){throw "Original V41 Fast CUDA worker failed after checkpoint import: exit $LASTEXITCODE"}
