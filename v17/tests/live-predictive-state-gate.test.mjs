@@ -126,6 +126,15 @@ test("new live sidecar persists prediction state; old v1 checkpoints still resto
 
 test("the REAL learned mathematical path exposes a second independent pre-action prediction from its validated contextual axis",()=>{
  const data=curriculum(product),x=new LiveObservedMathAxes();
+ // The native conditional field cannot identify WHICH numeric coordinate
+ // is dependent if all observations modify only input X and output Z.
+ // Give actual independently observed training pairs along input Y as well.
+ // These are witnessed transitions, never the unseen test starting state.
+ for(let y=3;y<=10;y++){
+  const before="2 * "+y+" = "+(2*y);
+  const after="2 * "+(y+1)+" = "+(2*(y+1));
+  x.consume(before+"\n"+after);
+ }
  for(const row of [...data.train,...data.validation,...data.test])
   x.consume(row.before+"\n"+row.after);
  const before=x.report(),originalStart="15 * 91 = 1365";
