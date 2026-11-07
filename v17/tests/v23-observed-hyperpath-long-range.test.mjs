@@ -1,0 +1,87 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {Discoverer as FrozenDiscoverer, KIND} from "../transcend/torus-aether/worlds/exercise-v17-IMMUTABLE-BASELINE.mjs";
+import {Discoverer as CurrentDiscoverer} from "../transcend/torus-aether/worlds/exercise.mjs";
+import {LearnedCognitiveMap} from "../transcend/torus-aether/worlds/learned-cognitive-map.mjs";
+
+const makeObservedChain = (steps=144) => {
+  const m=new LearnedCognitiveMap();
+  for(let i=0;i<steps;i++) {
+    m.observeExternalTransition({domain:"text",
+      before:["STATE",String(i)],action:"observed-action-"+i,
+      after:["STATE",String(i+1)]});
+  }
+  return m;
+};
+
+test("84 fixed 2D retinas preserve byte-frozen Discoverer.shape outputs including noise",()=>{
+  for(let seed=1;seed<=84;seed++){
+    const n=7+2*(seed%3), size=n*n, retina=new Array(size).fill(KIND.floor);
+    for(let cell=1;cell<size-1;cell++){
+      // Deterministic, varied, sometimes disconnected. Exactly the same retina in both.
+      if(((cell*131+seed*17) % 19)<4)retina[cell]=KIND.wall;
+    }
+    retina[0]=KIND.self;retina[size-1]=KIND.target;
+    const old=new FrozenDiscoverer(seed),now=new CurrentDiscoverer(seed);
+    for(const d of [old,now]){
+      d.pass=[18,1,19,9];d.block=[2,80,1,4];
+      d.enter=[1,1,10,1];d.endIn=[0,0,9,0];
+      d.temp=seed%2?.7:0;
+    }
+    assert.deepEqual(now.shape(retina,n,0),old.shape(retina,n,0),
+      "Original V17 behavior changed on seed "+seed);
+  }
+  console.log("V23_ORIGINAL_2D_DISCOVERER_PARITY",JSON.stringify({boards:84,noise:"seeded on 42 boards"}));
+});
+
+test("original V17 field predicts complete 144-action route across observed text-world transitions before action",()=>{
+  const steps=144,m=makeObservedChain(steps);
+  const result=m.formObservedWorld("text",["STATE","0"],{slots:{1:String(steps)}},
+    {maxNodes:steps+4});
+  assert.equal(result.directOriginalMethod,"Discoverer.shape");
+  assert.equal(result.plannedBeforeAction,true);
+  assert.equal(result.found,true,
+    "Original attraction must reach start of long observed path, not vanish numerically: "+
+    JSON.stringify({reason:result.field?.reason,values:result.field?.values?.slice(0,8),steps:result.path?.length}));
+  assert.equal(result.path.length,steps);
+  let cursor=["STATE","0"];
+  for(let i=0;i<result.path.length;i++){
+    const hop=result.path[i];
+    assert.equal(hop.action,"observed-action-"+i);
+    const recorded=m.externalEdges.get(JSON.stringify(["text",cursor])+"\u001f"+String(hop.action));
+    assert.ok(recorded&&!recorded.ambiguous,"action must have an actually observed effect");
+    cursor=recorded.after;
+  }
+  assert.deepEqual(cursor,["STATE",String(steps)]);
+  console.log("V23_OBSERVED_LONG_PATH",JSON.stringify({
+    steps,plannedBeforeAction:true,method:result.directOriginalMethod,
+    fieldAtStart:result.field.values[0],
+    solvedFromLearnedObservedTransitions:result.found,
+    limitation:"closed graph of already observed transitions; not a general language understanding claim"
+  }));
+});
+
+test("no target oracle: absent goal and missing observed edge must not create a path",()=>{
+  const m=makeObservedChain(64);
+  assert.equal(m.formObservedWorld("text",["STATE","0"],{slots:{1:"999"}},
+    {maxNodes:100}).found,false);
+  const partial=new LearnedCognitiveMap();
+  for(let i=0;i<64;i++)if(i!==17)partial.observeExternalTransition({
+    domain:"text",before:["STATE",String(i)],action:"action-"+i,
+    after:["STATE",String(i+1)]});
+  const p=partial.formObservedWorld("text",["STATE","0"],{slots:{1:"64"}},
+    {maxNodes:100});
+  assert.equal(p.found,false,"Missing experienced edge is a real wall; never hallucinate a route");
+});
+
+test("contradictory observed action transitions invalidate the route, not quietly promote the guess",()=>{
+  const m=makeObservedChain(64);
+  assert.equal(m.formObservedWorld("text",["STATE","0"],{slots:{1:"64"}},
+    {maxNodes:100}).found,true);
+  const contradictory=m.observeExternalTransition({
+    domain:"text",before:["STATE","32"],action:"observed-action-32",
+    after:["STATE","UNEXPECTED"]});
+  assert.equal(contradictory.conflict,true);
+  assert.equal(m.formObservedWorld("text",["STATE","0"],{slots:{1:"64"}},
+    {maxNodes:100}).found,false);
+});
