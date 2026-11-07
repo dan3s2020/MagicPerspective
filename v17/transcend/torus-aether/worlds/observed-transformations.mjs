@@ -177,6 +177,10 @@ export class ObservedTransformations {
       if(this.operators.size>=this.maxOperators){this.droppedOperators++;return;}
       op={...action,sourceObservations:0,evidence:[],key:k};
       this.operators.set(k,op);
+      // Optional SAME-BRAIN observation callback: allows the real corpus
+      // streamer to update original 5D geometry ONLY for genuinely new
+      // actions, instead of rescanning all learned operators per text row.
+      this.onNewOperator?.(op);
       this._ensureOperatorIndex();
       const bucket=this._operatorBucket(op);
       if(!this.operatorIndex.has(bucket))this.operatorIndex.set(bucket,new Set());
