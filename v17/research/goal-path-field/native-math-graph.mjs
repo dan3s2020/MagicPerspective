@@ -203,9 +203,9 @@ export class NativeMathGoalField {
       throw Error("Independent before/action/after/accepted physical observations required");
     const first=this.findObservedClause(beforeDocument),
       second=this.findObservedClause(afterDocument);
-    if(!first.found||!second.found)throw Error("Observed outcome leaves the learned world template");
-    const before=first.source.tokens,after=second.source.tokens;
-    const accurate=accepted&&expectedDocument===afterDocument;
+    if(!first.found)throw Error("Source state is not the observed action world");
+    const before=first.source.tokens,after=second.found?second.source.tokens:null;
+    const accurate=accepted&&second.found&&expectedDocument===afterDocument;
     this.observedExecutions++;
     if(!accurate){
       this.failedExecutions++;
@@ -217,7 +217,9 @@ export class NativeMathGoalField {
     this.last={accurate,accepted,action,
       observedOutputOrigin:"external afterDocument, NOT predicted output"};
     return {accurate,accepted,blockedThisContext:!accurate,
-      beforeClause:renderObservation(before),observedClause:renderObservation(after),
+      beforeClause:renderObservation(before),
+      observedClause:after?renderObservation(after):null,
+      unexpectedWorldTemplate:!second.found,
       changedFullDocument:beforeDocument!==afterDocument,
       source:"external-observed-action-result"};
   }
