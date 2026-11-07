@@ -1,0 +1,29 @@
+name: V40 original Brain mixed witnessed goals and human evidence
+on:
+  push:
+    branches:
+      - integration/V40-ORIGINAL-BRAIN-LEARNED-GOALS-REAL-QA-20261107
+  workflow_dispatch:
+jobs:
+  v40-shared-brain-no-oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Source syntax on original V34 and verbatim research modules
+        run: |
+          node --check v17/transcend/torus-aether/devour/brain.mjs
+          node --check v17/transcend/torus-aether/worlds/observed-instruction-goals.mjs
+          node --check v17/transcend/torus-aether/worlds/path-answer-writer.mjs
+          node --check v17/research/text-hypermaze/real-squad-evidence-paths.mjs
+          node --check v17/research/text-hypermaze/v40-original-brain-evidence.mjs
+          node --check v17/tests/v40-single-original-brain-integration.test.mjs
+      - name: One original brain checkpoint, witnessed intent, real QA preference and strict refusal
+        run: node --test v17/tests/v40-single-original-brain-integration.test.mjs
+      - name: Original V34 integration core compatibility
+        run: |
+          node --test v17/tests/v34-incremental-observed-character-rules.test.mjs
+          node --test v17/tests/v31-million-original-log-attraction.test.mjs
