@@ -96,6 +96,18 @@ export class TinyStoriesTrainer{
    this.state.chars=this.model.chars;
    this.state.checkpointChars=this.model.savedChars;
    this.state.unified=this.model.unified||null;
+   if(existing&&this.model.unified?.extendedLegacyCheckpoint){
+    // Before the FIRST conversion of the already-fully-trained 2M-story model
+    // create recoverable exact copies, never erase or reset learned counts.
+    this.legacyBackup=this.checkpoint+".before-unified";
+    const previousManifest=this.manifest+".before-unified";
+    if(!fs.existsSync(this.legacyBackup)){
+     await fsp.copyFile(this.checkpoint,this.legacyBackup,
+      fs.constants.COPYFILE_EXCL);
+     await fsp.copyFile(this.manifest,previousManifest,
+      fs.constants.COPYFILE_EXCL);
+    }
+   }
    this.state.phase=this.finished?"complete":"ready";
    if(this.model.unified?.bytes)await this.refreshGraph();
   }catch(e){this.state.error=message(e);this.state.phase="error";this.gpu.close();throw e;}
