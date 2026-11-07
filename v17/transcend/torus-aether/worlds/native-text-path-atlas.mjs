@@ -219,6 +219,29 @@ export class NativeTextPathAtlas {
     originalNativeGraphPages:"GET /atlas-graph?scale=0..5&offset=0&limit=80",
     graphNotRebuiltHere:true};
  }
+ operatorPage(observed,{offset=0,limit=80}={}){
+  const start=clip(offset,0,Number.MAX_SAFE_INTEGER),count=clip(limit,1,200);
+  const total=observed?.operators?.size||0,entries=[];
+  if(observed?.operators) {
+    let i=0;
+    for(const [key,op] of observed.operators){
+      if(i++<start)continue;
+      if(entries.length>=count)break;
+      entries.push({key,kind:op.kind,index:op.index,
+        beforeLength:op.beforeLength,afterLength:op.afterLength,
+        from:op.from,to:op.to,left:op.left,right:op.right,
+        support:op.sourceObservations,evidence:op.evidence?.slice()||[],
+        permittedOnlyWhenAnchorsMatch:true,
+        limitation:"observed one-token edit, not general natural-language semantics"});
+    }
+  }
+  return {kind:"native-observed-edit-transformations",
+    offset:start,returned:entries.length,totalOperators:total,
+    nextOffset:start+entries.length<total?start+entries.length:null,
+    droppedOriginalOperators:observed?.droppedOperators||0,
+    originalOperatorStorageLimit:observed?.maxOperators||0,
+    originalGraphNotMutated:true,entries};
+ }
  page(model,{scale=0,offset=0,limit=80}={}){
   const i=clip(scale,0,model.scales.length-1),g=model.scales[i];
   const start=clip(offset,0,Number.MAX_SAFE_INTEGER),
