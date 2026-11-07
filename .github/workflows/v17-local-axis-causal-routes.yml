@@ -21,6 +21,8 @@ jobs:
         run: node --test v17/tests/math-language-transformation-shapes.test.mjs
       - name: Prove mathematical action words + per-node learned frame transport compose into actual unseen goal paths
         run: node --test v17/tests/coupled-symbolic-local-axes.test.mjs
+      - name: Extend local frame and learned symbolic action words up to 11D, 2048 states
+        run: node --test v17/tests/xd-2048-states-local-language.test.mjs
       - name: Baseline regression tests for original V17 are unchanged
         run: |
           node --test v17/tests/observed-text-paths.test.mjs
