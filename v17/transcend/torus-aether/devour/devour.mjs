@@ -148,7 +148,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
     const dProgress=slotInfo(sl).dataset;
     const corpusLine=dProgress?.percent!=null?
-      " | dataset "+dProgress.percent.toFixed(2)+"% · "+
+      " | dataset "+preciseDatasetNumber(dProgress.percent)+"% · "+
       dProgress.processed.toLocaleString()+"/"+
       dProgress.trainingTotal.toLocaleString()+" exerciții · rămase "+
       dProgress.remaining.toLocaleString():" | dataset: total necunoscut";
@@ -172,6 +172,7 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
+const preciseDatasetNumber = v => v>0&&v<0.01?v.toFixed(6):v<1?v.toFixed(4):v.toFixed(2);
 const datasetInfo = () => ({
   kind:source.kind,rows:source.totalRows??null,trainRows:source.trainRows??null,
   heldOutRows:source.heldRows??null,files:source.fileCount??null,
