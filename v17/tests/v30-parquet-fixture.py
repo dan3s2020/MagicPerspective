@@ -7,8 +7,11 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 root=os.path.abspath(sys.argv[1] if len(sys.argv)>1 else "v30-parquet-ci")
 os.makedirs(root,exist_ok=True)
-schema=pa.schema([("conversations",pa.list_(pa.struct([
-    ("from",pa.string()),("value",pa.string())]))])
+schema=pa.schema([
+    ("conversations",pa.list_(pa.struct([
+        ("from",pa.string()),("value",pa.string())
+    ])))
+])
 rows=[]
 for i in range(82):
     if i%4==0:
