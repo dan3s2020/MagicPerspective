@@ -1,0 +1,61 @@
+name: V17 real CUDA character stream and native dataset progress
+on:
+  push:
+    branches:
+      - feature/V17-REAL-CUDA-TEXT-CHAR-STREAM-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-native-text-stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the real NumPy text engine dependencies for an exact offline backend verification
+        run: python -m pip install numpy
+      - name: Verify Python CUDA/CPU backend stream syntax
+        run: |
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py v17/transcend/torus-aether/gpu/worlds_gpu.py
+      - name: Real TextCard predictions must match actually trained hits and conserve all training symbols
+        run: python v17/tests/actual-textcard-prediction-sampling.py
+      - name: Verify original V17 browser module JS syntax
+        run: node --input-type=module --check < v17/transcend/torus-aether/ui/app.js
+      - name: Verify original native HTTP backend counters and UI controls (CPU real corpus, no faked CUDA)
+        run: node --test v17/tests/real-corpus-live-progress.test.mjs
+      - name: Verify original backend/UI observability controls still work
+        run: |
+          node --test v17/tests/torus-live-observability.test.mjs
+          node --test v17/tests/torus-unified-http.test.mjs
+  windows-launcher-syntax:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native Windows PowerShell entrypoints remain syntactically valid
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          foreach ($file in @("v17/START_V17.ps1", "v17/START_NATIVE_V17_TRAINING_LIVE.ps1")) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { throw "$file syntax errors: $($errors | Out-String)" }
+            Write-Host "SYNTAX PASS: $file"
+          }
+      - name: Reject missing training corpus without a demo fallback
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Continue"
+          $msg = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\v17\START_NATIVE_V17_TRAINING_LIVE.ps1 -Data "Z:\MISSING_OPEN_THOUGHTS" -ReportEvery 200000 -GpuTextChunk 128 2>&1 | Out-String
+          if ($LASTEXITCODE -eq 0 -or $msg -notmatch 'REAL OpenThoughts dataset not found') {
+            throw "Missing-data guard did not correctly refuse training: $msg"
+          }
+          Write-Host "No fake corpus or fallback; hard fail was observed."
+          exit 0

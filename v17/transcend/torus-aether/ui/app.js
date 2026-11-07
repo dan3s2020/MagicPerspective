@@ -451,6 +451,69 @@ const LIVE = new URLSearchParams(location.search).has("live");
 const textPathMap = new ObservedTextPathMap($("textPathCanvas"), $("textPathStats"), $("textPathDetail"));
 let liveW = +(new URLSearchParams(location.search).get("w") || 0), liveSnap = null, liveSummary = null;
 let livePulling=false;
+let realTextSeq=0, realTextGraph=null, realTextSegments=[];
+const fmtReal=v=>Number.isFinite(v)?v.toLocaleString("ro-RO"):"—";
+const realRate=v=>Number.isFinite(v)?v.toFixed(2):"—";
+const printableRealByte=code=>code===32?"␣":code===10?"↵":code===9?"⇥":
+  Number.isInteger(code)&&code>=33&&code<127?String.fromCharCode(code):"·";
+function clearRealTextStream(w){
+  realTextGraph=w;realTextSeq=0;realTextSegments=[];
+  const log=$("realTextRecent");if(log)log.textContent="Aștept predicțiile reale CUDA...";
+}
+function renderRealProgress(graph){
+  const p=graph?.progress||{},st=$("realTextStats"),phase=$("realTextPhase"),bar=$("realTextDatasetProgress");
+  if(!st||!phase||!bar)return;
+  const percent=Number.isFinite(p.percent)?p.percent.toFixed(4)+"%":"—";
+  bar.value=Number.isFinite(p.percent)?p.percent:0;
+  st.textContent="DATASET REAL: "+fmtReal(p.done)+" / "+fmtReal(p.total)+" exerciții ("+percent+")"+
+    "\nEXERCIȚII/s: "+realRate(p.exercisesPerSec)+"  · CARACTERE/s: "+realRate(p.charsPerSec)+
+    "\nLABIRINTE/s: "+realRate(p.mazeWorldsPerSec)+"  · TRANSFORMĂRI/s: "+realRate(p.transformWorldsPerSec)+
+    "\nRânduri sursă: "+fmtReal(p.datasetRows)+" · rezervate evaluării: "+fmtReal(p.heldRows);
+  const elapsed=Number.isFinite(p.phaseAt)?Math.max(0,(Date.now()-p.phaseAt)/1000):null;
+  const stale=elapsed!==null&&elapsed>25&&graph.status==="antrenează";
+  const g=graph.gpu?.text||{},timing=g.pipelineMs||{};
+  const costs=Object.entries(timing).map(([k,v])=>k+": "+(v/1000).toFixed(1)+" s").join(" · ");
+  phase.textContent="FAZA WORKER: "+(p.phase||"necunoscută")+" · "+(elapsed===null?"—":elapsed.toFixed(1)+" s")+" de la ultimul eveniment de fază"+
+    (stale?" · ATENȚIE: fără actualizare de peste 25 s":"")+
+    "\nCUDA ultimul lot: "+(Number.isFinite(g.cardMs)?(g.cardMs/1000).toFixed(2)+" s":"—")+
+    " · integrare memorie: "+(Number.isFinite(g.mergeMs)?g.mergeMs+" ms":"—")+
+    (costs?"\nETAPE ULTIMUL LOT: "+costs:"");
+}
+function ingestActualGpuText(data){
+  if(!data||data.error)return;
+  if(realTextGraph!==data.w)clearRealTextStream(data.w);
+  for(const e of data.events||[]){
+    if(e.seq<=realTextSeq)continue;
+    realTextSeq=e.seq;
+    const a=e.sample?.actual,g=e.sample?.predicted;
+    if(!Array.isArray(a)||!Array.isArray(g)||a.length!==g.length||!a.length)continue;
+    realTextSegments.push({a,g,position:e.sample.position||[],exercise:e.sample.exercise||[],
+      sampled:e.sample.sampled,computed:e.sample.computed,done:e.done,total:e.total});
+  }
+  if(realTextSegments.length>9)realTextSegments.splice(0,realTextSegments.length-9);
+  const root=$("realTextRecent");if(!root||!realTextSegments.length)return;
+  const frag=document.createDocumentFragment();
+  for(const x of realTextSegments.slice().reverse()){
+    const item=document.createElement("div");item.className="streamLine";
+    const note=document.createElement("div");note.className="streamCaption";
+    const first=x.position[0],last=x.position.at(-1),ex=x.exercise[0];
+    const correct=x.a.reduce((n,c,i)=>n+(c===x.g[i]),0);
+    note.textContent="Lot GPU · exercițiul local #"+ex+" · poziții "+first+"–"+last+
+      " · "+correct+"/"+x.a.length+" ghicite în eșantion · "+x.sampled+"/"+x.computed+" afișate din ultimul chunk · "+
+      fmtReal(x.done)+"/"+fmtReal(x.total)+" poziții calculate în lot";
+    item.append(note);
+    for(const [label,values]of [["VĂZUT  ",x.a],["GHICIT ",x.g]]){
+      const line=document.createElement("div");line.className="streamCompare";
+      const prefix=document.createElement("span");prefix.className="blank";prefix.textContent=label+" ";line.append(prefix);
+      values.forEach((value,i)=>{const cell=document.createElement("span");
+        cell.className=x.a[i]===x.g[i]?"ok":"bad";
+        cell.textContent=printableRealByte(value);line.append(cell);});
+      item.append(line);
+    }
+    frag.append(item);
+  }
+  root.replaceChildren(frag);
+}
 const observatory = LIVE ? new Observatory({getGraph:()=>liveW}) : null;
 const languageMazeViewer = LIVE ? new LanguageMazeViewer() : null;
 const inlineTextMaze = LIVE ? new InlineTextMaze() : null;
@@ -856,6 +919,12 @@ async function livePull() {
   livePulling=true;
   const requestedW=liveW;
   let selectedSnap=null,selectedSummary=null,selectedTelemetry=null,pullError=null;
+  // Lightweight truth-first stream: read it BEFORE the heavy graph JSON.
+  try {
+    if(realTextGraph!==requestedW)clearRealTextStream(requestedW);
+    const r=await fetch("/text-stream?w="+requestedW+"&after="+realTextSeq,{cache:"no-store"});
+    if(r.ok){const live=await r.json();if(requestedW===liveW)ingestActualGpuText(live);}
+  }catch(err){pullError="text CUDA: "+err.message;}
   try {
     const r=await fetch("/graph?w="+requestedW,{cache:"no-store"});
     if(r.ok){
@@ -870,6 +939,7 @@ async function livePull() {
     if(requestedW===liveW){
       selectedSummary=L.graphs?.find(x=>x.w===requestedW)||null;
       liveSummary=selectedSummary;
+      renderRealProgress(selectedSummary);
       inlineTextMaze?.update(selectedSnap||liveSnap,
         !!selectedSummary?.worlds?.includes("text"));
     }
@@ -891,7 +961,7 @@ async function livePull() {
       <div class="bt"><button data-do="start" title="pornește / continuă antrenarea">▶</button><button data-do="pause" title="pauză">⏸</button><button data-do="save" title="salvează acum">💾</button><button data-do="reset" title="pornește de la 0">${armedNow(gr.w + "reset") ? "sigur?" : "⟲"}</button><button data-do="remove" title="scoate graful">${armedNow(gr.w + "remove") ? "sigur?" : "✕"}</button></div></div>`).join("");
     for (const c of $("liveList").querySelectorAll(".lgc")) {
       c.querySelector(".t").onclick = () => { liveW = +c.dataset.w;
-        languageMazeViewer?.reset();inlineTextMaze?.update(null,false);
+        languageMazeViewer?.reset();inlineTextMaze?.update(null,false);clearRealTextStream(liveW);
         nodes.clear();edges.clear();liveSnap=null;liveSummary=null;data=[];
         view.path="";view.mode="inside";
         nv.cam={k:0,w:"",x:0,y:0,S:300};nv.placed=false;

@@ -95,6 +95,20 @@
   #evalText{font:12px/1.6 ui-monospace,monospace;background:#05080c;border-radius:8px;padding:8px;max-height:420px;overflow:auto;white-space:pre-wrap;word-break:break-all}
   #evalText .eh{color:var(--green)}#evalText .em{color:#ff4d6d;background:#2a0d14}#evalPane [hidden]{display:none!important}
   #evalTab table{width:100%;border-collapse:collapse;font-size:12px}#evalTab td,#evalTab th{padding:2px 4px}#evalTab tr[data-i]:hover{background:#0d1824}
+  /* True CUDA text-observation display; independent from original graph canvas. */
+  #realTextLivePane{background:#06121c;border:1px solid #315773;border-radius:11px;padding:12px;margin:10px 0 14px;min-width:0}
+  #realTextLivePane progress{width:100%;height:14px;accent-color:var(--green);margin:7px 0}
+  #realTextStats{font:12px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  #realTextPhase{color:#95c8e8;font:12px/1.45 ui-monospace,monospace;overflow-wrap:anywhere}
+  #realTextLivePane .streamLine{padding:6px 0;border-bottom:1px solid #20374a}
+  #realTextLivePane .streamLine:last-child{border-bottom:0}
+  #realTextLivePane .streamCaption{font:11px ui-monospace,monospace;color:#8fa9bf;margin-bottom:4px}
+  #realTextLivePane .streamCompare{font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+  #realTextLivePane .streamCompare .ok{color:var(--green)}
+  #realTextLivePane .streamCompare .bad{color:#fff;background:#893146;border-radius:2px}
+  #realTextLivePane .streamCompare .blank{color:#9ab8c9}
+  #realTextRecent{max-height:400px;overflow:auto;border:1px solid #233a4e;background:#030b12;border-radius:8px;padding:6px}
+  #realTextLivePane .streamNote{color:var(--dim);font-size:11px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -224,6 +238,14 @@
     <div id="livePanel" hidden>
       <h2>Grafurile care devorează acum (alege unul ca să intri în spațiul lui)</h2>
       <div id="liveList" class="liveList"></div>
+      <section id="realTextLivePane" aria-label="Antrenare reală și ghicirea caracterelor CUDA">
+        <h2>Textul devorat LIVE · predicții reale CUDA</h2>
+        <div id="realTextStats">Aștept primele exerciții procesate de workerul V17...</div>
+        <progress id="realTextDatasetProgress" max="100" value="0" aria-label="Procent de exerciții din datasetul de antrenare consumate"></progress>
+        <div id="realTextPhase">Aștept faza reală a procesării CUDA / CPU.</div>
+        <p class="streamNote">VERDE = caracter prezis corect înainte de observație. ROȘU = predicție diferită de caracterul observat. Motorul transmite TOATE predicțiile efectuate pentru fiecare chunk CUDA (prima poziție a exercițiului este context, nu se ghicește). Browserul păstrează ultimele fragmente, pentru viteză; antrenarea nu sare peste niciun caracter.</p>
+        <div id="realTextRecent" role="log" aria-live="off" aria-label="Caractere reale observate și prezise de CUDA">Aștept predicțiile primei bucăți reale de text...</div>
+      </section>
       <div class="row"><button id="allStart">▶ Start toate</button><button id="allPause">⏸ Pauză toate</button><button id="allSave">💾 Salvează toate</button><button id="liveReset" title="toate creierele pornesc din nou, goale (salvările vechi sunt puse deoparte)">⟲ Reset toate la 0</button></div>
       <div class="row gpuRow"><b class="dim">Lumi pe GPU:</b> <select id="gpuDev"><option value="off">oprit (CPU)</option><option>cuda:0</option><option>cuda:1</option><option>cpu</option></select>
         <label class="dim" title="0 = câte umplu memoria video dată">lumi odată (0 = umple VRAM) <input id="gpuWorlds" type="number" min="0" step="1" value="0" style="width:90px"></label>

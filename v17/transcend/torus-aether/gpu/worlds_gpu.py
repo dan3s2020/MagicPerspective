@@ -444,10 +444,12 @@ class Server:
             if self.text is None:
                 from text_gpu import TextCard
                 self.text = TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit)
-            def text_progress(done, total, phase):
+            def text_progress(done, total, phase, sample=None):
                 if "id" in m:
-                    sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
-                                                 "done": int(done), "total": int(total)}) + "\n")
+                    message = {"id": m["id"], "type": "progress", "phase": phase,
+                               "done": int(done), "total": int(total)}
+                    if sample is not None: message["sample"] = sample
+                    sys.stdout.write(json.dumps(message) + "\n")
                     sys.stdout.flush()
             chunk = max(32, min(512, int(m.get("chunk") or self.text_chunk)))
             while True:

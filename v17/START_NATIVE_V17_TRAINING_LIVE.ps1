@@ -8,7 +8,8 @@ param(
     [double]$Vram = 2.0,
     [int]$GpuWorlds = 32,
     [int]$GpuTextBatch = 1,
-    [int]$GpuTextChunk = 64,
+    [int]$GpuTextChunk = 128,
+    [int]$ReportEvery = 200000,
     [int]$Workers = 1,
     [long]$Chars = 0,
     [string]$RuntimeName = "runtime-real-v17-live-20261107",
@@ -42,7 +43,7 @@ if ($Gpu -ne "cuda:0" -and $Gpu -ne "off") {
 if ($Vram -le 0 -or $Vram -gt 3.2) {
     throw "For the 4GB RTX 3050 Ti, set a VRAM allowance in (0, 3.2] GB."
 }
-if ($GpuWorlds -lt 1 -or $GpuTextBatch -lt 1 -or $GpuTextChunk -lt 1 -or $Workers -lt 1) {
+if ($GpuWorlds -lt 1 -or $GpuTextBatch -lt 1 -or $GpuTextChunk -lt 1 -or $GpuTextChunk -gt 512 -or $Workers -lt 1 -or $ReportEvery -lt 1000) {
     throw "GPU worlds, text batch, chunk and workers must be positive."
 }
 $runtime = Join-Path $root $RuntimeName
@@ -66,7 +67,7 @@ $argsNative = @(
     "-Mem", "3",
     "-Worlds", "text,maze,transform",
     "-MazeEvery", "4000",
-    "-Every", "60000",
+    "-Every", "$ReportEvery",
     "-Data", $Data,
     "-Out", $runtime,
     "-Port", "$Port",
@@ -88,6 +89,8 @@ Write-Host "Original motor: $native"
 Write-Host "REAL dataset:   $Data"
 Write-Host "Isolated save:  $runtime"
 Write-Host "CUDA device:    $Gpu (GPU self-test must pass, NO silent CPU fallback)"
+Write-Host "Text chunk:     $GpuTextChunk (all characters still trained)"
+Write-Host "Evaluate/save: every $ReportEvery characters after initial checkpoint"
 Write-Host "LIVE UI:        http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
 Write-Host "This runs the native model and its existing live observers."
 Write-Host "Research-only local-axis symbolic experiments are NOT integrated into native generation." -ForegroundColor Yellow
