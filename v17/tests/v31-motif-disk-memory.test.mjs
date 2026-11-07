@@ -26,7 +26,7 @@ test("Disk index restores a previous real source phrase even AFTER its entire ac
   assert.equal(one.archiveDiskEnabled,true);
   const db1=archive.inspect({limit:200});
   assert.ok(db1.total>0);
-  const anchor=db1.rows.find(row=>row.example.includes(phrase));
+  const anchor=db1.rows.find(row=>row.width===5&&row.example.includes(phrase));
   assert.ok(anchor,JSON.stringify(db1.rows.slice(0,2)));
   const id=anchor.id;
   assert.equal(archive.lookupMotif(id).episodes,1);
