@@ -117,3 +117,16 @@ test("ORGANISM REUSES TRANSFORMATIONS PARSED FROM 32 TEXT EXERCISES, NOT GIVEN A
   observedTextEvents:atlas.events.length,conditions:learned.discoveredConditionalRules,
   heldoutBeforeActionPath:plan.solutionShape}));
 });
+
+test("each action-string character maps to a real learned operator and its prior-world training evidence",()=>{
+ const {result}=evaluate({seed:1181,worlds:20});
+ for(const attempt of result.attempts){
+  const output=attempt.conditional.characterAttribution;
+  assert.equal(output.characters.length,output.predicted.length);
+  assert.ok(output.characters.every(x=>x.actionIndex!==null));
+  assert.ok(output.routeEvidence.every(x=>x.evidenceIds.length&&x.sourceWorlds.length));
+  assert.ok(output.characters.every(x=>output.routeEvidence[x.actionIndex]));
+  assert.equal(attempt.conditional.success,true);
+  assert.equal(typeof output.exactString,"boolean");
+ }
+});
