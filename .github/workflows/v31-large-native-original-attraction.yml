@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
       - name: 240 exact parity tasks and 104400-state learned transformation graph using original attraction
         run: node --test v17/tests/v31-scalable-original-attraction.test.mjs
+      - name: Original Brain persistent atlas on 1800 novel text worlds and 1,024,000 learned text actions
+        run: node --test v17/tests/v31-persistent-native-causal-atlas-large.test.mjs
       - name: Original native 2D maze parity and V29 checkpoint/Q&A acceptance
         run: |
           node --test v17/tests/native-hypermaze-shape-parity.test.mjs
