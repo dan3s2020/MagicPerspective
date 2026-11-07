@@ -369,7 +369,7 @@
         <label class="dim">Context memorat <select id="atlasScale">
           <option value="0">1 caracter</option><option value="1">2 caractere</option>
           <option value="2">4 caractere</option><option value="3">8 caractere</option>
-          <option value="4">16 caractere</option><option value="5">32 caractere</option>
+          <option value="4">16 caractere</option><option value="5">32 caractere</option><option value="edits">TOATE transformările contextuale (editări)</option>
         </select></label>
         <button id="atlasPagePrev">◀ Pagina anterioară</button>
         <button id="atlasPageNext">Pagina următoare ▶</button>
@@ -378,7 +378,7 @@
       <canvas id="atlasGraphCanvas" width="950" height="390" style="width:100%;height:325px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px" aria-label="Proiecție parțială a nodurilor grafurilor textuale native din pagina curentă"></canvas>
       <pre id="atlasPageText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:290px;overflow:auto;font-size:11px">Se vor încărca stările native, fără trunchierea memoriei originale.</pre>
       <h2>4. Jurnalul tuturor încercărilor înregistrate, inclusiv a celor fără cale</h2>
-      <div class="row"><button id="atlasLogMore">Încarcă următoarele episoade reale din jurnal</button></div>
+      <div class="row"><label class="dim">Jurnal <select id="atlasLogKind"><option value="text">Limbaj: caractere și cauze</option><option value="xd">Labirinturi xD: căi reușite și ratate</option></select></label><button id="atlasLogMore">Încarcă următoarele episoade reale din jurnal</button></div>
       <pre id="atlasLogText" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:270px;overflow:auto;font-size:11px">Jurnalul este adăugat pe disc, în fișierele .path-atlas.jsonl și .xd-atlas.jsonl; aici îl poți parcurge paginat.</pre>
     </div>
     <div id="agentNoiseBox" hidden style="margin:12px 0;border:1px solid #375354;border-radius:10px;padding:12px">
