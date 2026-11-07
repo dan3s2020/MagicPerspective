@@ -957,6 +957,7 @@ fetch("/corpus").then(r => r.json()).then(c => {
     }
     const opts = kind === "maze" ? {sizes: $("evSizes").value.split(",").map(Number).filter(n => n >= 5 && n % 2 && n <= 61), per: +$("evPer").value || 1}
       : kind === "text" ? {text: $("evTextIn").value, count: +$("evNum").value || 12, max: $("evMax").value === "" ? 20000 : Number($("evMax").value), strictHeldout: strictRun} : {count: +$("evCount").value || 12, impossible: +$("evImp").value || 0};
+    if (kind === "text" && strictRun) opts.maxOutput = Number($("cpuExactMaxOutput").value);
     opts.T = +$("evT").value; opts.noise = +$("evNoise").value; if (again && R) { opts.again = true; if (R.seed != null) opts.seed = R.seed; if (kind === "maze") opts.sizes = R.mazes.map(m => m.n).filter((v, i, A) => A.indexOf(v) === i); }
     $("evW").textContent = "#" + liveW; $("evOut").textContent = "graful #" + liveW + " se salvează și copia lui dă evaluarea pe CPU…"; $("evGo").disabled = true; R = null; $("evalTab").innerHTML = "";
     try { const r = await (await fetch("/eval", {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({w: liveW, kind, opts})})).json();
