@@ -158,6 +158,26 @@ export class AligningGraph {
     for (let i = 0; i < bytes.length; i++) { const P = this.proposals(h, fh, self, fself), d = this.distribution(P), g = this.choose(d, opts), y = bytes[i]; ok += g === y; onStep?.(i, y, g, d);
       h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); }
     return ok / Math.max(1, bytes.length); }
+  // EXACT same original frozen prediction algorithm, but cooperative:
+  // yield between bounded groups of unseen symbols so the original worker
+  // can continue responding to heartbeat/Pause while full evaluation runs.
+  // No skipped tokens, no reduced history, no synthetic accuracy.
+  async readFrozenAsync(bytes, onStep, opts = {}, onProgress = null) {
+    this.mem.ready(true); this.fmem.ready(true);
+    const h=[],fh=[],self=new SelfMem(),fself=new SelfMem();
+    let ok=0;
+    for(let i=0;i<bytes.length;i++){
+      const P=this.proposals(h,fh,self,fself),d=this.distribution(P),
+        g=this.choose(d,opts),y=bytes[i];
+      ok+=g===y;onStep?.(i,y,g,d);
+      h.push(y);fh.push(form(y));self.add(y);fself.add(form(y));
+      if((i&127)===127||i===bytes.length-1){
+        await onProgress?.(i+1,bytes.length);
+        await new Promise(resolve=>setImmediate(resolve));
+      }
+    }
+    return ok/Math.max(1,bytes.length);
+  }
   // writing: follow its own alignment, symbol after symbol (temperature over the trusted distribution)
   write(prompt, {max = 400, T = 0, rand = Math.random, stop = null, onStep = null} = {}) { this.mem.ready(true); this.fmem.ready(true);
     const h = [], fh = [], self = new SelfMem(), fself = new SelfMem(), push = y => { h.push(y); fh.push(form(y)); self.add(y); fself.add(form(y)); };

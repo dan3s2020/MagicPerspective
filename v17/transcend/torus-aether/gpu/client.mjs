@@ -25,7 +25,38 @@ export class GpuWorlds {
     let timer; const limit = new Promise((_, reject) => { timer = setTimeout(() => { reject(new Error("GPU process " + py + " did not answer in 180 s: " + (this.error || ""))); this.close(); }, 180000); });
     this.ready = Promise.race([this.call({cmd: "init", ...this.settings}), limit]).then(info => (this.info = info), err => { this.close(); this.dead = true; throw err; }).finally(() => clearTimeout(timer));
   }
-  call(m, {onProgress} = {}) { return new Promise((resolve, reject) => { if (this.dead) return reject(new Error("GPU process is not running: " + (this.error || ""))); const id = ++this.id; this.wait.set(id, {resolve, reject, onProgress}); this.p.stdin.write(JSON.stringify({...m, id}) + "\n"); }); }
+  call(m, {onProgress, stallMs} = {}) { return new Promise((resolve, reject) => {
+    if (this.dead) return reject(new Error("GPU process is not running: " + (this.error || "")));
+    const id = ++this.id;
+    // The original protocol had no timeout for text_learn: a blocked Python
+    // kernel could leave the UI waiting forever after the first real batch.
+    // This is an INACTIVITY deadline, reset by every legitimate Python
+    // training-progress event. It never claims training has progressed.
+    const inactivityMs = Math.max(1000, Number(stallMs || this.settings?.stallMs || 360000));
+    let timer = null;
+    const clear = () => { if (timer) clearTimeout(timer); timer = null; };
+    const arm = () => {
+      clear();
+      timer = setTimeout(() => {
+        const why = "GPU request "+m.cmd+" had no progress for "+Math.round(inactivityMs/1000)+
+          " seconds (not a completed training batch). Python process will be stopped; original Brain checkpoint is unchanged.";
+        this.error=why;
+        this.dead=true;
+        const waits=[...this.wait.values()]; this.wait.clear();
+        for(const waiter of waits) waiter.reject(new Error(why));
+        this.close();
+      }, inactivityMs);
+      // Keep this deadline referenced until the pending GPU request resolves.
+    };
+    this.wait.set(id, {
+      resolve: value => { clear(); resolve(value); },
+      reject: err => { clear(); reject(err); },
+      onProgress: value => { arm(); onProgress?.(value); }
+    });
+    arm();
+    try { this.p.stdin.write(JSON.stringify({...m, id}) + "\n"); }
+    catch (err) { clear(); this.wait.delete(id); reject(err); }
+  }); }
   async configure(settings) { this.settings = {...this.settings, ...settings}; await this.ready; this.info = await this.call({cmd: "init", ...this.settings}); return this.info; }
   close() { try { this.p.stdin.end(); this.p.kill(); } catch {} }
 }

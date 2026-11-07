@@ -22,6 +22,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
 const workers = +arg("workers", Math.max(1, os.cpus().length - 1)), every = +arg("every", 200000), maxChars = +arg("chars", 0) || Infinity;
 const memGB = +arg("mem", 3), out = path.resolve(arg("out", "runtime-devour")), evalChars = +arg("eval", 4000);
+const saveEveryChars = Math.max(0,Math.trunc(+arg("save-every",0))); // optional checkpoint without expensive unseen evaluation
 // worlds the same brains live: text (the corpus) and/or maze (the 2D maps); brains are saved in <out>/brains and
 // --resume continues every brain from its save; /reset (the page's button) starts every brain again from nothing
 // many worlds at once on the GPU (gpu/worlds_gpu.py): --gpu cuda:0|cuda:1|cpu|off, --gpu-worlds N (no limit here),
@@ -94,7 +95,7 @@ function slotInfo(sl) { const g = graphs.get(sl.w), t = last.get(sl.w);
     ? datasetProgress(source, sl.share, shares, Math.max(g?.exercises||0,t?.exercises||0))
     : null;
   return {w: sl.w, arm: sl.arm.name, worlds: sl.worlds, status: sl.status, error: sl.lastError || null, gpu:G,chars:Math.max(g?.chars||0,t?.chars||0),lived:g?.lived??0,
-    exercises:Math.max(g?.exercises||0,t?.exercises||0),dataset:progress,
+    exercises:Math.max(g?.exercises||0,t?.exercises||0),dataset:progress,rate:g?.rate||t?.rate||null,
     nodeCount:g?.nodes?.length??0,edgeCount:g?.edges?.length??0,
     snapshotAt:g?.snapshotAt||null,batch:G?.batch||null,test: t?.test || null, maze: g?.maze || t?.maze || null, transform: t?.transform || g?.transform || null, selfcode: g?.selfcode || t?.selfcode || null,
     perspective: g?.perspective || t?.perspective || null,
@@ -116,12 +117,25 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   const gen = ++sl.gen, share = sl.share, shares = Math.max(1, Math.ceil(slots.length / arms.length));
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
-    worlds: sl.worlds, mazeEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
+    worlds: sl.worlds, mazeEvery, saveEveryChars, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
     traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"),
     mathAxes: process.argv.includes("--math-axes")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
+    if(m.type==="heartbeat"){
+      const existing=graphs.get(sl.w);
+      if(existing){
+        const gpu=existing.gpu||{settings:gpuFor()};
+        gpu.batch={phase:m.phase,done:m.done,total:m.total,
+          noProgressSeconds:m.noProgressSeconds,heartbeatAt:m.at};
+        existing.gpu=gpu;
+        existing.snapshotAt=m.at;
+        existing.chars=m.chars;existing.exercises=m.exercises;existing.rate=m.rate;
+        recordTelemetry(existing);
+      }
+      return;
+    }
     if (m.type === "note") return console.log(`#${sl.w} ${m.text}`);
     if (m.type === "fatal") { sl.lastError = m.text; sl.status = "eroare"; return console.error(`#${sl.w} ${m.text}`); }
     if (m.type === "graph") { const old=graphs.get(sl.w);
@@ -134,13 +148,13 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
     const t = m.test, p = v => (100 * v).toFixed(1).padStart(5) + "%", tf = m.transform?.test ? ` | transforms unseen solved ${p(m.transform.test.solved)} steps/optimal ${m.transform.test.ratio?.toFixed(2) ?? "—"} wrong predictions ${p(m.transform.test.failedRate || 0)} limitation ${m.transform.test.saidLimitation}/${m.transform.test.impossible}` : "", mz = m.maze ? ` | labyrinths lived ${m.maze.played} · unseen solved ${m.maze.test ? p(m.maze.test.solved) : "—"} steps/optimal ${m.maze.test?.ratio?.toFixed(2) ?? "—"} shape ${m.maze.test ? p(m.maze.test.shape) : "—"}` : "";
     const dProgress=slotInfo(sl).dataset;
     const corpusLine=dProgress?.percent!=null?
-      " | dataset "+dProgress.percent.toFixed(2)+"% · "+
+      " | dataset "+preciseDatasetNumber(dProgress.percent)+"% · "+
       dProgress.processed.toLocaleString()+"/"+
       dProgress.trainingTotal.toLocaleString()+" exerciții · rămase "+
       dProgress.remaining.toLocaleString():" | dataset: total necunoscut";
     console.log(`#${String(sl.w).padStart(2)} ${m.arm.padEnd(8)} ${(m.chars / 1e6).toFixed(2).padStart(7)}M chars ${String(m.exercises).padStart(6)} ex` +
       (t ? ` | unseen: ALIGNED ${p(t.aligned)}  graph ${p(t.live)}  field ${p(t.field)}  together ${p(t.together)}  C ${p(t.C)}  masked ${p(t.masked)}` : "") + mz + tf +
-      (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + corpusLine + ` | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
+      (m.gpu ? ` | GPU ${m.gpu.info?.name || m.gpu.info?.device || m.gpu.settings.device}${m.gpu.error ? " ERROR " + m.gpu.error : ` ${m.gpu.settings.worlds} worlds/batch${m.gpu.maze?.vramUsedGB != null ? " VRAM " + m.gpu.maze.vramUsedGB + " GB" : ""}`}` : "") + corpusLine + ` | rata REALA ${Number(m.rate?.exercisesPerSecond||0).toFixed(3)} exercitii/s · ${Number(m.rate?.megabytesPerSecond||0).toFixed(4)} MB/s | C ${m.cActive} lag ${m.cLag} flips ${m.cFlips} | ${(m.speed / 1000).toFixed(1)}k/s ${m.heapGB.toFixed(2)} GB${m.savedMB ? ` saved ${m.savedMB.toFixed(0)}MB` : ""}${m.dissolved ? " dissolved " + m.dissolved : ""}${m.final ? "  DONE" : ""}`); });
   wk.on("error", err => console.error(`#${sl.w} error:`, err.message));
   wk.on("exit", () => { for (const f of sl.onSaved?.splice(0) || []) f(); if (gen === sl.gen) { sl.wk = null; if (sl.status !== "gata" && sl.status !== "eroare") sl.status = "oprit"; } });
 }
@@ -158,6 +172,7 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
+const preciseDatasetNumber = v => v>0&&v<0.01?v.toFixed(6):v<1?v.toFixed(4):v.toFixed(2);
 const datasetInfo = () => ({
   kind:source.kind,rows:source.totalRows??null,trainRows:source.trainRows??null,
   heldOutRows:source.heldRows??null,files:source.fileCount??null,
@@ -211,6 +226,22 @@ http.createServer((req, res) => {
        !Number.isSafeInteger(value)||value<0||value>100000)
       return json(res,{error:"A start expression and valid numeric index/value constraint are required"});
     const goals=[{index,value}];
+    // An original full V17 frozen exam may occupy the worker for many
+    // seconds. Observed math axes are saved atomically after EACH real batch.
+    // Plan from that authentic immutable snapshot without waiting for the
+    // training thread; never invent an answer or use unseen examples.
+    const liveSnapshotFile=saveOf(sl)+".observed-math-axes.v8";
+    if(fs.existsSync(liveSnapshotFile)){
+      try {
+        const frozen=LiveObservedMathAxes.restore(liveSnapshotFile);
+        const answer=frozen.plan(start,goals);
+        return json(res,{...answer,w:sl.w,fromSave:true,
+          savedSnapshotAt:fs.statSync(liveSnapshotFile).mtimeMs,
+          provenance:"real-observed-axes-from-completed-training-batch"});
+      }catch(error){
+        if(!sl.wk)return json(res,{error:error.message});
+      }
+    }
     if(!sl.wk){
       const file=saveOf(sl)+".observed-math-axes.v8";
       if(!fs.existsSync(file))return json(res,{found:false,reason:"No saved observed math axes"});

@@ -10,6 +10,7 @@ param(
  [string]$Worlds = "text,maze,transform",
  [double]$Mem = 3,
  [long]$Every = 50000,
+ [long]$SaveEveryChars = 0,
  [string]$Gpu = "cuda:0",
  [double]$Vram = 2.6,
  [long]$GpuWorlds = 0,
@@ -21,8 +22,8 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_V17.ps1"
-$branchTag = "feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107"
-$compatibleBranches = @($branchTag, "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107")
+$branchTag = "fix/V17-EXACT-CUDA-ALIGNMENT-PROGRESS-20261107"
+$compatibleBranches = @($branchTag, "feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107", "experiment/V17-LIVE-PREDICTIVE-STATE-GATE-20261107")
 if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
  throw "Original complete CUDA V17 launcher missing: $launcher"
 }
@@ -85,7 +86,7 @@ Write-Host ""
 # missing. Its native worker is the only training process; no fake data/world.
 $launch = @{
  Data=$Data; Out=$Out; Port=$Port; Workers=$Workers; Arms=$Arms; Worlds=$Worlds
- Mem=$Mem; Every=$Every; Gpu=$Gpu; Vram=$Vram; GpuWorlds=$GpuWorlds
+ Mem=$Mem; Every=$Every; SaveEveryChars=$SaveEveryChars; Gpu=$Gpu; Vram=$Vram; GpuWorlds=$GpuWorlds
  GpuTextBatch=$GpuTextBatch; GpuTextChunk=$GpuTextChunk; Cuda=$Cuda
  Resume=$true; Start=$true; MagicUI=$true; MathAxes=$true
  TraceTransformations=[bool]$TraceTransformations

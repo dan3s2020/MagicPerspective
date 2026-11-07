@@ -384,18 +384,22 @@ function write(mapField = false) {
     `<div class="gen">${String.fromCharCode(...gen.slice(0, 420)).replace(/</g, "&lt;").replace(/\n/g, " ")}</div>`;
 }
 
+const trainingPctText = v => !Number.isFinite(v)?"—":v>0&&v<0.01?v.toFixed(6)+"%":v<1?v.toFixed(4)+"%":v.toFixed(2)+"%";
 function stats() {
   const rate = a => a.length ? (100 * a.reduce((s, v) => s + v, 0) / a.length).toFixed(1) + "%" : "—";
   let s = 0, c = 0, a = 0; for (const n of nodes.values()) n.type === "sym" ? s++ : n.type === "C" ? c++ : a++;
   $("steps").textContent = (LIVE ? (liveSummary?.chars ?? liveSnap?.chars ?? 0) : t).toLocaleString();
   $("livedSteps").textContent = (LIVE ? (liveSummary?.lived ?? liveSnap?.lived ?? 0) : t).toLocaleString();
+  const liveRate=LIVE?(liveSummary?.rate||liveSnap?.rate):null;
+  $("nativeMBps").textContent=Number.isFinite(liveRate?.megabytesPerSecond)?liveRate.megabytesPerSecond.toFixed(4)+" MB/s":"—";
+  $("nativeExps").textContent=Number.isFinite(liveRate?.exercisesPerSecond)?liveRate.exercisesPerSecond.toFixed(3)+" ex/s":"—";
   const at=liveSummary?.snapshotAt||liveSnap?.snapshotAt;
   $("lastSnapshotAge").textContent=LIVE?(at?((Date.now()-at)/1000).toFixed(1)+" s":"—"):"—";
   $("symbols").textContent = s; $("cw").textContent = c; $("aw").textContent = a;
   const D=LIVE?(liveSummary?.dataset||liveSnap?.dataset):null;
   $("trainingExercises").textContent=D?.trainingTotal!=null?
     D.processed.toLocaleString("ro-RO")+" / "+D.trainingTotal.toLocaleString("ro-RO"):"—";
-  $("trainingDatasetPct").textContent=D?.percent!=null?D.percent.toFixed(2)+"%":"—";
+  $("trainingDatasetPct").textContent=D?.percent!=null?trainingPctText(D.percent):"—";
   $("trainingRemaining").textContent=D?.remaining!=null?D.remaining.toLocaleString("ro-RO"):"—";
   $("trainingFilesHeld").textContent=D?
     (D.fileCount??"—")+" fișiere · "+(D.heldOutRows??"—")+" exemple rezervate":"—";
@@ -406,7 +410,12 @@ function stats() {
     "Caractere consumate: "+(liveSummary?.chars??liveSnap?.chars??0).toLocaleString("ro-RO")+
     " · exerciții alocate "+(D.trainingTotal??"—")+
     " · dataset "+(D.datasetRows??"—")+" rânduri"+
-    " · procentul este calculat din EXERCIȚII finalizate, nu din alfabet.":
+    " · procentul este calculat din EXERCIȚII finalizate, nu din alfabet."+
+    ((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch)?
+       " · FAZA REALĂ: "+(liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).phase+
+       " · "+((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).done??"—")+
+       "/"+((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).total??"—")+
+       " · fără progres "+((liveSummary?.gpu?.batch||liveSnap?.gpu?.batch).noProgressSeconds??0)+" s":"") :
     "Procentul real apare numai când serverul livrează totalul din dataset.";
   $("edges").textContent = edges.size; $("accC").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accC).toFixed(1) + "%" : "—") : rate(recent.C); $("accF").textContent = LIVE ? (liveSnap ? (100 * liveSnap.accF).toFixed(1) + "%" : "—") : rate(recent.F); $("accAl").textContent = LIVE && liveSnap?.accAlign != null ? (100 * liveSnap.accAlign).toFixed(1) + "%" : "—"; if (LIVE && liveSnap?.selfModel && frame % 30 === 0) { const M = liveSnap.selfModel, nm = {mem: "tot trecutul", memn: "trecutul cel mai nou", self: "exercițiul de acum", form: "forma (trecutul)", formn: "forma (cel mai nou)", fself: "forma exercițiului de acum"};
     $("selfModel").innerHTML = "cât se poate încrede în fiecare fel de aliniere (a prezis înainte, apoi a văzut): " + Object.entries(M.sources).map(([k, o]) => `${nm[k] || k} <b>${(100 * o.trust).toFixed(1)}%</b>`).join(" · ") +
