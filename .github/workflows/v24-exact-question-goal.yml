@@ -1,0 +1,38 @@
+name: V24 Exact Original Discoverer Question-to-Goal
+on:
+  push:
+    branches:
+      - experiment/V24-EXACT-DISCOVERER-QUESTION-GOAL-NAVIGATION-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-question-goal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check exact original route module syntax
+        run: |
+          node --check v17/transcend/torus-aether/worlds/question-goal-navigation.mjs
+          node --check v17/tests/v24-native-question-goal.test.mjs
+      - name: Validate exact original shape on real learned text actions and no hidden answer
+        run: node --test v17/tests/v24-native-question-goal.test.mjs
+      - name: Preserve V23 long observed routes and original 2D parity
+        run: node --test v17/tests/v23-observed-hyperpath-long-range.test.mjs
+  windows-native-question-goal:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Windows native Discoverer text maze
+        shell: pwsh
+        run: |
+          node --test v17/tests/v24-native-question-goal.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw "V24 native shape acceptance failed" }
