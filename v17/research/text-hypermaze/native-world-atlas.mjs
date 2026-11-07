@@ -264,8 +264,10 @@ export class NativeWorldAtlas{
      if(from==null||to==null)continue;
      const verified=out?.frames?.some(x=>x.before===from&&
       x.actual===to&&x.action===e.action.name&&x.predictionCorrect===true)||false;
+     const fromTextContrast=e.action.causalTrainingEvidence===false;
      edge(from,to,e.action.name,
       verified?"PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD":
+       fromTextContrast?"PREDICTED_FROM_TEXT_CONTRAST_NOT_CAUSAL":
        "PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE",
        {attemptId:attempt.id,verified});
     }
@@ -320,7 +322,8 @@ export class NativeWorldAtlas{
    statusDefinitions:{
     WITNESSED_IN_SOURCE_WORLD:"Actual before/action/after observation in a known world",
     TEXT_CONTRAST_OBSERVED_NOT_CAUSAL:"A text-edit difference inferred from corpus sentences; NOT independently executed physics",
-    PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE:"Original shapeGraph planned transferred action; no physical test yet",
+    PREDICTED_FROM_RULES_NOT_YET_VERIFIED_HERE:"Original shapeGraph planned a transferred action whose effect was witnessed in OTHER worlds; not verified here",
+    PREDICTED_FROM_TEXT_CONTRAST_NOT_CAUSAL:"Original shapeGraph used a repeatedly observed corpus contrast; no causal action proof even in training worlds",
     PHYSICALLY_VERIFIED_IN_HELDOUT_WORLD:"Actual independent physics callback matched prediction",
     BLOCKED_BY_EXPLICIT_SEARCH_BUDGET:"Potential path refused by explicit depth/state design budget"
    }};
@@ -361,6 +364,10 @@ export class NativeWorldAtlas{
    ...(frontier.counts?.stateCutoff?[{type:"STATE_DESIGN_CUTOFF",count:frontier.counts.stateCutoff}]:[]),
    ...(frontier.numericInvariant?.impossibleResidueWithAdmittedRules?
     [{type:"REACHABILITY_INVARIANT",gcd:frontier.numericInvariant.gcdOfAvailableChanges}]:[]),
+   ...(attempt.actions.some(x=>x.causalTrainingEvidence===false)?
+    [{type:"NONCAUSAL_CORPUS_CONTRAST_USED",
+      count:attempt.actions.filter(x=>x.causalTrainingEvidence===false).length,
+      note:"Text difference is not independently witnessed physical action; must validate"}]:[]),
    ...(outcome&&!outcome.completeExact?[{type:"EXTERNAL_WORLD_DISAGREED_WITH_PREDICTED_ACTIONS",
     incorrect:outcome.mismatches}]:[])
   ];
