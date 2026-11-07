@@ -771,13 +771,16 @@ $("cognitiveEvaluate").onclick = async () => {
       "\nMetoda REALA: "+result.directOriginalMethod+
       " | temperatura V17: "+result.noiseTemperature+
       "\nFORMA INITIALA COMPLETA (nodurile grafului): "+(result.preActionShape||[]).join(" → ")+
-      "\nLegea de propagare: "+result.law
+      "\nLegea de propagare: "+result.law+
       "\nStarea inițială: "+result.start+
       "\nTRASEUL INTERN (niciun pas executat încă):\n"+
       (result.plannedPath||[]).map((p,i)=>(i+1)+". "+p.action+" → "+p.after).join("\n")+
       "\nSuccessor Representation: "+JSON.stringify(result.successor||[])+
       "\nATENȚIE: traseul este prezis din transformări deduse, nu verificat de un evaluator semantic extern."+
       (result.truncated?"\nHARTA LIMITATĂ: rezultatul poate fi incomplet.":"");
+    // Full learned topology and the frozen pre-action route are rendered by
+    // the V22 canvas. NO action is faked or executed by this event.
+    window.dispatchEvent(new CustomEvent("v22-original-shape", {detail:result}));
   }catch(err){output.textContent="EROARE: "+err.message;}
   finally{button.disabled=false;}
 };
@@ -798,6 +801,9 @@ $("cognitiveRecord").onclick = async () => {
     out.textContent="Feedback observat: "+JSON.stringify(data.result,null,2)+
       "\nHarta actualizată: "+JSON.stringify(data.report,null,2)+
       "\nCheckpoint: "+(data.savedMB!=null?data.savedMB.toFixed(2)+" MB":"așteaptă salvarea");
+    window.dispatchEvent(new CustomEvent("v22-observed-action",{
+      detail:{before,after,action,accepted,result:data.result}
+    }));
     await pullSelectedGraph();
   }catch(err){out.textContent="EROARE: "+err.message;}
   finally{button.disabled=false;}
