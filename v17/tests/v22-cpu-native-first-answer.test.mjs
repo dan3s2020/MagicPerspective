@@ -94,7 +94,7 @@ test("NATIVE CPU V22: real V17 Q/A + V19 original Discoverer.shape + V20/21 + 2D
    assert.ok(!strict.error,"Original heldout evaluation failed: "+JSON.stringify(strict.error));
    assert.equal(strict.heldoutAnswerComplete,true);
    assert.equal(strict.firstAnswerExactTotal,strict.exercises.length);
-   assert.ok(strict.firstAnswerExactTotal>=1);
+   assert.equal(strict.firstAnswerExactTotal,2,"Distinct 2 heldout rows must not be resampled up to 16 times");
    assert.ok(strict.firstAnswerExactRate>=0&&strict.firstAnswerExactRate<=1);
    assert.equal(strict.firstAnswerTarget70Reached,strict.firstAnswerExactRate>=.70);
    assert.ok(strict.exercises.every(x=>typeof x.firstAnswerExact==="boolean"));
