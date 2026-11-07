@@ -281,18 +281,21 @@ $("cumPlan").addEventListener("click",async()=>{
   $("cumEvidence").textContent="Specifică NUMAI coordonatele de intrare: 0:8,2:7. Nu oferi rezultatul dependent.";
   return;
  }
- if(mode!=="numeric"&&(!required.length||required.length>16)){
+ if(mode!=="numeric"&&mode!=="question"&&(!required.length||required.length>16)){
   $("cumEvidence").textContent="Pentru text, oferă 1–16 tokeni ai obiectivului; nu răspunsul complet.";
   return;
  }
  state.busy=true;$("cumPlan").disabled=true;
  $("cumEvidence").textContent="Construiesc topologia din toate experiențele memorate de originalul Brain...";
  try{
-  const qs=mode==="numeric"?
+  const qs=mode==="question"?
+   new URLSearchParams({question:start,depth,budget,topology:"1"}):
+   mode==="numeric"?
    new URLSearchParams({start,inputs:numericInputs,depth,budget,topology:"1"}):
    new URLSearchParams({start,required:required.join(","),depth,budget,
     inferred:mode==="inferred"?"1":"0",topology:"1"});
-  const url=(mode==="numeric"?"/native-cumulative-numeric?":"/native-cumulative?")+qs;
+  const url=(mode==="question"?"/native-cumulative-question?":
+   mode==="numeric"?"/native-cumulative-numeric?":"/native-cumulative?")+qs;
   const result=await getJson(url,{method:"POST"});
   if(result.originalPlanner!=="Discoverer.shapeGraph"||
    result.referenceAnswerProvided!==false||
@@ -314,7 +317,8 @@ $("cumPlan").addEventListener("click",async()=>{
   setNum("nodes",state.topology?.nodes?.length??null);
   setNum("edges",state.topology?.edges?.length??null);
   setNum("steps",result.steps);
-  $("goal").textContent="Formă găsită";
+  $("goal").textContent=mode==="question"&&result.goalLearnedFromQuestion?
+   "Țintă descoperită din întrebare":"Formă găsită";
   $("frame").max="0";$("frame").value="0";
   $("truth").textContent="Forma a fost prezisă, execuția fizică încă NU a fost efectuată. Verificarea externă rămâne necesară.";
   $("predicted").textContent="FORMA ORIGINALĂ ÎNAINTE DE PRIMA ACȚIUNE\n"+
@@ -333,6 +337,10 @@ $("cumPlan").addEventListener("click",async()=>{
     " · suport "+String(x.observedSupport??x.observedTrainingPairs??"n/a")).join("\n\n")+
    "\n\nMEMORIE / AXE / LIMITE:\n"+
    JSON.stringify(result.memory||result.graph||{},null,2)+
+   (mode==="question"?"\n\nȚINTĂ ÎNVĂȚATĂ DIN ÎNTREBARE: "+
+    String(result.goalLearnedFromQuestion===true)+
+    " · exemple Q/A observate: "+String(result.sourceWitnessedQuestionAnswerExamples)+
+    " · fără numărul-răspuns în obiectiv":"")+
    "\n\nRĂSPUNS COMPLET INFERAT:\n"+String(result.predicted)+
    "\n\nAcuratețe semantică generală: NEDEMONSTRATĂ.";
   refreshFrame();draw();
