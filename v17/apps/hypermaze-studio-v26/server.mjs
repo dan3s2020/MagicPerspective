@@ -161,7 +161,8 @@ export async function startServer(options={}){
     server.listen(o.port,o.host,resolve);
   });
   if(o.auto)session.start();
-  const address="http://"+o.host+":"+o.port;
+  const actualPort=server.address()?.port||o.port;
+  const address="http://"+o.host+":"+actualPort;
   console.log("MagicPerspective V26 native LIVE text training: "+address);
   console.log("Corpus: "+session.corpus.path+
     "; train tokens "+session.corpus.trainTokens+
