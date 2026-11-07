@@ -16,13 +16,21 @@ const shuffle=(arr,R)=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=s
 export function trainWorlds({seed=1181,worlds=32,examples=76,noise=.055}={}){
  const R=PRNG(seed),atlas=new CrossWorldAtlas({dims,side,actions:ACTIONS}),fragments=[];
  for(let w=0;w<worlds;w++){
-  const action=ACTIONS[w%8],samples=[];
+  const action=ACTIONS[w%8],lines=[];
   for(let i=0;i<examples;i++){
    const from=sample(R,N),real=actualStep(from,action),to=R()<noise?sample(R,N):real;
-   const e=atlas.observe({world:'episode-'+w,from,action,to,provenance:'training-world-'+w+'/observation-'+i});
-   samples.push({id:e.id,from,action,to});
+   const x=tuple(from,dims,side).join(","),y=tuple(to,dims,side).join(",");
+   const row=i%4===0?"Archive witness: "+action+" changed observed state ("+x+") into ("+y+").":
+    i%4===1?"In another world, from ("+x+") the action "+action+" led to ("+y+").":
+    i%4===2?"A life recorded path ("+x+"), and after "+action+" arrived at ("+y+").":
+    "Observation of ("+x+") becoming ("+y+") under action "+action+".";
+   lines.push(row);
   }
-  fragments.push({world:'episode-'+w,action,count:examples,samples});
+  lines.push("Field note: the world did not expose the definitions of other operators.");
+  const text=lines.join("\n"),report=atlas.ingestTextDocument(text,{world:"episode-"+w});
+  if(report.accepted!==examples)throw Error("Cross-world TEXT training missed observations in world "+w);
+  const samples=report.evidenceIds.map(id=>({id,from:atlas.events[id].from,action,to:atlas.events[id].to}));
+  fragments.push({world:"episode-"+w,action,count:examples,samples,text,ignored:report.ignored});
  }
  return{atlas,fragments,trainingEvents:atlas.events.length};
 }
@@ -151,7 +159,10 @@ export function saveBenchmark(dir,options={}){
  fs.mkdirSync(dir,{recursive:true});const {result,sampleAtlas,model}=evaluate(options);
  fs.writeFileSync(path.join(dir,'results.json'),JSON.stringify(result,null,2));
  fs.writeFileSync(path.join(dir,'atlas.json'),JSON.stringify(sampleAtlas,null,2));
- fs.writeFileSync(path.join(dir,'learned-transforms.json'),JSON.stringify(model,null,2));return result;
+ fs.writeFileSync(path.join(dir,'learned-transforms.json'),JSON.stringify(model,null,2));
+ const training=trainWorlds({seed:options.seed??1181,examples:options.examples??76,noise:options.noise??.055});
+ fs.writeFileSync(path.join(dir,'training-documents.json'),JSON.stringify(training.fragments.map(x=>({world:x.world,action:x.action,text:x.text,ignored:x.ignored})),null,2));
+ return result;
 }
 if(process.argv[1]&&import.meta.url.endsWith(process.argv[1].split(/[\\/]/).at(-1))){
  const output=process.argv[2]||'atlas-output',r=saveBenchmark(output);
