@@ -1,0 +1,48 @@
+name: V17 real dataset exercise percent, both original and Magic UIs
+on:
+  push:
+    branches:
+      - feature/V17-REAL-DATASET-PROGRESS-FULL-INSTALL-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-dataset-and-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check syntax of actual V17 server and original+Magic UIs
+        run: |
+          node --check v17/transcend/torus-aether/devour/dataset-progress.mjs
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/ui/magic.js
+          node --check v17/transcend/torus-aether/ui/app.js
+          node --check v17/tests/native-dataset-progress.test.mjs
+          node --check v17/tests/magic-live-native-ui.test.mjs
+      - name: Exact train/heldout row totals, shards, resume & non-ASCII count
+        run: node --test v17/tests/native-dataset-progress.test.mjs
+      - name: ORIGINAL V17 worker streams REAL training, both UIs see real progress
+        run: node --test v17/tests/magic-live-native-ui.test.mjs
+      - name: Previous native V17 mathematical observer remains unchanged
+        run: node --test v17/tests/live-predictive-state-gate.test.mjs
+  windows-original-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the original Windows launchers without launching any GPU mock
+        shell: powershell
+        run: |
+          foreach ($path in @("v17/START_MAGIC_REAL.ps1","v17/START_V17.ps1")) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path).Path, [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) { throw ("PowerShell syntax: "+$path+" "+($errors | Out-String)) }
+            Write-Host "WINDOWS_PS_OK $path"
+          }
