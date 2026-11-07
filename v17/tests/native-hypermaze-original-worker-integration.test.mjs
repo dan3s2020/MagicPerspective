@@ -148,6 +148,25 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
   assert.ok(result.topology.initialShapeIds.length>=2);
   assert.ok(result.topology.nodes.some(n=>n.text==="She is calm."&&n.goal),
    "The real textual goal state must be an actual topology node");
+  // A segmented world with only one move of visibility MUST expose its
+  // frontier rather than reporting an impossible answer. More learned
+  // world depth on the SAME original Brain then makes the route traversable.
+  const restricted=new URLSearchParams({w:"0",start:"He is calm.",
+   required:"She,tired",execute:"0",topology:"1",atlas:"1",
+   maxDepth:"1",maxStates:"100"});
+  const narrow=await(await fetch(url+"/native-hypermaze?"+restricted,
+   {method:"POST"})).json();
+  assert.equal(narrow.found,false);
+  assert.equal(narrow.graph.closedUnderLearnedOperators,false);
+  assert.ok(narrow.graph.frontierCount>0);
+  assert.ok(narrow.topology.frontier.some(x=>x.reason==="depth-budget"));
+  restricted.set("maxDepth","6");
+  const wide=await(await fetch(url+"/native-hypermaze?"+restricted,
+   {method:"POST"})).json();
+  assert.equal(wide.found,true,JSON.stringify(wide).slice(0,900));
+  assert.equal(wide.predicted,"She is tired.");
+  assert.ok(wide.actions.length>=2);
+
   // The REAL original V17 native worker must retain Romanian diacritics
   // in the observed world, and infer a completely unseen Unicode goal.
   const unicodeGoal=new URLSearchParams({w:"0",
