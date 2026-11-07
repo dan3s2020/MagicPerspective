@@ -24,6 +24,8 @@ jobs:
           node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
           node --test v17/tests/text-hypermaze-state-dependent.test.mjs
           node --test v17/tests/text-path-holonomy-memory.test.mjs
+      - name: Real public ORIGINAL OpenThoughts3, multiple distant corpus episodes, cumulative source-evidence anchors, frozen 0/4 semantic audit
+        run: node --test v17/tests/v29-authentic-public-openthoughts3.test.mjs
       - name: Original V29 native Q/A learned role pipeline and no answer leakage
         run: |
           node --test v17/tests/v29-real-qa-closed-loop.test.mjs
