@@ -176,19 +176,17 @@ class TextCard:
                 if len(kn): u, inv = np.unique(kn, return_inverse=True); rr = np.bincount(inv, weights=rn).astype(np.int64); tt = np.bincount(inv).astype(np.int64)
                 else: u, rr, tt = [], [], []
                 for k_, r_, t_ in zip(u, rr, tt): T_right[int(k_)] = T_right.get(int(k_), 0) + int(r_); T_tried[int(k_)] = T_tried.get(int(k_), 0) + int(t_)
-        # Actual GPU next-character predictions, sampled from the batch
-        # AFTER each prediction and BEFORE this chunk enters learned memory.
-        # The small observed tail is honest: not an artificial answer or
-        # a claim to have rendered all Q computed predictions.
-        if progress is not None:
-            shown = min(32, Q)
-            tail = X.tonp(guess[-shown:])
-            sample = {"exercise": [int(x) for x in Oi[-shown:]],
+            # These are the REAL next-character predictions of this CUDA chunk,
+            # captured BEFORE the current batch is appended to the learned memory.
+            if progress is not None:
+                shown = min(32, Q)
+                tail = X.tonp(guess[-shown:])
+                sample = {"exercise": [int(x) for x in Oi[-shown:]],
                           "position": [int(x) for x in Pi[-shown:]],
                           "actual": [int(x) for x in ys_true[-shown:]],
                           "predicted": [int(x) for x in tail],
                           "sampled": shown, "computed": Q, "batchOffset": c0}
-            progress(c0 + Q, total, 'alignment', sample)
+                progress(c0 + Q, total, 'alignment', sample)
         # imagining: from every 31st moment it writes 48 symbols ahead from its own expectations (all at once); as the real
         # symbols are compared, each alignment it followed while imagining earns or loses the trust it gets WHEN it imagines
         W_right, W_tried = self._imagine(exs, names, g, formW, progress=progress, batch=max(32, min(256, chunk)))
