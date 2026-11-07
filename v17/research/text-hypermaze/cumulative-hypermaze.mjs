@@ -29,6 +29,9 @@ const bounded=(n,max)=>Number.isSafeInteger(n)&&n>=1&&n<=max;
 const empty=(maxStates,maxEdges)=>({
  version:1,maxStates,maxEdges,
  nodes:new Map(),edges:new Map(),blocked:new Set(),proposed:new Map(),
+ // Recurrent conflicting action outcomes reveal a hidden perspective.
+ // Never merge those into a fake deterministic corridor.
+ actionOutcomes:new Map(),ambiguousActions:new Set(),
  textAdjacency:new Map(),
  episodesObserved:0,observedTransitions:0,
  rejectedActions:0,repeatedObservations:0,sourceAdjacentPairs:0,
@@ -45,6 +48,19 @@ export class CumulativeHyperMaze {
   const prior=brain.hypermazeCumulativeExperience;
   if(prior&&prior.version!==1)throw Error("Unsupported native cumulative graph version");
   this.state=brain.hypermazeCumulativeExperience ||=empty(maxStates,maxEdges);
+  // Older original V30 checkpoints may predate conflict detection. Recover
+  // the ambiguity index from ACTUALLY witnessed physical outcomes only.
+  if(!(this.state.actionOutcomes instanceof Map)){
+   this.state.actionOutcomes=new Map();
+   this.state.ambiguousActions=new Set();
+   for(const edge of this.state.edges.values()){
+    const key=JSON.stringify([edge.before,edge.action]);
+    const outcomes=this.state.actionOutcomes.get(key)||new Set();
+    outcomes.add(edge.after);
+    this.state.actionOutcomes.set(key,outcomes);
+    if(outcomes.size>1)this.state.ambiguousActions.add(key);
+   }
+  }
   // The same checkpoint controls the same evolving topology, irrespective
   // of how many transient NativeGoalTextMaze views get constructed later.
   if(!prior){this.state.maxStates=maxStates;this.state.maxEdges=maxEdges;}
@@ -128,6 +144,11 @@ export class CumulativeHyperMaze {
     episodes:new Set([episode]),source,blocks:0});
   }
   S.observedTransitions++;
+  const actionState=JSON.stringify([src,action]);
+  const destinations=S.actionOutcomes.get(actionState)||new Set();
+  destinations.add(dst);
+  S.actionOutcomes.set(actionState,destinations);
+  if(destinations.size>1)S.ambiguousActions.add(actionState);
   return {learned:true,observedEdge:k,
    observedSupport:S.edges.get(k).support,
    evidenceEpisodes:S.edges.get(k).episodes.size,
@@ -165,6 +186,7 @@ export class CumulativeHyperMaze {
    episodes:S.episodesObserved,observedTransitions:S.observedTransitions,
    memoryNodes:S.nodes.size,physicallyVerifiedEdges:S.edges.size,
    proposedEdges:S.proposed.size,
+   ambiguousActions:S.ambiguousActions.size,
    sourceOnlyEdges:S.textAdjacency.size,
    rejectedActions:S.rejectedActions,
    repeatObservations:S.repeatedObservations,
@@ -207,7 +229,8 @@ export class CumulativeHyperMaze {
   const knownBySource=new Map();
   for(const edge of S.edges.values()){
    const id=edgeKey(edge.before,edge.action,edge.after);
-   if(S.blocked.has(id)||edge.status!=="physically-verified")continue;
+   if(S.blocked.has(id)||edge.status!=="physically-verified"||
+     S.ambiguousActions.has(JSON.stringify([edge.before,edge.action])))continue;
    if(!knownBySource.has(edge.before))knownBySource.set(edge.before,[]);
    knownBySource.get(edge.before).push(edge);
   }
