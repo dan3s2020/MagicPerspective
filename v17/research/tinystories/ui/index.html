@@ -33,18 +33,15 @@ canvas{width:100%;display:block;background:radial-gradient(ellipse at center,#19
     <div class="mark"><div class="sigil" aria-hidden="true">✧</div><div>
       <div class="eyebrow">MagicPerspective / Independent Language World</div>
       <h1>TinyStories <span style="color:var(--gold)">Aether</span></h1>
-      <p>O singură lume. Povești reale. Tranziții textuale învățate pe CUDA. Nicio lume de maze sau OpenThoughts în acest proces.</p>
+      <p>Un singur creier CUDA, același checkpoint TinyStories învățat. Text pe mai multe scări, tranziții, geometrie 5D și lumi procedurale învățate în același flux.</p>
     </div></div>
     <div class="status"><div class="orb" id="orb"></div><strong id="status">Conectare…</strong></div>
   </header>
   <div class="controls">
-    <button id="start" class="primary">▶ Antrenează</button>
+    <button id="start" class="primary">▶ Antrenează TOT</button>
     <button id="pause">Ⅱ Pauză</button>
     <button id="save">◈ Salvează checkpoint</button>
     <button id="test">◎ Testează povești nevăzute</button>
-    <button id="nativeTest">✧ Testează toate lumile V17 nevăzute</button>
-    <button id="nativeStart">▶ Continuă V17 nativ (independent)</button>
-    <button id="nativeGraphRefresh">↻ Actualizează graful V17</button>
     <button id="refresh" class="quiet">↻ Actualizează</button>
   </div>
   <section class="metrics">
@@ -56,25 +53,16 @@ canvas{width:100%;display:block;background:radial-gradient(ellipse at center,#19
     <div class="metric"><div class="k">Sursă GPU</div><div class="v" id="device">—</div><div class="sub" id="deviceInfo">Antrenorul nu este pornit</div></div>
   </section>
   <section class="progress">
-    <div class="progresshead"><span><b id="pct">0.00%</b> din fișierul TinyStories de antrenare</span><span id="dataProgress">0 MB / — MB</span><span id="saveStatus">Checkpoint: —</span></div>
+    <div class="progresshead"><span>Epoca <b id="epoch">1</b> · <b id="pct">0.00%</b> din TinyStories la această trecere</span><span id="dataProgress">0 MB / — MB</span><span id="saveStatus">Checkpoint: —</span></div>
     <div class="bar"><div class="fill" id="fill"></div></div>
   </section>
-<section class="progress" aria-label="Progresul original al tuturor lumilor V17">
-  <div class="progresshead">
-   <span><b id="nativePct">0.00%</b> din TinyStories văzut și de creierul V17 original</span>
-   <span id="nativeProgress">0 MB / — MB · 0 povești originale</span>
-   <span id="nativeStatus">V17: inițializare</span>
-  </div>
-  <div class="bar"><div class="fill" id="nativeFill" style="background:linear-gradient(90deg,#536eaf,#ba8df4,#f3c483)"></div></div>
-  <p class="notes" id="nativeLag" style="margin:7px 0 0">Fluxul CUDA învață tot textul. Creierul V17 simbolic procesează separat, fără să blocheze fluxul CUDA.</p>
- </section>
- <section class="metrics" aria-label="Cât de mult a învățat fiecare mecanism original V17" style="margin:0 0 16px">
-  <div class="metric"><div class="k">Labirinturi V17</div><div class="v" id="mazeWorlds">—</div><div class="sub">Lumi trăite · aceeași instanță Brain</div></div>
-  <div class="metric"><div class="k">Transformări V17</div><div class="v" id="transformWorlds">—</div><div class="sub">Acțiuni și efecte cauzale învățate</div></div>
-  <div class="metric"><div class="k">Perspective text</div><div class="v" id="perspectiveStates">—</div><div class="sub">Stări contextuale native</div></div>
-  <div class="metric"><div class="k">Căi text învățate</div><div class="v" id="constructedPairs">—</div><div class="sub">Perechi reale propoziție → continuare</div></div>
-  <div class="metric"><div class="k">Graf 5D real</div><div class="v" id="graphNodes">—</div><div class="sub">Noduri · simboluri și organe V17</div></div>
-  <div class="metric"><div class="k">Auto-observare</div><div class="v" id="selfCodeTicks">—</div><div class="sub">Pași ai lumii cod · fără execuții noi</div></div>
+<section class="metrics" aria-label="Mecanisme învățate de același creier GPU" style="margin:0 0 16px">
+  <div class="metric"><div class="k">Perspective text</div><div class="v" id="perspectiveStates">—</div><div class="sub">Scări și contexte · un singur model</div></div>
+  <div class="metric"><div class="k">Lumi maze învățate</div><div class="v" id="mazeWorlds">—</div><div class="sub">Fizica originală, policy GPU învățată</div></div>
+  <div class="metric"><div class="k">Efecte acțiuni</div><div class="v" id="transformWorlds">—</div><div class="sub">Tranziții fizice și condiționale</div></div>
+  <div class="metric"><div class="k">Căi observate</div><div class="v" id="constructedPairs">—</div><div class="sub">Tranziții reale de simboluri</div></div>
+  <div class="metric"><div class="k">Geometrie 5D</div><div class="v" id="graphNodes">—</div><div class="sub">Poziții învățate, torus 5D</div></div>
+  <div class="metric"><div class="k">Loturi integrate</div><div class="v" id="selfCodeTicks">—</div><div class="sub">Câmpurile învață în același apel CUDA</div></div>
  </section>
  <main class="columns">
     <article class="panel">
@@ -102,24 +90,24 @@ canvas{width:100%;display:block;background:radial-gradient(ellipse at center,#19
   </main>
 <section class="gridbottom">
   <article class="panel">
-    <div class="panelhead"><div><div class="eyebrow">03 / ACELAȘI CREIER ORIGINAL V17</div><h2>Graful nativ al lumilor și corpului</h2></div><span class="tag">Noduri și conexiuni reale · 5D proiectat</span></div>
-    <canvas id="nativeGraph" style="height:320px" aria-label="Graf real V17 cu simboluri, perspective, legături și noduri 5D"></canvas>
-    <div class="panelbody"><div class="details" id="nativeWorldInfo">Aștept activitatea mecanismelor simbolice originale…</div></div>
+    <div class="panelhead"><div><div class="eyebrow">03 / UN SINGUR MODEL GPU</div><h2>Traseele și torusul 5D învățate</h2></div><span class="tag">Coordonate și muchii observate · proiecție 5D</span></div>
+    <canvas id="unifiedGraph" style="height:320px" aria-label="Tranzițiile și coordonatele 5D învățate de același model CUDA"></canvas>
+    <div class="panelbody"><div class="details" id="unifiedWorldInfo">Aștept primele actualizări GPU ale câmpurilor integrate…</div></div>
   </article>
   <article class="panel">
-    <div class="panelhead"><div><div class="eyebrow">04 / CÂT DE BINE ÎNVAȚĂ</div><h2>Rezultate pe teste nevăzute</h2></div><span class="tag green">Fără scor IQ inventat</span></div>
+    <div class="panelhead"><div><div class="eyebrow">04 / CÂT A ÎNVĂȚAT, VERIFICAT PE NEVĂZUTE</div><h2>Rezultate pe teste nevăzute</h2></div><span class="tag green">Fără scor IQ inventat</span></div>
     <div class="panelbody">
      <div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:14px">
       <div class="metric"><div class="k">Limbaj validare</div><div class="v" id="scoreLanguage">—</div><div class="sub">Predicție octet următor</div></div>
-      <div class="metric"><div class="k">Maze nevăzute</div><div class="v" id="scoreMaze">—</div><div class="sub">Procent rezolvate, Brain V17</div></div>
-      <div class="metric"><div class="k">Construcție de căi</div><div class="v" id="scoreConstructed">—</div><div class="sub">Labirinturi nevăzute, fără hartă completă</div></div>
-      <div class="metric"><div class="k">Transformări</div><div class="v" id="scoreTransform">—</div><div class="sub">Obiective nevăzute, policy V17</div></div>
+      <div class="metric"><div class="k">Maze nevăzute</div><div class="v" id="scoreMaze">—</div><div class="sub">Policy învățată, teste pe seeduri noi</div></div>
+      <div class="metric"><div class="k">Perspective text</div><div class="v" id="scoreConstructed">—</div><div class="sub">Precizie contextuală multi-scală</div></div>
+      <div class="metric"><div class="k">Transformări</div><div class="v" id="scoreTransform">—</div><div class="sub">Efecte de acțiune pe lumi nevăzute</div></div>
      </div>
-     <div class="details" id="intelligenceDetails">Apasă „Testează toate lumile V17 nevăzute”. Nu există o măsură universală a inteligenței sau un scor IQ fără o evaluare definită.</div>
-     <div class="eyebrow" style="margin-top:15px">Forma prezisă înaintea continuării observate</div>
+     <div class="details" id="intelligenceDetails">Butonul existent „Testează povești nevăzute” evaluează toate câmpurile integrate. 64–67% reprezintă acuratețe de predicție a octetului, nu un IQ.</div>
+     <div class="eyebrow" style="margin-top:15px">Ramificarea traseului învățat din text</div>
      <div class="comparison" style="margin-top:9px">
-      <div class="sample"><b>Traseu anticipat (V17)</b><p id="nativePredicted">—</p></div>
-      <div class="sample"><b>Continuarea reală din TinyStories</b><p id="nativeActual">—</p></div>
+      <div class="sample"><b>Continuare generată din câmpul învățat</b><p id="nativePredicted">—</p></div>
+      <div class="sample"><b>Contextul observat</b><p id="nativeActual">—</p></div>
      </div>
     </div>
   </article>
@@ -130,9 +118,9 @@ canvas{width:100%;display:block;background:radial-gradient(ellipse at center,#19
     </div></div>
     <div class="panel"><div class="panelhead"><h2>Jurnalul observațiilor</h2><span class="tag">Verificabil</span></div><div class="panelbody history"><pre id="log">Se așteaptă serverul TinyStories…</pre></div></div>
   </section>
-  <footer class="footer">Cercetare experimentală MagicPerspective. Două fluxuri paralele: (1) modelul rapid CUDA de contexte 1–4 octeți, cu hashing la 3/4, învață întregul TinyStories; (2) creierul V17 original în worker CPU separat, cu limbaj, graf 5D, labirinturi, perspective, transformări, noise și observarea codului. Procesarea simbolică completă a fiecărui octet este eșantionată explicit și se măsoară separat. Procentele celor două fluxuri pot fi diferite. Nu este o demonstrație de inteligență generală sau de performanță CUDA identică pe toate mecanismele.</footer>
+  <footer class="footer">Creierul antrenat inițial pe TinyStories este păstrat în același checkpoint și primește câmpuri GPU integrate: context multi-scală, tranziții, ramuri, geometrie 5D și o politică de labirint pe generatorul procedural original. Este o adaptare accelerată, nu întregul cod nativ JS V17 transpus matematic identic. Epocile suplimentare reiau aceleași date, nu aduc informații independente; 100% acuratețe pe texte complet nevăzute nu este garantată.</footer>
 </div>
 <script type="module" src="./app.js"></script>
-<script type="module" src="./native-ui.js"></script>
+<script type="module" src="./unified-ui.js"></script>
 </body>
 </html>
