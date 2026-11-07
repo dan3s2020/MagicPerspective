@@ -105,7 +105,7 @@ export class NativeGoalTextMaze {
  observe(text){
   if(typeof text!=="string"||!text.trim())return {learned:false,reason:"empty-text"};
   const old=new Set(this.brain.observedTransformations.operators.keys());
-  const observed=this.brain.learnObservedTransformations(text);
+  const observed=this.brain.learnObservedTransformations(text,{windowLong:true});
   const {newPairs,novel,geo}=this._indexNewOperators(old);
   // Capture exact original text, including UTF-8 diacritics. The atlas is
   // an append-only evidence log, NOT another trained model or separate brain.
@@ -113,6 +113,8 @@ export class NativeGoalTextMaze {
    observedEpisode:this.livedTexts+1,
    rawText:text,utf8Bytes:Buffer.byteLength(text,"utf8"),
    observedUnits:observed.observedUnits,
+   observedLongUnitWindows:observed.longUnitsWindowed,
+   observedContiguousSlices:observed.actualContiguousObservedSlices,
    learnedSentences:observed.newSentences,
    learnedOperatorCount:novel.length,
    rejectedLongTotal:this.brain.observedTransformations.rejectedLong,
@@ -278,7 +280,7 @@ export class NativeGoalTextMaze {
   const raw=cached.raw;
   const nodes=raw.nodes.map((node,index)=>{
    const reached=index!==0&&node.kind!==1&&
-     node.support?.consistent&&target(node.tokens,required);
+     (!node.support?.verified||node.support.consistent)&&target(node.tokens,required);
    return {...node,kind:reached?2:node.kind,goal:!!reached};
   });
   const frontier=nodes.filter(n=>n.kind!==1&&n.depth>=maxDepth);
@@ -478,7 +480,7 @@ export class NativeGoalTextMaze {
     targetConstraints:goal.slice(),worldActionsExecuted:0}];
   for(let k=0;k<Math.min(maxSteps,120);k++){
    const tokens=tokenizeObservation(text);
-   if(target(tokens,goal)&&model.structuralSupport(tokens).consistent)break;
+   if(target(tokens,goal)&&(()=>{const s=model.structuralSupport(tokens);return !s.verified||s.consistent;})())break;
    if(!route.found||route.start!==text){
     route=this.plan({start:text,required:goal});
     repairs++;
@@ -499,7 +501,8 @@ export class NativeGoalTextMaze {
     chosen=agency.output(chosen,candidates.length,portal);
    const act=candidates[chosen],after=renderObservation(act.tokens);
    const matched=after===expected.predictedNext;
-   const reached=target(act.tokens,goal)&&model.structuralSupport(act.tokens).consistent;
+   const support= model.structuralSupport(act.tokens);
+   const reached=target(act.tokens,goal)&&(!support.verified||support.consistent);
    if(!matched){departures++;repairs++;}
    if(portal&&trainNoise){
     agency.learn(portal,{before:Array.from(Buffer.from(text)),
@@ -536,7 +539,7 @@ export class NativeGoalTextMaze {
   }
   const endTokens=tokenizeObservation(text);
   const finalResult={attempted:true,firstShape:plan.initialShape.slice(),
-   solvedInternalGoal:target(endTokens,goal)&&model.structuralSupport(endTokens).consistent,
+   solvedInternalGoal:target(endTokens,goal)&&(()=>{const s=model.structuralSupport(endTokens);return !s.verified||s.consistent;})(),
    predictedBeforeMovement:plan.predicted,executedFinal:text,
    matchedInitialShape:text===plan.predicted,
    actions:frames.length-1,divergences:departures,replans:repairs,
