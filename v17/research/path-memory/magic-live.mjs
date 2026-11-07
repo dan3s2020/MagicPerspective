@@ -275,6 +275,6 @@ process.on("SIGINT",async()=>{running=false;clearInterval(timer);try{await save(
 server.listen(port,"127.0.0.1",()=>{
  console.log(JSON.stringify({
  event:"MAGIC_LIVE_READY",url:"http://127.0.0.1:"+port,mode,source,out,running,
- truth:"Real observations; original V17 unchanged; all experimental steps observable"})));
+ truth:"Real observations; original V17 unchanged; all experimental steps observable"}));
  if(has("open")&&process.platform==="win32")exec('start "" "http://127.0.0.1:'+port+'"',()=>{});
 });
