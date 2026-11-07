@@ -45,13 +45,15 @@ async function* stream() {                                                 // th
   if (!TEXT) { for (;;) yield {k: -1, bytes: []}; }
   if (source.kind === "parquet") {
     const ds = await openTextDataset(source.root);
-    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer,\n      ...(workerData.nativeHypermaze?{rawText:"Q: "+x.prompt+"\nA: "+x.answer+"\n\n"}:{})}; }
+    for (let k = w; k < ds.trainRows; k += n) { const x = await ds.exercise(k); yield {k, bytes: ascii("Q: " + x.prompt + "\nA: " + x.answer + "\n\n"), prompt: x.prompt, answer: x.answer,
+      ...(workerData.nativeHypermaze?{rawText:"Q: "+x.prompt+"\nA: "+x.answer+"\n\n"}:{})}; }
   } else {
     let k = 0; for (const f of source.files) for (const para of fs.readFileSync(f, "utf8").split(/\n\s*\n/)) {
       if (!para.trim()) continue;  // 4-word sentences are valid structural training observations
       if (k++ % n === w && !source.heldSet.includes(k)) {
         const observed = splitObservedText(para);
-        yield {k, bytes: ascii(para + "\n\n"), ...observed,\n          ...(workerData.nativeHypermaze?{rawText:para+"\n\n"}:{})};
+        yield {k, bytes: ascii(para + "\n\n"), ...observed,
+          ...(workerData.nativeHypermaze?{rawText:para+"\n\n"}:{})};
       } }
   }
 }
@@ -464,7 +466,8 @@ for await (const ex of stream()) {
     // depend on a training budget that can end at the same moment as a row.
     // If a row is truncated, only use the observed PREFIX, never the
     // unobserved continuation (strict no-leak partial-observation rule).
-    const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars),\n      rawText:livedChars===ex.bytes.length?(ex.rawText??null):null};
+    const livedRow={...ex,bytes:ex.bytes.slice(0,livedChars),
+      rawText:livedChars===ex.bytes.length?(ex.rawText??null):null};
     absorbObservedDifferences(livedRow);
     if(livedChars===ex.bytes.length&&!stop){
       absorbLanguage(ex);absorbConstructed(ex);absorbText(ex);
