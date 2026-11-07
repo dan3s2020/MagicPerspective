@@ -20,20 +20,25 @@
     "v17/START_V21_AETHER_VEIL.ps1",
     "v17/tests/veil-aether.test.mjs",
     ".github/workflows/v21-veil-aether.yml",
-    "v17/docs/V21_VEIL_AETHER_EVIDENCE.md"
+    "v17/docs/V21_VEIL_AETHER_EVIDENCE.md",
+    "v17/tests/veil-aether.http.test.mjs"
   ],
   "minimum_mechanism": "Learn contextual observed transitions using two-token states and empirical futures; reuse V17 goal-attraction 0.97 max-neighbor mathematical field on observed directed graph; retain original V17 Discoverer.shape unchanged. Expose online surprise, path replay and per-domain experience counters. No hidden target oracle; known-goal path frozen.",
   "no_unauthorized_substitution": true,
   "extras": "Everything added as an independently identifiable, opt-in experiment; semantic actions, continuous xD frames, learned noncommuting fields and all-CUDA are NOT claimed. These hypotheses remain separate from measured implementation.",
   "tests": [
     "node --test v17/tests/veil-aether.test.mjs",
+    "node --test v17/tests/torus-text-hypermaze.test.mjs",
+    "node --test v17/tests/veil-aether.http.test.mjs",
     "node --test v17/tests/torus-text-hypermaze.test.mjs"
   ],
-  "status": "IN_PROGRESS — scientific and user-authority regression #25 remains OPEN",
+  "status": "PARTIAL — CI NATIVE/UNIT acceptance passed on prior V21 commits; issue #25 still OPEN; no user Windows GPU validation",
   "limitations": [
     "Contextual next-symbol transitions are not general semantic action physics",
     "No proof of original Discoverer.shape() being directly reused on language states",
     "Sparse graph trained in Node CPU; not full CUDA",
-    "No user-hardware evaluation yet"
-  ]
+    "No user-hardware evaluation yet",
+    "Original V19 cognitive-world activation is opt-in via -IncludeCognitive and does not establish semantic architecture unification"
+  ],
+  "evidence": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42320527756"
 }
