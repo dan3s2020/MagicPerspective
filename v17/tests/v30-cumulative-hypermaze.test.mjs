@@ -296,3 +296,31 @@ test("numerical field discovered in other episodes is accessible via SAME native
   assert.equal(loaded.hypermazeCumulativeExperience.episodesObserved,4);
  }finally{fs.rmSync(dir,{recursive:true,force:true})}
 });
+
+test("historically aliased same-visible-state actions cannot be accepted as one deterministic corridor",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b);
+ m.observeTransition({episode:"hidden-state-off",before:"door state",after:"door open",
+  action:"use",accepted:true,source:"independent-physical-outcome"});
+ m.observeTransition({episode:"hidden-state-on",before:"door state",after:"door sealed",
+  action:"use",accepted:true,source:"independent-physical-outcome"});
+ // Both worlds contain identical visible "door state" but different action
+ // results, as in the earlier original PR36 holonomy/hidden lever discovery.
+ // Their missing history coordinate is a WALL to deterministic planning.
+ const uncertain=m.plan({start:"door state",required:["open"],
+  includeTopology:true});
+ assert.equal(uncertain.found,false,
+  "Same visible self state cannot masquerade as a known single world transition");
+ assert.equal(uncertain.memory.ambiguousActions,1);
+ assert.equal(m.audit().ambiguousActions,1);
+ m.observeTransition({episode:"separate-deterministic-world",before:"door state",
+  after:"door open",action:"known alternative",accepted:true});
+ const safe=m.plan({start:"door state",required:["open"]});
+ assert.equal(safe.found,true);
+ assert.equal(safe.actions[0].action,"known alternative");
+ console.log("V30_HIDDEN_CONTEXT_WALL",JSON.stringify({
+  conflictingOutcomeWorlds:2,ambiguousNativeAxes:m.audit().ambiguousActions,
+  unreliableTransitionExcluded:true,
+  alternateObservedPhysicalRoutePreserved:true,
+  necessaryFutureDiscovery:"additional observable history/context coordinate"
+ }));
+});
