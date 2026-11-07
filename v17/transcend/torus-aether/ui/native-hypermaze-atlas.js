@@ -245,7 +245,7 @@ canvas.addEventListener("wheel",e=>{
  state.zoom=Math.min(2.5,Math.max(.5,state.zoom*(e.deltaY<0?1.1:.9)));
  $("zoom").value=String(state.zoom);draw();
 },{passive:false});
-function point(n,i,total,w,h){
+function point(n,i,total,w,h,maxGraphDepth){
  const v=n.position5D;
  if(Array.isArray(v)&&v.length===5&&v.every(Number.isFinite)){
   const ax=Number($("axisX").value),ay=Number($("axisY").value),az=Number($("axisZ").value);
@@ -256,7 +256,7 @@ function point(n,i,total,w,h){
   return {x:w/2+xr*f+state.offset[0],y:h/2+yr*f+state.offset[1],actual5D:true};
  }
  // Fallback is an explicitly NON-5D canvas layout from actual graph depth.
- return {x:18+Math.min(w-36,(n.depth+1)/(Math.max(1,...(state.selected?.fullExploredTopology?.nodes||[]).map(x=>x.depth))+2)*(w-36))+
+ return {x:18+Math.min(w-36,(n.depth+1)/(maxGraphDepth+2)*(w-36))+
      state.offset[0],
   y:18+((i*53+Math.floor(i/7)*37)%(Math.max(50,h-36)))+state.offset[1],
   actual5D:false};
@@ -277,7 +277,8 @@ function draw(){
   document.documentElement.dataset.atlasGraphNodes="0";
   return;
  }
- const nodes=g.nodes,points=nodes.map((x,i)=>point(x,i,nodes.length,w,h));
+ const nodes=g.nodes,maxGraphDepth=nodes.reduce((m,n)=>Math.max(m,n.depth||0),1);
+ const points=nodes.map((x,i)=>point(x,i,nodes.length,w,h,maxGraphDepth));
  ctx.beginPath();ctx.lineWidth=.6;ctx.strokeStyle="rgba(102,172,204,.22)";
  for(const x of g.edges){
   const a=points[x.from],b=points[x.to];if(!a||!b)continue;
