@@ -519,10 +519,15 @@ export class Brain {
     const rand = rngFrom(seed), out = [];
     for (const ex of list.slice().sort((a, b) => a.length - b.length)) {
       let a0 = 0; for (let i = 0; i < ex.length - 2; i++) if (ex[i] === 10 && ex[i + 1] === 65 && ex[i + 2] === 58) { a0 = i + 3; break; }
+      // The complete NATIVE goal shape must be predicted from QUESTION ALONE,
+      // before ANY frozen teacher-forced evaluation sees the heldout answer.
+      const holdoutQuestion = a0 ? String.fromCharCode(...ex.slice(0,a0))
+        .replace(/^\s*Q:\s*/,'').replace(/\nA:\s*$/,'').trim() : null;
+      const nativePlan = holdoutQuestion ? this.answerByGoalPath(holdoutQuestion) : null;
       const rows = []; let ok = 0, aok = 0, an = 0, top = 0;
       this.align.readFrozen(ex, (i, y, g, d) => { let b = 32, bv = -1; for (const [c, v] of d) if (v > bv) { bv = v; b = c; } rows.push([y, g]); ok += g === y; top += b === y; if (i >= a0) { aok += g === y; an++; } }, {T, noise, rand});
       let old = 0, oa = 0; for (let i = 0; i < ex.length; i++) { const g = argmax(this.chain.play(this.e, this.ctxOf(ex, i), this.histOf(ex, i)).out); if (i >= a0) old += g === ex[i], oa++; }
-      // the shape of the solution, before it is seen: from the question alone it writes the whole answer
+      // Legacy-character baseline only: this is NOT a learned goal-conditioned solution-shape planner.
       const shape = a0 ? this.align.write(ex.slice(0, a0), {max: Math.min(3000, ex.length - a0 + 40), T, rand, stop: (y, o) => y === 10 && o.at(-1) === 10}) : [];
       let same = 0; for (let i = 0; i < Math.min(shape.length, ex.length - a0); i++) same += shape[i] === ex[a0 + i];
       // Separate learned state/action WORLD, rather than the next-character
@@ -542,12 +547,26 @@ export class Brain {
           contextGraphStates:planned.graphStates,finished:planned.finished,
           trace:planned.path.slice(0,120),beforeAnswer:true};
       }
+      const heldAnswer=a0 ? String.fromCharCode(...ex.slice(a0)).trim() : null;
+      const nativeGoal=nativePlan ? {
+        mode:nativePlan.mode,ready:nativePlan.ready,
+        wholePredictedBeforeFirstCharacter:nativePlan.predictedFullAnswerBeforeFirstCharacter||"",
+        executedAnswer:nativePlan.text||"",
+        fullAnswerExact:nativePlan.ready && nativePlan.text.trim()===heldAnswer,
+        externalReferenceScoredAfterPlanning:true,
+        modelInternalSuccess:nativePlan.verifiedAgainstLearnedActionWorld??false,
+        requiredAxes:nativePlan.stepAxes||[],steps:nativePlan.planSteps?.length||0,
+        reason:nativePlan.reason||null,noNextCharacterFallback:nativePlan.noNextCharacterFallback
+      }:null;
       out.push({n: ex.length, a0, all: ok / ex.length, answer: an ? aok / an : null, best: top / ex.length, oldAnswer: oa ? old / oa : null, rows,
         shape: String.fromCharCode(...shape), shapeSame: an ? same / an : null,
+        shapeLegacyDiagnosticOnly:true,nativeGoal,
+        nativeGoalExact: nativeGoal ? +(nativeGoal.fullAnswerExact) : null,
         constructed,constructedAccuracy}); }
     const av = k => { const v = out.filter(x => x[k] != null); return v.length ? v.reduce((s, x) => s + x[k], 0) / v.length : null; };
     return {T, noise, seed, exercises: out, answer: av("answer"), all: av("all"), oldAnswer: av("oldAnswer"),
-      constructedAccuracy:av("constructedAccuracy")};
+      constructedAccuracy:av("constructedAccuracy"), nativeWholeAnswerExact:av("nativeGoalExact"),
+      nativeGoalNoTeacherAnswerDuringPlanning:true};
   }
   evalText(bytes, max = 3000) {                                              // frozen: every next symbol guessed from what came before, on text it never lived
     const {e, chain} = this, H = bytes.slice(0, max), rows = []; let live = 0, c = 0;
