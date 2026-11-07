@@ -7,9 +7,10 @@
     "branch": "experiment/V21-AETHER-VEIL-PREDICTIVE-PERSPECTIVE-20261107",
     "base_branch": "experiment/V20-OBSERVED-TEXT-HYPERMAZE-LIVE-20261107",
     "base_commit": "b6a5d3aba4784fe7643509f03906ec4bb1752199",
-    "main_unchanged_by_this_experiment": true,
     "blocking_issue": "https://github.com/dan3s2020/MagicPerspective/issues/25",
-    "blocking_issue_state": "OPEN"
+    "blocking_issue_state": "OPEN",
+    "main_runtime_code_unchanged": true,
+    "main_documentation_index_added": "docs/V21_AETHER_VEIL_20261107_RESEARCH_INDEX.md"
   },
   "source_truth": {
     "direct_user_verbatim": "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md",
@@ -25,7 +26,8 @@
     "v17/docs/V21_VEIL_AETHER_EVIDENCE.md",
     "v17/docs/V21_WINDOWS_POWERSHELL51_POSTMORTEM_20261107.md",
     "user-intent/changes/V21-AETHER-VEIL-20261107.json",
-    "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md"
+    "verbatim/2026-11-07-V21-VISIBLE-CHAT-USER-DIRECTIVES-VERBATIM-PARTIAL.md",
+    "docs/V21_AETHER_VEIL_20261107_RESEARCH_INDEX.md (main; links to V21 branch, no V21 runtime merge)"
   ],
   "measurements": [
     {
@@ -92,7 +94,10 @@
       "reported_line": 120,
       "offending_character_codepoint": "U+2014",
       "source": "v17/START_V21_AETHER_VEIL.ps1",
-      "status": "SOURCE_FIXED_PENDING_WINDOWS_CI_VERIFICATION"
+      "status": "PASSED_REAL_WINDOWS_POWERSHELL_5_1",
+      "evidence": "https://github.com/dan3s2020/MagicPerspective/actions/runs/42326210472",
+      "code_commit": "8ca3ddbb6da459a37dcc78ce54f6fba20bad40fb",
+      "native_windows_ci_fixed_commit": "e79343dc14bdd9876d6a76b49adfa6d572a96c64"
     },
     {
       "id": "V21-USER-RTX3050TI-OPENTHOUGHTS3",
@@ -153,5 +158,6 @@
     "Complete original chronological transcript, assistant replies and screenshot binaries",
     "Explicit user approval to close blocking issue 25 and merge into main"
   ],
-  "machine_readable_verdict": "PARTIAL_WITH_VERIFIED_NATIVE_REGRESSION_REPAIR_AND_INDEPENDENT_HISTORICAL_TESTS"
+  "machine_readable_verdict": "PARTIAL_WITH_VERIFIED_NATIVE_REGRESSION_REPAIR_AND_INDEPENDENT_HISTORICAL_TESTS",
+  "evidence_addendum": "The real Windows PowerShell 5.1 GitHub CI job passed. It validates file parser compatibility only; user GPU full training remains UNVERIFIED."
 }
