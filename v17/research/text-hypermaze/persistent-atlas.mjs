@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const natural=(x,fallback=0)=>Number.isSafeInteger(x)&&x>=0?x:fallback;
-const knownKinds=["world","operator","search","execution","baseline","note"];
+const knownKinds=["world","operator","search","execution","baseline","replay","note"];
 const safeKinds=a=>Array.isArray(a)?a.filter(x=>knownKinds.includes(x)):[];
 const countTo=(obj,key)=>{obj[key]=(obj[key]||0)+1;};
 export class PersistentHypermazeAtlas {
@@ -27,6 +27,7 @@ export class PersistentHypermazeAtlas {
   this.usedInFailure=new Map();
   this.failedReasons=Object.create(null);
   this.worldsByDomain=Object.create(null);
+  this.lastReplayCursor=0;
   this.records=[]; // ONLY used when there is no on-disk journal
   this.last=null;
   this.bytes=0;
@@ -42,6 +43,7 @@ export class PersistentHypermazeAtlas {
    throw Error("Atlas JSONL chronology corrupted: a journal event was lost or reordered");
   countTo(this.counts,entry.type);
   if(entry.type==="world")countTo(this.worldsByDomain,entry.world||"unknown");
+  if(entry.type==="replay")this.lastReplayCursor=entry.nextCursor||0;
   if(entry.type==="search"){
    if(!entry.found)countTo(this.failedReasons,entry.diagnostic?.reason||"unknown");
    const used=entry.actions||[];
@@ -157,6 +159,8 @@ export class PersistentHypermazeAtlas {
    totalWorlds:this.counts.world||0,worldsByDomain:{...this.worldsByDomain},
    learnedOperatorEvents:this.counts.operator||0,
    legacyOperatorBaselineEvents:this.counts.baseline||0,
+   historicalReplayEvents:this.counts.replay||0,
+   lastReplayCursor:this.lastReplayCursor,
    historicCorpusUnavailableBeforeAtlas:(this.counts.baseline||0)>0,
    searches:this.counts.search||0,executions:this.counts.execution||0,
    searchesFailed:Object.values(this.failedReasons).reduce((a,b)=>a+b,0),
