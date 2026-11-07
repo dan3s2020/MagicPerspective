@@ -56,6 +56,17 @@ async function parse(req,maxBytes=1024*1024){
   const raw=Buffer.concat(parts).toString("utf8");
   try{return raw?JSON.parse(raw):{};}catch{throw Error("Invalid JSON")}
 }
+// These statuses belong to the ORIGINAL native worker, never inferred
+// from stale graph coordinates or last cached heldout accuracy.
+export function nativeWorkerHealth(graph){
+  if(!graph)return {state:"DISCONNECTED",active:false,error:"No original V17 worker",
+    progress:null,chars:null};
+  const status=String(graph.status||"unknown"),error=graph.error||graph.gpu?.error||null;
+  return {state:status,active:status==="antrenează"&&!error,
+    error:error?String(error):null,
+    progress:Number.isFinite(graph.progress?.trained)?graph.progress.trained:null,
+    chars:Number.isFinite(graph.chars)?graph.chars:null};
+}
 export function pickNativeGraph(payload,worker=null){
   const list=Array.isArray(payload?.graphs)?payload.graphs:[];
   if(worker!==null&&worker!==undefined&&worker!==""){
@@ -134,6 +145,7 @@ export async function createNativeBridge({
           catch(e){graphError=String(e.message||e);}
         }
         send(res,{...nativeSnapshot(graphs,graph,worker),
+          workerHealth:nativeWorkerHealth(selected),
           graphError,nativeCudaError:isCudaStartupFailure(selected)?selected.error:null,
           upstream:base,receivedAt:new Date().toISOString()});return;
       }
@@ -147,6 +159,14 @@ export async function createNativeBridge({
         if(b.action==="start"){
           const graphInfo=await nativeGet("/graphs");
           const selected=pickNativeGraph(graphInfo,worker);
+          const health=nativeWorkerHealth(selected);
+          if(health.state==="eroare")throw Error(
+            "ORIGINAL V17 WORKER FAILED: "+(health.error||"unknown fatal error")+
+            ". Start cannot restart a failed worker thread or prove training. "+
+            "Stop the old ORIGINAL backend in its PowerShell window, then "+
+            "start a NEW native server on a VERIFIED FREE port with original "+
+            "START_V17.ps1, SAME -Out, -Resume and CUDA environment. "+
+            "Do not press Reset or rely on the cached ALIGNED score.");
           if(isCudaStartupFailure(selected))throw Error(
             "CUDA ORIGINAL V17 FAILED: "+selected.error+
             ". Repeated Start cannot change the Python interpreter of a running worker. "+
@@ -155,8 +175,17 @@ export async function createNativeBridge({
             "v17/transcend/torus-aether/gpu/.venv and verifies torch CUDA. "+
             "Do not use hermes-agent\\venv Python for CUDA.");
         }
+        const before=await nativeGet("/graphs");
+        const beforeState=nativeWorkerHealth(pickNativeGraph(before,worker));
         const out=await nativePost("/control?do="+encodeURIComponent(b.action)+selector);
-        send(res,{ok:true,original:out});return;
+        const after=await nativeGet("/graphs");
+        const afterState=nativeWorkerHealth(pickNativeGraph(after,worker));
+        if(b.action==="start"&&afterState.state==="eroare")throw Error(
+          "ORIGINAL V17 worker entered fatal ERROR after Start: "+afterState.error);
+        send(res,{ok:true,commandAcknowledged:true,
+          trainingProgressVerified:b.action==="start"&&beforeState.progress!==null&&
+            afterState.progress!==null&&afterState.progress>beforeState.progress,
+          beforeState,afterState,original:out});return;
       }
       if(req.method==="POST"&&target==="/api/native-eval"){
         const b=await parse(req,2*1024*1024);

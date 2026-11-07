@@ -22,3 +22,27 @@
   .native-gpu-grid{grid-template-columns:1fr}
   .native-chart-area{margin:0 10px;height:200px}
 }
+
+/* V29: visible original dataset progress, no synthetic worlds. */
+.native-progress-panel{border-color:#346b74;background:linear-gradient(120deg,#102432,#121d2f)}
+.native-progress-values{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;
+  padding:0 18px 11px}
+.native-progress-values strong{font-size:27px;font-variant-numeric:tabular-nums;
+  color:#4deacb}
+.native-progress-values span{color:#c3d5e8;font-size:12px}
+.native-progress-track{height:23px;border-radius:15px;border:1px solid #315768;
+  margin:0 18px 10px;overflow:hidden;background:#0b1625;position:relative}
+.native-progress-fill{height:100%;width:0;
+  background:linear-gradient(90deg,#32b9ab,#46ead1,#75c5ff);
+  box-shadow:0 0 18px #43e8c188;transition:width .3s ease;min-width:0}
+.native-progress-footer{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:0 18px 11px;flex-wrap:wrap;color:#8eabc2;font-size:11px}
+.native-progress-message{padding:8px 18px 15px;color:#acbbca;font-size:11px}
+.native-fatal{margin:4px 17px 12px;padding:12px 14px;border:1px solid #d65979;
+  background:#52263966;border-radius:8px;color:#ffccd9;white-space:pre-wrap;
+  font:12px/1.6 ui-monospace,Consolas,monospace}
+.native-fatal[hidden]{display:none}
+#nativeTrainingState[data-state="antrenează"]{color:#7ef9d2;border-color:#3d997c}
+#nativeTrainingState[data-state="eroare"]{color:#ff92ab;border-color:#ae4260;background:#48242e}
+#nativeTrainingState[data-state="pauză"]{color:#f4cd7f;border-color:#977a4d}
+#nativeTrainingState[data-state="oprit"]{color:#b1bdd0}

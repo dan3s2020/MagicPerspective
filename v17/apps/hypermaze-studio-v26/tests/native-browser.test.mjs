@@ -158,6 +158,17 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    assert.equal(before.progress,"4");
    assert.match(before.source,/OpenThoughts3-1.2M/);
    assert.equal(before.connected,true);
+   const progressUI=await c.eval("({state:document.querySelector('#nativeTrainingState').textContent,"+
+     "pct:document.querySelector('#nativeProgressPct').textContent,"+
+     "counts:document.querySelector('#nativeProgressCounts').textContent,"+
+     "color:document.querySelector('#nativeProgressFill').style.width,"+
+     "fatal:document.querySelector('#nativeFatal').hidden})");
+   assert.equal(progressUI.state,"WORKER ACTIV");
+   assert.equal(progressUI.pct,"0.0003%");
+   assert.match(progressUI.counts,/4 \/ 1\.209\.984/);
+   assert.equal(progressUI.fatal,true);
+   assert.ok(parseFloat(progressUI.color)>0,"Actual original training progress must be drawn");
+
    const nativeGeometry=await c.eval("({history:document.querySelector('#nativeHistoryCanvas').width, "+
      "status:document.querySelector('#nativeHistoryInfo').textContent, "+
      "gpu:document.querySelector('#nativeGpuDevice').value})");

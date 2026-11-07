@@ -234,7 +234,7 @@ test("Hermes CPU-only PyTorch CUDA is reported, and Start/GPU refuse to fake a s
     };
     const start=await post("/api/native-control",{action:"start",worker:0});
     assert.equal(start.status,502);
-    assert.match(start.data.error,/Restart the ORIGINAL V17 process/);
+    assert.match(start.data.error,/Stop the old ORIGINAL backend/);
     assert.equal(source.commands.filter(x=>x.path==="/control").length,0,
       "Start must not say success while original CUDA worker remains erroare");
     const gpu=await post("/api/native-gpu",{device:"cuda:0",worlds:3,textBatch:3,vram:3,util:100});

@@ -36,7 +36,9 @@ const api=async (endpoint,body=null)=>{
 };
 async function action(operation,body={}){
   try{const x=await api("/api/native-"+operation,body);
-    appendLog("success","Motor ORIGINAL V17: "+operation+" confirmat");
+    appendLog(operation==="control"&&body.action==="start"?"info":"success",
+      "Motor ORIGINAL V17: "+operation+
+      (body.action==="start"?" ACCEPTAT, progres neconfirmat":" confirmat"));
     return x;
   }catch(e){errors++;appendLog("error",e.message);notice(e.message,true);throw e;}
 }
@@ -172,6 +174,80 @@ function renderOriginalMaze(record){
   }
 }
 
+
+// V29: do not infer living training from an old ALIGNED score.
+let lastDatasetWorker=null,lastTrainingProgress=null,lastTrainingProgressAt=0;
+let startRequestedAt=0,startRequestedProgress=null;
+function renderNativeDataset(d,m){
+  const h=d.workerHealth||{state:d.original?.status||"unknown",
+    active:d.original?.status==="antrenează",error:d.original?.error||null};
+  const valid=typeof m.progressTrained==="number"&&
+    typeof m.progressTotal==="number"&&m.progressTotal>0;
+  const pct=valid?Math.max(0,Math.min(100,100*m.progressTrained/m.progressTotal)):null;
+  const failed=h.state==="eroare"||!!h.error;
+  const badge=$("nativeTrainingState");badge.dataset.state=h.state;
+  value("nativeTrainingState",failed?"ANTRENARE EȘUATĂ":
+    h.active?"WORKER ACTIV":h.state==="pauză"?"PAUZĂ":
+    h.state==="oprit"?"OPRIT":"NECONFIRMAT");
+  value("nativeProgressPct",m.progressPercent);
+  value("nativeProgressCounts",fmt(m.progressTrained)+" / "+
+    fmt(m.progressTotal)+" exerciții originale");
+  value("nativeProgressChars","Caractere procesate: "+fmt(m.chars));
+  value("nativeProgressHeldout","Holdout separat: "+fmt(m.progressHeldout)+" exerciții");
+  $("nativeProgressFill").style.width=pct===null?"0%":pct+"%";
+  // A 0.02% real corpus share is <1px on screen. A tiny visibility marker
+  // means "non-zero", while numeric percentage remains exactly unchanged.
+  $("nativeProgressFill").style.minWidth=pct>0?"6px":"0";
+  $("nativeProgressFill").title=pct>0&&pct<.5?
+    "Progres real "+m.progressPercent+"; segmentul minim de 6px este doar un marker de vizibilitate.":"Progres proporțional "+m.progressPercent;
+  $("nativeProgressTrack").setAttribute("aria-valuenow",String(pct??0));
+  const batch=d.graph?.batch||d.graph?.batchNow||d.graph?.gpuBatch||null;
+  const phase=typeof batch==="object"?batch?.phase:batch;
+  value("nativeCudaPhase",phase?"CUDA: "+String(phase).slice(0,110):
+    "GPU: "+String(m.nativeDevice||"—")+
+    " · "+fmt(m.completedExercisesPerSecond,2)+" ex/s");
+  value("nativeProgressHeartbeat","Verificat "+new Date().toLocaleTimeString("ro-RO"));
+  const connection=$("connection");
+  connection.classList.toggle("error",failed);
+  connection.classList.toggle("connected",!failed);
+  value("connectionText",failed?"API CONECTAT · WORKER ÎN EROARE":
+    h.active?"ORIGINAL V17 · TRAINING ACTIV":
+    "API V17 CONECTAT · WORKER "+h.state);
+  if(failed)value("mAccSub","ULTIMUL SCOR SALVAT · WORKER OPRIT/EROARE");
+  const fatal=$("nativeFatal");fatal.hidden=!failed;
+  if(failed)fatal.textContent="WORKERUL ORIGINAL V17 ESTE ÎN EROARE:\n"+
+    String(h.error||d.nativeCudaError||"Unknown fatal error")+
+    "\n\nALIGNED și graful sunt ULTIMELE VALORI CUNOSCUTE, nu dovada antrenării active."+
+    "\nNu apăsa Reset. Repornește procesul V17 pe un PORT LIBER cu -Resume și ACELAȘI -Out.";
+  if(lastDatasetWorker!==m.selectedWorker){
+    lastDatasetWorker=m.selectedWorker;lastTrainingProgress=null;
+    lastTrainingProgressAt=0;startRequestedAt=0;startRequestedProgress=null;
+  }
+  if(typeof m.progressTrained==="number"&&m.progressTrained!==lastTrainingProgress){
+    const previous=lastTrainingProgress;
+    lastTrainingProgress=m.progressTrained;lastTrainingProgressAt=Date.now();
+    if(startRequestedAt&&startRequestedProgress!==null&&
+      m.progressTrained>startRequestedProgress){
+      appendLog("success","TRAINING REAL CONFIRMAT: "+
+        fmt(startRequestedProgress)+" → "+fmt(m.progressTrained)+" exerciții");
+      startRequestedAt=0;startRequestedProgress=null;
+    }
+    if(previous!==null&&m.progressTrained<previous)
+      appendLog("warn","Dataset counter reset or changed: verify process/checkpoint identity");
+  }
+  let message=failed?"ANTRENAREA NU RULEAZĂ: workerul V17 a eșuat.":
+    !h.active?"ANTRENAREA NU RULEAZĂ: "+h.state:
+    startRequestedAt?"Start acceptat. Aștept creșterea REALĂ a contorului de exerciții.":
+    lastTrainingProgressAt?"Ultimul progres confirmat la "+
+      new Date(lastTrainingProgressAt).toLocaleTimeString("ro-RO")+
+      "; CUDA poate procesa un batch lung.":"Worker activ; fără exercițiu finalizat confirmat.";
+  if(h.active&&lastTrainingProgressAt&&Date.now()-lastTrainingProgressAt>60000)
+    message+=" Niciun exercițiu finalizat în 60s: verifică faza CUDA în terminal.";
+  value("nativeProgressMessage",message);
+  $("startBtn").disabled=failed||h.active;
+  $("pauseBtn").disabled=!h.active;
+}
+
 function liveIdentity(d){
   const m=nativeMeasurements(d);
   const isConnected=true;
@@ -181,6 +257,7 @@ function liveIdentity(d){
   value("nativeDevice",m.nativeDevice);
   updateGpuControls(d,m);
   recordHistory(m);
+  renderNativeDataset(d,m);
   const gr=d.original,source=d.corpus;
   const first=source?source.kind+" · "+fmt(source.trainRows)+
     " train · "+fmt(source.heldOut)+" holdout · "+fmt(source.totalRows)+" total":
@@ -258,8 +335,6 @@ function liveIdentity(d){
     ["BASELINE IDENTITATE",fmt(m.identityBaselineLoss,5)]
   ].map(([name,score])=>'<div class="effect-row"><small>·</small><span>'+
     esc(name)+'</span><strong>'+esc(score)+'</strong></div>').join("");
-  $("startBtn").disabled=gr?.status==="antrenează";
-  $("pauseBtn").disabled=gr?.status!=="antrenează";
   return m;
 }
 function updateWorkerOptions(d){
@@ -508,12 +583,22 @@ async function poll(){
   }finally{polling=false;}
 }
 $("startBtn").addEventListener("click",()=>{
+  if(state?.workerHealth?.state==="eroare"){
+    notice("ORIGINAL V17 FAILED: "+String(state.workerHealth.error||"unknown")+
+      ". Start nu repară procesul. Vezi bara roșie de status.",true);
+    return;
+  }
   if(state?.nativeCudaError){
     notice("CUDA failure: workerul original trebuie repornit cu START_V17.ps1 -Gpu cuda:0 -Resume și același -Out. Nu folosi Hermes Python.",true);
     appendLog("error",state.nativeCudaError);
     return;
   }
-  action("control",{action:"start",worker}).then(poll).catch(()=>{});
+  startRequestedAt=Date.now();startRequestedProgress=metrics?.progressTrained??null;
+  action("control",{action:"start",worker}).then(resp=>{
+    if(!resp.commandAcknowledged)throw Error("Original V17 did not acknowledge Start");
+    appendLog("info","Start accepted, NOT yet confirmed training progress");
+    return poll();
+  }).catch(()=>{startRequestedAt=0;startRequestedProgress=null;});
 });
 $("pauseBtn").addEventListener("click",()=>action("control",{action:"pause",worker}).then(poll).catch(()=>{}));
 $("saveBtn").addEventListener("click",()=>action("control",{action:"save",worker}).then(()=>
