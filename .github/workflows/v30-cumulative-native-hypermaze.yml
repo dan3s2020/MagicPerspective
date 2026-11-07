@@ -1,0 +1,45 @@
+name: V30 ONE Brain cumulative hypermaze across segmented exercises
+on:
+  push:
+    branches:
+      - experiment/V30-UNIFIED-LEARNED-HYPERMAZE-TOPOLOGY-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cumulative-original:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Native persistent multi-exercise graph, all physical walls, no oracle, original Discoverer global field, checkpoints, contextual inference
+        run: node --test v17/tests/v30-cumulative-hypermaze.test.mjs
+      - name: Existing independent established contextual and coupled axes regression
+        run: |
+          node --test v17/tests/text-hypermaze-coupled-axes.test.mjs
+          node --test v17/tests/text-hypermaze-state-dependent.test.mjs
+          node --test v17/tests/text-path-holonomy-memory.test.mjs
+      - name: Original V29 native Q/A learned role pipeline and no answer leakage
+        run: |
+          node --test v17/tests/v29-real-qa-closed-loop.test.mjs
+          node --test v17/tests/v29-real-qa-native-http.test.mjs
+      - name: Unchanged original 2D maze native Brain and stopship release gate
+        run: |
+          node --test v17/tests/native-hypermaze-shape-parity.test.mjs
+          node --test v17/tests/hypermaze-stopship-release.test.mjs
+  original-windows:
+    runs-on: windows-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse unmodified V17 OpenThoughts launcher on PowerShell 5.1
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'v17/START_REAL_OPENTHOUGHTS_HYPERMAZE.ps1').Path,
+            [ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){throw ($errors|Out-String)}
