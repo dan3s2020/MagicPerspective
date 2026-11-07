@@ -230,7 +230,7 @@ const report = (final = false) => {
   stage("CPU: evaluare înghețată + statistici");
   const msg = {type: "test", w: workerData.gw, arm: arm.name, chars: brain.chars, exercises: brain.exercises || 0, dissolved, heapGB: process.memoryUsage().heapUsed / 1e9,
     speed: (brain.chars - c0) / ((performance.now() - t0) / 1000), test: TEXT && !workerData.goalTraining ? brain.test(H) : null,
-    nativeGoalHeldout: TEXT ? goalHeldoutEval() : null, goalTraining: !!workerData.goalTraining, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
+    nativeGoalHeldout: TEXT ? (workerData.goalTraining ? measureGoal("frozen-heldout-whole-answer",goalHeldoutEval) : goalHeldoutEval()) : null, goalTraining: !!workerData.goalTraining, final, maze: MAZE ? (brain.testMazes(30), mazeStats()) : null, transform: TRANS ? (brain.testTransforms(24), transStats()) : null,
     gpu: gpuSet ? {settings: gpuSet, info: gpuInfo, error: gpuError, maze: brain.mazes.gpu || null, transform: brain.trans?.gpu || null, text: brain.textGpu || null, batch: batchNow} : null,
     shared: shared.status(), worldCore: brain.unifiedEnabled?brain.worldCore.report():null,
     constructedPaths: brain.constructedPaths?.summary() || null,
@@ -244,7 +244,11 @@ const report = (final = false) => {
     endogenousNoise: brain.noiseAgent?.status() || null, selfcode: selfcode?.status() || null, perspective: perspectiveStats(), form: brain.chain.A[0].wires.length ? brain.chain.A[0].form().split(", ").slice(0, 4).join(", ") : "", cActive: brain.e.c.active, cLag: brain.e.c.maxLag, cFlips: brain.e.c.promotions};
   if (saveFile) { try {
     stage("CPU: salvare checkpoint V17");
-    selfcode?.save(); msg.savedMB = brain.save(saveFile) / 1e6; saveText();
+    selfcode?.save();
+    msg.savedMB=(workerData.goalTraining ?
+      measureGoal("native-brain-checkpoint",()=>brain.save(saveFile)) :
+      brain.save(saveFile))/1e6;
+    if(workerData.goalTraining)measureGoal("language-sidecar-checkpoint",saveText);else saveText();
   } catch (err) { msg.saveError = err.message; } }
   parentPort.postMessage(msg);
   stage(final ? "antrenament terminat" : "continuă următorul lot");
@@ -530,7 +534,7 @@ for await (const ex of stream()) {
       stage("GOAL: evaluare frozen + checkpoint");report();
     }
     if((brain.exercises||0)%16===0){
-      shot();await new Promise(r=>setImmediate(r));
+      measureGoal("live-snapshot",()=>shot());await new Promise(r=>setImmediate(r));
     }
     if(brain.chars>=maxChars||stop)break;
     continue;
