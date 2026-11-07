@@ -292,6 +292,8 @@ const processGpuText = async (exs, meta) => {
       total: +(end - profStart).toFixed(2),
       textCharacters: exs.reduce((sum, e) => sum + e.length, 0),
       textExercises: exs.length,
+      exercisesPerSecond: +(exs.length * 1000 / Math.max(1, end - profStart)).toFixed(4),
+      targetExercisesPerSecond: 100,
       charactersPerSecond: +((exs.reduce((sum, e) => sum + e.length, 0) * 1000) / Math.max(1, end - profStart)).toFixed(2),
       note: "wall-clock per completed batch; card includes GPU+Python synchronization and suffix-index rebuild; not a GPU utilization sensor",
       detailedCudaSync: profileText
