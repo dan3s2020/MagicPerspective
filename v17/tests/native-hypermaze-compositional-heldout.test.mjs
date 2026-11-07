@@ -48,9 +48,11 @@ test("Original Discoverer.shapeGraph composes withheld text goals using ONLY act
    "One withheld answer leaked into learned text: "+expected);
   // Select a real, already-observed starting state from training ONLY;
   // never substitute an unseen answer as the origin.
-  const start=subjects.map((_,i)=>sentence(i,b)).find(x=>
-   x!==expected&&actualTraining.includes(x));
-  assert.ok(start&&actualTraining.includes(start),"Start must be a REAL observed sentence");
+  const start=subjects.flatMap((_,i)=>properties.map((_,j)=>({i,j,
+   text:sentence(i,j)}))).find(x=>x.i!==a&&x.j!==b&&
+    actualTraining.includes(x.text))?.text;
+  assert.ok(start&&actualTraining.includes(start),
+   "A TWO-EDIT origin must be a REAL observed training sentence");
   const problem={start,required:[subjects[a],properties[b]]};
   const proposed=adapter.plan(problem);
   assert.equal(proposed.plannedBeforeFirstAction,true);
@@ -65,6 +67,8 @@ test("Original Discoverer.shapeGraph composes withheld text goals using ONLY act
    "Original-shape text navigator failed withheld composition: "+expected);
   assert.equal(proposed.predicted,expected,
    "Global solution shape was NOT correct before first action: "+expected);
+  assert.ok(proposed.actions.length>=2,
+   "With both subject and property changed, the shape must contain at least TWO learned transformations");
   assert.equal(executed.predictedBeforeMovement,expected);
   assert.equal(brain.observedTransformations.seen,trainedCount,
    "Frozen text tests must not train original edit operator model");
