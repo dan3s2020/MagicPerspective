@@ -298,6 +298,21 @@ http.createServer((req, res) => {
       json(res,{error:"Could not read disjoint heldout corpus: "+err.message});}});
     return;
   }
+  if(req.method==="POST"&&url==="/evidence-gated-text-path"){
+    const w=+(q.get("w")||0),sl=slots.find(x=>x.w===w);
+    if(!sl?.wk)return json(res,{error:"Original V17 Brain worker unavailable"});
+    const start=(q.get("start")||"").slice(0,1000);
+    const required=(q.get("required")||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,16);
+    if(!start||!required.length)
+      return json(res,{error:"Required: start sentence and goal tokens, not an ideal answer"});
+    const maxSteps=Math.max(1,Math.min(9,Math.trunc(+(q.get("steps")||8))));
+    const id=++chatId,timer=setTimeout(()=>{
+      chats.delete(id);json(res,{error:"Native evidence-gated worker busy; no fabricated result"});
+    },25000);
+    chats.set(id,result=>{clearTimeout(timer);json(res,{w,...result});});
+    sl.wk.postMessage({evidenceGatedText:{id,start,required,maxSteps,maxExpanded:6000}});
+    return;
+  }
   // Full finite-world frozen test. The agent receives the ENTIRE map, no
   // correct path, no new probes; we compare the real action execution.
   if(req.method==="POST"&&url==="/xd-atlas-eval"){
