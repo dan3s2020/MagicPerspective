@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-07",
+  "base": "experiment/V22-EXACT-DISCOVERER-TEXT-LABYRINTH-20261107@7cd1a85d31a79bf8e7bf8cdfa112e005d59cd227",
+  "sourceSha": "af9e2dac05e8b1cab1f2fed466b1b1fa0b308c7d",
+  "runner": "Original V22 Discoverer.shape loaded from actual GitHub source; isolated V8 runtime, no CUDA/production V17 claim",
+  "firstSmoke": {
+    "cases": 300,
+    "passes": 300,
+    "cumulativeCharacters": 12260474,
+    "maxTokens": 8296,
+    "maxSteps": 59
+  },
+  "testSuite": {
+    "cases": 300,
+    "passes": 300,
+    "cumulativeCharacters": 11237882,
+    "maxTokens": 7703,
+    "maxSteps": 59,
+    "additionalLarge": {
+      "tokens": 118882,
+      "characters": 780227,
+      "actions": 100,
+      "passed": true
+    },
+    "controls": {
+      "missingRulesFails": true,
+      "missingQuestionGrammarFails": true,
+      "unsupportedEventIgnored": true,
+      "contradictionAbstains": true,
+      "physicalRejectionStops": true,
+      "checkpointRestore": true
+    }
+  },
+  "objective": "Complete terminal-location answer from graph with frozen preaction shape, only goal terminal time; no heldout final-answer token in question",
+  "status": "PARTIAL_VERIFIED_STRUCTURED_BENCHMARK_NOT_REAL_LONG_SEMANTIC_QA"
+}
