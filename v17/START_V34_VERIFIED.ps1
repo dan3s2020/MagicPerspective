@@ -1,4 +1,4 @@
-# MagicPerspective V34 — SAFE real original V17 multiworld training + full xD/character atlas.
+# MagicPerspective V34 - SAFE real original V17 multiworld training + full xD/character atlas.
 # A V31 mathematical research solver is added to this EXACT repository tree;
 # it does not silently replace the original Brain, V17 UI, CUDA kernel or worker.
 # This launcher REQUIRES a real corpus and existing original checkpoint.
@@ -18,8 +18,7 @@ param(
  [int]$GpuWorlds = 4,
  [int]$GpuTextBatch = 8,
  [int]$GpuTextChunk = 256,
- [switch]$TraceTransformations,
- [switch]$EndogenousNoise
+ [switch]$TraceTransformations
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_HYPERMAZE_REAL_CUDA.ps1"
@@ -97,15 +96,11 @@ $opts = @{
  GpuTextChunk = $GpuTextChunk
 }
 if ($TraceTransformations) { $opts.TraceTransformations = $true }
-# This switch preserves the original organism's native noise policy,
-# not a fabricated noise-to-text accuracy improvement.
-if ($EndogenousNoise) {
- Write-Host "Noise policy is an original Brain capability; not claimed to solve unrestricted semantic text." -ForegroundColor Yellow
-}
+# Original Brain native noise controls stay available in the existing UI.
 if ($existing.Count -eq 0) {
  $opts.ResumeFrom = $OriginalOut
 }
-Write-Host "MagicPerspective V34 — original V17 CUDA + native xD + six-scale text-path atlas" -ForegroundColor Cyan
+Write-Host "MagicPerspective V34 - original V17 CUDA + native xD + six-scale text-path atlas" -ForegroundColor Cyan
 Write-Host "Original checkpoint directory NOT modified: $OriginalOut"
 Write-Host "Separate V34 runtime: $Out"
 Write-Host "Live ORIGINAL UI: http://127.0.0.1:$Port/transcend/torus-aether/ui/index.html?live=1"
