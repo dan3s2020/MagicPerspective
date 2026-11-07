@@ -148,6 +148,11 @@ test("REAL original devour worker shares native Brain and corpus-learned text hy
     "--dump-dom","--virtual-time-budget=4800",
     url+"/transcend/torus-aether/ui/native-hypermaze.html?"+deep
    ],{encoding:"utf8",timeout:25000,maxBuffer:12*1024*1024});
+   console.log("NATIVE_CHROMIUM_DIAGNOSTIC",JSON.stringify({
+    browser,status:ran.status,signal:ran.signal,
+    stdoutBytes:ran.stdout?.length||0,stdoutStart:ran.stdout?.slice(0,350)||null,
+    stderrLast:ran.stderr?.slice(-650)||null,error:ran.error?.message||null
+   }));
    assert.equal(ran.status,0,"Native hypermaze Chrome UI not running: "+ran.stderr?.slice(-1200));
    assert.match(ran.stdout,/data-native-connected="true"/,
     "Browser's actual V17 worker poll must be connected, not static mock");
