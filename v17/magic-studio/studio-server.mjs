@@ -46,7 +46,7 @@ const extractResults=output=>{
  return entries.slice(-60);
 };
 export function createMagicStudio({port=8872,backendPort=8871,host="127.0.0.1"}={}){
- if(!Number.isInteger(+port)||+port<1||+port>65535||
+ if(!Number.isInteger(+port)||+port<0||+port>65535||
     !Number.isInteger(+backendPort)||+backendPort<1||+backendPort>65535)throw Error("Invalid ports");
  const target="http://127.0.0.1:"+backendPort;
  const state={job:null,last:[],seq:0};
