@@ -37,7 +37,8 @@ test("TinyStories text separators stream EXACT raw positions; resume skips alrea
   assert.equal(all.at(-1).endOffset,meta.size);
   assert.ok(all[1].text.includes("café"));
   assert.ok(all[1].ascii.length>0);
-  assert.ok([...all[1].ascii].every(v=>v<128));
+  assert.ok([...all[1].ascii].some(v=>v>127),"Unicode UTF-8 bytes must be retained in real training");
+  assert.equal(all[1].ascii.toString("utf8"),all[1].text);
   const remaining=[];
   for await(const item of stories(f,{metadata:meta,startOffset:all[0].endOffset}))
    remaining.push(item);
