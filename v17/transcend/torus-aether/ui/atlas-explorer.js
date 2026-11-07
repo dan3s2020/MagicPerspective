@@ -62,6 +62,7 @@ if(!chosen?.fullAtlas?.states?.length){
  ctx.fillStyle="#b9cddd";ctx.fillText("Selectează un eveniment de planificare real din jurnal.",20,38);return;
 }
 const {states=[],neighbors=[],targets=[]}=chosen.fullAtlas,p=chosen.fullPredictedPath||[],xy=geometry(states,neighbors);
+const noKnownExit=new Set(states.map((_,i)=>i).filter(i=>(neighbors[i]?.length||0)===0&&!targets.includes(i)));
 const route=new Set(p.map(x=>x.from+":"+x.to+":"+x.action)),goals=new Set(targets);
 ctx.save();ctx.translate(panX,panY);ctx.scale(scale,scale);
 let count=0;
@@ -74,10 +75,10 @@ for(let i=0;i<neighbors.length;i++)for(const e of neighbors[i]||[]){
 }
 ctx.globalAlpha=1;
 for(let i=0;i<xy.length;i++){const [x,y]=xy[i];ctx.beginPath();ctx.arc(x,y,i===0||goals.has(i)?4.4:1.6,0,Math.PI*2);
-ctx.fillStyle=i===0?"#72b7fd":goals.has(i)?"#6ce8aa":"#b5c7d5";ctx.fill();}
+ctx.fillStyle=i===0?"#72b7fd":goals.has(i)?"#6ce8aa":noKnownExit.has(i)?"#f07177":"#b5c7d5";ctx.fill();}
 ctx.restore();ctx.font="12px monospace";ctx.fillStyle="#e8f2fc";
 ctx.fillText("2D proiecție a distanței în graf (NU axe 4D învățate)",10,19);
-ctx.fillText(states.length+" stări, "+count+" muchii; auriu=traseu, mov=transfer ipotetic",10,canvas.height-10);
+ctx.fillText(states.length+" stări, "+count+" muchii; "+noKnownExit.size+" fără ieșire CUNOSCUTĂ, nu pereți confirmați",10,canvas.height-10);
 }
 function select(e){
 chosen=e;scale=1;panX=panY=0;el("v30AtlasZoom").value="1";
@@ -87,6 +88,7 @@ const lines=[
 "EVENIMENT: "+e.type+"; success="+e.found+"; time="+e.date,
 "Metoda originală: "+(e.originalMethod||"indisponibil")+"; evaluare înghețată="+!!e.frozen,
 "Stări="+states.length+"; muchii="+edges.reduce((s,x)=>s+(x?.length||0),0)+"; ținte="+(graph.targets?.length||0),
+"FRONTIERE FĂRĂ IEȘIRE CUNOSCUTĂ (nu pereți fizici demonstrați): "+states.filter((_,i)=>(edges[i]?.length||0)===0&&!(graph.targets||[]).includes(i)).length,
 "CAUZA EȘECULUI: "+(e.reason||e.diagnostics?.failureReason||"neînregistrată"),
 "PERETE OBSERVAT: "+(e.accepted===false)+"; acțiune: "+(e.action||"—"),
 "SURSĂ PREDICȚIE: "+(e.source||"nu este măsurată")+", controlată de Discoverer="+(e.causallyDrivenByDiscovererPath??"not measured"),
