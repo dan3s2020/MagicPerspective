@@ -362,7 +362,11 @@
       <p id="atlasTextMissing" class="note">Eroare = caracter fără legătură SAU caracter existent, dar clasat sub altă opțiune.</p>
       <canvas id="atlasTextCanvas" width="950" height="300" style="width:100%;height:235px;display:block;background:#07121e;border:1px solid #2c475c;border-radius:9px" aria-label="Compararea poziție cu poziție între alegerea modelului nativ și răspunsul textual real"></canvas>
       <pre id="atlasTextReason" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-size:12px">Nu s-a învățat încă suficient text pentru un traseu.</pre>
-      <div class="row"><button id="atlasTextExport">Exportă traseul, alternativele și toate motivele erorilor</button></div>
+      <div class="row">
+        <button id="atlasTextFrozenEval">Testează pe TEXT NEVĂZUT (înghețat)</button>
+        <button id="atlasTextExport">Exportă traseul, alternativele și toate motivele erorilor</button>
+      </div>
+      <pre id="atlasTextFrozenResult" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;font-size:12px">Testul folosește partiția originală held-out; planifică înainte de a compara cu răspunsul și nu actualizează Brain.</pre>
       <h2>3. Atlasul original NELIMITAT de paginile desenate: toate cele șase scale</h2>
       <p class="note">Fiecare pagină citește direct din <code>Brain.constructedPaths.scales</code>. Alege contextul, navighează prin toate stările memorate și vezi toate acțiunile și destinațiile lor. Orice vizualizare are limită de pixeli; datele originale nu sunt înlocuite cu o hartă inventată.</p>
       <div class="row">
