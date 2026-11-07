@@ -62,6 +62,7 @@ test("Original V17 corpus text operators remain available after one original Bra
  b.observedTransformations.maxObserved=8;
  b.observedTransformations.observeText("The fabric is cold. The fabric is warm.");
  assert.ok(b.observedTransformations.evicted>0);
+ const model=new NativeCrossEpisodeTransfer(b);
  const atlas=new NativeWorldAtlas(b);
  assert.equal(atlas.summary().originalTextFullRawHistoryRetained,false);
  const folder=fs.mkdtempSync(path.join(os.tmpdir(),"mp-v30-existing-native-text-"));
