@@ -12,6 +12,24 @@ Utilizatorul a raportat "DAR TRAININGUL PE CUDA MERGE FOARTE INCET ORICAT AS INC
 - La **textBatch=1**, fiecare exercitiu provoaca o reconstructie completa a indexurilor. Loturile 4/8 pot amortiza costul reconstruirii, dar schimba frecventa actualizarilor trust si pot creste memoria/depasirile, deci nu sunt automat optime. `GPU worlds=2` inseamna doar 2 labirinturi/transformari per episod si nu accelereaza antrenarea Q/A.
 - Temperatura 86 C merita inspectata (posibil throttling/limita de putere pe laptop); temperatura singura NU dovedeste throttling. Nu cresteti orbeste procentul de utilizare cand placa este deja fierbinte.
 
+## Accelerari native implementate DUPA audit (fara model nou si fara resetare)
+
+1. **Alocare direct CUDA:** `gpu/text_gpu.py` - `X.zeros()` folosește `torch.zeros(..., device=self.dev)` pe backendul Torch, nu alocare NumPy in RAM urmată de `torch.as_tensor(...,device=cuda)`. Aceeasi forma, tip, valori zero si device; NumPy ramane neschimbat.
+2. **Fara sincronizare per axa in GPU suffix search:** `Index.align()` a pastrat early-exit-ul bazat pe `bool(alive.any())` pe NumPy, dar il evita pe Torch GPU. Mask-urile `alive` continua sa blocheze orice actualizare pentru contexte epuizate. Implementarea poate executa mai multe iteratii masked in unele cazuri, deci efectul de performanta trebuie masurat pe RTX 3050 Ti.
+3. **Setari GPU fara reload al intregului index:** `devour/gpu-settings-transition.mjs` clasifica schimbarea: `reuse` pentru numarul de lumi ori texte/lot pe acelasi device, `configure` pentru procent utilizare / VRAM pe acelasi device, `restart` numai pentru schimbarea dispozitivului. `worker.mjs` pastreaza procesul Python, `TextCard` si `SharedPerspective`; `GpuWorlds.configure` aplica `Server.init` in acelasi proces. In Python `Server.init` NU reseteaza `self.text` ori `self.shared`. Setarile se aplica la frontiera urmatorului lot, fara stergerea sau recrearea memoriei text.
+4. **Mecanism de control:** `v17/tests/test_v21_gpu_text_allocation.py` foloseste un fake Torch care esueaza daca `X.zeros` incearca sa creeze `np.zeros` pe CPU in loc de tensor direct CUDA; testeaza ruta NumPy originala si forma indexului. `v17/tests/veil-aether.gpu-hot-settings.test.mjs` verifica toate schimbarile de device si comportamentul no-reset pentru lot si lumi. Ambele sunt incluse in workflowul original V21, impreuna cu testele Windows PowerShell si V17-V21.
+5. **Limitare:** testele in GitHub Actions NU dispun de RTX 3050 Ti/CUDA real. Ele demonstreaza contractul sursei si pastrarea controalelor Node; **nu demonstreaza throughput si nici egalitate numerica completa pentru un corpus real pe GPU.** Evaluarea originala `shapeSame` ramine un gate independent obligatoriu.
+
+Motivul fundamental pentru o incetinire care creste pe masura datasetului ramine: `TextCard.append()` reconstruieste *sufixul intregului istoric* dupa fiecare lot. Schimbarea batch text din 1 in 4 evita 3 reconstruiri din 4 exercitii, dar fiecare lot foloseste un alt moment de actualizare a trustului. Nu declarati echivalenta stricta a intregului algoritm pentru batch sizes diferite.
+
+### Utilizare fara repetarea procesului de setup
+
+Dupa salvarea checkpointului, oprirea workerului si `git pull --ff-only`:
+- Reluati cu `-Resume -Gpu cuda:0 -Vram 3 -GpuTextBatch 4 -GpuWorlds 32 -IncludeCognitive`.
+- Evitati un al doilea graf `hypertext` care ruleaza in paralel si foloseste CPU/memoria sistemului.
+- In UI `Aplica` cu acelasi `cuda:0` poate schimba textele/lot sau lumi/lot **fara** sa distruga indexul original. Verificati `/graphs` pentru setarile reale si `gpu.text.hostMs` pentru timpi.
+- Temperatura 86C este deja mare; daca frecventele scad sau apar limite de putere/temperatura, reduceti temperatura/incarcarea, nu fortati 100%.
+
 ## Instrumente introduse fara alterarea algoritmului
 
 - `worker.mjs` masoara acum la FIECARE lot (folosind `performance.now()`, fara sincronizare CUDA suplimentara) durata end-to-end, apelul Python pentru text, traseul grafului original V17, V19/V20/V21, shared PyTorch, maze/transform, numarul real de exercitii si caracter/s. Nu introduce un model sau dataset nou si nu sterge checkpointuri.
