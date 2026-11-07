@@ -145,13 +145,16 @@ export class NativeGoalTextMaze {
    const originSupport=model.structuralSupport(seed);
    const nodes=[{id:normalized,tokens:seed,depth:0,kind:3,
      support:originSupport,coordinates5D:originCoords,
+     geometryEvidence:originCoords?"observed":"unavailable",
      isPreviouslyObserved:model.containsSentence(normalized)}];
    const ids=new Map([[normalized,0]]),edges=[[]];
-   let pending=0,operatorEdges=0,blocked=0;
+   let pending=0,operatorEdges=0,blocked=0,deadEnds=0,depthPruned=0,budgetPruned=0;
    while(pending<nodes.length&&nodes.length<this.maxStates){
     const at=pending++,cur=nodes[at];
-    if(cur.depth>=this.maxDepth||cur.kind===1)continue;
+    if(cur.depth>=this.maxDepth){depthPruned++;continue;}
+    if(cur.kind===1)continue;
     const choices=model.neighbors(cur.tokens);
+    if(!choices.length)deadEnds++;
     // Strict bounded expansion; EVERY action was learned from observations.
     for(const choice of choices){
      const dest=renderObservation(choice.tokens);
@@ -160,7 +163,7 @@ export class NativeGoalTextMaze {
      if(!allowed)blocked++;
      let next=ids.get(dest);
      if(next===undefined){
-      if(nodes.length>=this.maxStates)break;
+      if(nodes.length>=this.maxStates){budgetPruned++;break;}
       next=nodes.length;ids.set(dest,next);
       const stored=geo.U.get("text-state:"+dest);
       const axis=this.brain.hypermazeLearnedAxes?.get(choice.action.key);
@@ -182,7 +185,8 @@ export class NativeGoalTextMaze {
      operatorEdges++;
     }
    }
-   cached={cacheKey,raw:{nodes,edges,operatorEdges,blocked}};
+   cached={cacheKey,raw:{nodes,edges,operatorEdges,blocked,deadEnds,
+     depthPruned,budgetPruned,expanded:pending}};
    this._topologyCache=cached;
   }
   const raw=cached.raw;
@@ -191,10 +195,20 @@ export class NativeGoalTextMaze {
      node.support?.consistent&&target(node.tokens,required);
    return {...node,kind:reached?2:node.kind,goal:!!reached};
   });
+  const frontier=nodes.filter(n=>n.kind!==1&&n.depth>=this.maxDepth);
+  // A graph with a reached limit is NOT the full known maze. Previous
+  // complete=true from nodes.length<=maxStates was a tautology.
+  const capacityReached=raw.budgetPruned>0||raw.expanded<nodes.length;
+  const complete=!capacityReached&&raw.depthPruned===0;
   return {nodes,edges:raw.edges,operatorEdges:raw.operatorEdges,
-   blocked:raw.blocked,goalNodes:nodes.filter(x=>x.goal).length,
-   topologyCacheHit:!!topologyCacheHit,
-   visited:persistentWorldBound(nodes.length,this.maxStates),source:normalized};
+   blocked:raw.blocked,deadEnds:raw.deadEnds,
+   depthPruned:raw.depthPruned,budgetPruned:raw.budgetPruned,
+   expanded:raw.expanded,frontier,
+   goalNodes:nodes.filter(x=>x.goal).length,
+   topologyCacheHit:!!topologyCacheHit,complete,capacityReached,
+   stateLimit:this.maxStates,depthLimit:this.maxDepth,
+   visited:persistentWorldBound(nodes.length,this.maxStates),
+   source:normalized};
  }
  // This is the SAME native Discoverer value-propagation method, lifted to an
  // arbitrary learned adjacency rather than inventing a second beam predictor.
