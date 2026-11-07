@@ -6,9 +6,30 @@
 import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
+import {execFile} from "node:child_process";
+import {promisify} from "node:util";
 import {fileURLToPath} from "node:url";
 
 const ROOT=fileURLToPath(new URL(".",import.meta.url));
+const runFile=promisify(execFile);
+const GPU_PY=path.resolve(ROOT,"../../transcend/torus-aether/gpu/.venv",
+  process.platform==="win32"?"Scripts/python.exe":"bin/python");
+export async function inspectOriginalCuda({python=GPU_PY,run=runFile}={}){
+  try{
+    await fs.access(python);
+    const {stdout}=await run(python,["-c",
+      "import sys, json, torch; print(json.dumps({'python':sys.executable,'torch':torch.__version__,'cuda':torch.version.cuda,'available':bool(torch.cuda.is_available()),'device':torch.cuda.get_device_name(0) if torch.cuda.is_available() else None}))"
+    ],{timeout:15000,windowsHide:true,maxBuffer:256*1024});
+    const data=JSON.parse(stdout.trim().split(/\\r?\\n/).at(-1));
+    return {...data,ok:!!data.available&&!!data.cuda,
+      python,reason:data.available&&data.cuda?null:
+      "PyTorch CUDA is not usable in the ORIGINAL dedicated V17 Python environment"};
+  }catch(e){return {ok:false,python,reason:String(e.message||e).slice(0,400)};}
+}
+export function isCudaStartupFailure(graph){
+  return /cuda|torch\\.cuda|GPU process|PyTorch|python|OCTOPUS_PY/i.test(
+    String(graph?.error||graph?.gpu?.error||""))&&graph?.status==="eroare";
+}
 const FILES={
   "/": ["public/native.html","text/html; charset=utf-8"],
   "/native-app.js": ["public/native-app.js","text/javascript; charset=utf-8"],
@@ -63,7 +84,8 @@ export function nativeSnapshot(graphs,graph=null,worker=null){
 }
 export async function createNativeBridge({
   port=8896,host="127.0.0.1",nativePort=8841,nativeHost="127.0.0.1",
-  fetchImpl=fetch
+  fetchImpl=fetch,
+  inspectCuda=inspectOriginalCuda
 }={}){
   if(!["127.0.0.1","localhost"].includes(host)||
     !["127.0.0.1","localhost"].includes(nativeHost))throw Error("Loopback only");
@@ -112,7 +134,8 @@ export async function createNativeBridge({
           catch(e){graphError=String(e.message||e);}
         }
         send(res,{...nativeSnapshot(graphs,graph,worker),
-          graphError,upstream:base,receivedAt:new Date().toISOString()});return;
+          graphError,nativeCudaError:isCudaStartupFailure(selected)?selected.error:null,
+          upstream:base,receivedAt:new Date().toISOString()});return;
       }
       if(req.method==="POST"&&target==="/api/native-control"){
         const b=await parse(req),worker=b.worker;
@@ -121,6 +144,17 @@ export async function createNativeBridge({
           throw Error("Unknown original training action");
         if(b.action==="reset"&&b.confirm!=="RESET_ORIGINAL_TRAINING")
           throw Error("Original training reset requires explicit confirmation");
+        if(b.action==="start"){
+          const graphInfo=await nativeGet("/graphs");
+          const selected=pickNativeGraph(graphInfo,worker);
+          if(isCudaStartupFailure(selected))throw Error(
+            "CUDA ORIGINAL V17 FAILED: "+selected.error+
+            ". Repeated Start cannot change the Python interpreter of a running worker. "+
+            "Restart the ORIGINAL V17 process using START_V17.ps1 -Gpu cuda:0 "+
+            "-Resume -Out <SAME_ORIGINAL_CHECKPOINT_FOLDER>; the script prepares "+
+            "v17/transcend/torus-aether/gpu/.venv and verifies torch CUDA. "+
+            "Do not use hermes-agent\\venv Python for CUDA.");
+        }
         const out=await nativePost("/control?do="+encodeURIComponent(b.action)+selector);
         send(res,{ok:true,original:out});return;
       }
@@ -168,6 +202,16 @@ export async function createNativeBridge({
         const dev=String(b.device||"off");
         if(!["off","cpu","cuda:0","cuda:1"].includes(dev))
           throw Error("Invalid original GPU selector");
+        if(dev.startsWith("cuda")){
+          const result=await inspectCuda();
+          if(!result.ok)throw Error(
+            "CUDA preflight rejected: "+result.reason+
+            " [Python: "+result.python+"]. No GPU configuration was applied. "+
+            "Restart original V17 via START_V17.ps1 -Gpu cuda:0 "+
+            "-Resume -Out <SAME_ORIGINAL_CHECKPOINT_FOLDER>, "+
+            "which prepares its own isolated torch CUDA environment; "+
+            "do not use hermes-agent\\venv.");
+        }
         const q=new URLSearchParams({
           device:dev,
           worlds:String(Math.trunc(bounded(b.worlds,0,100000,0))),
