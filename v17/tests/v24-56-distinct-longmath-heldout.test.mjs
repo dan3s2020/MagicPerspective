@@ -30,7 +30,12 @@ function uniqueText(x,y){
 test("56 distinct unseen arithmetic TARGETS, each in a 2057-token complete document: original preaction shape versus independent physical world", {timeout:240000},()=>{
  const brain=new NativeMathGoalField({maxNodes:1700,maxSteps:36,maxDocumentTokens:4096,maxValue:300});
  for(const [a,b]of observations)assert.equal(brain.observePair(a,b).learned,true);
- const before=JSON.stringify(brain.export()),t0=performance.now();
+ const learnedSnapshot=()=>{const x=brain.export();return JSON.stringify({
+   induction:x.induction,observedPairs:x.observedPairs,
+   observedExecutions:x.observedExecutions,failedExecutions:x.failedExecutions,
+   blockedContexts:x.blockedContexts
+  });};
+ const before=learnedSnapshot(),t0=performance.now();
  let successes=0,actions=0,explored=0,totalCharacters=0;
  let minSteps=Infinity,maxSteps=0,minNodes=Infinity,maxNodes=0;
  const failures=[];
@@ -81,8 +86,8 @@ test("56 distinct unseen arithmetic TARGETS, each in a 2057-token complete docum
   naturalLanguageSemanticGeneralizationProven:false,
   CUDAProven:false,failures:failures.slice(0,12)};
  console.log("V24_56_DIFFERENT_LONG_HELDOUT_SHAPES",JSON.stringify(raw));
- assert.deepEqual(JSON.stringify(brain.export()),before,
-  "Heldout full-answer paths must not mutate or train from secret reference");
+ assert.equal(learnedSnapshot(),before,
+  "Heldout scoring can update last-run diagnostics, but MUST NOT mutate the learned action field, evidence, or physical-feedback history");
  assert.equal(failures.length,0,"Harder distinct goals must remain visible failures until actually solved");
  assert.equal(successes,56);
 });
