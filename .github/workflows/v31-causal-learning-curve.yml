@@ -40,3 +40,35 @@ jobs:
         run: |
           node --test v17/tests/v30-full-atlas-diagnostics.test.mjs v17/tests/v30-answer-forensics.test.mjs
           node --test v17/tests/v22-long-unseen-shape.test.mjs v17/tests/torus-cognitive-learned-map.test.mjs
+  windows-v31-launcher-preflight:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate PowerShell syntax and protect existing training checkpoints
+        shell: pwsh
+        run: |
+          $tokens = $null; $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path ".\v17\START_V31_REAL_TRAINING.ps1"),[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+          git switch -C "experiment/V31-CAUSAL-PATH-TO-ANSWER-LEARNING-CURVE-20261107"
+          $data = Join-Path $env:RUNNER_TEMP "v31-preflight-only"
+          $out = Join-Path $env:RUNNER_TEMP "v31-guarded-checkpoints"
+          New-Item -ItemType Directory -Path $data -Force | Out-Null
+          # This file is a placeholder ONLY for preflight, no training.
+          Set-Content -LiteralPath (Join-Path $data "preflight-placeholder.parquet") -Value "not-training-data" -Encoding Ascii
+          & .\v17\START_V31_REAL_TRAINING.ps1 -Data $data -Out $out -ValidateOnly
+          if ($LASTEXITCODE -ne 0) { throw "V31 PowerShell preflight failed" }
+          $saves=Join-Path $out "brains"
+          New-Item -ItemType Directory -Path $saves -Force | Out-Null
+          $sentinel=Join-Path $saves "brain-0-stable+many.v8"
+          Set-Content -LiteralPath $sentinel -Value "do-not-overwrite" -Encoding Ascii
+          $blocked = $false
+          try { & .\v17\START_V31_REAL_TRAINING.ps1 -Data $data -Out $out -ValidateOnly }
+          catch { $blocked = $_.Exception.Message -match "Existing original checkpoint" }
+          if (-not $blocked) { throw "Launcher failed to protect native checkpoint" }
+          if ((Get-Content -LiteralPath $sentinel -Raw).Trim() -ne "do-not-overwrite") { throw "Checkpoint modified" }
+          Write-Host "V31 Windows PowerShell parser and safeguard PASS. CUDA and real data NOT executed in CI."
