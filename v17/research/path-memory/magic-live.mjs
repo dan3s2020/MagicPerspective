@@ -7,6 +7,7 @@ import path from "node:path";
 import http from "node:http";
 import readline from "node:readline";
 import {createHash} from "node:crypto";
+import {exec} from "node:child_process";
 import {fileURLToPath} from "node:url";
 import {Brain} from "../../transcend/torus-aether/devour/brain.mjs";
 import {tokenize} from "../../transcend/torus-aether/language-universe/perspectives.mjs";
@@ -21,7 +22,7 @@ if(!mode||!flag("out")){console.error("Usage: node magic-live.mjs (--data PARQUE
 const source=path.resolve(flag(mode==="events"?"events":mode==="text"?"text":"data")),out=path.resolve(flag("out"));
 const port=Number(flag("port")||8877),maxRows=Math.max(0,Number(flag("max-rows")||0));
 const batch=Math.max(1,Math.min(100,Number(flag("batch")||2)));
-const rowChars=Math.max(128,Math.min(30000,Number(flag("row-chars")||2400)));
+const rowChars=Math.max(128,Math.min(200000,Number(flag("row-chars")||20000)));
 if(!Number.isInteger(port)||port<1024||port>65535)throw Error("Invalid port");
 if(!fs.existsSync(source))throw Error("Source missing: "+source);
 if(out===source||out.startsWith(source+path.sep))throw Error("Output must be outside source");
@@ -40,8 +41,15 @@ let running=has("start"),finished=false,busy=false,rate=Math.max(1,Math.min(30,N
 let fault=null,frozen=null,last=null,recent=[],clients=new Set(),saved=null,sourceInfo={mode},started=Date.now();
 const rawText=x=>String(x??"");
 const fragment=(x,n=160)=>rawText(x).slice(0,n);
-const rec=e=>{const item={...e,time:new Date().toISOString()};recent.push(item);if(recent.length>120)recent.shift();
- fs.appendFileSync(journal,JSON.stringify(item)+"\n");};
+const rec=e=>{
+ const item={...e,time:new Date().toISOString()};
+ fs.appendFileSync(journal,JSON.stringify(item)+"\n");
+ // Entire observation is preserved in JSONL. Limit only the live SSE window.
+ const windowItem={...item};
+ if(typeof windowItem.passage==="string")windowItem.passage=windowItem.passage.slice(0,260);
+ if(Array.isArray(windowItem.predictions))windowItem.predictions=windowItem.predictions.slice(-6);
+ recent.push(windowItem);if(recent.length>120)recent.shift();
+};
 const split=p=>parseInt(createHash("sha256").update(p.trim()).digest("hex").slice(0,8),16)%1000;
 async function* paragraphs(file){
  const rs=fs.createReadStream(file,{encoding:"utf8"}),lines=readline.createInterface({input:rs,crlfDelay:Infinity});
@@ -145,7 +153,8 @@ async function learn(row){
    predictions:samples.slice(-16),learnedOperators:operators.newOperators,
    shape:brain.language.navigate(tokens.slice(0,Math.min(8,tokens.length)).join(" "),
     {steps:12,useField:false}).path};
-  rec({kind:"text",position:row.position,passage:fragment(input,200),
+  rec({kind:"text",position:row.position,passage:input,sourceChars:rawText(row.text).length,trainedChars:input.length,
+   truncated:rawText(row.text).length>input.length,predictions:samples,
    correct:beforeHits,total:tokens.length,lastPredictions:samples.slice(-5)});
   progress.tokens+=actual.tokens;
  }else{
@@ -234,6 +243,12 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==="GET"&&url.pathname==="/"){res.writeHead(200,{"content-type":"text/html; charset=utf-8"});return fs.createReadStream(index).pipe(res);}
   if(req.method==="GET"&&url.pathname==="/api/state")return json(res,snap());
   if(req.method==="GET"&&url.pathname==="/api/export")return json(res,snap());
+  if(req.method==="GET"&&url.pathname==="/api/log"){
+   if(!fs.existsSync(journal))return json(res,{error:"No observations have been recorded yet"},404);
+   res.writeHead(200,{"content-type":"application/x-ndjson; charset=utf-8",
+     "content-disposition":"attachment; filename=magic-observed-transitions.jsonl"});
+   return fs.createReadStream(journal).pipe(res);
+  }
   if(req.method==="GET"&&url.pathname==="/api/events"){
    res.writeHead(200,{"content-type":"text/event-stream","cache-control":"no-store","connection":"keep-alive"});
    clients.add(res);res.write("data: "+JSON.stringify(snap())+"\n\n");req.on("close",()=>clients.delete(res));return;
@@ -257,6 +272,9 @@ const server=http.createServer(async(req,res)=>{
  }catch(e){console.error(e);return json(res,{error:e.message},400);}
 });
 process.on("SIGINT",async()=>{running=false;clearInterval(timer);try{await save();}finally{server.close(()=>process.exit(0));}});
-server.listen(port,"127.0.0.1",()=>console.log(JSON.stringify({
+server.listen(port,"127.0.0.1",()=>{
+ console.log(JSON.stringify({
  event:"MAGIC_LIVE_READY",url:"http://127.0.0.1:"+port,mode,source,out,running,
  truth:"Real observations; original V17 unchanged; all experimental steps observable"})));
+ if(has("open")&&process.platform==="win32")exec('start "" "http://127.0.0.1:'+port+'"',()=>{});
+});
