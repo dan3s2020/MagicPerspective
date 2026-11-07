@@ -8,6 +8,20 @@ const numeric=t=>/^\d+$/u.test(t);
 const readNums=s=>tokenizeObservation(s).filter(numeric).map(Number);
 const template=s=>tokenizeObservation(s).map(t=>numeric(t)?"#":t).join("\u001f");
 const finiteInts=v=>v.every(Number.isSafeInteger);
+// Learn punctuation and whitespace layout from an ACTUAL previously observed
+// answer. Only predicted numeric coordinates are substituted; this is NOT a
+// stored correct answer or an independently authored language rule.
+const observedSurface=(observed,tokens)=>{
+  const original=tokenizeObservation(observed);
+  if(original.length!==tokens.length||original.some((x,i)=>!numeric(x)&&x!==tokens[i]))
+    return renderObservation(tokens);
+  const originalNumbers=original.filter(numeric),predictedNumbers=tokens.filter(numeric);
+  if(originalNumbers.length!==predictedNumbers.length)return renderObservation(tokens);
+  const embedded=observed.match(/\b\d+\b/gu)||[];
+  if(embedded.length!==originalNumbers.length)return renderObservation(tokens);
+  let i=0;
+  return observed.replace(/\b\d+\b/gu,()=>predictedNumbers[i++]);
+};
 const safeFields=p=>p && p.found===true && p.referenceAnswerProvided===false &&
   p.predictedBeforeExecution===true && Array.isArray(p.actions);
 
@@ -108,30 +122,35 @@ export class NativeCoupledGoalField {
     const shape=w.model.plan(start,goals,{maxSteps,maxExpanded:this.maxExpanded});
     if(!safeFields(shape))return fail(shape.reason||"no-learned-transformation-path",
       {observedPairs:w.model.observations});
-    const report={...shape,ready:true,mode:"goal-path",fullShape:shape.predicted,
+    const originalTokens=tokenizeObservation(start);
+    const displayStates=shape.states.map(state=>observedSurface(start,tokenizeObservation(state)));
+    const fullShape=displayStates.at(-1);
+    const report={...shape,ready:true,mode:"goal-path",fullShape,
+      predicted:fullShape,states:displayStates,
+      worldKey:w.qTemplate+"\u0000"+w.aTemplate,
       sourceQuestion:question,observedStart:start,axisMapping:axes,
       activeLocalAxes:shape.model,learnedPairedTransitions:w.model.observations,
       noNextCharacterFallback:true,usesLearnedCausalField:true,
       plannedBeforeFirstOutput:true,referenceAnswerProvided:false};
     this.plans++;
-    this.last={found:true,ready:true,predicted:report.predicted,
+    this.last={found:true,ready:true,predicted:report.fullShape,
       steps:shape.actions.length,axisMapping:axes,observedStart:start};
     return report;
   }
   executeFrozen(plan){
     if(!safeFields(plan)||!plan.ready)throw Error("Cannot execute without a frozen learned solution shape");
-    const w=[...this.worlds.values()].find(x=>x.states.some(s=>s.answer===plan.observedStart));
+    const w=this.worlds.get(plan.worldKey);
     if(!w)throw Error("Observed initial state absent from trained model");
     const model=w.model.discover(plan.observedStart);
     if(!model.ready)throw Error("State-dependent field unavailable");
     let state=tokenizeObservation(plan.observedStart);
-    const frames=[renderObservation(state)];
+    const frames=[observedSurface(plan.observedStart,state)];
     for(const action of plan.actions){
       const next=w.model.apply(state,action,model);
       if(!next)throw Error("Learned action failed during embodied replay");
-      state=next;frames.push(renderObservation(state));
+      state=next;frames.push(observedSurface(plan.observedStart,state));
     }
-    const actual=renderObservation(state),internalMatch=actual===plan.fullShape;
+    const actual=observedSurface(plan.observedStart,state),internalMatch=actual===plan.fullShape;
     this.executed++;this.success+=+internalMatch;
     return {actual,frames,executedSteps:plan.actions.length,
       internalMatch,externalSemanticVerified:false,noReferenceAnswer:true,
