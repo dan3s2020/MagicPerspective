@@ -1,0 +1,183 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
+import {makeMaze,seedOf,SEEDS} from "../transcend/torus-aether/worlds/labyrinth.mjs";
+import {playExercise,KIND} from "../transcend/torus-aether/worlds/exercise.mjs";
+import {CumulativeHyperMaze} from "../research/text-hypermaze/cumulative-hypermaze.mjs";
+
+const rules={depth:1,off:["R2","R4"],budEvery:100,empty:true,maxWires:32,fold:false};
+function brain(){
+ const b=new Brain({rules,seed:131});
+ for(let i=0;i<150;i++){
+  playExercise(makeMaze(seedOf(SEEDS.train,400+i*19),[7,9,11][i%3]),b.disc);
+  if(i>=24&&b.disc.attract(KIND.target)>.2&&b.disc.conduct(KIND.floor)>=.5)break;
+ }
+ assert.ok(b.disc.attract(KIND.target)>.2,"Exactly original native Discoverer learned attractor required");
+ return b;
+}
+const node=i=>i===12?"exit reached":"corridor "+i;
+const action=i=>"walk-"+i;
+function observeOnePerEpisode(agent){
+ for(let i=0;i<12;i++)agent.observeTransition({
+  episode:"maze-world-"+(i+1),before:node(i),
+  action:action(i),after:node(i+1),accepted:true,
+  source:"independent-physical-outcome"
+ });
+}
+test("RED: 12 independent maze episodes form ONE cumulative 12-action route with original native shapeGraph and no 4D coordinates",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b,{maxStates:250,maxEdges:1000});
+ let failures=0;
+ for(let i=0;i<12;i++){
+  m.observeTransition({episode:"isolated-maze-"+i,before:node(i),after:node(i+1),
+   action:action(i),accepted:true,source:"independent-physical-outcome"});
+  if(i<11){
+   const frozen=m.plan({start:node(0),required:["exit"],includeTopology:true});
+   failures+=Number(!frozen.found);
+  }
+ }
+ assert.equal(failures,11,"Before final fragment the graph must remain incomplete");
+ const plan=m.plan({start:node(0),required:["exit"],includeTopology:true});
+ assert.equal(plan.found,true,JSON.stringify(plan).slice(0,700));
+ assert.equal(plan.steps,12);
+ assert.equal(plan.originalPlanner,"Discoverer.shapeGraph");
+ assert.equal(plan.frozenBeforeAction,true);
+ assert.equal(plan.goalAnswerSupplied,false);
+ assert.equal(plan.completeReachableVerifiedTopology,true);
+ assert.equal(plan.topology.nodes.length,13);
+ assert.equal(plan.topology.edges.length,12);
+ assert.equal(new Set(plan.actions.map(x=>x.evidenceEpisode)).size,12);
+ assert.ok(plan.values[0]>0,"Original field must propagate back 12 transformations");
+ const physics=new Map(Array.from({length:12},(_,i)=>[node(i)+"|"+action(i),node(i+1)]));
+ let actual=node(0);
+ for(const step of plan.actions){
+  assert.equal(step.before,actual);
+  actual=physics.get(actual+"|"+step.action);
+  assert.equal(actual,step.after,"Independent physical step did not match predicted path");
+ }
+ assert.equal(actual,node(12));
+ console.log("V30_CUMULATIVE_HYPERMAZE",JSON.stringify({
+  separatelyWitnessedMazeEpisodes:12,
+  singleEpisodeFullRouteExists:false,composedPreactionPathSteps:plan.steps,
+  physicallyVerifiedFullRoute:true,
+  distinctEpisodeSources:new Set(plan.actions.map(x=>x.evidenceEpisode)).size,
+  originalPlanner:plan.originalPlanner,totalRememberedNodes:plan.memory.nodes,
+  totalRememberedEdges:plan.memory.edges,
+  caveat:"verified symbolic paths, NOT unrestricted semantic language understanding"
+ }));
+});
+
+test("repeated observations strengthen exact transformations and an actual rejected action creates a wall that reroutes the field",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b);
+ observeOnePerEpisode(m);
+ for(let i=0;i<7;i++)m.observeTransition({
+  episode:"repeat-"+i,before:node(0),action:action(0),
+  after:node(1),accepted:true,source:"independent-physical-outcome"
+ });
+ let p=m.plan({start:node(0),required:["exit"]});
+ assert.equal(p.found,true);
+ assert.ok(p.actions[0].observedSupport>=8);
+ // Falsify one attractive shortcut that previously worked but environment
+ // no longer permits. Rejected action outcome must remove this edge.
+ m.observeTransition({episode:"old-world",before:node(0),action:"jump",
+  after:node(12),accepted:true,source:"independent-physical-outcome"});
+ p=m.plan({start:node(0),required:["exit"]});
+ assert.equal(p.steps,1);
+ m.observeTransition({episode:"new-world",before:node(0),action:"jump",
+  after:node(0),expectedAfter:node(12),accepted:false,
+  source:"physical-rejection"});
+ p=m.plan({start:node(0),required:["exit"],includeTopology:true});
+ assert.equal(p.found,true);assert.equal(p.steps,12);
+ assert.ok(p.memory.rejectedActions>=1);
+ assert.ok(p.topology.edges.every(e=>!(e.action==="jump"&&e.fromText===node(0))));
+});
+
+test("no bridge in prior experience means no imaginary path; a previously unseen goal stays unreachable",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b);
+ for(let i=0;i<4;i++)m.observeTransition({episode:"one-"+i,
+  before:node(i),after:node(i+1),action:action(i),accepted:true});
+ for(let i=6;i<12;i++)m.observeTransition({episode:"other-"+i,
+  before:node(i),after:node(i+1),action:action(i),accepted:true});
+ const fail=m.plan({start:node(0),required:["exit"],includeTopology:true});
+ assert.equal(fail.found,false);
+ assert.equal(fail.reason,"NO_EVIDENCED_PATH_TO_GOAL");
+ assert.equal(fail.memory.unknownConnections>0,true);
+ m.observeTransition({episode:"newly-discovered-bridge",
+  before:node(4),after:node(6),action:"rare-bridge",
+  accepted:true,source:"independent-physical-outcome"});
+ const found=m.plan({start:node(0),required:["exit"]});
+ assert.equal(found.found,true);
+ assert.ok(found.actions.some(x=>x.action==="rare-bridge"));
+ assert.equal(found.steps,11);
+});
+
+test("wrong guesses, source text adjacency and inferred operators are NOT silently promoted to witnessed walkable edges",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b);
+ observeOnePerEpisode(m);
+ m.observeTransition({episode:"hypothesis-1",before:node(0),after:node(12),
+  action:"imaginary",accepted:null,source:"model-proposal"});
+ const evidence=m.plan({start:node(0),required:["exit"]});
+ assert.equal(evidence.steps,12);
+ const audit=m.audit();
+ assert.equal(audit.proposedEdges>=1,true);
+ assert.equal(evidence.actions.every(x=>x.edgeStatus==="physically-verified"),true);
+ m.observeTextAdjacency({episode:"OpenThoughts3-row-1",
+  beforeText:"The reasoning passage starts.",afterText:"The reasoning passage continues."});
+ assert.equal(m.plan({start:"The reasoning passage starts.",required:["continues"]}).found,false);
+});
+
+test("actual original Brain .v8 checkpoint holds cumulative cross-world paths and does not require a second model",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b);
+ observeOnePerEpisode(m);
+ const old=m.plan({start:node(0),required:["exit"],includeTopology:true});
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"magic-v30-cumulative-"));
+ try{
+  const fn=path.join(dir,"native-brain.v8");b.save(fn);
+  const loaded=Brain.load(fn);
+  const restored=new CumulativeHyperMaze(loaded);
+  const next=restored.plan({start:node(0),required:["exit"],includeTopology:true});
+  assert.deepEqual(next.actions,old.actions);
+  assert.deepEqual(next.values,old.values);
+  assert.equal(typeof loaded.chat,"function");
+  assert.equal(typeof loaded.disc.shapeGraph,"function");
+  assert.ok(loaded.hypermazeCumulativeExperience);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
+});
+
+test("sparse old context-axis evidence can join separated text experiences without asserting it is already independently verified",()=>{
+ const b=brain(),m=new CumulativeHyperMaze(b,{maxStates:550,maxEdges:3000});
+ const source=b.observedTransformations;
+ const tokens=ids=>ids.map((v,i)=>"dim"+i+"v"+v).join(" ")+" artifact.";
+ const origin=tokens([0,0,0]);
+ for(const text of [origin,tokens([1,0,0]),tokens([2,0,0]),
+  tokens([0,1,0]),tokens([0,2,0]),tokens([0,0,1]),tokens([0,0,2])]){
+  source.observeSentence(text);
+ }
+ let absent=m.plan({start:origin,required:["dim0v2","dim1v2","dim2v2"],
+  allowInferred:true,maxExpansionDepth:4});
+ assert.equal(absent.found,false,
+  "Three independent dimensions are unproven when neighbor contexts never vary");
+ // Previously tested bridge hypothesis from PR #34; repeated independent
+ // observed sentences are added to THE ORIGINAL Brain's operator memory.
+ source.observeSentence(tokens([1,1,0]));
+ source.observeSentence(tokens([0,1,1]));
+ const found=m.plan({start:origin,required:["dim0v2","dim1v2","dim2v2"],
+  allowInferred:true,maxExpansionDepth:5,includeTopology:true});
+ assert.equal(found.found,true,JSON.stringify(found).slice(0,750));
+ assert.equal(found.originalPlanner,"Discoverer.shapeGraph");
+ assert.equal(found.steps,3);
+ assert.equal(found.pathContainsInferredEdges,true);
+ assert.equal(found.externallyVerifiedSemanticExecution,false);
+ assert.equal(found.goalAnswerSupplied,false);
+ assert.equal(source.containsSentence(found.predicted),false);
+ console.log("V30_REUSED_CONTEXT_AXES",JSON.stringify({
+  beforeObservedBridges:false,
+  afterWitnesedBridges:found.found,
+  retainedOriginalOperators:source.operators.size,
+  fullPredictedUnseenText:found.predicted,
+  originalNativePlanner:found.originalPlanner,
+  semanticClaim:"inferred, requires environment check before promoting to verified"
+ }));
+});
