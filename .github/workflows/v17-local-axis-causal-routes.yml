@@ -1,0 +1,23 @@
+name: V17 node-local frames and causal route experiments
+on:
+  push:
+    branches:
+      - experiment/V17-LEARNED-LOCAL-AXES-CAUSAL-ROUTES-20261107
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  learned-local-axes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Native V17 ConstructedTransitionGraph + node-local xD route tests
+        run: node --test v17/tests/local-axis-transport-shapes.test.mjs
+      - name: Baseline regression tests for original V17 are unchanged
+        run: |
+          node --test v17/tests/observed-text-paths.test.mjs
+          node --test v17/tests/xd-gauge-collapse.test.mjs
