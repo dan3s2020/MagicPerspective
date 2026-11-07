@@ -182,6 +182,13 @@ export async function createAtlasServer(runtime,{port=8901,host="127.0.0.1"}={})
      res.end(html);return;
     }
     if(url.pathname==="/api/status")return json(res,200,runtime.status());
+    if(url.pathname==="/api/global-topology")return json(res,200,
+     runtime.atlas.globalTopology({
+      nodeOffset:asInt(url.searchParams.get("nodeOffset")||0,0,Number.MAX_SAFE_INTEGER,"nodeOffset"),
+      nodeLimit:asInt(url.searchParams.get("nodeLimit")||300,1,1000,"nodeLimit"),
+      edgeOffset:asInt(url.searchParams.get("edgeOffset")||0,0,Number.MAX_SAFE_INTEGER,"edgeOffset"),
+      edgeLimit:asInt(url.searchParams.get("edgeLimit")||600,1,2000,"edgeLimit")
+     }));
     if(url.pathname==="/api/atlas")return json(res,200,
      runtime.atlas.page(url.searchParams.get("section")||"attempts",{
       offset:asInt(url.searchParams.get("offset")||0,0,Number.MAX_SAFE_INTEGER,"offset"),
