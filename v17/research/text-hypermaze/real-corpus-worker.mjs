@@ -162,11 +162,20 @@ async function init(){
  // bounded active Brain motif memory evicts them at 50k nodes. This store
  // never sees heldout rows, only actual observeQA() training evidence.
  if(opts.disableMotifDiskArchive!==true){
-  motifArchive=await openNativeMotifArchive(path.join(out,
-   "original-native-long-language-motifs.sqlite"));
-  engine.qaRole.attachMotifArchive(motifArchive);
-  send("note",{text:"Same native original Brain attached durable exact witnessed source motif disk index: "+
-   motifArchive.filename});
+  try{
+   motifArchive=await openNativeMotifArchive(path.join(out,
+    "original-native-long-language-motifs.sqlite"));
+   engine.qaRole.attachMotifArchive(motifArchive);
+   send("note",{text:"Same native original Brain attached durable exact witnessed source motif disk index: "+
+    motifArchive.filename});
+  }catch(error){
+   // The existing released native launcher explicitly supports Node20+.
+   // Older Node20 lacks node:sqlite. Preserve that WORKING legacy training,
+   // but make lost disk coverage VISIBLE, never claim full retention.
+   if(String(error?.message||error).includes("requires Node.js >=22")){
+    send("note",{text:"WARNING: Node20+ legacy V17 training works, but indexed motif DISK memory is unavailable until Node22+. Recurrent source nodes can be evicted from active RAM."});
+   }else throw error;
+  }
  }else send("note",{text:"EXPLICIT WARNING: long-language motif disk memory disabled by caller; active graph can evict old evidence"});
  done=counters.fileIndex>=files.length;
  publish();
