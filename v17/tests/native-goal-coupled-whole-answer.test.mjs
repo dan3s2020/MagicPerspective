@@ -140,3 +140,22 @@ test("genuine frozen heldout Q/A evaluation reports exact whole-answer path BEFO
     legacyNextCharacterDiagnosticSeparate:true
   }));
 });
+
+
+test("real causal action-field cache preserves identical planned whole-answer and invalidates after every new observation",()=>{
+  const b=train(cases[1]),world=b.numericGoalField.worlds.values().next().value;
+  const initial="4 * 4 = 16.";
+  const x=world.model.discover(initial),y=world.model.discover(initial);
+  assert.strictEqual(x.operators,y.operators,"Unchanged actual training evidence must reuse exact field");
+  const before=b.chat([["you","What is 7 times 6?"]]);
+  assert.equal(before.text,"7 * 6 = 42.");
+  const obs=b.learnGoalPathPair("What is 5 times 4?","5 * 4 = 20.");
+  assert.equal(obs.coupled.learned,true);
+  const after=world.model.discover(initial);
+  assert.notStrictEqual(x.operators,after.operators,
+    "A new real paired transition must force rediscovery of the entire local field");
+  assert.equal(after.pairedObservations>x.pairedObservations,true);
+  const again=b.chat([["you","What is 7 times 6?"]]);
+  assert.equal(again.text,before.text,"Caching cannot change complete unseen numeric answer");
+  assert.equal(again.predictedFullAnswerBeforeFirstCharacter,before.predictedFullAnswerBeforeFirstCharacter);
+});
