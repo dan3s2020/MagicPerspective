@@ -169,6 +169,8 @@ def exercise_batch(B, worlds, K, seed):
 T_FLOOR, T_WALL, T_PLATE, T_LEVER, T_DOORP, T_DOORL = 0, 1, 2, 3, 4, 5
 class TBatch:
     def __init__(self, B, levels, moves):
+        if not levels:
+            raise ValueError("t_reset requires at least one transform world; resolve GPU auto-world count before starting")
         self.B = B; self.N = len(levels); self.n = np.array([L["n"] for L in levels]); P = int(self.n.max()); self.P = P
         terr = np.full((self.N, P * P), T_WALL, dtype=np.int64)
         for b, L in enumerate(levels):
