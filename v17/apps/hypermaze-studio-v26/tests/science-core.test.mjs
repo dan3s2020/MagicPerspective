@@ -1,6 +1,8 @@
+import {Discoverer} from '../../../transcend/torus-aether/worlds/exercise.mjs';
+import {replayOriginalShape,retinaForWorld} from '../../../research/science/native-field-mechanics.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nativeGraph,nativeXD,topology,graphSpectrum,coordinateDimensions,causalTrace,mazeShape,DynamicsTracker} from '../public/science-core.mjs';
+import {nativeGraph,nativeXD,topology,graphSpectrum,coordinateDimensions,causalTrace,mazeShape,DynamicsTracker,verifyFieldEpisode} from '../public/science-core.mjs';
 const sample={w:1,nodes:[['s:65','sym','A',1],['s:66','sym','B',2],['s:67','sym','C',3],['s:68','sym','D',4]],edges:[['s:65','s:66','',1],['s:66','s:67','',1],['s:67','s:68','',1],['s:68','s:65','',1]],U:[[65,[0.1,.2,.3,.4,.5]],[66,[.2,.3,.4,.5,.6]],[67,[.3,.4,.5,.6,.7]],[68,[.4,.5,.6,.7,.8]]],flow:[['s:65','s:66']],shared:{training:{step:1,trace:{before:[0,0],predicted:[1,3],observed:[1,2]}}}};
 test('actual native symbol U keys resolve into displayed s:byte IDs',()=>{
   const g=nativeGraph(sample);assert.equal(g.totalNodes,4);assert.equal(g.coordsCount,4);
@@ -49,4 +51,17 @@ test('native xD witness maps actual pre-action route against executed consequenc
 test('absence of original measurements produces null and no invented particle results',()=>{
   assert.equal(nativeGraph(null),null);assert.equal(mazeShape(null),null);assert.equal(nativeXD({}),null);
   assert.equal(coordinateDimensions(nativeGraph({nodes:[['x']],edges:[]})),null);
+});
+
+test('scientific JSON is independently recomputed on EVERY cell/sweep and tampering is rejected',()=>{
+  const d=new Discoverer(11);
+  d.pass=[200,1,200,1];d.block=[1,200,1,1];d.enter=[1,1,20,1];d.endIn=[0,0,19,0];
+  const w={n:7,start:0,goal:48,wall:Array(49).fill(0)},ret=retinaForWorld(w);
+  const e={...replayOriginalShape(d,ret,7,0),n:7,start:0,goal:48,wall:w.wall,ret,
+    independentMaxAbsError:0,nativePathIdentical:true};
+  assert.equal(verifyFieldEpisode(e),true,'Actual mathematical operator should pass');
+  const corrupted=structuredClone(e);corrupted.frames[0].values[1]+=.6;
+  assert.equal(verifyFieldEpisode(corrupted),false,'Forged field evolution must be rejected');
+  const forged=structuredClone(e);forged.path=[1,1];
+  assert.equal(verifyFieldEpisode(forged),false,'Forged answer path must be rejected');
 });
