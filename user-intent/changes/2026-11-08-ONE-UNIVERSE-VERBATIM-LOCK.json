@@ -1,0 +1,34 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "MP-2026-11-08-ONE-UNIVERSE-VERBATIM-LOCK",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-08-QWEN-ONE-UNIVERSE-USER-VERBATIM-PARTIAL.md",
+    "exact_user_quote": "Yes. So stop saying that the \"target\" is available. No it's not ,the target is the hyperdimensional structure that we define as intelligence . Training an AI model llm,means finding coordonate to the location this structure exist in the form we want us to answer . Intelligence isn't created and is not random ,we should treat it as the basic foundation of our reality,it's structure . So let's write everything in verbatim in Braivour repo and MagicPerspective ,with all my word and your answers. Verbatim . And make sure no agent will be ever try to simplify my explanations to it's mediocre definitions of what it knows "
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/worlds/exercise.mjs",
+    "algorithm": "Unchanged original V42 Discoverer.shape() and Discoverer.shapeGraph()",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "tests/verbatim-one-universe-integrity.test.mjs",
+    ".github/workflows/verbatim-one-universe-integrity.yml"
+  ],
+  "added_mechanisms": [],
+  "additional_user_authorization_quote": null,
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node --test tests/verbatim-one-universe-integrity.test.mjs"
+  ],
+  "actual_observed_results": "Source archive blob SHA equality verified across Braivour and MagicPerspective. New CI test not run yet at source contract creation.",
+  "limitations": [
+    "Historical Verbatim is incomplete",
+    "Original U01 image binaries and platform-native complete export unavailable",
+    "CI does not itself prevent direct unreviewed pushes or guarantee every external agent honors definitions"
+  ],
+  "verification_status": "NOT_VERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
