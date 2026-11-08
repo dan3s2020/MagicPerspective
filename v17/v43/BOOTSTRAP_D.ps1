@@ -40,61 +40,78 @@ if(!(Test-Path -LiteralPath (Join-Path $V17 "START_V43.ps1") -PathType Leaf)){
     if(Test-Path -LiteralPath $Stage){Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue}
   }
 }
-# Inventory only direct D: descendants, bounded by a small depth and item limit.
-# No repeated recursive C:/D: project discovery, no deletion of existing tools.
-# Does not inspect model tensor data, only names, extensions, lengths and files.
-function Inventory-D {
-  $dirs=New-Object 'System.Collections.Generic.Queue[object]'
-  $dirs.Enqueue(@{p="D:\";depth=0})
-  $candidates=@{models=New-Object System.Collections.ArrayList;
-    parquet=New-Object System.Collections.ArrayList;
-    node=New-Object System.Collections.ArrayList;
-    python=New-Object System.Collections.ArrayList}
-  $scanned=0;$excluded=@("node_modules",".git","__pycache__","site-packages",
-    "dist-info",".cache","Cache","Temp","Downloads","System Volume Information",
-    '$RECYCLE.BIN',"WindowsApps","Lib","include","share","torch","numpy","ffmpeg")
-  while($dirs.Count -and $scanned -lt 1800){
-    $entry=$dirs.Dequeue();$folder=[string]$entry.p;$depth=[int]$entry.depth
-    if($folder.StartsWith($Destination,[StringComparison]::OrdinalIgnoreCase)){continue}
-    $scanned++
-    try {
-      foreach($file in [IO.Directory]::EnumerateFiles($folder)){
-        $name=[IO.Path]::GetFileName($file)
-        if($name.EndsWith(".parquet",[StringComparison]::OrdinalIgnoreCase)){
-          [void]$candidates.parquet.Add([IO.Path]::GetDirectoryName($file))
-        }elseif($name.EndsWith(".gguf",[StringComparison]::OrdinalIgnoreCase) -and
-          $file.ToLowerInvariant().Contains("qwen")){
-          [void]$candidates.models.Add((Get-Item -LiteralPath $file))
-        }elseif($name -ieq "node.exe"){
-          [void]$candidates.node.Add($file)
-        }elseif($name -ieq "python.exe"){
-          [void]$candidates.python.Add($file)
-        }
-      }
-      if($depth -ge 7){continue}
-      foreach($child in [IO.Directory]::EnumerateDirectories($folder)){
-        $name=[IO.Path]::GetFileName($child)
-        if($excluded -contains $name){continue}
-        $dirs.Enqueue(@{p=$child;depth=$depth+1})
-      }
-    }catch [System.UnauthorizedAccessException] {continue}
-    catch [System.IO.IOException] {continue}
-  }
-  Write-Host ("Inspected {0} D: dependency directories (bounded); existing installations untouched." -f $scanned) -ForegroundColor DarkCyan
-  return $candidates
+# The user selects existing dependencies directly. NEVER enumerate D: or
+# replace the user's model/dataset with a name guessed from old experiments.
+Add-Type -AssemblyName System.Windows.Forms
+function Pick-ExistingFile([string]$Title,[string]$Initial,[string]$Filter){
+  $dlg=New-Object System.Windows.Forms.OpenFileDialog
+  try{
+    $dlg.Title=$Title
+    $dlg.Filter=$Filter
+    $dlg.CheckFileExists=$true
+    $dlg.Multiselect=$false
+    if(Test-Path -LiteralPath $Initial -PathType Container){
+      $dlg.InitialDirectory=$Initial
+    } else {
+      $dlg.InitialDirectory="D:\"
+    }
+    if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){
+      return $dlg.FileName
+    }
+    return ""
+  }finally{$dlg.Dispose()}
 }
-$Inventory=Inventory-D
-function Test-Node([string]$exe){
-  if(!(Test-Path -LiteralPath $exe -PathType Leaf)){return $false}
-  try {$v=& $exe -p "Number(process.versions.node.split('.')[0])" 2>$null;return [int]$v -ge 22}
-  catch {return $false}
+function Pick-ExistingFolder([string]$Title,[string]$Initial){
+  $dlg=New-Object System.Windows.Forms.FolderBrowserDialog
+  try{
+    $dlg.Description=$Title
+    $dlg.ShowNewFolderButton=$false
+    if(Test-Path -LiteralPath $Initial -PathType Container){
+      $dlg.SelectedPath=$Initial
+    } else {
+      $dlg.SelectedPath="D:\"
+    }
+    if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){
+      return $dlg.SelectedPath
+    }
+    return ""
+  }finally{$dlg.Dispose()}
+}
+function Test-Node([string]$Exe){
+  if(!(Test-Path -LiteralPath $Exe -PathType Leaf)){return $false}
+  try{$v=& $Exe -p "Number(process.versions.node.split('.')[0])" 2>$null;return [int]$v -ge 22}
+  catch{return $false}
+}
+function Test-Python([string]$Exe){
+  if(!(Test-Path -LiteralPath $Exe -PathType Leaf)){return $false}
+  try{
+    $v=& $Exe -c "import sys;print(int((3,10)<=sys.version_info[:2]<=(3,12)))" 2>$null
+    return "$v".Trim() -eq "1"
+  }catch{return $false}
+}
+$SelectionFile=Join-Path $Destination "selected-paths.json"
+$Selection=@{}
+if(Test-Path -LiteralPath $SelectionFile -PathType Leaf){
+  try{
+    $saved=Get-Content -LiteralPath $SelectionFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach($k in @("GGUF","Data","NodeExe","PythonExe","CudaPythonExe")){
+      if($saved.PSObject.Properties.Name -contains $k){
+        $Selection[$k]=[string]$saved.$k
+      }
+    }
+  }catch{Write-Warning "Cannot read old path selections; use Windows file dialogs."}
 }
 $Node=$null
-$onPath=Get-Command node.exe -ErrorAction SilentlyContinue
-if($onPath -and (Test-Node $onPath.Source)){$Node=$onPath.Source}
+$cmdNode=Get-Command node.exe -ErrorAction SilentlyContinue
+if($cmdNode -and (Test-Node $cmdNode.Source)){$Node=$cmdNode.Source}
+if(!$Node -and $Selection.NodeExe -and (Test-Node $Selection.NodeExe)){
+  $Node=$Selection.NodeExe
+}
 if(!$Node){
-  foreach($candidate in @($Inventory.node)){
-    if(Test-Node $candidate){$Node=$candidate;break}
+  $chosen=Pick-ExistingFile "Select existing Node.js node.exe on D: (Cancel = automatic portable install on D:)" "D:\" "Node.js executable (node.exe)|node.exe|Executable files (*.exe)|*.exe"
+  if($chosen){
+    if(!(Test-Node $chosen)){throw "Selected Node.js is not version 22+: $chosen"}
+    $Node=$chosen
   }
 }
 if(!$Node){
@@ -121,20 +138,18 @@ if(!$Node){
 }
 $env:PATH=([IO.Path]::GetDirectoryName($Node))+";"+$env:PATH
 Write-Host "Reusing Node: $Node" -ForegroundColor Green
-function Test-Python([string]$exe){
-  if(!(Test-Path -LiteralPath $exe -PathType Leaf)){return $false}
-  try{
-    $value=& $exe -c "import sys;print(int((3,10)<=sys.version_info[:2]<=(3,12)))" 2>$null
-    return "$value".Trim() -eq "1"
-  }catch{return $false}
-}
 $Python=$null
-foreach($candidate in @($Inventory.python)){
-  if(Test-Python $candidate){$Python=$candidate;break}
+$cmdPython=Get-Command python.exe -ErrorAction SilentlyContinue
+if($cmdPython -and (Test-Python $cmdPython.Source)){$Python=$cmdPython.Source}
+if(!$Python -and $Selection.PythonExe -and (Test-Python $Selection.PythonExe)){
+  $Python=$Selection.PythonExe
 }
 if(!$Python){
-  $pathPy=Get-Command python.exe -ErrorAction SilentlyContinue
-  if($pathPy -and (Test-Python $pathPy.Source)){$Python=$pathPy.Source}
+  $chosen=Pick-ExistingFile "Select existing Python 3.10–3.12 python.exe on D: (Cancel = install under D:)" "D:\" "Python executable (python.exe)|python.exe|Executable files (*.exe)|*.exe"
+  if($chosen){
+    if(!(Test-Python $chosen)){throw "Selected Python is not 3.10–3.12: $chosen"}
+    $Python=$chosen
+  }
 }
 if(!$Python){
   Write-Host "No compatible Python on D: or PATH. Installing Python 3.12 ONLY under D:..." -ForegroundColor Yellow
@@ -154,52 +169,67 @@ if(!$Python){
 }
 $env:PATH=([IO.Path]::GetDirectoryName($Python))+";"+$env:PATH
 Write-Host "Reusing Python: $Python" -ForegroundColor Green
-# Prefer the existing CUDA-equipped virtualenv on D. It is only JUNCTIONED
-# into the fresh source tree; no tensor weights or old checkpoint copied.
+# Existing CUDA Python is optional. When explicitly selected, let Python
+# venv inherit globally installed packages (no junction / no overwriting the
+# original environment). The native V42 CUDA self-tests still have final say.
 $CudaPython=$null
-foreach($candidate in @($Inventory.python)){
-  if(!(Test-Python $candidate)){continue}
+if($Selection.CudaPythonExe -and (Test-Python $Selection.CudaPythonExe)){
   try{
-    $ok=& $candidate -c "import torch; print('1' if torch.cuda.is_available() else '0')" 2>$null
-    if("$ok".Trim() -eq "1"){$CudaPython=$candidate;break}
+    $cuda=& $Selection.CudaPythonExe -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
+    if("$cuda".Trim() -eq "1"){$CudaPython=$Selection.CudaPythonExe}
   }catch{}
+}
+if(!$CudaPython){
+  try{
+    $cuda=& $Python -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
+    if("$cuda".Trim() -eq "1"){$CudaPython=$Python}
+  }catch{}
+}
+if(!$CudaPython -and !$CPU){
+  $candidate=Pick-ExistingFile "Optional: choose existing CUDA-enabled python.exe (Cancel = original V42 CUDA auto-setup under D:)" "D:\" "Python executable (python.exe)|python.exe|Executable files (*.exe)|*.exe"
+  if($candidate){
+    if(!(Test-Python $candidate)){throw "Selected CUDA Python version is incompatible: $candidate"}
+    $cuda=& $candidate -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
+    if("$cuda".Trim() -ne "1"){throw "Selected Python does not have a working CUDA PyTorch installation"}
+    $CudaPython=$candidate
+  }
 }
 $OwnVenv=Join-Path $V17 "transcend\torus-aether\gpu\.venv"
 if($CudaPython -and !(Test-Path -LiteralPath $OwnVenv)){
-  $Scripts=Split-Path -Parent $CudaPython
-  if([IO.Path]::GetFileName($Scripts) -ieq "Scripts"){
-    $RootVenv=Split-Path -Parent $Scripts
-    if(Test-Path -LiteralPath (Join-Path $RootVenv "pyvenv.cfg")){
-      $null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $OwnVenv)
-      try{
-        New-Item -ItemType Junction -Path $OwnVenv -Target $RootVenv -ErrorAction Stop | Out-Null
-        Write-Host "Reusing existing CUDA PyTorch environment on D: $RootVenv" -ForegroundColor Green
-      }catch{
-        Write-Warning "Existing CUDA reuse junction not permitted; original V42 auto-setup will prepare its own GPU environment under D:."
-      }
-    }
+  # Reuse any compatible system-site packages without installing into or
+  # writing to the selected pre-existing CUDA environment.
+  $null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $OwnVenv)
+  & $CudaPython -m venv --system-site-packages $OwnVenv
+  if($LASTEXITCODE -ne 0){
+    throw "Cannot create isolated V43 environment inheriting selected CUDA Python."
   }
+  Write-Host "Created isolated V43 environment from your selected CUDA Python: $CudaPython" -ForegroundColor Green
 }
-# The exact model needs Qwen GGUF; do not substitute an unrelated donor.
+if(!$GGUF -and $Selection.GGUF -and (Test-Path -LiteralPath $Selection.GGUF -PathType Leaf)){$GGUF=$Selection.GGUF}
 if(!$GGUF){
-  $models=@($Inventory.models | Sort-Object -Property @{Expression={
-    $priority=if($_.FullName -match "(?i)qwen"){0}else{1}
-    $priority*1e15+[math]::Abs($_.Length-10GB)
-  }})
-  if($models.Count){$GGUF=$models[0].FullName}
+  # This is a starting directory for the FILE PICKER, not an assumption
+  # about the actual model file name.
+  $GGUF=Pick-ExistingFile "Select your actual Qwen .gguf model for V43" "D:\LocalAi\models" "GGUF model (*.gguf)|*.gguf"
 }
 if(!$GGUF -or !(Test-Path -LiteralPath $GGUF -PathType Leaf)){
-  throw "No Qwen GGUF exists in the inspected D: directories. Source is installed at $V17, but real Qwen movements require an actual GGUF. No model, results or paths were fabricated."
+  throw "You did not select a Qwen GGUF. Your V43 source remains installed on D:."
 }
+if([IO.Path]::GetExtension($GGUF) -ine ".gguf"){
+  throw "Please select a real Qwen .gguf model file: $GGUF"
+}
+if(!$Data -and $Selection.Data -and (Test-Path -LiteralPath $Selection.Data -PathType Container)){$Data=$Selection.Data}
 if(!$Data){
-  $dirs=@($Inventory.parquet | Sort-Object -Unique)
-  $preferred=@($dirs | Where-Object {$_ -match "(?i)OpenThoughts"})
-  if($preferred.Count){$Data=$preferred[0]}elseif($dirs.Count){$Data=$dirs[0]}
+  $Data=Pick-ExistingFolder "Select the folder containing your actual OpenThoughts Parquet dataset" "D:\training"
 }
 if(!$Data -or !(Test-Path -LiteralPath $Data -PathType Container)){
-  throw "No actual Parquet training dataset was found in the bounded D: inventory. V43 source is installed at $V17; no synthetic text dataset is substituted."
+  throw "No dataset folder selected. V43 remains installed on D: without replacing your existing files."
 }
-# Prefer original model/data matches, show paths explicitly for audit.
+# Only verify direct .parquet presence. If the dataset is partitioned, let
+# the original text reader validate it; don't guess its layout.
+$Selection=@{
+  GGUF=$GGUF;Data=$Data;NodeExe=$Node;PythonExe=$Python;CudaPythonExe=$CudaPython
+}
+$Selection | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $SelectionFile -Encoding UTF8
 Write-Host ("V43 source: {0}" -f $V17) -ForegroundColor Green
 Write-Host ("Real Qwen GGUF: {0}" -f $GGUF) -ForegroundColor Green
 Write-Host ("Original training corpus: {0}" -f $Data) -ForegroundColor Green
