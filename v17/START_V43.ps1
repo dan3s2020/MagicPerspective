@@ -98,7 +98,8 @@ if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
   & $Py $Export --gguf $GGUF --output $Atlas --dim 64 --tensor-limit 1024 --axes-limit 96
   if($LASTEXITCODE -ne 0){throw "Genuine Qwen coordinate extraction failed. No training started."}
 }
-& node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));if(d.format!=='braivour/v42-brain-character/v1'||d.source_genuine_gguf!==true||!Array.isArray(d.movement_axes)||d.movement_axes.length<2)process.exit(2)" $Atlas
+$DonorValidator=Join-Path $Root "v43\validate_donor.mjs"
+& node $DonorValidator $Atlas
 if($LASTEXITCODE -ne 0){throw "V43 donor source-fidelity preflight failed"}
 $PreviousDonor=$env:MAGICPERSPECTIVE_V43_DONOR
 $PreviousUI=$env:MAGICPERSPECTIVE_V43_UI
