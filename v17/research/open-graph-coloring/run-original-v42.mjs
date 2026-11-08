@@ -13,7 +13,7 @@ for(const line of source.split(/\r?\n/)){
   if(line.startsWith('p ')){const a=line.trim().split(/\s+/);n=Number(a[2]);declared=Number(a[3])}
   if(line.startsWith('e ')){const a=line.trim().split(/\s+/);edges.push([Number(a[1])-1,Number(a[2])-1])}
 }
-if(n!==250||declared!==15668||edges.length!==declared)throw Error('Missing real DIMACS data');
+if(n!==250||edges.length!==15668||declared!==31336)throw Error('Missing real DIMACS data; original source p-header counts 2*m, actual unique undirected edges m');
 const adj=Array.from({length:n},()=>new Set());
 for(const [u,v] of edges){
   if(u<0||v<0||u>=n||v>=n||u===v||adj[u].has(v))throw Error('Invalid graph constraint');
