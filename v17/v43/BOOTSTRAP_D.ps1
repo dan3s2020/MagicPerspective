@@ -44,6 +44,17 @@ if(!(Test-Path -LiteralPath (Join-Path $V17 "START_V43.ps1") -PathType Leaf)){
 # The user selects existing dependencies directly. NEVER enumerate D: or
 # replace the user's model/dataset with a name guessed from old experiments.
 Add-Type -AssemblyName System.Windows.Forms
+function New-TopmostOwner {
+  $owner=New-Object System.Windows.Forms.Form
+  $owner.TopMost=$true
+  $owner.ShowInTaskbar=$false
+  $owner.StartPosition=[System.Windows.Forms.FormStartPosition]::CenterScreen
+  $owner.Size=New-Object System.Drawing.Size(1,1)
+  $owner.Opacity=0
+  $owner.Show()
+  $owner.Activate()
+  return $owner
+}
 function Pick-ExistingFile([string]$Title,[string]$Initial,[string]$Filter){
   $dlg=New-Object System.Windows.Forms.OpenFileDialog
   try{
@@ -56,7 +67,10 @@ function Pick-ExistingFile([string]$Title,[string]$Initial,[string]$Filter){
     } else {
       $dlg.InitialDirectory="D:\"
     }
-    if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){
+    Write-Host "Waiting for Windows file picker: $Title" -ForegroundColor Cyan
+    $owner=New-TopmostOwner
+    try{$choice=$dlg.ShowDialog($owner)}finally{$owner.Close();$owner.Dispose()}
+    if($choice -eq [System.Windows.Forms.DialogResult]::OK){
       return $dlg.FileName
     }
     return ""
@@ -72,7 +86,10 @@ function Pick-ExistingFolder([string]$Title,[string]$Initial){
     } else {
       $dlg.SelectedPath="D:\"
     }
-    if($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){
+    Write-Host "Waiting for Windows folder picker: $Title" -ForegroundColor Cyan
+    $owner=New-TopmostOwner
+    try{$choice=$dlg.ShowDialog($owner)}finally{$owner.Close();$owner.Dispose()}
+    if($choice -eq [System.Windows.Forms.DialogResult]::OK){
       return $dlg.SelectedPath
     }
     return ""
@@ -156,10 +173,12 @@ Write-Host "Using verified existing D: CUDA Python: $Python" -ForegroundColor Gr
 # junction points to the existing environment without copying or reinstalling.
 $OwnVenv=Join-Path $V17 "transcend\torus-aether\gpu\.venv"
 $VenvRoot=Split-Path -Parent (Split-Path -Parent $Python)
+Write-Host "Checking V43 CUDA environment link..." -ForegroundColor Cyan
 if(!(Test-Path -LiteralPath $OwnVenv)){
   $null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $OwnVenv)
   New-Item -ItemType Junction -Path $OwnVenv -Target $VenvRoot -ErrorAction Stop | Out-Null
 }
+Write-Host "CUDA environment link ready. Requesting Qwen GGUF..." -ForegroundColor Green
 if(!$GGUF -and !$ChoosePaths -and $Selection.GGUF -and (Test-Path -LiteralPath $Selection.GGUF -PathType Leaf)){$GGUF=$Selection.GGUF}
 if(!$GGUF){
   # This is a starting directory for the FILE PICKER, not an assumption
@@ -182,7 +201,7 @@ if(!$Data -or !(Test-Path -LiteralPath $Data -PathType Container)){
 # Only verify direct .parquet presence. If the dataset is partitioned, let
 # the original text reader validate it; don't guess its layout.
 $Selection=@{
-  GGUF=$GGUF;Data=$Data;NodeExe=$Node;PythonExe=$Python;CudaPythonExe=$CudaPython
+  GGUF=$GGUF;Data=$Data;NodeExe=$Node;PythonExe=$Python;CudaPythonExe=$Python
 }
 $Selection | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $SelectionFile -Encoding UTF8
 Write-Host ("V43 source: {0}" -f $V17) -ForegroundColor Green
