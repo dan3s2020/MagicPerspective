@@ -1,5 +1,5 @@
 // Seven observational instruments; draws ONLY native /graph and original frozen /eval results.
-import {nativeGraph,nativeXD,topology,graphSpectrum,coordinateDimensions,causalTrace,mazeShape,DynamicsTracker} from '/science-core.mjs';
+import {nativeGraph,nativeXD,topology,graphSpectrum,coordinateDimensions,causalTrace,mazeShape,DynamicsTracker,verifyFieldEpisode} from '/science-core.mjs';
 const IDS=['spectrum','phases','cycles','dynamics','unfold','causal','shape'];
 const $=id=>document.getElementById(id);
 const num=(n,d=2)=>Number.isFinite(n)?Number(n).toFixed(d):'unavailable';
@@ -284,7 +284,7 @@ function verifiedEvidence(data){
       e.nativePathIdentical===true&&typeof e.independentMaxAbsError==='number'&&
       e.independentMaxAbsError<=1e-9&&
       Array.isArray(e.ret)&&e.ret.length===e.n*e.n&&
-      Array.isArray(e.wall)&&e.wall.length===e.n*e.n);
+      Array.isArray(e.wall)&&e.wall.length===e.n*e.n&&verifyFieldEpisode(e));
 }
 
 export function createScienceObservatory(){
