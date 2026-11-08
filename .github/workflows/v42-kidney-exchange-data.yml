@@ -1,0 +1,29 @@
+name: Public kidney-exchange data + ORIGINAL V42 source for local CPU science
+on:
+  push:
+    branches:
+      - research/V42-TRANSPLANT-EXCHANGE-20261109
+  workflow_dispatch:
+jobs:
+  reproducible-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve original V42 source byte-for-byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code ac205b5bc561274b957584a7dee058a1110ab6f8 HEAD -- \
+            v17/transcend/torus-aether/worlds/exercise.mjs \
+            v17/transcend/torus-aether/worlds/labyrinth.mjs \
+            v17/transcend/torus-aether/devour/brain.mjs
+      - name: Preserve publicly sourced kidney-exchange instance files and original native operator
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-v42-kidney-exchange-benchmark-data
+          path: |
+            v17/research/kidney-exchange/data
+            v17/transcend/torus-aether/worlds/exercise.mjs
+            v17/transcend/torus-aether/worlds/labyrinth.mjs
