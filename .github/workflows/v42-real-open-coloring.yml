@@ -37,4 +37,9 @@ jobs:
           path: |
             v17/research/open-graph-coloring/full-certificate.json
             v17/research/open-graph-coloring/tabu-control-best.json
+            v17/research/open-graph-coloring/data/DSJC250.5.col
+            v17/research/open-graph-coloring/run-original-v42.mjs
+            v17/research/open-graph-coloring/tabu-control.mjs
+            v17/transcend/torus-aether/worlds/exercise.mjs
+            v17/transcend/torus-aether/worlds/labyrinth.mjs
           if-no-files-found: warn
