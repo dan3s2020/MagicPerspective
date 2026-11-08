@@ -24,7 +24,7 @@ if(!(Test-Path -LiteralPath (Join-Path $V17 "START_V43.ps1") -PathType Leaf)){
     $present=@(Get-ChildItem -LiteralPath $Source -Force -ErrorAction SilentlyContinue)
     if($present.Count){throw "Existing nonempty source directory does not contain V43; refusing overwrite: $Source"}
   }
-  Write-Host "Downloading original MagicPerspective V42 → V43 source into D:\MagicPerspective-V43..." -ForegroundColor Cyan
+  Write-Host "Downloading original MagicPerspective V42 -> V43 source into D:\MagicPerspective-V43..." -ForegroundColor Cyan
   $Stage=Join-Path $Destination ("download-"+[guid]::NewGuid().ToString("N"))
   $Zip=Join-Path $Stage "magicperspective-v43.zip"
   try {
@@ -146,9 +146,9 @@ if(!$Python -and $Selection.PythonExe -and (Test-Python $Selection.PythonExe)){
   $Python=$Selection.PythonExe
 }
 if(!$Python){
-  $chosen=Pick-ExistingFile "Select existing Python 3.10–3.12 python.exe on D: (Cancel = install under D:)" "D:\" "Python executable (python.exe)|python.exe|Executable files (*.exe)|*.exe"
+  $chosen=Pick-ExistingFile "Select existing Python 3.10-3.12 python.exe on D: (Cancel = install under D:)" "D:\" "Python executable (python.exe)|python.exe|Executable files (*.exe)|*.exe"
   if($chosen){
-    if(!(Test-Python $chosen)){throw "Selected Python is not 3.10–3.12: $chosen"}
+    if(!(Test-Python $chosen)){throw "Selected Python is not 3.10-3.12: $chosen"}
     $Python=$chosen
   }
 }
