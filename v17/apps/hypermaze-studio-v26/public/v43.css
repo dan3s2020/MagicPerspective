@@ -1,0 +1,46 @@
+/* V43 additive extension of EXACT V42 native UI visual design, not a replacement. */
+.v43-mode{display:flex;align-items:center;gap:6px;color:#99bed8;font-size:10px;font-weight:700;letter-spacing:.045em}
+.v43-mode select{max-width:310px;background:#173b38;color:#a9f3d5;border:1px solid #4c796c;border-radius:8px;padding:9px 7px;font-size:10px;opacity:1}
+.v43-panel{min-width:0}
+.v43-stats{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;padding:15px}
+.v43-stats>div{background:#0d1b2b;border:1px solid #35506a;border-radius:9px;padding:12px;min-width:0}
+.v43-stats span,.v43-stats small{display:block;color:#a3c0d5;font-size:10px;line-height:1.5}
+.v43-stats span{font-weight:700;letter-spacing:.04em}.v43-stats strong{display:block;font-size:clamp(17px,1.7vw,26px);font-weight:800;margin:5px 0;color:#d9f6ed;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.v43-two-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;padding:9px 15px}
+.v43-two-charts>div{min-width:0;border:1px solid #304f63;border-radius:12px;background:#0c1828;padding:12px}
+.v43-two-charts h3,.v43-live h3,.v43-journal h3{font-size:14px;color:#e3eff9;margin:3px 0 12px}
+.v43-two-charts canvas{display:block;width:100%;height:220px}
+.v43-legend{display:flex;align-items:center;flex-wrap:wrap;gap:10px;color:#afc3d5;font-size:11px}
+.v43-legend b{display:inline-block;width:16px;height:3px;vertical-align:middle;margin-right:3px}
+.v43-legend b.before{background:#eba6c5}.v43-legend b.puppet{background:#81c7f4}.v43-legend b.after{background:#7ee8ba}.v43-legend b.speed{background:#f2d18c}
+.v43-live,.v43-journal{padding:15px;border-top:1px solid #2c4257}
+.v43-live h3 span{color:#8ddcc5;font-size:12px}
+.v43-triple{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.v43-triple>div{border:1px solid #355369;border-radius:9px;padding:12px;background:#10243a}
+.v43-triple b{display:block;color:#b4cadb;font-size:10px}.v43-triple strong{display:block;font-size:24px;font-variant-numeric:tabular-nums;margin-top:6px;color:#e6f1fc}
+.v43-triple>div:nth-child(1) strong{color:#eba6c5}.v43-triple>div:nth-child(2) strong{color:#81c7f4}.v43-triple>div:nth-child(3) strong{color:#7ee8ba}
+.v43-triple small{display:block;overflow-wrap:anywhere;color:#b0c9dd;font-size:10px}
+.v43-text-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.v43-text-grid>div{min-width:0;background:#081521;border:1px solid #2c455d;border-radius:8px;padding:12px}
+.v43-text-grid h4{font-size:12px;margin:0 0 8px;color:#afc7dd}
+.v43-text-grid pre,.v43-expansion pre{font-size:12px;max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;color:#e4eaf4;line-height:1.5;margin:0}
+.v43-table-wrap{overflow:auto;max-width:100%}
+.v43-table-wrap table{border-collapse:collapse;width:100%;min-width:940px;font-size:12px}
+.v43-table-wrap th,.v43-table-wrap td{padding:10px 12px;text-align:left;border-bottom:1px solid #34465a;white-space:nowrap}
+.v43-table-wrap th{font-size:10px;letter-spacing:.04em;color:#bcd3e4;background:#152c42}
+.v43-table-wrap tbody tr:hover{background:#19354a}
+.v43-table-wrap .v43-expansion:hover{background:transparent}
+.v43-table-wrap .v43-expansion td{white-space:normal;padding:12px;background:#0d1e2e}
+.v43-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v43-details>div{min-width:0;padding:10px;border-radius:8px;background:#081521;border:1px solid #305167}
+.v43-details h4{font-size:11px;margin:0 0 7px;color:#b4d5e6}
+.v43-details pre{max-height:450px}
+.v43-footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:13px;color:#9dbed4;font-size:11px}
+.v43-universe-hidden #v43OriginalUniverse{display:none!important}
+.v43-universe-hidden .workspace{display:block!important}
+.v43-universe-hidden .workspace>.inspector-panel{width:100%!important}
+.v43-graph-hide-note{color:#95bacc}
+@media(max-width:1400px){.v43-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:900px){.v43-two-charts{grid-template-columns:1fr}.v43-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.v43-mode{flex-wrap:wrap}}
+@media(max-width:630px){.v43-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.v43-triple,.v43-text-grid,.v43-details{grid-template-columns:1fr}.v43-two-charts,.v43-stats,.v43-live,.v43-journal{padding:10px}.v43-mode select{max-width:230px}}
+@media(prefers-reduced-motion:reduce){.v43-panel *{scroll-behavior:auto!important}}
