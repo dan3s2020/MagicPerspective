@@ -26,10 +26,15 @@ jobs:
             v17/transcend/torus-aether/devour/worker.mjs
       - name: Execute ORIGINAL Discoverer.shapeGraph over actual open graph, write independently validated certificate
         run: node v17/research/open-graph-coloring/run-original-v42.mjs
+      - name: Adversarial classic coloring solver tries improve original-V42 certificate (separately attributed)
+        timeout-minutes: 3
+        run: node v17/research/open-graph-coloring/tabu-control.mjs
       - name: Preserve full certified assignment and native runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: original-v42-real-dimacs-250-coloring
-          path: v17/research/open-graph-coloring/full-certificate.json
+          path: |
+            v17/research/open-graph-coloring/full-certificate.json
+            v17/research/open-graph-coloring/tabu-control-best.json
           if-no-files-found: warn
