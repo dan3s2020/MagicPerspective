@@ -81,3 +81,19 @@ This is read-only replay of a genuine saved native model, not a live per-iterati
 ## Real Chromium acceptance
 
 A browser integration test uses the ORIGINAL Brain with 160 genuine playExercise episodes to generate a real Brain.v8 checkpoint fixture, then the actual science exporter, loads that data through the browser File input, verifies causal/field/shape rendering, and takes a screenshot. The original upstream graph HTTP source in this particular UI acceptance test remains an explicitly fixed fixture, not the user's running Windows training graph.
+
+
+## Mechanism-guided performance improvement — benchmarked, not installed
+
+An alternative O((V+E) log V) binary-heap reverse shortest-path solver was written in RESEARCH ONLY in v17/research/science/native-field-mechanics.mjs (heapWeightedField and greedyFromField). This follows directly from the experimentally confirmed negative-log equivalence. The original V42 training and Discoverer.shape remain completely unchanged.
+
+CI run: https://github.com/dan3s2020/MagicPerspective/actions/runs/42513135676
+Native control: exact ORIGINAL Discoverer.shape on unseen seeded mazes; candidate: mathematically equivalent heap field plus greedy route; twenty unseen worlds for each maze size. Measurements on Ubuntu GitHub Actions Node.js 22 (not user's Windows/CUDA, and not guaranteed outside this fixture):
+
+| Grid | Original total | Heap candidate total | Original/heap speed ratio | Exact routes | Reached-goal parity | Max field error |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 9×9 | 0.358 ms | 1.107 ms | 0.32× (candidate SLOWER) | 20/20 | 20/20 | 1.11e-16 |
+| 21×21 | 5.428 ms | 3.175 ms | 1.71× | 20/20 | 20/20 | 2.22e-16 |
+| 41×41 | 23.896 ms | 4.608 ms | 5.19× | 20/20 | 20/20 | 4.16e-16 |
+
+The promising engineering implication is an optional SIZE-AWARE optimization: retain exact original propagation on small mazes, consider a verified heap method for sufficiently large finite-grid problems, and make it pass rigorous byte-exact training and checkpoint/regression gates before integrating. It has NOT been installed in the original Brain. These are short CPU benchmarks with small samples, not a GPU or entire-system speedup.
