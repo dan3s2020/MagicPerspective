@@ -134,3 +134,30 @@ export class DynamicsTracker{
     return true;
   }
 }
+
+// Native finite xD witness from the SAME original V17 Brain stored in /graph.xdAtlas.
+// Finite 128-state / 7-active-axis worlds must never be described as full 2^D cubes.
+export function nativeXD(raw){
+  const last=raw?.xdAtlas?.last,atlas=last?.atlas,world=atlas?.fullWorld,execution=last?.execution;
+  if(!world||!Array.isArray(world.vertices)||!Array.isArray(world.links)||!atlas)return null;
+  const byId=new Map(world.vertices.map((v,i)=>[String(v.id),i]));
+  const basis=[...new Set(world.vertices.flatMap(v=>v.coordinates||[]))].sort((a,b)=>a-b);
+  const vertices=world.vertices.map(v=>({
+    id:String(v.id),wall:!!v.wall,coordinates:Array.isArray(v.coordinates)?v.coordinates:[],
+    mask:v.mask??null,bits:basis.map(axis=>v.coordinates?.includes(axis)?1:0)
+  }));
+  const legal=world.links.filter(e=>byId.has(String(e.from))&&byId.has(String(e.to)));
+  const predicted=Array.isArray(atlas.initialPredictedSolution)?atlas.initialPredictedSolution.map(String):[];
+  const frames=Array.isArray(execution?.frames)?execution.frames:[];
+  const observed=frames.length?[String(world.start),...frames.map(e=>String(e.observedAfter))]:[];
+  const graphNodes=vertices.filter(v=>!v.wall).map(v=>[v.id,'xd-state',v.id,0]);
+  const graphU=vertices.filter(v=>!v.wall).map(v=>[v.id,v.bits]);
+  const graph=nativeGraph({nodes:graphNodes,edges:legal.map(e=>[e.from,e.to,'xd-edge',1]),U:graphU},320);
+  return {dimensions:world.ambientDimensions,activeRank:world.activeRank,
+    finiteStates:world.finiteStateCount,completeFullHypercube:world.completeFullHypercube,
+    vertices,links:legal,byId,basis,graph,predicted,observed,frames,
+    solved:execution?.solved===true,correct:execution?.correct??null,
+    attempted:execution?.attempted??null,steps:atlas.pathLength??null,
+    shortest:atlas.evaluatorPhysicalShortestPath??null,
+    missingAxes:atlas.missingAxes||[],last,source:'native /graph.xdAtlas.last'};
+}
