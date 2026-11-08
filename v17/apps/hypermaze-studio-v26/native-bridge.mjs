@@ -139,11 +139,16 @@ export async function createNativeBridge({
         const report=await readV43State(native.checkpoint);
         const data=native.dataset||null,assigned=data?.assignedTrainingRows??null;
         const completed=report?.completed??0;
-        const progress=Number.isFinite(assigned)&&assigned>0?
+        // Native progress INCLUDES the already-learned V42 checkpoint rows.
+        // V43-only completed rows are counted separately; dividing only V43
+        // rows by the whole dataset would never show 100% on resumed Brain.
+        const progress=Number.isFinite(data?.percent)?data.percent:null;
+        const v43OnlyPercent=Number.isFinite(assigned)&&assigned>0?
           Math.min(100,100*completed/assigned):null;
         send(res,{version:43,mode:"V43_ONE_ORGANISM_ONLY",
           worker:report,phase:report?.phase||native.health?.phase||native.status,
-          dataset:{...data,v43Completed:completed,v43Percent:progress},
+          dataset:{...data,v43Completed:completed,v43Percent:progress,
+            v43OnlyPercent},
           health:native.health||null,checkpointFound:Boolean(native.checkpoint),
           originalWorkerStatus:native.status,
           source:"SAME MagicPerspective native V42 Brain and Qwen puppet; no Braivour server"});
