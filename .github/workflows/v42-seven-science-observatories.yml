@@ -24,7 +24,7 @@ jobs:
           git fetch origin perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107
           git diff --name-only origin/perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107 HEAD > /tmp/science-changed.txt
           cat /tmp/science-changed.txt
-          if grep -Ev '^v17/apps/hypermaze-studio-v26/(public/|tests/|native-bridge\.mjs$)|^\.github/workflows/v42-seven-science-observatories\.yml$' /tmp/science-changed.txt; then
+          if grep -Ev '^v17/apps/hypermaze-studio-v26/(public/|tests/|native-bridge\.mjs$)|^v17/(research/science/|tests/v42-science-native-field-causal\.test\.mjs$)|^docs/V42_SEVEN_SCIENCE_OBSERVATORIES_20261108\.md$|^\.github/workflows/v42-seven-science-observatories\.yml$' /tmp/science-changed.txt; then
             echo "FAIL: native training, solver or checkpoint source changed"; exit 1
           fi
           git diff --quiet origin/perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107 HEAD -- \
