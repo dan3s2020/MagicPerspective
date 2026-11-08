@@ -34,20 +34,17 @@ export async function readV43Exercises(checkpoint,{before=null,limit=20}={}){
       const chunk=Buffer.allocUnsafe(n);
       const {bytesRead}=await handle.read(chunk,0,n,position);
       const joined=Buffer.concat([chunk.subarray(0,bytesRead),remainder]);
-      const parts=joined.toString("utf8").split("\n");
-      // Avoid splitting UTF-8 characters at arbitrary byte boundaries:
-      // reconstruct partial bytes, then decode only complete JSONL lines.
-      const firstBreak=chunk.subarray(0,bytesRead).lastIndexOf(10);
-      if(firstBreak<0&&remainder.length===0){remainder=joined;continue;}
-      const boundaries=[];
-      for(let i=0;i<joined.length;i++)if(joined[i]===10)boundaries.push(i);
-      let start=0;
-      const chunks=[];
-      for(const pos of boundaries){chunks.push(joined.subarray(start,pos));start=pos+1;}
-      remainder=joined.subarray(start);
-      // Last part after a newline may be empty or an incomplete line.
-      for(let i=chunks.length-1;i>=0&&entries.length<limit;i--){
-        const raw=chunks[i].toString("utf8").trim();
+      // The first fragment may start in the middle of a UTF-8 symbol.
+      // Keep it in BYTES until the next earlier chunk completes the line.
+      const pieces=[];
+      let begin=0;
+      for(let i=0;i<joined.length;i++)if(joined[i]===10){
+        pieces.push(joined.subarray(begin,i));begin=i+1;
+      }
+      pieces.push(joined.subarray(begin));
+      remainder=pieces.shift();
+      for(let i=pieces.length-1;i>=0&&entries.length<limit;i--){
+        const raw=pieces[i].toString("utf8").trim();
         if(!raw)continue;
         let item;try{item=JSON.parse(raw);}catch{continue;}
         if(!item||!Number.isSafeInteger(item.id))continue;
