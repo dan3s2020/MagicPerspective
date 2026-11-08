@@ -166,3 +166,39 @@ test("RESEARCH ONLY: actual native Player 1 recovery after three synthetic donor
     assert.ok(report.every(r=>r.episode==="unseen"||typeof r.p1AfterExact==="boolean"));
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+
+test("RESEARCH ONLY: three distinct lessons do not allow trivial constant-output 100% on unseen Player1",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"magic-v43-p1-different-"));
+  try{
+    const brain=new Brain({seed:17,rules:{depth:1,off:["R2","R4"],budEvery:100,
+      empty:true,maxWires:32,fold:false}});
+    brain.disc=Object.assign(new Discoverer(17),{body:brain.body||{}});
+    brain.disc.endIn[KIND.target]=10;
+    brain.disc.enter[KIND.target]=14;
+    brain.disc.pass[KIND.floor]=25;
+    brain.disc.block[KIND.floor]=2;
+    const fused=new V43FusedOneUniverse({brain,donor:syntheticControlFixture(),
+      saveFile:path.join(dir,"brain-0-winner.v8"),maxPredictionChars:128});
+    const examples=[
+      {k:1,prompt:"What is two plus two?",answer:"4"},
+      {k:2,prompt:"What is three plus three?",answer:"6"},
+      {k:3,prompt:"What is four plus four?",answer:"8"}
+    ];
+    const progress=[];
+    for(const ex of examples){
+      const row=fused.experience(ex);
+      progress.push({episode:ex.k,donorExact:row.player2.score.exact,
+        player1BeforeExact:row.player1.before.score.exact,
+        player1AfterExact:row.player1.after.score.exact,
+        player1AfterText:row.player1.after.text});
+    }
+    const hidden={prompt:"What is five plus five?",answer:"10"};
+    const guess=fused._nativePredict(hidden.prompt,Array.from(hidden.answer).length);
+    console.log("V43_DISTINCT_OUTPUTS_PLAYER1_FIRST_SHAPE="+JSON.stringify({
+      lessons:progress,unseenPrompt:hidden.prompt,unseenExpected:hidden.answer,
+      unseenPrediction:guess.text,unseenExact:guess.text===hidden.answer}));
+    assert.equal(progress.length,3);
+    assert.equal(fused.brain,brain);
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
