@@ -1,0 +1,23 @@
+name: Preserve 2026-11-08 original user wording and assistant chronology
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'verbatim/2026-11-08-*'
+      - 'tests/verbatim-one-universe-integrity.test.mjs'
+      - '.github/workflows/verbatim-one-universe-integrity.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  literal-source-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Literal six-user five-assistant blob locks and semantics contract
+        run: node --test tests/verbatim-one-universe-integrity.test.mjs
