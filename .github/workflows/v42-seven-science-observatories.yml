@@ -1,0 +1,41 @@
+name: V42 seven scientific observatories — exact original-engine preservation
+on:
+  push:
+    branches:
+      - experiment/V42-SEVEN-SCIENCE-OBSERVATORIES-20261108
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify only the isolated UI/test/workflow changed from V42 FAST
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107
+          git diff --name-only origin/perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107 HEAD > /tmp/science-changed.txt
+          cat /tmp/science-changed.txt
+          if grep -Ev '^v17/apps/hypermaze-studio-v26/(public/|tests/|native-bridge\.mjs$)|^\.github/workflows/v42-seven-science-observatories\.yml$' /tmp/science-changed.txt; then
+            echo "FAIL: native training, solver or checkpoint source changed"; exit 1
+          fi
+          git diff --quiet origin/perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107 HEAD -- \
+            v17/transcend v17/START_V42_RESUME_V41_FAST.ps1
+      - name: Parse and execute seven read-only scientific instruments
+        run: |
+          node --check v17/apps/hypermaze-studio-v26/public/native-app.js
+          node --check v17/apps/hypermaze-studio-v26/public/science-core.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/science-observatory.mjs
+          node --test v17/apps/hypermaze-studio-v26/tests/science-core.test.mjs
+      - name: Original V17 xD organism solves controlled genuinely unseen finite worlds
+        run: node --test v17/tests/complete-xd-maze-atlas.test.mjs
+      - name: Browser-integrated source, controls and science UI
+        run: node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
