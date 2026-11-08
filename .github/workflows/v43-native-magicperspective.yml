@@ -73,17 +73,7 @@ jobs:
           if($raw | Where-Object {$_ -gt 127}) {
             throw 'Bootstrap contains non-ASCII bytes: Windows PowerShell 5.1 decodes raw UTF-8 without BOM incorrectly'
           }
-          $test = @'
-          $file=$args[0]
-          $tokens=$null
-          $errors=$null
-          [System.Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)|Out-Null
-          if($errors.Count){
-            foreach($e in $errors){[Console]::Error.WriteLine($e.ToString())}
-            exit 1
-          }
-          '@
-          $test | & powershell.exe -NoProfile -NonInteractive -Command - $file
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File v17/tests/v43-parse-windows-ps51.ps1 -File $file
           if($LASTEXITCODE -ne 0){throw 'Windows PowerShell 5.1 parser rejected V43 installer'}
           Write-Host 'V43_REAL_WINDOWS_POWERSHELL_5_1_PARSE_PASS'
       - name: Verify fresh D installer opens GUI file/folder pickers and never scans drives
