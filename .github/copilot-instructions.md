@@ -7,3 +7,7 @@ Read [AGENTS.md](../AGENTS.md), [VERBATIM_ROOT.md](../VERBATIM_ROOT.md), [user's
 Do not rewrite others' branches or working UI, graph, GPU, training, data or checkpoints. New optional approaches require distinct literal user authorization and separate opt-in branch/path. Do not claim that CI passing proves whole conversation compliance; Verbatim is incomplete and regression MP-REG-2026-11-06-001 is OPEN/BLOCKING.
 
 All code PRs to `main` need a matching source-to-code JSON change contract under `user-intent/changes/` with actual user quote, baseline, affected paths and acceptance tests. See [template](../user-intent/CHANGE_CONTRACT_TEMPLATE.json) and [gate](../scripts/user-intent-gate.mjs).
+
+## Binding 2026-11-08 additional USER source — no simplification
+
+Read [the six exact USER source messages U01–U06](../verbatim/2026-11-08-QWEN-ONE-UNIVERSE-USER-VERBATIM-PARTIAL.md), [chronological record](../verbatim/2026-11-08-ONE-UNIVERSE-CHRONOLOGY-AND-SOURCE-INDEX.md) and root [AGENTS.md](../AGENTS.md). USER U04/U05/U06 control terminology, overriding earlier assistant-only interpretations. Do not redefine USER's "target" as the output known inside a training game; the USER's target is the hypothesized intelligence structure in higher dimensions. Player 1, Player 2, the maze and the Qwen puppet are one organism/universe, not two AIs. No substituted distillation or new planner. Preserve literal original user words; separate hypothesis and empirical evidence; never mark historical Verbatim complete.
