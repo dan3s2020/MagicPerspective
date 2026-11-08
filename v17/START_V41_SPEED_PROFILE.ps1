@@ -14,6 +14,7 @@ param(
   [int]$MazeEvery=4000,
   [int]$Mem=2,
   [switch]$NoBrowser,
+  [switch]$V43Paused,
   [switch]$EndogenousNoise
 )
 $ErrorActionPreference="Stop"
@@ -81,6 +82,7 @@ $parameters=@(
 )
 if($fresh){$parameters+="-Fresh"}
 if($EndogenousNoise){$parameters+="-EndogenousNoise"}
+if($V43Paused){$parameters+="-V43Paused"}
 $native=Start-Process -FilePath "powershell.exe" -WorkingDirectory $Root -ArgumentList $parameters -PassThru
 $ready=$false
 for($i=0;$i -lt 1800;$i++){
