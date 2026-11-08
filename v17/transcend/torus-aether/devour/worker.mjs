@@ -244,6 +244,15 @@ const absorbConstructed = row => {
   const judged=nativeAtlas.after(brain.constructedPaths,before,row.answer,
     {observed:brain.observedTransformations,maxAnalyze:512});
   if(nativeAtlasLog)nativeAtlasLog.write(JSON.stringify(judged)+"\n");
+  // Preserve V42's exact pre-action atlas metrics BEFORE the constrained Qwen
+  // puppet can change the shared Brain. Then P2 travels, freezes its movement,
+  // and the SAME native original P1 navigator learns from successful observed
+  // donor-produced text. Failed P2 returns to ordinary original V42 learning.
+  if(v43World){
+    const v43Result=v43World.experience(row);
+    row.v43NativeAlreadyLearned=Boolean(v43Result?.player2?.score?.exact &&
+      !v43Result?.player1?.transferError);
+  }
   // V43's original learner has already absorbed a successful physically
   // traversed Qwen-puppet text path; do not double-count it. Failed donor
   // episodes keep the UNCHANGED original V42 observed-text training route.
@@ -739,17 +748,11 @@ for await (const ex of stream()) {
   }
   await hold();
   if (TEXT && k++ < skip) continue;
-  // V43: freeze Player 1 original shape BEFORE this row is lived by V42 CUDA/CPU.
-  // Traverse Qwen puppet, freeze movement, and let SAME original Brain learn its
-  // observed transformations. No external server / teacher model / replacement.
+  // V43: preserve the original Player 1 pre-action solution-form prediction
+  // BEFORE CUDA/CPU observes this row. No answer characters or length are
+  // exposed to the native original ConstructedPathLearner prediction.
   if(v43World && typeof ex.prompt==="string" && typeof ex.answer==="string" &&
-     ex.prompt.trim() && ex.answer.trim()) {
-    v43World.observeBefore(ex);
-    const v43Result=v43World.experience(ex);
-    ex.v43NativeAlreadyLearned=Boolean(v43Result?.player2?.score?.exact &&
-      !v43Result?.player1?.transferError);
-    await new Promise(resolve=>setImmediate(resolve));
-  }                                         // a resumed brain does not live the same exercises twice
+     ex.prompt.trim() && ex.answer.trim()) v43World.observeBefore(ex);                                         // a resumed brain does not live the same exercises twice
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
