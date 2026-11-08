@@ -45,3 +45,39 @@ Then open http://127.0.0.1:8972/ . The V42 launcher imports a validated saved V4
 ### Further proof requirements
 
 True full-hidden-state time series from the user's Windows checkpoint; eigendecomposition of the actual transition Jacobian rather than only graph Laplacian; perturbation/ablation of identified modes; numerical linking invariants on real 3D embeddings with appropriate null models; endogenous learner-produced unfolding coordinates; held-out domain-general tests and competitive baselines. No claims of a perfect solver or physical quantum/Hopf computation are currently justified by these tests.
+
+
+## Iterated original-code investigation — verified 2026-11-08
+
+CI: https://github.com/dan3s2020/MagicPerspective/actions/runs/42512445725
+Source tests: v17/tests/v42-science-native-field-causal.test.mjs
+
+- Native ORIGINAL Discoverer training: 158/160 seeded mazes solved. Learned floor conductance 0.9991735537190083; wall conductance 0.3333333333333333; target attraction 0.9937106918238994.
+- Frozen ORIGINAL unseen first plans: 72/72 routes generated; 72/72 end at the goal, with 758 total predicted path edges.
+- Actual internally reproduced field propagation: mean 10.041666666666666 update sweeps; maximum 17 update sweeps before fixed point.
+- Independently calculated negative-log weighted-shortest-path field matched the original native field at all measured cells in all 72 held-out worlds; worst absolute cell discrepancy 1.1102230246251565e-16. The original and replayed first-shot solution routes match in all 72.
+- REAL original-code frozen ablations: remove learned goal attraction => 72 original first paths disappear (72/72); suppress passability of the floor class => 72 goal-reaching routes fall to 0.
+- The original field update's internal changes are transient non-negative propagation, converging to a fixed point. This does not establish oscillating particles, physical quantum mechanics or Hopf links.
+- Native xD original module: a controlled unseen 2048-ambient world has SEVEN ACTIVE coordinates and 128 finite states; 7/7 predicted actions physically matched, goal reached. A lossy 2-active-coordinate projection collapses the 128 states into only 4 distinguishable positions (32-state aliasing). Visualizer 05 separately shows a LOSSLESS 8x16 grid encoding of all seven active bits. The latter is an OBSERVER encoding, not the organism inventing a new geometry.
+
+Scientific scope: This is strong source-level evidence for the controlled complete-retina original maze, not a user Windows checkpoint test and not a proof of general 3SAT, unconstrained language, quantum physics, learned Hopf fibrations or perfect intelligence.
+
+## Measure field EXCITATIONS from the user's REAL frozen checkpoint
+
+New scientific CLI: v17/research/science/export-native-field.mjs. It uses original Brain.load and Discoverer.shape, computes every actual original Gauss-Seidel field sweep, compares native route to scientific replay and to independent weighted-shortest-path reconstruction, measures goal and floor counterfactuals with prototype-shadow ORIGINAL solver, and exports JSON with original checkpoint SHA256. It does NOT modify/save the original Brain.
+
+The original Brain.v8 save-load-export scientific test passed: 3/3 frozen paths matched, no checkpoint bytes changed, and exporter rejects overwriting a prior evidence file.
+
+1. Start V42 Science in the ISOLATED branch. When capturing a stable real checkpoint, pause/save through the original controls.
+2. Run from the V42 Science repository root, using the ACTUAL saved checkpoint path. With the V42 default output folder, the command is:
+
+   node .\v17\research\science\export-native-field.mjs --checkpoint .\v17\runtime-v42-resumed-v41-fast\brains\brain-0-winner.v8 --out .\v17\science-original-field-proof.json --count 12 --size 9 --seed 20261108
+
+3. Load science-original-field-proof.json in the original web UI (http://127.0.0.1:8972/) using the new Load verified field evidence JSON field. Select the unseen maze, choose the relaxation sweep, or press Play real sweeps.
+4. Panel 04 maps actual propagation increments per cell, panel 07 shows actual partial and final routes from successive potentials, and panel 06 shows real original-code causal ablations. The original seven-panel native graph remains available even without an evidence file.
+
+This is read-only replay of a genuine saved native model, not a live per-iteration hook in the Windows trainer. Continuous high-frequency internal-state streaming would require further instrumentation and timing regression tests, and is not claimed.
+
+## Real Chromium acceptance
+
+A browser integration test uses the ORIGINAL Brain with 160 genuine playExercise episodes to generate a real Brain.v8 checkpoint fixture, then the actual science exporter, loads that data through the browser File input, verifies causal/field/shape rendering, and takes a screenshot. The original upstream graph HTTP source in this particular UI acceptance test remains an explicitly fixed fixture, not the user's running Windows training graph.
