@@ -7,8 +7,10 @@ export function nativeGraph(raw,cap=320){
   const rows=raw.nodes,chosen=rows.length<=cap?rows:rows.slice(-cap);
   const nodes=chosen.map((r,i)=>({id:String(r[0]),type:String(r[1]??''),label:String(r[2]??r[0]),activity:finite(Number(r[3]))?Number(r[3]):0,index:i}));
   const ids=new Map(nodes.map((n,i)=>[n.id,i]));
-  const U=new Map(Array.isArray(raw.U)?raw.U:[]);
-  const xyz=nodes.map(n=>{const c=numbers(U.get(n.id));return c.length>=2?c:null});
+  // Native GraphTrace stores geometry keys as symbol bytes (65) while
+  // visible graph node IDs are 's:65'. Preserve this real identity mapping.
+  const U=new Map((Array.isArray(raw.U)?raw.U:[]).map(([id,v])=>[String(id),v]));
+  const xyz=nodes.map(n=>{const c=numbers(U.get(n.id)??(n.id.startsWith('s:')?U.get(n.id.slice(2)):null));return c.length>=2?c:null});
   const edges=[],seen=new Set();
   for(const row of raw.edges||[]){if(!Array.isArray(row))continue;
     const a=ids.get(String(row[0])),b=ids.get(String(row[1]));if(a===undefined||b===undefined)continue;
