@@ -167,9 +167,140 @@ function xdShape(xd){
     'Original learned action atlas predicted a full route BEFORE action. Actual action consequences from execution.frames; 7 active axes only.');
 }
 
+
+// A scientific replay contains the ORIGINAL solver's Gauss-Seidel values after
+// each sweep. It is produced from a REAL frozen Brain checkpoint and verified
+// against the exact original Discoverer.shape and independent shortest paths.
+function fieldCanvas(entry,round,id){
+  const q=sheet(id);if(!q)return;
+  const {c,w,h}=q,n=entry.n,N=n*n,cell=Math.min((w-24)/n,(h-24)/n),
+    ox=(w-cell*n)/2,oy=(h-cell*n)/2;
+  const seed=entry.ret.map((kind,i)=>i!==entry.start&&entry.att[kind]>.2?entry.att[kind]:0);
+  const after=round?entry.frames[round-1]?.values:seed;
+  const before=round>1?entry.frames[round-2]?.values:seed;
+  if(!Array.isArray(after)||after.length!==N)return;
+  const source=id==='dynamics'?'delta':'field';
+  const values=source==='delta'?after.map((v,i)=>Math.max(0,v-(before?.[i]??0))):after;
+  const scale=Math.max(1e-12,...values);
+  for(let i=0;i<N;i++){
+    const x=ox+(i%n)*cell,y=oy+Math.floor(i/n)*cell;
+    if(entry.wall?.[i]){c.fillStyle='#314050';c.fillRect(x+.3,y+.3,cell-.8,cell-.8);continue}
+    c.fillStyle='#13253a';c.fillRect(x+.3,y+.3,cell-.8,cell-.8);
+    const intensity=Math.max(0,Math.min(1,values[i]/scale));
+    if(intensity>0){c.fillStyle=source==='delta'?
+       'rgba(255,204,86,'+Math.max(.12,intensity)+')':
+       'rgba(63,202,188,'+Math.max(.15,intensity)+')';
+      c.fillRect(x+1,y+1,Math.max(1,cell-2),Math.max(1,cell-2));}
+  }
+  const position=i=>[ox+(i%n+.5)*cell,oy+(Math.floor(i/n)+.5)*cell];
+  if(id==='shape'){
+    // Current frozen-sweep field, NOT a fabricated pre-known final route.
+    const path=[entry.start],seen=new Set(path);
+    let at=entry.start;
+    for(let t=0;t<N;t++){
+      let best=-1,bv=after[at];
+      for(const [a,delta] of [[0,-n],[1,1],[2,n],[3,-1]]){
+        const next=at+delta;
+        if(next<0||next>=N||seen.has(next))continue;
+        if(Math.abs((next%n)-(at%n))+Math.abs(Math.floor(next/n)-Math.floor(at/n))!==1)continue;
+        if(after[next]>bv){bv=after[next];best=next}
+      }
+      if(best<0)break;
+      path.push(best);seen.add(best);at=best;
+      if(entry.att[entry.ret[best]]>.2)break;
+    }
+    line(c,path.map(position),colors.hot,2.5);
+    label(c,round===entry.frames.length?'Frozen native full first path':'Partial greedy route after '+round+' sweeps',10,14,colors.hot,10);
+    dot(c,...position(entry.start),colors.purple,3.5);
+    dot(c,...position(entry.goal),colors.bad,3.5);
+    status(id,'before-action path: '+(path.at(-1)===entry.goal?'goal reached':'not yet at goal'),
+      'Original learned-field replay. '+round+'/'+entry.frames.length+
+      ' internal sweeps · exact original path parity '+entry.nativePathIdentical+
+      ' · independent weighted field error '+num(entry.independentMaxAbsError,10));
+  }else{
+    const f=entry.frames[round-1];
+    label(c,round===0?'Original attractor seeds (before relaxation)':('Transient field excitation · sweep '+round),8,14,colors.hot,10);
+    status(id,'changed cells '+(f?.changed??0)+' · max delta '+num(f?.maxDelta??0,5),
+      'Measured changes in ORIGINAL max-product field, '+round+'/'+entry.frames.length+
+      ' sweeps. These settle to a fixed point: no sustained oscillation is inferred.');
+  }
+}
+function verifiedEvidence(data){
+  return data?.schema==='MagicPerspective-native-field-replay-v1'&&
+    Array.isArray(data.episodes)&&data.episodes.length>0&&data.episodes.length<=64&&
+    data.episodes.every(e=>[7,9,11,13].includes(e.n)&&
+      Array.isArray(e.frames)&&e.frames.length>0&&e.frames.length<=2*e.n*e.n&&
+      e.frames.every(f=>Array.isArray(f.values)&&f.values.length===e.n*e.n&&
+        f.values.every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0))&&
+      e.nativePathIdentical===true&&typeof e.independentMaxAbsError==='number'&&
+      e.independentMaxAbsError<=1e-9&&
+      Array.isArray(e.ret)&&e.ret.length===e.n*e.n&&
+      Array.isArray(e.wall)&&e.wall.length===e.n*e.n);
+}
+
 export function createScienceObservatory(){
-  const tracker=new DynamicsTracker(),selected={record:null},sampled={g:null};
-  function render(){const g=sampled.g,xd=sampled.xd;spectrum(xd?.graph||g);phases(g);cycles(xd?.graph||g);dynamics(tracker);if(xd){xdUnfold(xd);xdCausal(xd);xdShape(xd)}else{unfold(g);causal(g);shape(selected.record)}}
+  const tracker=new DynamicsTracker(),selected={record:null,evidence:null,world:0,sweep:0,playing:null},sampled={g:null};
+  function experiment(){return selected.evidence?.episodes?.[selected.world]||null}
+  function render(){const g=sampled.g,xd=sampled.xd;spectrum(xd?.graph||g);phases(g);cycles(xd?.graph||g);
+    if(experiment())fieldCanvas(experiment(),selected.sweep,'dynamics');else dynamics(tracker);
+    if(xd){xdUnfold(xd);xdCausal(xd)}else{unfold(g);causal(g)}
+    if(experiment())fieldCanvas(experiment(),selected.sweep,'shape');
+    else if(xd)xdShape(xd);else shape(selected.record);
+  }
+  function syncExperiment(){
+    const e=experiment(),range=$('science-evidence-round');
+    if(!e)return;
+    range.disabled=false;range.max=String(e.frames.length);range.value=String(selected.sweep);
+    const f=e.frames[selected.sweep-1];
+    $('science-evidence-note').textContent='FROZEN ORIGINAL checkpoint '+selected.evidence.originalCheckpoint.basename+
+      ' · SHA256 '+selected.evidence.originalCheckpoint.sha256.slice(0,16)+
+      '… · actual unseen maze seed '+e.seed+' · sweep '+selected.sweep+'/'+e.frames.length+
+      ' · changed '+(f?.changed??0)+' cells · exact native first-path parity '+e.nativePathIdentical+
+      ' · independent weighted-cost error '+Number(e.independentMaxAbsError).toExponential(3);
+    render();
+  }
+  function stop(){if(selected.playing){clearInterval(selected.playing);selected.playing=null}
+    $('science-evidence-play').textContent='Play real sweeps'}
+  $('science-evidence-file')?.addEventListener('change',async event=>{
+    stop();
+    try{
+      const file=event.target.files?.[0];if(!file)return;
+      if(file.size>35*1024*1024)throw Error('Evidence file exceeds 35 MB safety limit');
+      const data=JSON.parse(await file.text());
+      if(!verifiedEvidence(data))throw Error('Not a valid native-field proof or numeric equations were not verified');
+      selected.evidence=data;selected.world=0;selected.sweep=0;
+      $('science-evidence-world').innerHTML='';
+      data.episodes.forEach((e,i)=>{const option=document.createElement('option');
+        option.value=String(i);option.textContent='#'+(i+1)+' · seed '+e.seed+' · '+e.n+'x'+e.n;
+        $('science-evidence-world').append(option)});
+      syncExperiment();
+    }catch(error){selected.evidence=null;selected.world=0;selected.sweep=0;
+      $('science-evidence-round').disabled=true;
+      $('science-evidence-note').textContent='EVIDENCE REJECTED: '+String(error.message);
+      render();
+    }
+  });
+  $('science-evidence-world')?.addEventListener('change',event=>{
+    stop();selected.world=Number(event.target.value);selected.sweep=0;syncExperiment();
+  });
+  $('science-evidence-round')?.addEventListener('input',event=>{
+    stop();selected.sweep=Number(event.target.value);syncExperiment();
+  });
+  $('science-evidence-back')?.addEventListener('click',()=>{
+    if(!experiment())return;stop();selected.sweep=Math.max(0,selected.sweep-1);syncExperiment();
+  });
+  $('science-evidence-next')?.addEventListener('click',()=>{
+    if(!experiment())return;stop();selected.sweep=Math.min(experiment().frames.length,selected.sweep+1);syncExperiment();
+  });
+  $('science-evidence-play')?.addEventListener('click',()=>{
+    if(!experiment())return;
+    if(selected.playing){stop();return}
+    selected.playing=setInterval(()=>{
+      const e=experiment();if(!e){stop();return}
+      selected.sweep=(selected.sweep+1)%(e.frames.length+1);syncExperiment();
+    },260);
+    $('science-evidence-play').textContent='Pause real sweeps';
+  });
   let lastDraw=0;
   window.addEventListener('resize',render,{passive:true});
   for(const id of IDS)$('science-expand-'+id)?.addEventListener('click',()=>{
