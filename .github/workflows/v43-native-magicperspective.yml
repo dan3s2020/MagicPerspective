@@ -1,0 +1,62 @@
+name: V43 native MagicPerspective V42-to-V43 regression
+on:
+  push:
+    branches:
+      - feature/V43-NATIVE-V42-ONE-UNIVERSE-20261108
+    paths:
+      - "v17/START_V43.ps1"
+      - "v17/START_V41_SPEED_PROFILE.ps1"
+      - "v17/START_HYPERMAZE_REAL_CUDA.ps1"
+      - "v17/v43/**"
+      - "v17/apps/hypermaze-studio-v26/**"
+      - "v17/transcend/torus-aether/devour/**"
+      - "v17/tests/v43-native-one-universe.test.mjs"
+      - ".github/workflows/v43-native-magicperspective.yml"
+  pull_request:
+  workflow_dispatch:
+jobs:
+  exact-original-native-brain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: JS and Python source syntax checks
+        run: |
+          node --check v17/transcend/torus-aether/devour/devour.mjs
+          node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/brain-character-world.mjs
+          node --check v17/transcend/torus-aether/devour/v43-fused-one-universe.mjs
+          node --check v17/apps/hypermaze-studio-v26/native-bridge.mjs
+          node --check v17/apps/hypermaze-studio-v26/public/v43-ui.js
+          node --check v17/apps/hypermaze-studio-v26/v43-journal.mjs
+          python -m py_compile v17/v43/gguf_checkpoint.py v17/v43/export_qwen.py
+      - name: Actual original V42 Brain with synthetic donor fixture (not Qwen inference)
+        run: node --test v17/tests/v43-native-one-universe.test.mjs
+      - name: Existing original V42 UI and Brain source regression tests
+        run: |
+          node --test v17/tests/torus-observatory-ui.test.mjs
+          node --test v17/tests/constructed-paths-speed-equivalence.test.mjs
+  exact-powershell-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse V43 original chain and confirm V42 entry point has no mutations
+        shell: pwsh
+        run: |
+          foreach($file in @(
+            'v17/START_V43.ps1',
+            'v17/START_V41_SPEED_PROFILE.ps1',
+            'v17/START_HYPERMAZE_REAL_CUDA.ps1'
+          )) {
+            $parseErrors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd $file),[ref]$null,[ref]$parseErrors)|Out-Null
+            if($parseErrors.Count){$parseErrors|Out-String|Write-Error;exit 1}
+          }
+          Write-Host 'V43_ORIGINAL_V42_LAUNCH_CHAIN_PARSE_PASS'
