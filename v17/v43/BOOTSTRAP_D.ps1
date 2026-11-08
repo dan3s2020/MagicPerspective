@@ -139,9 +139,9 @@ if(!$Node){
 }
 $env:PATH=([IO.Path]::GetDirectoryName($Node))+";"+$env:PATH
 Write-Host "Reusing Node: $Node" -ForegroundColor Green
-# The user verified this exact existing CUDA interpreter on D:.
+# The user verified this existing MagicPerspective CUDA interpreter on D:.
 # Do not select Hermes, search for other Python, install Python or create a venv.
-$Python="D:\Braivour\.venv\Scripts\python.exe"
+$Python="D:\MagicPerspective-FULL-ATLAS-HANGFIX\v17\transcend\torus-aether\gpu\.venv\Scripts\python.exe"
 if(!(Test-Python $Python)){
   throw "Previously verified CUDA Python is missing or incompatible: $Python"
 }
