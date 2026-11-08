@@ -30,7 +30,8 @@ param(
   [int]$GpuUtil = 100,
   [switch]$Fresh,
   [switch]$TraceTransformations,
-  [switch]$EndogenousNoise
+  [switch]$EndogenousNoise,
+  [switch]$V43Paused
 )
 $ErrorActionPreference = "Stop"
 $launcher = Join-Path $PSScriptRoot "START_V17.ps1"
@@ -116,7 +117,9 @@ $launchParams = @{
 }
 if ($TraceTransformations) { $launchParams.TraceTransformations = $true }
 if ($EndogenousNoise) { $launchParams.EndogenousNoise = $true }
-$launchParams.Start = $true
+# V43 only: native original worker starts PAUSED for original UI Start Training.
+# Without this switch, exact previous V42 startup and auto-start remain unchanged.
+if (-not $V43Paused) { $launchParams.Start = $true }
 if (-not $Fresh) { $launchParams.Resume = $true }
 & $launcher @launchParams
 if ($LASTEXITCODE -ne 0) { throw "Native V17 training returned exit code $LASTEXITCODE" }
