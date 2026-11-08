@@ -129,3 +129,40 @@ test("UTF-8 full-text journal reads reverse pages across 64 KiB boundaries",asyn
     assert.equal(all.items.at(-1).exerciseReference,rows[0].exerciseReference);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+
+test("RESEARCH ONLY: actual native Player 1 recovery after three synthetic donor shape demonstrations",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"magic-v43-p1-gate-"));
+  try{
+    const brain=new Brain({seed:17,rules:{depth:1,off:["R2","R4"],budEvery:100,
+      empty:true,maxWires:32,fold:false}});
+    brain.disc=Object.assign(new Discoverer(17),{body:brain.body||{}});
+    brain.disc.endIn[KIND.target]=10;
+    brain.disc.enter[KIND.target]=14;
+    brain.disc.pass[KIND.floor]=25;
+    brain.disc.block[KIND.floor]=2;
+    const fused=new V43FusedOneUniverse({brain,donor:syntheticControlFixture(),
+      saveFile:path.join(dir,"brain-0-winner.v8"),maxPredictionChars:128});
+    const samples=[
+      {k:1,prompt:"What shape does fire make?",answer:"B"},
+      {k:2,prompt:"What shape does water make?",answer:"B"},
+      {k:3,prompt:"What shape does wind make?",answer:"B"}
+    ];
+    const report=[];
+    for(const row of samples){
+      const r=fused.experience(row);
+      report.push({episode:row.k,donorExact:r.player2.score.exact,
+        p1BeforeExact:r.player1.before.score.exact,
+        p1AfterExact:r.player1.after.score.exact,
+        p1Before:r.player1.before.text,p1After:r.player1.after.text,
+        transferError:r.player1.transferError});
+    }
+    const unseen=fused._nativePredict("What shape does sand make?",1);
+    report.push({episode:"unseen",p1FirstShape:unseen.text,
+      p1Exact:unseen.text==="B",predictionError:unseen.error});
+    console.log("V43_NATIVE_PLAYER1_THREE_EXPERIENCES_RESEARCH_ONLY="+JSON.stringify(report));
+    assert.equal(report.length,4);
+    assert.equal(fused.brain,brain);
+    assert.ok(report.every(r=>r.episode==="unseen"||typeof r.p1AfterExact==="boolean"));
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
