@@ -195,9 +195,16 @@ test("RESEARCH ONLY: three distinct lessons do not allow trivial constant-output
     }
     const hidden={prompt:"What is five plus five?",answer:"10"};
     const guess=fused._nativePredict(hidden.prompt,Array.from(hidden.answer).length);
+    const unseenWorlds=Array.from({length:16},(_,i)=>{const k=i+5;
+      return {prompt:`Compute ${k} plus ${k}.`,answer:String(k*2)};
+    });
+    const predictions=unseenWorlds.map(row=>({prompt:row.prompt,target:row.answer,
+      predicted:fused._nativePredict(row.prompt,Array.from(row.answer).length).text}));
+    const exact=predictions.filter(r=>r.predicted===r.target).length;
     console.log("V43_DISTINCT_OUTPUTS_PLAYER1_FIRST_SHAPE="+JSON.stringify({
       lessons:progress,unseenPrompt:hidden.prompt,unseenExpected:hidden.answer,
-      unseenPrediction:guess.text,unseenExact:guess.text===hidden.answer}));
+      unseenPrediction:guess.text,unseenExact:guess.text===hidden.answer,
+      sixteenUnseen:{exact,total:predictions.length,predictions}}));
     assert.equal(progress.length,3);
     assert.equal(fused.brain,brain);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
