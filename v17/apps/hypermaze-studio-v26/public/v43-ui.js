@@ -183,7 +183,7 @@ async function refresh(){
    const w=data.worker||{},d=data.dataset||{};
    set("v43Phase",(data.phase||"ready").toUpperCase());
    set("v43Percent",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(2)+"%");
-   set("v43Dataset",fmt(d.v43Completed)+" / "+fmt(d.assignedTrainingRows)+" assigned original text exercises");
+   set("v43Dataset",fmt(d.completedTrainingRows)+" / "+fmt(d.assignedTrainingRows)+" original dataset exercises · "+fmt(d.v43Completed)+" newly fused V43");
    set("v43Completed",fmt(d.v43Completed));
    set("v43Speed",Number.isFinite(Number(w.completedExercisesPerSecond))?Number(w.completedExercisesPerSecond).toFixed(2):"—");
    set("v43CharSpeed",Number.isFinite(Number(w.completedCharactersPerSecond))?Number(w.completedCharactersPerSecond).toFixed(1):"—");
