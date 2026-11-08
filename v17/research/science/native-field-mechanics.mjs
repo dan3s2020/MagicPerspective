@@ -89,7 +89,28 @@ export function fieldEvidence(D,w,{keepFrames=true}={}){
   const err=Math.max(...independent.map((x,i)=>Math.abs(x-r.field[i])));
   const native=D.shape(ret,w.n,me);
   const identical=JSON.stringify(native)===JSON.stringify(r.path);
+  // Read-only scientific intervention on a prototype-shadow of the frozen
+  // original organism; ZERO mutation of the actual Brain or checkpoint.
+  const goalOff=Object.create(D);goalOff.temp=0;goalOff.attract=()=>0;
+  const floorOff=Object.create(D);floorOff.temp=0;
+  floorOff.conduct=k=>k===KIND.floor?0:D.conduct(k);
+  const traceEnd=actions=>{
+    if(!Array.isArray(actions))return null;
+    let i=me;
+    for(const a of actions){const next=nextStep(w.n,i,a);if(next<0)return null;i=next}
+    return i;
+  };
+  const goalOffPath=goalOff.shape(ret,w.n,me);
+  const floorOffPath=floorOff.shape(ret,w.n,me);
+  const counterfactual={
+    originalReachesGoal:traceEnd(native)===w.goal,
+    removeAttractionReachesGoal:traceEnd(goalOffPath)===w.goal,
+    blockFloorReachesGoal:traceEnd(floorOffPath)===w.goal,
+    removeAttractionHasPath:Array.isArray(goalOffPath),
+    blockFloorHasPath:Array.isArray(floorOffPath),
+    intervention:'frozen prototype-shadow, ORIGINAL Discoverer.shape, no checkpoint mutation'
+  };
   return {...r,n:w.n,start:w.start,goal:w.goal,ret,wall:Array.from(w.wall),
     independentMaxAbsError:err,nativePathIdentical:identical,
-    firstShapeBeforeAction:!!native,originalPath:native};
+    firstShapeBeforeAction:!!native,originalPath:native,counterfactual};
 }
