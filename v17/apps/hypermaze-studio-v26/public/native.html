@@ -91,6 +91,18 @@
             <h2>Seven scientific measurements <span class="panel-sub">/ original graph + original frozen evaluator only</span></h2></div>
             <span class="chip" id="graphBadge">No native graph yet</span></div>
           <p class="science-intro">All seven instruments read the same ORIGINAL V42 brain. Scientific labels distinguish observed data, computed graph quantities, and UNVERIFIED hypotheses. No physical particles or quantum states are fabricated.</p>
+          <div class="science-probe" aria-label="Original checkpoint field evolution proof">
+            <strong>Read-only original checkpoint field replay · no model substitution</strong>
+            <label class="science-evidence-upload">Load verified field evidence JSON <input id="science-evidence-file" type="file" accept=".json,application/json"></label>
+            <div class="science-evidence-actions">
+              <label>Unseen maze <select id="science-evidence-world"><option value="0">Upload original evidence to inspect</option></select></label>
+              <button class="tiny-btn" type="button" id="science-evidence-back">◀</button>
+              <input id="science-evidence-round" type="range" min="0" max="0" value="0" aria-label="Real relaxation sweep" disabled>
+              <button class="tiny-btn" type="button" id="science-evidence-next">▶</button>
+              <button class="tiny-btn" type="button" id="science-evidence-play">Play real sweeps</button>
+            </div>
+            <small id="science-evidence-note">No checkpoint evidence loaded. Existing native /graph visualizations remain available. Produce evidence using v17/research/science/export-native-field.mjs on a frozen copy of the REAL checkpoint.</small>
+          </div>
           <div class="science-grid">
             <article class="science-card" id="science-card-spectrum"><div class="science-card-head"><strong>01 · Graph eigenmodes</strong><button type="button" class="tiny-btn" id="science-expand-spectrum" aria-label="Expand 01 · Graph eigenmodes">↗</button></div><canvas id="science-spectrum" height="168" aria-label="Observed Laplacian spectrum (not physical quantum energy)"></canvas><div class="science-status" id="science-status-spectrum">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-spectrum">Observed Laplacian spectrum (not physical quantum energy)</p></article>
             <article class="science-card" id="science-card-phases"><div class="science-card-head"><strong>02 · Periodic native U</strong><button type="button" class="tiny-btn" id="science-expand-phases" aria-label="Expand 02 · Periodic native U">↗</button></div><canvas id="science-phases" height="168" aria-label="Original coordinate vectors, tested for wrapping"></canvas><div class="science-status" id="science-status-phases">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-phases">Original coordinate vectors, tested for wrapping</p></article>
