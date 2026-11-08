@@ -17,6 +17,7 @@ import {SharedExperience} from "../shared/experience.mjs";
 import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
+import {V43FusedOneUniverse} from "./v43-fused-one-universe.mjs"; // V43 isolated opt-in
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, xdAtlasEvery = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -68,6 +69,12 @@ async function* stream() {                                                 // th
 let brain = null, skip = 0;
 if (resume && saveFile && fs.existsSync(saveFile)) { try { brain = Brain.load(saveFile); skip = brain.exercises || 0; } catch (err) { parentPort.postMessage({type: "note", w: workerData.gw, text: "could not resume: " + err.message}); } }
 if (!brain) brain = new Brain({rules: arm.rules, c: arm.c || {}, seed: 11 + w});
+// Same Brain, maze and exercise. Player 1 / Qwen puppet are INTERNAL movement roles.
+// No donor found => preserve the original V42 execution exactly as before.
+const v43World=workerData.v43DonorPath ? new V43FusedOneUniverse({
+  brain,donor:JSON.parse(fs.readFileSync(workerData.v43DonorPath,"utf8")),
+  saveFile,source:"Original V42 OpenThoughts stream"
+}) : null;
 if (workerData.endogenousNoise) brain.enableEndogenousNoise(); // policy is saved with the original Brain
 if (workerData.controls) brain.setControls(workerData.controls);         // the person's determinism / noise settings survive a restart
 // Bounded additional text-transition learner on real, never repeated V17 rows.
@@ -237,7 +244,11 @@ const absorbConstructed = row => {
   const judged=nativeAtlas.after(brain.constructedPaths,before,row.answer,
     {observed:brain.observedTransformations,maxAnalyze:512});
   if(nativeAtlasLog)nativeAtlasLog.write(JSON.stringify(judged)+"\n");
-  brain.learnConstructedText(row.prompt,row.answer);
+  // V43's original learner has already absorbed a successful physically
+  // traversed Qwen-puppet text path; do not double-count it. Failed donor
+  // episodes keep the UNCHANGED original V42 observed-text training route.
+  if(!v43World || !row.v43NativeAlreadyLearned)
+    brain.learnConstructedText(row.prompt,row.answer);
 };
 const absorbText = row => {
   if (typeof row?.prompt !== "string" || typeof row?.answer !== "string" || !row.prompt.trim() || !row.answer.trim()) return;
@@ -727,7 +738,18 @@ for await (const ex of stream()) {
       (ex.bytes?.length||0)+"; sourceRow="+ex.k+"; paused="+paused});
   }
   await hold();
-  if (TEXT && k++ < skip) continue;                                         // a resumed brain does not live the same exercises twice
+  if (TEXT && k++ < skip) continue;
+  // V43: freeze Player 1 original shape BEFORE this row is lived by V42 CUDA/CPU.
+  // Traverse Qwen puppet, freeze movement, and let SAME original Brain learn its
+  // observed transformations. No external server / teacher model / replacement.
+  if(v43World && typeof ex.prompt==="string" && typeof ex.answer==="string" &&
+     ex.prompt.trim() && ex.answer.trim()) {
+    v43World.observeBefore(ex);
+    const v43Result=v43World.experience(ex);
+    ex.v43NativeAlreadyLearned=Boolean(v43Result?.player2?.score?.exact &&
+      !v43Result?.player1?.transferError);
+    await new Promise(resolve=>setImmediate(resolve));
+  }                                         // a resumed brain does not live the same exercises twice
   // the card is there: text is lived on the card in batches (gpu/text_gpu.py); the brain adds the totals, and one
   // exercise of each batch is also lived here by the older organs (so they and the drawn graph stay alive)
   // Explicit CUDA errors stop the worker: NEVER silently continue on CPU or discard an unseen batch.
