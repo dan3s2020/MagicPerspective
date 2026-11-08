@@ -1,0 +1,45 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "contract_id": "V43-ONE-UNIVERSE-FUSED-TRAINING-20261108",
+  "mode": "ISOLATED_ADDITIVE_IMPLEMENTATION",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "source": {
+    "path": "verbatim/2026-11-08-V43-FUSED-TRAINING-USER-VERBATIM.md",
+    "exact_user_quote": "Ok ,now implement this in v43 and make start training button only have this new type of training  selected . And make a button to turn off/hide the graf universe and when it hides ,our training data shows  each exercise live,how it predicts using the brain of qwen(player2) and how well it does by itself. And evolution chart/graf etc to we can see how it performed and why in each exercise\nAnd also display speed and % of dataset training completed . And bellow the charts/graf the list with each exercise ,scores ,characters wrong/correct ,display all text etc "
+  },
+  "prior_user_definitions": "verbatim/2026-11-08-QWEN-ONE-UNIVERSE-USER-VERBATIM-PARTIAL.md U04–U06",
+  "original_baseline": {
+    "repository": "dan3s2020/MagicPerspective",
+    "commit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+    "source_path": "v17/transcend/torus-aether/devour/brain.mjs",
+    "algorithm": "Original native V42 Brain, Discoverer.shapeGraph, ConstructedPathLearner and CUDA text pipeline",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "added_mechanisms": [
+    "Additive four reversible original-worker hooks in an isolated copied pinned V42",
+    "Qwen 256-byte-state physically moveable puppet whose frozen donor movements remain observable in SAME Brain",
+    "Before/P2/after analysis and native V42 original text-learning from actual puppet-produced bytes",
+    "V43-only Start Training live UI, original universe toggle, full-text journal and progress charts"
+  ],
+  "authorize_original_algorithm_replacement_quote": null,
+  "additional_user_authorization_quote": "Ok ,now implement this in v43 and make start training button only have this new type of training  selected . And make a button to turn off/hide the graf universe and when it hides ,our training data shows  each exercise live,how it predicts using the brain of qwen(player2) and how well it does by itself. And evolution chart/graf etc to we can see how it performed and why in each exercise\nAnd also display speed and % of dataset training completed . And bellow the charts/graf the list with each exercise ,scores ,characters wrong/correct ,display all text etc ",
+  "acceptance_tests": [
+    "node --test tests/v43-fused-one-universe.test.mjs",
+    "python -m pytest -q tests/test_v43.py",
+    "Windows PowerShell parser check START_BRAIVOUR_V43.ps1"
+  ],
+  "verification_status": "PARTIALLY_VERIFIED_SYNTHETIC_NATIVE_V42; REAL_QWEN_CUDA_AND_OPENTHOUGHTS_PENDING",
+  "actual_observed_results": "Native original V42 synthetic donor fixture fusion test PASSED, isolated CI PowerShell syntax PASSED. Full CI negative controls and real user GPU not yet independently verified.",
+  "limitations": [
+    "Cannot certify full Qwen knowledge transfer from a bounded 256-byte-state coordinate map",
+    "A successful training-game reference traversal is not proof of unseen-language reasoning",
+    "Full full-history Verbatim coverage is blocked",
+    "No physical Windows RTX 3050 Ti benchmark has been executed by this assistant"
+  ],
+  "full_verbatim_gate": "BLOCKED",
+  "changed_code_paths": [
+    "v43/README.md",
+    "v43/START_V43.ps1"
+  ]
+}
