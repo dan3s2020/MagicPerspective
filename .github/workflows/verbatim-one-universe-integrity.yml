@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'GEMINI.md'
+      - '.github/copilot-instructions.md'
+      - '.cursor/rules/**'
       - 'verbatim/2026-11-08-*'
       - 'tests/verbatim-one-universe-integrity.test.mjs'
       - '.github/workflows/verbatim-one-universe-integrity.yml'
