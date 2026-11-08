@@ -163,3 +163,67 @@ export function nativeXD(raw){
     shortest:atlas.evaluatorPhysicalShortestPath??null,
     missingAxes:atlas.missingAxes||[],last,source:'native /graph.xdAtlas.last'};
 }
+
+
+// Browser-side numeric gate: independently recomputes EVERY claimed frozen
+// native field sweep, greedy solution, and reverse weighted-distance field.
+// A JSON file cannot pass simply by claiming nativePathIdentical:true.
+export function verifyFieldEpisode(e){
+  try{
+    const n=e.n,N=n*n,me=e.start;
+    if(![7,9,11,13].includes(n)||!Number.isInteger(me)||me<0||me>=N||
+      !Array.isArray(e.ret)||e.ret.length!==N||!Array.isArray(e.wall)||e.wall.length!==N||
+      !Array.isArray(e.att)||e.att.length!==4||!Array.isArray(e.cond)||e.cond.length!==4||
+      !e.att.every(v=>finite(v)&&v>=0&&v<=1)||
+      !e.cond.every(v=>finite(v)&&v>=0&&v<=1)||
+      !e.ret.every(v=>Number.isInteger(v)&&v>=0&&v<=3)||
+      !Array.isArray(e.frames)||!e.frames.length||e.frames.length>2*N)return false;
+    const V=new Float64Array(N),nb=(i,a)=>{
+      const x=i%n+[0,1,0,-1][a],y=Math.floor(i/n)+[-1,0,1,0][a];
+      return x<0||y<0||x>=n||y>=n?-1:y*n+x;
+    };
+    let seeds=0;
+    for(let i=0;i<N;i++)if(e.att[e.ret[i]]>.2&&i!==me){V[i]=e.att[e.ret[i]];seeds++}
+    if(seeds!==e.seedCount)return false;
+    for(const f of e.frames){
+      let changed=0,total=0,max=0;
+      for(let i=0;i<N;i++){
+        if(e.att[e.ret[i]]>.2&&i!==me)continue;
+        const c=i===me?1:e.cond[e.ret[i]];if(c<.5)continue;
+        let b=0;for(let a=0;a<4;a++){const j=nb(i,a);if(j>=0&&V[j]>b)b=V[j]}
+        const v=.97*c*b;
+        if(v>V[i]+1e-12){const d=v-V[i];V[i]=v;total+=d;max=Math.max(max,d);changed++}
+      }
+      if(changed!==f.changed||Math.abs(total-f.totalDelta)>1e-8||Math.abs(max-f.maxDelta)>1e-8||
+        !Array.isArray(f.values)||f.values.length!==N||
+        f.values.some((x,i)=>!finite(x)||Math.abs(x-V[i])>1e-9))return false;
+    }
+    if(e.frames.at(-1).changed!==0||e.nativePathIdentical!==true)return false;
+    const path=[],seen=new Set([me]);let p=me;
+    for(let k=0;k<N;k++){
+      let best=-1,bv=V[p];for(let a=0;a<4;a++){
+        const j=nb(p,a);if(j>=0&&!seen.has(j)&&V[j]>bv){bv=V[j];best=a}
+      }
+      if(best<0)break;
+      path.push(best);p=nb(p,best);seen.add(p);
+      if(e.att[e.ret[p]]>.2)break;
+    }
+    if(JSON.stringify(path.length?path:null)!==JSON.stringify(e.path))return false;
+    const dist=Array(N).fill(Infinity),done=Array(N).fill(false);
+    for(let i=0;i<N;i++)if(e.att[e.ret[i]]>.2&&i!==me)dist[i]=-Math.log(e.att[e.ret[i]]);
+    for(let step=0;step<N;step++){
+      let u=-1,b=Infinity;
+      for(let i=0;i<N;i++)if(!done[i]&&dist[i]<b){u=i;b=dist[i]}
+      if(u<0)break;
+      done[u]=true;
+      for(let a=0;a<4;a++){
+        const i=nb(u,a);if(i<0||done[i]||(e.att[e.ret[i]]>.2&&i!==me))continue;
+        const c=i===me?1:e.cond[e.ret[i]];if(c<.5)continue;
+        const candidate=dist[u]-Math.log(.97*c);
+        if(candidate<dist[i])dist[i]=candidate;
+      }
+    }
+    const maximum=Math.max(...dist.map((d,i)=>Math.abs((Number.isFinite(d)?Math.exp(-d):0)-V[i])));
+    return maximum<=1e-9&&e.independentMaxAbsError<=1e-9;
+  }catch{return false}
+}
