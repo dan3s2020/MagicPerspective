@@ -1,0 +1,16 @@
+/* Isolated V42 science observatory. Only replaces left graph visualization. */
+.science-panel{min-width:0}
+.science-intro{margin:0 18px 14px;line-height:1.6;font-size:12px;color:#a9c1d6}
+.science-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0 14px 14px;align-items:start}
+.science-card{display:flex;flex-direction:column;gap:7px;min-width:0;border:1px solid #283b4f;border-radius:12px;background:#0d1b2b;overflow:hidden;padding:10px}
+.science-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px}
+.science-card-head strong{font-size:12px;letter-spacing:.03em;color:#e0efff;font-weight:650}
+.science-card-head button{flex:none;min-width:30px}
+.science-card canvas{display:block;width:100%;height:170px;background:#071521;border:1px solid #284057;border-radius:7px}
+.science-status{min-height:18px;color:#75debf;font-size:11px;line-height:1.4;font-weight:700}
+.science-detail{margin:0;font-size:10px;line-height:1.55;color:#9dafc4;min-height:44px}
+.science-expanded{grid-column:1/-1}
+.science-expanded canvas{height:310px}
+.science-panel>.under-graph{margin-top:auto}
+#science-compat[hidden]{display:none!important}
+@media(max-width:660px){.science-grid{grid-template-columns:1fr}.science-card canvas{height:200px}.science-expanded canvas{height:270px}}
