@@ -97,3 +97,9 @@ Native control: exact ORIGINAL Discoverer.shape on unseen seeded mazes; candidat
 | 41×41 | 23.896 ms | 4.608 ms | 5.19× | 20/20 | 20/20 | 4.16e-16 |
 
 The promising engineering implication is an optional SIZE-AWARE optimization: retain exact original propagation on small mazes, consider a verified heap method for sufficiently large finite-grid problems, and make it pass rigorous byte-exact training and checkpoint/regression gates before integrating. It has NOT been installed in the original Brain. These are short CPU benchmarks with small samples, not a GPU or entire-system speedup.
+
+## Final integrity gate
+
+Browser imports are now independently checked on EACH cell and EACH original field-relaxation sweep. The UI recomputes the original update equation, exact greedy route and separate negative-log reverse shortest-path field before accepting a JSON evidence file. Unit controls deliberately corrupt one field value and replace a proposed route; both are rejected. This prevents a JSON file from acquiring scientific status merely by claiming that a fabricated picture was verified. A browser cannot cryptographically attest that a file really came from an inaccessible checkpoint; original checkpoint SHA256 is recorded by the exporter, and the experiment must retain provenance.
+
+Final end-to-end CI with source-preservation gate, native field, negative controls, actual original V8 export, 9/21/41-size performance experiments, original xD learner, Chromium import/painting test and preserved UI screenshot: https://github.com/dan3s2020/MagicPerspective/actions/runs/42513480029 . The screenshot is downloadable under the Actions run artifact v42-seven-science-chrome, and uses actual source-generated test checkpoint evidence plus a clearly fixture-based V17 HTTP upstream.
