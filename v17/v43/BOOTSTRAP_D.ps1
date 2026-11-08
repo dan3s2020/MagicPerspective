@@ -139,72 +139,26 @@ if(!$Node){
 }
 $env:PATH=([IO.Path]::GetDirectoryName($Node))+";"+$env:PATH
 Write-Host "Reusing Node: $Node" -ForegroundColor Green
-$Python=$null
-$cmdPython=Get-Command python.exe -ErrorAction SilentlyContinue
-if($cmdPython -and (Test-Python $cmdPython.Source)){$Python=$cmdPython.Source}
-if(!$Python -and $Selection.PythonExe -and (Test-Python $Selection.PythonExe)){
-  $Python=$Selection.PythonExe
+# The user verified this exact existing CUDA interpreter on D:.
+# Do not select Hermes, search for other Python, install Python or create a venv.
+$Python="D:\Braivour\.venv\Scripts\python.exe"
+if(!(Test-Python $Python)){
+  throw "Previously verified CUDA Python is missing or incompatible: $Python"
 }
-if(!$Python){
-  $chosen=Pick-ExistingFile "Select existing Python 3.10-3.12 python.exe on D: (Cancel = install under D:)" "D:\" "Python executable (python.exe)|python.exe|Executable files (*.exe)|*.exe"
-  if($chosen){
-    if(!(Test-Python $chosen)){throw "Selected Python is not 3.10-3.12: $chosen"}
-    $Python=$chosen
-  }
-}
-if(!$Python){
-  Write-Host "No compatible Python on D: or PATH. Installing Python 3.12 ONLY under D:..." -ForegroundColor Yellow
-  $Tools=Join-Path $Destination "tools"
-  $null=New-Item -ItemType Directory -Force -Path $Tools
-  $PythonHome=Join-Path $Tools "Python312"
-  $Installer=Join-Path $Tools "python-3.12.10-amd64.exe"
-  Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe" -UseBasicParsing -OutFile $Installer
-  $signature=Get-AuthenticodeSignature -LiteralPath $Installer
-  if($signature.Status -ne "Valid"){throw "Python installer is not Authenticode-signed correctly; refusing execution"}
-  $p=Start-Process -FilePath $Installer -ArgumentList @("/quiet","InstallAllUsers=0",
-    ('TargetDir="'+$PythonHome+'"'),"PrependPath=0","Include_launcher=0",
-    "Include_pip=1","Include_test=0","AssociateFiles=0","Shortcuts=0") -Wait -PassThru
-  if($p.ExitCode -ne 0){throw "Python installation under D: failed with exit "+$p.ExitCode}
-  $Python=Join-Path $PythonHome "python.exe"
-  if(!(Test-Python $Python)){throw "Python 3.12 installed but did not pass interpreter validation"}
+$cuda=& $Python -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
+if($LASTEXITCODE -ne 0 -or "$cuda".Trim() -ne "1"){
+  throw "Existing D: CUDA environment is not available: $Python"
 }
 $env:PATH=([IO.Path]::GetDirectoryName($Python))+";"+$env:PATH
-Write-Host "Reusing Python: $Python" -ForegroundColor Green
-# Existing CUDA Python is optional. When explicitly selected, let Python
-# venv inherit globally installed packages (no junction / no overwriting the
-# original environment). The native V42 CUDA self-tests still have final say.
-$CudaPython=$null
-if($Selection.CudaPythonExe -and (Test-Python $Selection.CudaPythonExe)){
-  try{
-    $cuda=& $Selection.CudaPythonExe -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
-    if("$cuda".Trim() -eq "1"){$CudaPython=$Selection.CudaPythonExe}
-  }catch{}
-}
-if(!$CudaPython){
-  try{
-    $cuda=& $Python -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
-    if("$cuda".Trim() -eq "1"){$CudaPython=$Python}
-  }catch{}
-}
-if(!$CudaPython -and !$CPU){
-  $candidate=Pick-ExistingFile "Optional: choose existing CUDA-enabled python.exe (Cancel = original V42 CUDA auto-setup under D:)" "D:\" "Python executable (python.exe)|python.exe|Executable files (*.exe)|*.exe"
-  if($candidate){
-    if(!(Test-Python $candidate)){throw "Selected CUDA Python version is incompatible: $candidate"}
-    $cuda=& $candidate -c "import torch;print('1' if torch.cuda.is_available() else '0')" 2>$null
-    if("$cuda".Trim() -ne "1"){throw "Selected Python does not have a working CUDA PyTorch installation"}
-    $CudaPython=$candidate
-  }
-}
+$env:MAGICPERSPECTIVE_V43_PYTHON=$Python
+Write-Host "Using verified existing D: CUDA Python: $Python" -ForegroundColor Green
+# The original V42 CUDA launcher may expect its own .venv path. A directory
+# junction points to the existing environment without copying or reinstalling.
 $OwnVenv=Join-Path $V17 "transcend\torus-aether\gpu\.venv"
-if($CudaPython -and !(Test-Path -LiteralPath $OwnVenv)){
-  # Reuse any compatible system-site packages without installing into or
-  # writing to the selected pre-existing CUDA environment.
+$VenvRoot=Split-Path -Parent (Split-Path -Parent $Python)
+if(!(Test-Path -LiteralPath $OwnVenv)){
   $null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $OwnVenv)
-  & $CudaPython -m venv --system-site-packages $OwnVenv
-  if($LASTEXITCODE -ne 0){
-    throw "Cannot create isolated V43 environment inheriting selected CUDA Python."
-  }
-  Write-Host "Created isolated V43 environment from your selected CUDA Python: $CudaPython" -ForegroundColor Green
+  New-Item -ItemType Junction -Path $OwnVenv -Target $VenvRoot -ErrorAction Stop | Out-Null
 }
 if(!$GGUF -and !$ChoosePaths -and $Selection.GGUF -and (Test-Path -LiteralPath $Selection.GGUF -PathType Leaf)){$GGUF=$Selection.GGUF}
 if(!$GGUF){
