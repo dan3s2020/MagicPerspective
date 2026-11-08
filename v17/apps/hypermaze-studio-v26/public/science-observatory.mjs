@@ -225,6 +225,30 @@ function fieldCanvas(entry,round,id){
       ' sweeps. These settle to a fixed point: no sustained oscillation is inferred.');
   }
 }
+function fieldAblations(entry){
+  const q=sheet('causal');if(!q)return;
+  const {c,w,h}=q,v=entry.counterfactual;
+  if(!v){status('causal','COUNTERFACTUAL UNAVAILABLE',
+    'Original checkpoint evidence lacks measured goal/conductance interventions.');return}
+  const rows=[
+    {name:'Original learned field',ok:v.originalReachesGoal},
+    {name:'Remove goal attraction',ok:v.removeAttractionReachesGoal},
+    {name:'Block floor conductance',ok:v.blockFloorReachesGoal}
+  ];
+  const span=(h-38)/rows.length;
+  rows.forEach((r,i)=>{
+    const y=22+i*span;
+    label(c,r.name,10,y,colors.ink,10);
+    c.fillStyle=r.ok?colors.good:colors.bad;
+    c.fillRect(w-42,y-10,22,11);
+    label(c,r.ok?'1':'0',w-33,y-1,'#071521',10);
+  });
+  status('causal','Original '+Number(v.originalReachesGoal)+
+    ' | goal-off '+Number(v.removeAttractionReachesGoal)+
+    ' | floor-off '+Number(v.blockFloorReachesGoal),
+    'Controlled frozen interventions on original trained Discoverer.shape: 1=goal reached; 0=not reached. Source checkpoint unchanged.');
+}
+
 function verifiedEvidence(data){
   return data?.schema==='MagicPerspective-native-field-replay-v1'&&
     Array.isArray(data.episodes)&&data.episodes.length>0&&data.episodes.length<=64&&
@@ -243,7 +267,8 @@ export function createScienceObservatory(){
   function experiment(){return selected.evidence?.episodes?.[selected.world]||null}
   function render(){const g=sampled.g,xd=sampled.xd;spectrum(xd?.graph||g);phases(g);cycles(xd?.graph||g);
     if(experiment())fieldCanvas(experiment(),selected.sweep,'dynamics');else dynamics(tracker);
-    if(xd){xdUnfold(xd);xdCausal(xd)}else{unfold(g);causal(g)}
+    if(xd){xdUnfold(xd)}else{unfold(g)}
+    if(experiment())fieldAblations(experiment());else if(xd)xdCausal(xd);else causal(g);
     if(experiment())fieldCanvas(experiment(),selected.sweep,'shape');
     else if(xd)xdShape(xd);else shape(selected.record);
   }
