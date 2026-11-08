@@ -75,7 +75,7 @@ let classes=0;
 while(remaining.size){
   const chosen=new Set();
   for(let steps=0;steps<n;steps++){
-    const cand=[...remaining].filter(v=>![...chosen].some(u=>adj[v].has(u)));
+    const cand=[...remaining].filter(v=>!chosen.has(v)&&![...chosen].some(u=>adj[v].has(u)));
     if(!cand.length)break;
     const tie=new Map(cand.map(v=>[v,rand()]));
     cand.sort((a,b)=>adj[b].size-adj[a].size||tie.get(a)-tie.get(b));
