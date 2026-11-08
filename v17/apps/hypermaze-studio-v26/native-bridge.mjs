@@ -9,6 +9,8 @@ import path from "node:path";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {fileURLToPath} from "node:url";
+import {readV43State,readV43Exercises} from "./v43-journal.mjs";
+const V43_UI=process.env.MAGICPERSPECTIVE_V43_UI==="1";
 
 const ROOT=fileURLToPath(new URL(".",import.meta.url));
 const runFile=promisify(execFile);
@@ -31,7 +33,9 @@ export function isCudaStartupFailure(graph){
     String(graph?.error||graph?.gpu?.error||""))&&graph?.status==="eroare";
 }
 const FILES={
-  "/": ["public/native.html","text/html; charset=utf-8"],
+  "/": [V43_UI?"public/native-v43.html":"public/native.html","text/html; charset=utf-8"],
+  "/v43-ui.js": ["public/v43-ui.js","text/javascript; charset=utf-8"],
+  "/v43.css": ["public/v43.css","text/css; charset=utf-8"],
   "/native-app.js": ["public/native-app.js","text/javascript; charset=utf-8"],
   "/style.css": ["public/style.css","text/css; charset=utf-8"],
   "/native-extra.css": ["public/native-extra.css","text/css; charset=utf-8"],
@@ -129,6 +133,30 @@ export async function createNativeBridge({
         res.writeHead(200,{"content-type":type,"cache-control":"no-store",
           "content-length":data.length,"x-content-type-options":"nosniff"});
         res.end(data);return;
+      }
+      if(V43_UI&&req.method==="GET"&&target==="/api/v43-status"){
+        const native=await nativeGet("/health?w=0",7000);
+        const report=await readV43State(native.checkpoint);
+        const data=native.dataset||null,assigned=data?.assignedTrainingRows??null;
+        const completed=report?.completed??0;
+        const progress=Number.isFinite(assigned)&&assigned>0?
+          Math.min(100,100*completed/assigned):null;
+        send(res,{version:43,mode:"V43_ONE_ORGANISM_ONLY",
+          worker:report,phase:report?.phase||native.health?.phase||native.status,
+          dataset:{...data,v43Completed:completed,v43Percent:progress},
+          health:native.health||null,checkpointFound:Boolean(native.checkpoint),
+          originalWorkerStatus:native.status,
+          source:"SAME MagicPerspective native V42 Brain and Qwen puppet; no Braivour server"});
+        return;
+      }
+      if(V43_UI&&req.method==="GET"&&target==="/api/v43-exercises"){
+        const native=await nativeGet("/health?w=0",7000);
+        const limit=Number(u.searchParams.get("limit")||20);
+        const cursor=u.searchParams.get("before");
+        const before=cursor===null?null:Number(cursor);
+        const journal=await readV43Exercises(native.checkpoint,{before,limit});
+        send(res,{...journal,source:"original V42 Brain full exercise journal",
+          originalWorkerStatus:native.status});return;
       }
       if(req.method==="GET"&&target==="/api/native-health"){
         const x=await nativeGet("/graphs",7000);
