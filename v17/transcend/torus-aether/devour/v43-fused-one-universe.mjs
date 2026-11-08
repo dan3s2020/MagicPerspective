@@ -73,7 +73,9 @@ export class V43FusedOneUniverse {
     atomicJSON(this.file,this.state);
   }
   _nativePredict(question,expectedLength){
-    const cap=Math.max(1,Math.min(this.maxPredictionChars,expectedLength));
+    // The native pre-action prediction is independent of the reference length;
+    // do not reveal even the exercise output's LENGTH to Player 1.
+    const cap=Math.max(1,Math.min(20000,this.maxPredictionChars));
     // Original saved multi-scale structural text navigator; NO donor consulted.
     // Frozen prediction only: imagineText() reads without training.
     try{
