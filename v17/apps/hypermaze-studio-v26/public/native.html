@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>MagicPerspective V28 · Original V17 Training · V26 Visual Design</title>
+  <title>MagicPerspective V42 · Seven Native Science Instruments · Isolated</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/native-extra.css">
+  <link rel="stylesheet" href="/science.css">
   <script type="module" src="/native-app.js"></script>
 </head>
 <body>
@@ -85,38 +86,30 @@
         <div class="native-chart-note" id="nativeHistoryInfo">Istoricul începe când este conectat motorul original; nu creează date de antrenare.</div>
       </section>
       <div class="workspace">
-        <section class="panel graph-panel" aria-label="Graf hiperdimensional cauzal">
-          <div class="panel-header">
-            <div><span class="eyebrow">01 / SPATIUL REAL AL STĂRILOR</span>
-              <h2>Topologia învățată <span class="panel-sub">/ nodurile și conexiunile organismului original</span></h2></div>
-            <span class="chip" id="graphBadge">Nicio lume încă</span>
+        <section class="panel graph-panel science-panel" aria-label="Seven measured original-organism science instruments">
+          <div class="panel-header"><div><span class="eyebrow">01 / V42 ORIGINAL SCIENCE OBSERVATORY · READ-ONLY</span>
+            <h2>Seven scientific measurements <span class="panel-sub">/ original graph + original frozen evaluator only</span></h2></div>
+            <span class="chip" id="graphBadge">No native graph yet</span></div>
+          <p class="science-intro">All seven instruments read the same ORIGINAL V42 brain. Scientific labels distinguish observed data, computed graph quantities, and UNVERIFIED hypotheses. No physical particles or quantum states are fabricated.</p>
+          <div class="science-grid">
+            <article class="science-card" id="science-card-spectrum"><div class="science-card-head"><strong>01 · Graph eigenmodes</strong><button type="button" class="tiny-btn" id="science-expand-spectrum" aria-label="Expand 01 · Graph eigenmodes">↗</button></div><canvas id="science-spectrum" height="168" aria-label="Observed Laplacian spectrum (not physical quantum energy)"></canvas><div class="science-status" id="science-status-spectrum">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-spectrum">Observed Laplacian spectrum (not physical quantum energy)</p></article>
+            <article class="science-card" id="science-card-phases"><div class="science-card-head"><strong>02 · Periodic native U</strong><button type="button" class="tiny-btn" id="science-expand-phases" aria-label="Expand 02 · Periodic native U">↗</button></div><canvas id="science-phases" height="168" aria-label="Original coordinate vectors, tested for wrapping"></canvas><div class="science-status" id="science-status-phases">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-phases">Original coordinate vectors, tested for wrapping</p></article>
+            <article class="science-card" id="science-card-cycles"><div class="science-card-head"><strong>03 · Loops and linking</strong><button type="button" class="tiny-btn" id="science-expand-cycles" aria-label="Expand 03 · Loops and linking">↗</button></div><canvas id="science-cycles" height="168" aria-label="Measured cycle rank; Hopf/linking unverified"></canvas><div class="science-status" id="science-status-cycles">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-cycles">Measured cycle rank; Hopf/linking unverified</p></article>
+            <article class="science-card" id="science-card-dynamics"><div class="science-card-head"><strong>04 · Attractors and dynamics</strong><button type="button" class="tiny-btn" id="science-expand-dynamics" aria-label="Expand 04 · Attractors and dynamics">↗</button></div><canvas id="science-dynamics" height="168" aria-label="Only actual activity changes, never animation as evidence"></canvas><div class="science-status" id="science-status-dynamics">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-dynamics">Only actual activity changes, never animation as evidence</p></article>
+            <article class="science-card" id="science-card-unfold"><div class="science-card-head"><strong>05 · High-D → 2D views</strong><button type="button" class="tiny-btn" id="science-expand-unfold" aria-label="Expand 05 · High-D → 2D views">↗</button></div><canvas id="science-unfold" height="168" aria-label="Same measured points projected across axes"></canvas><div class="science-status" id="science-status-unfold">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-unfold">Same measured points projected across axes</p></article>
+            <article class="science-card" id="science-card-causal"><div class="science-card-head"><strong>06 · Causal transformation</strong><button type="button" class="tiny-btn" id="science-expand-causal" aria-label="Expand 06 · Causal transformation">↗</button></div><canvas id="science-causal" height="168" aria-label="Actual before / predicted / observed trace"></canvas><div class="science-status" id="science-status-causal">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-causal">Actual before / predicted / observed trace</p></article>
+            <article class="science-card" id="science-card-shape"><div class="science-card-head"><strong>07 · Before-action solution shape</strong><button type="button" class="tiny-btn" id="science-expand-shape" aria-label="Expand 07 · Before-action solution shape">↗</button></div><canvas id="science-shape" height="168" aria-label="Original frozen maze path versus initial plan"></canvas><div class="science-status" id="science-status-shape">AWAITING REAL DATA</div><p class="science-detail" id="science-detail-shape">Original frozen maze path versus initial plan</p></article>
           </div>
-          <div class="graph-controls">
-            <label class="compact-control">Proiecție
-              <select id="projection">
-                <option value="full">Proiecție nativă · 5D</option>
-                <option value="layers">Plan secundar · 5D</option>
-                <option value="slice">Secțiune de axe native</option>
-              </select>
-            </label>
-            <label class="compact-control">Axa secțiunii
-              <select id="axisSelect"><option value="0">Axa 0</option></select>
-            </label>
-            <label class="check-mini"><input type="checkbox" id="showEdges" checked> Legături</label>
-            <label class="check-mini"><input type="checkbox" id="showField" checked> Atracție</label>
-            <button class="tiny-btn" id="fitBtn">Încadrează</button>
-          </div>
-          <div class="canvas-frame" id="canvasFrame">
-            <canvas id="graphCanvas" aria-label="Graf animat: noduri, legături și drumul soluției"></canvas>
-            <div class="canvas-corner top-left"><span class="live-dot"></span> <span id="graphLiveText">Așteptare prima lume</span></div>
-            <div class="canvas-corner bottom-left" id="graphHover">Mișcă cursorul peste noduri / scroll pentru zoom / trage pentru pan</div>
-            <div class="canvas-corner bottom-right"><span class="legend-item"><b class="line yellow"></b> Legături native</span><span class="legend-item"><b class="line green"></b> Flux observat</span><span class="legend-item"><b class="dot violet"></b> Nod activ</span></div>
-          </div>
+          <!-- Compatibility surface: original graph viewer is not run/displayed, but native-app.js retains all original controls and event wiring untouched. -->
+          <div hidden aria-hidden="true" id="science-compat"><select id="projection"><option value="full">full</option><option value="layers">layers</option><option value="slice">slice</option></select>
+            <select id="axisSelect"></select><input type="checkbox" id="showEdges" checked><input type="checkbox" id="showField" checked>
+            <button type="button" id="fitBtn">Fit</button><div class="canvas-frame" id="canvasFrame"><canvas id="graphCanvas"></canvas>
+            <span id="graphLiveText"></span><span id="graphHover"></span></div></div>
           <div class="under-graph">
-            <div><span class="label-lite">TEXT NEVĂZUT · TOGETHER</span><strong id="gField">—</strong></div>
-            <div><span class="label-lite">TEXT NEVĂZUT · C</span><strong id="gPlanned">—</strong></div>
-            <div><span class="label-lite">TEXT NEVĂZUT · CU CÂMPUL</span><strong id="gExecuted">—</strong></div>
-            <div><span class="label-lite">LUMI ANTRENATE</span><strong id="gGoal" class="goal-short">—</strong></div>
+            <div><span class="label-lite">TEXT UNSEEN · TOGETHER</span><strong id="gField">—</strong></div>
+            <div><span class="label-lite">TEXT UNSEEN · C</span><strong id="gPlanned">—</strong></div>
+            <div><span class="label-lite">TEXT UNSEEN · FIELD</span><strong id="gExecuted">—</strong></div>
+            <div><span class="label-lite">TRAINED WORLDS</span><strong id="gGoal" class="goal-short">—</strong></div>
           </div>
         </section>
         <aside class="panel inspector-panel">
