@@ -167,11 +167,22 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    for(let i=0;i<100;i++){
      const state=await c.eval("({loaded:document.readyState==='complete',"+
        "score:document.querySelector('#mAccuracy')?.textContent,"+
-       "canvas:document.querySelector('#graphCanvas')?.width||0})");
+       "canvas:document.querySelector('#science-spectrum')?.width||0})");
      if(state.loaded&&state.score==="64.2%"&&state.canvas>100){ready=true;break;}
      await sleep(100);
    }
    assert.equal(ready,true,"V26 browser UI did not display original ALIGNED score");
+   const science=await c.eval("({canvasCount:[...document.querySelectorAll('.science-card canvas')].length,"+
+     "spectrum:document.querySelector('#science-status-spectrum')?.textContent,"+
+     "phases:document.querySelector('#science-status-phases')?.textContent,"+
+     "cycles:document.querySelector('#science-status-cycles')?.textContent,"+
+     "trainerUI:!!document.querySelector('#pauseBtn')&&!!document.querySelector('#saveBtn')})");
+   assert.equal(science.canvasCount,7,"Exactly seven measured science canvases are required");
+   assert.match(science.spectrum,/eigenvalue/,"Spectrum needs actual graph data");
+   assert.match(science.phases,/coordinate vectors/,"Native coordinates must be displayed");
+   assert.match(science.cycles,/graph cycles/,"Measured graph loops must be displayed");
+   assert.equal(science.trainerUI,true,"Original V42 controls must remain");
+
    const before=await c.eval("({aligned:document.querySelector('#mAccuracy').textContent,"+
      "live:document.querySelector('#mLearned').textContent,"+
      "throughput:document.querySelector('#mThroughput').textContent,"+
