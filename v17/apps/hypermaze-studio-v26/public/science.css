@@ -14,3 +14,13 @@
 .science-panel>.under-graph{margin-top:auto}
 #science-compat[hidden]{display:none!important}
 @media(max-width:660px){.science-grid{grid-template-columns:1fr}.science-card canvas{height:200px}.science-expanded canvas{height:270px}}
+
+.science-probe{display:flex;flex-direction:column;gap:8px;margin:0 14px 14px;padding:12px;border:1px solid #3b5c75;border-radius:11px;background:#0d2638}
+.science-probe>strong{font-size:12px;color:#c1f4e7}
+.science-evidence-upload{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:#dae8fa;flex-wrap:wrap}
+.science-evidence-upload input{max-width:100%;font-size:11px}
+.science-evidence-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.science-evidence-actions label{display:flex;align-items:center;gap:5px;color:#b5cce2;font-size:11px}
+.science-evidence-actions select{max-width:180px;min-width:80px;border-radius:5px;background:#091727;color:#e1f4fd;border:1px solid #39556d;padding:5px}
+.science-evidence-actions input[type=range]{flex:1;min-width:80px}
+#science-evidence-note{font-size:11px;line-height:1.5;color:#acc4d8;white-space:normal}
