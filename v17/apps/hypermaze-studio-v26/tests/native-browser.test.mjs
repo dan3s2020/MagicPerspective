@@ -9,6 +9,8 @@ import path from "node:path";
 import http from "node:http";
 import {spawn,spawnSync} from "node:child_process";
 import {createNativeBridge} from "../native-bridge.mjs";
+import {Brain} from "../../../transcend/torus-aether/devour/brain.mjs";
+import {playExercise,makeMaze,SEEDS,seedOf} from "../../../transcend/torus-aether/worlds/exercise.mjs";
 const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
 const browserBinary=()=>{
   if(process.platform==="win32"){
@@ -266,6 +268,44 @@ test("real browser V26 design displays exact V17 native metrics and visible corr
    await c.eval("document.querySelector('#pauseBtn').click()");
    await sleep(170);
    assert.ok(calls.some(x=>x.url==="/control"&&x.query.includes("do=pause")));
+   // A genuine ORIGINAL trained Brain saved as .v8 and exported read-only.
+   // HTTP transport remains the explicitly fixed original-V17 API fixture.
+   const originalBrain=new Brain({rules:"winner",seed:11});
+   for(let i=0;i<160;i++){
+     const maze=makeMaze(seedOf(SEEDS.train,i),i%2?9:7);
+     playExercise(maze,originalBrain.disc,()=>{},{record:false});
+   }
+   const proofCheckpoint=path.join(dir,"original-browser-science.v8");
+   const proofFile=path.join(dir,"science-real-field.json");
+   originalBrain.save(proofCheckpoint);
+   const exporter=path.resolve("v17/research/science/export-native-field.mjs");
+   const exported=spawnSync(process.execPath,[exporter,"--checkpoint",proofCheckpoint,
+     "--out",proofFile,"--count","1","--size","9","--seed","117"],{
+       encoding:"utf8",timeout:30000});
+   assert.equal(exported.status,0,"Actual original checkpoint export failed: "+
+     exported.stderr+"\n"+exported.stdout);
+   const proof=JSON.parse(await fs.readFile(proofFile,"utf8"));
+   assert.equal(proof.episodes[0].nativePathIdentical,true);
+   const wire=JSON.stringify(JSON.stringify(proof));
+   await c.eval("(()=>{const el=document.querySelector('#science-evidence-file');"+
+     "const data="+wire+";const f=new File([data],'verified-native-field.json',{type:'application/json'});"+
+     "Object.defineProperty(el,'files',{configurable:true,value:[f]});"+
+     "el.dispatchEvent(new Event('change',{bubbles:true}));return true})()");
+   let proofShown=false;
+   for(let i=0;i<40;i++){
+     const proofUi=await c.eval("({note:document.querySelector('#science-evidence-note').textContent,"+
+       "causal:document.querySelector('#science-status-causal').textContent})");
+     if(proofUi.note.includes('SHA256')&&proofUi.causal.includes('goal-off')){proofShown=true;break}
+     await sleep(100);
+   }
+   assert.equal(proofShown,true,"Read-only REAL original field evidence was not rendered");
+   await c.eval("(()=>{const slider=document.querySelector('#science-evidence-round');"+
+     "slider.value=slider.max;slider.dispatchEvent(new Event('input',{bubbles:true}));"+
+     "document.querySelector('#science-card-shape').scrollIntoView({block:'center'});return true})()");
+   const proofLast=await c.eval("({shape:document.querySelector('#science-status-shape').textContent,"+
+     "round:document.querySelector('#science-evidence-round').value})");
+   assert.match(proofLast.shape,/before-action path/);
+   assert.ok(Number(proofLast.round)>0,"Original internal relaxations missing");
    const screenshot=await c.send("Page.captureScreenshot",{
      format:"png",captureBeyondViewport:false});
    assert.ok(screenshot.data?.length>10000);
