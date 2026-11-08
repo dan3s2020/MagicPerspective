@@ -1,5 +1,5 @@
 // Seven observational instruments; draws ONLY native /graph and original frozen /eval results.
-import {nativeGraph,topology,graphSpectrum,coordinateDimensions,causalTrace,mazeShape,DynamicsTracker} from '/science-core.mjs';
+import {nativeGraph,nativeXD,topology,graphSpectrum,coordinateDimensions,causalTrace,mazeShape,DynamicsTracker} from '/science-core.mjs';
 const IDS=['spectrum','phases','cycles','dynamics','unfold','causal','shape'];
 const $=id=>document.getElementById(id);
 const num=(n,d=2)=>Number.isFinite(n)?Number(n).toFixed(d):'unavailable';
@@ -109,16 +109,74 @@ function shape(record){const q=sheet('shape');if(!q)return;
     'Green = original executed path; yellow = '+(m.isFirstPlan?'original first plan':'first plan absent')+
     '. Source = frozen /eval, NOT a native 5D solution trajectory.');
 }
+
+function xdPoints(xd,w,h){
+  // Exact binary occupancy of the seven ACTIVE coordinates exposed by the native world.
+  // x/y are observer-only finite-state coordinates, never learned manifold coordinates.
+  const out=new Map();
+  for(const v of xd.vertices){
+    const low=v.bits.slice(0,3).reduce((s,b,i)=>s+b*(2**i),0);
+    const high=v.bits.slice(3).reduce((s,b,i)=>s+b*(2**i),0);
+    out.set(v.id,[16+(low/Math.max(1,2**Math.min(3,xd.activeRank)-1))*(w-32),
+      18+(high/Math.max(1,2**Math.max(0,xd.activeRank-3)-1))*(h-36)]);
+  }
+  return out;
+}
+function xdUnfold(xd){
+  const q=sheet('unfold');if(!q||!xd)return;
+  const {c,w,h}=q,pts=xdPoints(xd,w,h);
+  for(const e of xd.links){const a=pts.get(String(e.from)),b=pts.get(String(e.to));if(a&&b)line(c,[a,b],'#345574',.65)}
+  for(const v of xd.vertices){const p=pts.get(v.id);if(p)dot(c,...p,v.wall?colors.bad:colors.ink,v.wall?2:1.6)}
+  const solution=xd.predicted.map(id=>pts.get(id)).filter(Boolean);
+  const observed=xd.observed.map(id=>pts.get(id)).filter(Boolean);
+  line(c,solution,colors.hot,3);line(c,observed,colors.good,1.8);
+  label(c,'7-bit occupancy -> 2D observer projection',12,13,colors.hot,10);
+  status('unfold',xd.dimensions+' ambient axes · '+xd.activeRank+' active · '+xd.finiteStates+' states',
+    'Real finite state map; gold predicted / green executed. 2D flattening is observer-made. NOT the whole 2^D hypercube or a proven emergent unfolding.');
+}
+function xdCausal(xd){
+  const q=sheet('causal');if(!q||!xd)return;
+  const {c,w,h}=q,frames=xd.frames,bar=(w-36)/Math.max(1,frames.length);
+  for(let i=0;i<frames.length;i++){
+    const x=18+i*bar;
+    c.fillStyle=frames[i].correct?colors.good:colors.bad;
+    c.fillRect(x,h*.3,Math.max(2,bar*.68),h*.5);
+    label(c,String(i+1),x,h-10,colors.ink,10);
+  }
+  label(c,'learned actions executed against hidden physics',12,18,colors.hot,10);
+  status('causal',(xd.correct??0)+'/'+(xd.attempted??0)+' predicted action effects matched',
+    'Native xD execution.frames: predictedAfter compared against observedAfter. Training uses real interventions; this is held-out execution evidence.');
+}
+function xdShape(xd){
+  const q=sheet('shape');if(!q||!xd)return;
+  const {c,w,h}=q,pts=xdPoints(xd,w,h);
+  for(const e of xd.links){
+    const a=pts.get(String(e.from)),b=pts.get(String(e.to));if(a&&b)line(c,[a,b],'#294963',.5);
+  }
+  const predicted=xd.predicted.map(id=>pts.get(id)).filter(Boolean),
+    observed=xd.observed.map(id=>pts.get(id)).filter(Boolean);
+  line(c,predicted,colors.hot,3);
+  line(c,observed,colors.good,1.8);
+  const first=pts.get(xd.predicted[0]||xd.observed[0]),last=pts.get(xd.predicted.at(-1)||xd.observed.at(-1));
+  if(first)dot(c,...first,colors.purple,4);
+  if(last)dot(c,...last,colors.bad,4);
+  label(c,'Gold = pre-action path / green = executed',10,14,colors.hot,10);
+  const exact=xd.predicted.length>0&&xd.predicted.length===xd.observed.length&&
+    xd.predicted.every((v,i)=>v===xd.observed[i]);
+  status('shape',(xd.solved?'SOLVED':'NOT SOLVED')+' · prediction vs execution '+(exact?'EXACT':'DIFFERENT/UNAVAILABLE'),
+    'Original learned action atlas predicted a full route BEFORE action. Actual action consequences from execution.frames; 7 active axes only.');
+}
+
 export function createScienceObservatory(){
   const tracker=new DynamicsTracker(),selected={record:null},sampled={g:null};
-  function render(){const g=sampled.g;spectrum(g);phases(g);cycles(g);dynamics(tracker);unfold(g);causal(g);shape(selected.record)}
+  function render(){const g=sampled.g,xd=sampled.xd;spectrum(xd?.graph||g);phases(g);cycles(xd?.graph||g);dynamics(tracker);if(xd){xdUnfold(xd);xdCausal(xd);xdShape(xd)}else{unfold(g);causal(g);shape(selected.record)}}
   let lastDraw=0;
   window.addEventListener('resize',render,{passive:true});
   for(const id of IDS)$('science-expand-'+id)?.addEventListener('click',()=>{
     $('science-card-'+id)?.classList.toggle('science-expanded');render();
   });
   return {
-    consume(payload){sampled.g=nativeGraph(payload?.graph);if(sampled.g)sampled.g.worker=payload?.selectedWorker??null;
+    consume(payload){sampled.g=nativeGraph(payload?.graph);sampled.xd=nativeXD(payload?.graph);if(sampled.g)sampled.g.worker=payload?.selectedWorker??null;
       tracker.push(sampled.g);if(Date.now()-lastDraw>1000){lastDraw=Date.now();render()}
     },
     onEvaluation(ev,index){selected.record=ev?.kind==='maze'&&Array.isArray(ev.mazes)?ev.mazes[index]||null:null;render()},
