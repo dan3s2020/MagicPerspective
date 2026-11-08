@@ -35,6 +35,8 @@ jobs:
           node --check v17/apps/hypermaze-studio-v26/public/science-core.mjs
           node --check v17/apps/hypermaze-studio-v26/public/science-observatory.mjs
           node --test v17/apps/hypermaze-studio-v26/tests/science-core.test.mjs
+      - name: Actual native Discoverer mechanism, independent math and causal ablations
+        run: node --test v17/tests/v42-science-native-field-causal.test.mjs
       - name: Original V17 xD organism solves controlled genuinely unseen finite worlds
         run: node --test v17/tests/complete-xd-maze-atlas.test.mjs
       - name: Browser-integrated source, controls and science UI
