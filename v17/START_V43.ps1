@@ -40,8 +40,16 @@ $V43Brain=Join-Path $Out "brains\brain-0-winner.v8"
 # No C:/D: discovery, no guessed alternative project paths, no Braivour service.
 if(!(Test-Path -LiteralPath $V43Brain -PathType Leaf)){
   if(!(Test-Path -LiteralPath $V42Brain -PathType Leaf)){
-    throw "No saved original V42 Brain in its own defined runtime: $V42Brain. Original V42 is untouched."
-  }
+    # First-ever installation: start an authentic original V42 Brain from zero.
+    # Do NOT require a retained prior checkpoint, Braivour installation or
+    # previous MagicPerspective checkout. The new native worker creates it.
+    if(Test-Path -LiteralPath $Out){
+      if(@(Get-ChildItem -LiteralPath $Out -Force -ErrorAction SilentlyContinue).Count){
+        throw "V43 runtime exists without a saved native Brain; refusing an implicit reset. Use a NEW -Out to start fresh."
+      }
+    }
+    Write-Host "No previous V42 checkpoint: training a fresh ORIGINAL V42 Brain in V43; nothing replaced." -ForegroundColor Cyan
+  } else {
   if(Test-Path -LiteralPath $Out){
     if(@(Get-ChildItem -LiteralPath $Out -Force -ErrorAction SilentlyContinue).Count){
       throw "Existing V43 runtime has files but no native Brain. Refusing overwrite."
@@ -76,8 +84,9 @@ if(!(Test-Path -LiteralPath $V43Brain -PathType Leaf)){
     throw
   }
   Write-Host "Real V42 Brain + ALL sidecars cloned into isolated V43 runtime; original untouched." -ForegroundColor Green
+  } # end original V42 checkpoint import (fresh V43 does not import anything)
 }
-$Atlas=if([string]::IsNullOrWhiteSpace($DonorAtlas)){Join-Path $Out "v43-qwen-donor.json"}else{[IO.Path]::GetFullPath($DonorAtlas)}
+$Atlas=if([string]::IsNullOrWhiteSpace($DonorAtlas)){Join-Path $Root "v43\v43-qwen-donor.json"}else{[IO.Path]::GetFullPath($DonorAtlas)}
 if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
   if([string]::IsNullOrWhiteSpace($GGUF)){$GGUF=$env:MAGICPERSPECTIVE_QWEN_GGUF}
   if([string]::IsNullOrWhiteSpace($GGUF)){
