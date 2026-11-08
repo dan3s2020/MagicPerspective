@@ -6,7 +6,8 @@ param(
   [string]$GGUF="",
   [string]$Data="",
   [switch]$CPU,
-  [switch]$NoBrowser
+  [switch]$NoBrowser,
+  [switch]$ChoosePaths
 )
 $ErrorActionPreference="Stop"
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
@@ -205,7 +206,7 @@ if($CudaPython -and !(Test-Path -LiteralPath $OwnVenv)){
   }
   Write-Host "Created isolated V43 environment from your selected CUDA Python: $CudaPython" -ForegroundColor Green
 }
-if(!$GGUF -and $Selection.GGUF -and (Test-Path -LiteralPath $Selection.GGUF -PathType Leaf)){$GGUF=$Selection.GGUF}
+if(!$GGUF -and !$ChoosePaths -and $Selection.GGUF -and (Test-Path -LiteralPath $Selection.GGUF -PathType Leaf)){$GGUF=$Selection.GGUF}
 if(!$GGUF){
   # This is a starting directory for the FILE PICKER, not an assumption
   # about the actual model file name.
@@ -217,7 +218,7 @@ if(!$GGUF -or !(Test-Path -LiteralPath $GGUF -PathType Leaf)){
 if([IO.Path]::GetExtension($GGUF) -ine ".gguf"){
   throw "Please select a real Qwen .gguf model file: $GGUF"
 }
-if(!$Data -and $Selection.Data -and (Test-Path -LiteralPath $Selection.Data -PathType Container)){$Data=$Selection.Data}
+if(!$Data -and !$ChoosePaths -and $Selection.Data -and (Test-Path -LiteralPath $Selection.Data -PathType Container)){$Data=$Selection.Data}
 if(!$Data){
   $Data=Pick-ExistingFolder "Select the folder containing your actual OpenThoughts Parquet dataset" "D:\training"
 }
