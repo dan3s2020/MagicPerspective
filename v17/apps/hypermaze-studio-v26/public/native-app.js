@@ -2,6 +2,7 @@
 // Uses the NEW V26 interface, NOT V26's ObservedEffects synthetic trainer.
 // Every response and benchmark is delegated to ORIGINAL native V17 endpoints.
 import {nativeMeasurements,summarizeNativeEvaluation,formatPct} from "/native-metrics.mjs";
+import {createScienceObservatory} from "/science-observatory.mjs";
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -13,6 +14,7 @@ let polling=false,graphVersion=0,positions=[],screenPositions=[],lastGraph=null;
 let replayTimer=null,hoverId=null,view={x:0,y:0,zoom:1,pointer:false,px:0,py:0};
 let projection="full",showEdges=true,showFlow=true,initialized=false,errors=0;
 const canvas=$("graphCanvas"),ctx=canvas.getContext("2d");
+const scienceObservatory=createScienceObservatory();
 const notice=(message,bad=false)=>{
   const el=$("toast");el.textContent=String(message);
   el.classList.toggle("error",bad);el.classList.add("visible");
@@ -546,6 +548,7 @@ function drawEval(){
   if(ev.kind==="maze")renderOriginalMaze(rows[selectedIndex]);
   else $("nativeMazeBox").hidden=true;
   const x=rows[selectedIndex];if(!x)return;
+  scienceObservatory.onEvaluation(selectedEval,selectedIndex);
   const max=rows.length;
   $("replayRange").max=max-1;$("replayRange").value=selectedIndex;
   value("replayLabel",(selectedIndex+1)+" / "+max);
@@ -638,6 +641,7 @@ async function poll(){
     updateWorkerOptions(payload);
     metrics=liveIdentity(payload);
     graphUpdate(payload.graph);
+    scienceObservatory.consume(payload);
     if(payload.graphError)appendLog("warn","Graf indisponibil momentan: "+payload.graphError);
   }catch(e){
     errors++;
