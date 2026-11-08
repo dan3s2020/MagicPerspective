@@ -124,15 +124,40 @@ function xdPoints(xd,w,h){
 }
 function xdUnfold(xd){
   const q=sheet('unfold');if(!q||!xd)return;
-  const {c,w,h}=q,pts=xdPoints(xd,w,h);
-  for(const e of xd.links){const a=pts.get(String(e.from)),b=pts.get(String(e.to));if(a&&b)line(c,[a,b],'#345574',.65)}
-  for(const v of xd.vertices){const p=pts.get(v.id);if(p)dot(c,...p,v.wall?colors.bad:colors.ink,v.wall?2:1.6)}
-  const solution=xd.predicted.map(id=>pts.get(id)).filter(Boolean);
-  const observed=xd.observed.map(id=>pts.get(id)).filter(Boolean);
-  line(c,solution,colors.hot,3);line(c,observed,colors.good,1.8);
-  label(c,'7-bit occupancy -> 2D observer projection',12,13,colors.hot,10);
-  status('unfold',xd.dimensions+' ambient axes · '+xd.activeRank+' active · '+xd.finiteStates+' states',
-    'Real finite state map; gold predicted / green executed. 2D flattening is observer-made. NOT the whole 2^D hypercube or a proven emergent unfolding.');
+  const {c,w,h}=q,left=new Map(),right=new Map();
+  const groups=new Map();
+  for(const v of xd.vertices){
+    const a=v.bits[0]??0,b=v.bits[1]??0,key=a+','+b;
+    left.set(v.id,[16+a*(w*.39-25),30+b*(h-61)]);
+    groups.set(key,(groups.get(key)||0)+1);
+    const lo=v.bits.slice(0,3).reduce((s,b,i)=>s+b*(2**i),0);
+    const hi=v.bits.slice(3).reduce((s,b,i)=>s+b*(2**i),0);
+    right.set(v.id,[w*.56+lo/7*(w*.38),27+hi/15*(h-53)]);
+  }
+  // Left = genuine 2-active-coordinate projection: only four distinct
+  // positions; right = LOSSLESS seven-bit grid encoding, NOT learned folding.
+  for(const e of xd.links){
+    const a=right.get(String(e.from)),b=right.get(String(e.to));
+    if(a&&b)line(c,[a,b],'#345574',.55);
+  }
+  for(const v of xd.vertices){
+    const p=right.get(v.id);
+    if(p)dot(c,...p,v.wall?colors.bad:colors.ink,1.4);
+  }
+  for(const [key,count] of groups){
+    const [a,b]=key.split(',').map(Number),x=16+a*(w*.39-25),y=30+b*(h-61);
+    dot(c,x,y,colors.purple,6);
+    label(c,String(count),x+7,y+3,colors.ink,10);
+  }
+  const path=xd.predicted.map(id=>right.get(id)).filter(Boolean);
+  const actual=xd.observed.map(id=>right.get(id)).filter(Boolean);
+  line(c,path,colors.hot,2.7);line(c,actual,colors.good,1.5);
+  c.strokeStyle=colors.mute;c.beginPath();c.moveTo(w*.48,20);c.lineTo(w*.48,h-10);c.stroke();
+  label(c,'2 real axes: aliased',10,14,colors.hot,10);
+  label(c,'7-bit unique encoding',w*.52,14,colors.good,10);
+  status('unfold',xd.activeRank+' active / '+xd.dimensions+' ambient · '+groups.size+' vs '+xd.finiteStates+' states',
+    'Left: 2-coordinate projection aliases '+xd.finiteStates/groups.size+
+    ' original states per point. Right: lossless 7-bit observer encoding, with native path. No learned dimensional unfolding is demonstrated.');
 }
 function xdCausal(xd){
   const q=sheet('causal');if(!q||!xd)return;
