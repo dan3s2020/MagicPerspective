@@ -1,5 +1,8 @@
 # MagicPerspective — Verbatim implementation contract
 
+**Binding 2026-11-08 source:** [6 exact USER turns + 5 visible ASSISTANT replies with chronology and limitations](./2026-11-08-ONE-UNIVERSE-CHRONOLOGY-AND-SOURCE-INDEX.md). USER U05/U06 override earlier assistant-only interpretations of "two players" and "target"; preserve the user's exact intelligence-structure definition and single-universe mechanism without normalizing. Original images and the full native historical conversation are unavailable; keep all pre-existing completion gates BLOCKED.
+
+
 **Source of truth:** the entire original conversation from its first to its last word. No assistant-authored paraphrase, selected feature list, or simplified "motor" can replace that source.
 
 ## Literal requirements
