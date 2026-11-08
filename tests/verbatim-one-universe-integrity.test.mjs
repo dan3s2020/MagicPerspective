@@ -55,3 +55,17 @@ test("chronology index lists every source and explicitly discloses missing origi
   assert.match(index,/NOT RECOVERED/);
   assert.match(index,/BLOCKED \/ UNVERIFIED/);
 });
+
+test("Claude, Gemini, Copilot and Cursor instructions route to literal USER archive", () => {
+  const paths=[
+    "CLAUDE.md","GEMINI.md",
+    ".github/copilot-instructions.md",
+    ".cursor/rules/verbatim-one-organism.mdc"
+  ];
+  for(const relative of paths){
+    const body=read(relative).toString("utf8");
+    assert.ok(body.includes("AGENTS.md"),relative + " missing AGENTS link");
+    assert.ok(body.includes("2026-11-08-QWEN-ONE-UNIVERSE-USER-VERBATIM-PARTIAL.md"),
+      relative + " missing original USER source");
+  }
+});
