@@ -1,0 +1,35 @@
+name: Original V42 on real still-open DIMACS graph coloring
+on:
+  push:
+    branches:
+      - research/V42-OPEN-GRAPH-COLORING-20261108
+  workflow_dispatch:
+jobs:
+  test-open-problem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prove original V42 train/solver source is byte-identical to pinned baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code ac205b5bc561274b957584a7dee058a1110ab6f8 HEAD -- \
+            v17/transcend/torus-aether/worlds/exercise.mjs \
+            v17/transcend/torus-aether/worlds/labyrinth.mjs \
+            v17/transcend/torus-aether/devour/brain.mjs \
+            v17/transcend/torus-aether/devour/worker.mjs
+      - name: Execute ORIGINAL Discoverer.shapeGraph over actual open graph, write independently validated certificate
+        run: node v17/research/open-graph-coloring/run-original-v42.mjs
+      - name: Preserve full certified assignment and native runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-v42-real-dimacs-250-coloring
+          path: v17/research/open-graph-coloring/full-certificate.json
+          if-no-files-found: warn
