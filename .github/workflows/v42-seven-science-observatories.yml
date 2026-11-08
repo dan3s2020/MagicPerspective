@@ -43,3 +43,10 @@ jobs:
         run: node --test v17/tests/complete-xd-maze-atlas.test.mjs
       - name: Browser-integrated source, controls and science UI
         run: node --test v17/apps/hypermaze-studio-v26/tests/native-browser.test.mjs
+      - name: Preserve actual Chromium science UI screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v42-seven-science-chrome
+          path: v28-native-ui-real-chrome.png
+          if-no-files-found: warn
