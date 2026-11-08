@@ -1,0 +1,62 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "MP-V43-NATIVE-ONE-UNIVERSE-20261108",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-08-V43-REPOSITORY-AND-LAUNCH-USER-CORRECTION.md",
+    "exact_user_quote": "Stop LOOKING FOR PATHS . DOES V41 OR V42 OPENS THAT WAY? NO ! DID I ASKED FOR THIS?NO ! DID I ASKED TO MAKE AN UPDATE FROM V42 KNOWING ALL WE KNOW AND NEED AND ALSO WHAT ELSE WE HAVE IN BRAIVOUR repo! WTF ARE YOU DOING IN BRAIVOUR REPO IF WE ARE WORKING ON UPDATING V42 to v43 in MAGICPERSPECTIVE REPO ! "
+  },
+  "additional_sources": [
+    "verbatim/2026-11-08-V43-FUSED-TRAINING-USER-VERBATIM.md",
+    "verbatim/2026-11-08-QWEN-ONE-UNIVERSE-USER-VERBATIM-PARTIAL.md"
+  ],
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/devour/brain.mjs",
+    "commit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+    "algorithm": "Original V42 native Brain, Discoverer.shapeGraph and ConstructedPathLearner, frozen observed-text systems, original CUDA, maze/transform sideworlds and original V26-designed native UI",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "v17/START_V43.ps1",
+    "v17/START_V41_SPEED_PROFILE.ps1",
+    "v17/START_HYPERMAZE_REAL_CUDA.ps1",
+    "v17/transcend/torus-aether/devour/devour.mjs",
+    "v17/transcend/torus-aether/devour/worker.mjs",
+    "v17/transcend/torus-aether/devour/brain-character-world.mjs",
+    "v17/transcend/torus-aether/devour/v43-fused-one-universe.mjs",
+    "v17/v43/gguf_checkpoint.py",
+    "v17/v43/export_qwen.py",
+    "v17/apps/hypermaze-studio-v26/native-bridge.mjs",
+    "v17/apps/hypermaze-studio-v26/v43-journal.mjs",
+    "v17/apps/hypermaze-studio-v26/public/native-v43.html",
+    "v17/apps/hypermaze-studio-v26/public/v43.css",
+    "v17/apps/hypermaze-studio-v26/public/v43-ui.js",
+    "v17/tests/v43-native-one-universe.test.mjs",
+    ".github/workflows/v43-native-magicperspective.yml"
+  ],
+  "added_mechanisms": [
+    "Additive authentic Braivour GGUF token-row atlas and read-only sampled transformation axes ported INTO original MagicPerspective",
+    "Player1 original V42 pre-action text-shape prediction",
+    "Same Brain Qwen-puppet movement, frozen actual donor route, native V42 resumed text navigation",
+    "Append-only full exercise journal and same native UI extension",
+    "Opt-in V43 paused training Start without changing V42 defaults"
+  ],
+  "additional_user_authorization_quote": "Ok ,now implement this in v43 and make start training button only have this new type of training  selected .",
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node --test v17/tests/v43-native-one-universe.test.mjs",
+    "node --check v17/transcend/torus-aether/devour/worker.mjs",
+    "Windows PowerShell 7 parse original V42 launch chain"
+  ],
+  "actual_observed_results": "First V43 native original Brain and UI regression CI succeeded on branch at commit ef52a72e699b68c8fad658777438e55e55f3a400. Real Qwen GGUF + user's RTX 3050 Ti training not measured.",
+  "limitations": [
+    "Original Qwen GGUF binary is not available in the GitHub runner or this conversation; real 10 GB donor performance remains UNVERIFIED",
+    "Predictions after observing a training exercise are not proof of unseen independence",
+    "V43 is a branch directly from original V42, not a rewrite of main",
+    "Historical full Verbatim remains incomplete"
+  ],
+  "verification_status": "SYNTHETIC_INTEGRATION_PASS_REAL_QWEN_UNVERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
