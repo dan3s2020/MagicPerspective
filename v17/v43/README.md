@@ -2,6 +2,27 @@
 
 **This V43 version is implemented and launched in `MagicPerspective`, NOT Braivour.** Built on exact original V42 branch commit `ac205b5bc561274b957584a7dee058a1110ab6f8`. Read [original V43 USER request](../verbatim/2026-11-08-V43-FUSED-TRAINING-USER-VERBATIM.md), [USER's direct-repository correction](../verbatim/2026-11-08-V43-REPOSITORY-AND-LAUNCH-USER-CORRECTION.md), [one organism original USER words](../verbatim/2026-11-08-QWEN-ONE-UNIVERSE-USER-VERBATIM-PARTIAL.md).
 
+## Clean first installation with clickable path selectors
+
+You do not need an earlier project checkout, Brain checkpoint, Braivour installation, Git repository, or launcher.
+
+Paste the following into Windows PowerShell:
+
+~~~powershell
+$ErrorActionPreference='Stop'
+[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+$D='D:\MagicPerspective-V43'
+New-Item -ItemType Directory -Force -Path $D | Out-Null
+$Url='https://raw.githubusercontent.com/dan3s2020/MagicPerspective/feature/V43-NATIVE-V42-ONE-UNIVERSE-20261108/v17/v43/BOOTSTRAP_D.ps1'
+Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile (Join-Path $D 'BOOTSTRAP_D.ps1')
+powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $D 'BOOTSTRAP_D.ps1')
+~~~
+
+The installer retrieves the native MagicPerspective V43 branch under D:\MagicPerspective-V43\source without Git. It never scans or modifies other drive folders. When Node 22+ or Python 3.10–3.12 is unavailable on PATH, Windows file pickers let you select existing executables. Canceling allows isolated downloads/installations under D:\MagicPerspective-V43\tools. Optionally select an existing CUDA-enabled Python; V42's original native CUDA self-test remains mandatory.
+
+The Qwen file picker opens at **D:\LocalAi\models**. You select the exact .gguf file; its name is never guessed. The dataset folder picker opens under D:\training. Selected paths are saved to D:\MagicPerspective-V43\selected-paths.json for future runs. Qwen and the dataset remain in their existing locations.
+
+With no V42 or V43 checkpoint saved, the launcher starts an original fresh V42 Brain in the V43 runtime. Subsequent runs resume its saved state. The original V42 browser UI and native Start Training control remain in use. Real on-device GPU and real Qwen training behavior remain to be measured locally.
 ## V42 → V43 (same native launch, same UI)
 
 The launch entrypoint is **`v17/START_V43.ps1`**, beside `v17/START_V42_RESUME_V41_FAST.ps1`. It calls the **original** `START_V41_SPEED_PROFILE.ps1` → `START_HYPERMAZE_REAL_CUDA.ps1` → `START_V17.ps1` chain, and reuses the same V26-designed original native browser UI at its unchanged default localhost port **8962**. It does **NOT** launch Braivour or an additional UI/server, scan disks for directories, rename other projects, or replace the original V42 UI.
