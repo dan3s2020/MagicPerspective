@@ -20,6 +20,9 @@ import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
 const workers = +arg("workers", Math.max(1, os.cpus().length - 1)), every = +arg("every", 200000), maxChars = +arg("chars", 0) || Infinity;
+// V43 in ORIGINAL MagicPerspective, not an external Braivour process. Absent => byte-identical V42 mode.
+const v43DonorPath=process.env.MAGICPERSPECTIVE_V43_DONOR||null;
+if(v43DonorPath&&workers!==1)throw Error("V43 ONE organism requires exactly one original native Brain worker");
 const checkpointEvery = Math.max(0,Math.trunc(+arg("checkpoint-every",0)));
 const xdAtlasEvery=Math.max(0,Math.trunc(+arg("xd-atlas-every",0)));
 // 0 preserves the native behavior; nonzero decouples atomic saves from expensive frozen evaluations.
@@ -160,7 +163,7 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
   fs.mkdirSync(brainsDir, {recursive: true});
   const wk = new Worker(path.join(here, "worker.mjs"), {workerData: {w: share, n: shares, gw: sl.w, source, arm: sl.arm, every, maxChars, memGB, evalText,
     worlds: sl.worlds, mazeEvery, checkpointEvery, xdAtlasEvery, saveFile: saveOf(sl), resume: !fresh && fromSave, paused, gpu: gpuFor(), controls: sl.controls || null,
-    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise")}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
+    traceTransformations: process.argv.includes("--trace-transformations"), endogenousNoise: process.argv.includes("--endogenous-noise"), v43DonorPath}, resourceLimits: {maxOldGenerationSizeMb: Math.round(memGB * 1024 * 1.6)}});
   sl.wk = wk; sl.status = paused ? "oprit" : "antrenează";
   wk.on("message", m => {
     if (gen !== sl.gen) return;
