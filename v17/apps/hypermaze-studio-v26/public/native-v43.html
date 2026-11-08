@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>MagicPerspective V43 · Original V42 one-organism native training</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/native-extra.css">
+  <link rel="stylesheet" href="/v43.css">
+  <script type="module" src="/native-app.js"></script>
+  <script type="module" src="/v43-ui.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="identity">
+        <div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div><div class="eyebrow">MAGICPERSPECTIVE / OBSERVATION SYSTEM</div>
+          <h1>Hypermaze <span>Laboratory</span><sup>V43 · ORIGINAL V42 UI</sup></h1></div>
+      </div>
+      <div class="topright">
+        <div class="connection" id="connection"><span class="led"></span><span id="connectionText">Conectare…</span></div>
+        <div class="device">ORIGINAL V17 <strong id="nativeDevice">DISCONNECTED</strong> <span>ACELAȘI TRAINER · ACELEAȘI METRICI</span></div>
+      </div>
+    </header>
+    <div class="toolbar">
+      <div class="controls-primary">
+        <label class="v43-mode">TRAINING MODE <select aria-label="V43 sole training mode" disabled><option selected>V43 · ONE UNIVERSE / FUSED TEXT + QWEN PUPPET</option></select></label>
+        <button class="main-btn" id="startBtn"><span class="symbol">▶</span> Start Training</button>
+        <button class="action-btn" id="pauseBtn"><span class="symbol">Ⅱ</span> Pauză</button>
+        <button class="action-btn" id="stepBtn"><span class="symbol">⇥</span> Selectează alt graf</button>
+        <button class="action-btn" id="evalBtn"><span class="symbol">◎</span> Frozen Test V17</button>
+      </div>
+      <div class="controls-secondary">
+        <button class="action-btn subtle" id="saveBtn">Salvează</button>
+        <button class="action-btn subtle" id="restoreBtn">Status checkpoint V17</button>
+        <button class="action-btn subtle danger" id="resetBtn">Reset training</button>
+        <a class="action-btn subtle" href="/api/native-evidence" download>Export dovezi</a>
+      </div>
+    </div>
+    <main>
+      <section class="stats-grid" aria-label="Metrici de antrenare">
+        <article class="stat-card"><span class="stat-label">DATE ANTRENATE · ORIGINAL V17</span><strong id="mWorlds">—</strong><small id="mWorldSub">Numărul original de exerciții, fără substituții</small></article>
+        <article class="stat-card primary"><span class="stat-label">TEXT NEVĂZUT · ALIGNED V17</span><strong id="mAccuracy">—</strong><small id="mAccSub">test.aligned · aceeași evaluare originală</small></article>
+        <article class="stat-card"><span class="stat-label">TEXT NEVĂZUT · GRAF LIVE</span><strong id="mLearned">—</strong><small id="mLearnedSub">test.live · original, nu editări de cuvinte</small></article>
+        <article class="stat-card"><span class="stat-label">VITEZĂ TRAINING ORIGINAL</span><strong id="mThroughput">—</strong><small id="mTotal">Exerciții/sec complete · CUDA nativ dacă e activ</small></article>
+        <article class="stat-card"><span class="stat-label">GRAF NATIV V17</span><strong id="mStates">—</strong><small id="mEdges">Noduri și muchii observate, nu 2^axe sintetice</small></article>
+      </section>
+      <section class="panel native-progress-panel" id="nativeDatasetPanel" aria-label="Progres real OpenThoughts original">
+        <div class="panel-header"><div><span class="eyebrow">ORIGINAL PARQUET TRAINING · CONTROL LIVE</span><h2>Dataset consumat <span class="panel-sub">/ 1:1 cu contorul original, fără reset</span></h2></div>
+          <div class="chip" id="nativeTrainingState">Se verifică workerul...</div></div>
+        <div class="native-progress-values">
+          <strong id="nativeProgressPct">—</strong>
+          <span id="nativeProgressCounts">Aștept primul contor original...</span>
+          <span id="nativeProgressChars">Caractere procesate: —</span>
+        </div>
+        <div class="native-progress-track" role="progressbar" id="nativeProgressTrack"
+          aria-label="Progres original OpenThoughts" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="native-progress-fill" id="nativeProgressFill"></div>
+        </div>
+        <div class="native-progress-footer">
+          <span id="nativeProgressHeldout">Exerciții rezervate nevăzute: —</span>
+          <span id="nativeCudaPhase">Faza CUDA: —</span>
+          <span id="nativeProgressHeartbeat">Stare verificată la: —</span>
+        </div>
+        <div class="native-fatal" id="nativeFatal" role="alert" hidden></div>
+        <div class="native-progress-message" id="nativeProgressMessage">Nu afișăm antrenare activă fără confirmarea workerului original.</div>
+        <div class="native-cuda-memory" id="v32CudaMemoryPanel">
+          <div class="native-vram-title">VRAM REAL · PYTORCH CUDA · FĂRĂ MEMORIE ARTIFICIALĂ</div>
+          <div class="native-vram-numbers">
+            <strong id="v32GpuUsed">—</strong>
+            <span id="v32GpuBudget">din limita sigură disponibilă: —</span>
+            <span id="v32GpuFree">VRAM disponibil: —</span>
+          </div>
+          <div class="native-vram-track" role="progressbar" id="v32GpuUsageBar"
+            aria-label="Memorie rezervată efectiv de PyTorch pentru antrenare" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="native-vram-fill" id="v32GpuUsageFill"></div>
+          </div>
+          <div id="v32GpuMicrochunk" class="native-vram-footnote">Dimensiunea lotului CUDA: aștept prima măsurare reală.</div>
+          <div id="v32GpuPhase" class="native-vram-footnote">Faza CUDA: aștept workerul original.</div>
+        </div>
+      </section>
+      <section class="panel native-history-panel" aria-label="Istoric de măsurători originale">
+        <div class="panel-header"><div><span class="eyebrow">LIVE / ORIGINAL V17 METRIC HISTORY</span><h2>ALIGNED, graf, together, C și viteză reală <span class="panel-sub">/ date înregistrate fără recalculare</span></h2></div>
+          <label>Metrică: <select id="nativeMetricView"><option value="aligned">ALIGNED · original</option><option value="live">GRAF · original</option><option value="together">TOGETHER · original</option><option value="C">C · original</option><option value="mazeShape">Labirinte · forma inițială</option><option value="completedExercisesPerSecond">Exerciții/s · native</option><option value="sustainedCharactersPerSecond">Caractere/s · native</option></select></label></div>
+        <div class="native-chart-area"><canvas id="nativeHistoryCanvas" aria-label="Graf de istoric, numai valorile originalului V17" width="1400" height="215"></canvas></div>
+        <div class="native-chart-note" id="nativeHistoryInfo">Istoricul începe când este conectat motorul original; nu creează date de antrenare.</div>
+      </section>
+      <div class="workspace">
+        <section class="panel graph-panel" id="v43OriginalUniverse" aria-label="Graf hiperdimensional cauzal">
+          <div class="panel-header">
+            <div><span class="eyebrow">01 / SPATIUL REAL AL STĂRILOR</span>
+              <h2>Topologia învățată <span class="panel-sub">/ nodurile și conexiunile organismului original</span></h2></div>
+            <span class="chip" id="graphBadge">Nicio lume încă</span>
+          </div>
+          <div class="graph-controls">
+            <label class="compact-control">Proiecție
+              <select id="projection">
+                <option value="full">Proiecție nativă · 5D</option>
+                <option value="layers">Plan secundar · 5D</option>
+                <option value="slice">Secțiune de axe native</option>
+              </select>
+            </label>
+            <label class="compact-control">Axa secțiunii
+              <select id="axisSelect"><option value="0">Axa 0</option></select>
+            </label>
+            <label class="check-mini"><input type="checkbox" id="showEdges" checked> Legături</label>
+            <label class="check-mini"><input type="checkbox" id="showField" checked> Atracție</label>
+            <button class="tiny-btn" id="fitBtn">Încadrează</button>
+             <button class="tiny-btn strong" id="v43ToggleGraph" aria-expanded="true" aria-controls="v43OriginalUniverse">Hide universe graph</button>
+          </div>
+          <div class="canvas-frame" id="canvasFrame">
+            <canvas id="graphCanvas" aria-label="Graf animat: noduri, legături și drumul soluției"></canvas>
+            <div class="canvas-corner top-left"><span class="live-dot"></span> <span id="graphLiveText">Așteptare prima lume</span></div>
+            <div class="canvas-corner bottom-left" id="graphHover">Mișcă cursorul peste noduri / scroll pentru zoom / trage pentru pan</div>
+            <div class="canvas-corner bottom-right"><span class="legend-item"><b class="line yellow"></b> Legături native</span><span class="legend-item"><b class="line green"></b> Flux observat</span><span class="legend-item"><b class="dot violet"></b> Nod activ</span></div>
+          </div>
+          <div class="under-graph">
+            <div><span class="label-lite">TEXT NEVĂZUT · TOGETHER</span><strong id="gField">—</strong></div>
+            <div><span class="label-lite">TEXT NEVĂZUT · C</span><strong id="gPlanned">—</strong></div>
+            <div><span class="label-lite">TEXT NEVĂZUT · CU CÂMPUL</span><strong id="gExecuted">—</strong></div>
+            <div><span class="label-lite">LUMI ANTRENATE</span><strong id="gGoal" class="goal-short">—</strong></div>
+          </div>
+        </section>
+        <aside class="panel inspector-panel">
+          <div class="panel-header"><div><span class="eyebrow">02 / EVALUAREA ORIGINALĂ · ÎNGHEȚATĂ</span>
+            <h2>Ce nimerește și ce greșește</h2></div><span class="chip" id="worldKind">—</span></div>
+          <div class="inspector-metas">
+            <div><span>GRAF ORIGINAL</span><strong id="iState">—</strong></div>
+            <div><span>TIP EVALUARE</span><strong id="iWords">—</strong></div>
+            <div><span>ACURATEȚE NATIVĂ</span><strong id="iCorrect">—</strong></div>
+          </div>
+          <div class="panel-title-inline"><h3>Exerciții evaluate · selectează unul</h3><small id="routeCount">0 pași</small></div>
+          <div class="route-list" id="routeList"><div class="empty">Aici vor apărea exercițiile din testul original, nu exerciții sintetice.</div></div>
+          <div class="replay-controls">
+            <div class="replay-buttons">
+              <button class="tiny-btn" id="replayPrev">‹</button>
+              <button class="tiny-btn strong" id="replayPlay">▶ Replay</button>
+              <button class="tiny-btn" id="replayNext">›</button>
+              <span id="replayLabel">0 / 0</span>
+            </div>
+            <input id="replayRange" type="range" min="0" max="0" value="0" aria-label="Poziție replay">
+          </div>
+          <div class="panel-title-inline"><h3>Măsurători native comparabile</h3><small id="rulesCount">0 axe</small></div>
+          <div class="effects-table" id="effectsList"><div class="empty">ALIGNED, graf, C, together, labirinte și transformări din exact același trainer V17.</div></div>
+        </aside>
+      </div>
+
+      <!-- V43: same live native V42 UI, add only the fused exercise observability. -->
+      <section class="panel v43-panel" id="v43Panel" aria-label="V43 one-organism fused training">
+        <div class="panel-header"><div><span class="eyebrow">V43 / ONE ORGANISM, ONE UNIVERSE · TWO INTERNAL MOVEMENT MODES</span>
+          <h2>Fused text evolution · Original V42 ↔ frozen Qwen-puppet transformations</h2></div>
+          <span class="chip" id="v43Phase">AWAITING ORIGINAL BRAIN</span>
+        </div>
+        <div class="v43-stats">
+          <div><span>V43 DATASET</span><strong id="v43Percent">—</strong><small id="v43Dataset">Waiting for real assigned training rows</small></div>
+          <div><span>COMPLETED FUSED EXERCISES</span><strong id="v43Completed">—</strong><small>Original OpenThoughts rows only</small></div>
+          <div><span>V43 SPEED</span><strong id="v43Speed">—</strong><small>Completed fused exercises per second</small></div>
+          <div><span>CHARACTER THROUGHPUT</span><strong id="v43CharSpeed">—</strong><small>Actual completed answer characters / sec</small></div>
+          <div><span>PLAYER 1 BEFORE</span><strong id="v43BeforePct">—</strong><small>Original prediction before moving</small></div>
+          <div><span>PLAYER 2 · QWEN</span><strong id="v43QwenPct">—</strong><small>Observed constrained Qwen-puppet movements</small></div>
+          <div><span>PLAYER 1 AFTER</span><strong id="v43AfterPct">—</strong><small>Original native V42 after frozen observation</small></div>
+        </div>
+        <div class="v43-two-charts">
+          <div><h3>Accuracy evolution per completed exercise</h3><canvas id="v43AccuracyChart" width="800" height="240" aria-label="Player 1 before, Qwen puppet, Player 1 after accuracy"></canvas><p class="v43-legend"><b class="before"></b> Player 1 before <b class="puppet"></b> Qwen puppet <b class="after"></b> Player 1 after</p></div>
+          <div><h3>Measured throughput</h3><canvas id="v43SpeedChart" width="800" height="240" aria-label="Native fused exercise and character processing speed"></canvas><p class="v43-legend"><b class="speed"></b> Exercises/sec <b class="after"></b> Characters/sec</p></div>
+        </div>
+        <div class="v43-live">
+          <h3>Current live exercise <span id="v43CurrentId">—</span> · full data, not abbreviated</h3>
+          <div class="v43-triple">
+            <div><b>PLAYER 1 · BEFORE</b><strong id="v43CurrentBefore">—</strong><small id="v43BeforeCount">—</small></div>
+            <div><b>PLAYER 2 · QWEN MOVEMENTS</b><strong id="v43CurrentQwen">—</strong><small id="v43QwenCount">—</small></div>
+            <div><b>PLAYER 1 · AFTER PUPPET FREEZE</b><strong id="v43CurrentAfter">—</strong><small id="v43AfterCount">—</small></div>
+          </div>
+          <div class="v43-text-grid">
+            <div><h4>Full text question</h4><pre id="v43Question">Waiting for actual exercise…</pre></div>
+            <div><h4>Full exercise reference</h4><pre id="v43Reference">Waiting for actual exercise…</pre></div>
+            <div><h4>Player 1 before · predicted solution form</h4><pre id="v43TextBefore">Waiting for actual exercise…</pre></div>
+            <div><h4>Player 2 output · actual Qwen coordinate movement</h4><pre id="v43TextPuppet">Waiting for actual exercise…</pre></div>
+            <div><h4>Player 1 after · original V42 movement</h4><pre id="v43TextAfter">Waiting for actual exercise…</pre></div>
+            <div><h4>Why / exact mismatches / transformation evidence</h4><pre id="v43Diagnosis">Waiting for actual exercise…</pre></div>
+          </div>
+        </div>
+        <div class="v43-journal">
+          <h3>All exercises · Scores · Correct/wrong characters · Full text and transformations</h3>
+          <div class="v43-table-wrap"><table><thead><tr><th>Exercise</th><th>P1 before</th><th>Qwen puppet</th><th>P1 after</th><th>P1 ✓ / ✕</th><th>P2 ✓ / ✕</th><th>P1 after ✓ / ✕</th><th>Change</th><th>Full details</th></tr></thead><tbody id="v43Rows"></tbody></table></div>
+          <div class="v43-footer"><button class="tiny-btn" id="v43Older" disabled>Load older exercises</button>
+            <span id="v43JournalCount">All completed exercises are stored in the original append-only V43 journal.</span></div>
+        </div>
+        <div class="measured-note">V43 records REAL changes inside one original V42 Brain. Player 1 and the Qwen puppet are internal movement configurations. The training-exercise reference is not the USER-defined target, the hypothesized structure of intelligence. Failed puppet routes are reported, not relabeled successes.</div>
+      </section>
+      <div class="secondary-grid">
+        <section class="panel text-panel">
+          <div class="panel-header"><div><span class="eyebrow">03 / TEXTUL REAL DIN TESTUL ORIGINAL</span><h2>Corect → prezis din prima → diferențe</h2></div><span class="chip">Test original · răspunsul începe la marcajul ▸</span></div>
+          <div class="text-columns">
+            <div class="text-col"><h3><span class="little-square source"></span> Text corect · referință</h3><pre id="textBefore">Așteptare corpus și prima lume…</pre></div>
+            <div class="text-col"><h3><span class="little-square predicted"></span> Text ghicit de modelul original</h3><pre id="textPredicted">Nicio formă calculată încă.</pre></div>
+            <div class="text-col"><h3><span class="little-square actual"></span> Diferențe caracter cu caracter</h3><pre id="textActual">Nicio acțiune executată încă.</pre></div>
+          </div>
+          <div class="measured-note">Evaluarea folosește ORIGINALUL V17: exerciții Q/A nevăzute din split-ul original, exact aceleași definiții de răspuns/ALIGNED/forma soluției. Roșu = caractere greșite; verde = caractere corecte. Niciun procent V26 de substituții nu este reutilizat.</div>
+        </section>
+        <section class="panel settings-panel">
+          <div class="panel-header"><div><span class="eyebrow">04 / CONTROL LIVE</span><h2>Controale native ale trainerului V17</h2></div></div>
+          <div class="slider-stack">
+            <label class="slider-control"><span>Temperatură locală V17 <output id="axesVal">0.60</output></span><input id="axes" type="range" min="0" max="2" step=".05" value=".6"></label>
+            <label class="slider-control"><span>Temperatură text V17 <output id="wordsVal">0.60</output></span><input id="words" type="range" min="0" max="2" step=".05" value=".6"></label>
+            <label class="slider-control"><span>Noise predicție V17 <output id="noiseVal">0.22</output></span><input id="noise" type="range" min="0" max="1" step=".01" value=".22"></label>
+            <label class="slider-control"><span>Noise graf V17 <output id="batchVal">0.30</output></span><input id="batch" type="range" min="0" max="2" step=".05" value=".3"></label>
+            <label class="slider-control"><span>Temperatură la test V17 <output id="recordEveryVal">0.40</output></span><input id="recordEvery" type="range" min="0" max="1.5" step=".05" value=".4"></label>
+          </div>
+          <button class="action-btn block" id="applyBtn">Aplică parametrii originali V17</button>
+          <div class="dataset-section" id="nativeGpuPanel">
+            <div class="panel-title-inline"><h3>GPU original V17 · setări reale</h3><small id="nativeGpuStatus">Fără măsurare</small></div>
+            <div class="native-speed-title">CUDA LIVE SPEED · MĂSURAT DIN ANTRENAREA REALĂ</div>
+            <div class="native-speed-grid" aria-live="polite">
+              <div><span>ULTIMUL LOT REAL</span><strong id="nativeSpeedLast">—</strong><small id="nativeSpeedLastMeta">aștept finalizarea lotului</small></div>
+              <div><span>CUDA TEXT CARD</span><strong id="nativeSpeedCuda">—</strong><small id="nativeSpeedCudaMeta">doar faza CUDA, fără a ascunde CPU</small></div>
+              <div><span>SUSȚINUT END-TO-END</span><strong id="nativeSpeedSustained">—</strong><small id="nativeSpeedSustainedMeta">măsurat după loturi complete</small></div>
+            </div>
+            <div class="native-gpu-grid">
+              <label>Dispozitiv <select id="nativeGpuDevice"><option value="off">CPU / off</option><option value="cuda:0">CUDA 0</option><option value="cuda:1">CUDA 1</option><option value="cpu">CPU explicit</option></select></label>
+              <label>Lumi pe GPU <input type="number" id="nativeGpuWorlds" min="0" max="100000" value="0"></label>
+              <label>Texte / lot GPU <input type="number" id="nativeGpuTextBatch" min="1" max="128" value="8"></label>
+              <label>Caractere / chunk CUDA <input type="number" id="nativeGpuTextChunk" min="32" max="4096" step="32" value="4096"></label>
+              <label>VRAM maxim (GB) <input type="number" id="nativeGpuVram" min="0" max="128" step=".5" value="0"></label>
+              <label>Limită de lucru GPU % <input type="number" id="nativeGpuUtil" min="5" max="100" value="100"></label>
+            </div>
+            <button class="action-btn block" id="nativeGpuApply">Aplică GPU original · fără motor sintetic</button>
+            <small>Hardware-ul poate raporta erori. Numai V17 decide dacă CUDA rulează; UI nu inventează accelerație.</small>
+          </div>
+          <div class="dataset-section">
+            <div class="panel-title-inline"><h3>Corpus nativ V17</h3><small>PARQUET ORIGINAL · FĂRĂ CONVERSIE</small></div>
+            <div class="dataset-path" id="datasetInfo">Așteptare încărcare…</div>
+            <label class="label-lite" for="corpusPath">DATELE TRAINERULUI ORIGINAL (READ-ONLY)</label>
+            <div class="inline-input"><input type="text" id="corpusPath" placeholder="D:\datasets\text.jsonl"><button class="tiny-btn strong" id="loadCorpusBtn">Verifică sursa</button></div>
+            <div class="file-upload"><input type="file" id="fileUpload" hidden><button class="tiny-btn" id="uploadBtn">Corpusul se configurează în START_V17.ps1</button></div>
+            <label class="label-lite" for="checkpointPath">CHECKPOINT ORIGINAL (RELUARE DIN -Resume / -Out)</label>
+            <input type="text" id="checkpointPath" placeholder="Calea din jurnalul salvării">
+            <label class="label-lite" for="evalCount">EVALUARE ORIGINALĂ · EXERCIȚII NEVĂZUTE</label>
+            <div class="inline-input"><input id="evalCount" type="number" min="1" max="200" step="1" value="12"><span class="small-muted">probleme Q/A native</span></div>
+          </div>
+        </section>
+      </div>
+      <section class="panel" id="native-eval-settings">
+        <div class="panel-header"><div><span class="eyebrow">NATIVE FROZEN EVALUATION · V17 EXACT</span><h2>Exerciții reale din OpenThoughts și alte lumi</h2></div>
+          <div class="row" gap="2"><label for="nativeKind">Lume </label>
+          <select id="nativeKind"><option value="text">Text / Q-A</option><option value="maze">Labirinte originale</option><option value="transform">Transformări originale</option></select></div></div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:0 19px 16px">
+           <label for="nativeWorker">Creier # </label><select id="nativeWorker"><option value="">Aștept grafuri…</option></select>
+           <label for="nativeMaxChars">Lungime max. răspuns text </label><input type="number" id="nativeMaxChars" min="0" max="1000000" step="1" value="20000" style="width:125px">
+           <label for="nativeTestNoise">Noise evaluare </label><input type="range" id="nativeTestNoise" min="0" max="1" step=".05" value="0" style="width:110px">
+           <span id="nativeFrozenStatus">Nu a rulat încă testul înghețat.</span>
+        </div>
+        <div id="nativeResultsTable" style="padding:0 18px 16px;max-height:300px;overflow:auto;font-size:12px"></div>
+        <div class="native-maze-box" id="nativeMazeBox" hidden><h3>Labirint original · forma prezisă (auriu) vs. traseu executat (albastru)</h3><canvas id="nativeMazeCanvas" width="600" height="600" aria-label="Labirintul original, forma din prima și mișcările reale"></canvas></div>
+      </section>
+      <section class="panel journal">
+        <div class="panel-header"><div><span class="eyebrow">05 / AUDIT ÎN TIMP REAL</span><h2>Jurnal, dovezi și erori</h2></div><span id="runSummary" class="chip">Trasee originale · nicio lume sintetică</span></div>
+        <div id="logList" class="log-list"><div class="empty">Jurnalul experimentelor va apărea aici.</div></div>
+      </section>
+    </main>
+    <footer><span>MagicPerspective V28 · Design V26 · motorul original V17</span><span>ALIGNED/score/test exact original · viteză GPU din loturi reale · fără simulări</span></footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
