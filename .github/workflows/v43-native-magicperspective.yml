@@ -5,6 +5,7 @@ on:
       - feature/V43-NATIVE-V42-ONE-UNIVERSE-20261108
     paths:
       - "v17/START_V43.ps1"
+      - "v17/v43/BOOTSTRAP_D.ps1"
       - "v17/START_V41_SPEED_PROFILE.ps1"
       - "v17/START_HYPERMAZE_REAL_CUDA.ps1"
       - "v17/v43/**"
@@ -55,6 +56,7 @@ jobs:
         run: |
           foreach($file in @(
             'v17/START_V43.ps1',
+            'v17/v43/BOOTSTRAP_D.ps1',
             'v17/START_V41_SPEED_PROFILE.ps1',
             'v17/START_HYPERMAZE_REAL_CUDA.ps1'
           )) {
@@ -63,3 +65,22 @@ jobs:
             if($parseErrors.Count){$parseErrors|Out-String|Write-Error;exit 1}
           }
           Write-Host 'V43_ORIGINAL_V42_LAUNCH_CHAIN_PARSE_PASS'
+      - name: Verify fresh D installer opens GUI file/folder pickers and never scans drives
+        shell: pwsh
+        run: |
+          $bootstrap=Get-Content v17/v43/BOOTSTRAP_D.ps1 -Raw
+          if($bootstrap -notmatch 'System\.Windows\.Forms\.OpenFileDialog' -or
+             $bootstrap -notmatch 'System\.Windows\.Forms\.FolderBrowserDialog'){
+            throw 'V43 lacks Qwen file picker or dataset folder picker'
+          }
+          if($bootstrap -notmatch 'D:\\LocalAi\\models'){
+            throw 'Qwen picker does not begin at user-specified directory'
+          }
+          if($bootstrap -match 'Inventory-D|EnumerateDirectories\('){
+            throw 'V43 must never scan drives looking for old installations'
+          }
+          if($bootstrap -notmatch 'selected-paths\.json'){
+            throw 'V43 must remember explicitly selected paths'
+          }
+          Write-Host 'V43_D_GUI_PICKERS_SOURCE_POLICY_PASS'
+
