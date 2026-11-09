@@ -129,8 +129,14 @@ export class V43FusedOneUniverse {
     const movementAtlas=new Map();
     const originalShape=this.world._nativeShape;
     const originalProgress=this.world.onPlanProgress;
-    let lastProgressMs=0;
+    let lastProgressMs=0,lastShapeIndex=0,correctShapeCount=0;
     this.world.onPlanProgress=(done,total,instructions)=>{
+      for(let i=lastShapeIndex;i<done;i++){
+        const r=instructions[i];
+        if(r&&r.planned&&r.predicted_before_move&&r.expectedFinal===r.wanted)
+          correctShapeCount++;
+      }
+      lastShapeIndex=done;
       const now=Date.now();
       // At most three bounded, read-only UI snapshots per second. Previously
       // rebuilt and persisted an ever-growing 50k-byte prefix every 128 bytes,
@@ -140,6 +146,10 @@ export class V43FusedOneUniverse {
       const prefix=Buffer.from(instructions.map(p=>p.expectedFinal)).toString('utf8');
       this._live({...progressBase,active:true,
         phase:'planning full donor coordinate movements',plannedBytes:done,totalBytes:total,
+        shapeVerifiedBeforeAction:correctShapeCount,shapeVerifiedTotal:done,
+        shapeComplete:done===total&&correctShapeCount===total,
+        frozenAxisRank:this.world.projector?.rank??0,
+        frozenAxisDimensions:this.world.projector?.dim??0,
         outputPrefix:prefix,bytesPerSecond:+(done/Math.max(.001,(now-startedAt)/1000)).toFixed(2)});
     };
     const shapeCache=new Map();let shapeCacheHits=0;
