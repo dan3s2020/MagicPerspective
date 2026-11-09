@@ -12,6 +12,7 @@ export class V43TextReservoir {
     this.totalTaken=0;this.peakQueuedCharacters=0;
   }
   get queuedCharacters(){return this.queue.reduce((n,x)=>n+(x.chars||0),0)}
+  peek(n=2){return this.queue.slice(0,Math.max(0,Math.min(3,n)))}
   get state(){return {readyBatches:this.queue.length,readyRows:this.queue.reduce((n,x)=>n+x.exs.length,0),
     queuedCharacters:this.queuedCharacters,peakQueuedCharacters:this.peakQueuedCharacters,
     depthLimit:this.depth,totalLoaded:this.totalLoaded,totalTaken:this.totalTaken,
