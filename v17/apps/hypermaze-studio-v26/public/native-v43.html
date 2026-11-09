@@ -162,6 +162,12 @@
           <div><span>PLAYER 2 · QWEN</span><strong id="v43QwenPct">—</strong><small>Observed constrained Qwen-puppet movements</small></div>
           <div><span>PLAYER 1 AFTER</span><strong id="v43AfterPct">—</strong><small>Original native V42 after frozen observation</small></div>
         </div>
+        <div class="v43-live-strip" aria-live="polite">
+          <span><b>ORIGINAL REAL CUDA</b> <strong id="v43OriginalSpeed">Awaiting first native batch</strong></span>
+          <span><b>DATASET REAL</b> <strong id="v43DatasetProgress">—</strong></span>
+          <span><b>WORKER ACTIVE PHASE</b> <strong id="v43WorkerPhase">Awaiting native progress</strong></span>
+        </div>
+        <div class="v43-live-meter" aria-label="Real donor movement planning progress"><div id="v43LiveFill"></div></div>
         <div class="v43-two-charts">
           <div><h3>Accuracy evolution per completed exercise</h3><canvas id="v43AccuracyChart" width="800" height="240" aria-label="Player 1 before, Qwen puppet, Player 1 after accuracy"></canvas><p class="v43-legend"><b class="before"></b> Player 1 before <b class="puppet"></b> Qwen puppet <b class="after"></b> Player 1 after</p></div>
           <div><h3>Measured throughput</h3><canvas id="v43SpeedChart" width="800" height="240" aria-label="Native fused exercise and character processing speed"></canvas><p class="v43-legend"><b class="speed"></b> Exercises/sec <b class="after"></b> Characters/sec</p></div>
@@ -188,7 +194,7 @@
           <div class="v43-footer"><button class="tiny-btn" id="v43Older" disabled>Load older exercises</button>
             <span id="v43JournalCount">All completed exercises are stored in the original append-only V43 journal.</span></div>
         </div>
-        <div class="measured-note">V43 records REAL changes inside one original V42 Brain. Player 1 and the Qwen puppet are internal movement configurations. The training-exercise reference is not the USER-defined target, the hypothesized structure of intelligence. Failed puppet routes are reported, not relabeled successes.</div>
+        <div class="measured-note">V43 records REAL changes inside one original V42 Brain. Green characters match the held-out reference at the same index; red characters disagree; grey squares mark missing predictions. The Qwen-puppet uses sampled GGUF weight coordinates and an answer-targeted training-game path, NOT Qwen inference or proven 100% independent prediction. Player 1 and the Qwen puppet are internal movement configurations. The training-exercise reference is not the USER-defined target, the hypothesized structure of intelligence. Failed puppet routes are reported, not relabeled successes.</div>
       </section>
       <div class="secondary-grid">
         <section class="panel text-panel">
