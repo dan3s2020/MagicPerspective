@@ -268,7 +268,7 @@ export class BrainCharacterWorld {
     const predictions=this._planEntireExercise(input,target);
     // Until this point the player has not moved and original Brain.live() has
     // seen no character-game action. The plan is completely predicted.
-    let state=this._start(input),successful=0,actions=0,planned=0,firstPredictions=0;
+    let state=this._start(input),successful=0,actions=0,planned=0,firstPredictions=0,verifiedExactFirstShape=0;
     const produced=[],trace=[];
     if(record)this.brain.beginExercise();
     for(const prediction of predictions){
@@ -302,6 +302,7 @@ export class BrainCharacterWorld {
       }
       produced.push(state);
       successful+=Number(state===prediction.wanted);
+      if(prediction.planned&&prediction.predicted_before_move&&prediction.expectedFinal===prediction.wanted&&state===prediction.wanted)verifiedExactFirstShape++;
       if(trace.length<32)trace.push({goalByte:prediction.wanted,actualByte:state,
         from:prediction.from,planned:prediction.planned,actions:prediction.steps.length,
         firstPredictionBeforeAction:prediction.predicted_before_move,
@@ -325,7 +326,7 @@ export class BrainCharacterWorld {
     const result={bytes:target.length,totalOutputBytes:gold.length,
       unvisitedTargetBytes:gold.length-target.length,matchedBytes:successful,
       accuracy:successful/Math.max(1,target.length),predictedRoutes:planned,
-      firstPredictionsBeforeMovement:firstPredictions,actions,
+      firstPredictionsBeforeMovement:firstPredictions,verifiedExactFirstShape,actions,
       completeOutputCovered:target.length===gold.length,
       producedPreview:Buffer.from(produced.slice(0,100)).toString('utf8'),
       targetPreview:Buffer.from(target.subarray(0,100)).toString('utf8'),trace,
