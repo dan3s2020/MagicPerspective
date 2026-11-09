@@ -28,6 +28,45 @@ export async function inspectOriginalCuda({python=GPU_PY,run=runFile}={}){
       "PyTorch CUDA is not usable in the ORIGINAL dedicated V17 Python environment"};
   }catch(e){return {ok:false,python,reason:String(e.message||e).slice(0,400)};}
 }
+// V43: independent, real NVIDIA driver utilization probe. This is NOT
+// equivalent to a "gpu-util=100" throttle setting or CUDA RPC uptime.
+// Sampling is cached to avoid disturbing the native training process.
+export function parseV43NvidiaSmi(line){
+  const cells=String(line||"").trim().split(",").map(x=>x.trim());
+  if(cells.length<3)return null;
+  const [percent,usedMiB,totalMiB]=cells.map(Number);
+  if(!Number.isFinite(percent)||percent<0||percent>100||
+     !Number.isFinite(usedMiB)||usedMiB<0||
+     !Number.isFinite(totalMiB)||totalMiB<=0)return null;
+  return {available:true,utilizationPercent:percent,usedMiB,totalMiB,
+    source:"nvidia-smi physical GPU sample",sampledAt:new Date().toISOString()};
+}
+let v43SampleCache={at:0,data:null,pending:null};
+export async function getV43PhysicalGpu(run=runFile){
+  const now=Date.now();
+  if(v43SampleCache.pending)return v43SampleCache.pending;
+  if(now-v43SampleCache.at<4000)return v43SampleCache.data;
+  v43SampleCache.pending=(async()=>{
+    try{
+      const {stdout}=await run("nvidia-smi",[
+        "--query-gpu=utilization.gpu,memory.used,memory.total",
+        "--format=csv,noheader,nounits"
+      ],{timeout:2500,windowsHide:true,maxBuffer:16384});
+      return parseV43NvidiaSmi(stdout.trim().split(/\r?\n/)[0])||
+        {available:false,source:"nvidia-smi invalid response"};
+    }catch(err){
+      return {available:false,source:"nvidia-smi unavailable",reason:String(err.message).slice(0,110)};
+    }
+  })();
+  try{
+    const data=await v43SampleCache.pending;
+    v43SampleCache={at:Date.now(),data,pending:null};
+    return data;
+  }catch(err){
+    v43SampleCache={at:Date.now(),data:{available:false,reason:String(err)},pending:null};
+    return v43SampleCache.data;
+  }
+}
 export function isCudaStartupFailure(graph){
   return /cuda|torch\.cuda|GPU process|PyTorch|python|OCTOPUS_PY/i.test(
     String(graph?.error||graph?.gpu?.error||""))&&graph?.status==="eroare";
@@ -136,7 +175,7 @@ export async function createNativeBridge({
       }
       if(V43_UI&&req.method==="GET"&&target==="/api/v43-status"){
         const native=await nativeGet("/health?w=0",7000);
-        const [report,live]=await Promise.all([readV43State(native.checkpoint),readV43Live(native.checkpoint)]);
+        const [report,live,physicalGpu]=await Promise.all([readV43State(native.checkpoint),readV43Live(native.checkpoint),getV43PhysicalGpu()]);
         const data=native.dataset||null,assigned=data?.assignedTrainingRows??null;
         const completed=report?.completed??0;
         // Native progress INCLUDES the already-learned V42 checkpoint rows.
@@ -146,7 +185,7 @@ export async function createNativeBridge({
         const v43OnlyPercent=Number.isFinite(assigned)&&assigned>0?
           Math.min(100,100*completed/assigned):null;
         send(res,{version:43,mode:"V43_ONE_ORGANISM_ONLY",
-          worker:report,live,phase:live?.active?live.phase:(native.health?.phase||report?.phase||native.status),
+          worker:report,live,physicalGpu,phase:live?.active?live.phase:(native.health?.phase||report?.phase||native.status),
           dataset:{...data,v43Completed:completed,v43Percent:progress,
             v43OnlyPercent},
           health:native.health||null,lastBatchReal:native.lastBatchReal||null,
