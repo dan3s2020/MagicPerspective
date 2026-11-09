@@ -284,6 +284,13 @@ class TextCard:
     def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None, stage_id=None):
         """exs: exercises (lists of symbols) lived now. trust: {key_id: [right, tried]}. Returns the totals."""
         X = self.X; flat = []; owner = []; posin = []; self._self = {}
+        # Stage tokens are consumed exactly once even on the NumPy parity
+        # backend; a mismatched or old token NEVER silently substitutes data.
+        staged = self._v43_staged.pop(stage_id, None) if stage_id else None
+        if staged is not None:
+            actual=np.concatenate([np.asarray(e,dtype=np.int64) for e in exs])
+            if hashlib.sha256(actual.tobytes()).hexdigest()!=staged["digest"]:
+                raise RuntimeError("V43 stage token does not match actual original exercises")
         for e_i, e in enumerate(exs):
             for i in range(1, len(e)): flat.append(i); owner.append(e_i)
         T_right = {}; T_tried = {}; hits = 0; vhits = [0] * len(variants); total = len(flat)
@@ -302,13 +309,7 @@ class TextCard:
             # Keep the real exercises on the card and gather every reversed
             # context there.  Previously Python rebuilt Q x 64 contexts one
             # row at a time and copied each chunk to CUDA.
-            staged = self._v43_staged.pop(stage_id, None) if stage_id else None
             if staged is not None:
-                # Safety: no result from a different text row may be consumed
-                # under this token, even when the accelerator was reused.
-                actual=np.concatenate([np.asarray(e,dtype=np.int64) for e in exs])
-                if hashlib.sha256(actual.tobytes()).hexdigest()!=staged["digest"]:
-                    raise RuntimeError("V43 stage token does not match actual original exercises")
                 lengths = staged["lengths"];starts = staged["starts"]
                 exercise_card = staged["card"]
             else:
