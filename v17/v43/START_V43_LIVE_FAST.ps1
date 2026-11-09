@@ -30,6 +30,7 @@ if($LASTEXITCODE -ne 0){throw "Real CUDA unavailable: no silent CPU fallback."}
 $changed=@(
   "v17/START_V41_SPEED_PROFILE.ps1",
   "v17/START_V43.ps1",
+  "v17/transcend/torus-aether/devour/devour.mjs",
   "v17/transcend/torus-aether/devour/worker.mjs",
   "v17/transcend/torus-aether/devour/brain-character-world.mjs",
   "v17/transcend/torus-aether/devour/v43-telemetry.mjs",
