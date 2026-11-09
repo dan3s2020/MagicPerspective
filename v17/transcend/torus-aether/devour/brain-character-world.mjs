@@ -53,10 +53,18 @@ export class BrainCharacterWorld {
     for(let from=0;from<this.outputRows.length;from++){
       const edges=[],next=[];
       for(let k=0;k<this.axes.length;k++)for(const sign of [-1,1]){
-        let dst=0,best=-Infinity;
+        let dst=0,best=-Infinity,runnerUp=-Infinity;
         for(let j=0;j<this.outputRows.length;j++){
           const value=rowDots[from][j]+sign*this.gain*axisDots[k][j];
-          if(value>best){best=value;dst=j;}
+          if(value>best){runnerUp=best;best=value;dst=j;}
+          else if(value>runnerUp)runnerUp=value;
+        }
+        // Preserve exact legacy floating point tie-breaking on near-equal
+        // actual GGUF coordinates; use the byte-original slow computation
+        // only for numerically ambiguous edges.
+        if(best-runnerUp<1e-9){
+          const src=this.outputRows[from];
+          dst=this._closest(norm(src.map((x,i)=>x+sign*this.gain*this.axes[k][i])));
         }
         // Every edge is the SAME donor physical transformation readout.
         if(dst===from)continue;
