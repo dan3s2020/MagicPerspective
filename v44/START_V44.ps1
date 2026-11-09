@@ -87,7 +87,7 @@ $Server=Join-Path $Source "v44\server.mjs"
 if(!(Test-Path -LiteralPath $Server -PathType Leaf)){throw "V44 server missing after installation"}
 New-Item -ItemType Directory -Force -Path $Runtime|Out-Null
 Write-Host ""
-Write-Host "MAGICPERSPECTIVE V44 — INDEPENDENT REAL TRAINING" -ForegroundColor Green
+Write-Host "MAGICPERSPECTIVE V44 - INDEPENDENT REAL TRAINING" -ForegroundColor Green
 Write-Host "Dataset: $Dataset"
 Write-Host "Real Qwen weight atlas: $Atlas"
 Write-Host "New CUDA learning engine: $Python"
