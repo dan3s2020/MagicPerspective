@@ -1,6 +1,8 @@
 // MagicPerspective V43 read-only mirror of the SAME original Brain's append-only
 // exercise journal. No arbitrary paths from HTTP inputs, no synthetic results.
 import fs from "node:fs/promises";
+const lastGoodState=new Map(),lastGoodLive=new Map();
+const transientRead=e=>e instanceof SyntaxError||["EPERM","EACCES","EBUSY"].includes(e?.code);
 
 export async function readV43State(checkpoint){
   if(typeof checkpoint!=="string"||!checkpoint.endsWith(".v8"))return null;
@@ -11,8 +13,15 @@ export async function readV43State(checkpoint){
     const report=JSON.parse(await fs.readFile(filename,"utf8"));
     if(report?.format!=="magicperspective/v43-one-universe/v1")
       throw Error("V43 status source identity mismatch");
+    lastGoodState.set(filename,report);
     return report;
-  }catch(e){if(e.code==="ENOENT")return null;throw e;}
+  }catch(e){
+    if(e.code==="ENOENT")return null;
+    // An exceptional Windows in-place fallback may overlap a read.
+    // Preserve LAST VERIFIED state instead of declaring original GPU dead.
+    if(transientRead(e))return lastGoodState.get(filename)||null;
+    throw e;
+  }
 }
 // Read only the latest N complete lines using bounded reverse chunks; the
 // entire OpenThoughts training journal is never materialized in server RAM.
@@ -73,6 +82,11 @@ export async function readV43Live(checkpoint){
     const value=JSON.parse(await fs.readFile(filename,"utf8"));
     if(value?.format!=="magicperspective/v43-live/v1")
       throw Error("V43 live progress format mismatch");
+    lastGoodLive.set(filename,value);
     return value;
-  }catch(e){if(e.code==="ENOENT")return null;throw e;}
+  }catch(e){
+    if(e.code==="ENOENT")return null;
+    if(transientRead(e))return lastGoodLive.get(filename)||null;
+    throw e;
+  }
 }
