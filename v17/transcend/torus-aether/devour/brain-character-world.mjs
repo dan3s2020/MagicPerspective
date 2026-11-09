@@ -5,6 +5,7 @@
 // No parallel GRU, no learned replacement output head, no donor inference.
 import fs from 'node:fs';
 import path from 'node:path';
+import {writeV43Telemetry} from './v43-telemetry.mjs';
 import {Discoverer, KIND} from '../worlds/exercise.mjs';
 
 const norm=v=>{const a=Math.hypot(...v);return a>1e-12?v.map(x=>x/a):v.map(()=>0)};
@@ -218,10 +219,9 @@ export class BrainCharacterWorld {
   _saveStatus(){
     if(!this.saveFile)return;
     const file=this.saveFile+'.brain-character.json';
-    const temp=file+'.tmp',body={format:'braivour/v42-brain-character-status-v1',
+    const body={format:'braivour/v42-brain-character-status-v1',
       ...this.brain.brainCharacterWorld,frozenDonorEdges:this.totalEdges,
       frozenDonorAxes:this.axes.length,originalBrain:true};
-    fs.mkdirSync(path.dirname(file),{recursive:true});
-    fs.writeFileSync(temp,JSON.stringify(body));fs.renameSync(temp,file);
+    writeV43Telemetry(file,body);
   }
 }
