@@ -54,7 +54,7 @@ jobs:
           db.exec('CREATE INDEX find_state ON graph(scale,state,ai,di);');
           const query=db.prepare('SELECT act,dst,n FROM graph WHERE scale=? AND state=? ORDER BY ai,di');
           class DiskGraph {
-            constructor(scale){this.scale=scale;}
+            constructor(scale,size){this.scale=scale;this.edges={size};}
             choices(from) {
               const actions=new Map();
               for(const row of query.all(this.scale,String(from))){
@@ -68,7 +68,7 @@ jobs:
               });
             }
           }
-          m.scales=m.scales.map((_,i)=>new DiskGraph(i));
+          m.scales=m.scales.map((g,i)=>new DiskGraph(i,g.edges.size));
           global.gc();
           const afterSwapHeapMiB=process.memoryUsage().heapUsed/2**20;
           const t1=performance.now();
