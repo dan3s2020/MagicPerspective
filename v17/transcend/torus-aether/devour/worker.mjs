@@ -18,6 +18,7 @@ import {NativeSelfCodeWorld} from "./selfcode-native.mjs";
 import {TextActionPaths} from "../../../../isolated/noise-space/text_action_paths.mjs";
 import {CausalTextAgent} from "../../../../isolated/noise-space/causal_text_world.mjs";
 import {V43FusedOneUniverse} from "./v43-fused-one-universe.mjs"; // V43 isolated opt-in
+import {V43TextReservoir} from "./v43-text-reservoir.mjs";
 
 const {w, n, source, arm, every, maxChars, memGB, evalText, worlds = ["text"], mazeEvery = 4000, checkpointEvery = 0, xdAtlasEvery = 0, saveFile, resume} = workerData;
 const ascii = s => { const out = []; for (const ch of s) { const c = ch.charCodeAt(0); if (c === 13) continue; out.push(c === 9 || c === 10 || (c >= 32 && c < 127) ? c : 63); } return out; };
@@ -361,7 +362,10 @@ let gpuBatchQueuedRows=0,gpuBatchQueuedCharacters=0;
 const v43Conveyor={enabled:!!v43World,depth:0,prefetchedSourceRows:0,
   cudaBatchesDispatchedAhead:0,cudaBatchesCommitted:0,
   nextGpuBatchInFlight:false,previousCpuOverlapWindows:0,
-  staleSpeculationReplays:0,aheadEnabled:true};
+  staleSpeculationReplays:0,aheadEnabled:true,
+  readyBatches:0,readyRows:0,readyCharacters:0,
+  cudaResidentBatches:0,cudaResidentCharacters:0,
+  cudaStageTransfers:0,cudaStageErrors:0,peakReadyCharacters:0};
 const heartbeat = setInterval(()=>{
   const now=Date.now(),deltaSeconds=Math.max(.001,(now-rateAt)/1000);
   const committedChars=brain.chars||0,committedExercises=brain.exercises||0;
@@ -449,7 +453,9 @@ const processGpuText = async (exs, meta, v43Pipeline = null) => {
     // V43 ONLY: physically submit next card batch while previous V42 organs
     // consolidate. Do not commit its results until its own ordered turn.
     const packet = await (v43Pipeline.started ||
-      brain.beginV43TextGPU(G,exs,observeProgress));
+      brain.beginV43TextGPU(G,exs,observeProgress,
+        {stageToken:v43Pipeline.stageToken||null}));
+    if(v43Pipeline.stageToken)v43Conveyor.cudaResidentBatches=Math.max(0,v43Conveyor.cudaResidentBatches-1);
     let result;
     try {
       result=brain.commitV43TextGPU(G,exs,packet);
@@ -823,8 +829,7 @@ const readV43CudaBatch = async iterator => {
   }
   if(!exs.length)return null;
   v43Conveyor.prefetchedSourceRows+=exs.length;
-  v43Conveyor.depth=1;
-  return {exs,meta,chars,started:null,gpu:null};
+  return {exs,meta,chars,started:null,gpu:null,stageToken:null};
 };
 // The same native Brain's GPU cards remain FIFO, NEVER guessed or trained
 // twice. Only V43 chooses this bounded two-lane execution. The complete V42
@@ -832,40 +837,83 @@ const readV43CudaBatch = async iterator => {
 if(v43World && TEXT && gpuSet){
   await hold();
   const iterator=stream()[Symbol.asyncIterator]();
-  let current=await readV43CudaBatch(iterator);
+  // Multiple authentic source batches are held READY; a single async
+  // producer reads the original Parquet iterator in strict source order.
+  // No future answer is seen by the Brain before its own training episode.
+  const reservoir=new V43TextReservoir(()=>readV43CudaBatch(iterator),{
+    depth:3,maxCharacters:520000,
+    onState:r=>{
+      v43Conveyor.readyBatches=r.readyBatches;
+      v43Conveyor.readyRows=r.readyRows;
+      v43Conveyor.readyCharacters=r.queuedCharacters;
+      v43Conveyor.peakReadyCharacters=r.peakQueuedCharacters;
+      v43Conveyor.depth=r.readyBatches;
+    }
+  });
+  let current=await reservoir.take();
+  const stageBatch=async (G,packet)=>{
+    if(!packet||packet.stageToken||G.dead||packet.chars>150000)return;
+    const token="V43_REAL_ROW_"+String(packet.meta[0]?.k??"missing");
+    try{
+      const stage=await G.call({cmd:"text_stage",token,exercises:packet.exs});
+      if(stage.token!==token||stage.stagedRows!==packet.exs.length)
+        throw Error("GPU staged different source rows than requested");
+      packet.stageToken=token;packet.gpu=G;
+      v43Conveyor.cudaResidentBatches=stage.residentBatches;
+      v43Conveyor.cudaResidentCharacters=stage.residentCharacters;
+      v43Conveyor.cudaStageTransfers++;
+    }catch(err){
+      // Staging is a placement optimization, NEVER the learning mechanism:
+      // failed CUDA preloading still permits the ORIGINAL text_learn path.
+      packet.stageToken=null;
+      v43Conveyor.cudaStageErrors++;
+      parentPort.postMessage({type:"note",w:workerData.gw,
+        text:"V43 stage skipped safely; original CUDA text path retained: "+err.message});
+    }
+  };
   while(current&&!stop){
     await hold();
-    // P1 now reads all learning from previous batch, but no current answer.
     for(const ex of current.meta){
       if(typeof ex.prompt==="string"&&typeof ex.answer==="string"&&
          ex.prompt.trim()&&ex.answer.trim())v43World.observeBefore(ex);
     }
     const activeGpu=current.gpu&&!current.gpu.dead?current.gpu:await gpuOn();
     if(!activeGpu)throw Error("V43 original CUDA subprocess unavailable");
-    if(!current.gpu||current.gpu.dead)current.started=null;
+    if(!current.gpu||current.gpu.dead){
+      current.started=null;current.stageToken=null;
+    }
     if(!current.started){
-      current.started=brain.beginV43TextGPU(activeGpu,current.exs);
+      current.started=brain.beginV43TextGPU(activeGpu,current.exs,null,
+        {stageToken:current.stageToken});
       current.started.catch(()=>{});
     }
-    const upcoming=readV43CudaBatch(iterator);
-    let nextPacket=null, nextDispatch=null;
+    // The reservoir refills immediately when NEXT is removed, not when
+    // current training ends. Several additional real future batches remain
+    // bounded in host RAM, with two also staged on the device when possible.
+    const upcoming=reservoir.take();
+    let nextPacket=null,nextDispatch=null;
     const phase={
       started:current.started,
+      stageToken:current.stageToken,
       nextWasStarted:false,
       onCommitted:()=>{
-        // Launch the NEXT original CUDA batch as soon as current CUDA
-        // reply is committed, concurrently with CURRENT original CPU
-        // consolidation. A pause/save inhibits new early dispatch.
         nextDispatch=(async()=>{
-          const next=await upcoming;
-          nextPacket=next;
-          if(next&&v43Conveyor.aheadEnabled&&!stop&&!paused&&!saveNow&&!activeGpu.dead){
-            next.gpu=activeGpu;
-            next.started=brain.beginV43TextGPU(activeGpu,next.exs);
-            next.started.catch(()=>{});
-            v43Conveyor.cudaBatchesDispatchedAhead++;
-            v43Conveyor.nextGpuBatchInFlight=true;
-            phase.nextWasStarted=true;
+          const next=await upcoming;nextPacket=next;
+          if(next&&!stop&&!paused&&!saveNow&&!activeGpu.dead){
+            const future=[next,...reservoir.peek(2)];
+            // The next authentic text and up to two additional batches
+            // physically reside in CUDA allocations before CPU finishes.
+            // Transfers do not learn, see a prediction or mutate any Brain.
+            for(const batch of future)await stageBatch(activeGpu,batch);
+            if(v43Conveyor.aheadEnabled){
+              next.gpu=activeGpu;
+              next.started=brain.beginV43TextGPU(activeGpu,next.exs,null,
+                {stageToken:next.stageToken});
+              next.started.catch(()=>{});
+              v43Conveyor.cudaBatchesDispatchedAhead++;
+              v43Conveyor.nextGpuBatchInFlight=true;
+              phase.nextWasStarted=true;
+            }else v43Conveyor.nextGpuBatchInFlight=false;
           }else v43Conveyor.nextGpuBatchInFlight=false;
         })();
         nextDispatch.catch(()=>{});
@@ -885,12 +933,12 @@ if(v43World && TEXT && gpuSet){
       stop=true;break;
     }
     current=nextPacket;
-    v43Conveyor.depth=current?1:0;
     v43Conveyor.nextGpuBatchInFlight=!!current?.started;
     gpuBatchQueuedRows=current?.exs.length||0;
     gpuBatchQueuedCharacters=current?.chars||0;
     if(brain.chars>=maxChars)break;
   }
+  reservoir.close();
 }else{
 for await (const ex of stream()) {
   if(!firstRowDiagnosed){
