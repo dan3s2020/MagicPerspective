@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>MagicPerspective / V44 — Live Intelligence Laboratory</title>
+  <link rel="stylesheet" href="/studio.css">
+</head>
+<body>
+<div class="app">
+  <aside class="rail" aria-label="Navigare">
+    <div class="brandmark" aria-label="MagicPerspective">M<span>∴</span></div>
+    <a class="railitem active" href="#overview" title="Studio"><span>◉</span><small>LIVE</small></a>
+    <a class="railitem" href="#solutions" title="Exerciții"><span>≋</span><small>TEXT</small></a>
+    <a class="railitem" href="#atlas" title="Atlas"><span>◇</span><small>ATLAS</small></a>
+    <a class="railitem" href="#journal" title="Jurnal"><span>▤</span><small>LOG</small></a>
+    <a class="railitem" href="#test" title="Test"><span>⌘</span><small>TEST</small></a>
+    <div class="railbottom">44</div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div><div class="eyebrow">MAGICPERSPECTIVE <b>/</b> EXPERIMENTAL OPERATING SYSTEM</div>
+        <h1>Language <em>Flow</em> <span>V44</span></h1>
+        <div class="subhead">Un univers · text real · CUDA vectorizat · forme cu ținta vizibilă</div>
+      </div>
+      <div class="topright">
+        <div class="connection"><span id="liveLed"></span><span id="connectionText">CONNECTING</span></div>
+        <div class="clock" id="wallTime">00:00:00</div>
+      </div>
+    </header>
+    <section class="controlbar" aria-label="Control training">
+      <button class="primary" id="startBtn">▶ Pornește training</button>
+      <button id="pauseBtn">Ⅱ Pauză</button>
+      <button id="resumeBtn">↻ Continuă</button>
+      <button id="saveBtn">↓ Salvează</button>
+      <button id="stopBtn" class="danger">■ Oprește</button>
+      <button id="resetBtn" class="subtle">Reset separat</button>
+      <label class="batchinput">EXERCIȚII / LOT GPU
+        <input id="batchSlider" type="range" min="1" max="16" value="4" step="1">
+        <strong id="batchLabel">4</strong></label>
+      <span id="controlStatus" role="status">Pregătire CUDA...</span>
+    </section>
+
+    <main id="overview">
+      <div class="headrow"><div><span class="chapter">01 / REAL-TIME MISSION CONTROL</span><h2>Training în desfășurare</h2></div><span class="tiny" id="sourceLabel">OpenThoughts3 · 1.2M · real</span></div>
+      <section class="hero-grid">
+        <div class="hero-primary">
+          <div class="hero-top"><span>DEBIT SUSȚINUT · EXERCIȚII COMPLETE</span><b id="runState">INIȚIALIZARE</b></div>
+          <div class="rate-line"><strong id="completedRate">0.00</strong><span>exerciții / secundă</span></div>
+          <div class="target-line"><div>ȚINTĂ <b>1–10 ex/s</b> · valoarea este măsurată după commit</div><div class="target-meter"><i id="speedFill"></i></div></div>
+          <div class="metric-footer"><span><b id="completedTotal">0</b> completate</span><span><b id="inputRead">0</b> citite</span><span><b id="sourceProgress">0.000%</b> dataset</span></div>
+        </div>
+        <div class="hero-secondary"><div class="circlebox" id="geomDial" style="--pct:0">
+          <div class="circle-center"><strong id="geomPct">—</strong><small>FORMA SOLUȚIEI</small></div></div>
+          <div class="circle-caption"><b>ȚINTA VIZIBILĂ</b><span>Poziții fizic verificabile din atlasul GGUF, nu output autonom Qwen</span></div></div>
+        <div class="hero-secondary alt"><div class="microhead">ÎNVĂȚARE EFECTIVĂ</div>
+          <div class="comparebox"><div><span>PLAYER 1 · ÎNAINTE</span><strong id="beforePct">—</strong></div>
+          <i>→</i><div><span>PLAYER 1 · DUPĂ</span><strong id="afterPct">—</strong></div></div>
+          <div class="microfoot">Scor caracter cu caracter, contextul corect anterior este vizibil. Nu este generare liberă.</div>
+        </div>
+      </section>
+      <section class="monitor-grid">
+        <div class="module">
+          <div class="module-title"><h3>GPU / puls computațional</h3><span id="cudaModel">DISPOZITIV NEDETECTAT</span></div>
+          <canvas id="throughputCanvas" height="145" aria-label="Istoricul măsurătorilor reale de throughput"></canvas>
+          <div class="microstats"><div><small>LOT GPU</small><b id="gpuBatchRate">—</b></div>
+            <div><small>CARACTERE / SEC. CUDA</small><b id="cudaChars">—</b></div>
+            <div><small>VRAM PEAK</small><b id="vramUsed">—</b></div>
+            <div><small>RÂND CURENT</small><b id="rowIndex">—</b></div></div>
+        </div>
+        <div class="module stage-panel"><div class="module-title"><h3>Pipeline în timp real</h3><span id="phaseClock">0.0 s</span></div>
+          <div class="pipeline">
+            <div class="pipe-step" id="stepRead"><i>01</i><div><strong>Parquet real</strong><small>Decodificare în proces separat</small></div></div>
+            <div class="pipe-step" id="stepShape"><i>02</i><div><strong>Devour → formă</strong><small>Coordonate Qwen, destinație vizibilă</small></div></div>
+            <div class="pipe-step" id="stepGpu"><i>03</i><div><strong>Actualizare model CUDA</strong><small>Fără replay JS per octet</small></div></div>
+            <div class="pipe-step" id="stepCommit"><i>04</i><div><strong>Commit + checkpoint</strong><small>Exercițiu întreg, metrici autentice</small></div></div>
+          </div>
+          <div class="phasebox"><span id="phaseText">Se inițializează...</span><b id="phaseHeartbeat">—</b></div>
+        </div>
+      </section>
+    </main>
+    <section id="solutions" class="chapter-section">
+      <div class="headrow"><div><span class="chapter">02 / FULL EVIDENCE · NO TRUNCATION</span><h2>Exercițiul observat</h2></div>
+        <span class="tiny">Răspunsul-țintă este vizibil pentru planificarea geometriei</span></div>
+      <div class="recordbar"><div><b id="recordId">Niciun exercițiu complet</b><span id="recordLength">0 caractere</span></div>
+        <div class="recordnav"><button id="prevRecord">← Anterior</button><button id="latestRecord">Ultimul →</button><button id="nextRecord">Următor →</button></div></div>
+      <div class="prompt-row"><div class="promptbox"><label>ÎNTREBAREA ORIGINALĂ · INTEGRAL</label><pre id="questionFull">Aștept exerciții reale...</pre></div>
+        <div class="promptbox"><label>RĂSPUNSUL CORECT VIZIBIL · INTEGRAL</label><pre id="targetFull">Aștept exerciții reale...</pre></div></div>
+      <div class="legend"><span><i class="ok"></i>caracter corect</span><span><i class="bad"></i>caracter greșit</span><span><i class="neutral"></i>încă neobservat</span><span id="diffMode">Comparație UTF-8 pe octeți, grupată pe caractere Unicode</span></div>
+      <div class="evidence-grid">
+        <article class="evidence before"><div class="evidence-top"><span>PLAYER 1 / BEFORE</span><strong id="beforeScore">—</strong></div>
+          <div class="evidence-sub" id="beforeCounts">Predicție înainte de actualizare</div><pre id="beforeText" class="difftext"></pre></article>
+        <article class="evidence shape"><div class="evidence-top"><span>DEVOUR / TARGET-VISIBLE</span><strong id="shapeScore">—</strong></div>
+          <div class="evidence-sub" id="shapeCounts">Trasee calculate din axele GGUF și verificate prin decoder</div><pre id="shapeText" class="difftext"></pre></article>
+        <article class="evidence after"><div class="evidence-top"><span>PLAYER 1 / AFTER</span><strong id="afterScore">—</strong></div>
+          <div class="evidence-sub" id="afterCounts">Predicție după actualizare CUDA</div><pre id="afterText" class="difftext"></pre></article>
+      </div>
+      <div class="notice">Interpretare: verdele din panoul central confirmă accesul la o țintă <b>deja vizibilă</b>. Verdele din Player 1 arată potrivirea unei predicții condiționate pe prefixul corect; nu demonstrează înțelegere sau auto-reparare.</div>
+    </section>
+    <section id="atlas" class="chapter-section">
+      <div class="headrow"><div><span class="chapter">03 / OBSERVABLE LEARNING</span><h2>Atlas, transformări și generalizare</h2></div><span class="tiny" id="operatorL2">Operator neural: —</span></div>
+      <div class="atlas-grid">
+        <div class="module"><div class="module-title"><h3>Hartă de tranziții învățate</h3><span>Evenimente observate, nu animație decorativă</span></div>
+          <canvas id="atlasCanvas" height="300" aria-label="Graful real al tranzițiilor de octeți învățate"></canvas>
+          <div class="microfoot">Fiecare legătură reflectă o tranziție cu număr pozitiv de observații.</div></div>
+        <div class="module"><div class="module-title"><h3>Test complet separat</h3><span>16 exerciții ținute în afara trainingului</span></div>
+          <div class="holdout-value" id="holdoutPct">—</div>
+          <div class="microfoot" id="holdoutInfo">Nu există încă o evaluare. Datele nevăzute nu sunt antrenate.</div>
+          <div class="divider"></div><h4>Transfer prompt → prima unitate</h4>
+          <div class="operator-value" id="operatorTest">—</div>
+          <p class="muted">Această comparație folosește doar promptul, fără acces la răspuns.</p></div>
+      </div>
+    </section>
+    <section id="journal" class="chapter-section">
+      <div class="headrow"><div><span class="chapter">04 / LOSSLESS REPLAY STORAGE</span><h2>Toate exercițiile completate</h2></div><button id="olderBtn">Încarcă exerciții mai vechi ↓</button></div>
+      <div id="exerciseJournal" class="journal"><div class="empty">Nu există încă exerciții confirmate în această sesiune.</div></div>
+      <p class="muted">Răspunsurile integrale și măștile de corectitudine sunt păstrate comprimat, cu index către fiecare exercițiu.</p>
+    </section>
+    <section id="test" class="chapter-section">
+      <div class="headrow"><div><span class="chapter">05 / FROZEN TEST · NO ANSWER SUPPLIED</span><h2>Test de limbaj independent</h2></div></div>
+      <div class="test-grid"><div><label for="testPrompt">PROMPT NOU, FĂRĂ RĂSPUNS-ȚINTĂ</label><textarea id="testPrompt" rows="4" placeholder="Scrie un prompt complet nou..."></textarea>
+        <button id="testBtn" class="primary">Rulează generare liberă</button></div><div><label>RĂSPUNS GENERAT DOAR DIN MODELUL ÎNVĂȚAT</label>
+          <pre id="testOutput">Aici vor apărea numai octeții generați fără a primi răspunsul corect.</pre></div></div>
+    </section>
+    <footer>MagicPerspective / V44 <span>Separat de toate checkpointurile V42 și V43 · Citește metricile înainte să tragi concluzii</span></footer>
+  </div>
+</div>
+<script type="module" src="/studio.js"></script>
+</body>
+</html>
