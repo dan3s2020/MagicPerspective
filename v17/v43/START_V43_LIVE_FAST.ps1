@@ -107,7 +107,13 @@ $CandidateCheckpoints=@(
 )
 if(!(Test-Path -LiteralPath (Join-Path $Out "brains\brain-0-winner.v8") -PathType Leaf)){
   if($OldPaused -and !(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf)){
-    throw "Previous Brain checkpoint has not been saved yet. No reset or new training was started."
+    for($i=0;$i -lt 120;$i++){
+      if(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf){break}
+      Start-Sleep -Milliseconds 500
+    }
+    if(!(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf)){
+      throw "Previous original V17 Brain has not confirmed checkpoint save. Refusing to reset or overwrite its learning."
+    }
   }
   $found=$CandidateCheckpoints|Where-Object{Test-Path -LiteralPath $_ -PathType Leaf}|Select-Object -First 1
   if($found){$V42Out=Split-Path -Parent (Split-Path -Parent $found)}
