@@ -253,7 +253,9 @@ export class V43FusedOneUniverse {
         actions:traversed.actions,plannedRoutes:traversed.predictedRoutes,
         firstPredictionsBeforeMovement:traversed.firstPredictionsBeforeMovement,
         visibleGoalShapeFraction:traversed.bytes?
-          traversed.firstPredictionsBeforeMovement/traversed.bytes:null,
+          traversed.verifiedExactFirstShape/traversed.bytes:null,
+        merelyPredictedRoutesBeforeMovement:traversed.firstPredictionsBeforeMovement,
+        exactVerifiedFirstShapes:traversed.verifiedExactFirstShape,
         shapeBeforeMovementMeans:'predicted complete donor-movement route to visible target, not blind text generation',
         waveOptimization:traversed.waveOptimization,
         allMovements:compactDonorStream?frozen.slice(0,32):frozen,
