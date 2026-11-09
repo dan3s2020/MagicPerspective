@@ -207,7 +207,7 @@ function handleEngine(data){
         }
       }
       journal=createJournal();
-      logs.length=0;
+      state.graph=[];
       nextAutoSave=100;
       status("New V44 session; archived old checkpoint and full evidence: "+data.archived);
       break;
