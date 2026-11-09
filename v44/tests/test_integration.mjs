@@ -82,7 +82,7 @@ test("V44 full HTTP + REAL PyTorch learner + separate reader + journal + control
     assert.ok(seen.current.bytes>0);
     assert.equal(seen.current.shape_verified,seen.current.bytes);
     assert.ok(seen.gpu_batch_exercises_per_second>0);
-    assert.equal(seen.gpu_batch_characters_per_second>0,false);
+    assert.ok(seen.gpu_batch_characters_per_second>0,"Must measure completed GPU/CPU-test byte throughput");
     assert.equal(seen.graph.some(e=>e.count>0),true);
     const history=await get("/api/history?limit=8");
     assert.equal(history.items.length,8);
