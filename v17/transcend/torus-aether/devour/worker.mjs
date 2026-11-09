@@ -757,6 +757,15 @@ parentPort.on("message", m => {
   }
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
+  if (m === "shutdown-reset") {
+    // The original GPU child must be closed BY ITS OWNING worker, before the
+    // parent archives the Brain and starts a new one on the same checkpoint.
+    stop=true;paused=false;saveNow=false;
+    if(gpu){gpu.close("V43 verified reset shutdown");gpu=null;}
+    parentPort.postMessage({type:"v43-reset-ready",w:workerData.gw,
+      at:Date.now(),noGpuProcessRetained:true});
+    return;
+  }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
   if (m === "stop") stop = true; else if (m === "pause") {paused = true;selfcode?.pause();} else if (m === "resume") {paused = false;selfcode?.resume();} else if (m === "save") saveNow = true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
