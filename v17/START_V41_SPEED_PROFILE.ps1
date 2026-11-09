@@ -1,5 +1,6 @@
 param(
   [string]$Data="D:\training\OpenThoughts3-1.2M",
+  [string]$Worlds="text,maze,transform",
   [string]$Out="",
   [int]$NativePort=8951,
   [int]$UIPort=8952,
@@ -73,6 +74,7 @@ $parameters=@(
   "-NoProfile","-ExecutionPolicy","Bypass","-File",('"' + $Original + '"'),
   "-Data",('"' + $Data + '"'),"-Out",('"' + $Out + '"'),
   "-Port","$NativePort","-Workers","1","-Arms","winner",
+  "-Worlds",("\""+$Worlds+"\""),
   "-Worlds","text,maze,transform","-Mem","$Mem",
   "-Gpu",('"' + $Gpu + '"'),"-Vram","$VramArg",
   "-GpuTextBatch","$GpuTextBatch","-GpuTextChunk","$GpuTextChunk",
