@@ -130,6 +130,10 @@ export class BrainCharacterWorld {
       instructions.push({from,wanted,planned:!!planned?.complete,
         predicted_before_move:planned?.firstPredictionBeforeAction===true,
         steps,expectedFinal:simulated});
+      // Read-only progress callback; no donor, original planner or Brain mutation.
+      if(typeof this.onPlanProgress==='function' &&
+        (instructions.length===1 || instructions.length%128===0 || instructions.length===expected.length))
+        this.onPlanProgress(instructions.length,expected.length,instructions);
     }
     return instructions;
   }
