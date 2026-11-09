@@ -1,0 +1,56 @@
+name: Native V42 V8 monolithic checkpoint memory audit
+on:
+  push:
+    branches: [experiment/V42-600GB-4GB-OFFLOAD-20261109]
+  workflow_dispatch:
+jobs:
+  exact-native-checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Benchmark actual Brain.save and Brain.load using synthetic raw text memories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p native_audit
+          for SIZE_MB in 16 64 128 256; do
+            SIZE_MB=$SIZE_MB node --expose-gc --input-type=module <<'JS' | tee -a native_audit/v42_real_brain_load.jsonl
+          import fs from "node:fs";
+          import os from "node:os";
+          import {Brain} from "./v17/transcend/torus-aether/devour/brain.mjs";
+          import {AligningGraph} from "./v17/transcend/torus-aether/align.mjs";
+          const MB=1024**2,N=Number(process.env.SIZE_MB)*MB;
+          const rss=()=>Math.round(process.memoryUsage().rss/MB*10)/10;
+          const peak=()=>Math.round(process.resourceUsage().maxRSS/1024*10)/10;
+          const t=performance.now();
+          const B=new Brain({seed:11,rules:{depth:1,off:["R2","R4"],budEvery:100,empty:true,maxWires:32,fold:false}});
+          B.align=new AligningGraph();
+          // In the ACTUAL original structure both mem and fmem are separately kept.
+          for(const [i,m] of [B.align.mem,B.align.fmem].entries()){
+            m.buf=new Uint8Array(N);
+            for(let j=0;j<N;j+=4096)m.buf[j]=(j/4096+i*17)%255;
+            m.n=N;m.lazy=true;m.big=null;m.small=null;m.bigTo=0;m.smallTo=0;
+          }
+          const before=rss();
+          const file="native_audit/native_brain_"+process.env.SIZE_MB+"MiBx2.v8";
+          const n=B.save(file),afterSave=rss(),saveMs=performance.now()-t;
+          const loaded=Brain.load(file),afterLoad=rss(),loadMs=performance.now()-t-saveMs;
+          const ok=loaded.align.mem.n===N && loaded.align.fmem.n===N &&
+            loaded.align.mem.buf.length===N && loaded.align.fmem.buf.length===N &&
+            loaded.align.mem.buf[4096]===B.align.mem.buf[4096] &&
+            loaded.align.fmem.buf[8192]===B.align.fmem.buf[8192];
+          if(!ok)throw Error("Original saved Brain failed exact memory round-trip");
+          console.log(JSON.stringify({nativeOriginalSaveAndLoad:true,perMemoryMiB:N/MB,twoMemoriesMiB:2*N/MB,checkpointMiB:n/MB,rssAfterPreparedMiB:before,rssAfterSaveMiB:afterSave,rssAfterLoadMiB:afterLoad,maxObservedProcessRssMiB:peak(),saveSeconds:saveMs/1000,loadSeconds:loadMs/1000,exactRoundTrip:ok,limitation:"Synthetic bytes inside native Brain, not real 900 OpenThoughts exercises. No CUDA on GitHub hosted runner."}));
+          fs.unlinkSync(file);
+          JS
+          done
+      - name: Upload experimental metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-v42-monolithic-v8-growth
+          path: native_audit/v42_real_brain_load.jsonl
+          retention-days: 7
