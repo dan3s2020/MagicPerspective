@@ -81,3 +81,24 @@ test("V43 conveyor opt-in; legacy V42 original training path and CPU fallback ar
   assert.match(brain,/async beginV43TextGPU/);
   assert.match(brain,/commitV43TextGPU/);
 });
+
+test("V43 replays stale next-card computation instead of training from pre-puppet trust",async()=>{
+  const brain=new Brain({rules:winner,seed:47}),gpu=fakeCuda();
+  const baseline=await brain.beginV43TextGPU(gpu,rows[0]);
+  brain.commitV43TextGPU(gpu,rows[0],baseline);
+  const speculative=await brain.beginV43TextGPU(gpu,rows[1]);
+  const priorCount=brain.exercises;
+  // Player 2 is INSIDE the same Brain: its actual movements train AligningGraph.
+  brain.live(250);brain.live(66);
+  assert.throws(()=>brain.commitV43TextGPU(gpu,rows[1],speculative),
+    /V43_STALE_CARD_PACKET/);
+  assert.equal(brain.exercises,priorCount,"Uncommitted stale CUDA result cannot change native Brain");
+  const oldLoadCount=gpu.events.filter(e=>e==="text_load").length;
+  brain.resetV43TextGPUForOrderedReplay(gpu);
+  const rebased=await brain.beginV43TextGPU(gpu,rows[1]);
+  brain.commitV43TextGPU(gpu,rows[1],rebased);
+  assert.equal(gpu.events.filter(e=>e==="text_load").length,oldLoadCount+1);
+  assert.equal(brain.exercises,priorCount+rows[1].length);
+  assert.equal(brain.align.mem.n,
+    rows.flat().reduce((n,b)=>n+b.length,0)+2);
+});
