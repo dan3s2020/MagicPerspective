@@ -16,6 +16,7 @@ import {fileURLToPath} from "node:url";
 import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
+import {archiveV43Session,stopV43WorkerForReset} from "./v43-reset.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -222,10 +223,40 @@ function launch(sl, {fresh = false, paused = !autostart, fromSave = true} = {}) 
 function gpuFor() { const share = Math.max(1, slots.filter(x => x.worlds.some(w => w !== "text")).length); return gpuSettings.device === "off" ? null : {...gpuSettings, vram: gpuSettings.vram ? gpuSettings.vram / share : 0}; }
 function addSlot(armName, worlds) { const arm = armOf(armName); if (!arm) throw Error("unknown arm " + armName);
   const w = slots.length ? Math.max(...slots.map(x => x.w)) + 1 : 0, sl = {w, arm, worlds, share: Math.floor(w / arms.length), gen: 0, wk: null, status: "oprit"}; slots.push(sl); launch(sl, {fresh: false, fromSave: resume || booted}); return sl; }
+async function verifiedV43Reset(sl) {
+  if(sl.resetting)throw Error("V43_RESET_ALREADY_IN_PROGRESS");
+  sl.resetting=true;
+  const old=sl.wk,oldGen=sl.gen,wasRunning=sl.status==="antrenează";
+  sl.status="resetează";sl.lastError=null;
+  sl.gen++; // Ignore all late snapshots and callbacks from the old worker.
+  try{
+    const stopped=await stopV43WorkerForReset(old,{timeoutMs:25000});
+    if(!stopped.acknowledged||!stopped.terminated)
+      throw Error("Original Brain did not confirm CUDA shutdown");
+    sl.wk=null;
+    const archive=archiveV43Session(saveOf(sl),path.join(out,"brains-before-reset"));
+    // NEVER reuse old sidecars: source progress, V43 live rows, Qwen movements,
+    // logs and original V42 checkpoint are all archived as ONE session.
+    last.delete(sl.w);history.delete(sl.w);graphs.delete(sl.w);
+    sl.lastHeartbeat=null;sl.lastHeartbeatAt=null;sl.lastGraphAt=null;
+    sl.lastBatchReal=null;sl.dataset=null;sl.savedMB=null;
+    sl.status="oprit";
+    launch(sl,{fresh:false,paused:!wasRunning,fromSave:false});
+    return {w:sl.w,resetVerified:true,oldWorkerTerminated:true,
+      oldCudaProcessClosed:true,archive:archive.destination,
+      filesArchived:archive.files,sourceReset:true,
+      newWorkerGeneration:sl.gen};
+  }catch(err){
+    if(sl.wk===old&&old)sl.gen=oldGen;
+    sl.lastError="V43_RESET_FAILED: "+err.message;
+    sl.status="eroare";
+    throw err;
+  }finally{sl.resetting=false;}
+}
 function control(sl, act) {
   if (act === "start") { if (!sl.wk) launch(sl, {paused: false}); else { sl.wk.postMessage("resume"); sl.status = "antrenează"; } }
   else if (act === "pause") { sl.wk?.postMessage("pause"); if (sl.wk) sl.status = "pauză"; }
-  else if (act === "reset") launch(sl, {fresh: true, paused: sl.status !== "antrenează"});
+  else if (act === "reset") { if(v43DonorPath)throw Error("V43 reset must use the verified async CUDA shutdown and archive"); launch(sl, {fresh: true, paused: sl.status !== "antrenează"}); }
   else if (act === "save") sl.wk?.postMessage("save");
   else if (act === "remove") { sl.gen++; sl.wk?.terminate(); slots.splice(slots.indexOf(sl), 1); last.delete(sl.w); history.delete(sl.w); graphs.delete(sl.w); }
 }
@@ -299,7 +330,20 @@ http.createServer((req, res) => {
     graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent})), last: h.at(-1)}))});
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
-    for (const sl of targets) control(sl, act); return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
+    if(v43DonorPath&&act==="reset"){
+      void (async()=>{
+        if(!targets.length)throw Error("No original Brain matched the reset request");
+        const done=[];
+        for(const sl of targets)done.push(await verifiedV43Reset(sl));
+        return json(res,{ok:true,resetVerified:true,done,graphs:slots.map(slotInfo)});
+      })().catch(err=>{
+        console.error("V43 verified reset failed:",err);
+        if(!res.writableEnded){res.statusCode=409;json(res,{ok:false,error:"V43_RESET_FAILED: "+err.message});}
+      });
+      return;
+    }
+    for (const sl of targets) control(sl, act);
+    return json(res, {ok: true, graphs: slots.map(slotInfo)}); }
   if (req.method === "POST" && url === "/add") { try { addSlot(q.get("arm") || "stable+many", (q.get("worlds") || "text").split(",").filter(x => ["text", "maze", "transform", "selfcode"].includes(x))); return json(res, {ok: true}); } catch (err) { res.writeHead(400); return res.end(err.message); } }
   if (req.method === "POST" && url === "/gpu") {                         // the person's GPU settings, applied to every brain at its next batch
     for (const k of ["device", "worlds", "vram", "util", "textBatch", "textChunk"]) if (q.has(k) && q.get(k) !== "") gpuSettings[k] = k === "device" ? q.get(k) : Math.max(0, +q.get(k));
@@ -638,7 +682,16 @@ http.createServer((req, res) => {
           return json(res, {...sl.talker.chat(m.history || [], {...(m.opts || {}), learn: false}), fromSave: true}); } catch (err) { return json(res, {error: "save-ul nu s-a putut citi: " + err.message}); } }
       const id = ++chatId, t = setTimeout(() => { chats.delete(id); json(res, {error: "graful nu a răspuns în 120 s"}); }, 120000);
       chats.set(id, r => { clearTimeout(t); json(res, r); }); sl.wk.postMessage({chat: {id, history: m.history || [], opts: m.opts || {}}}); }); return; }
-  if (req.method === "POST" && url === "/reset") { for (const sl of slots) control(sl, "reset"); return json(res, {ok: true}); }
+  if (req.method === "POST" && url === "/reset") {
+    if(v43DonorPath){
+      void (async()=>{
+        const done=[];
+        for(const sl of slots)done.push(await verifiedV43Reset(sl));
+        return json(res,{ok:true,resetVerified:true,done});
+      })().catch(err=>{if(!res.writableEnded){res.statusCode=409;json(res,{ok:false,error:"V43_RESET_FAILED: "+err.message});}});
+      return;
+    }
+    for (const sl of slots) control(sl, "reset"); return json(res, {ok: true}); }
   if (req.method === "POST" && url === "/stop") { stopping = true; for (const sl of slots) sl.wk?.postMessage("stop"); res.writeHead(200); return res.end("ok"); }
   // the graph is the home: the living-graph page, fed by the devouring graphs instead of training in the browser
   if (url === "/") { res.writeHead(302, {location: "/transcend/torus-aether/ui/index.html?live=1"}); return res.end(); }
