@@ -232,6 +232,10 @@ async function refresh(){
    const conveyor=data.health?.v43Conveyor||{};
    set("v43GpuQueued",fmt(data.health?.gpuBatchQueuedRows));
    set("v43GpuOverlap",fmt(conveyor.cudaBatchesDispatchedAhead));
+   set("v43Rebases",fmt(conveyor.staleSpeculationReplays));
+   const gpu=data.physicalGpu;
+   set("v43PhysicalGpu",gpu?.available?gpu.utilizationPercent.toFixed(0)+"%":"—");
+   set("v43PhysicalVram",gpu?.available?fmt(gpu.usedMiB)+" / "+fmt(gpu.totalMiB)+" MiB VRAM · sampled NVIDIA driver":"nvidia-smi unavailable; GPU load not measured");
    set("v43Phase",(data.phase||"ready").toUpperCase());
    set("v43Percent",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(2)+"%");
    set("v43Dataset",fmt(d.completedTrainingRows)+" / "+fmt(d.assignedTrainingRows)+
