@@ -104,14 +104,14 @@ class FrozenGeometry:
         totals = []
         for prompt, answer in zip(prompts, answers):
             if not answer:
-                totals.append((0, 0))
+                totals.append((0, 0, b''))
                 continue
             target = tensor_bytes(answer, self.rows.device)
             prev = torch.empty_like(target)
             prev[0] = prompt[-1] if prompt else 0
             prev[1:] = target[:-1]
             hits = self.lookup[prev, target]
-            totals.append((int(hits.sum().item()), int(target.numel())))
+            totals.append((int(hits.sum().item()), int(target.numel()), hits.to(torch.uint8).cpu().numpy().tobytes()))
         return totals
 
 
@@ -251,11 +251,12 @@ class StreamLearner:
             self.last_row_index = int(rows[n]["id"])
             pre_correct = int(pre_np[start_i:end_i].sum())
             post_correct = int(post_np[start_i:end_i].sum())
-            shape_correct, shape_total = visible[n]
+            shape_correct, shape_total, shape_mask = visible[n]
             result.append({
                 "id": self.last_row_index, "prompt": rows[n]["prompt"], "answer": rows[n]["answer"],
                 "bytes": full, "before_correct": pre_correct, "after_correct": post_correct,
                 "shape_verified": shape_correct, "shape_total": shape_total,
+                "shape_mask": base64.b64encode(shape_mask).decode(),
                 "before_mask": base64.b64encode(pre_np[start_i:end_i].tobytes()).decode(),
                 "after_mask": base64.b64encode(post_np[start_i:end_i].tobytes()).decode(),
                 "before_bytes": base64.b64encode(predicted_pre[start_i:end_i].tobytes()).decode(),
@@ -264,6 +265,37 @@ class StreamLearner:
                 "geometry": "verified frozen Qwen-weight coordinate path with FULL target visible",
             })
         return result, elapsed
+
+    @torch.no_grad()
+    def generate(self, prompt, max_output=96):
+        """Independent prompt-only byte prediction; not Qwen inference."""
+        raw = str(prompt).encode("utf-8", errors="replace")
+        if not raw:
+            return {"text": "", "bytes": 0}
+        a = raw[-2] if len(raw) >= 2 else 0
+        b = raw[-1]
+        out = bytearray()
+        for _ in range(min(256, max(1, int(max_output)))):
+            p2 = torch.tensor([a], dtype=torch.int64, device=self.device)
+            p1 = torch.tensor([b], dtype=torch.int64, device=self.device)
+            next_byte = int(self._predict(p2, p1)[0][0].item())
+            out.append(next_byte)
+            a,b=b,next_byte
+        return {"text": bytes(out).decode("utf-8", errors="replace"),
+                "raw_bytes_base64": base64.b64encode(out).decode(),
+                "bytes": len(out),
+                "reference_supplied": False,
+                "donor_model_forward": False}
+
+    def reset_with_archive(self):
+        import shutil
+        self.save()
+        archive = self.checkpoint.with_name(
+            self.checkpoint.stem+".archived-"+time.strftime("%Y%m%d-%H%M%S")+self.checkpoint.suffix)
+        shutil.copy2(self.checkpoint, archive)
+        # Only V44 state is reset, previous file is safely archived.
+        fresh = StreamLearner(self.geo, self.device, self.checkpoint, resume=False)
+        return fresh, str(archive)
 
     @torch.no_grad()
     def eval_holdout(self, rows: list[dict]):
@@ -326,7 +358,18 @@ def main():
                      exact_characters_per_second=sum(x["bytes"] for x in outcomes) / max(elapsed, 1e-6),
                      vram_allocated_bytes=int(torch.cuda.memory_allocated() if device.type == "cuda" else 0),
                      vram_peak_bytes=int(torch.cuda.max_memory_allocated() if device.type == "cuda" else 0),
-                     operator_l2=float(torch.linalg.vector_norm(agent.operator).item()))
+                     operator_l2=float(torch.linalg.vector_norm(agent.operator).item()),
+                     graph_edges=[
+                        {"from":int(i),"to":int(v),"count":int(c)}
+                        for i,(v,c) in enumerate(zip(*[
+                            x.cpu().tolist() for x in agent.pair_counts.max(dim=1)
+                        ])) if c>0
+                     ])
+            elif cmd == "generate":
+                emit("generation", **agent.generate(job.get("prompt",""),job.get("max_output",96)))
+            elif cmd == "reset":
+                agent, archived = agent.reset_with_archive()
+                emit("reset", archived=archived)
             elif cmd == "eval":
                 emit("holdout", result=agent.eval_holdout(job["rows"]))
             elif cmd == "save":
