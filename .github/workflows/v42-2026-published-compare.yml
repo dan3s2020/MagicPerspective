@@ -1,0 +1,43 @@
+name: Read 2026 kidney exchange published benchmark data
+on:
+  push:
+    branches: [research/V42-TRANSPLANT-EXCHANGE-20261109]
+  workflow_dispatch:
+jobs:
+  published-2026:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: magicperspective
+      - uses: actions/checkout@v4
+        with:
+          repository: INFORMSJoC/2024.0664
+          path: published-2026
+          persist-credentials: false
+      - name: Inventory actual published benchmark and results
+        run: |
+          python - <<'PY'
+          import os,zipfile,struct
+          p='published-2026/data/Pansart2022.zip'
+          z=zipfile.ZipFile(p)
+          a=[(i.filename,i.file_size) for i in z.infolist() if not i.is_dir()]
+          print('PUBLISHED_2026_TOTAL_FILES',len(a))
+          print('PUBLISHED_2026_ZIP_SAMPLE',repr(a[:70]))
+          print('PUBLISHED_2026_RESEARCH_EXCEL_BYTES',os.path.getsize('published-2026/KEP_detailed_results.xlsx'))
+          for name,size in a:
+              if size<70000 and name.lower().endswith(('.txt','.dat','.json')):
+                  raw=z.read(name)
+                  print('PUBLISHED_2026_SAMPLE_NAME',name)
+                  print('PUBLISHED_2026_SAMPLE_TEXT',repr(raw[:1400]))
+                  break
+          PY
+      - name: Package paper's original 2026 benchmark material (read-only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kidney-2026-published-solver-data
+          path: |
+            published-2026/KEP_detailed_results.xlsx
+            published-2026/data/Pansart2022.zip
+          retention-days: 2
