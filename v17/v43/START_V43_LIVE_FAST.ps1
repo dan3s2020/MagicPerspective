@@ -146,7 +146,7 @@ Write-Host "Qwen: real sampled GGUF coordinate movements; NO false claim of nati
 $launchArgs=@{
   Data=$Data;Worlds="text";Out=$Out;V42Out=$V42Out
   NativePort=$NativePort;UIPort=$UIPort
-  Gpu="cuda:0";Vram=3.0;GpuTextBatch=8;GpuTextChunk=4096;GpuWorlds=0
+  Gpu="cuda:0";Vram=3.0;GpuTextBatch=8;GpuTextChunk=4096;GpuWorlds=0;AutoStart=$true
 }
 if(Test-Path -LiteralPath $Atlas -PathType Leaf){$launchArgs.DonorAtlas=$Atlas}
 else{$launchArgs.GGUF=$GGUF}
