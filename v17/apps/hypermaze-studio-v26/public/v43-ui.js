@@ -6,7 +6,7 @@ const fmt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString():"—";
 const pct=v=>v==null||!Number.isFinite(Number(v))?"—":(100*Number(v)).toFixed(2)+"%";
 const delta=v=>v==null||!Number.isFinite(Number(v))?"—":(v>=0?"+":"")+(100*Number(v)).toFixed(2)+" pp";
 const node=(tag,value,cls)=>{const n=document.createElement(tag);if(value!==undefined)n.textContent=String(value);if(cls)n.className=cls;return n};
-const model={items:new Map(),ids:[],older:null,current:null,history:[],busy:false,visible:true,liveKey:null};
+const model={items:new Map(),ids:[],older:null,current:null,history:[],busy:false,visible:true,liveKey:null,sessionStart:null};
 const v43Panel=el("v43Panel"),nativePanel=el("nativeDatasetPanel");
 if(v43Panel&&nativePanel&&v43Panel.parentElement===nativePanel.parentElement)
   nativePanel.before(v43Panel); // ONE live workbench before other panels
@@ -229,6 +229,20 @@ async function refresh(){
  try{
    const data=await get("/api/v43-status");
    const w=data.worker||{},d=data.dataset||{};
+   // A verified reset creates a NEW original Brain session. Do not display
+   // cached successes or stale speed curves after that identity changes.
+   if(w.startTime && w.startTime!==model.sessionStart){
+     model.sessionStart=w.startTime;
+     model.items.clear();model.ids=[];model.older=null;
+     model.current=null;model.liveKey=null;model.history=[];
+     lastCompleted=-1;
+     el("v43Rows").replaceChildren();
+     for(const id of ["v43Question","v43Reference","v43TextBefore",
+       "v43TextPuppet","v43TextAfter","v43Diagnosis"])
+       set(id,"New V43 session; awaiting actual training data.");
+     set("v43CurrentId","new session");
+     render();
+   }
    const conveyor=data.health?.v43Conveyor||{};
    set("v43GpuQueued",fmt(data.health?.gpuBatchQueuedRows));
    set("v43GpuOverlap",fmt(conveyor.cudaBatchesDispatchedAhead));
