@@ -10,7 +10,14 @@ Settings, all chosen by the person: the device (cuda:0, cuda:1, cpu), how much V
 GPU's time it may use (%), how many worlds at once (no limit written here — only the VRAM decides).
 Talks to Node by one JSON object per line on stdin / stdout.
 The same code runs on numpy (no GPU) so it can be checked against the JavaScript worlds without a card."""
-import sys, json, time, math
+import sys, json, time, math, os, threading, queue
+from concurrent.futures import ThreadPoolExecutor
+
+_V43_STDOUT_LOCK = threading.Lock()
+def v43_emit(record):
+    with _V43_STDOUT_LOCK:
+        sys.stdout.write(json.dumps(record) + "\n")
+        sys.stdout.flush()
 
 try:
     import torch
@@ -456,9 +463,8 @@ class Server:
                 self.text = TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit)
             def text_progress(done, total, phase):
                 if "id" in m:
-                    sys.stdout.write(json.dumps({"id": m["id"], "type": "progress", "phase": phase,
-                                                 "done": int(done), "total": int(total)}) + "\n")
-                    sys.stdout.flush()
+                    v43_emit({"id": m["id"], "type": "progress", "phase": phase,
+                              "done": int(done), "total": int(total)})
             chunk = max(32, min(4096, int(m.get("chunk") or self.text_chunk)))
             while True:
                 try:
@@ -509,13 +515,80 @@ def selftest(device):                                        # run by START_V17.
         print(json.dumps({"error": "the batch did not allocate anything on the card"})); return 1
     return 0 if ok == 512 else 1
 
+def serve_v43_concurrent_prefetch(server):
+    """V43 opt-in: read and stage the next REAL text onto CUDA while GPU trains.
+
+    Actual training commands remain single ordered consumer in this thread.
+    Only text_stage runs on the concurrent placement stream. This never
+    commits a model or processes answers before the original Brain authorizes
+    their matching text_learn operation.
+    """
+    inbox=queue.Queue(maxsize=8)
+    stage_pool=ThreadPoolExecutor(max_workers=1, thread_name_prefix="v43-gpu-prefetch")
+    def stage_async(m):
+        try:
+            if server.text is None:
+                raise RuntimeError("GPU text card has not been initialized")
+            if server.B.torch and str(server.B.device).startswith("cuda"):
+                # The copy happens on a secondary CUDA stream. CPU/IO may keep
+                # producing exercises and the primary stream may keep
+                # executing original V42 text kernels simultaneously.
+                stage_stream=torch.cuda.Stream(device=server.B.device)
+                with torch.cuda.stream(stage_stream):
+                    r=server.text.stage_v43(m["token"],m["exercises"])
+                    event=torch.cuda.Event(blocking=False)
+                    event.record(stage_stream)
+                    stage=server.text._v43_staged.get(m["token"])
+                    if stage is not None:
+                        stage["cudaEvent"]=event
+            else:
+                r=server.text.stage_v43(m["token"],m["exercises"])
+            r["concurrentPlacement"]=True
+        except Exception as exc:
+            r={"error":repr(exc),"concurrentPlacement":True}
+        r["id"]=m.get("id")
+        v43_emit(r)
+    def read_commands():
+        try:
+            for line in sys.stdin:
+                if not line.strip():continue
+                try:m=json.loads(line)
+                except Exception as e:
+                    v43_emit({"id":None,"error":"Invalid original CUDA request: "+str(e)})
+                    continue
+                if m.get("cmd")=="text_stage":
+                    # Bound outstanding CPU placement tasks by the original
+                    # JavaScript producer's three-batch resident queue.
+                    stage_pool.submit(stage_async,m)
+                else:
+                    inbox.put(m)
+        finally:
+            inbox.put(None)
+    producer=threading.Thread(target=read_commands,name="v43-gpu-command-reader",daemon=True)
+    producer.start()
+    try:
+        while True:
+            m=inbox.get()
+            if m is None:break
+            try:r=server.handle(m)
+            except Exception as e:r={"error":repr(e)}
+            r["id"]=m.get("id")
+            v43_emit(r)
+    finally:
+        stage_pool.shutdown(wait=True)
+
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "--selftest": sys.exit(selftest(sys.argv[2]))
     S = Server()
-    for line in sys.stdin:
-        line = line.strip()
-        if not line: continue
-        m = json.loads(line)
-        try: r = S.handle(m)
-        except Exception as e: r = {"error": repr(e)}
-        r["id"] = m.get("id"); sys.stdout.write(json.dumps(r) + "\n"); sys.stdout.flush()
+    if os.environ.get("MAGICPERSPECTIVE_V43_DONOR"):
+        serve_v43_concurrent_prefetch(S)
+    else:
+        # ORIGINAL V42 behavior: exact same serial stdin command loop.
+        for line in sys.stdin:
+            line = line.strip()
+            if not line: continue
+            m = json.loads(line)
+            try: r = S.handle(m)
+            except Exception as e: r = {"error": repr(e)}
+            r["id"] = m.get("id"); v43_emit(r)
+
