@@ -49,6 +49,7 @@ export async function stopV43WorkerForReset(worker,{timeoutMs=25000}={}) {
     const success=()=>{if(done)return;done=true;cleanup();resolve();};
     const failure=e=>{if(done)return;done=true;cleanup();reject(e);};
     const onMessage=m=>{
+      if(m?.type==="v43-reset-error")failure(Error(m.error||"Native CUDA worker did not shut down"));
       if(m?.type==="v43-reset-ready"&&m.noGpuProcessRetained===true)success();
     };
     const onError=e=>failure(e);
