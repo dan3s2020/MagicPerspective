@@ -1,0 +1,69 @@
+name: Native V42 lossless state-addressing pilot
+on:
+  push:
+    branches: [experiment/V42-FIBONACCI-LANGUAGE-20261109]
+  workflow_dispatch:
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compare original aliasing to lossless-address adapter (unchanged learner)
+        shell: bash
+        run: |
+          node --input-type=module <<'JS' | tee v42_address_adapter_results.json
+          import crypto from 'node:crypto';
+          import {ConstructedPathLearner} from './v17/transcend/torus-aether/worlds/constructed-paths.mjs';
+          const address=s=>'aa'+crypto.createHash('sha256').update(s).digest('hex').slice(0,20);
+          const wrap=q=>address(q)+' '+q;
+          const qs=['Does the dog chase the cat?','Does the cat chase the dog?'];
+          const ans=['The dog chases the cat.','The cat chases the dog.'];
+          const base=new ConstructedPathLearner({seed:17});
+          const tagged=new ConstructedPathLearner({seed:17});
+          for(let i=0;i<30;i++){
+            for(let k=0;k<2;k++){
+              base.trainText(qs[k],ans[k]);
+              tagged.trainText(wrap(qs[k]),ans[k]);
+            }
+          }
+          const predict=(m,queries)=>queries.map(q=>m.imagineText(q,{maxChars:40,beamWidth:3,fanOut:4,record:false}).predicted);
+          const baseOut=predict(base,qs),taggedOut=predict(tagged,qs.map(wrap));
+          const seqs=['ALPHA:'+'x'.repeat(42),'OMEGA:'+'x'.repeat(42)];
+          const ends=['1','2'];
+          const baseline=new ConstructedPathLearner({seed:17});
+          const adapted=new ConstructedPathLearner({seed:17});
+          for(let i=0;i<25;i++){
+            for(let k=0;k<2;k++){
+              baseline.trainText('continue sequence',seqs[k]+ends[k]);
+              adapted.trainText(wrap('continue sequence '+seqs[k]),ends[k]);
+            }
+          }
+          const baseChoices=seqs.map(s=>baseline.nextCharacters('continue sequence',s,8).map(c=>[c.character,c.weight]));
+          const adaptedOut=seqs.map(s=>adapted.imagineText(wrap('continue sequence '+s),{maxChars:2,beamWidth:3,fanOut:3,record:false}).predicted);
+          const result={
+            source:'native ConstructedPathLearner unmodified; experiment-only input state address; no answer encoded in address',
+            questionOrder:{
+              originalQuestions:qs,targetAnswers:ans,
+              basePredictions:baseOut,baseExact:baseOut.map((v,i)=>v===ans[i]),
+              taggedQuestions:qs.map(wrap),
+              distinctTaggedQkeys:ConstructedPathLearner.qkey(wrap(qs[0]))!==ConstructedPathLearner.qkey(wrap(qs[1])),
+              taggedPredictions:taggedOut,taggedExact:taggedOut.map((v,i)=>v===ans[i])
+            },
+            longHistory:{
+              originalNextDistributionsIdentical:JSON.stringify(baseChoices[0])===JSON.stringify(baseChoices[1]),
+              fullPrefixHashRetainsDistinction:ConstructedPathLearner.qkey(wrap('continue sequence '+seqs[0]))!==ConstructedPathLearner.qkey(wrap('continue sequence '+seqs[1])),
+              adaptedPredictions:adaptedOut,targets:ends,adaptedExact:adaptedOut.map((v,i)=>v===ends[i]),
+              limitation:'The adapter stores separate observed prefix addresses. These are seen-prefix recall tests, not unseen language generalization.'
+            }
+          };
+          console.log(JSON.stringify(result,null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-v42-state-address-results
+          path: v42_address_adapter_results.json
+          retention-days: 7
