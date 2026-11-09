@@ -69,6 +69,18 @@ export class BrainCharacterWorld {
     }
     this.neighbors=frozen(this.neighbors.map(frozen));
     this.transitions=frozen(this.transitions.map(frozen));
+    // Reverse edges belong to the identical immutable donor graph. Each
+    // visible target requires one attraction-wave coverage calculation.
+    this.reverse=Array.from({length:this.outputRows.length},()=>[]);
+    for(let from=0;from<this.neighbors.length;from++)
+      for(const e of this.neighbors[from])this.reverse[e.to].push(from);
+    this.goalDistances=new Map();
+    this.waveVerified=new Set();
+    this.waveRejected=new Set();
+    this.waveCalls=0;
+    this.waveOriginalCalls=0;
+    this.waveFastCalls=0;
+    this.waveParityFailures=0;
     this.totalEdges=this.neighbors.reduce((n,e)=>n+e.length,0);
     if(this.totalEdges<1)throw Error('Frozen donor axes cause no observable character movement');
     // All learning belongs to the SAME original serializable Brain.
@@ -96,7 +108,8 @@ export class BrainCharacterWorld {
     return this._closest(norm(mean));
   }
 
-  _nativeShape(start,target){
+  _originalNativeShape(start,target){
+    this.waveOriginalCalls++;
     const kinds=Array(this.outputRows.length).fill(KIND.floor);
     kinds[start]=KIND.self;
     if(target!==start)kinds[target]=KIND.target;
@@ -107,6 +120,71 @@ export class BrainCharacterWorld {
       firstPredictionBeforeAction:prediction.firstPredictionBeforeAction,
       sharedOriginalAlgorithm:prediction.sharedOriginalAlgorithm,
       visitedStates:prediction.path.map(p=>p.to)};
+  }
+
+  _uniformAttractionWave(start,target){
+    // Optimization of the EXACT ORIGINAL shapeGraph under the one-visible-goal,
+    // homogeneous-floor case. The original recurrence is V=0.97*c*max(next).
+    // Consequently V is monotone in reverse shortest-hop distance. One
+    // reverse wave per visible target gives the same steepest-ascent route,
+    // including original donor edge ordering. Other kinds/laws use ORIGINAL.
+    const disc=this.brain.disc,N=this.neighbors.length;
+    if(!Number.isInteger(start)||!Number.isInteger(target)||start<0||target<0||
+      start>=N||target>=N)return undefined;
+    if(target===start)return null; // No other attractive target in this world.
+    if(!(disc.attract(KIND.target)>.2)||
+       disc.attract(KIND.floor)>.2||
+       disc.conduct(KIND.floor)<.5)return undefined;
+    let distance=this.goalDistances.get(target);
+    if(!distance){
+      distance=new Int16Array(N);distance.fill(-1);
+      distance[target]=0;
+      const queue=[target];
+      for(let head=0;head<queue.length;head++){
+        const u=queue[head];
+        for(const v of this.reverse[u])if(distance[v]<0){
+          distance[v]=distance[u]+1;queue.push(v);
+        }
+      }
+      this.goalDistances.set(target,distance);
+    }
+    if(distance[start]<0)return null;
+    if(distance[start]>this.maxActionsPerByte)return undefined;
+    const route=[],visitedStates=[];
+    let node=start;
+    while(node!==target){
+      const step=this.neighbors[node].find(e=>distance[e.to]===distance[node]-1);
+      if(!step)return undefined;
+      route.push({from:node,to:step.to,action:step.action,value:0});
+      visitedStates.push(step.to);
+      node=step.to;
+    }
+    return {route,complete:true,firstPredictionBeforeAction:true,
+      sharedOriginalAlgorithm:true,visitedStates};
+  }
+
+  _nativeShape(start,target){
+    this.waveCalls++;
+    const fast=this._uniformAttractionWave(start,target);
+    if(fast===undefined||this.waveRejected.has(target))
+      return this._originalNativeShape(start,target);
+    // Verify against the UNCHANGED original Discoverer.shapeGraph once per
+    // target and periodically when the native learner's statistics evolve.
+    const check=!this.waveVerified.has(target)||this.waveCalls%2048===0;
+    if(check){
+      const original=this._originalNativeShape(start,target);
+      const edges=r=>r?JSON.stringify({
+        complete:r.complete,steps:r.route.map(x=>[x.from,x.to,x.action?.axis,x.action?.sign])
+      }):"null";
+      if(edges(fast)!==edges(original)){
+        this.waveParityFailures++;this.waveRejected.add(target);
+        return original; // Never silently change a real V42 goal trajectory.
+      }
+      this.waveVerified.add(target);
+      return original;
+    }
+    this.waveFastCalls++;
+    return fast;
   }
 
   _nativeExplore(state){
@@ -211,7 +289,10 @@ export class BrainCharacterWorld {
       nativePlanner:'Discoverer.shapeGraph',originalOrganism:true,
       donorActionsOnly:true,donorWeightsReadOnly:true,
       targetHiddenAtExecution:false, // Gold known for planning in training
-      randomQwenInferenceExecuted:false};
+      randomQwenInferenceExecuted:false,
+      waveOptimization:{fastCalls:this.waveFastCalls,
+        originalCalls:this.waveOriginalCalls,parityFailures:this.waveParityFailures,
+        validatedTargets:this.waveVerified.size,rejectedTargets:this.waveRejected.size}};
     if(record){
       const m=this.brain.brainCharacterWorld;
       m.worlds++;m.planned+=planned;m.executed++;m.matched+=successful;
