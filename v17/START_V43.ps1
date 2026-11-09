@@ -11,7 +11,7 @@ param(
   [int]$UIPort=8962,
   [string]$Gpu="cuda:0",
   [double]$Vram=3.0,
-  [int]$GpuTextBatch=1,
+  [int]$GpuTextBatch=8,
   [int]$GpuTextChunk=4096,
   [int]$GpuWorlds=3,
   [int]$XdAtlasEvery=16000,
