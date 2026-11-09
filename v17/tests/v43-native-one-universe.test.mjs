@@ -8,6 +8,7 @@ import {fileURLToPath} from "node:url";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 import {Discoverer,KIND} from "../transcend/torus-aether/worlds/exercise.mjs";
 import {V43FusedOneUniverse} from "../transcend/torus-aether/devour/v43-fused-one-universe.mjs";
+import {BrainCharacterWorld} from "../transcend/torus-aether/devour/brain-character-world.mjs";
 import {readV43State,readV43Exercises,readV43Live} from "../apps/hypermaze-studio-v26/v43-journal.mjs";
 
 const v17=fileURLToPath(new URL("../",import.meta.url));
@@ -214,4 +215,66 @@ test("RESEARCH ONLY: three distinct lessons do not allow trivial constant-output
     assert.equal(progress.length,3);
     assert.equal(fused.brain,brain);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test("V43 fast visible-target attraction wave reproduces ORIGINAL shapeGraph donor paths",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"magic-v43-parity-"));
+  try{
+    const brain=new Brain({seed:17,rules:{depth:1,off:["R2","R4"],budEvery:100,
+      empty:true,maxWires:32,fold:false}});
+    brain.disc=Object.assign(new Discoverer(17),{body:brain.body||{}});
+    brain.disc.endIn[KIND.target]=10;
+    brain.disc.enter[KIND.target]=14;
+    brain.disc.pass[KIND.floor]=25;
+    brain.disc.block[KIND.floor]=2;
+    const world=new BrainCharacterWorld({brain,donor:syntheticControlFixture(),
+      saveFile:path.join(dir,"original.v8"),maxActionsPerByte:16});
+    const actions=r=>r?JSON.stringify({complete:r.complete,
+      steps:r.route.map(z=>[z.from,z.to,z.action.axis,z.action.sign])}):null;
+    for(let t=0;t<256;t+=17)for(let st=0;st<256;st+=19)
+      assert.equal(actions(world._nativeShape(st,t)),actions(world._originalNativeShape(st,t)),
+        "native identical goal wave start="+st+" target="+t);
+    assert.ok(world.waveFastCalls>0,"fast wave must actually execute");
+    assert.equal(world.waveParityFailures,0);
+    // Same actual movement physics as normalization plus original frozen readout.
+    for(let from=0;from<256;from+=5)for(let axis=0;axis<8;axis++){
+      for(const sign of [-1,1]){
+        const src=world.outputRows[from],basis=world.axes[axis];
+        const vector=src.map((x,j)=>x+sign*world.gain*basis[j]);
+        const length=Math.hypot(...vector);
+        const candidate=length>1e-12?vector.map(x=>x/length):vector.map(()=>0);
+        const actual=world._closest(candidate);
+        const edge=world.transitions[from].find(e=>e.action.axis===axis&&e.action.sign===sign);
+        assert.equal(edge?.to??from,actual,
+          "factorized exact Qwen coordinate movement from="+from+" axis="+axis+" sign="+sign);
+      }
+    }
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test("V43 Windows EPERM telemetry rename does NOT kill original Brain training",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"magic-v43-eperm-"));
+  const originalRename=fs.renameSync;
+  try{
+    fs.renameSync=(src,dst)=>{
+      if(String(dst).includes(".v43-status.json")){
+        const err=Object.assign(new Error("Windows sidecar locked"),{code:"EPERM"});
+        throw err;
+      }
+      return originalRename(src,dst);
+    };
+    const brain=new Brain({seed:17,rules:{depth:1,off:["R2","R4"],budEvery:100,
+      empty:true,maxWires:32,fold:false}});
+    brain.disc=Object.assign(new Discoverer(17),{body:brain.body||{}});
+    brain.disc.endIn[KIND.target]=10;
+    brain.disc.enter[KIND.target]=14;
+    brain.disc.pass[KIND.floor]=25;
+    brain.disc.block[KIND.floor]=2;
+    const file=path.join(dir,"brain.v8");
+    const fused=new V43FusedOneUniverse({brain,donor:syntheticControlFixture(),saveFile:file});
+    const r=fused.experience({k:11,prompt:"A visible goal",answer:"B"});
+    assert.equal(r.exerciseReference,"B");
+    assert.equal(fused.state.completed,1);
+    assert.equal(JSON.parse(fs.readFileSync(file+".v43-status.json","utf8")).completed,1);
+    assert.ok(fs.readFileSync(file+".v43-exercises.jsonl","utf8").includes('"sourceRow":11'));
+  }finally{fs.renameSync=originalRename;fs.rmSync(dir,{recursive:true,force:true});}
 });
