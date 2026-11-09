@@ -20,6 +20,18 @@ param(
   [switch]$EndogenousNoise
 )
 $ErrorActionPreference="Stop"
+# Module-independent SHA256 (Windows PowerShell 5.1, constrained installations).
+function Get-V43SHA256([string]$FilePath){
+  $sha=[System.Security.Cryptography.SHA256]::Create()
+  $stream=$null
+  try{
+    $stream=[System.IO.File]::OpenRead($FilePath)
+    return ([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace("-","").ToUpperInvariant()
+  }finally{
+    if($null -ne $stream){$stream.Dispose()}
+    $sha.Dispose()
+  }
+}
 $Root=$PSScriptRoot
 $Original=Join-Path $Root "START_V41_SPEED_PROFILE.ps1"
 $Export=Join-Path $Root "v43\export_qwen.py"
@@ -67,11 +79,11 @@ if(!(Test-Path -LiteralPath $V43Brain -PathType Leaf)){
     $null=New-Item -ItemType Directory -Force -Path (Join-Path $Stage "brains")
     $provenance=@()
     foreach($file in $all){
-      $before=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+      $before=(Get-V43SHA256 $file.FullName)
       $copy=Join-Path (Join-Path $Stage "brains") $file.Name
       Copy-Item -LiteralPath $file.FullName -Destination $copy -ErrorAction Stop
-      $after=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
-      $written=(Get-FileHash -LiteralPath $copy -Algorithm SHA256).Hash
+      $after=(Get-V43SHA256 $file.FullName)
+      $written=(Get-V43SHA256 $copy)
       if($before -ne $after -or $before -ne $written){throw "V42 saved source changed during V43 import"}
       $provenance+=@{file=$file.Name;sha256=$before;bytes=$file.Length}
     }
