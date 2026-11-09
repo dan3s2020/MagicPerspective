@@ -202,6 +202,20 @@ export class V43FusedOneUniverse {
       plannedBytes:referenceBytes,totalBytes:referenceBytes,outputPrefix:produced,
       bytesPerSecond:+(referenceBytes/Math.max(.001,(Date.now()-startedAt)/1000)).toFixed(2)});
     const frozen=physicalPlan.map(p=>({...p,steps:p.steps.map(s=>({...s}))}));
+    // Exact, lossless movement compression for a full-rank donor world:
+    // every completed byte is either a zero-action target or one real
+    // composed donor move. Full output-state stream + unique operator atlas
+    // reconstitute all actions without 50k duplicated JSON route objects.
+    const compactDonorStream=frozen.every(p=>p.steps.length===0||
+      (p.steps.length===1&&p.steps[0].type==='frozen-axis-composition'));
+    const movementStream=compactDonorStream?{
+      encoding:'frozen-donor-one-composed-operator-per-output-byte/v1',
+      initialState:frozen[0]?.from??null,
+      destinationStatesBase64:Buffer.from(frozen.map(p=>p.final)).toString('base64'),
+      byteCount:frozen.length,
+      operatorLookup:'sourceByte:targetByte in uniqueWeightCompositions',
+      complete:true
+    }:null;
     // Player 2 becomes a frozen OBSERVABLE part of the organism's experience.
     // Nothing below invokes donor .exercise, ._planEntireExercise, ._nativeShape,
     // or a donor-weight readout. Player 1 acts only through original V42 motors.
@@ -242,7 +256,10 @@ export class V43FusedOneUniverse {
           traversed.firstPredictionsBeforeMovement/traversed.bytes:null,
         shapeBeforeMovementMeans:'predicted complete donor-movement route to visible target, not blind text generation',
         waveOptimization:traversed.waveOptimization,
-        allMovements:frozen,
+        allMovements:compactDonorStream?frozen.slice(0,32):frozen,
+        fullMovementStream:movementStream,
+        fullMovementsCount:frozen.length,
+        movementsCompressedInJournal:compactDonorStream,
         uniqueWeightCompositions:[...movementAtlas.values()],
         donorGeometryFrozen:true,physicalDonorActionsOnly:true,
         expectedOutputUsedInTrainingGame:true,
