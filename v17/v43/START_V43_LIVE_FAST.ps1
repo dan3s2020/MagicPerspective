@@ -174,15 +174,7 @@ if(!$NativePort){throw "No free isolated pair of ports for V43; no processes wer
 
 $Atlas=Join-Path $Root "v43\v43-qwen-donor.json"
 if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
-  if([string]::IsNullOrWhiteSpace($GGUF)){
-    $selections=Join-Path $Destination "selected-paths.json"
-    if(Test-Path -LiteralPath $selections){
-      $GGUF=(Get-Content -LiteralPath $selections -Raw -Encoding UTF8|ConvertFrom-Json).GGUF
-    }
-  }
-  if([string]::IsNullOrWhiteSpace($GGUF) -or !(Test-Path -LiteralPath $GGUF -PathType Leaf)){
-    throw "No existing genuine Qwen donor atlas or known GGUF path. Pass -GGUF with your already selected file."
-  }
+  throw "Existing Qwen GGUF atlas is missing: $Atlas. Refusing to silently reinstall or use a different donor."
 }
 Write-Host "ONE LIVE WINDOW: http://127.0.0.1:$UIPort" -ForegroundColor Green
 Write-Host "Real Parquet: $Data; original Brain: $V42Out; resumed V43: $Out" -ForegroundColor Cyan
