@@ -43,6 +43,7 @@ export class V43FusedOneUniverse {
     this.world=new BrainCharacterWorld({brain,donor,saveFile,maxOutputBytes:0,maxActionsPerByte:16});
     this.file=saveFile+'.v43-status.json';
     this.events=saveFile+'.v43-exercises.jsonl';
+    this.liveFile=saveFile+'.v43-live.json';
     this.pending=new Map();
     this.maxPredictionChars=maxPredictionChars;
     this.started=Date.now();
@@ -63,6 +64,12 @@ export class V43FusedOneUniverse {
       key:'one organism; player1 and player2 are internal movement roles'
     };
     this._publish();
+  }
+  _live(record){
+    // Atomically published sidecar for the separate UI server. It contains
+    // actual work and never asserts a successful Qwen forward pass.
+    atomicJSON(this.liveFile,{format:'magicperspective/v43-live/v1',
+      at:new Date().toISOString(),...record});
   }
   _publish() {
     const elapsed=Math.max(.001,(Date.now()-this.started)/1000);
@@ -110,11 +117,25 @@ export class V43FusedOneUniverse {
     const baseline=this.pending.get(key)||this.observeBefore(row);
     this.pending.delete(key);
     this.state.phase='player2-Qwen-puppet-moving';
+    const referenceBytes=Buffer.byteLength(row.answer,'utf8');
+    const progressBase={sourceRow:row.k??null,input:row.prompt,reference:row.answer,
+      beforeText:baseline.text,beforeAccuracy:match(row.answer,baseline.text).accuracy,
+      model:'Qwen-weight-derived coordinate puppet (not Qwen forward inference)',
+      totalBytes:referenceBytes,startedAt:new Date(startedAt).toISOString()};
+    this._live({...progressBase,active:true,phase:'planning real donor transformations',
+      plannedBytes:0,outputPrefix:'',bytesPerSecond:0});
     this._publish();
     // Capture the EXACT route calculated by original BrainCharacterWorld.exercise.
     // No extra calls to the planner: the wrapper observes the one real traversal.
     let physicalPlan=null;
     const originalShape=this.world._nativeShape;
+    const originalProgress=this.world.onPlanProgress;
+    this.world.onPlanProgress=(done,total,instructions)=>{
+      const prefix=Buffer.from(instructions.map(p=>p.expectedFinal)).toString('utf8');
+      this._live({...progressBase,active:true,
+        phase:'planning full donor coordinate movements',plannedBytes:done,totalBytes:total,
+        outputPrefix:prefix,bytesPerSecond:+(done/Math.max(.001,(Date.now()-startedAt)/1000)).toFixed(2)});
+    };
     const shapeCache=new Map();let shapeCacheHits=0;
     // Original Discoverer.shapeGraph remains the ONLY route constructor.
     // Whole-exercise preplanning has a frozen Discoverer, so identical
@@ -144,10 +165,14 @@ export class V43FusedOneUniverse {
     finally{
       this.world._planEntireExercise=originalPlan;
       this.world._nativeShape=originalShape;
+      this.world.onPlanProgress=originalProgress;
     }
     if(!physicalPlan||physicalPlan.length!==Buffer.byteLength(row.answer,'utf8'))
       throw Error('Physical Player 2 route was not captured in full');
     const produced=whole(physicalPlan.map(p=>p.final));
+    this._live({...progressBase,active:true,phase:'original Player 1 absorbing frozen donor observation',
+      plannedBytes:referenceBytes,totalBytes:referenceBytes,outputPrefix:produced,
+      bytesPerSecond:+(referenceBytes/Math.max(.001,(Date.now()-startedAt)/1000)).toFixed(2)});
     const frozen=physicalPlan.map(p=>({...p,steps:p.steps.map(s=>({...s}))}));
     // Player 2 becomes a frozen OBSERVABLE part of the organism's experience.
     // Nothing below invokes donor .exercise, ._planEntireExercise, ._nativeShape,
@@ -230,6 +255,10 @@ export class V43FusedOneUniverse {
     fs.mkdirSync(path.dirname(this.events),{recursive:true});
     fs.appendFileSync(this.events,JSON.stringify(entry)+'\n','utf8');
     this._publish();
+    this._live({...progressBase,active:false,phase:'completed and scored',
+      plannedBytes:referenceBytes,totalBytes:referenceBytes,
+      outputPrefix:produced,afterText:after.text,
+      bytesPerSecond:entry.answerBytesPerSecond,completeExerciseId:entry.id});
     return entry;
   }
 }
