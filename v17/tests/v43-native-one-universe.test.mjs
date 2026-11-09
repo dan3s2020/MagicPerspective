@@ -48,6 +48,9 @@ test("V43 uses the SAME original V42 Brain and freezes a real movement trace",as
     assert.equal(r.player1.before.text,baseline.text);
     assert.equal(r.player2.output,"B");
     assert.equal(r.player2.score.exact,true);
+    assert.equal(r.player2.visibleGoalShapeFraction,1,
+      "100% form requires the physical donor destination to equal the target, not just a planned route");
+    assert.equal(r.player2.exactVerifiedFirstShapes,1);
     assert.ok(r.player2.allMovements.length>0);
     assert.ok(r.player2.allMovements[0].steps.length>0);
     assert.equal(r.player1.noDonorMovementsDuringThisPhase,true);
