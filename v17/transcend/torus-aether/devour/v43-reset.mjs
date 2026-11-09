@@ -35,16 +35,34 @@ export function archiveV43Session(base,archiveRoot,{stamp=Date.now()}={}) {
   }
 }
 export async function stopV43WorkerForReset(worker,{timeoutMs=25000}={}) {
-  if(!worker)return {terminated:true,noPreviousWorker:true};
-  try{worker.postMessage("shutdown-reset");}catch{}
-  // worker.terminate() MUST finish before source files are moved or a new
-  // worker gets the same checkpoint path. Never overlap two original Brains.
-  const done=Promise.resolve().then(()=>worker.terminate());
-  const timeout=new Promise((_,reject)=>{
-    const t=setTimeout(()=>reject(Error("Reset worker did not terminate; files left untouched")),timeoutMs);
-    t.unref?.();
-    done.finally(()=>clearTimeout(t)).catch(()=>{});
+  if(!worker)return {terminated:true,noPreviousWorker:true,acknowledged:true};
+  // The shutdown is performed BY the old worker, so its own Python CUDA
+  // subprocess is closed before the parent worker is terminated.
+  await new Promise((resolve,reject)=>{
+    let done=false;
+    const cleanup=()=>{
+      clearTimeout(timer);
+      worker.off?.("message",onMessage);
+      worker.off?.("error",onError);
+      worker.off?.("exit",onExit);
+    };
+    const success=()=>{if(done)return;done=true;cleanup();resolve();};
+    const failure=e=>{if(done)return;done=true;cleanup();reject(e);};
+    const onMessage=m=>{
+      if(m?.type==="v43-reset-ready"&&m.noGpuProcessRetained===true)success();
+    };
+    const onError=e=>failure(e);
+    const onExit=code=>failure(Error("Old worker exited before CUDA reset acknowledgement: "+code));
+    const timer=setTimeout(()=>failure(Error(
+      "Old CUDA worker did not acknowledge shutdown within "+timeoutMs+"ms; reset refused, checkpoints untouched")),timeoutMs);
+    timer.unref?.();
+    worker.on("message",onMessage);
+    worker.on("error",onError);
+    worker.on("exit",onExit);
+    try{worker.postMessage("shutdown-reset");}catch(e){failure(e);}
   });
-  await Promise.race([done,timeout]);
-  return {terminated:true,noPreviousWorker:false};
+  // ACK guarantees Python was already closed by its owning native worker.
+  // Await old worker termination before archiving all of its files.
+  await worker.terminate();
+  return {terminated:true,noPreviousWorker:false,acknowledged:true};
 }
