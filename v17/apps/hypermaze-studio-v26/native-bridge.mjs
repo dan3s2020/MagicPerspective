@@ -9,7 +9,7 @@ import path from "node:path";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {fileURLToPath} from "node:url";
-import {readV43State,readV43Exercises} from "./v43-journal.mjs";
+import {readV43State,readV43Exercises,readV43Live} from "./v43-journal.mjs";
 const V43_UI=process.env.MAGICPERSPECTIVE_V43_UI==="1";
 
 const ROOT=fileURLToPath(new URL(".",import.meta.url));
@@ -136,7 +136,7 @@ export async function createNativeBridge({
       }
       if(V43_UI&&req.method==="GET"&&target==="/api/v43-status"){
         const native=await nativeGet("/health?w=0",7000);
-        const report=await readV43State(native.checkpoint);
+        const [report,live]=await Promise.all([readV43State(native.checkpoint),readV43Live(native.checkpoint)]);
         const data=native.dataset||null,assigned=data?.assignedTrainingRows??null;
         const completed=report?.completed??0;
         // Native progress INCLUDES the already-learned V42 checkpoint rows.
@@ -146,10 +146,11 @@ export async function createNativeBridge({
         const v43OnlyPercent=Number.isFinite(assigned)&&assigned>0?
           Math.min(100,100*completed/assigned):null;
         send(res,{version:43,mode:"V43_ONE_ORGANISM_ONLY",
-          worker:report,phase:report?.phase||native.health?.phase||native.status,
+          worker:report,live,phase:live?.active?live.phase:(native.health?.phase||report?.phase||native.status),
           dataset:{...data,v43Completed:completed,v43Percent:progress,
             v43OnlyPercent},
-          health:native.health||null,checkpointFound:Boolean(native.checkpoint),
+          health:native.health||null,lastBatchReal:native.lastBatchReal||null,
+          checkpointFound:Boolean(native.checkpoint),
           originalWorkerStatus:native.status,
           source:"SAME MagicPerspective native V42 Brain and Qwen puppet; no Braivour server"});
         return;
