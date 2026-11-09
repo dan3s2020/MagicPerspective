@@ -117,6 +117,7 @@ function workerHealth(sl, graph = graphs.get(sl.w)) {
     realDatasetRowCharacters:sl.lastHeartbeat?.realDatasetRowCharacters??null,
     gpuBatchQueuedRows:sl.lastHeartbeat?.gpuBatchQueuedRows??null,
     gpuBatchQueuedCharacters:sl.lastHeartbeat?.gpuBatchQueuedCharacters??null,
+    v43Conveyor:sl.lastHeartbeat?.v43Conveyor??null,
     lastReportedChars:sl.lastHeartbeat?.chars??0,
     lastReportedExercises:sl.lastHeartbeat?.exercises??0,
     textMBps:sl.lastHeartbeat?.textMBps??null,
