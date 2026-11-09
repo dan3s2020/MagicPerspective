@@ -15,6 +15,7 @@ param(
   [int]$GpuTextChunk=4096,
   [int]$GpuWorlds=3,
   [switch]$NoBrowser,
+  [switch]$AutoStart,
   [switch]$EndogenousNoise
 )
 $ErrorActionPreference="Stop"
@@ -120,7 +121,7 @@ Write-Host "Start Training mode: only V43 fused one-organism Qwen puppet + origi
 $ArgsOriginal=@{
   Data=$Data;Worlds=$Worlds;Out=$Out;NativePort=$NativePort;UIPort=$UIPort;Gpu=$Gpu;Vram=$Vram;
   GpuTextBatch=$GpuTextBatch;GpuTextChunk=$GpuTextChunk;GpuWorlds=$GpuWorlds;
-  NoBrowser=$NoBrowser;EndogenousNoise=$EndogenousNoise;V43Paused=$true
+  NoBrowser=$NoBrowser;EndogenousNoise=$EndogenousNoise;V43Paused=(!$AutoStart)
 }
 try{
   & $Original @ArgsOriginal
