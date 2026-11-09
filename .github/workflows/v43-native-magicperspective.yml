@@ -80,6 +80,33 @@ jobs:
           if($LASTEXITCODE -ne 0){throw "Windows PowerShell 5.1 parser rejected fast live launcher"}
           if($LASTEXITCODE -ne 0){throw 'Windows PowerShell 5.1 parser rejected V43 installer'}
           Write-Host 'V43_REAL_WINDOWS_POWERSHELL_5_1_PARSE_PASS'
+      - name: Execute actual Windows PowerShell 5.1 SHA256 compatibility regression
+        shell: pwsh
+        run: |
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command @'
+          $ErrorActionPreference='Stop'
+          $files=@('v17/START_V43.ps1','v17/v43/START_V43_LIVE_FAST.ps1','v17/v43/BOOTSTRAP_D.ps1','v17/START_V41_SPEED_PROFILE.ps1','v17/START_HYPERMAZE_REAL_CUDA.ps1')
+          foreach($file in $files){
+            $content=[System.IO.File]::ReadAllText((Join-Path (Get-Location) $file))
+            if($content -match 'Get-FileHash'){
+              throw "Forbidden unavailable Get-FileHash call in original launch chain: $file"
+            }
+          }
+          $bytes=[System.Text.Encoding]::ASCII.GetBytes('abc')
+          $temp=Join-Path $env:TEMP ('v43-hash-'+[guid]::NewGuid().ToString('N')+'.txt')
+          try {
+            [System.IO.File]::WriteAllBytes($temp,$bytes)
+            $sha=[System.Security.Cryptography.SHA256]::Create()
+            $stream=[System.IO.File]::OpenRead($temp)
+            try{$actual=([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}
+            finally{$stream.Dispose();$sha.Dispose()}
+            if($actual -ne 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'){
+              throw "V43 SHA256 calculation incorrect: $actual"
+            }
+            Write-Host 'WINDOWS_POWERSHELL_5_1_NO_GET_FILEHASH_REAL_SHA256_PASS'
+          }finally{Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue}
+          '@
+          if($LASTEXITCODE -ne 0){throw 'V43 Windows PowerShell 5.1 SHA256 regression failed'}
       - name: Verify fresh D installer opens GUI file/folder pickers and never scans drives
         shell: pwsh
         run: |
