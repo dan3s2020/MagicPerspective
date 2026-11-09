@@ -1,0 +1,72 @@
+name: Native V42 information-loss counterexamples
+on:
+  push:
+    branches: [experiment/V42-FIBONACCI-LANGUAGE-20261109]
+  workflow_dispatch:
+jobs:
+  native-information-loss:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test qkey and 32-character context collision in native engine
+        shell: bash
+        run: |
+          node --input-type=module <<'JS' | tee v42_native_information_loss.json
+          import fs from 'node:fs';
+          import {ConstructedPathLearner} from './v17/transcend/torus-aether/worlds/constructed-paths.mjs';
+          const q1='Does the dog chase the cat?';
+          const q2='Does the cat chase the dog?';
+          const k1=ConstructedPathLearner.qkey(q1),k2=ConstructedPathLearner.qkey(q2);
+          const d=new ConstructedPathLearner({seed:77});
+          for(let i=0;i<30;i++){
+            d.trainText(q1,'The dog chases the cat.');
+            d.trainText(q2,'The cat chases the dog.');
+          }
+          const p1=d.nextCharacters(q1,'',8),p2=d.nextCharacters(q2,'',8);
+          const i1=d.imagineText(q1,{maxChars:32,beamWidth:3,fanOut:4,record:false});
+          const i2=d.imagineText(q2,{maxChars:32,beamWidth:3,fanOut:4,record:false});
+          const ctxA='ALPHA:'+'x'.repeat(42),ctxB='OMEGA:'+'x'.repeat(42);
+          const m=new ConstructedPathLearner({seed:77});
+          for(let i=0;i<25;i++){m.trainText('continue sequence',ctxA+'1');m.trainText('continue sequence',ctxB+'2');}
+          const c1=m.nextCharacters('continue sequence',ctxA,8);
+          const c2=m.nextCharacters('continue sequence',ctxB,8);
+          const scalesBeyond32=new ConstructedPathLearner({seed:77});
+          scalesBeyond32.byScale=[1,2,3,5,21,89];
+          scalesBeyond32.trainText('same question','z'.repeat(84)+'X');
+          const state89=scalesBeyond32.textState('same question','z'.repeat(84),89);
+          const longStateWasObserved=scalesBeyond32.scales[5].choices(state89).length>0;
+          const result={
+            nativeCode:'ConstructedPathLearner original source unchanged',
+            inversion:{
+              q1,q2,qkey1:k1,qkey2:k2,sameKey:k1===k2,
+              trainingRows:d.textRows,identicalFirstStepDistributions:JSON.stringify(p1)===JSON.stringify(p2),
+              sameFreeRunAnswer:i1.predicted===i2.predicted,
+              preview1:i1.predicted,preview2:i2.predicted,
+              correctAnswersDiffer:true
+            },
+            longMemory:{
+              contextsDifferBeforeLast32:true,
+              bothLast32Equal:ctxA.slice(-32)===ctxB.slice(-32),
+              trainingRows:m.textRows,
+              sameNextCharacterDistribution:JSON.stringify(c1)===JSON.stringify(c2),
+              exampleTopCandidates:c1.slice(0,4).map(x=>({c:x.character,weight:x.weight})),
+              distinctRequiredTargets:['1','2']
+            },
+            maxContext:{
+              trialScale:89,
+              trainingInternalHistoryTruncatedAt32:true,
+              stateAfter84CharsWasObserved:longStateWasObserved,
+              explanation:'trainText stores history.slice(-32) even when larger scales are configured'
+            }
+          };
+          console.log(JSON.stringify(result,null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-v42-information-loss-results
+          path: v42_native_information_loss.json
+          retention-days: 7
