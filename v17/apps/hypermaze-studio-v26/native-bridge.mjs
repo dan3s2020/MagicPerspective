@@ -185,6 +185,12 @@ export async function createNativeBridge({
           else graphError=String(graphResult.reason?.message||graphResult.reason);
           if(healthResult.status==="fulfilled")liveHealth=healthResult.value;
           else liveHealthError=String(healthResult.reason?.message||healthResult.reason);
+          // No snapshot exists until ORIGINAL V42 finishes its first CUDA work.
+          // That /graph 404 is a pending state, not a worker error.
+          if(graphError&&/Original V17 \/graph\?w=\d+ responded HTTP 404/.test(graphError)&&
+             selected.status!=="eroare"&&liveHealth?.status!=="eroare"){
+            graphError=null;
+          }
         }
         send(res,{...nativeSnapshot(graphs,graph,worker),
           workerHealth:nativeWorkerHealth(selected),
