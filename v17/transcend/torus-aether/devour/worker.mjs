@@ -356,6 +356,8 @@ let batchNow = null;                                                       // wh
 let workerPhase = "starting", phaseSince = Date.now();
 const setWorkerPhase = label => {workerPhase=label;phaseSince=Date.now();};
 let rateAt=Date.now(),rateChars=brain.chars||0,rateExercises=brain.exercises||0;
+let realDatasetRowsRead=brain.exercises||0,lastRealDatasetRowIndex=-1,realDatasetRowCharacters=0;
+let gpuBatchQueuedRows=0,gpuBatchQueuedCharacters=0;
 const heartbeat = setInterval(()=>{
   const now=Date.now(),deltaSeconds=Math.max(.001,(now-rateAt)/1000);
   const committedChars=brain.chars||0,committedExercises=brain.exercises||0;
@@ -365,6 +367,8 @@ const heartbeat = setInterval(()=>{
   parentPort.postMessage({type:"heartbeat",w:workerData.gw,at:now,
     phase:workerPhase,phaseSince,chars:committedChars,
     exercises:committedExercises,batch:batchNow,
+    realDatasetRowsRead,lastRealDatasetRowIndex,realDatasetRowCharacters,
+    gpuBatchQueuedRows,gpuBatchQueuedCharacters,
     textMBps,exercisesPerSecond,
     throughputIntervalSeconds:deltaSeconds,
     rawTextMB:committedChars/1e6,
@@ -748,6 +752,11 @@ const v34Stage=label=>{
 };
 let firstCorpusAbsorptionDiagnosed=false;
 for await (const ex of stream()) {
+  if(TEXT){
+    realDatasetRowsRead++;
+    lastRealDatasetRowIndex=ex.k;
+    realDatasetRowCharacters=ex.bytes?.length||0;
+  }
   if(!firstRowDiagnosed){
    firstRowDiagnosed=true;
    parentPort.postMessage({type:"note",w:workerData.gw,
@@ -771,10 +780,13 @@ for await (const ex of stream()) {
       stop = true; break;
     }
     textBatch.push(ex.bytes); textMeta.push(ex);
+    gpuBatchQueuedRows=textBatch.length;
+    gpuBatchQueuedCharacters=textBatch.reduce((n,row)=>n+row.length,0);
     setWorkerPhase("collecting next real CUDA text batch");
     if (textBatch.length >= selectedTextBatch() || textBatch.reduce((n, b) => n + b.length, 0) >= 120000) {
       const exs = textBatch, meta = textMeta;
-      try { await processGpuText(exs, meta); textBatch = []; textMeta = []; }
+      try { await processGpuText(exs, meta); textBatch = []; textMeta = [];
+        gpuBatchQueuedRows=0;gpuBatchQueuedCharacters=0; }
       catch (err) {
         gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
         parentPort.postMessage({type: "fatal", w: workerData.gw, text: "GPU batch failed without CPU fallback: " + err.message});
