@@ -1,0 +1,90 @@
+name: V42 Native Language Graph Disk-backed Parity
+on:
+  push:
+    branches: [experiment/V42-600GB-4GB-OFFLOAD-20261109]
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compare native graph and on-disk exact storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p native_audit
+          node --expose-gc --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          import {DatabaseSync} from 'node:sqlite';
+          import {ConstructedPathLearner} from './v17/transcend/torus-aether/worlds/constructed-paths.mjs';
+          const fileNames=['README.md','CANON.md','V2-LAUNCH.md','v17/README.md'];
+          const sources=fileNames.filter(f=>fs.existsSync(f)).map(f=>[...fs.readFileSync(f,'utf8')].filter(c=>c.charCodeAt(0)<128).join('').slice(0,6600)).filter(s=>s.length>1200);
+          const chunks=s=>{const a=[];for(let i=0;i+25<s.length;i+=84)a.push(s.slice(i,i+84));return a;};
+          const training=sources.flatMap(s=>chunks(s.slice(0,Math.floor(s.length*.75))));
+          const heldout=sources.flatMap(s=>chunks(s.slice(Math.floor(s.length*.75))));
+          const question='continue technical documentation',m=new ConstructedPathLearner({seed:17,maxTextStates:180000});
+          for(const row of training)m.trainText(question,row);
+          const inputs=[];
+          for(const row of heldout)for(let i=0;i<row.length;i++)inputs.push([question,row.slice(0,i),8]);
+          const t0=performance.now();
+          const reference=inputs.map(args=>m.nextCharacters(...args));
+          const nativeSeconds=(performance.now()-t0)/1000;
+          const refFree=heldout.slice(0,6).map(row=>m.imagineText(question,{maxChars:Math.min(30,row.length),beamWidth:3,fanOut:4,record:false}).predicted);
+          const originalHeapMiB=process.memoryUsage().heapUsed/2**20;
+          const db=new DatabaseSync('native_audit/complete_native_language_graph.sqlite');
+          db.exec('PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF; CREATE TABLE graph(scale INTEGER, state TEXT, act TEXT, dst TEXT, n INTEGER, ai INTEGER, di INTEGER);');
+          const ins=db.prepare('INSERT INTO graph VALUES(?,?,?,?,?,?,?)');
+          db.exec('BEGIN');
+          let edges=0;
+          for(let s=0;s<m.scales.length;s++){
+            for(const [state,actions] of m.scales[s].edges){
+              let ai=0;
+              for(const [act,dest] of actions){
+                let di=0;for(const [dst,n] of dest){ins.run(s,state,act,dst,n,ai,di++);edges++;}
+                ai++;
+              }
+            }
+          }
+          db.exec('COMMIT');
+          db.exec('CREATE INDEX find_state ON graph(scale,state,ai,di);');
+          const query=db.prepare('SELECT act,dst,n FROM graph WHERE scale=? AND state=? ORDER BY ai,di');
+          class DiskGraph {
+            constructor(scale){this.scale=scale;}
+            choices(from) {
+              const actions=new Map();
+              for(const row of query.all(this.scale,String(from))){
+                let dest=actions.get(row.act);
+                if(!dest){dest=[];actions.set(row.act,dest);}
+                dest.push([row.dst,Number(row.n)]);
+              }
+              return [...actions].map(([action,dest])=>{
+                const total=dest.reduce((s,x)=>s+x[1],0);
+                return {action,total,successors:dest.sort((a,b)=>b[1]-a[1]).map(([to,seen])=>({to,seen,probability:seen/total}))};
+              });
+            }
+          }
+          m.scales=m.scales.map((_,i)=>new DiskGraph(i));
+          global.gc();
+          const afterSwapHeapMiB=process.memoryUsage().heapUsed/2**20;
+          const t1=performance.now();
+          const diskResults=inputs.map(args=>m.nextCharacters(...args));
+          const diskSeconds=(performance.now()-t1)/1000;
+          const diskFree=heldout.slice(0,6).map(row=>m.imagineText(question,{maxChars:Math.min(30,row.length),beamWidth:3,fanOut:4,record:false}).predicted);
+          for(let i=0;i<inputs.length;i++)assert.deepStrictEqual(diskResults[i],reference[i],'Different native result for query '+i);
+          assert.deepStrictEqual(diskFree,refFree);
+          const result={originalLearnerUnmodified:true,memoryBackend:'node:sqlite complete successor graph',trainingRows:training.length,heldoutQueries:inputs.length,transitionsPersisted:edges,exactNativeDistributions:inputs.length,freeGenerationEqual:diskFree.length,diskMiB:fs.statSync('native_audit/complete_native_language_graph.sqlite').size/2**20,originalHeapMiB,afterSwapHeapMiB,nativeSeconds,diskSeconds,slowerRatio:diskSeconds/nativeSeconds,limitations:'CPU only. Entire trained graph was initially in memory for export. Only constructedPaths.scales externalized, not AligningGraph, emergent wires, semantic state, or the full native 600 GB Brain.'};
+          fs.writeFileSync('native_audit/complete_graph_parity.json',JSON.stringify(result,null,2));
+          console.log('NATIVE_DISK_GRAPH_PARITY_PASS '+JSON.stringify(result));
+          JS
+      - name: Metrics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: V42-native-disk-backed-parity-results
+          path: native_audit/complete_graph_parity.json
+          retention-days: 7
