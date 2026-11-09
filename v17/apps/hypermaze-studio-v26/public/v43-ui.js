@@ -229,6 +229,9 @@ async function refresh(){
  try{
    const data=await get("/api/v43-status");
    const w=data.worker||{},d=data.dataset||{};
+   const conveyor=data.health?.v43Conveyor||{};
+   set("v43GpuQueued",fmt(data.health?.gpuBatchQueuedRows));
+   set("v43GpuOverlap",fmt(conveyor.cudaBatchesDispatchedAhead));
    set("v43Phase",(data.phase||"ready").toUpperCase());
    set("v43Percent",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(2)+"%");
    set("v43Dataset",fmt(d.completedTrainingRows)+" / "+fmt(d.assignedTrainingRows)+
