@@ -1,13 +1,23 @@
 // V44 dataset isolation worker. This imports the pre-existing, proven
 // OpenThoughts Parquet FORMAT ADAPTER ONLY, never the V42/V43 trainer/UI.
 import {parentPort, workerData} from "node:worker_threads";
+import fs from "node:fs";
 import {openTextDataset} from "../v17/transcend/torus-aether/data/text-dataset.mjs";
 
 let ds=null,index=0,busy=false;
 const send=(type,data={})=>parentPort.postMessage({type,...data});
 async function init(){
   try{
-    ds=await openTextDataset(workerData.dataset);
+    if(workerData.ciSynthetic){
+      if(process.env.V44_ALLOW_CI_SYNTHETIC!=="1")throw Error("Synthetic dataset is restricted to authorized CI");
+      const rows=fs.readFileSync(workerData.dataset,"utf8").split(/\r?\n/).filter(Boolean).map(JSON.parse);
+      if(rows.length<4)throw Error("CI requires at least 4 synthetic rows");
+      const held=Math.min(2,Math.floor(rows.length/4)),trainRows=rows.length-held;
+      ds={trainRows,held,files:[{path:workerData.dataset}],
+        exercise:async i=>rows[i],heldOut:async i=>rows[trainRows+i]};
+    }else{
+      ds=await openTextDataset(workerData.dataset);
+    }
     index=Math.max(0,Math.min(ds.trainRows,Number(workerData.startRow)||0));
     const holdout=[];
     for(let i=0;i<ds.held;i++){
