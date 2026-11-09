@@ -147,8 +147,9 @@ function Stop-VerifiedOldMagicWorker($item){
   if($native.Count -ne 1){
     throw "Could not uniquely identify old MagicPerspective native PID for $runtime. No foreign process touched."
   }
-  Write-Host "Stopping ONLY obsolete MagicPerspective PID $($native[0].ProcessId), including its old CUDA child." -ForegroundColor Yellow
-  & taskkill.exe /PID $native[0].ProcessId /T /F | Out-Host
+  $OldPid=[int]$native[0].ProcessId
+  Write-Host "Stopping ONLY obsolete MagicPerspective PID $OldPid, including its old CUDA child." -ForegroundColor Yellow
+  & taskkill.exe /PID $OldPid /T /F | Out-Host
   if($LASTEXITCODE -ne 0){throw "Unable to stop old MagicPerspective PID $($native[0].ProcessId)"}
 }
 foreach($p in $Paused){
