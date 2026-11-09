@@ -375,7 +375,7 @@ const heartbeat = setInterval(()=>{
     throughputDefinition:"COMMITTED text characters in original Brain / wall-clock seconds (NOT Parquet file I/O bytes)",
     activeGpuRpc:gpu?.activeCommand||null,
     gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9});
-},5000);
+},v43World?1000:5000);
 heartbeat.unref?.();
 const flushShared = async (force = false) => {
   if (!shared.queue.length || (!force && shared.queue.length < 24)) return;
