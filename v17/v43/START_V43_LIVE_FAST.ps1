@@ -29,6 +29,7 @@ $changed=@(
   "v17/START_V41_SPEED_PROFILE.ps1",
   "v17/START_V43.ps1",
   "v17/transcend/torus-aether/devour/brain-character-world.mjs",
+  "v17/transcend/torus-aether/devour/v43-telemetry.mjs",
   "v17/transcend/torus-aether/devour/v43-fused-one-universe.mjs",
   "v17/apps/hypermaze-studio-v26/v43-journal.mjs",
   "v17/apps/hypermaze-studio-v26/native-bridge.mjs",
@@ -61,14 +62,21 @@ try{
   foreach($rel in $changed){
     $destFile=Join-Path $Destination ("source\"+$rel.Replace("/","\"))
     $stageFile=Join-Path $Stage $rel
-    if(!(Test-Path -LiteralPath $destFile -PathType Leaf)){
-      throw "Installed file missing; no silent architecture replacement: $destFile"
+    $exists=Test-Path -LiteralPath $destFile -PathType Leaf
+    if(!$exists -and $rel -ne "v17/transcend/torus-aether/devour/v43-telemetry.mjs"){
+      throw "Original V43 source file missing; no silent architecture replacement: $destFile"
     }
-    if((Get-FileHash -LiteralPath $destFile -Algorithm SHA256).Hash -ne
-       (Get-FileHash -LiteralPath $stageFile -Algorithm SHA256).Hash){
-      $back=Join-Path $Backups $rel
-      $null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $back)
-      Copy-Item -LiteralPath $destFile -Destination $back
+    $different=(!$exists)
+    if($exists){
+      $different=(Get-FileHash -LiteralPath $destFile -Algorithm SHA256).Hash -ne
+        (Get-FileHash -LiteralPath $stageFile -Algorithm SHA256).Hash
+    }
+    if($different){
+      if($exists){
+        $back=Join-Path $Backups $rel
+        $null=New-Item -ItemType Directory -Force -Path (Split-Path -Parent $back)
+        Copy-Item -LiteralPath $destFile -Destination $back
+      }
       Copy-Item -LiteralPath $stageFile -Destination $destFile
     }
   }
@@ -77,55 +85,92 @@ try{
   if(Test-Path -LiteralPath $Stage){Remove-Item -LiteralPath $Stage -Force -Recurse}
 }
 
-# Pause ONLY the known MagicPerspective worker ports from prior commands;
-# never kill a process or touch other programs. Save the original Brain first.
+# Stop duplicate CUDA workload ONLY in known native MagicPerspective instances.
+# A pause without a newly saved .v8 is not treated as a safe resume source.
 function Pause-MagicWorker([int]$Port){
   try{
     $base="http://127.0.0.1:$Port"
     $state=Invoke-RestMethod -Uri ($base+"/health?w=0") -TimeoutSec 3
+    $checkpoint=[string]$state.checkpoint
+    if($checkpoint -notlike "$Root\*"){return $null}
     if([string]$state.status -match "^antren"){
-      Write-Host "Pausing previous MagicPerspective $Port and requesting native checkpoint..." -ForegroundColor Yellow
-      Invoke-RestMethod -Method Post -Uri ($base+"/control?do=pause") -TimeoutSec 12 | Out-Null
-      Invoke-RestMethod -Method Post -Uri ($base+"/control?do=save") -TimeoutSec 12 | Out-Null
-      return $true
+      $requested=Get-Date
+      Write-Host "Pausing ONLY known MagicPerspective trainer on $Port..." -ForegroundColor Yellow
+      Invoke-RestMethod -Method Post -Uri ($base+"/control?do=pause") -TimeoutSec 12|Out-Null
+      Invoke-RestMethod -Method Post -Uri ($base+"/control?do=save") -TimeoutSec 12|Out-Null
+      return @{checkpoint=$checkpoint;at=$requested;port=$Port}
     }
   }catch{
-    Write-Warning "Could not pause MagicPerspective on $Port : $($_.Exception.Message)"
+    Write-Warning "MagicPerspective port $Port pause probe: $($_.Exception.Message)"
   }
-  return $false
+  return $null
 }
-$OldPaused=$false
-$OldSaveRequestedAt=Get-Date
+$Paused=@()
 if(!$LeaveOldWorkersRunning){
-  $OldPaused=Pause-MagicWorker 8951
-  $null=Pause-MagicWorker 8961
-}
-$Out=Join-Path $Root "runtime-v43-one-universe-live"
-$V42Out=Join-Path $Root "runtime-V43-REAL-CUDA-FAST"
-$CandidateCheckpoints=@(
-  (Join-Path $V42Out "brains\brain-0-winner.v8"),
-  (Join-Path $Root "runtime-v43-fused-v42\brains\brain-0-winner.v8")
-)
-if(!(Test-Path -LiteralPath (Join-Path $Out "brains\brain-0-winner.v8") -PathType Leaf)){
-  if($OldPaused){
-    $ConfirmedNewCheckpoint=$false
-    for($i=0;$i -lt 120;$i++){
-      if(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf){
-        $saved=Get-Item -LiteralPath $CandidateCheckpoints[0]
-        if($saved.Length -gt 0 -and $saved.LastWriteTime -ge $OldSaveRequestedAt.AddSeconds(-2)){
-          $ConfirmedNewCheckpoint=$true;break
-        }
-      }
-      Start-Sleep -Milliseconds 500
-    }
-    if(!$ConfirmedNewCheckpoint){
-      throw "Previous original V17 Brain did not confirm a NEW checkpoint after pause. Refusing to import a stale state."
-    }
+  foreach($port in @(8951,8961,8971)){
+    $p=Pause-MagicWorker $port
+    if($p){$Paused+=,$p}
   }
-  $found=$CandidateCheckpoints|Where-Object{Test-Path -LiteralPath $_ -PathType Leaf}|Select-Object -First 1
-  if($found){$V42Out=Split-Path -Parent (Split-Path -Parent $found)}
-  else{Write-Warning "No original saved Brain found: a NEW V43 Brain will begin, old runtimes unchanged."}
 }
+foreach($p in $Paused){
+  $confirmed=$false
+  for($i=0;$i -lt 240;$i++){
+    if(Test-Path -LiteralPath $p.checkpoint -PathType Leaf){
+      $saved=Get-Item -LiteralPath $p.checkpoint
+      if($saved.Length -gt 0 -and $saved.LastWriteTime -ge $p.at.AddSeconds(-2)){
+        $confirmed=$true;break
+      }
+    }
+    Start-Sleep -Milliseconds 500
+  }
+  if(!$confirmed){
+    throw "Port $($p.port): no newly saved original Brain after pause. No reset or fresh run performed."
+  }
+}
+$OldV43=Join-Path $Root "runtime-v43-one-universe-live"
+$OldV42=Join-Path $Root "runtime-V43-REAL-CUDA-FAST"
+$OldFused=Join-Path $Root "runtime-v43-fused-v42"
+$Out=Join-Path $Root "runtime-v43-one-universe-fastfix"
+$CandidateFolders=@($Out,$OldV43,$OldV42,$OldFused)
+$ExistingCheckpoint=@($CandidateFolders|ForEach-Object{
+  $f=Join-Path $_ "brains\brain-0-winner.v8"
+  if(Test-Path -LiteralPath $f -PathType Leaf){Get-Item -LiteralPath $f}
+}|Sort-Object LastWriteTime -Descending|Select-Object -First 1)
+if(!$ExistingCheckpoint.Count){
+  throw "No saved original native Brain .v8 found. Refusing to start from zero or erase unsaved work."
+}
+$V42Out=Split-Path -Parent (Split-Path -Parent $ExistingCheckpoint[0].FullName)
+if([string]::Equals($V42Out,$Out,[StringComparison]::OrdinalIgnoreCase)){
+  $Other=@($CandidateFolders|Where-Object{$_ -ne $Out}|ForEach-Object{
+    $f=Join-Path $_ "brains\brain-0-winner.v8"
+    if(Test-Path -LiteralPath $f -PathType Leaf){Get-Item -LiteralPath $f}
+  }|Sort-Object LastWriteTime -Descending|Select-Object -First 1)
+  if($Other.Count){$V42Out=Split-Path -Parent (Split-Path -Parent $Other[0].FullName)}
+  else{$V42Out=$OldV42} # only a distinct non-target path is required for an existing V43 save
+}
+# Never re-use an existing runtime directory without a valid Brain.
+$OwnCheckpoint=Join-Path $Out "brains\brain-0-winner.v8"
+if((Test-Path -LiteralPath $Out -PathType Container) -and
+   !(Test-Path -LiteralPath $OwnCheckpoint -PathType Leaf)){
+  if(@(Get-ChildItem -LiteralPath $Out -Force -ErrorAction SilentlyContinue).Count){
+    $Out=$Out+"-"+(Get-Date -Format "yyyyMMdd-HHmmss")
+  }
+}
+# If a previous native process owns the fixed fastfix checkpoint, clone the
+# latest checkpoint into a new isolated runtime rather than overwrite it.
+$NativeProcesses=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|
+  Where-Object{$_.Name -match '^node(\.exe)?$' -and
+    $_.CommandLine -match 'devour[\\/]+devour\.mjs' -and
+    $_.CommandLine -like "*$Out*"})
+if($NativeProcesses.Count){
+  $Out=$Out+"-"+(Get-Date -Format "yyyyMMdd-HHmmss")
+}
+$NativePort=0;$UIPort=0
+foreach($p in @(8973,8985,8991,8997,9013,9019)){
+  $occupied=@(Get-NetTCPConnection -LocalPort $p,($p+1) -State Listen -ErrorAction SilentlyContinue)
+  if(!$occupied.Count){$NativePort=$p;$UIPort=$p+1;break}
+}
+if(!$NativePort){throw "No free isolated pair of ports for V43; no processes were killed"}
 
 $Atlas=Join-Path $Root "v43\v43-qwen-donor.json"
 if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
@@ -137,12 +182,6 @@ if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
   }
   if([string]::IsNullOrWhiteSpace($GGUF) -or !(Test-Path -LiteralPath $GGUF -PathType Leaf)){
     throw "No existing genuine Qwen donor atlas or known GGUF path. Pass -GGUF with your already selected file."
-  }
-}
-$NativePort=8971;$UIPort=8972
-foreach($port in @($NativePort,$UIPort)){
-  if(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue){
-    throw "Port $port is occupied by another session. No process was killed."
   }
 }
 Write-Host "ONE LIVE WINDOW: http://127.0.0.1:$UIPort" -ForegroundColor Green
