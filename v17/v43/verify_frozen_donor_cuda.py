@@ -133,16 +133,53 @@ def main():
     parser.add_argument("--atlas", required=True)
     parser.add_argument("--report", required=True)
     parser.add_argument("--batch", type=int, default=4096)
+    parser.add_argument("--try-genuine-input-space", action="store_true",
+                        help="Only if original output space fails: test the GGUF input embeddings without inventing vectors")
+    parser.add_argument("--candidate-atlas",
+                        help="Where to write a separate input-embedding donor atlas ONLY when 65536/65536 pass")
     args = parser.parse_args()
     result = verify(args.atlas, batch_size=max(256, min(args.batch, 8192)))
+    result["selected_space"] = None
+    result["selected_atlas"] = None
+    if result.get("reachable") == 65536:
+        result["selected_space"] = "genuine_qwen_output_weight_rows"
+        result["selected_atlas"] = str(Path(args.atlas).resolve())
+    elif args.try_genuine_input_space and args.candidate_atlas and (
+            result.get("alternative_genuine_qwen_input_space", {}).get("all_reachable")):
+        original = json.loads(Path(args.atlas).read_text(encoding="utf8"))
+        candidate = dict(original)
+        candidate["output_rows"] = original["input_rows"]
+        provenance = dict(candidate.get("provenance", {}))
+        provenance["coordinate_readout_used"] = "genuine_original_input_embeddings"
+        provenance["coordinate_selection_reason"] = (
+            "original Qwen output rows contained unreachable visible byte targets")
+        provenance["original_output_atlas"] = str(Path(args.atlas).resolve())
+        provenance["not_qwen_forward_inference"] = True
+        candidate["provenance"] = provenance
+        candidate_path = Path(args.candidate_atlas).resolve()
+        if candidate_path == Path(args.atlas).resolve():
+            raise ValueError("Must not overwrite original donor atlas")
+        candidate_path.parent.mkdir(parents=True, exist_ok=True)
+        staged = candidate_path.with_suffix(candidate_path.suffix + ".tmp")
+        staged.write_text(json.dumps(candidate, separators=(",", ":"), ensure_ascii=False),
+                          encoding="utf8")
+        staged.replace(candidate_path)
+        # Independent second complete CUDA gate on the selected immutable rows.
+        checked = verify(str(candidate_path), batch_size=max(256, min(args.batch, 8192)))
+        if checked.get("reachable") == 65536:
+            result["selected_space"] = "genuine_qwen_input_weight_rows"
+            result["selected_atlas"] = str(candidate_path)
+            result["selected_space_verified_goals"] = checked["reachable"]
+        else:
+            result["input_space_secondary_verification"] = checked["reachable"]
     target = Path(args.report)
     target.parent.mkdir(parents=True, exist_ok=True)
     stage = target.with_suffix(target.suffix + ".tmp")
     stage.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf8")
     stage.replace(target)
     print("V43_REAL_QWEN_COORDINATE_REACHABILITY=" + json.dumps(result), flush=True)
-    if result.get("reachable") != 65536:
-        sys.exit("REAL QWEN DONOR FULL-REACHABILITY GATE FAILED; no training will start")
+    if not result.get("selected_atlas"):
+        sys.exit("REAL QWEN DONOR FULL-REACHABILITY GATE FAILED in both available genuine-weight spaces; no training will start")
 
 
 if __name__ == "__main__":
