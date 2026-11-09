@@ -360,10 +360,10 @@ def main():
                      vram_peak_bytes=int(torch.cuda.max_memory_allocated() if device.type == "cuda" else 0),
                      operator_l2=float(torch.linalg.vector_norm(agent.operator).item()),
                      graph_edges=[
-                        {"from":int(i),"to":int(v),"count":int(c)}
-                        for i,(v,c) in enumerate(zip(*[
+                        {"from":int(i),"to":int(dst),"count":int(count)}
+                        for i,(count,dst) in enumerate(zip(*[
                             x.cpu().tolist() for x in agent.pair_counts.max(dim=1)
-                        ])) if c>0
+                        ])) if count>0
                      ])
             elif cmd == "generate":
                 emit("generation", **agent.generate(job.get("prompt",""),job.get("max_output",96)))
