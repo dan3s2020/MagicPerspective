@@ -752,11 +752,6 @@ const v34Stage=label=>{
 };
 let firstCorpusAbsorptionDiagnosed=false;
 for await (const ex of stream()) {
-  if(TEXT){
-    realDatasetRowsRead++;
-    lastRealDatasetRowIndex=ex.k;
-    realDatasetRowCharacters=ex.bytes?.length||0;
-  }
   if(!firstRowDiagnosed){
    firstRowDiagnosed=true;
    parentPort.postMessage({type:"note",w:workerData.gw,
@@ -765,6 +760,11 @@ for await (const ex of stream()) {
   }
   await hold();
   if (TEXT && k++ < skip) continue;
+  if(TEXT){
+    realDatasetRowsRead++;
+    lastRealDatasetRowIndex=ex.k;
+    realDatasetRowCharacters=ex.bytes?.length||0;
+  }
   // V43: preserve the original Player 1 pre-action solution-form prediction
   // BEFORE CUDA/CPU observes this row. No answer characters or length are
   // exposed to the native original ConstructedPathLearner prediction.
