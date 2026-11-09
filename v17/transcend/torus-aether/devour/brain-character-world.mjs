@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {writeV43Telemetry} from './v43-telemetry.mjs';
+import {WeightedAtlasProjector} from './v43-weight-coordinate-planner.mjs';
 import {Discoverer, KIND} from '../worlds/exercise.mjs';
 
 const norm=v=>{const a=Math.hypot(...v);return a>1e-12?v.map(x=>x/a):v.map(()=>0)};
@@ -89,6 +90,11 @@ export class BrainCharacterWorld {
     this.waveOriginalCalls=0;
     this.waveFastCalls=0;
     this.waveParityFailures=0;
+    // Meditate once over the frozen GGUF-derived axis span, not once per
+    // output byte. Every composed motion is checked against donor output rows.
+    this.projector=new WeightedAtlasProjector(this.outputRows,this.axes);
+    this.directShapes=0;
+    this.directFallbacks=0;
     this.totalEdges=this.neighbors.reduce((n,e)=>n+e.length,0);
     if(this.totalEdges<1)throw Error('Frozen donor axes cause no observable character movement');
     // All learning belongs to the SAME original serializable Brain.
@@ -209,7 +215,12 @@ export class BrainCharacterWorld {
     // Plan the FULL configured target coverage before executing any action.
     for(const wanted of expected){
       const from=simulated;
-      const planned=this._nativeShape(from,wanted);
+      const directed=from!==wanted?this.projector.move(from,wanted):null;
+      const planned=directed?{complete:true,firstPredictionBeforeAction:true,
+        route:[{from,to:wanted,action:{type:'frozen-axis-composition',
+          coefficientPairs:directed.coefficientPairs,
+          from,target:wanted}}]}:this._nativeShape(from,wanted);
+      if(directed)this.directShapes++;else if(from!==wanted)this.directFallbacks++;
       const route=planned?.complete?planned.route.map(edge=>edge.action):[];
       if(!route.length&&wanted!==from){
         const exploratory=this._nativeExplore(from);
@@ -217,8 +228,18 @@ export class BrainCharacterWorld {
       }
       const steps=[];
       for(const action of route){
-        const original=this.transitions[simulated].find(e=>e.action.axis===action.axis&&
-          e.action.sign===action.sign);
+        let original;
+        if(action.type==='frozen-axis-composition'){
+          // Action is a single composed motion entirely within the SAME
+          // frozen donor axes, not an invented output token.
+          const verified=this.projector.move(simulated,action.target);
+          if(!verified||verified.from!==action.from)
+            throw Error('Frozen donor composition failed physical readout');
+          original={to:verified.to,action};
+        }else{
+          original=this.transitions[simulated].find(e=>e.action.axis===action.axis&&
+            e.action.sign===action.sign);
+        }
         if(!original)throw Error('Predicted movement is not in frozen donor action space');
         steps.push({from:simulated,to:original.to,action});
         simulated=original.to;
@@ -258,13 +279,24 @@ export class BrainCharacterWorld {
       for(const step of prediction.steps){
         // Never assign output from the gold target: ONLY the actual donor
         // coordinate transformation and its frozen readout may move the player.
-        const actual=this.transitions[state].find(e=>e.action.axis===step.action.axis&&
-          e.action.sign===step.action.sign);
+        let actual;
+        if(step.action.type==='frozen-axis-composition'){
+          const verified=this.projector.move(state,step.action.target);
+          if(!verified)throw Error('Composed donor movement failed verification during execution');
+          actual={to:verified.to};
+        }else{
+          actual=this.transitions[state].find(e=>e.action.axis===step.action.axis&&
+            e.action.sign===step.action.sign);
+        }
         if(!actual)throw Error('Attempted action outside the absorbed brain');
         state=actual.to;actions++;
         if(state!==step.to)throw Error('Physical outcome differs from predicted donor action');
         if(record){
-          this.brain.live((step.action.axis*2+(step.action.sign>0?1:0))%256);
+          // The original V42 Brain still consumes its original per-step
+          // action/outcome observations; no new learner or optimizer.
+          const code=step.action.type==='frozen-axis-composition'?250:
+            (step.action.axis*2+(step.action.sign>0?1:0))%256;
+          this.brain.live(code);
           this.brain.live(state);
         }
       }
@@ -301,6 +333,10 @@ export class BrainCharacterWorld {
       donorActionsOnly:true,donorWeightsReadOnly:true,
       targetHiddenAtExecution:false, // Gold known for planning in training
       randomQwenInferenceExecuted:false,
+      frozenAxisComposition:{rank:this.projector.rank,
+        dimensions:this.projector.dim,verifiedDirectPairs:this.projector.verifiedMoves,
+        rejectedDirectPairs:this.projector.rejectedMoves,directPredictions:this.directShapes,
+        fallbacks:this.directFallbacks,cacheHits:this.projector.cacheHits},
       waveOptimization:{fastCalls:this.waveFastCalls,
         originalCalls:this.waveOriginalCalls,parityFailures:this.waveParityFailures,
         validatedTargets:this.waveVerified.size,rejectedTargets:this.waveRejected.size}};
