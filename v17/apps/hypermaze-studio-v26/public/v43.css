@@ -44,3 +44,16 @@
 @media(max-width:900px){.v43-two-charts{grid-template-columns:1fr}.v43-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.v43-mode{flex-wrap:wrap}}
 @media(max-width:630px){.v43-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.v43-triple,.v43-text-grid,.v43-details{grid-template-columns:1fr}.v43-two-charts,.v43-stats,.v43-live,.v43-journal{padding:10px}.v43-mode select{max-width:230px}}
 @media(prefers-reduced-motion:reduce){.v43-panel *{scroll-behavior:auto!important}}
+
+/* Real first-class live trainer; keep all original V42 controls accessible. */
+.v43-live-first #v43Panel{border:1px solid #4b867f;box-shadow:0 0 0 1px rgba(83,227,183,.04);scroll-margin-top:12px}
+.v43-live-strip{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:12px 15px;background:#102439;border-bottom:1px solid #355169}
+.v43-live-strip>span{flex:1;min-width:180px;display:flex;flex-direction:column;gap:5px;overflow-wrap:anywhere}
+.v43-live-strip b{color:#8badbf;font-size:10px;letter-spacing:.05em}
+.v43-live-strip strong{font-size:13px;color:#d9f6ed;font-variant-numeric:tabular-nums}
+.v43-live-meter{height:5px;background:#12273a;overflow:hidden}
+.v43-live-meter>div{height:100%;width:0;background:#54e2b5;transition:width .3s linear}
+.v43-text-grid pre .v43-correct{color:#50e6a7;background:rgba(38,184,126,.11)}
+.v43-text-grid pre .v43-wrong{color:#ff8188;background:rgba(240,59,77,.13)}
+.v43-text-grid pre .v43-missing{color:#d8ae79;background:rgba(221,169,60,.09)}
+.v43-live-first #v43Panel .v43-text-grid pre{max-height:420px;min-height:80px}
