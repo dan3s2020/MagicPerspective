@@ -3,6 +3,7 @@
 // The original V42 trainer, learning equations, CUDA calls, checkpoints and UI are NOT replaced.
 import fs from 'node:fs';
 import path from 'node:path';
+import {writeV43Telemetry} from './v43-telemetry.mjs';
 import {BrainCharacterWorld} from './brain-character-world.mjs';
 
 function match(reference,generated) {
@@ -26,10 +27,7 @@ function entryBytesPerSecond(answer,startedAt){
   return Buffer.byteLength(answer,'utf8')/Math.max(.001,(Date.now()-startedAt)/1000);
 }
 function atomicJSON(file,data){
-  fs.mkdirSync(path.dirname(file),{recursive:true});
-  const tmp=file+'.tmp';
-  fs.writeFileSync(tmp,JSON.stringify(data));
-  fs.renameSync(tmp,file);
+  return writeV43Telemetry(file,data);
 }
 function requireRow(row){
   return row&&typeof row.prompt==='string'&&row.prompt.length&&
