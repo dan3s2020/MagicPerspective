@@ -312,6 +312,13 @@ class TextCard:
             if staged is not None:
                 lengths = staged["lengths"];starts = staged["starts"]
                 exercise_card = staged["card"]
+                if staged.get("cudaEvent") is not None:
+                    # Async staging runs on a separate CUDA stream while the
+                    # previous original text batch is training. The training
+                    # stream must wait for the actual future bytes to arrive.
+                    current_stream=torch.cuda.current_stream(device=X.dev)
+                    current_stream.wait_event(staged["cudaEvent"])
+                    exercise_card.record_stream(current_stream)
             else:
                 lengths = np.asarray([len(e) for e in exs], dtype=np.int64)
                 starts = np.concatenate([np.zeros(1, dtype=np.int64), np.cumsum(lengths)[:-1]])
