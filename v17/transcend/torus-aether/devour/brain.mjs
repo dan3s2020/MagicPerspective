@@ -101,7 +101,7 @@ export class Brain {
   // caller finishes the previous exercise's original CPU organs. That permits
   // CUDA of batch N+1 to overlap original V42 symbolic consolidation of N.
   // GPU requests remain FIFO and only one real Brain owns all their results.
-  async beginV43TextGPU(gpu, exs, onProgress = null) {
+  async beginV43TextGPU(gpu, exs, onProgress = null, {stageToken = null} = {}) {
     const A = (this.align ||= new AligningGraph());
     const cardWindow = Math.max(8192, Math.trunc(gpu.info?.textMemoryWindow || 32768));
     if (SYNCED.get(gpu) !== this) {
@@ -115,7 +115,7 @@ export class Brain {
     const startedAt = performance.now();
     const reply = await gpu.call({cmd:"text_learn", exercises:exs,
       trust:A.trustForCard(), g:A.g, formW:A.formW, variants:A.variants(),
-      chunk:gpu.settings?.textChunk || 0}, {onProgress});
+      chunk:gpu.settings?.textChunk || 0, ...(stageToken?{stageToken}:{})}, {onProgress});
     return {reply,startedAt,cardFinishedAt:performance.now(),gpu,version};
   }
   commitV43TextGPU(gpu, exs, packet) {
