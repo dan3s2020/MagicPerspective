@@ -95,6 +95,7 @@ function Pause-MagicWorker([int]$Port){
   return $false
 }
 $OldPaused=$false
+$OldSaveRequestedAt=Get-Date
 if(!$LeaveOldWorkersRunning){
   $OldPaused=Pause-MagicWorker 8951
   $null=Pause-MagicWorker 8961
@@ -106,13 +107,19 @@ $CandidateCheckpoints=@(
   (Join-Path $Root "runtime-v43-fused-v42\brains\brain-0-winner.v8")
 )
 if(!(Test-Path -LiteralPath (Join-Path $Out "brains\brain-0-winner.v8") -PathType Leaf)){
-  if($OldPaused -and !(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf)){
+  if($OldPaused){
+    $ConfirmedNewCheckpoint=$false
     for($i=0;$i -lt 120;$i++){
-      if(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf){break}
+      if(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf){
+        $saved=Get-Item -LiteralPath $CandidateCheckpoints[0]
+        if($saved.Length -gt 0 -and $saved.LastWriteTime -ge $OldSaveRequestedAt.AddSeconds(-2)){
+          $ConfirmedNewCheckpoint=$true;break
+        }
+      }
       Start-Sleep -Milliseconds 500
     }
-    if(!(Test-Path -LiteralPath $CandidateCheckpoints[0] -PathType Leaf)){
-      throw "Previous original V17 Brain has not confirmed checkpoint save. Refusing to reset or overwrite its learning."
+    if(!$ConfirmedNewCheckpoint){
+      throw "Previous original V17 Brain did not confirm a NEW checkpoint after pause. Refusing to import a stale state."
     }
   }
   $found=$CandidateCheckpoints|Where-Object{Test-Path -LiteralPath $_ -PathType Leaf}|Select-Object -First 1
