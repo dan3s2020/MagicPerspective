@@ -179,12 +179,13 @@ if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
 Write-Host "ONE LIVE WINDOW: http://127.0.0.1:$UIPort" -ForegroundColor Green
 Write-Host "Real Parquet: $Data; original Brain: $V42Out; resumed V43: $Out" -ForegroundColor Cyan
 Write-Host "Training worlds: TEXT ONLY. GPU: CUDA 0; text batch=8; chunk=4096; VRAM=3GB." -ForegroundColor Cyan
+Write-Host "Unrequested maze, transform and xD worlds: DISABLED; original text and shared learner retained." -ForegroundColor Cyan
 Write-Host "Qwen: real sampled GGUF coordinate movements; NO false claim of native Qwen forward inference or 100% accuracy." -ForegroundColor Yellow
 
 $launchArgs=@{
   Data=$Data;Worlds="text";Out=$Out;V42Out=$V42Out
   NativePort=$NativePort;UIPort=$UIPort
-  Gpu="cuda:0";Vram=3.0;GpuTextBatch=8;GpuTextChunk=4096;GpuWorlds=0;AutoStart=$true
+  Gpu="cuda:0";Vram=3.0;GpuTextBatch=8;GpuTextChunk=4096;GpuWorlds=0;XdAtlasEvery=0;AutoStart=$true
 }
 if(Test-Path -LiteralPath $Atlas -PathType Leaf){$launchArgs.DonorAtlas=$Atlas}
 else{$launchArgs.GGUF=$GGUF}
