@@ -96,6 +96,42 @@ export class Brain {
     const n = exs.reduce((s, e) => s + e.length, 0); this.chars += n; this.exercises = (this.exercises || 0) + exs.length;
     this.textGpu = {batch: exs.length, chars: n, cardMs: +(t1 - t0).toFixed(0), mergeMs: +(performance.now() - t1).toFixed(1), busy: R.busy, vramUsedGB: R.vramUsedGB ?? null, acc: R.seen ? +(R.hits / R.seen).toFixed(4) : null, textChunk: R.textChunk ?? null, cardWindowChars: R.memory ?? null, historyChars: A.mem.n};
     return this.textGpu; }
+  // V43 OPT-IN TWO-PHASE CUDA DISPATCH. The V42 learnTextGPU method above is
+  // UNTOUCHED. A completed CUDA packet is not applied to the Brain until the
+  // caller finishes the previous exercise's original CPU organs. That permits
+  // CUDA of batch N+1 to overlap original V42 symbolic consolidation of N.
+  // GPU requests remain FIFO and only one real Brain owns all their results.
+  async beginV43TextGPU(gpu, exs, onProgress = null) {
+    const A = (this.align ||= new AligningGraph());
+    const cardWindow = Math.max(8192, Math.trunc(gpu.info?.textMemoryWindow || 32768));
+    if (SYNCED.get(gpu) !== this) {
+      await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(Math.max(0, A.mem.n - cardWindow), A.mem.n)).toString("base64")});
+      SYNCED.set(gpu, this);
+    }
+    const startedAt = performance.now();
+    const reply = await gpu.call({cmd:"text_learn", exercises:exs,
+      trust:A.trustForCard(), g:A.g, formW:A.formW, variants:A.variants(),
+      chunk:gpu.settings?.textChunk || 0}, {onProgress});
+    return {reply,startedAt,cardFinishedAt:performance.now(),gpu};
+  }
+  commitV43TextGPU(gpu, exs, packet) {
+    if (!packet || packet.gpu !== gpu)
+      throw Error("V43 CUDA packet belongs to a different GPU process");
+    const A = (this.align ||= new AligningGraph()), R = packet.reply;
+    // Exact original V42 update operations and order from learnTextGPU().
+    A.absorb(R, exs);
+    const n = exs.reduce((sum,e) => sum + e.length,0);
+    this.chars += n;
+    this.exercises = (this.exercises || 0) + exs.length;
+    this.textGpu = {batch:exs.length, chars:n,
+      cardMs:+(packet.cardFinishedAt-packet.startedAt).toFixed(0),
+      mergeMs:+(performance.now()-packet.cardFinishedAt).toFixed(1),
+      busy:R.busy, vramUsedGB:R.vramUsedGB ?? null,
+      acc:R.seen ? +(R.hits/R.seen).toFixed(4) : null,
+      textChunk:R.textChunk ?? null, cardWindowChars:R.memory ?? null,
+      historyChars:A.mem.n};
+    return this.textGpu;
+  }
   live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
     const prev = this.past.length ? this.past[this.past.length - 1] : null, al = old ? {guess: -1, src: null} : (this.align ||= new AligningGraph()).live(y, {T: (this.controls || {}).ltemp, noise: (this.controls || {}).pnoise, rand: this.rand});
