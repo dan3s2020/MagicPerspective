@@ -307,3 +307,50 @@ test("VISIBLE-GOAL 50,000 byte synthetic donor plan: full shape before action, n
     noBrainTrainingPerformed:true,noTextPredictionPerformed:true
   }));
 });
+
+
+test("50k DIFFERENT visible bytes: complete pre-action route via real frozen full-rank donor-axis compositions",()=>{
+  let seed=192874;
+  const rng=()=>{seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296};
+  const unit=a=>{const n=Math.hypot(...a);return a.map(x=>x/n)};
+  const dim=64;
+  const rows=Array.from({length:256},()=>unit(Array.from({length:dim},()=>rng()-.5)));
+  const axes=Array.from({length:96},()=>unit(Array.from({length:dim},()=>rng()-.5)));
+  const donor={format:"braivour/v42-brain-character/v1",dimensions:dim,
+    move_gain:1.4,input_rows:rows,output_rows:rows,movement_axes:axes,
+    source_genuine_gguf:true,provenance:"SYNTHETIC 64D FULL RANK CONTROL, NOT QWEN"};
+  const brain=new Brain({seed:17,rules:{depth:1,off:["R2","R4"],budEvery:100,
+    empty:true,maxWires:32,fold:false}});
+  brain.disc=Object.assign(new Discoverer(17),{body:brain.body||{}});
+  brain.disc.endIn[KIND.target]=10;
+  brain.disc.enter[KIND.target]=14;
+  brain.disc.pass[KIND.floor]=25;
+  brain.disc.block[KIND.floor]=2;
+  const world=new BrainCharacterWorld({brain,donor,maxActionsPerByte:16});
+  assert.equal(world.projector.rank,dim);
+  const chars="The visible destination IS part of the maze; cross its donor-weight geometry. ";
+  const answer=(chars.repeat(700)).slice(0,50000);
+  const began=performance.now();
+  const plan=world._planEntireExercise("Original context remains fixed",Buffer.from(answer));
+  const shapeMilliseconds=performance.now()-began;
+  const result=world.exercise("Original context remains fixed",answer,{record:false});
+  const totalMilliseconds=performance.now()-began;
+  assert.equal(plan.length,50000);
+  assert.equal(plan.filter(x=>x.predicted_before_move&&x.planned).length,50000);
+  assert.equal(result.matchedBytes,50000);
+  assert.equal(result.firstPredictionsBeforeMovement,50000);
+  assert.equal(result.accuracy,1);
+  assert.ok(world.projector.verifiedMoves>0);
+  assert.equal(world.projector.rejectedMoves,0);
+  console.log("V43_VISIBLE_TARGET_AXIS_COMPOSITION_50K="+JSON.stringify({
+    donor:"synthetic 64D, NOT Qwen",targetVisible:true,
+    firstShapeExact:result.firstPredictionsBeforeMovement,
+    verifiedOutputBytes:result.matchedBytes,totalBytes:result.bytes,
+    factorizedDonorRank:world.projector.rank,donorDimensions:dim,
+    uniqueVerifiedPhysicalOperators:world.projector.verifiedMoves,
+    planningCharactersPerSecond:Math.round(50000/(shapeMilliseconds/1000)),
+    completeExerciseMilliseconds:Math.round(totalMilliseconds),
+    originalBrainCUDAUpdatePerformed:false,
+    donorIndependentTextGeneration:false
+  }));
+});
