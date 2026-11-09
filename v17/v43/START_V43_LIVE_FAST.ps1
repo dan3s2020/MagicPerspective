@@ -30,6 +30,8 @@ $changed=@(
   "v17/START_V43.ps1",
   "v17/transcend/torus-aether/devour/brain-character-world.mjs",
   "v17/transcend/torus-aether/devour/v43-telemetry.mjs",
+  "v17/transcend/torus-aether/devour/v43-weight-coordinate-planner.mjs",
+  "v17/v43/verify_frozen_donor_cuda.py",
   "v17/transcend/torus-aether/devour/v43-fused-one-universe.mjs",
   "v17/apps/hypermaze-studio-v26/v43-journal.mjs",
   "v17/apps/hypermaze-studio-v26/native-bridge.mjs",
@@ -63,7 +65,12 @@ try{
     $destFile=Join-Path $Destination ("source\"+$rel.Replace("/","\"))
     $stageFile=Join-Path $Stage $rel
     $exists=Test-Path -LiteralPath $destFile -PathType Leaf
-    if(!$exists -and $rel -ne "v17/transcend/torus-aether/devour/v43-telemetry.mjs"){
+    $NewV43Components=@(
+      "v17/transcend/torus-aether/devour/v43-telemetry.mjs",
+      "v17/transcend/torus-aether/devour/v43-weight-coordinate-planner.mjs",
+      "v17/v43/verify_frozen_donor_cuda.py"
+    )
+    if(!$exists -and $NewV43Components -notcontains $rel){
       throw "Original V43 source file missing; no silent architecture replacement: $destFile"
     }
     $different=(!$exists)
@@ -84,6 +91,21 @@ try{
 } finally {
   if(Test-Path -LiteralPath $Stage){Remove-Item -LiteralPath $Stage -Force -Recurse}
 }
+
+# Full physical reachability check on the ACTUAL selected Qwen coordinates,
+# using the already-installed PyTorch CUDA. Zero training is performed yet.
+$Atlas=Join-Path $Root "v43\v43-qwen-donor.json"
+if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
+  throw "Existing real Qwen donor atlas is missing: $Atlas. No training started."
+}
+$Verify=Join-Path $Root "v43\verify_frozen_donor_cuda.py"
+$Proof=Join-Path $Destination "v43-real-qwen-reachability.json"
+Write-Host "CUDA PREFLIGHT: physically verify ALL 65,536 Qwen coordinate-to-coordinate visible-target moves" -ForegroundColor Cyan
+& $Python $Verify --atlas $Atlas --report $Proof --batch 4096
+if($LASTEXITCODE -ne 0){
+  throw "Real Qwen atlas cannot reach 100% of visible targets with these frozen axes. Training NOT started. See $Proof"
+}
+Write-Host "REAL QWEN FROZEN-GEOMETRY REACHABILITY PASSED; NOT A QWEN LANGUAGE INFERENCE RESULT" -ForegroundColor Green
 
 # Stop duplicate CUDA workload ONLY in known native MagicPerspective instances.
 # A pause without a newly saved .v8 is not treated as a safe resume source.
@@ -107,7 +129,7 @@ function Pause-MagicWorker([int]$Port){
 }
 $Paused=@()
 if(!$LeaveOldWorkersRunning){
-  foreach($port in @(8951,8961,8971)){
+  foreach($port in @(8951,8961,8971,8973,8985,8991,8997)){
     $p=Pause-MagicWorker $port
     if($p){$Paused+=,$p}
   }
@@ -172,10 +194,6 @@ foreach($p in @(8973,8985,8991,8997,9013,9019)){
 }
 if(!$NativePort){throw "No free isolated pair of ports for V43; no processes were killed"}
 
-$Atlas=Join-Path $Root "v43\v43-qwen-donor.json"
-if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
-  throw "Existing Qwen GGUF atlas is missing: $Atlas. Refusing to silently reinstall or use a different donor."
-}
 Write-Host "ONE LIVE WINDOW: http://127.0.0.1:$UIPort" -ForegroundColor Green
 Write-Host "Real Parquet: $Data; original Brain: $V42Out; resumed V43: $Out" -ForegroundColor Cyan
 Write-Host "Training worlds: TEXT ONLY. GPU: CUDA 0; text batch=8; chunk=4096; VRAM=3GB." -ForegroundColor Cyan
