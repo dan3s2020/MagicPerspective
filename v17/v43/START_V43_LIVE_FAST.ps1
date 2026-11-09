@@ -83,7 +83,7 @@ function Pause-MagicWorker([int]$Port){
   try{
     $base="http://127.0.0.1:$Port"
     $state=Invoke-RestMethod -Uri ($base+"/health?w=0") -TimeoutSec 3
-    if($state.status -eq "antrenează"){
+    if([string]$state.status -match "^antren"){
       Write-Host "Pausing previous MagicPerspective $Port and requesting native checkpoint..." -ForegroundColor Yellow
       Invoke-RestMethod -Method Post -Uri ($base+"/control?do=pause") -TimeoutSec 12 | Out-Null
       Invoke-RestMethod -Method Post -Uri ($base+"/control?do=save") -TimeoutSec 12 | Out-Null
