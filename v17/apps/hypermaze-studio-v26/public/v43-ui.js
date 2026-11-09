@@ -247,6 +247,13 @@ async function refresh(){
    set("v43GpuQueued",fmt(data.health?.gpuBatchQueuedRows));
    set("v43GpuOverlap",fmt(conveyor.cudaBatchesDispatchedAhead));
    set("v43Rebases",fmt(conveyor.staleSpeculationReplays));
+   set("v43ReadyBatches",fmt(conveyor.readyBatches));
+   set("v43ReadyChars",fmt(conveyor.readyRows)+" rows / "+
+     fmt(conveyor.readyCharacters)+" actual characters READY on D:");
+   set("v43ResidentBatches",fmt(conveyor.cudaResidentBatches));
+   set("v43ResidentChars",fmt(conveyor.cudaResidentCharacters)+" real text characters staged on GPU");
+   set("v43StageTransfers",fmt(conveyor.cudaStageTransfers));
+   set("v43StageErrors",fmt(conveyor.cudaStageErrors)+" stage errors; source text-learning always preserved");
    const gpu=data.physicalGpu;
    set("v43PhysicalGpu",gpu?.available?gpu.utilizationPercent.toFixed(0)+"%":"—");
    set("v43PhysicalVram",gpu?.available?fmt(gpu.usedMiB)+" / "+fmt(gpu.totalMiB)+" MiB VRAM · sampled NVIDIA driver":"nvidia-smi unavailable; GPU load not measured");
