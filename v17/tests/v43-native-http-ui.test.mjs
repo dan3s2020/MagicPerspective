@@ -40,7 +40,10 @@ test("V43 same original V42 browser port: UI, real source sidecars, same Start T
       const u=new URL(req.url,"http://127.0.0.1");
       const json=x=>{res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify(x));};
       if(u.pathname==="/health")return json({checkpoint,status:running?"antrenează":"pauză",
-        health:{phase:running?"text CUDA":"paused"},
+        health:{phase:running?"text CUDA: self-index":"text CUDA: self-index",
+          state:"running",heartbeatAgeMs:350,batch:{phase:"text CUDA: self-index",done:16400,total:50000},
+          realDatasetRowsRead:2,lastRealDatasetRowIndex:1,
+          gpuBatchQueuedRows:2,gpuBatchQueuedCharacters:100000},
         dataset:{assignedTrainingRows:40,completedTrainingRows:10,percent:25}});
       if(u.pathname==="/graphs")return json({graphs:[{w:0,status:running?"antrenează":"pauză",
         progress:{trained:10,total:40}}]});
@@ -68,6 +71,9 @@ test("V43 same original V42 browser port: UI, real source sidecars, same Start T
     assert.equal(status.mode,"V43_ONE_ORGANISM_ONLY");
     assert.equal(status.dataset.v43Percent,25,"original V42 resumed dataset progress");
     assert.equal(status.dataset.v43Completed,3,"V43-only fused count separate");
+    assert.equal(status.health.realDatasetRowsRead,2,"decoded rows must be independent from completed CUDA rows");
+    assert.equal(status.health.batch.done,16400,"live CUDA phase must not freeze at zero");
+    assert.equal(status.health.gpuBatchQueuedRows,2);
     assert.equal(status.worker.lastExercise.input,record.input);
     assert.equal(status.live.active,true);
     assert.equal(status.live.sourceRow,19);
