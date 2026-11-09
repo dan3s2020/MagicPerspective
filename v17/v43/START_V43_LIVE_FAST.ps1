@@ -79,8 +79,17 @@ try{
     }
     $different=(!$exists)
     if($exists){
-      $different=(Get-FileHash -LiteralPath $destFile -Algorithm SHA256).Hash -ne
-        (Get-FileHash -LiteralPath $stageFile -Algorithm SHA256).Hash
+      $HashA=[System.Security.Cryptography.SHA256]::Create()
+      $HashB=[System.Security.Cryptography.SHA256]::Create()
+      try {
+        $StreamA=[System.IO.File]::OpenRead($destFile)
+        try { $DigestA=[System.BitConverter]::ToString($HashA.ComputeHash($StreamA)) }
+        finally { $StreamA.Dispose() }
+        $StreamB=[System.IO.File]::OpenRead($stageFile)
+        try { $DigestB=[System.BitConverter]::ToString($HashB.ComputeHash($StreamB)) }
+        finally { $StreamB.Dispose() }
+        $different=$DigestA -ne $DigestB
+      } finally { $HashA.Dispose(); $HashB.Dispose() }
     }
     if($different){
       if($exists){
