@@ -13,15 +13,17 @@ import crypto from "node:crypto";
 
 const HERE=path.dirname(url.fileURLToPath(import.meta.url));
 const args={python:"python",dataset:"D:\\training\\OpenThoughts3-1.2M",atlas:"",
-  runtime:"D:\\MagicPerspective-V44\\runtime",port:0,batch:4,open:true};
+  runtime:"D:\\MagicPerspective-V44\\runtime",port:0,batch:4,open:true,ci:false};
 for(let i=2;i<process.argv.length;i++){
   const flag=process.argv[i];
   if(flag==="--no-browser"){args.open=false;continue}
+  if(flag==="--ci-synthetic"){args.ci=true;continue}
   const key=flag.replace(/^--/,"");
   if(!(key in args)||!flag.startsWith("--")||i+1>=process.argv.length)
     throw Error("Invalid CLI argument "+flag);
   args[key]=process.argv[++i];
 }
+if(args.ci&&process.env.V44_ALLOW_CI_SYNTHETIC!=="1")throw Error("CI synthetic mode explicitly restricted");
 args.port=Number(args.port)||0;
 args.batch=Math.max(1,Math.min(16,Number(args.batch)||4));
 if(!args.atlas||!fs.existsSync(args.atlas))throw Error("V44 requires the real verified Qwen-weight atlas");
@@ -34,7 +36,7 @@ const startClock=Date.now(),recentCompletionTimes=[];
 const state={
   product:"MagicPerspective V44 | INDEPENDENT STREAM",
   status:"STARTUP",step:"Checking donor geometry and reading real dataset metadata",
-  cpu_copy_of_old_training:false,real_dataset:true,target_visible:true,
+  cpu_copy_of_old_training:false,real_dataset:!args.ci,ci_synthetic_test:args.ci,target_visible:true,
   qwen_full_forward:false,save_dir:args.runtime,device:"waiting",
   train_rows:0,heldout_rows:0,files:0,completed:0,source_read:0,
   committed_bytes:0,batch_size:args.batch,learned_exercises_this_session:0,
@@ -220,7 +222,8 @@ function handleEngine(data){
 }
 function spawnEngine(){
   engine=spawn(args.python,["-u",path.join(HERE,"engine.py"),
-    "--atlas",args.atlas,"--checkpoint",checkpoint,"--device","cuda:0"],{
+    "--atlas",args.atlas,"--checkpoint",checkpoint,"--device",args.ci?"cpu":"cuda:0",
+    ...(args.ci?["--ci-synthetic"]:[])],{
     cwd:HERE,windowsHide:true,stdio:["pipe","pipe","pipe"]});
   readline.createInterface({input:engine.stdout}).on("line",line=>{
     try{handleEngine(JSON.parse(line));}
@@ -236,7 +239,8 @@ function spawnEngine(){
 }
 function spawnReader(){
   reader=new Worker(new URL("./data-worker.mjs",import.meta.url),{
-    workerData:{dataset:args.dataset,startRow:state.current_source_index+1}});
+    workerData:{dataset:args.dataset,startRow:state.current_source_index+1,
+      ciSynthetic:args.ci}});
   reader.on("message",data=>{
     if(data.type==="ready"){
       dataReady=true;holdout=data.holdout;
@@ -359,7 +363,8 @@ const server=http.createServer((req,res)=>{
 server.listen(args.port,"127.0.0.1",()=>{
   const port=server.address().port,href="http://127.0.0.1:"+port;
   console.log("MAGICPERSPECTIVE_V44="+href);
-  console.log("CUDA preflight + real OpenThoughts loading; no V42/V43 process touched.");
+  console.log(args.ci?"V44 EXPLICIT SYNTHETIC CPU CI TEST ONLY":
+    "CUDA preflight + real OpenThoughts loading; no V42/V43 process touched.");
   spawnEngine();
   if(args.open&&process.platform==="win32"){
     const ui=spawn("cmd.exe",["/c","start","",""+href],{detached:true,windowsHide:true,stdio:"ignore"});
