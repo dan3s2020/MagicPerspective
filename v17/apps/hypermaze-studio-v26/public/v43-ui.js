@@ -252,7 +252,12 @@ async function refresh(){
       (heartbeatAge==null?"fără heartbeat":
         (heartbeatAge/1000).toFixed(1)+"s · "+String(health.state||"unknown")+
         " · CUDA "+String(health.gpuRequest?.phase||"idle")));
-   set("v43DatasetProgress",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(4)+"%");
+    const assigned=Number(d.assignedTrainingRows)||0;
+    const fetched=Number(data.health?.realDatasetRowsRead)||0;
+    const fetchedPct=assigned?Math.min(100,100*fetched/assigned):0;
+    const committedPct=d.v43Percent==null?0:Number(d.v43Percent);
+    set("v43DatasetProgress",committedPct.toFixed(4)+"% finalizat · "+
+      fetchedPct.toFixed(4)+"% citit");
    set("v43Completed",fmt(d.v43Completed)+" total · "+
      fmt(w.completedThisSession??0)+" in this session");
    set("v43Speed",Number.isFinite(Number(w.completedExercisesPerSecond))?Number(w.completedExercisesPerSecond).toFixed(2):"—");
