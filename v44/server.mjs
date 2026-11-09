@@ -29,7 +29,7 @@ fs.mkdirSync(args.runtime,{recursive:true});
 const checkpoint=path.join(args.runtime,"v44-learner.pt");
 const SSE=new Set();
 let controlWaiter=null,engineReady=false,dataReady=false,dataReading=false,batchBusy=false;
-let engine=null,reader=null,holdout=[],running=false,stopping=false,closed=false;
+let engine=null,reader=null,holdout=[],running=false,stopping=false,closed=false,pendingRows=null;
 const startClock=Date.now(),recentCompletionTimes=[];
 const state={
   product:"MagicPerspective V44 | INDEPENDENT STREAM",
@@ -77,7 +77,7 @@ function command(cmd,more={}){
   engine.stdin.write(JSON.stringify({cmd,...more})+"\n");
 }
 function setBatch(n){args.batch=Math.max(1,Math.min(16,Number(n)||4));state.batch_size=args.batch;}
-const journal=(()=>{
+function createJournal(){
   const index=new Map(),entries=[];
   const infoFile=path.join(args.runtime,"history.v44.jsonl");
   const binary=path.join(args.runtime,"full-replays.v44.bin");
@@ -114,7 +114,8 @@ const journal=(()=>{
     return entries.filter(x=>x.id<before).slice(-limit).reverse();
   }
   return {record,get,list,close:()=>fs.closeSync(fd)};
-})();
+}
+let journal=createJournal();
 const sendJson=(res,obj,code=200)=>{res.writeHead(code,JSON_HEADER);res.end(JSON.stringify(obj))};
 function progressRate(now,howMany){
   for(let i=0;i<howMany;i++)recentCompletionTimes.push(now);
@@ -123,7 +124,7 @@ function progressRate(now,howMany){
   const duration=Math.min(10000,now-startClock);
   state.real_exercises_per_second=recentCompletionTimes.length/(Math.max(1000,duration)/1000);
 }
-let nextEvalAt=100;
+let nextEvalAt=100,nextAutoSave=100;
 function handleEngine(data){
   state.last_event_at=new Date().toISOString();
   switch(data.kind){
@@ -135,7 +136,9 @@ function handleEngine(data){
       state.first_shape_verified=data.complete_visible_pairs;
       state.first_shape_total=65536;
       if(data.complete_visible_pairs!==65536){error("Exact visible-goal donor geometry was not verified");return}
-      status();break;
+      status();
+      if(!reader)spawnReader();
+      break;
     case "phase":
       state.pending_job={phase:data.step,rows:data.rows};state.step=data.step;status();break;
     case "batch":{
@@ -149,6 +152,7 @@ function handleEngine(data){
       state.vram_allocated_bytes=data.vram_allocated_bytes;
       state.vram_peak_bytes=data.vram_peak_bytes;
       state.operator_l2=data.operator_l2;
+      state.graph=Array.isArray(data.graph_edges)?data.graph_edges:[];
       const now=Date.now(),actual=data.outcomes||[];
       for(const row of actual){
         const summary=journal.record(row);
@@ -158,6 +162,10 @@ function handleEngine(data){
         state.learned_exercises_this_session++;
       }
       progressRate(now,actual.length);
+      if(state.completed>=nextAutoSave){
+        nextAutoSave=state.completed+100;
+        command("save");
+      }
       state.average_before_pct=actual.length?
         100*actual.reduce((s,x)=>s+x.before_correct,0)/
            Math.max(1,actual.reduce((s,x)=>s+x.bytes,0)):0;
@@ -187,7 +195,21 @@ function handleEngine(data){
       state.committed_bytes=0;state.learned_exercises_this_session=0;
       state.current=null;state.recent=[];state.holdout=null;
       recentCompletionTimes.length=0;dataReading=false;batchBusy=false;
-      reader.postMessage({cmd:"seek",index:0});status("New V44 session. Old checkpoint archived: "+data.archived);
+      reader.postMessage({cmd:"seek",index:0});
+      const archiveFolder=path.join(args.runtime,"archives");
+      fs.mkdirSync(archiveFolder,{recursive:true});
+      journal.close();
+      for(const name of ["history.v44.jsonl","full-replays.v44.bin"]){
+        const src=path.join(args.runtime,name);
+        if(fs.existsSync(src)){
+          const dest=path.join(archiveFolder,Date.now()+"-"+name);
+          fs.renameSync(src,dest);
+        }
+      }
+      journal=createJournal();
+      logs.length=0;
+      nextAutoSave=100;
+      status("New V44 session; archived old checkpoint and full evidence: "+data.archived);
       break;
     case "warning":state.step=String(data.error);status();break;
     case "error":error("GPU engine "+data.command+": "+data.error);break;
@@ -226,6 +248,13 @@ function spawnReader(){
     if(data.type==="batch"){
       dataReading=false;
       state.source_read=data.index;
+      if(!running||stopping){
+        pendingRows=data.rows;
+        state.step="Dataset batch decoded; held for resume, not silently trained";
+        status();
+        if(stopping&&!batchBusy)command("quit");
+        return;
+      }
       if(!data.rows.length){running=false;state.status="COMPLETE";status("All eligible dataset rows consumed");command("save");return}
       batchBusy=true;
       state.pending_job={phase:"Original Parquet decoded; waiting for vectorized CUDA",rows:data.rows.length,
@@ -242,6 +271,12 @@ function spawnReader(){
 }
 function requestNext(){
   if(!engineReady||!dataReady||!running||batchBusy||dataReading||stopping)return;
+  if(pendingRows){
+    const rows=pendingRows;pendingRows=null;
+    if(!rows.length){running=false;state.status="COMPLETE";command("save");return}
+    batchBusy=true;status("Resuming previously decoded, untrained real dataset batch");
+    command("batch",{rows});return;
+  }
   if(state.current_source_index+1>=state.train_rows){
     running=false;state.status="COMPLETE";status("All training rows completed");command("save");return;
   }
@@ -264,7 +299,7 @@ function processAction(body){
   if(action==="stop"){
     if(stopping)return{ok:true};
     stopping=true;running=false;state.status="STOPPING";status("Save and stop requested after current batch");
-    if(!batchBusy)command("quit");
+    if(!batchBusy&&!dataReading)command("quit");
     return{ok:true};
   }
   if(action==="batch"){
@@ -325,13 +360,14 @@ server.listen(args.port,"127.0.0.1",()=>{
   const port=server.address().port,href="http://127.0.0.1:"+port;
   console.log("MAGICPERSPECTIVE_V44="+href);
   console.log("CUDA preflight + real OpenThoughts loading; no V42/V43 process touched.");
-  spawnEngine();spawnReader();
+  spawnEngine();
   if(args.open&&process.platform==="win32"){
     const ui=spawn("cmd.exe",["/c","start","",""+href],{detached:true,windowsHide:true,stdio:"ignore"});
     ui.on("error",()=>{});ui.unref();
   }
 });
 const ticker=setInterval(()=>{
+  progressRate(Date.now(),0);
   if(SSE.size)push("heartbeat",{at:Date.now(),status:state.status,
     phase:state.step,age_ms:Date.now()-Date.parse(state.last_event_at)});
 },250);
