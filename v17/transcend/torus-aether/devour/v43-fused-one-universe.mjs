@@ -128,11 +128,18 @@ export class V43FusedOneUniverse {
     let physicalPlan=null;
     const originalShape=this.world._nativeShape;
     const originalProgress=this.world.onPlanProgress;
+    let lastProgressMs=0;
     this.world.onPlanProgress=(done,total,instructions)=>{
+      const now=Date.now();
+      // At most three bounded, read-only UI snapshots per second. Previously
+      // rebuilt and persisted an ever-growing 50k-byte prefix every 128 bytes,
+      // causing quadratic CPU work and hundreds of Windows file renames.
+      if(done!==total && now-lastProgressMs<350)return;
+      lastProgressMs=now;
       const prefix=Buffer.from(instructions.map(p=>p.expectedFinal)).toString('utf8');
       this._live({...progressBase,active:true,
         phase:'planning full donor coordinate movements',plannedBytes:done,totalBytes:total,
-        outputPrefix:prefix,bytesPerSecond:+(done/Math.max(.001,(Date.now()-startedAt)/1000)).toFixed(2)});
+        outputPrefix:prefix,bytesPerSecond:+(done/Math.max(.001,(now-startedAt)/1000)).toFixed(2)});
     };
     const shapeCache=new Map();let shapeCacheHits=0;
     // Original Discoverer.shapeGraph remains the ONLY route constructor.
