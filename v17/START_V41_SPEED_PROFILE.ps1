@@ -74,7 +74,7 @@ $parameters=@(
   "-NoProfile","-ExecutionPolicy","Bypass","-File",('"' + $Original + '"'),
   "-Data",('"' + $Data + '"'),"-Out",('"' + $Out + '"'),
   "-Port","$NativePort","-Workers","1","-Arms","winner",
-  "-Worlds",("\""+$Worlds+"\""),
+  "-Worlds",('"' + $Worlds + '"'),
   "-Mem","$Mem",
   "-Gpu",('"' + $Gpu + '"'),"-Vram","$VramArg",
   "-GpuTextBatch","$GpuTextBatch","-GpuTextChunk","$GpuTextChunk",
