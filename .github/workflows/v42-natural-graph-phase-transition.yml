@@ -1,0 +1,83 @@
+name: Native V42 context-width phase transition and shuffled controls
+on:
+  push:
+    branches: [experiment/V42-FIBONACCI-LANGUAGE-20261109]
+  workflow_dispatch:
+jobs:
+  phase-transition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Train native transitions independently at every context width 1 through 32
+        run: |
+          node --input-type=module <<'JS' | tee native_phase_transition_console.json
+          import fs from 'node:fs';
+          import {ConstructedTransitionGraph,ConstructedPathLearner} from './v17/transcend/torus-aether/worlds/constructed-paths.mjs';
+          const docs=['README.md','CANON.md','V2-LAUNCH.md','v17/README.md'];const samples=[];
+          for(const file of docs){if(!fs.existsSync(file))continue;const s=[...fs.readFileSync(file,'utf8')].filter(c=>c.codePointAt(0)<128).join('').slice(0,6600);if(s.length<1200)continue;const split=Math.floor(s.length*.75);const chunks=t=>{let a=[];for(let i=0;i+25<t.length;i+=84)a.push(t.slice(i,i+84));return a;};samples.push({file,train:chunks(s.slice(0,split)),test:chunks(s.slice(split))});}
+          const train=samples.flatMap(x=>x.train),test=samples.flatMap(x=>x.test);
+          let seed=45342;function random(){seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return (seed>>>0)/2**32;}
+          function shuffleWord(row){const parts=row.match(/\s+|\S+/g)||[],words=parts.filter(x=>!/^\s+$/.test(x));for(let i=words.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[words[i],words[j]]=[words[j],words[i]];}let j=0;return parts.map(x=>/^\s+$/.test(x)?x:words[j++]).join('');}
+          function shuffleChar(row){const a=[...row];for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.join('');}
+          const model=new ConstructedPathLearner({seed:17});
+          const question='continue technical documentation',key=ConstructedPathLearner.qkey(question);
+          function state(s,h){return model.textStateWithKey(key,h,s);}
+          function analyzeGraph(graph){
+           const nodes=new Set(),adj=new Map(),rev=new Map(),selfLoop=new Set(),SCC=[];
+           let edgeCount=0,observations=0,repeat=0,branch=0;
+           for(const [from,actions] of graph.edges){
+             nodes.add(from);if(!adj.has(from))adj.set(from,new Set());
+             let visits=0;if(actions.size>1)branch++;
+             for(const [action,successors] of actions)for(const [to,count] of successors){
+               nodes.add(to);visits+=count;observations+=count;adj.get(from).add(to);if(to===from)selfLoop.add(to);
+               if(!rev.has(to))rev.set(to,new Set());rev.get(to).add(from);
+             }
+             if(visits>1)repeat++;
+           }
+           for(const row of adj.values())edgeCount+=row.size;
+           const seen=new Map(),low=new Map(),onStack=new Set(),stack=[],cyclic=new Set();let counter=0,largest=0,sccCount=0;
+           function tarjan(v){
+             seen.set(v,counter);low.set(v,counter++);stack.push(v);onStack.add(v);
+             for(const w of adj.get(v)||[]){
+               if(!seen.has(w)){tarjan(w);low.set(v,Math.min(low.get(v),low.get(w)));}
+               else if(onStack.has(w))low.set(v,Math.min(low.get(v),seen.get(w)));
+             }
+             if(low.get(v)===seen.get(v)){
+               let comp=[],w;
+               do{w=stack.pop();onStack.delete(w);comp.push(w);}while(w!==v);
+               largest=Math.max(largest,comp.length);
+               if(comp.length>1||selfLoop.has(comp[0])){sccCount++;for(const x of comp)cyclic.add(x);}
+             }
+           }
+           for(const n of nodes)if(!seen.has(n))tarjan(n);
+           return {nodes:nodes.size,sourceStates:graph.edges.size,uniqueDirectedEdges:edgeCount,observations,largestSCC:largest,largestSCCFraction:largest/nodes.size,cycleSupportingNodes:cyclic.size,cycleSupportingFraction:cyclic.size/nodes.size,stronglyConnectedCycleGroups:sccCount,reusedStateFraction:repeat/graph.edges.size,branchingStateFraction:branch/graph.edges.size};
+          }
+          function runRegime(rows,withHeldout=false){
+           const data=[];
+           for(let scale=1;scale<=32;scale++){
+             const g=new ConstructedTransitionGraph({maxStates:100000});
+             for(const row of rows){let history='';for(let i=0;i<=row.length;i++){const c=i===row.length?256:row.charCodeAt(i);const next=c===256?'\0':String.fromCharCode(c);g.observe(state(scale,history),String(c),state(scale,history+next));history+=next;if(history.length>32)history=history.slice(-32);}}
+             const top=analyzeGraph(g),r={scale,...top};
+             if(withHeldout){let correct=0,covered=0,total=0,top5=0;for(const row of test){let history='';for(const ch of row){const goal=ch.charCodeAt(0),opt=g.choices(state(scale,history));if(opt.length)covered++;opt.sort((a,b)=>b.total-a.total);if(+opt[0]?.action===goal)correct++;if(opt.slice(0,5).some(o=>+o.action===goal))top5++;total++;history+=ch;if(history.length>32)history=history.slice(-32);}}r.holdoutTotal=total;r.holdoutTop1=correct/total;r.holdoutTop5=top5/total;r.holdoutCoverage=covered/total;r.holdoutCorrect=correct;}
+             data.push(r);
+           }
+           return data;
+          }
+          const original=runRegime(train,true),charShuffle=runRegime(train.map(shuffleChar)),wordShuffle=runRegime(train.map(shuffleWord));
+          const output={method:'Original native ConstructedTransitionGraph used at every width 1..32; no changes to original learner',data:{trainRows:train.length,trainChars:train.reduce((n,s)=>n+s.length,0),heldoutRows:test.length,heldoutChars:test.reduce((n,s)=>n+s.length,0),docs:samples.map(x=>x.file)},original,charShuffle,wordShuffle,keyConstraint:'Question qkey is the same for all samples; this is a within-topic state-topology test, not a general language-understanding benchmark.',interpretation:'Compare natural-text network motifs to shuffled-text controls. A dominant strongly connected component at some context width reflects repeated overlapping observed suffixes, not proof of Fibonacci/golden-ratio geometry. Cross-scale edges are absent in the native six-graph storage.'};
+          fs.writeFileSync('v42_natural_context_phase_transition.json',JSON.stringify(output,null,2));
+          console.log(JSON.stringify({data:output.data,selectedScales:[1,2,3,5,8,10,12,13,16,21,32].map(s=>({scale:s,natural:original[s-1],shuffledChars:charShuffle[s-1],shuffledWords:wordShuffle[s-1]}))},null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-v42-context-phase-transition
+          path: |
+            v42_natural_context_phase_transition.json
+            v17/transcend/torus-aether/worlds/constructed-paths.mjs
+            v17/transcend/torus-aether/worlds/labyrinth.mjs
+            v17/transcend/torus-aether/fractal.mjs
+          retention-days: 7
