@@ -215,8 +215,11 @@ export class BrainCharacterWorld {
         steps.push({from:simulated,to:original.to,action});
         simulated=original.to;
       }
-      instructions.push({from,wanted,planned:!!planned?.complete,
-        predicted_before_move:planned?.firstPredictionBeforeAction===true,
+      // The target is VISIBLE. If already at goal, the correct pre-action
+      // solution shape is the empty path (zero physical actions).
+      const zeroActionGoal=(wanted===from);
+      instructions.push({from,wanted,planned:zeroActionGoal||!!planned?.complete,
+        predicted_before_move:zeroActionGoal||planned?.firstPredictionBeforeAction===true,
         steps,expectedFinal:simulated});
       // Read-only progress callback; no donor, original planner or Brain mutation.
       if(typeof this.onPlanProgress==='function' &&
