@@ -235,7 +235,23 @@ async function refresh(){
      " original completed · "+fmt(d.heldOutRows)+" held out · "+fmt(d.v43Completed)+" V43 fused");
    set("v43OriginalSpeed",fmt(Number(data.health?.exercisesPerSecond))+" ex/s original · "+
      (data.lastBatchReal?fmt(data.lastBatchReal.realEndToEndCharactersPerSecond)+" chars/s end-to-end":"await batch"));
-   set("v43WorkerPhase",data.health?.phase||data.originalWorkerStatus||"—");
+    const health=data.health||{},batch=health.batch||{};
+    set("v43WorkerPhase",health.phase||data.originalWorkerStatus||"—");
+    set("v43RealRows",fmt(health.realDatasetRowsRead??"—")+" citite · "+
+      fmt(d.completedTrainingRows??0)+" finalizate · row "+
+      fmt(health.lastRealDatasetRowIndex??"—"));
+    const denominator=Number(batch.total)||0,numerator=Number(batch.done)||0;
+    set("v43RealBatch",denominator?
+      fmt(numerator)+" / "+fmt(denominator)+" caractere · "+
+      (100*numerator/denominator).toFixed(2)+"% · "+(batch.phase||""):
+      fmt(health.gpuBatchQueuedRows??0)+" exerciții · "+
+      fmt(health.gpuBatchQueuedCharacters??0)+" caractere în lot");
+    const heartbeatAge=health.heartbeatAgeMs;
+    set("v43Heartbeat",health.state==="unresponsive"?
+      "WORKER NERESPONSIV":
+      (heartbeatAge==null?"fără heartbeat":
+        (heartbeatAge/1000).toFixed(1)+"s · "+String(health.state||"unknown")+
+        " · CUDA "+String(health.gpuRequest?.phase||"idle")));
    set("v43DatasetProgress",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(4)+"%");
    set("v43Completed",fmt(d.v43Completed));
    set("v43Speed",Number.isFinite(Number(w.completedExercisesPerSecond))?Number(w.completedExercisesPerSecond).toFixed(2):"—");
