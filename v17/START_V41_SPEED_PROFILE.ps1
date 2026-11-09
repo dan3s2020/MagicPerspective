@@ -75,7 +75,7 @@ $parameters=@(
   "-Data",('"' + $Data + '"'),"-Out",('"' + $Out + '"'),
   "-Port","$NativePort","-Workers","1","-Arms","winner",
   "-Worlds",("\""+$Worlds+"\""),
-  "-Worlds","text,maze,transform","-Mem","$Mem",
+  "-Mem","$Mem",
   "-Gpu",('"' + $Gpu + '"'),"-Vram","$VramArg",
   "-GpuTextBatch","$GpuTextBatch","-GpuTextChunk","$GpuTextChunk",
   "-GpuWorlds","$GpuWorlds","-Every","$Every",
