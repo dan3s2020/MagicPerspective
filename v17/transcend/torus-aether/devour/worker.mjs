@@ -764,12 +764,26 @@ parentPort.on("message", m => {
   if (m && m.exam) { let r; try { r = brain.examMazes(m.exam.sizes, m.exam.per); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.exam.id, ...r}); return; }
   if (m && m.chat) { let r; try { r = brain.chat(m.chat.history, m.chat.opts || {}); } catch (err) { r = {error: err.message}; } parentPort.postMessage({type: "chat", id: m.chat.id, ...r}); if (m.chat.opts?.learn) shot(true); return; }
   if (m === "shutdown-reset") {
-    // The original GPU child must be closed BY ITS OWNING worker, before the
-    // parent archives the Brain and starts a new one on the same checkpoint.
+    // Reset is acknowledged ONLY AFTER the old native CUDA Python process
+    // has actually exited, not when Node merely called ChildProcess.kill().
     stop=true;paused=false;saveNow=false;
+    const child=gpu?.p||null;
+    const closed=new Promise((resolve,reject)=>{
+      if(!child || child.exitCode!==null || child.signalCode!==null)
+        return resolve();
+      const timer=setTimeout(()=>reject(Error(
+        "Old CUDA subprocess did not exit within 12000ms; refusing reset")),12000);
+      const finish=(err)=>{clearTimeout(timer);if(err)reject(err);else resolve();};
+      child.once("exit",()=>finish(null));
+      child.once("error",finish);
+    });
     if(gpu){gpu.close("V43 verified reset shutdown");gpu=null;}
-    parentPort.postMessage({type:"v43-reset-ready",w:workerData.gw,
-      at:Date.now(),noGpuProcessRetained:true});
+    void closed.then(()=>{
+      parentPort.postMessage({type:"v43-reset-ready",w:workerData.gw,
+        at:Date.now(),noGpuProcessRetained:true});
+    }).catch(err=>{
+      parentPort.postMessage({type:"v43-reset-error",w:workerData.gw,error:err.message});
+    });
     return;
   }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
