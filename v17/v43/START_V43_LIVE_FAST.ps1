@@ -104,11 +104,15 @@ if(!(Test-Path -LiteralPath $Atlas -PathType Leaf)){
 $Verify=Join-Path $Root "v43\verify_frozen_donor_cuda.py"
 $Proof=Join-Path $Destination "v43-real-qwen-reachability.json"
 Write-Host "CUDA PREFLIGHT: physically verify ALL 65,536 Qwen coordinate-to-coordinate visible-target moves" -ForegroundColor Cyan
-& $Python $Verify --atlas $Atlas --report $Proof --batch 4096
+$CandidateAtlas=Join-Path $Root "v43\v43-qwen-input-space-verified.json"
+& $Python $Verify --atlas $Atlas --report $Proof --batch 4096 --try-genuine-input-space --candidate-atlas $CandidateAtlas
 if($LASTEXITCODE -ne 0){
   throw "Real Qwen atlas cannot reach 100% of visible targets with these frozen axes. Training NOT started. See $Proof"
 }
-Write-Host "REAL QWEN FROZEN-GEOMETRY REACHABILITY PASSED; NOT A QWEN LANGUAGE INFERENCE RESULT" -ForegroundColor Green
+$Check=Get-Content -LiteralPath $Proof -Raw -Encoding UTF8|ConvertFrom-Json
+if(-not $Check.selected_atlas){throw "No genuine Qwen atlas verified at 100%: $Proof"}
+$Atlas=[string]$Check.selected_atlas
+Write-Host "REAL QWEN VISIBLE-GOAL REACHABILITY PASSED using $($Check.selected_space); not language inference." -ForegroundColor Green
 
 # Stop duplicate CUDA workload ONLY in known native MagicPerspective instances.
 # A pause without a newly saved .v8 is not treated as a safe resume source.
