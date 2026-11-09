@@ -2,6 +2,7 @@
 # SAME browser UI, SAME native Brain/CUDA; no Braivour app or drive path scans.
 param(
   [string]$Data="D:\training\OpenThoughts3-1.2M",
+  [string]$Worlds="text,maze,transform",
   [string]$V42Out="",
   [string]$Out="",
   [string]$GGUF="",
@@ -117,7 +118,7 @@ $env:MAGICPERSPECTIVE_V43_UI="1"
 Write-Host "MAGICPERSPECTIVE V43: original V42 native trainer, SAME ORIGINAL BROWSER UI" -ForegroundColor Cyan
 Write-Host "Start Training mode: only V43 fused one-organism Qwen puppet + original text." -ForegroundColor Green
 $ArgsOriginal=@{
-  Data=$Data;Out=$Out;NativePort=$NativePort;UIPort=$UIPort;Gpu=$Gpu;Vram=$Vram;
+  Data=$Data;Worlds=$Worlds;Out=$Out;NativePort=$NativePort;UIPort=$UIPort;Gpu=$Gpu;Vram=$Vram;
   GpuTextBatch=$GpuTextBatch;GpuTextChunk=$GpuTextChunk;GpuWorlds=$GpuWorlds;
   NoBrowser=$NoBrowser;EndogenousNoise=$EndogenousNoise;V43Paused=$true
 }
