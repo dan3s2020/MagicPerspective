@@ -6,9 +6,48 @@ const fmt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString():"—";
 const pct=v=>v==null||!Number.isFinite(Number(v))?"—":(100*Number(v)).toFixed(2)+"%";
 const delta=v=>v==null||!Number.isFinite(Number(v))?"—":(v>=0?"+":"")+(100*Number(v)).toFixed(2)+" pp";
 const node=(tag,value,cls)=>{const n=document.createElement(tag);if(value!==undefined)n.textContent=String(value);if(cls)n.className=cls;return n};
-const model={items:new Map(),ids:[],older:null,current:null,history:[],busy:false,visible:true};
+const model={items:new Map(),ids:[],older:null,current:null,history:[],busy:false,visible:true,liveKey:null};
+const v43Panel=el("v43Panel"),nativePanel=el("nativeDatasetPanel");
+if(v43Panel&&nativePanel&&v43Panel.parentElement===nativePanel.parentElement)
+  nativePanel.before(v43Panel); // ONE live workbench before other panels
+document.body.classList.add("v43-live-first");
 async function get(url){const r=await fetch(url,{cache:"no-store"});const j=await r.json();if(!r.ok||j.error)throw Error(j.error||r.statusText);return j;}
 function counts(r){return r?fmt(r.correct)+" correct / "+fmt(r.wrong)+" wrong · "+pct(r.accuracy):"not measured";}
+function colored(id,reference,guess){
+  const root=el(id);if(!root)return;
+  const truth=Array.from(String(reference??"")),pred=Array.from(String(guess??""));
+  const output=document.createDocumentFragment();
+  let cls="",run="";
+  const flush=()=>{if(!run)return;output.append(node("span",run,cls));run="";};
+  for(let i=0;i<Math.max(truth.length,pred.length);i++){
+    const category=i>=pred.length?"v43-missing":
+      (i<truth.length&&truth[i]===pred[i]?"v43-correct":"v43-wrong");
+    const shown=i>=pred.length?"□":pred[i];
+    if(category!==cls){flush();cls=category;}run+=shown;
+  }
+  flush();root.replaceChildren(output);
+}
+function displayLive(live){
+  if(!live?.active)return;
+  const k=String(live.sourceRow)+":"+live.plannedBytes+":"+live.at;
+  if(model.liveKey===k)return;model.liveKey=k;
+  set("v43CurrentId","#"+fmt(live.sourceRow)+" · LIVE");
+  set("v43Question",live.input);
+  set("v43Reference",live.reference);
+  colored("v43TextBefore",live.reference,live.beforeText);
+  colored("v43TextPuppet",live.reference,live.outputPrefix);
+  set("v43TextAfter","Waiting for frozen donor observation (not yet scored)");
+  set("v43Diagnosis",live.phase+"\n"+fmt(live.plannedBytes)+
+    " / "+fmt(live.totalBytes)+" genuine GGUF-coordinate planning bytes");
+  set("v43CurrentBefore",pct(live.beforeAccuracy));
+  set("v43CurrentQwen","IN PROGRESS");
+  set("v43CurrentAfter","—");
+  set("v43BeforeCount","Prediction frozen before donor work");
+  set("v43QwenCount",fmt(live.plannedBytes)+" / "+fmt(live.totalBytes)+" bytes · "+fmt(live.bytesPerSecond)+" bytes/s");
+  set("v43AfterCount","No score until original Brain has completed the observation");
+  const meter=el("v43LiveFill");if(meter)meter.style.width=(live.totalBytes?
+    Math.max(0,Math.min(100,100*live.plannedBytes/live.totalBytes)):0)+"%";
+}
 function reason(r){
  const p1=r.player1||{},p2=r.player2||{},d=r.diagnosis||{};
  return [
@@ -91,11 +130,13 @@ function showLatest(r){
  set("v43BeforeCount",counts(r.player1?.before?.score));
  set("v43QwenCount",counts(r.player2?.score)+" · "+fmt(r.player2?.actions)+" movements");
  set("v43AfterCount",counts(r.player1?.after?.score)+" · "+delta(r.player1?.deltaAccuracy));
- for(const [id,value] of [
-   ["v43Question",r.input],["v43Reference",r.exerciseReference],
-   ["v43TextBefore",r.player1?.before?.text],["v43TextPuppet",r.player2?.output],
-   ["v43TextAfter",r.player1?.after?.text],["v43Diagnosis",reason(r)]
- ])set(id,value);
+ set("v43Question",r.input);
+  set("v43Reference",r.exerciseReference);
+  colored("v43TextBefore",r.exerciseReference,r.player1?.before?.text);
+  colored("v43TextPuppet",r.exerciseReference,r.player2?.output);
+  colored("v43TextAfter",r.exerciseReference,r.player1?.after?.text);
+  set("v43Diagnosis",reason(r));
+  const meter=el("v43LiveFill");if(meter)meter.style.width="100%";
 }
 function merge(items){
  for(const item of items||[])if(item&&Number.isSafeInteger(item.id))model.items.set(item.id,item);
@@ -183,7 +224,12 @@ async function refresh(){
    const w=data.worker||{},d=data.dataset||{};
    set("v43Phase",(data.phase||"ready").toUpperCase());
    set("v43Percent",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(2)+"%");
-   set("v43Dataset",fmt(d.completedTrainingRows)+" / "+fmt(d.assignedTrainingRows)+" original dataset exercises · "+fmt(d.v43Completed)+" newly fused V43");
+   set("v43Dataset",fmt(d.completedTrainingRows)+" / "+fmt(d.assignedTrainingRows)+
+     " original completed · "+fmt(d.heldOutRows)+" held out · "+fmt(d.v43Completed)+" V43 fused");
+   set("v43OriginalSpeed",fmt(Number(data.health?.exercisesPerSecond))+" ex/s original · "+
+     (data.lastBatchReal?fmt(data.lastBatchReal.realEndToEndCharactersPerSecond)+" chars/s end-to-end":"await batch"));
+   set("v43WorkerPhase",data.health?.phase||data.originalWorkerStatus||"—");
+   set("v43DatasetProgress",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(4)+"%");
    set("v43Completed",fmt(d.v43Completed));
    set("v43Speed",Number.isFinite(Number(w.completedExercisesPerSecond))?Number(w.completedExercisesPerSecond).toFixed(2):"—");
    set("v43CharSpeed",Number.isFinite(Number(w.completedCharactersPerSecond))?Number(w.completedCharactersPerSecond).toFixed(1):"—");
@@ -194,6 +240,8 @@ async function refresh(){
      set("v43AfterPct",pct(current.player1?.after?.score?.accuracy));
      if(model.current===null)showLatest(current);
    }
+   if(data.live?.active)displayLive(data.live);
+   else if(model.liveKey){model.liveKey=null;if(w.lastExercise)showLatest(w.lastExercise);}
    model.history=Array.isArray(w.history)?w.history:[];
    drawCharts();
    if(Number(w.completed)>0&&(Number(w.completed)!==lastCompleted||!model.ids.length)){
@@ -202,4 +250,4 @@ async function refresh(){
  }catch(e){set("v43Phase","LIVE V43 unavailable: "+e.message);}
  finally{inFlight=false;}
 }
-refresh();setInterval(refresh,1700);
+refresh();setInterval(refresh,900);
