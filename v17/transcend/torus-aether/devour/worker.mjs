@@ -360,7 +360,8 @@ let realDatasetRowsRead=brain.exercises||0,lastRealDatasetRowIndex=-1,realDatase
 let gpuBatchQueuedRows=0,gpuBatchQueuedCharacters=0;
 const v43Conveyor={enabled:!!v43World,depth:0,prefetchedSourceRows:0,
   cudaBatchesDispatchedAhead:0,cudaBatchesCommitted:0,
-  nextGpuBatchInFlight:false,previousCpuOverlapWindows:0};
+  nextGpuBatchInFlight:false,previousCpuOverlapWindows:0,
+  staleSpeculationReplays:0,aheadEnabled:true};
 const heartbeat = setInterval(()=>{
   const now=Date.now(),deltaSeconds=Math.max(.001,(now-rateAt)/1000);
   const committedChars=brain.chars||0,committedExercises=brain.exercises||0;
@@ -449,7 +450,25 @@ const processGpuText = async (exs, meta, v43Pipeline = null) => {
     // consolidate. Do not commit its results until its own ordered turn.
     const packet = await (v43Pipeline.started ||
       brain.beginV43TextGPU(G,exs,observeProgress));
-    const result = brain.commitV43TextGPU(G,exs,packet);
+    let result;
+    try {
+      result=brain.commitV43TextGPU(G,exs,packet);
+    }catch(err){
+      // The SAME organism's Qwen puppet changes its AligningGraph. A
+      // speculative next-card result with prior trust is NOT legal learning.
+      // Reset only Python's not-yet-committed working card, reload actual
+      // original native Brain, and replay exactly once in source order.
+      if(!String(err.message).startsWith("V43_STALE_CARD_PACKET:"))throw err;
+      v43Conveyor.staleSpeculationReplays++;
+      v43Conveyor.aheadEnabled=false; // no repeated wasted CUDA batches
+      setWorkerPhase("CUDA: rebase speculative card after original P2 actions");
+      brain.resetV43TextGPUForOrderedReplay(G);
+      const rebased=await brain.beginV43TextGPU(G,exs,observeProgress);
+      result=brain.commitV43TextGPU(G,exs,rebased);
+      parentPort.postMessage({type:"note",w:workerData.gw,text:
+        "V43_ORIGINAL_PARITY: stale speculative CUDA card rebased onto actual "+
+        "same-Brain Qwen movement observations; early dispatch disabled."});
+    }
     v43Pipeline.onCommitted?.();
     return result;
   };
@@ -831,7 +850,7 @@ if(v43World && TEXT && gpuSet){
         nextDispatch=(async()=>{
           const next=await upcoming;
           nextPacket=next;
-          if(next&&!stop&&!paused&&!saveNow&&!activeGpu.dead){
+          if(next&&v43Conveyor.aheadEnabled&&!stop&&!paused&&!saveNow&&!activeGpu.dead){
             next.gpu=activeGpu;
             next.started=brain.beginV43TextGPU(activeGpu,next.exs);
             next.started.catch(()=>{});
