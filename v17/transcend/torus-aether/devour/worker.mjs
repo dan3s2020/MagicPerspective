@@ -358,6 +358,9 @@ const setWorkerPhase = label => {workerPhase=label;phaseSince=Date.now();};
 let rateAt=Date.now(),rateChars=brain.chars||0,rateExercises=brain.exercises||0;
 let realDatasetRowsRead=brain.exercises||0,lastRealDatasetRowIndex=-1,realDatasetRowCharacters=0;
 let gpuBatchQueuedRows=0,gpuBatchQueuedCharacters=0;
+const v43Conveyor={enabled:!!v43World,depth:0,prefetchedSourceRows:0,
+  cudaBatchesDispatchedAhead:0,cudaBatchesCommitted:0,
+  nextGpuBatchInFlight:false,previousCpuOverlapWindows:0};
 const heartbeat = setInterval(()=>{
   const now=Date.now(),deltaSeconds=Math.max(.001,(now-rateAt)/1000);
   const committedChars=brain.chars||0,committedExercises=brain.exercises||0;
@@ -374,6 +377,7 @@ const heartbeat = setInterval(()=>{
     rawTextMB:committedChars/1e6,
     throughputDefinition:"COMMITTED text characters in original Brain / wall-clock seconds (NOT Parquet file I/O bytes)",
     activeGpuRpc:gpu?.activeCommand||null,
+    v43Conveyor:v43World?{...v43Conveyor}:null,
     gpuDead:!!gpu?.dead,heapGB:process.memoryUsage().heapUsed/1e9});
 },v43World?1000:5000);
 heartbeat.unref?.();
@@ -414,7 +418,7 @@ const worldsOnce = async (record) => {                                     // on
 
 const selectedTextBatch = () => Math.max(1, Math.min(128, Math.trunc(Number(gpuSet?.textBatch) || gpuInfo?.autoText || 2)));
 let completedTextBatchChars=0,completedTextBatchExercises=0,completedTextBatchMs=0;
-const processGpuText = async (exs, meta) => {
+const processGpuText = async (exs, meta, v43Pipeline = null) => {
   const total = exs.reduce((sum, e) => sum + Math.max(0, e.length - 1), 0);
   // V41 observability: this measures original CUDA and CPU work separately.
   // NO exercise, Brain, prediction, queue or checkpoint change.
@@ -439,8 +443,18 @@ const processGpuText = async (exs, meta) => {
     setWorkerPhase(batchNow.phase);
     // Lightweight /health heartbeat records actual Python progress.
   };
+  const executeOnGpu = async G => {
+    if (!v43Pipeline) return brain.learnTextGPU(G,exs,observeProgress);
+    // V43 ONLY: physically submit next card batch while previous V42 organs
+    // consolidate. Do not commit its results until its own ordered turn.
+    const packet = await (v43Pipeline.started ||
+      brain.beginV43TextGPU(G,exs,observeProgress));
+    const result = brain.commitV43TextGPU(G,exs,packet);
+    v43Pipeline.onCommitted?.();
+    return result;
+  };
   try {
-    await brain.learnTextGPU(gpu,exs,observeProgress);
+    await executeOnGpu(gpu);
   } catch (err) {
     // For a dead / unresponsive Python child, the native Brain has NOT
     // absorbed the batch: Brain.learnTextGPU mutates it only AFTER receiving
@@ -456,10 +470,12 @@ const processGpuText = async (exs, meta) => {
     gpu=null;gpuInfo=null;gpuError=null;sharedLoaded=false;
     const restarted=await gpuOn();
     if(!restarted)throw Error("CUDA recovery failed: "+(gpuError||err.message));
-    await brain.learnTextGPU(restarted,exs,observeProgress);
+    if(v43Pipeline)v43Pipeline.started=null; // discarded child did not commit
+    await executeOnGpu(restarted);
     parentPort.postMessage({type:"note",w:workerData.gw,text:
       "CUDA recovered. Native text batch committed once after successful retry."});
   }
+  if(v43Pipeline)v43Conveyor.cudaBatchesCommitted++;
   timed("ORIGINAL_PYTORCH_TEXT_CARD_FINISHED");
   setWorkerPhase("CPU: merging real CUDA text batch into original Brain");
   batchNow = {phase: "CPU: legacy Brain.live original graph consolidation", done: 0, total: exs[0]?.length || 0}; shot();
@@ -491,6 +507,7 @@ const processGpuText = async (exs, meta) => {
       if (progressed % 2048 === 0) await new Promise(r => setImmediate(r));
     }
   }
+  if(v43Pipeline?.nextWasStarted) v43Conveyor.previousCpuOverlapWindows++;
   timed("CPU_ORIGINAL_BRAIN_LIVE_FULL_REPLAY");
   setWorkerPhase("CPU: learning cross-world causal and language atlas");
   for(const row of meta){
@@ -751,6 +768,99 @@ const v34Stage=label=>{
   text:"V34_STARTUP_DIAG: "+label+" at chars="+brain.chars});
 };
 let firstCorpusAbsorptionDiagnosed=false;
+// A V43-only pipeline: batch N+1 is decoded in parallel with CUDA batch N.
+// Decompression/prefetch never trains, observes a reference, or changes the
+// Brain, so the original before-action prediction is captured later, after
+// the previous episode's CPU consolidation has completed.
+const readV43CudaBatch = async iterator => {
+  const exs=[],meta=[];let chars=0;
+  const limit=selectedTextBatch();
+  while(!stop && exs.length<limit && chars<120000){
+    const {value:ex,done}=await iterator.next();
+    if(done)break;
+    if(TEXT && k++<skip)continue;  // EXACT original resume skip order
+    if(!firstRowDiagnosed){
+      firstRowDiagnosed=true;
+      parentPort.postMessage({type:"note",w:workerData.gw,
+        text:"V43_CUDA_CONVEYOR: original row decoded; chars="+ex.bytes.length+
+          "; source row="+ex.k});
+    }
+    realDatasetRowsRead++;
+    lastRealDatasetRowIndex=ex.k;
+    realDatasetRowCharacters=ex.bytes.length;
+    meta.push(ex);exs.push(ex.bytes);chars+=ex.bytes.length;
+  }
+  if(!exs.length)return null;
+  v43Conveyor.prefetchedSourceRows+=exs.length;
+  v43Conveyor.depth=1;
+  return {exs,meta,chars,started:null,gpu:null};
+};
+// The same native Brain's GPU cards remain FIFO, NEVER guessed or trained
+// twice. Only V43 chooses this bounded two-lane execution. The complete V42
+// loop below remains unchanged when the donor is not present.
+if(v43World && TEXT && gpuSet){
+  await hold();
+  const iterator=stream()[Symbol.asyncIterator]();
+  let current=await readV43CudaBatch(iterator);
+  while(current&&!stop){
+    await hold();
+    // P1 now reads all learning from previous batch, but no current answer.
+    for(const ex of current.meta){
+      if(typeof ex.prompt==="string"&&typeof ex.answer==="string"&&
+         ex.prompt.trim()&&ex.answer.trim())v43World.observeBefore(ex);
+    }
+    const activeGpu=current.gpu&&!current.gpu.dead?current.gpu:await gpuOn();
+    if(!activeGpu)throw Error("V43 original CUDA subprocess unavailable");
+    if(!current.gpu||current.gpu.dead)current.started=null;
+    if(!current.started){
+      current.started=brain.beginV43TextGPU(activeGpu,current.exs);
+      current.started.catch(()=>{});
+    }
+    const upcoming=readV43CudaBatch(iterator);
+    let nextPacket=null, nextDispatch=null;
+    const phase={
+      started:current.started,
+      nextWasStarted:false,
+      onCommitted:()=>{
+        // Launch the NEXT original CUDA batch as soon as current CUDA
+        // reply is committed, concurrently with CURRENT original CPU
+        // consolidation. A pause/save inhibits new early dispatch.
+        nextDispatch=(async()=>{
+          const next=await upcoming;
+          nextPacket=next;
+          if(next&&!stop&&!paused&&!saveNow&&!activeGpu.dead){
+            next.gpu=activeGpu;
+            next.started=brain.beginV43TextGPU(activeGpu,next.exs);
+            next.started.catch(()=>{});
+            v43Conveyor.cudaBatchesDispatchedAhead++;
+            v43Conveyor.nextGpuBatchInFlight=true;
+            phase.nextWasStarted=true;
+          }else v43Conveyor.nextGpuBatchInFlight=false;
+        })();
+        nextDispatch.catch(()=>{});
+      }
+    };
+    try{
+      await processGpuText(current.exs,current.meta,phase);
+      if(nextDispatch)await nextDispatch;
+      else nextPacket=await upcoming;
+    }catch(err){
+      gpuError=err.message;
+      gpu?.close("V43 CUDA conveyor stopped after error: "+err.message);
+      batchNow={phase:"CUDA conveyor error: "+err.message,done:0,total:0};
+      shot(true);
+      parentPort.postMessage({type:"fatal",w:workerData.gw,
+        text:"V43 original CUDA conveyor failed without CPU fallback: "+err.message});
+      stop=true;break;
+    }
+    current=nextPacket;
+    v43Conveyor.depth=current?1:0;
+    v43Conveyor.nextGpuBatchInFlight=!!current?.started;
+    gpuBatchQueuedRows=current?.exs.length||0;
+    gpuBatchQueuedCharacters=current?.chars||0;
+    if(brain.chars>=maxChars)break;
+  }
+}else{
 for await (const ex of stream()) {
   if(!firstRowDiagnosed){
    firstRowDiagnosed=true;
@@ -895,8 +1005,9 @@ for await (const ex of stream()) {
   if (brain.chars >= maxChars || stop) break;
   await new Promise(r => setImmediate(r));                                   // let the stop message in
 }
+} // End V43-only CUDA conveyor or untouched V42 original streaming loop
 // A dataset can end before the final batch reaches the configured size; those rows must still be trained.
-if (TEXT && gpuSet && !stop && textBatch.length) {
+if (TEXT && gpuSet && !v43World && !stop && textBatch.length) {
   try { const G = await gpuOn(); if (!G) throw Error(gpuError || "CUDA unavailable"); await processGpuText(textBatch, textMeta); textBatch = []; textMeta = []; }
   catch (err) { gpuError = err.message; batchNow = {phase: "CUDA error: " + err.message, done: 0, total: 0}; shot(true);
     parentPort.postMessage({type: "fatal", w: workerData.gw, text: "Final GPU text batch failed: " + err.message}); stop = true; }
