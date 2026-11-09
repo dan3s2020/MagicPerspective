@@ -33,11 +33,12 @@ jobs:
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/devour/worker.mjs
           node --check v17/transcend/torus-aether/devour/brain-character-world.mjs
+          node --check v17/transcend/torus-aether/devour/v43-weight-coordinate-planner.mjs
           node --check v17/transcend/torus-aether/devour/v43-fused-one-universe.mjs
           node --check v17/apps/hypermaze-studio-v26/native-bridge.mjs
           node --check v17/apps/hypermaze-studio-v26/public/v43-ui.js
           node --check v17/apps/hypermaze-studio-v26/v43-journal.mjs
-          python -m py_compile v17/v43/gguf_checkpoint.py v17/v43/export_qwen.py
+          python -m py_compile v17/v43/gguf_checkpoint.py v17/v43/export_qwen.py v17/v43/verify_frozen_donor_cuda.py
       - name: Actual original V42 Brain with synthetic donor fixture (not Qwen inference)
         run: node --test v17/tests/v43-native-one-universe.test.mjs
       - name: Same native V42 UI port + original Start Training end-to-end HTTP test
