@@ -69,10 +69,10 @@ def device_from_config(name: str):
 
 
 class FrozenGeometry:
-    def __init__(self, atlas_path: Path, device):
+    def __init__(self, atlas_path: Path, device, allow_synthetic_for_test=False):
         obj = json.loads(atlas_path.read_text(encoding="utf-8"))
-        if obj.get("format") != ATLAS_FORMAT or not obj.get("source_genuine_gguf", False):
-            raise ValueError("Real Qwen GGUF-derived coordinate atlas required")
+        if obj.get("format") != ATLAS_FORMAT or not (obj.get("source_genuine_gguf", False) or (allow_synthetic_for_test and device.type == "cpu")):
+            raise ValueError("Real Qwen GGUF-derived coordinate atlas required; synthetic allowed only in explicit CPU unit tests")
         if not isinstance(obj.get("output_rows"), list) or not isinstance(obj.get("movement_axes"), list):
             raise ValueError("Malformed donor tensor arrays")
         self.rows = F.normalize(torch.tensor(obj["output_rows"], dtype=torch.float32, device=device), dim=1)
