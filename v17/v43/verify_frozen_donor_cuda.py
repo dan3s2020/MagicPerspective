@@ -96,6 +96,33 @@ def verify(atlas_path, *, device="cuda:0", batch_size=4096):
                 "zero_row": bool(row_norm[goal]<1e-12),
                 "decoder_at_target": int(torch.argmax(best[goal]).item())
             })
+    # Compare the other genuine Qwen coordinate space WITHOUT changing the atlas.
+    # An actual zero-weight output token can be indistinguishable in output
+    # space while being distinct in the original input embeddings.
+    if "input_rows" in obj:
+        input_rows = F.normalize(torch.tensor(obj["input_rows"],dtype=torch.float32,device=device),dim=1)
+        if input_rows.shape==rows.shape:
+            input_count=0
+            input_unreachable_per_target=torch.zeros(256,dtype=torch.int32,device=device)
+            for offset in range(0,65536,batch_size):
+                ids=torch.arange(offset,min(65536,offset+batch_size),device=device)
+                src=torch.div(ids,256,rounding_mode="floor")
+                goal=ids%256
+                coords=(input_rows[goal]-input_rows[src])@inverse.T
+                moved=F.normalize(input_rows[src]+coords@axes,dim=1)
+                decoded=torch.argmax(moved@input_rows.T,dim=1)
+                success=decoded==goal
+                input_count+=int(success.sum().item())
+                failed=goal[~success]
+                input_unreachable_per_target+=torch.bincount(failed,minlength=256).to(torch.int32)
+            report["alternative_genuine_qwen_input_space"]={
+                "reachable":input_count,
+                "unreachable":65536-input_count,
+                "all_reachable":input_count==65536,
+                "unreachable_target_bytes":torch.where(input_unreachable_per_target>0)[0].tolist(),
+                "read_only_comparison":True,
+                "not_automatically_substituted":True
+            }
     report["exact_reachability"] = (report["unreachable"] == 0)
     report["seconds"] = round(time.perf_counter() - started, 4)
     return report
