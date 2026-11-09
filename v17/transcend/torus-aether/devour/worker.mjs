@@ -774,7 +774,10 @@ let firstCorpusAbsorptionDiagnosed=false;
 // the previous episode's CPU consolidation has completed.
 const readV43CudaBatch = async iterator => {
   const exs=[],meta=[];let chars=0;
-  const limit=selectedTextBatch();
+  // The old V43 default of ONE exercise per CUDA call starved the GPU.
+  // Eight is the initial bounded feed target on the 4 GB RTX 3050 Ti;
+  // 120k original characters remains the independent memory guard.
+  const limit=Math.max(8,selectedTextBatch());
   while(!stop && exs.length<limit && chars<120000){
     const {value:ex,done}=await iterator.next();
     if(done)break;
