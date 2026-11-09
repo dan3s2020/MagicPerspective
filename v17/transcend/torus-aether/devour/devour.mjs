@@ -17,6 +17,7 @@ import {openTextDataset, DEFAULT_TEXT_ROOT} from "../data/text-dataset.mjs";
 import {Brain} from "./brain.mjs";
 import {NativeTextPathAtlas} from "../worlds/native-text-path-atlas.mjs";
 import {archiveV43Session,stopV43WorkerForReset} from "./v43-reset.mjs";
+import {requestV43WorkerAck,verifyV43SavedCheckpoint} from "./v43-controls.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
@@ -253,6 +254,24 @@ async function verifiedV43Reset(sl) {
     throw err;
   }finally{sl.resetting=false;}
 }
+async function verifiedV43Control(sl,act) {
+  if(sl.resetting)throw Error("V43 command refused while original Brain is resetting");
+  if(sl.status==="eroare")
+    throw Error("Original Brain is in error state: "+(sl.lastError||"unknown")+
+      ". Inspect the native worker error; Reset performs verified replacement.");
+  if(["start","pause","save"].indexOf(act)<0)
+    throw Error("Unsupported verified V43 control: "+act);
+  if(!sl.wk){
+    if(act!=="start")throw Error("Cannot "+act+" original Brain: worker absent");
+    if(sl.status==="gata")throw Error("Dataset finished; use verified Reset to begin from zero");
+    launch(sl,{fresh:false,paused:true,fromSave:true});
+  }
+  const result=await requestV43WorkerAck(sl.wk,act,{timeoutMs:act==="save"?150000:25000});
+  if(act==="start")sl.status="antrenează";
+  if(act==="pause")sl.status="pauză";
+  if(act==="save")return {...result,...verifyV43SavedCheckpoint(saveOf(sl)),w:sl.w};
+  return {...result,w:sl.w,verifiedCommandReceipt:true};
+}
 function control(sl, act) {
   if (act === "start") { if (!sl.wk) launch(sl, {paused: false}); else { sl.wk.postMessage("resume"); sl.status = "antrenează"; } }
   else if (act === "pause") { sl.wk?.postMessage("pause"); if (sl.wk) sl.status = "pauză"; }
@@ -264,7 +283,7 @@ function control(sl, act) {
 if (!resume && fs.existsSync(brainsDir) && fs.readdirSync(brainsDir).length) fs.renameSync(brainsDir, path.join(out, "brains-before-" + Date.now()));
 let booted = false; for (let w = 0; w < workers; w++) addSlot(arms[w % arms.length].name, worldsArg); booted = true;
 const chats = new Map(); let chatId = 0;                                     // talking to a graph: page → worker → page
-const json = (res, o) => { res.writeHead(200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
+const json = (res, o) => { res.writeHead(res.statusCode||200, {"content-type": "application/json", "cache-control": "no-store"}); res.end(JSON.stringify(o)); };
 http.createServer((req, res) => {
   const U = new URL(req.url, "http://x"), url = decodeURIComponent(U.pathname), q = U.searchParams;
   // V34 native research inspection/typed evidence in the SAME original Brain.
@@ -330,6 +349,20 @@ http.createServer((req, res) => {
     graphs: [...history.entries()].map(([w, h]) => ({w, arm: h.at(-1).arm, history: h.map(m => ({chars: m.chars, live: m.test?.live, C: m.test?.C, masked: m.test?.masked, bits: m.test?.bits, field: m.test?.field, together: m.test?.together, maze: m.maze?.recent})), last: h.at(-1)}))});
   if (req.method === "POST" && url === "/control") {                     // ?do=start|pause|reset|save|remove &w=<graph> (no w = every graph)
     const act = q.get("do"), w = q.get("w"), targets = w == null ? slots.slice() : slots.filter(x => x.w === +w);
+    if(v43DonorPath&&["start","pause","save"].includes(act)){
+      void (async()=>{
+        if(!targets.length)throw Error("Unknown original Brain for V43 "+act);
+        const done=[];
+        for(const sl of targets)done.push(await verifiedV43Control(sl,act));
+        return json(res,{ok:true,commandAcknowledged:true,
+          saveVerified:act==="save"&&done.every(x=>x.saveVerified===true),
+          controls:done,graphs:slots.map(slotInfo)});
+      })().catch(err=>{
+        console.error("V43 "+act+" failed:",err);
+        if(!res.writableEnded){res.statusCode=409;json(res,{ok:false,error:"V43_"+act.toUpperCase()+"_FAILED: "+err.message});}
+      });
+      return;
+    }
     if(v43DonorPath&&act==="reset"){
       void (async()=>{
         if(!targets.length)throw Error("No original Brain matched the reset request");
