@@ -126,6 +126,7 @@ export class V43FusedOneUniverse {
     // Capture the EXACT route calculated by original BrainCharacterWorld.exercise.
     // No extra calls to the planner: the wrapper observes the one real traversal.
     let physicalPlan=null;
+    const movementAtlas=new Map();
     const originalShape=this.world._nativeShape;
     const originalProgress=this.world.onPlanProgress;
     let lastProgressMs=0;
@@ -159,8 +160,20 @@ export class V43FusedOneUniverse {
       physicalPlan=instructions.map(p=>({
         from:p.from,wanted:p.wanted,planned:p.planned,
         predictedBeforeMove:p.predicted_before_move,
-        steps:p.steps.map(s=>({from:s.from,to:s.to,
-          axis:s.action.axis,sign:s.action.sign,gain:s.action.gain})),
+        steps:p.steps.map(s=>{
+          if(s.action.type==='frozen-axis-composition'){
+            const operatorId=s.from+':'+s.to;
+            if(!movementAtlas.has(operatorId))movementAtlas.set(operatorId,{
+              operatorId,sourceByte:s.from,targetByte:s.to,
+              frozenDonorAxes:s.action.coefficientPairs,
+              actualReadoutVerified:true,
+              scope:'VISIBLE-GOAL, not Qwen text inference'
+            });
+            return {from:s.from,to:s.to,type:s.action.type,operatorId};
+          }
+          return {from:s.from,to:s.to,
+            axis:s.action.axis,sign:s.action.sign,gain:s.action.gain};
+        }),
         final:p.expectedFinal
       }));
       return instructions;
@@ -219,7 +232,9 @@ export class V43FusedOneUniverse {
           traversed.firstPredictionsBeforeMovement/traversed.bytes:null,
         shapeBeforeMovementMeans:'predicted complete donor-movement route to visible target, not blind text generation',
         waveOptimization:traversed.waveOptimization,
-        allMovements:frozen,donorGeometryFrozen:true,physicalDonorActionsOnly:true,
+        allMovements:frozen,
+        uniqueWeightCompositions:[...movementAtlas.values()],
+        donorGeometryFrozen:true,physicalDonorActionsOnly:true,
         expectedOutputUsedInTrainingGame:true,
         donorFullForwardExecuted:false},
       diagnosis:{
@@ -251,6 +266,8 @@ export class V43FusedOneUniverse {
     // of long Qwen movement traces at every browser poll.
     this.state.lastExercise={...entry,player2:{...entry.player2,
       allMovements:frozen.slice(0,32),
+      uniqueWeightCompositions:[...movementAtlas.values()].slice(0,8),
+      weightCompositionsTruncatedInStatus:movementAtlas.size>8,
       movementsTruncatedInStatus:frozen.length>32}};
     this.state.history.push({
       id:entry.id,row:entry.sourceRow,at:entry.at,
