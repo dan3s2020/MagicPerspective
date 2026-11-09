@@ -102,3 +102,21 @@ test("V43 replays stale next-card computation instead of training from pre-puppe
   assert.equal(brain.align.mem.n,
     rows.flat().reduce((n,b)=>n+b.length,0)+2);
 });
+
+
+test("V43 samples actual NVIDIA driver utilization; never claims 100% from config",async()=>{
+  const {parseV43NvidiaSmi,getV43PhysicalGpu}=await import("../apps/hypermaze-studio-v26/native-bridge.mjs");
+  assert.equal(parseV43NvidiaSmi("99, 2401, 4096").utilizationPercent,99);
+  assert.equal(parseV43NvidiaSmi("0, 300, 4096").utilizationPercent,0);
+  assert.equal(parseV43NvidiaSmi("100, 800, 4096").usedMiB,800);
+  assert.equal(parseV43NvidiaSmi("invalid data"),null);
+  let calls=0;
+  const got=await getV43PhysicalGpu(async(exe,args)=>{
+    calls++; assert.equal(exe,"nvidia-smi");assert.ok(args.includes("--format=csv,noheader,nounits"));
+    return {stdout:"37, 1024, 4096\n"};
+  });
+  assert.equal(got.utilizationPercent,37);
+  const again=await getV43PhysicalGpu(async()=>{throw Error("cache did not work")});
+  assert.equal(again.utilizationPercent,37);
+  assert.equal(calls,1);
+});
