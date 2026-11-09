@@ -108,16 +108,23 @@ export class Brain {
       await gpu.call({cmd: "text_load", b64: Buffer.from(A.mem.buf.subarray(Math.max(0, A.mem.n - cardWindow), A.mem.n)).toString("base64")});
       SYNCED.set(gpu, this);
     }
+    // Snapshot native CUDA inputs. Original Player 2 may still live actions
+    // on the CPU while this RPC executes; never commit a result based on
+    // stale AligningGraph trust / text memory after those actions.
+    const version={lived:A.lived,memN:A.mem.n,g:A.g,formW:A.formW};
     const startedAt = performance.now();
     const reply = await gpu.call({cmd:"text_learn", exercises:exs,
       trust:A.trustForCard(), g:A.g, formW:A.formW, variants:A.variants(),
       chunk:gpu.settings?.textChunk || 0}, {onProgress});
-    return {reply,startedAt,cardFinishedAt:performance.now(),gpu};
+    return {reply,startedAt,cardFinishedAt:performance.now(),gpu,version};
   }
   commitV43TextGPU(gpu, exs, packet) {
     if (!packet || packet.gpu !== gpu)
       throw Error("V43 CUDA packet belongs to a different GPU process");
     const A = (this.align ||= new AligningGraph()), R = packet.reply;
+    if(A.lived!==packet.version?.lived || A.mem.n!==packet.version?.memN ||
+       A.g!==packet.version?.g || A.formW!==packet.version?.formW)
+      throw Error("V43_STALE_CARD_PACKET: P2/CPU updated AligningGraph while CUDA was in flight");
     // Exact original V42 update operations and order from learnTextGPU().
     A.absorb(R, exs);
     const n = exs.reduce((sum,e) => sum + e.length,0);
@@ -131,6 +138,12 @@ export class Brain {
       textChunk:R.textChunk ?? null, cardWindowChars:R.memory ?? null,
       historyChars:A.mem.n};
     return this.textGpu;
+  }
+  resetV43TextGPUForOrderedReplay(gpu){
+    // The rejected speculative CUDA reply already appended text in Python,
+    // but it has NEVER been committed to this Brain. Recreate Python's
+    // bounded card memory from the ORIGINAL current Brain before replay.
+    SYNCED.delete(gpu);
   }
   live(y, detailed = false, {old = false} = {}) {                                                // one lived symbol, from any world
     if (this.frozen) { this.past.push(y); if (this.past.length > 64) this.past.splice(0, 32); return; }   // a test: perceived, never learned
