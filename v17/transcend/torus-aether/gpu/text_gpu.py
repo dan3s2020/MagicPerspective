@@ -9,6 +9,7 @@ there. Mirrors align.mjs (AligningGraph) exactly where it can; where it cannot (
 exercise is found at lengths 1, 2, 4 … 64, not exactly) it says so."""
 import ctypes
 import pathlib
+import hashlib
 import numpy as np
 try:
     import torch
@@ -190,6 +191,41 @@ class TextCard:
         self._fraction_lut = None
         self._self = {} # never reuse per-exercise suffix automata across native Brains
         self.mem = self.X.zeros(0, np.int64); self.fmem = self.X.zeros(0, np.int64); self.big = None; self.fbig = None; self.indexed = 0
+        # V43: bounded future real text batches physically staged on CUDA.
+        # Staging has NO teacher/trust, no gradient, no prediction, no learning
+        # and cannot mutate original card memory. Up to three live transfers.
+        self._v43_staged = {}
+        self._v43_stage_cap = 3
+    def stage_v43(self, token, exs):
+        if not isinstance(token, str) or not token or len(token) > 100:
+            raise ValueError("Invalid V43 original-batch token")
+        if token in self._v43_staged:
+            raise ValueError("Duplicate V43 staged token")
+        if len(self._v43_staged) >= self._v43_stage_cap:
+            raise RuntimeError("V43 resident queue is full; bounded by three batches")
+        raw = [np.asarray(e, dtype=np.int64) for e in exs]
+        if not raw or any(len(e) < 1 for e in raw):
+            raise ValueError("Cannot stage empty original text batch")
+        lengths = np.asarray([len(e) for e in raw], dtype=np.int64)
+        starts = np.concatenate([np.zeros(1, dtype=np.int64),
+                                 np.cumsum(lengths)[:-1]])
+        flat = np.concatenate(raw)
+        if len(flat) > 150000:
+            raise ValueError("V43 GPU staging batch exceeds memory safety limit")
+        # Only the actual original text, no answers supplied to a different
+        # teacher or mutation of the AligningGraph.
+        digest = hashlib.sha256(flat.tobytes()).hexdigest()
+        on_card = self.X.arr(flat)
+        self._v43_staged[token] = {
+            "lengths": lengths, "starts": starts, "card": on_card,
+            "digest": digest, "bytes": int(len(flat))}
+        return {"token":token,"stagedRows":len(raw),"stagedCharacters":int(len(flat)),
+                "residentBatches":len(self._v43_staged),
+                "residentCharacters":sum(v["bytes"] for v in self._v43_staged.values()),
+                "source":"actual CUDA/NumPy device tensor; no learning until ordered commit"}
+    def unstage_v43(self, token):
+        item=self._v43_staged.pop(token,None)
+        return {"removed":item is not None,"residentBatches":len(self._v43_staged)}
     def append(self, exs, progress=None):
         X = self.X; raw = np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]) if exs else np.zeros(0, np.int64)
         if not len(raw): return
@@ -245,7 +281,7 @@ class TextCard:
         else:
             digit_mass = torch.zeros(Q, dtype=torch.float32, device=X.dev)
         return base, digit_mass
-    def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None):
+    def live(self, exs, trust, g=8.0, formW=1.0, variants=(), chunk=4096, progress=None, stage_id=None):
         """exs: exercises (lists of symbols) lived now. trust: {key_id: [right, tried]}. Returns the totals."""
         X = self.X; flat = []; owner = []; posin = []; self._self = {}
         for e_i, e in enumerate(exs):
@@ -266,10 +302,20 @@ class TextCard:
             # Keep the real exercises on the card and gather every reversed
             # context there.  Previously Python rebuilt Q x 64 contexts one
             # row at a time and copied each chunk to CUDA.
-            lengths = np.asarray([len(e) for e in exs], dtype=np.int64)
-            starts = np.concatenate([np.zeros(1, dtype=np.int64), np.cumsum(lengths)[:-1]])
+            staged = self._v43_staged.pop(stage_id, None) if stage_id else None
+            if staged is not None:
+                # Safety: no result from a different text row may be consumed
+                # under this token, even when the accelerator was reused.
+                actual=np.concatenate([np.asarray(e,dtype=np.int64) for e in exs])
+                if hashlib.sha256(actual.tobytes()).hexdigest()!=staged["digest"]:
+                    raise RuntimeError("V43 stage token does not match actual original exercises")
+                lengths = staged["lengths"];starts = staged["starts"]
+                exercise_card = staged["card"]
+            else:
+                lengths = np.asarray([len(e) for e in exs], dtype=np.int64)
+                starts = np.concatenate([np.zeros(1, dtype=np.int64), np.cumsum(lengths)[:-1]])
+                exercise_card = X.arr(np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]))
             starts_card_all = X.arr(starts)
-            exercise_card = X.arr(np.concatenate([np.asarray(e, dtype=np.int64) for e in exs]))
             reverse_depth = torch.arange(self.maxK, dtype=torch.int64, device=X.dev)[None, :]
         if progress is not None: progress(0, total, 'preparing-real-text')
         names = [x for x in trust if not x[0].endswith(":c")]; trust = [(name_id(nm), r, t) for nm, r, t in names if nm.split(":")[0] in SRC]
