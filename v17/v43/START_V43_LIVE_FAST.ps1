@@ -123,7 +123,12 @@ function Pause-MagicWorker([int]$Port){
       Write-Host "Pausing ONLY known MagicPerspective trainer on $Port..." -ForegroundColor Yellow
       Invoke-RestMethod -Method Post -Uri ($base+"/control?do=pause") -TimeoutSec 12|Out-Null
       Invoke-RestMethod -Method Post -Uri ($base+"/control?do=save") -TimeoutSec 12|Out-Null
-      return @{checkpoint=$checkpoint;at=$requested;port=$Port}
+      return @{checkpoint=$checkpoint;at=$requested;port=$Port;alreadySaved=$false}
+    }
+    if([string]$state.status -match "^(eroare|oprit|pau)" -and
+       (Test-Path -LiteralPath $checkpoint -PathType Leaf)){
+      Write-Host "Old MagicPerspective process on $Port is idle, paused or in error; existing original Brain is saved." -ForegroundColor Yellow
+      return @{checkpoint=$checkpoint;port=$Port;alreadySaved=$true}
     }
   }catch{
     Write-Warning "MagicPerspective port $Port pause probe: $($_.Exception.Message)"
@@ -153,8 +158,8 @@ function Stop-VerifiedOldMagicWorker($item){
   if($LASTEXITCODE -ne 0){throw "Unable to stop old MagicPerspective PID $($native[0].ProcessId)"}
 }
 foreach($p in $Paused){
-  $confirmed=$false
-  for($i=0;$i -lt 30;$i++){
+  $confirmed=[bool]$p.alreadySaved
+  for($i=0;$i -lt $(if($confirmed){0}else{30});$i++){
     if(Test-Path -LiteralPath $p.checkpoint -PathType Leaf){
       $saved=Get-Item -LiteralPath $p.checkpoint
       if($saved.Length -gt 0 -and $saved.LastWriteTime -ge $p.at.AddSeconds(-2)){
