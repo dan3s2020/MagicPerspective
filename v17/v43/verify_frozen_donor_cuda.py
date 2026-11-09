@@ -66,6 +66,36 @@ def verify(atlas_path, *, device="cuda:0", batch_size=4096):
         report["reachable"] += exact
         report["unreachable"] += ids.numel() - exact
     torch.cuda.synchronize()
+    # Report EXACT failed target classes, not just the aggregate. A multiple of
+    # 256 failures often means some output rows are zero or tied for every source.
+    failures = []
+    row_norm = torch.linalg.vector_norm(torch.tensor(obj["output_rows"], dtype=torch.float64, device=device),dim=1)
+    report["zero_or_near_zero_output_rows"] = [int(i) for i in torch.where(row_norm < 1e-12)[0].tolist()]
+    best = rows @ rows.T
+    exact_ties = []
+    for i in range(256):
+        if row_norm[i] < 1e-12:
+            continue
+        identical = torch.where(torch.linalg.vector_norm(rows - rows[i], dim=1) < 1e-7)[0].tolist()
+        if len(identical) > 1 and identical[0] == i:
+            exact_ties.append([int(j) for j in identical])
+    report["identical_or_nearly_identical_output_clusters"] = exact_ties
+    report["unreachable_targets"] = []
+    # Repeat only failed classes for precise errors and numerical diagnosis.
+    for goal in range(256):
+        src = torch.arange(256, device=device)
+        dst = torch.full_like(src, goal)
+        delta = rows[dst] - rows[src]
+        coeffs = delta @ inverse.T
+        moved = F.normalize(rows[src] + coeffs @ axes, dim=1)
+        actual = torch.argmax(moved @ rows.T,dim=1)
+        misses = int((actual != goal).sum().item())
+        if misses:
+            report["unreachable_targets"].append({
+                "byte": goal, "unreachable_sources": misses,
+                "zero_row": bool(row_norm[goal]<1e-12),
+                "decoder_at_target": int(torch.argmax(best[goal]).item())
+            })
     report["exact_reachability"] = (report["unreachable"] == 0)
     report["seconds"] = round(time.perf_counter() - started, 4)
     return report
