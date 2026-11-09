@@ -41,6 +41,11 @@ function displayLive(live){
     " / "+fmt(live.totalBytes)+" genuine GGUF-coordinate planning bytes");
   set("v43CurrentBefore",pct(live.beforeAccuracy));
   set("v43CurrentQwen","IN PROGRESS");
+  set("v43ShapeRate",Number.isInteger(live.shapeVerifiedTotal)&&live.shapeVerifiedTotal>0?
+    fmt(live.shapeVerifiedBeforeAction)+" / "+fmt(live.shapeVerifiedTotal)+
+    " actual confirmed pre-action shape · rank "+fmt(live.frozenAxisRank)+
+    "/"+fmt(live.frozenAxisDimensions):
+    "Building exact target-visible path from frozen donor weights");
   set("v43CurrentAfter","—");
   set("v43BeforeCount","Prediction frozen before donor work");
   set("v43QwenCount",fmt(live.plannedBytes)+" / "+fmt(live.totalBytes)+" bytes · "+fmt(live.bytesPerSecond)+" bytes/s");
