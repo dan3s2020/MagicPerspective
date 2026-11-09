@@ -43,5 +43,49 @@ class V43StageTests(unittest.TestCase):
         self.assertEqual(card.unstage_v43("row-1")["removed"],True)
         self.assertEqual(card.unstage_v43("row-1")["removed"],False)
 
+    def test_python_reader_stages_next_text_while_prior_training_command_is_running(self):
+        # Real asynchronous control-flow test, using NumPy as a deterministic
+        # placement backend. The previous training handler intentionally waits
+        # for the future batch to be staged; a serial reader would deadlock.
+        import io
+        import json
+        import threading
+        import time
+        import worlds_gpu
+        ready=threading.Event()
+        card=TextCard("numpy",max_memory=256)
+        original_stage=card.stage_v43
+        def stage_and_signal(token,exs):
+            out=original_stage(token,exs)
+            ready.set()
+            return out
+        card.stage_v43=stage_and_signal
+        class FakeServer:
+            text=card
+            B=type("Backend",(),{"torch":False,"device":"numpy"})()
+            def handle(self,request):
+                if request["cmd"]!="text_learn":raise AssertionError("unexpected command")
+                if not ready.wait(3):
+                    raise AssertionError("No concurrent V43 producer: CUDA starved")
+                return {"priorBatchCompleted":True}
+        protocol=[
+            {"id":1,"cmd":"text_learn","exercises":[[65,66,67]]},
+            {"id":2,"cmd":"text_stage","token":"future-original-row",
+             "exercises":[[81,58,32,66,10],[81,58,32,67,10]]}
+        ]
+        previous_in,previous_out=sys.stdin,sys.stdout
+        try:
+            sys.stdin=io.StringIO("".join(json.dumps(x)+"\n" for x in protocol))
+            output=io.StringIO();sys.stdout=output
+            worlds_gpu.serve_v43_concurrent_prefetch(FakeServer())
+            responses=[json.loads(line) for line in output.getvalue().splitlines()]
+        finally:
+            sys.stdin=previous_in;sys.stdout=previous_out
+        self.assertEqual(len(responses),2)
+        self.assertEqual({r["id"] for r in responses},{1,2})
+        self.assertTrue(any(r.get("concurrentPlacement") for r in responses))
+        self.assertTrue(ready.is_set())
+        self.assertIn("future-original-row",card._v43_staged)
+
 if __name__=="__main__":
     unittest.main()
