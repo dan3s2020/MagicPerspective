@@ -147,7 +147,15 @@ if(!$Node){
     $manifest=Get-Content -LiteralPath $SumFile | Where-Object {$_ -match ([regex]::Escape($ZipName)+"$")} | Select-Object -First 1
     if(!$manifest){throw "Official Node.js SHASUMS has no exact ZIP entry; refused to extract"}
     $expected=($manifest -split "\s+")[0].ToLowerInvariant()
-    $actual=(Get-FileHash -LiteralPath $Archive -Algorithm SHA256).Hash.ToLowerInvariant()
+    $sha=[System.Security.Cryptography.SHA256]::Create()
+    $stream=$null
+    try {
+      $stream=[System.IO.File]::OpenRead($Archive)
+      $actual=([System.BitConverter]::ToString($sha.ComputeHash($stream))).Replace("-","").ToLowerInvariant()
+    } finally {
+      if($null -ne $stream){$stream.Dispose()}
+      $sha.Dispose()
+    }
     if($actual -ne $expected){throw "Node.js official SHA-256 integrity check FAILED"}
     Expand-Archive -LiteralPath $Archive -DestinationPath $Tools -Force
   }
