@@ -328,10 +328,15 @@ def main():
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--fresh", action="store_true")
+    parser.add_argument("--ci-synthetic", action="store_true", help="ONLY for explicitly authorized local CPU integration tests")
     args = parser.parse_args()
     try:
         device = device_from_config(args.device)
-        geometry = FrozenGeometry(Path(args.atlas), device)
+        synthetic = (args.ci_synthetic and device.type == "cpu"
+                     and os.environ.get("V44_ALLOW_CI_SYNTHETIC") == "1")
+        if args.ci_synthetic and not synthetic:
+            raise RuntimeError("Synthetic mode is restricted to explicitly authorized CPU CI tests")
+        geometry = FrozenGeometry(Path(args.atlas), device, allow_synthetic_for_test=synthetic)
         agent = StreamLearner(geometry, device, Path(args.checkpoint), resume=not args.fresh)
         emit("ready", device=str(device), donor=geometry.source, rank=geometry.rank,
              dimensions=geometry.dim, complete_visible_pairs=geometry.reachable,
