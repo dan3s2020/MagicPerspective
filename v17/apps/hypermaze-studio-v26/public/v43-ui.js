@@ -253,7 +253,8 @@ async function refresh(){
         (heartbeatAge/1000).toFixed(1)+"s · "+String(health.state||"unknown")+
         " · CUDA "+String(health.gpuRequest?.phase||"idle")));
    set("v43DatasetProgress",d.v43Percent==null?"—":Number(d.v43Percent).toFixed(4)+"%");
-   set("v43Completed",fmt(d.v43Completed));
+   set("v43Completed",fmt(d.v43Completed)+" total · "+
+     fmt(w.completedThisSession??0)+" in this session");
    set("v43Speed",Number.isFinite(Number(w.completedExercisesPerSecond))?Number(w.completedExercisesPerSecond).toFixed(2):"—");
    set("v43CharSpeed",Number.isFinite(Number(w.completedCharactersPerSecond))?Number(w.completedCharactersPerSecond).toFixed(1):"—");
    const current=w.lastExercise;
