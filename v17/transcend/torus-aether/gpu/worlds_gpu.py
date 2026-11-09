@@ -440,6 +440,16 @@ class Server:
             self.text = TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit); raw = np.frombuffer(base64.b64decode(m["b64"]), dtype=np.uint8).astype(np.int64)
             if len(raw): self.text.append([raw])
             r = {"memory": int(len(self.text.mem))}
+        elif c == "text_stage":
+            # V43: GPU-resident next texts; no training, no alignment update.
+            # This command is legal while the original Brain consolidates CPU
+            # worlds, so the next real batch is already on the device.
+            if self.text is None:
+                from text_gpu import TextCard
+                self.text=TextCard(self.B.device if self.B.torch else "numpy", max_memory=self.text_limit)
+            r=self.text.stage_v43(m["token"],m["exercises"])
+        elif c == "text_unstage":
+            r=self.text.unstage_v43(m.get("token","")) if self.text is not None else {"removed":False,"residentBatches":0}
         elif c == "text_learn":                                 # text exercises lived on the card; only the totals go back
             if self.text is None:
                 from text_gpu import TextCard
@@ -454,7 +464,8 @@ class Server:
                 try:
                     r = self.text.live(m["exercises"], m.get("trust", []), m.get("g", 8.0),
                                        m.get("formW", 1.0), [tuple(v) for v in m.get("variants", [])],
-                                       chunk=chunk, progress=text_progress)
+                                       chunk=chunk, progress=text_progress,
+                                       stage_id=m.get("stageToken"))
                     r["textChunk"] = chunk
                     break
                 except RuntimeError as exc:
