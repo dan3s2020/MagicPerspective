@@ -215,6 +215,10 @@ export class V43FusedOneUniverse {
         cachedOriginalRoutes:shapeCacheHits,uniqueOriginalRoutes:shapeCache.size,
         actions:traversed.actions,plannedRoutes:traversed.predictedRoutes,
         firstPredictionsBeforeMovement:traversed.firstPredictionsBeforeMovement,
+        visibleGoalShapeFraction:traversed.bytes?
+          traversed.firstPredictionsBeforeMovement/traversed.bytes:null,
+        shapeBeforeMovementMeans:'predicted complete donor-movement route to visible target, not blind text generation',
+        waveOptimization:traversed.waveOptimization,
         allMovements:frozen,donorGeometryFrozen:true,physicalDonorActionsOnly:true,
         expectedOutputUsedInTrainingGame:true,
         donorFullForwardExecuted:false},
