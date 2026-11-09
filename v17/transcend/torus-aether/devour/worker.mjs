@@ -469,6 +469,14 @@ const processGpuText = async (exs, meta) => {
       // Strict source order and every original weight update are preserved.
       ++progressed;
       if (progressed % 2048 === 0) {
+        // The ORIGINAL CPU text loop has this exact memory-budget guard,
+        // but the CUDA->legacy-CPU replay omitted it. Without it the native
+        // graph keeps expanding until Windows starts paging / stalls.
+        if(process.memoryUsage().heapUsed/1e9>memGB&&!brain.full){
+          brain.full=true;
+          parentPort.postMessage({type:"note",w:workerData.gw,text:
+            "Original Brain memory budget reached DURING CUDA replay. Existing graph retained; new symbolic graph growth stopped as in original CPU path."});
+        }
         batchNow={phase:"CPU: Brain.live exact original symbolic consolidation",
           done:progressed,total:exs[0]?.length||0};
         setWorkerPhase("CPU: Brain.live exact original symbolic consolidation "+
