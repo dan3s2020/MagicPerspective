@@ -22,6 +22,12 @@ test("V43 same original V42 browser port: UI, real source sidecars, same Start T
     player2:{output:"2",score:{accuracy:1},allMovements:[{from:1,to:2}]}
   };
   fs.writeFileSync(checkpoint+".v43-exercises.jsonl",JSON.stringify(record)+"\n");
+  fs.writeFileSync(checkpoint+".v43-live.json",JSON.stringify({
+    format:"magicperspective/v43-live/v1",at:new Date().toISOString(),active:true,
+    phase:"planning full donor coordinate movements",sourceRow:19,
+    input:"Cât este 1+1?",reference:"2",beforeText:"1",beforeAccuracy:0,
+    outputPrefix:"2",plannedBytes:1,totalBytes:1,bytesPerSecond:100
+  }));
   fs.writeFileSync(checkpoint+".v43-status.json",JSON.stringify({
     format:"magicperspective/v43-one-universe/v1",completed:3,
     history:[{id:3,at:new Date().toISOString(),before:0,player2:1,after:1}],
@@ -63,6 +69,11 @@ test("V43 same original V42 browser port: UI, real source sidecars, same Start T
     assert.equal(status.dataset.v43Percent,25,"original V42 resumed dataset progress");
     assert.equal(status.dataset.v43Completed,3,"V43-only fused count separate");
     assert.equal(status.worker.lastExercise.input,record.input);
+    assert.equal(status.live.active,true);
+    assert.equal(status.live.sourceRow,19);
+    assert.equal(status.live.beforeText,"1");
+    assert.equal(status.live.outputPrefix,"2");
+    assert.ok((await (await fetch(bridge.url+"/v43-ui.js")).text()).includes('v43-correct'));
     const journal=await (await fetch(bridge.url+"/api/v43-exercises?limit=10")).json();
     assert.equal(journal.items.length,1);
     assert.equal(journal.items[0].input,record.input);
