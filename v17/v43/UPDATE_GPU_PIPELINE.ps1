@@ -35,10 +35,17 @@ $List=@(
   "v17/transcend/torus-aether/devour/brain.mjs",
   "v17/transcend/torus-aether/devour/worker.mjs",
   "v17/transcend/torus-aether/devour/devour.mjs",
+  "v17/transcend/torus-aether/devour/v43-reset.mjs",
+  "v17/transcend/torus-aether/devour/v43-controls.mjs",
+  "v17/transcend/torus-aether/devour/v43-text-reservoir.mjs",
+  "v17/transcend/torus-aether/gpu/text_gpu.py",
+  "v17/transcend/torus-aether/gpu/worlds_gpu.py",
   "v17/apps/hypermaze-studio-v26/native-bridge.mjs",
   "v17/apps/hypermaze-studio-v26/public/native-v43.html",
   "v17/apps/hypermaze-studio-v26/public/v43-ui.js",
   "v17/tests/v43-cuda-conveyor.test.mjs",
+  "v17/tests/v43-reservoir-reset.test.mjs",
+  "v17/tests/test_v43_cuda_stage.py",
   "v17/v43/README.md"
 )
 $stage=Join-Path $Destination ("v43-update-stage-"+[Guid]::NewGuid().ToString("N"))
@@ -84,12 +91,23 @@ try{
       "v17/transcend/torus-aether/devour/brain.mjs",
       "v17/transcend/torus-aether/devour/worker.mjs",
       "v17/transcend/torus-aether/devour/devour.mjs",
+      "v17/transcend/torus-aether/devour/v43-reset.mjs",
+      "v17/transcend/torus-aether/devour/v43-controls.mjs",
+      "v17/transcend/torus-aether/devour/v43-text-reservoir.mjs",
       "v17/apps/hypermaze-studio-v26/native-bridge.mjs",
       "v17/apps/hypermaze-studio-v26/public/v43-ui.js"
     )){
       & node --check $relative
       if($LASTEXITCODE -ne 0){throw "V43 source syntax rejected: $relative"}
     }
+    $Py=Join-Path $Root "transcend\torus-aether\gpu\.venv\Scripts\python.exe"
+    if(!(Test-Path -LiteralPath $Py)){throw "Verified D: CUDA Python missing; no Python installed by V43 updater."}
+    & $Py -m py_compile "v17/transcend/torus-aether/gpu/text_gpu.py" "v17/transcend/torus-aether/gpu/worlds_gpu.py"
+    if($LASTEXITCODE -ne 0){throw "V43 original CUDA Python syntax failed"}
+    & $Py "v17/tests/test_v43_cuda_stage.py"
+    if($LASTEXITCODE -ne 0){throw "V43 CUDA-resident real text parity failed"}
+    & node --test "v17/tests/v43-reservoir-reset.test.mjs"
+    if($LASTEXITCODE -ne 0){throw "V43 verified Reset and bounded producer regression failed"}
     & node --test "v17/tests/v43-cuda-conveyor.test.mjs"
     if($LASTEXITCODE -ne 0){throw "V43 original Brain / CUDA two-lane training tests failed"}
     & node --test "v17/tests/v43-native-one-universe.test.mjs"
