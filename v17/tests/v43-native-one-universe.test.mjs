@@ -278,3 +278,32 @@ test("V43 Windows EPERM telemetry rename does NOT kill original Brain training",
     assert.ok(fs.readFileSync(file+".v43-exercises.jsonl","utf8").includes('"sourceRow":11'));
   }finally{fs.renameSync=originalRename;fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+
+test("VISIBLE-GOAL 50,000 byte synthetic donor plan: full shape before action, no answer generation claim",()=>{
+  const brain=new Brain({seed:17,rules:{depth:1,off:["R2","R4"],budEvery:100,
+    empty:true,maxWires:32,fold:false}});
+  brain.disc=Object.assign(new Discoverer(17),{body:brain.body||{}});
+  brain.disc.endIn[KIND.target]=10;
+  brain.disc.enter[KIND.target]=14;
+  brain.disc.pass[KIND.floor]=25;
+  brain.disc.block[KIND.floor]=2;
+  const world=new BrainCharacterWorld({brain,donor:syntheticControlFixture(),maxActionsPerByte:16});
+  const target=Buffer.alloc(50000,66);
+  const started=performance.now();
+  const plan=world._planEntireExercise("an original visible goal",target);
+  const seconds=(performance.now()-started)/1000;
+  const matched=plan.filter(x=>x.expectedFinal===x.wanted).length;
+  const preaction=plan.filter(x=>x.predicted_before_move).length;
+  assert.equal(plan.length,50000);
+  assert.equal(matched,50000);
+  assert.equal(preaction,50000);
+  assert.ok(world.waveFastCalls>49000);
+  console.log("V43_VISIBLE_GOAL_SYNTHETIC_SHAPE_ONLY="+JSON.stringify({
+    actualDonor:"synthetic; NOT a Qwen checkpoint",visibleAnswer:true,
+    targets:plan.length,preaction,matched,
+    shapeOnlyCharsPerSecond:Math.round(plan.length/seconds),
+    originalShapeParityFailures:world.waveParityFailures,
+    noBrainTrainingPerformed:true,noTextPredictionPerformed:true
+  }));
+});
