@@ -156,6 +156,19 @@ function Stop-VerifiedOldMagicWorker($item){
   Write-Host "Stopping ONLY obsolete MagicPerspective PID $OldPid, including its old CUDA child." -ForegroundColor Yellow
   & taskkill.exe /PID $OldPid /T /F | Out-Host
   if($LASTEXITCODE -ne 0){throw "Unable to stop old MagicPerspective PID $($native[0].ProcessId)"}
+  # The obsolete V43 UI bridge is a sibling Node process, not a child of
+  # devour.mjs. Close ONLY the bridge bound to this exact old native port.
+  $bridgePortsPattern="--native-port\s+"+[regex]::Escape([string]$item.port)+"(\s|$)"
+  $bridges=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|Where-Object{
+    $_.Name -match '^node(\.exe)?$' -and
+    $_.CommandLine -match 'native-bridge\.mjs' -and
+    $_.CommandLine -like "*$Root*" -and
+    $_.CommandLine -match $bridgePortsPattern
+  })
+  foreach($bridge in $bridges){
+    Write-Host "Closing ONLY obsolete V43 bridge PID $($bridge.ProcessId), paired with native port $($item.port)" -ForegroundColor Yellow
+    Stop-Process -Id ([int]$bridge.ProcessId) -Force -ErrorAction Stop
+  }
 }
 foreach($p in $Paused){
   $confirmed=[bool]$p.alreadySaved
