@@ -126,6 +126,8 @@ function showLatest(r){
  set("v43CurrentId","#"+fmt(r.id)+(r.sourceRow==null?"":" · source "+fmt(r.sourceRow)));
  set("v43CurrentBefore",pct(r.player1?.before?.score?.accuracy));
  set("v43CurrentQwen",pct(r.player2?.score?.accuracy));
+  set("v43ShapeRate",pct(r.player2?.visibleGoalShapeFraction)+
+    " formă pre-acțiune · "+fmt(r.player2?.waveOptimization?.parityFailures)+" abateri de la shapeGraph");
  set("v43CurrentAfter",pct(r.player1?.after?.score?.accuracy));
  set("v43BeforeCount",counts(r.player1?.before?.score));
  set("v43QwenCount",counts(r.player2?.score)+" · "+fmt(r.player2?.actions)+" movements");
