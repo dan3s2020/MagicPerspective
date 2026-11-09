@@ -11,6 +11,10 @@ on:
       - "v17/v43/**"
       - "v17/apps/hypermaze-studio-v26/**"
       - "v17/transcend/torus-aether/devour/**"
+      - "v17/transcend/torus-aether/gpu/text_gpu.py"
+      - "v17/transcend/torus-aether/gpu/worlds_gpu.py"
+      - "v17/tests/v43-reservoir-reset.test.mjs"
+      - "v17/tests/test_v43_cuda_stage.py"
       - "v17/tests/v43-native-one-universe.test.mjs"
       - "v17/tests/v43-cuda-conveyor.test.mjs"
       - "v17/tests/v43-native-http-ui.test.mjs"
@@ -33,6 +37,9 @@ jobs:
         run: |
           node --check v17/transcend/torus-aether/devour/devour.mjs
           node --check v17/transcend/torus-aether/devour/worker.mjs
+          node --check v17/transcend/torus-aether/devour/v43-reset.mjs
+          node --check v17/transcend/torus-aether/devour/v43-text-reservoir.mjs
+          python -m py_compile v17/transcend/torus-aether/gpu/text_gpu.py v17/transcend/torus-aether/gpu/worlds_gpu.py
           node --check v17/transcend/torus-aether/devour/brain-character-world.mjs
           node --check v17/transcend/torus-aether/devour/v43-weight-coordinate-planner.mjs
           node --check v17/transcend/torus-aether/devour/v43-fused-one-universe.mjs
@@ -44,6 +51,11 @@ jobs:
         run: node --test v17/tests/v43-native-one-universe.test.mjs
       - name: Prove two-lane V43 CUDA update parity and strict ordered commits
         run: node --test v17/tests/v43-cuda-conveyor.test.mjs
+      - name: Verify GPU resident real-text staging parity and strict bounded reset boundaries
+        run: |
+          python -m pip install --quiet numpy
+          python v17/tests/test_v43_cuda_stage.py
+          node --test v17/tests/v43-reservoir-reset.test.mjs
       - name: Same native V42 UI port + original Start Training end-to-end HTTP test
         run: MAGICPERSPECTIVE_V43_UI=1 node --test v17/tests/v43-native-http-ui.test.mjs
       - name: Existing original V42 UI and Brain source regression tests
