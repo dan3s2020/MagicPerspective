@@ -468,7 +468,7 @@ const processGpuText = async (exs, meta) => {
       // while CUDA's batch is being absorbed by the CPU old organs.
       // Strict source order and every original weight update are preserved.
       ++progressed;
-      if (progressed % 2048 === 0) {
+      if (progressed % 256 === 0) {
         // The ORIGINAL CPU text loop has this exact memory-budget guard,
         // but the CUDA->legacy-CPU replay omitted it. Without it the native
         // graph keeps expanding until Windows starts paging / stalls.
