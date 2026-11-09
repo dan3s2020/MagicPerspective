@@ -63,3 +63,16 @@ export async function readV43Exercises(checkpoint,{before=null,limit=20}={}){
     return {items:entries,olderCursor:entries.at(-1)?.id??null};
   }finally{await handle.close();}
 }
+
+export async function readV43Live(checkpoint){
+  if(typeof checkpoint!=="string"||!checkpoint.endsWith(".v8"))return null;
+  try{
+    const filename=checkpoint+".v43-live.json";
+    const info=await fs.stat(filename);
+    if(info.size>8*1024*1024)throw Error("V43 live progress exceeds 8 MiB");
+    const value=JSON.parse(await fs.readFile(filename,"utf8"));
+    if(value?.format!=="magicperspective/v43-live/v1")
+      throw Error("V43 live progress format mismatch");
+    return value;
+  }catch(e){if(e.code==="ENOENT")return null;throw e;}
+}
