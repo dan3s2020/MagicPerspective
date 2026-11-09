@@ -44,12 +44,21 @@ export class BrainCharacterWorld {
     this.maxActionsPerByte=maxActionsPerByte;
     this.neighbors=[];
     this.transitions=[];
+    // Same normalized frozen-donor coordinate readout, precomputed dot
+    // products. Normalization of (src + sign*gain*axis) is a positive common
+    // scalar across candidate output rows, so argmax is exactly preserved.
+    // Work: O((N*N + A*N)*D + N*A*N), not O(N*A*N*D).
+    const rowDots=this.outputRows.map(src=>this.outputRows.map(dst=>dot(src,dst)));
+    const axisDots=this.axes.map(axis=>this.outputRows.map(dst=>dot(axis,dst)));
     for(let from=0;from<this.outputRows.length;from++){
-      const src=this.outputRows[from],edges=[],next=[];
+      const edges=[],next=[];
       for(let k=0;k<this.axes.length;k++)for(const sign of [-1,1]){
-        const candidate=norm(src.map((x,i)=>x+sign*this.gain*this.axes[k][i]));
-        const dst=this._closest(candidate);
-        // Every edge is the ACTUAL physical donor transformation readout.
+        let dst=0,best=-Infinity;
+        for(let j=0;j<this.outputRows.length;j++){
+          const value=rowDots[from][j]+sign*this.gain*axisDots[k][j];
+          if(value>best){best=value;dst=j;}
+        }
+        // Every edge is the SAME donor physical transformation readout.
         if(dst===from)continue;
         const action={axis:k,sign,gain:this.gain};
         edges.push({to:dst,action});
