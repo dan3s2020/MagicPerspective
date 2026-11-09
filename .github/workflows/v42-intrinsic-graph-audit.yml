@@ -1,0 +1,79 @@
+name: Native V42 learned graph intrinsic topology
+on:
+  push:
+    branches: [experiment/V42-FIBONACCI-LANGUAGE-20261109]
+  workflow_dispatch:
+jobs:
+  native-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Analyze actual learned language graph structure and matched shuffled controls
+        run: |
+          node --input-type=module <<'JS' | tee native_intrinsic_graph_console.json
+          import fs from 'node:fs';
+          import {ConstructedPathLearner} from './v17/transcend/torus-aether/worlds/constructed-paths.mjs';
+          const docs=['README.md','CANON.md','V2-LAUNCH.md','v17/README.md'];
+          let rows=[];
+          for(const file of docs){
+           if(!fs.existsSync(file))continue;
+           const content=[...fs.readFileSync(file,'utf8')].filter(c=>c.charCodeAt(0)<128).join('').slice(0,6600);
+           if(content.length<1200)continue;
+           const train=content.slice(0,Math.floor(content.length*.75));
+           for(let i=0;i+25<train.length;i+=84)rows.push(train.slice(i,i+84));
+          }
+          let seed=824637;
+          function rand(){seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return (seed>>>0)/2**32;}
+          function shuffled(row){const chars=[...row];for(let i=chars.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[chars[i],chars[j]]=[chars[j],chars[i]];}return chars.join('');}
+          function summarizeScale(graph){
+            const nodes=new Set();const adj=new Map(),rev=new Map();
+            let arcObs=0,edgeCount=0,selfLoops=0,weightedEntropy=0,weight=0;
+            const sourceObs=[],degree=[];
+            for(const [source,actions] of graph.edges){
+              nodes.add(source);if(!adj.has(source))adj.set(source,new Set());
+              const counts=[],succ=adj.get(source);
+              for(const [action,targets] of actions)for(const [dst,count] of targets){
+                nodes.add(dst);if(!succ.has(dst)){succ.add(dst);edgeCount++;if(source===dst)selfLoops++;}
+                if(!rev.has(dst))rev.set(dst,new Set());rev.get(dst).add(source);
+                counts.push(count);arcObs+=count;
+              }
+              const total=counts.reduce((a,b)=>a+b,0);sourceObs.push(total);degree.push(succ.size);
+              if(total){const ent=-counts.reduce((v,n)=>v+(n/total)*Math.log2(n/total),0);weightedEntropy+=ent*total;weight+=total;}
+            }
+            // Tarjan over the graph that was ACTUALLY learned, not a synthetic graph.
+            let index=0,stack=[],onStack=new Set(),idx=new Map(),low=new Map(),sccSizes=[];
+            function visit(v){
+              idx.set(v,index);low.set(v,index++);stack.push(v);onStack.add(v);
+              for(const w of adj.get(v)||[]){if(!idx.has(w)){visit(w);low.set(v,Math.min(low.get(v),low.get(w)));}else if(onStack.has(w))low.set(v,Math.min(low.get(v),idx.get(w)));}
+              if(low.get(v)===idx.get(v)){let sz=0,w;do{w=stack.pop();onStack.delete(w);sz++;}while(w!==v);sccSizes.push(sz);}
+            }
+            for(const node of nodes)if(!idx.has(node))visit(node);
+            const cyclic=sccSizes.filter(x=>x>1);const cycNodes=cyclic.reduce((a,b)=>a+b,0)+selfLoops;
+            // Identify states from which some observed EOS action is actually reachable.
+            const terminal=new Set();
+            for(const [from,actions] of graph.edges)if(actions.has('256'))terminal.add(from);
+            let reachable=new Set(terminal),queue=[...terminal];for(let q=0;q<queue.length;q++){for(const p of rev.get(queue[q])||[])if(!reachable.has(p)){reachable.add(p);queue.push(p);}}
+            let totalSourceVisits=0,repeatedSources=0;for(const n of sourceObs){totalSourceVisits+=n;if(n>1)repeatedSources++;}
+            return {sources:graph.edges.size,nodes:nodes.size,uniqueEdges:edgeCount,observations:arcObs,averageOutDegree:edgeCount/Math.max(1,graph.edges.size),stateWeightedNextTransitionEntropy:weightedEntropy/Math.max(1,weight),nontrivialSCCs:cyclic.length,largestSCC:Math.max(...sccSizes,0),cyclicStates:cycNodes,cyclicStateFraction:cycNodes/Math.max(1,nodes.size),selfLoops,terminalSourceStates:terminal.size,canReachEOSFromStateFraction:reachable.size/Math.max(1,nodes.size),sourceStatesSeenMoreThanOnce:repeatedSources,originalRecordedEdges:graph.observations,unknownStates:graph.unknownStates};
+          }
+          function run(rows){
+           const m=new ConstructedPathLearner({seed:17,maxTextStates:180000});
+           for(const row of rows)m.trainText('continue technical documentation',row);
+           const scale=m.byScale.map((s,i)=>({scale:s,...summarizeScale(m.scales[i])}));
+           return {rows:m.textRows,chars:m.textChars,scale,totalSourceNodes:scale.reduce((a,x)=>a+x.sources,0),totalObservedEdges:scale.reduce((a,x)=>a+x.observations,0),explicitCrossScaleLinks:0};
+          }
+          const original=run(rows),controls=[];
+          for(let i=0;i<4;i++)controls.push(run(rows.map(shuffled)));
+          const results={nativeSource:'original ConstructedPathLearner/ConstructedTransitionGraph, no modifications',experiment:'graph topology learned from technical text vs four within-row character permutation nulls; same character counts, same row boundaries and EOS',trainingRows:rows.length,original,shuffledControls:controls,interpretation:'Native six context scales are separately stored state-transition graphs and nextCharacters mixes predictions; no observed cross-scale edges are created by trainText; short-scale cycles may be expected consequences of suffix-state merging and not necessarily a hidden geometric law. Cross-scale bridges and longitudinal structure must be learned or represented before they can be navigated.'};
+          fs.writeFileSync('v42_native_intrinsic_graph_audit.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results,null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-v42-intrinsic-graph-results
+          path: |
+            v42_native_intrinsic_graph_audit.json
+          retention-days: 7
