@@ -773,7 +773,17 @@ parentPort.on("message", m => {
     return;
   }
   if (m && m.gpu) { gpuSet = m.gpu.device === "off" ? null : {...(gpuSet || {}), ...m.gpu}; gpuResetPending = true; gpuError = null; return; }
-  if (m === "stop") stop = true; else if (m === "pause") {paused = true;selfcode?.pause();} else if (m === "resume") {paused = false;selfcode?.resume();} else if (m === "save") saveNow = true; });
+  if (m === "stop") stop = true;
+  else if (m === "pause") {
+    paused=true;selfcode?.pause();
+    if(v43World)parentPort.postMessage({type:"v43-control-ack",action:"pause",
+      at:Date.now(),schedulingPaused:true,
+      note:"An in-flight CUDA kernel may finish before the next safe pause boundary"});
+  } else if (m === "resume") {
+    paused=false;selfcode?.resume();
+    if(v43World)parentPort.postMessage({type:"v43-control-ack",action:"resume",
+      at:Date.now(),schedulerEnabled:true});
+  } else if (m === "save") saveNow=true; });
 const hold = async () => { while (paused && !stop) { if (saveNow) doSave(); await new Promise(r => setTimeout(r, 150)); } if (saveNow) doSave(); };
 const doSave = () => { saveNow = false; if (saveFile) try {
   setWorkerPhase("checkpoint: saving original Brain (atomic temp file)");
