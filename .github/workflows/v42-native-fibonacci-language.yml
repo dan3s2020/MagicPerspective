@@ -1,0 +1,75 @@
+name: V42 Fibonacci vs native language context scales
+on:
+  push:
+    branches: [experiment/V42-FIBONACCI-LANGUAGE-20261109]
+  workflow_dispatch:
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run heldout native graph scale ablation without changing organism
+        shell: bash
+        run: |
+          node --input-type=module <<'JS' | tee fibonacci_native_language_results.json
+          import fs from 'node:fs';
+          import {ConstructedPathLearner} from './v17/transcend/torus-aether/worlds/constructed-paths.mjs';
+          const docPaths=['README.md','CANON.md','V2-LAUNCH.md','v17/README.md'];
+          const question='continue technical documentation';
+          const docs=[];
+          for(const file of docPaths){
+            if(!fs.existsSync(file))continue;
+            const text=[...fs.readFileSync(file,'utf8')].filter(c=>c.codePointAt(0)<128).join('').slice(0,6600);
+            if(text.length<1200)continue;
+            const split=Math.floor(text.length*.75);
+            const chunks=(t)=>{let a=[];for(let i=0;i+25<t.length;i+=84)a.push(t.slice(i,i+84));return a;};
+            docs.push({name:file,train:chunks(text.slice(0,split)),test:chunks(text.slice(split)),length:text.length});
+          }
+          const train=docs.flatMap(d=>d.train),test=docs.flatMap(d=>d.test);
+          const regimes=[
+           ['dyadic_original',[1,2,4,8,16,32]],
+           ['fibonacci_original_lengths',[1,2,3,5,8,13]],
+           ['fibonacci_hybrid_equal_max',[1,2,3,5,13,32]],
+           ['golden_spread_equal_max',[1,2,3,6,14,32]],
+           ['linear_equal_max',[1,7,13,19,25,32]],
+           ['intermediate_equal_max',[1,2,4,7,13,32]]
+          ];
+          const results=[];
+          for(const [name,scales] of regimes){
+            const m=new ConstructedPathLearner({seed:17,maxTextStates:180000});
+            m.byScale=scales.slice(); // external test-only configuration; original implementation untouched
+            for(const row of train)m.trainText(question,row);
+            let total=0,correct=0,covered=0,top5=0,free8=0,full=0;
+            const perDoc={};
+            for(const doc of docs){
+              const stat={correct:0,total:0};
+              for(const row of doc.test){
+                let hist='';
+                for(let i=0;i<row.length;i++){
+                  const target=row.charCodeAt(i),opts=m.nextCharacters(question,hist,8);
+                  if(opts.length)covered++;
+                  if(opts[0]?.character===target){correct++;stat.correct++;}
+                  if(opts.slice(0,5).some(x=>x.character===target))top5++;
+                  total++;stat.total++;hist+=row[i];
+                }
+              }
+              perDoc[doc.name]={accuracy:stat.total?stat.correct/stat.total:null,chars:stat.total};
+            }
+            for(const row of test.slice(0,12)){
+              const p=m.imagineText(question,{maxChars:Math.min(35,row.length),beamWidth:3,fanOut:4,record:false}).predicted;
+              if(p.slice(0,8)===row.slice(0,8))free8++;
+              if(p===row.slice(0,35))full++;
+            }
+            results.push({name,scales,rows:m.textRows,chars:m.textChars,exactNextChar:correct/total,correct,total,top5:top5/total,covered:covered/total,free8,freeRunExact35:full,freeRunTrials:Math.min(12,test.length),perDoc});
+          }
+          console.log(JSON.stringify({method:'NATIVE Original ConstructedPathLearner unchanged; only byScale externally set to predetermined arrays',data:{documents:docs.map(d=>({name:d.name,length:d.length,trainRows:d.train.length,testRows:d.test.length})),rowsTraining:train.length,rowsTest:test.length,trainAndTestDisjoint:true,heldoutAnswerNotSuppliedDuringPrediction:true},results},null,2));
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-v42-fibonacci-language-results
+          path: fibonacci_native_language_results.json
+          retention-days: 7
