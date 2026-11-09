@@ -56,6 +56,7 @@ jobs:
         run: |
           foreach($file in @(
             'v17/START_V43.ps1',
+            'v17/v43/START_V43_LIVE_FAST.ps1',
             'v17/v43/BOOTSTRAP_D.ps1',
             'v17/START_V41_SPEED_PROFILE.ps1',
             'v17/START_HYPERMAZE_REAL_CUDA.ps1'
@@ -74,6 +75,8 @@ jobs:
             throw 'Bootstrap contains non-ASCII bytes: Windows PowerShell 5.1 decodes raw UTF-8 without BOM incorrectly'
           }
           & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File v17/tests/v43-parse-windows-ps51.ps1 -File $file
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File v17/tests/v43-parse-windows-ps51.ps1 -File (Resolve-Path "v17/v43/START_V43_LIVE_FAST.ps1").Path
+          if($LASTEXITCODE -ne 0){throw "Windows PowerShell 5.1 parser rejected fast live launcher"}
           if($LASTEXITCODE -ne 0){throw 'Windows PowerShell 5.1 parser rejected V43 installer'}
           Write-Host 'V43_REAL_WINDOWS_POWERSHELL_5_1_PARSE_PASS'
       - name: Verify fresh D installer opens GUI file/folder pickers and never scans drives
