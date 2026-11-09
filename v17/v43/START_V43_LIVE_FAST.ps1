@@ -59,7 +59,7 @@ try{
   }
   # All downloaded files passed syntax before the first installed file changes.
   foreach($rel in $changed){
-    $destFile=Join-Path $Destination ("source\"+$rel.Substring(4).Replace("/","\"))
+    $destFile=Join-Path $Destination ("source\"+$rel.Replace("/","\"))
     $stageFile=Join-Path $Stage $rel
     if(!(Test-Path -LiteralPath $destFile -PathType Leaf)){
       throw "Installed file missing; no silent architecture replacement: $destFile"
