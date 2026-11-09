@@ -165,6 +165,9 @@
           <div><span>OVERLAPPED GPU DISPATCHES</span><strong id="v43GpuOverlap">—</strong><small>Next batch submitted during prior CPU processing</small></div>
           <div><span>REAL NVIDIA GPU LOAD</span><strong id="v43PhysicalGpu">—</strong><small id="v43PhysicalVram">Waiting for nvidia-smi driver reading</small></div>
           <div><span>CUDA DEPENDENCY REPLAYS</span><strong id="v43Rebases">—</strong><small>Stale donor trust detected; ordered rebase, no duplicate Brain commit</small></div>
+          <div><span>READY ORIGINAL TEXT BATCHES</span><strong id="v43ReadyBatches">—</strong><small id="v43ReadyChars">Original Parquet ring buffer; no generated input</small></div>
+          <div><span>TEXT BATCHES ON GPU</span><strong id="v43ResidentBatches">—</strong><small id="v43ResidentChars">Actually copied into bounded CUDA resident tensors</small></div>
+          <div><span>GPU TRANSFER / STAGE STATUS</span><strong id="v43StageTransfers">—</strong><small id="v43StageErrors">Prepared future batches and errors, not fabricated training progress</small></div>
         </div>
         <div class="v43-live-strip" aria-live="polite">
           <span><b>FORMA SOLUȚIEI · ȚINTA VIZIBILĂ</b> <strong id="v43ShapeRate">—</strong></span>
