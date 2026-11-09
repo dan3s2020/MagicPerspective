@@ -30,7 +30,7 @@ test("V44 new UI every bound status and control is live",()=>{
 test("V44 server cannot count partial rows, hide GPU fallback or share V43 checkpoints",()=>{
   const server=read("server.mjs"),engine=read("engine.py"),dataset=read("data-worker.mjs");
   assert.ok(server.includes("state.completed=data.completed_exercises"));
-  assert.ok(server.includes('cmd:"batch"')||server.includes('cmd: "batch"'));
+  assert.ok(server.includes('command("batch"'),"CUDA batch must be sent through the actual Python command protocol");
   assert.ok(server.includes("journal.record(row)"));
   assert.ok(server.includes("full-replays.v44.bin"));
   assert.ok(engine.includes("No CPU training fallback"));
