@@ -140,77 +140,16 @@ if(!$LeaveOldWorkersRunning){
 function Stop-VerifiedOldMagicWorker($item){
   $runtime=Split-Path -Parent (Split-Path -Parent $item.checkpoint)
   $native=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|Where-Object{
-    $_.Name -match '^node(\.exe)?
-$OldV43=Join-Path $Root "runtime-v43-one-universe-live"
-$OldV42=Join-Path $Root "runtime-V43-REAL-CUDA-FAST"
-$OldFused=Join-Path $Root "runtime-v43-fused-v42"
-$Out=Join-Path $Root "runtime-v43-one-universe-fastfix"
-$CandidateFolders=@($Out,$OldV43,$OldV42,$OldFused)
-$ExistingCheckpoint=@($CandidateFolders|ForEach-Object{
-  $f=Join-Path $_ "brains\brain-0-winner.v8"
-  if(Test-Path -LiteralPath $f -PathType Leaf){Get-Item -LiteralPath $f}
-}|Sort-Object LastWriteTime -Descending|Select-Object -First 1)
-if(!$ExistingCheckpoint.Count){
-  throw "No saved original native Brain .v8 found. Refusing to start from zero or erase unsaved work."
-}
-$V42Out=Split-Path -Parent (Split-Path -Parent $ExistingCheckpoint[0].FullName)
-if([string]::Equals($V42Out,$Out,[StringComparison]::OrdinalIgnoreCase)){
-  $Other=@($CandidateFolders|Where-Object{$_ -ne $Out}|ForEach-Object{
-    $f=Join-Path $_ "brains\brain-0-winner.v8"
-    if(Test-Path -LiteralPath $f -PathType Leaf){Get-Item -LiteralPath $f}
-  }|Sort-Object LastWriteTime -Descending|Select-Object -First 1)
-  if($Other.Count){$V42Out=Split-Path -Parent (Split-Path -Parent $Other[0].FullName)}
-  else{$V42Out=$OldV42} # only a distinct non-target path is required for an existing V43 save
-}
-# Never re-use an existing runtime directory without a valid Brain.
-$OwnCheckpoint=Join-Path $Out "brains\brain-0-winner.v8"
-if((Test-Path -LiteralPath $Out -PathType Container) -and
-   !(Test-Path -LiteralPath $OwnCheckpoint -PathType Leaf)){
-  if(@(Get-ChildItem -LiteralPath $Out -Force -ErrorAction SilentlyContinue).Count){
-    $Out=$Out+"-"+(Get-Date -Format "yyyyMMdd-HHmmss")
-  }
-}
-# If a previous native process owns the fixed fastfix checkpoint, clone the
-# latest checkpoint into a new isolated runtime rather than overwrite it.
-$NativeProcesses=@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue|
-  Where-Object{$_.Name -match '^node(\.exe)?$' -and
-    $_.CommandLine -match 'devour[\\/]+devour\.mjs' -and
-    $_.CommandLine -like "*$Out*"})
-if($NativeProcesses.Count){
-  $Out=$Out+"-"+(Get-Date -Format "yyyyMMdd-HHmmss")
-}
-$NativePort=0;$UIPort=0
-foreach($p in @(8973,8985,8991,8997,9013,9019)){
-  $occupied=@(Get-NetTCPConnection -LocalPort $p,($p+1) -State Listen -ErrorAction SilentlyContinue)
-  if(!$occupied.Count){$NativePort=$p;$UIPort=$p+1;break}
-}
-if(!$NativePort){throw "No free isolated pair of ports for V43; no processes were killed"}
-
-Write-Host "ONE LIVE WINDOW: http://127.0.0.1:$UIPort" -ForegroundColor Green
-Write-Host "Real Parquet: $Data; original Brain: $V42Out; resumed V43: $Out" -ForegroundColor Cyan
-Write-Host "Training worlds: TEXT ONLY. GPU: CUDA 0; text batch=8; chunk=4096; VRAM=3GB." -ForegroundColor Cyan
-Write-Host "Unrequested maze, transform and xD worlds: DISABLED; original text and shared learner retained." -ForegroundColor Cyan
-Write-Host "Qwen: real sampled GGUF coordinate movements; NO false claim of native Qwen forward inference or 100% accuracy." -ForegroundColor Yellow
-
-$launchArgs=@{
-  Data=$Data;Worlds="text";Out=$Out;V42Out=$V42Out
-  NativePort=$NativePort;UIPort=$UIPort
-  Gpu="cuda:0";Vram=3.0;GpuTextBatch=8;GpuTextChunk=4096;GpuWorlds=0;XdAtlasEvery=0;AutoStart=$true
-}
-if(Test-Path -LiteralPath $Atlas -PathType Leaf){$launchArgs.DonorAtlas=$Atlas}
-else{$launchArgs.GGUF=$GGUF}
-& (Join-Path $Root "START_V43.ps1") @launchArgs
-if($LASTEXITCODE -ne 0){throw "Native V43 runtime exited with error code $LASTEXITCODE"}
- -and
+    $_.Name -match '^node(\.exe)?$' -and
     $_.CommandLine -match 'devour[\\/]+devour\.mjs' -and
     $_.CommandLine -like "*$runtime*"
   })
   if($native.Count -ne 1){
-    throw "Could not uniquely identify old MagicPerspective GPU worker for $runtime. No other process touched."
+    throw "Could not uniquely identify old MagicPerspective native PID for $runtime. No foreign process touched."
   }
-  Write-Host "Stopping ONLY old MagicPerspective native process PID $($native[0].ProcessId) including its old CUDA child" -ForegroundColor Yellow
+  Write-Host "Stopping ONLY obsolete MagicPerspective PID $($native[0].ProcessId), including its old CUDA child." -ForegroundColor Yellow
   & taskkill.exe /PID $native[0].ProcessId /T /F | Out-Host
-  if($LASTEXITCODE -ne 0){throw "Failed stopping old MagicPerspective native worker $($native[0].ProcessId)"}
+  if($LASTEXITCODE -ne 0){throw "Unable to stop old MagicPerspective PID $($native[0].ProcessId)"}
 }
 foreach($p in $Paused){
   $confirmed=$false
@@ -225,13 +164,13 @@ foreach($p in $Paused){
   }
   if(!$confirmed){
     if(!$StopStalledOldWorkers){
-      throw "Old MagicPerspective worker $($p.port) has NOT saved a fresh checkpoint. Refusing to stop it implicitly. Re-run with -StopStalledOldWorkers to resume its LAST already-saved Brain."
+      throw "Port $($p.port) has not saved a fresh Brain. No data discarded. Use -StopStalledOldWorkers ONLY to resume last saved .v8."
     }
     if(!(Test-Path -LiteralPath $p.checkpoint -PathType Leaf) -or
        (Get-Item -LiteralPath $p.checkpoint).Length -le 0){
-      throw "Old worker $($p.port) has NO verified saved Brain to resume. Cannot safely stop it."
+      throw "Port $($p.port) has NO saved original Brain; cannot safely recover."
     }
-    Write-Warning "Old training is stalled. Progress since last verified .v8 checkpoint may be lost; last checkpoint WILL be preserved."
+    Write-Warning "Stopped stale work may lose UNSAVED observations since last .v8. Saved Brain is preserved."
   }
   Stop-VerifiedOldMagicWorker $p
 }
