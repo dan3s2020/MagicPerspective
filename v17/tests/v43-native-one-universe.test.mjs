@@ -8,7 +8,7 @@ import {fileURLToPath} from "node:url";
 import {Brain} from "../transcend/torus-aether/devour/brain.mjs";
 import {Discoverer,KIND} from "../transcend/torus-aether/worlds/exercise.mjs";
 import {V43FusedOneUniverse} from "../transcend/torus-aether/devour/v43-fused-one-universe.mjs";
-import {readV43State,readV43Exercises} from "../apps/hypermaze-studio-v26/v43-journal.mjs";
+import {readV43State,readV43Exercises,readV43Live} from "../apps/hypermaze-studio-v26/v43-journal.mjs";
 
 const v17=fileURLToPath(new URL("../",import.meta.url));
 const gitSHA=b=>crypto.createHash("sha1").update(Buffer.from("blob "+b.length+"\0")).update(b).digest("hex");
@@ -70,6 +70,12 @@ test("V43 uses the SAME original V42 Brain and freezes a real movement trace",as
       "original V42 .v8 serialization and resume stay intact");
     const report=await readV43State(saved);
     assert.equal(report.completed,2);
+    const live=await readV43Live(saved);
+    assert.equal(live.active,false);
+    assert.equal(live.completeExerciseId,2);
+    assert.equal(live.plannedBytes,Buffer.byteLength(repeated.answer,"utf8"));
+    assert.equal(live.beforeText,second.player1.before.text);
+    assert.equal(live.afterText,second.player1.after.text);
     const page=await readV43Exercises(saved,{limit:1});
     assert.equal(page.items.length,1);
     assert.equal(page.items[0].id,2);
