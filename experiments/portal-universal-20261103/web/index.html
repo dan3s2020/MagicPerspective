@@ -8,6 +8,10 @@
   <label>Auto-save / loturi <input id="autosave" type="number" min="1" max="1000" value="20"></label>
   <label>Explorare <input id="epsilon" type="number" min="0" max="1" step="0.01" value="0.18"></label>
   <label><input id="capture" type="checkbox" checked> Înregistrează evenimente</label>
+  <label><input id="expansionEnabled" type="checkbox"> Expansiune perspectivă — experimental (persistentă după activare)</label>
+  <label>Niveluri maxime <input id="expansionLevels" type="number" min="1" max="8" value="3"></label>
+  <label>Zgomot local <input id="expansionLocalNoise" type="number" min="0" max="0.5" step="0.01" value="0"></label>
+  <label>Zgomot corelat <input id="expansionSharedNoise" type="number" min="0" max="0.5" step="0.01" value="0"></label>
 </section>
 <section class="domains"><strong>Lumi conectate:</strong>
 <label><input class="domain" type="checkbox" value="maze3d" checked> Labirint 3D</label>
@@ -52,6 +56,7 @@
  <div id="perspectiveStats">Așteaptă intervenții comparate.</div>
  <pre id="perspectiveLatest" aria-live="polite">Niciun experiment de controlabilitate înregistrat.</pre>
  </section>
+<section class="panel perspective"><h2>03C / EXPANSIUNE ÎNVĂȚATĂ</h2><p>Canale latente reale, create din activări și feedback. NU sunt dimensiuni spațiale sau efecte cuantice; funcționează numai când sunt activate.</p><pre id="expansionInfo">Modul dezactivat. Motorul original rămâne neschimbat.</pre></section>
 <section class="panel inspector"><h2>04 / INSPECTOR NOD</h2><pre id="nodeInfo">Alege un nod din graf.</pre></section>
 <section class="panel"><h2>05 / CE ESTE PROBAT</h2><p>Acțiuni reale, feedback, gradient și noduri persistente. Reutilizarea ponderilor între lumi nu dovedește transfer pozitiv. Încă nu există 14 milioane de exerciții antrenate sau limbaj conversațional.</p><div id="domainStats"></div><pre id="evaluation">Testul blind compară ponderile antrenate cu un model nou, pe alte lumi.</pre></section></aside></div>
 <div class="statusline" id="statusline">Se conectează la server…</div>

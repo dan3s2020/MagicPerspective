@@ -231,6 +231,15 @@ function highlightFrame(){const f=selectedTrace();if(!f)return;
   $('mismatch').textContent=`${(100*Number(f.error||0)).toFixed(1)}% · target=${f.target}`;
   $('update').textContent=`||ΔW||=${f.update_norm} · ||∇||=${f.gradient_norm}`;
   $('growth').textContent=`+${(f.growth?.born||[]).length} noduri · ${f.growth?.node_count} în total · ${f.growth?.dimension||1}D · ${(f.growth?.edges_born||[]).length} conexiuni noi`;
+  const ex=f.expansion;
+  $('expansionInfo').textContent=ex ?
+    `CANALE ÎNVĂȚATE: ${ex.extra_coordinates} · niveluri active: ${ex.active_levels}\n`+
+    `Consistență scară MSE: ${ex.consistency_mse}\n`+
+    `Eroare proprie prezisă: ${ex.self_predicted_error}\n`+
+    `Zgomot local / corelat: ${ex.local_noise} / ${ex.shared_noise}\n`+
+    `Memorie temporală observată: ${ex.temporal_memory_norm ?? 0}\n`+
+    `Coordonate înregistrate pentru ${ex.nodes?.length||0} noduri reale` :
+    'Nu există canale de expansiune în această înregistrare.';
   $('frameInfo').textContent=`Trace #${f.trace_id||f.event_seq} · ${f.world_hash?.slice(0,12)}… · ${f.device}`;
   const lens=f.perspective;
   if(lens?.features?.length){
@@ -314,7 +323,11 @@ $('play').onclick=()=>{follow=!follow;$('play').textContent=follow?'❚❚':'▶
 document.onkeydown=e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();$('play').click()}};
 async function post(url,obj={}){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
 async function act(cb){try{const out=await cb();lastError='';return out}catch(e){lastError=e.message;$('statusline').textContent='EROARE: '+lastError;return null}}
-$('start').onclick=()=>act(()=>post('/api/start',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),batch_size:+$('batch').value,autosave_every:+$('autosave').value,epsilon:+$('epsilon').value,capture:$('capture').checked}));
+$('start').onclick=()=>act(()=>post('/api/start',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),batch_size:+$('batch').value,autosave_every:+$('autosave').value,epsilon:+$('epsilon').value,capture:$('capture').checked,
+ perspective_expansion:$('expansionEnabled').checked ? {
+   max_levels:+$('expansionLevels').value,
+   local_noise:+$('expansionLocalNoise').value,
+   shared_noise:+$('expansionSharedNoise').value} : undefined}));
 $('stop').onclick=()=>act(()=>post('/api/stop'));
 $('save').onclick=()=>act(()=>post('/api/save'));
 $('evaluate').onclick=()=>act(async()=>{const x=await post('/api/evaluate',{domains:[...document.querySelectorAll('.domain:checked')].map(x=>x.value),count:24});$('evaluation').textContent=JSON.stringify(x,null,2)});
@@ -333,6 +346,9 @@ $('confirmReset').onclick=()=>act(async()=>{
  $('skipped').textContent='0';$('nodeInfo').textContent='Alege un nod din graf.';
  document.querySelector('.domain[value="text"]').checked=false;
  $('evaluation').textContent='Niciun test efectuat după RESET TOT.';
+ $('expansionEnabled').checked=false;delete $('expansionEnabled').dataset.restored;
+ for(const id of ['expansionEnabled','expansionLevels','expansionLocalNoise','expansionSharedNoise'])$(id).disabled=false;
+ $('expansionInfo').textContent='Modul dezactivat. Motorul original rămâne neschimbat.';
  $('perspectiveStats').textContent='0 intervenții pereche · 0 caracteristici';
  $('perspectiveLatest').textContent='Niciun experiment de controlabilitate înregistrat.';
  $('statusline').textContent='RESET COMPLET · Greutăți noi · Graf nou · Replay gol · Corpusul-sursă neatins.';
@@ -341,6 +357,15 @@ $('confirmReset').onclick=()=>act(async()=>{
 async function refreshStatus(){if(statusBusy)return;statusBusy=true;try{
  const r=await fetch('/api/status');if(!r.ok)throw Error('Status '+r.status);
  const s=await r.json();lastStatus=s;
+ const exp=s.perspective_expansion||{};
+ if(exp.max_levels && !$('expansionEnabled').dataset.restored){
+   $('expansionEnabled').checked=true;
+   $('expansionEnabled').dataset.restored='yes';
+   $('expansionLevels').value=exp.max_levels;
+   $('expansionLocalNoise').value=exp.local_noise;
+   $('expansionSharedNoise').value=exp.shared_noise;
+   for(const id of ['expansionEnabled','expansionLevels','expansionLocalNoise','expansionSharedNoise'])$(id).disabled=true;
+ }
  $('unique').textContent=Number(s.unique_worlds_verified_sqlite).toLocaleString('ro-RO');
  $('episodes').textContent=Number(s.episodes).toLocaleString('ro-RO');
  $('steps').textContent=Number(s.steps).toLocaleString('ro-RO');

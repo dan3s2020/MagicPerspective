@@ -105,8 +105,14 @@ class Control:
             if every<1 or every>1000:raise ValueError('autosave_every must be 1..1000')
             eps=float(config.get('epsilon',.18));
             if not 0<=eps<=1:raise ValueError('epsilon must be between 0 and 1')
+            expansion=config.get('perspective_expansion')
+            if expansion is not None:
+                if not isinstance(expansion,dict):raise ValueError('perspective_expansion must be an object')
+                self.engine.enable_expansion(expansion)
             self.config={'domains':domains,'batch_size':size,'autosave_every':every,
-                         'capture':bool(config.get('capture',True)),'epsilon':eps}
+                         'capture':bool(config.get('capture',True)),'epsilon':eps,
+                         'perspective_expansion':(self.engine.model.expansion.configuration()
+                             if self.engine.model.expansion is not None else None)}
             self.error=None;self.state='running';self.stop.clear()
             self.worker=threading.Thread(target=self._work,daemon=True)
             self.worker.start()

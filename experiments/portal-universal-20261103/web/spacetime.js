@@ -10,7 +10,7 @@ const state = {
   knownNodeTotal:0, knownEdgeTotal:0, graphLoading:false,
   lastGraphFetch:0, busy:false, follow:true, timeCenter:0, timeDepth:0,
   logZoom:0, angles:Array(10).fill(0), cameraCenter:[0,0,0,0,0],
-  shell:true, tracks:true, picked:[], level:0, graphIncomplete:false,
+  shell:true, tracks:true, learnedGeometry:false, picked:[], level:0, graphIncomplete:false,
   drag:null, problem:null, skipped:0, lastHit:null, revision:0, layerCache:null,
 };
 const LIMIT_EDGES=65000;
@@ -162,6 +162,9 @@ function draw(){
   let missing=0,drawnMessages=0;
   for(const f of state.rows){
     const grouped=new Map(),t=timeCoord(f.trace_id,state.range);
+    const measured=new Map((f.expansion?.nodes||[]).filter(n=>
+      Array.isArray(n.latent)&&n.latent.length>=4&&n.latent.slice(0,4).every(Number.isFinite))
+      .map(n=>[n.id,n.latent.slice(0,4)]));
     for(const id of (f.active||[])){
       const n=lookup.get(id);
       if(!n){missing++;continue;}
@@ -169,7 +172,14 @@ function draw(){
     }
     const points=new Map();
     for(const n of grouped.values()){
-      const p=position([...n.p4,t],w,h);if(!p)continue;
+      let coords=n.p4;
+      if(state.learnedGeometry){
+        const values=n.members.map(id=>measured.get(id)).filter(Boolean);
+        if(!values.length)continue; // Do not substitute invented geometry
+        coords=Array.from({length:4},(_,axis)=>
+          values.reduce((sum,point)=>sum+point[axis],0)/values.length);
+      }
+      const p=position([...coords,t],w,h);if(!p)continue;
       points.set(n.id,p);
       const original=n.members.length===1?state.byId.get(n.members[0]):null;
       const color=original?colorOf(original):'#8b9ed5';
@@ -228,7 +238,8 @@ function inspect(hit){
     `Predicție: ${f.prediction??'n/a'} · eroare: ${f.error??'n/a'}`,
     `Update parametri: ${f.update_norm??'n/a'}`,
     `Global step: ${f.global_step??'n/a'}`,
-    'Coordonate spațiale: embedding de vizualizare 4D',
+    state.learnedGeometry?'Coordonate: primele 4 canale neuronale ÎNVĂȚATE în acest cadru':
+      'Coordonate spațiale: embedding de vizualizare 4D',
     'Timp: ordinea acțiunilor înregistrate, nu secunde'
   ].join('\n'));
 }
@@ -277,6 +288,7 @@ $('timeFront').onclick=()=>{state.timeCenter+=Math.max(1,Math.round(currentWidth
 $('allTime').onclick=()=>{if(!state.meta)return;state.timeDepth=Number($('timeZoom').max);state.timeCenter=state.meta.last;state.follow=false;text('follow','URMĂREȘTE LIVE: NU');applyTimeControls();refresh();};
 $('shell').onchange=()=>state.shell=$('shell').checked;
 $('tracks').onchange=()=>state.tracks=$('tracks').checked;
+$('learnedGeometry').onchange=()=>state.learnedGeometry=$('learnedGeometry').checked;
 space.addEventListener('pointerdown',e=>{space.setPointerCapture(e.pointerId);state.drag={x:e.clientX,y:e.clientY,shift:e.shiftKey,moved:false};});
 space.addEventListener('pointermove',e=>{
   if(!state.drag)return;

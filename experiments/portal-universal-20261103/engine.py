@@ -18,6 +18,7 @@ from pathlib import Path
 import torch
 from toroid import solid_torus4_position
 from perspective import PerspectiveLearner
+from perspective_expansion import PerspectiveExpansion
 from torch import nn
 import torch.nn.functional as F
 
@@ -367,9 +368,10 @@ class GraphController(nn.Module):
         self.context=nn.Linear(dim,dim)
         self.action=nn.Linear(dim,dim)
         self.value_bias=nn.Parameter(torch.zeros(1))
+        self.expansion=None  # opt-in; disabled model state_dict remains backward-compatible
         nn.init.normal_(self.embedding.weight, std=.06)
 
-    def forward(self, obs_ids, act_ids, adjacency, obs_mask, act_mask, trace=False):
+    def forward(self, obs_ids, act_ids, adjacency, obs_mask, act_mask, trace=False, step=0, history=None):
         # shapes: [B,S], [B,A], [B,S,S], [B,S], [B,A]
         h=self.embedding(obs_ids)
         activations=[];signals=[]
@@ -384,6 +386,9 @@ class GraphController(nn.Module):
             h=torch.tanh(self.self_layer(h)+self.msg_layer(agg))
             if trace:activations.append(h.detach().cpu())
         ctx=(h*obs_mask.unsqueeze(-1)).sum(1)/obs_mask.sum(1,keepdim=True).clamp(min=1)
+        if self.expansion is not None:
+            self.last_macro=ctx.detach() # pre-action observation, no oracle target
+            ctx=ctx+self.expansion(h,obs_mask.unsqueeze(-1),step=step,trace=trace,history=history)
         a=self.embedding(act_ids)
         scores=(self.context(ctx).unsqueeze(1)*self.action(a)).sum(-1)/math.sqrt(h.shape[-1])+self.value_bias
         scores=scores.masked_fill(act_mask==0,-1e5)
@@ -617,10 +622,28 @@ class PortalEngine:
     def _meta_set(self,k,value):
         self.db.execute('INSERT OR REPLACE INTO meta(k,v) VALUES(?,?)',(k,canonical(value)))
 
+    def enable_expansion(self, config=None):
+        """Enable only on an idle engine; keep original optimizer moments intact."""
+        if self.model.expansion is not None:
+            requested=config or {}
+            current=self.model.expansion.configuration()
+            if any(k not in current or current[k]!=v for k,v in requested.items()):
+                raise ValueError('Expansion already active with different configuration')
+            return current
+        requested=dict(config or {})
+        if 'dim' in requested and requested['dim']!=DIM:
+            raise ValueError('Expansion dimension must equal existing GraphController DIM')
+        expansion=PerspectiveExpansion(**requested).to(self.device)
+        self.model.expansion=expansion
+        self.optimizer.add_param_group({'params':list(expansion.parameters())})
+        return expansion.configuration()
+
     def _restore(self):
         p=self.folder/'brain.pt'
         if p.exists():
             ck=torch.load(p,map_location=self.device,weights_only=False)
+            if ck.get('expansion_config'):
+                self.enable_expansion(ck['expansion_config'])
             self.model.load_state_dict(ck['model']);self.optimizer.load_state_dict(ck['optimizer'])
             self.graph=Graph.restore(ck['graph'])
             self.perspective=PerspectiveLearner.restore(ck.get('perspective',{}))
@@ -644,6 +667,7 @@ class PortalEngine:
         episode_mark=self.db.execute('SELECT IFNULL(MAX(id),0) FROM episodes').fetchone()[0]
         trace_mark=self.db.execute('SELECT IFNULL(MAX(id),0) FROM trace').fetchone()[0]
         torch.save({'model':self.model.state_dict(),'optimizer':self.optimizer.state_dict(),
+                    'expansion_config':self.model.expansion.configuration() if self.model.expansion is not None else None,
                     'graph':self.graph.state(),'perspective':self.perspective.state(),
                     'steps':self.steps,'episodes':self.episodes,
                     'episode_watermark':episode_mark,'trace_watermark':trace_mark,
@@ -680,7 +704,15 @@ class PortalEngine:
         if not worlds:return []
         batch,stored,contexts=self._batch(worlds)
         self.model.train()
-        logits,acts,signals=self.model(*batch,trace=record)
+        history=(torch.stack([getattr(w,'expansion_history',
+                                  torch.zeros(DIM,device=self.device)) for w in worlds])
+                 if self.model.expansion is not None else None)
+        logits,acts,signals=self.model(*batch,trace=record,step=self.steps,history=history)
+        if self.model.expansion is not None:
+            for i,w in enumerate(worlds):
+                w.expansion_history=self.model.last_macro[i].detach()
+        expansion_coords=(self.model.expansion.last_coordinates.cpu() if
+            record and self.model.expansion is not None else None)
         with torch.no_grad():
             probabilities=F.softmax(logits,dim=1).cpu().tolist()
         rng=random.Random((self.steps+1)*113)
@@ -750,11 +782,32 @@ class PortalEngine:
                     'round':r+1,'strength':round(float(signals[r][i,a,b]),6)}
                     for r in range(len(signals)) for a in range(contexts[i][3]) for b in range(contexts[i][3])
                     if a!=b and contexts[i][2][a][b]>0][:150]
+            if expansion_coords is not None:
+                config=self.model.expansion.last_diagnostics
+                active_rank=config['learned_extra_dimensions']
+                step_frame['expansion']={
+                    'active_levels':config['active_levels'],
+                    'extra_coordinates':active_rank,
+                    'consistency_mse':config['consistency_mse'],
+                    'self_predicted_error':round(float(config['self_predicted_error'][i]),6),
+                    'local_noise':config['local_noise'],
+                    'shared_noise':config['shared_noise'],
+                    'temporal_memory_norm':(round(float(history[i].norm()),6)
+                                            if history is not None else 0.0),
+                    'nodes':[{'id':ids[j],
+                              'latent': [round(float(v),6) for v in
+                                         expansion_coords[i,j,:active_rank].tolist()]}
+                             for j in range(contexts[i][3])]}
             frame.append(step_frame)
         chosen=logits.gather(1,torch.tensor(picks,dtype=torch.long,device=self.device).unsqueeze(-1)).squeeze(-1)
         targets=torch.tensor(rewards,dtype=torch.float32,device=self.device)
         # Predict the quality of REAL executed choices. The world reports targets only afterwards.
         loss=F.binary_cross_entropy_with_logits(chosen,targets)
+        if self.model.expansion is not None:
+            observed_errors=torch.tensor(errors,dtype=torch.float32,device=self.device)
+            loss=loss+0.10*F.mse_loss(self.model.expansion.last_self_prediction,
+                                     observed_errors)
+            loss=loss+0.02*self.model.expansion.last_consistency
         self.optimizer.zero_grad(set_to_none=True);loss.backward()
         grad_norm=float(torch.nn.utils.clip_grad_norm_(self.model.parameters(),2.0))
         before=self.model.context.weight.detach().clone()
@@ -866,6 +919,8 @@ class PortalEngine:
                 'episodes':self.episodes,'unique_worlds_verified_sqlite':unique,'unique_worlds_created':created,'next_seed':self.seq,
                 'loss':round(self.loss_mean,6),'prediction_error':round(self.error_mean,6),
                 'perspective':self.perspective.summary(limit=12),
+                'perspective_expansion':(self.model.expansion.configuration()
+                    if self.model.expansion is not None else {'enabled':False}),
                 'graph':{'nodes':len(self.graph.nodes),'edges':len(self.graph.edges),
                          'growth_events':self.graph.growth_events,'cross_domain_links':self.graph.cross_domain_links,
                          'dimension_counts':{str(d):sum(n.get('dimension',1)==d for n in self.graph.nodes)
@@ -899,7 +954,7 @@ class PortalEngine:
                 for i in range(count):
                     kind=domains[i%len(domains)]
                     world=build_world(kind,seed+i*7919,self.corpus)
-                    reward=0.;last=None
+                    reward=0.;last=None;temporal=None
                     while not world.done:
                         obs,opts=world.observation()
                         ids,act_ids,adj,n,m,_=graph.context(kind,obs,opts)
@@ -908,7 +963,10 @@ class PortalEngine:
                               torch.tensor([act_ids],dtype=torch.long,device=d),
                               torch.tensor([adj],dtype=torch.float32,device=d),
                               torch.tensor([[int(j<n) for j in range(MAX_OBS)]],device=d),
-                              torch.tensor([[int(j<m) for j in range(MAX_ACTIONS)]],device=d))
+                              torch.tensor([[int(j<m) for j in range(MAX_ACTIONS)]],device=d),
+                              history=temporal)
+                        if model.expansion is not None:
+                            temporal=model.last_macro.detach()
                         selected=int(logits[0,:m].argmax().item())
                         event=world.step(opts[selected]);reward+=event['reward'];last=event
                     solved=world.last_effect in ('goal','correct')
