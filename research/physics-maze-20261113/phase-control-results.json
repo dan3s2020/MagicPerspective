@@ -1,0 +1,603 @@
+{
+  "originalCommit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "status": "PROJECT-LEVEL TRANSFER ONLY; NO NEW PHYSICS LAW",
+  "organismSeeds": [
+    {
+      "seed": 1,
+      "mazeSolved": 157,
+      "correct": 12,
+      "goalAttraction": 0.9936708860759493,
+      "wallConductance": 0.3333333333333333
+    },
+    {
+      "seed": 2,
+      "mazeSolved": 157,
+      "correct": 12,
+      "goalAttraction": 0.9936708860759493,
+      "wallConductance": 0.3333333333333333
+    },
+    {
+      "seed": 3,
+      "mazeSolved": 156,
+      "correct": 12,
+      "goalAttraction": 0.9936305732484076,
+      "wallConductance": 0.3333333333333333
+    },
+    {
+      "seed": 7,
+      "mazeSolved": 157,
+      "correct": 12,
+      "goalAttraction": 0.9936708860759493,
+      "wallConductance": 0.3333333333333333
+    },
+    {
+      "seed": 11,
+      "mazeSolved": 158,
+      "correct": 12,
+      "goalAttraction": 0.9937106918238994,
+      "wallConductance": 0.3333333333333333
+    },
+    {
+      "seed": 17,
+      "mazeSolved": 149,
+      "correct": 12,
+      "goalAttraction": 0.9932885906040269,
+      "wallConductance": 0.14285714285714285
+    },
+    {
+      "seed": 23,
+      "mazeSolved": 157,
+      "correct": 12,
+      "goalAttraction": 0.9936708860759493,
+      "wallConductance": 0.3333333333333333
+    },
+    {
+      "seed": 41,
+      "mazeSolved": 159,
+      "correct": 12,
+      "goalAttraction": 0.99375,
+      "wallConductance": 0.3333333333333333
+    }
+  ],
+  "remappedCodes": [
+    {
+      "worldSeed": 17,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        5,
+        13,
+        12,
+        6,
+        9,
+        3,
+        11,
+        10,
+        7,
+        8,
+        2,
+        1,
+        15,
+        14,
+        4,
+        0
+      ]
+    },
+    {
+      "worldSeed": 19,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        13,
+        7,
+        10,
+        1,
+        11,
+        8,
+        3,
+        15,
+        14,
+        2,
+        12,
+        9,
+        5,
+        6,
+        4,
+        0
+      ]
+    },
+    {
+      "worldSeed": 23,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        7,
+        6,
+        1,
+        13,
+        10,
+        14,
+        4,
+        3,
+        12,
+        9,
+        11,
+        15,
+        8,
+        2,
+        5,
+        0
+      ]
+    },
+    {
+      "worldSeed": 29,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        15,
+        11,
+        2,
+        1,
+        14,
+        13,
+        4,
+        7,
+        12,
+        9,
+        5,
+        10,
+        3,
+        8,
+        6,
+        0
+      ]
+    },
+    {
+      "worldSeed": 31,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        4,
+        8,
+        10,
+        1,
+        9,
+        13,
+        6,
+        5,
+        12,
+        11,
+        3,
+        15,
+        2,
+        14,
+        7,
+        0
+      ]
+    },
+    {
+      "worldSeed": 37,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        6,
+        13,
+        14,
+        15,
+        10,
+        7,
+        2,
+        9,
+        12,
+        1,
+        4,
+        3,
+        11,
+        5,
+        8,
+        0
+      ]
+    },
+    {
+      "worldSeed": 41,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        1,
+        10,
+        12,
+        13,
+        11,
+        2,
+        5,
+        4,
+        7,
+        15,
+        3,
+        6,
+        8,
+        14,
+        9,
+        0
+      ]
+    },
+    {
+      "worldSeed": 43,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        12,
+        13,
+        3,
+        15,
+        2,
+        1,
+        8,
+        6,
+        4,
+        9,
+        11,
+        5,
+        14,
+        7,
+        10,
+        0
+      ]
+    },
+    {
+      "worldSeed": 47,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        9,
+        4,
+        10,
+        6,
+        13,
+        12,
+        3,
+        5,
+        8,
+        2,
+        1,
+        7,
+        15,
+        14,
+        11,
+        0
+      ]
+    },
+    {
+      "worldSeed": 53,
+      "observedDirectedEdges": 32,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "rawCodes": [
+        5,
+        11,
+        7,
+        3,
+        4,
+        2,
+        9,
+        15,
+        6,
+        13,
+        1,
+        10,
+        14,
+        8,
+        12,
+        0
+      ]
+    }
+  ],
+  "nonuniform": [
+    {
+      "seed": 0,
+      "correct": 8,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.784574970195182,
+      "phaseAtIndex12": 5.166536632755133
+    },
+    {
+      "seed": 1,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.517359363572636,
+      "phaseAtIndex12": 3.7268668897778117
+    },
+    {
+      "seed": 2,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.6825468420369363,
+      "phaseAtIndex12": 5.184816791175934
+    },
+    {
+      "seed": 3,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.2361940437972163,
+      "phaseAtIndex12": 5.309733576135905
+    },
+    {
+      "seed": 4,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.3299565258324333,
+      "phaseAtIndex12": 3.5365200182974887
+    },
+    {
+      "seed": 5,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.751984379408316,
+      "phaseAtIndex12": 5.190257775112436
+    },
+    {
+      "seed": 6,
+      "correct": 11,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 3.0061852488739236,
+      "phaseAtIndex12": 3.909540903838824
+    },
+    {
+      "seed": 7,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.3195249157727744,
+      "phaseAtIndex12": 4.823295669570208
+    },
+    {
+      "seed": 8,
+      "correct": 8,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.6326488688664327,
+      "phaseAtIndex12": 3.7053223138654037
+    },
+    {
+      "seed": 9,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.9294434539490575,
+      "phaseAtIndex12": 4.630462164805758
+    },
+    {
+      "seed": 10,
+      "correct": 11,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.9459900727623607,
+      "phaseAtIndex12": 5.439885477816862
+    },
+    {
+      "seed": 11,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.339984380436349,
+      "phaseAtIndex12": 4.730670603373963
+    },
+    {
+      "seed": 12,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.5774156071596055,
+      "phaseAtIndex12": 4.5738689391152985
+    },
+    {
+      "seed": 13,
+      "correct": 7,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.7570736298083633,
+      "phaseAtIndex12": 4.396821273205954
+    },
+    {
+      "seed": 14,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.5684650726823017,
+      "phaseAtIndex12": 3.842653247610803
+    },
+    {
+      "seed": 15,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.789597460333537,
+      "phaseAtIndex12": 5.659376694814276
+    },
+    {
+      "seed": 16,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.236210503592598,
+      "phaseAtIndex12": 3.898585330918059
+    },
+    {
+      "seed": 17,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.549215171012783,
+      "phaseAtIndex12": 4.4370967939739465
+    },
+    {
+      "seed": 18,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.249501170177112,
+      "phaseAtIndex12": 4.547912478225543
+    },
+    {
+      "seed": 19,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.0811790573116213,
+      "phaseAtIndex12": 5.530162700822157
+    },
+    {
+      "seed": 20,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.0814537975224057,
+      "phaseAtIndex12": 4.156445323338653
+    },
+    {
+      "seed": 21,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.8001339362130415,
+      "phaseAtIndex12": 4.661929696223281
+    },
+    {
+      "seed": 22,
+      "correct": 8,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.2738950146924037,
+      "phaseAtIndex12": 5.80097051798696
+    },
+    {
+      "seed": 23,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.462370116244995,
+      "phaseAtIndex12": 4.4613572131842245
+    },
+    {
+      "seed": 24,
+      "correct": 11,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.4734007291711126,
+      "phaseAtIndex12": 4.574123625498604
+    },
+    {
+      "seed": 25,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.1856593081623363,
+      "phaseAtIndex12": 4.013084741694493
+    },
+    {
+      "seed": 26,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.268240128863851,
+      "phaseAtIndex12": 5.359030937790106
+    },
+    {
+      "seed": 27,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.6719699547420106,
+      "phaseAtIndex12": 4.103213075942869
+    },
+    {
+      "seed": 28,
+      "correct": 11,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.5068372752762043,
+      "phaseAtIndex12": 5.486730761490543
+    },
+    {
+      "seed": 29,
+      "correct": 10,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.0858435565031221,
+      "phaseAtIndex12": 4.688069366292858
+    },
+    {
+      "seed": 30,
+      "correct": 8,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.3765602842731455,
+      "phaseAtIndex12": 3.6121836981432898
+    },
+    {
+      "seed": 31,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.4577961154386214,
+      "phaseAtIndex12": 3.6842317588070985
+    },
+    {
+      "seed": 32,
+      "correct": 8,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.0562614385544977,
+      "phaseAtIndex12": 5.174644064916335
+    },
+    {
+      "seed": 33,
+      "correct": 8,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.2523012691727975,
+      "phaseAtIndex12": 3.6596359232539553
+    },
+    {
+      "seed": 34,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 1.2067141528176502,
+      "phaseAtIndex12": 5.086947904467209
+    },
+    {
+      "seed": 35,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.711545876825679,
+      "phaseAtIndex12": 4.560071730475755
+    },
+    {
+      "seed": 36,
+      "correct": 11,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.2077457067601287,
+      "phaseAtIndex12": 4.392034473891653
+    },
+    {
+      "seed": 37,
+      "correct": 12,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.9925918765240906,
+      "phaseAtIndex12": 5.471424157024968
+    },
+    {
+      "seed": 38,
+      "correct": 6,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.231534490506689,
+      "phaseAtIndex12": 5.703601537496389
+    },
+    {
+      "seed": 39,
+      "correct": 9,
+      "unseenDetectorTests": 12,
+      "phaseAtIndex4": 2.44703927303979,
+      "phaseAtIndex12": 5.1921690803499585
+    }
+  ],
+  "summary": {
+    "organismSeedsAllPerfect": true,
+    "remappedScenarios": 10,
+    "totalRemappedCorrect": 120,
+    "totalRemappedHeldout": 120,
+    "nonuniformMeanCorrect": 9.775,
+    "nonuniformMin": 6,
+    "nonuniformMax": 12,
+    "nonuniformPerfect": 7,
+    "nonuniformWorlds": 40
+  },
+  "limitations": [
+    "The intervention schedule is supplied; autonomous phase-action exploration not tested.",
+    "Raw symbol identity is observable in the physics simulator; circular topology is RECORDED from 32 transitions, not inferred from bare text.",
+    "Both calibration detector nodes are learned from known extreme phases; all heldout evaluations concern majority detector, not Born probability.",
+    "Nonuniform angle results show a missing metric, not evidence of hidden new physical dynamics."
+  ]
+}
