@@ -1,0 +1,197 @@
+{
+  "date": "2026-11-13",
+  "nativeV17Source": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "originalMazeSolved": 149,
+  "trainingActions": 420,
+  "candidates": 243,
+  "model": {
+    "id": 121,
+    "k": {
+      "a": 1,
+      "b": 1,
+      "c": 1,
+      "d": 1,
+      "e": -1
+    },
+    "coeff": 0.9973589332000569,
+    "error": 0.0012888269375088413,
+    "nativeRoute": {
+      "actions": [
+        "a:1",
+        "b:1",
+        "c:1",
+        "d:1",
+        "e:1"
+      ],
+      "steps": 5,
+      "reached": true
+    }
+  },
+  "test": {
+    "weakQuantum": {
+      "n": 320,
+      "phaseMAE": 0.000754668037158639,
+      "detectorProbabilityMAE": 0.004744847659114738,
+      "phaseBlindDetectorMAE": 0.08846114571741039,
+      "meanTruePhaseMagnitude": 0.2857436385838059,
+      "preview": [
+        {
+          "predictedPhase": 0.0730244743690259,
+          "truePhase": 0.07321784759547362,
+          "predictedDetector": 0.000314639862901811,
+          "actualDetector": 0.00007750601098055476
+        },
+        {
+          "predictedPhase": 0.3647522416074584,
+          "truePhase": 0.36571812761243294,
+          "predictedDetector": 0.12244003710303986,
+          "actualDetector": 0.12299188934699612
+        },
+        {
+          "predictedPhase": 0.2297776301385344,
+          "truePhase": 0.23038609520575085,
+          "predictedDetector": 0.9933396140992158,
+          "actualDetector": 0.9946951111998745
+        },
+        {
+          "predictedPhase": 0.4200661122068896,
+          "truePhase": 0.42117847268795655,
+          "predictedDetector": 0.27506537208007065,
+          "actualDetector": 0.2802885999700341
+        }
+      ]
+    },
+    "weakSchwarzschild": {
+      "n": 320,
+      "phaseMAE": 0.00042980957027122235,
+      "detectorProbabilityMAE": 0.005192610971791053,
+      "phaseBlindDetectorMAE": 0.07928445291844062,
+      "meanTruePhaseMagnitude": 0.24414022192290435,
+      "preview": [
+        {
+          "predictedPhase": 0.1112574571203385,
+          "truePhase": 0.11143698998132556,
+          "predictedDetector": 0.10530839171403672,
+          "actualDetector": 0.10214280592817748
+        },
+        {
+          "predictedPhase": 0.31918075099690046,
+          "truePhase": 0.3196928287787924,
+          "predictedDetector": 0.7096346412220939,
+          "actualDetector": 0.707265872990213
+        },
+        {
+          "predictedPhase": 0.09459811201553758,
+          "truePhase": 0.09480511130890218,
+          "predictedDetector": 0.10842606384332892,
+          "actualDetector": 0.10013586380387168
+        },
+        {
+          "predictedPhase": 0.14138689066821797,
+          "truePhase": 0.14172781864627398,
+          "predictedDetector": 0.8970994297410069,
+          "actualDetector": 0.9071722054214533
+        }
+      ]
+    },
+    "strongSchwarzschild": {
+      "n": 320,
+      "phaseMAE": 0.05170434048252568,
+      "detectorProbabilityMAE": 0.017474099911677494,
+      "phaseBlindDetectorMAE": 0.09374407590992904,
+      "meanTruePhaseMagnitude": 0.2987410907115814,
+      "preview": [
+        {
+          "predictedPhase": 0.03705705569042784,
+          "truePhase": 0.042145105308574175,
+          "predictedDetector": 0.31837497400526826,
+          "actualDetector": 0.3277503814244189
+        },
+        {
+          "predictedPhase": 0.3166994741969597,
+          "truePhase": 0.42489547182050474,
+          "predictedDetector": 0.257517704286912,
+          "actualDetector": 0.23089336417940476
+        },
+        {
+          "predictedPhase": 0.11250985356426384,
+          "truePhase": 0.12905032421383303,
+          "predictedDetector": 0.8116236567397491,
+          "actualDetector": 0.8060696571037188
+        },
+        {
+          "predictedPhase": 0.35266795296010145,
+          "truePhase": 0.4524694334160325,
+          "predictedDetector": 0.7613706870521848,
+          "actualDetector": 0.7992469785746963
+        }
+      ]
+    }
+  },
+  "control": {
+    "shuffledModel": {
+      "id": 121,
+      "k": {
+        "a": 1,
+        "b": 1,
+        "c": 1,
+        "d": 1,
+        "e": -1
+      },
+      "coeff": 0.6534080445442446,
+      "error": 0.016124176395034873,
+      "nativeRoute": {
+        "actions": [
+          "a:1",
+          "b:1",
+          "c:1",
+          "d:1",
+          "e:1"
+        ],
+        "steps": 5,
+        "reached": true
+      }
+    },
+    "shuffled": {
+      "n": 320,
+      "phaseMAE": 0.0990364464558039,
+      "detectorProbabilityMAE": 0.03053286912717218,
+      "phaseBlindDetectorMAE": 0.08846114571741039,
+      "meanTruePhaseMagnitude": 0.2857436385838059,
+      "preview": [
+        {
+          "predictedPhase": 0.04784113062309693,
+          "truePhase": 0.07321784759547362,
+          "predictedDetector": 0.000919668864620693,
+          "actualDetector": 0.00007750601098055476
+        },
+        {
+          "predictedPhase": 0.23896316661762232,
+          "truePhase": 0.36571812761243294,
+          "predictedDetector": 0.08429897560736815,
+          "actualDetector": 0.12299188934699612
+        },
+        {
+          "predictedPhase": 0.15053612795857382,
+          "truePhase": 0.23038609520575085,
+          "predictedDetector": 0.9982302090170152,
+          "actualDetector": 0.9946951111998745
+        },
+        {
+          "predictedPhase": 0.27520140224316925,
+          "truePhase": 0.42117847268795655,
+          "predictedDetector": 0.212958550418895,
+          "actualDetector": 0.2802885999700341
+        }
+      ]
+    }
+  },
+  "knownPhysicsOracle": "weak gravitational phase m*g*h*t/hbar; separate Schwarzschild static-clock lapse difference",
+  "verdict": "Same native organism's added physical causal hypothesis body recovers known weak-field gravity-induced quantum phase law from detector experiences. Predictions degrade at stronger spacetime curvature; no quantum gravity or new law discovered.",
+  "limitations": [
+    "The monomial grammar, two quadrature readout and phase inverse are supplied research structures.",
+    "The simulated weak-field training law is known and exactly matches a monomial candidate.",
+    "Schwarzschild redshift is a classical GR background, not dynamical quantum spacetime.",
+    "No real atom interferometer or laboratory measurement involved."
+  ]
+}
