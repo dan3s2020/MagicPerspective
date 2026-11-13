@@ -1,0 +1,16 @@
+name: Verify preissued 24h future forecast data provenance
+on:
+  push:
+    paths:
+      - 'experiments/atmospheric-native-20261113/probe-24h-issued-forecast.mjs'
+      - '.github/workflows/probe-issued-forecast.yml'
+  workflow_dispatch:
+jobs:
+  independent-forecast-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node experiments/atmospheric-native-20261113/probe-24h-issued-forecast.mjs
