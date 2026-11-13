@@ -103,12 +103,23 @@ function runObservedMaze(t,start,goal){
    route:plan?.path?.map(s=>({from:s.from,to:s.to,action:s.action}))||[],
    native:'Discoverer.shapeGraph',firstPredictionBeforeAction:plan?.firstPredictionBeforeAction===true};
 }
-const targets=[{name:'east',goal:3},{name:'south',goal:12},{name:'southeast',goal:15}];
+const targets=[{name:'east',goal:3},{name:'north',goal:12},{name:'northeast',goal:15}];
 const episodesData=[];
+let livedWeatherSymbols=0;
 for(let t=0;t<hours.length;t+=3){
+ if(t<48){
+   // Actual original Brain.live absorbs observed atmospheric states in
+   // chronological order during the first half only. No substitute model.
+   for(let i=0;i<cells.length;i++){
+     const wind=grid[i].hourly.wind_direction_100m[t];
+     const speed=grid[i].hourly.wind_speed_100m[t];
+     const sequence=[120+i,40+(Math.floor((((wind%360)+360)%360+22.5)/45)%8),70+Math.min(7,Math.floor(speed/3))];
+     for(const token of sequence){brain.live(token);livedWeatherSymbols++}
+   }
+ }
  for(const target of targets){
    const r=runObservedMaze(t,0,target.goal);
-   episodesData.push({region:target.name,stage:t<48?'seen-period':'heldout-period',...r});
+   episodesData.push({region:target.name,stage:t<48?'learning-period':'unseen-period',...r});
  }
 }
 function summary(data){
@@ -131,9 +142,9 @@ const result={
  sourceAndTargetsVisible:true,
  futureWeatherPredicted:false,
  physicalScope:'instantaneous static 2D alignment edges, NOT 3D trajectory, hazard plume, contamination or safety assessment',
- nativePriorLearning:learned,
+ nativePriorLearning:learned,weatherSymbolsAbsorbedViaOriginalBrainLive:livedWeatherSymbols,
  all:summary(episodesData),
- heldout:summary(episodesData.filter(x=>x.stage==='heldout-period')),
+ heldout:summary(episodesData.filter(x=>x.stage==='unseen-period')),
  perRegion:Object.fromEntries(targets.map(s=>[s.name,summary(episodesData.filter(x=>x.region===s.name))])),
  data:episodesData
 };
