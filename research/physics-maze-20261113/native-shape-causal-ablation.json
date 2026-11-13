@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-13",
+  "originalCommit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "nativeBodyTest": {
+    "originalMAE": 0.026393238125308915,
+    "withFixedPath": 0.026393238125308915,
+    "identical": true
+  },
+  "moyal": {
+    "originalQuartic": 0.9999625132899025,
+    "withoutShapeQuartic": 0.9999625132899025,
+    "originalSextic": 0.9997149419978782,
+    "withoutShapeSextic": 0.9997149419978782,
+    "identical": true
+  },
+  "gravity": {
+    "originalMAE": 0.004744847659114738,
+    "withoutShapeMAE": 0.004744847659114738,
+    "identical": true
+  },
+  "verdict": "Native original shape navigation is NOT causally necessary for the reported numerical accuracy in these experiment implementations. The added physical-body and hypothesis-fit methods account for it. Original native organism still genuinely learned earlier maze physics. Do not call these an original-organism-discovered physical law."
+}
