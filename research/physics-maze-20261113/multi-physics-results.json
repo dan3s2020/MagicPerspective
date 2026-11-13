@@ -1,0 +1,340 @@
+{
+  "date": "2026-11-13",
+  "nativeV17Commit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "originalNativeMazeEpisodes": 160,
+  "mazeSolved": 149,
+  "originalShapeGraphOwnsAllActions": true,
+  "multiplePhysicalWorldsInSameOrganism": true,
+  "testedDomainCount": 5,
+  "assumedFamily": "globally linear 2D state actions",
+  "results": [
+    {
+      "world": "oscillator",
+      "physicalExperiences": 2,
+      "signature": {
+        "determinant": 1,
+        "trace": 1.9046671397714268,
+        "discriminant": -0.3722430866749322,
+        "geometricClass": "elliptic",
+        "observedBodyColumns": [
+          [
+            0.9523335698857134,
+            -0.8236583183972978
+          ],
+          [
+            0.11298468016423832,
+            0.9523335698857134
+          ]
+        ]
+      },
+      "heldout": {
+        "predictions": 1536,
+        "meanVectorError": 1.389667566256527e-15,
+        "staticMeanVectorError": 4.28448747959594,
+        "maxVectorError": 7.444291678311382e-15,
+        "preview": [
+          {
+            "step": 1,
+            "actual": [
+              -1.0790535545739635,
+              -5.173620974492657
+            ],
+            "predicted": [
+              -1.0790535545739641,
+              -5.173620974492657
+            ],
+            "error": 6.661338147750939e-16
+          },
+          {
+            "step": 2,
+            "actual": [
+              -1.6121588348193387,
+              -4.038241495653177
+            ],
+            "predicted": [
+              -1.6121588348193396,
+              -4.038241495653178
+            ],
+            "error": 1.2560739669470201e-15
+          },
+          {
+            "step": 3,
+            "actual": [
+              -1.9915724021986227,
+              -2.51788490473937
+            ],
+            "predicted": [
+              -1.9915724021986239,
+              -2.5178849047393697
+            ],
+            "error": 1.1957467920563635e-15
+          }
+        ]
+      }
+    },
+    {
+      "world": "quantum_interferometer",
+      "physicalExperiences": 2,
+      "signature": {
+        "determinant": 0.9999999999999997,
+        "trace": 1.9046671397714263,
+        "discriminant": -0.37224308667493267,
+        "geometricClass": "elliptic",
+        "observedBodyColumns": [
+          [
+            0.9523335698857134,
+            0.305058636443444
+          ],
+          [
+            -0.30505863644344344,
+            0.9523335698857129
+          ]
+        ]
+      },
+      "heldout": {
+        "predictions": 1536,
+        "meanVectorError": 1.6149964603911875e-15,
+        "staticMeanVectorError": 1.4590284916170846,
+        "maxVectorError": 4.535723058779543e-15,
+        "preview": [
+          {
+            "step": 1,
+            "actual": [
+              -0.3754322523781226,
+              0.9268498389028772
+            ],
+            "predicted": [
+              -0.3754322523781226,
+              0.9268498389028771
+            ],
+            "error": 1.1102230246251565e-16
+          },
+          {
+            "step": 2,
+            "actual": [
+              -0.6402802852010286,
+              0.7681413648430143
+            ],
+            "predicted": [
+              -0.6402802852010285,
+              0.768141364843014
+            ],
+            "error": 3.510833468576701e-16
+          },
+          {
+            "step": 3,
+            "actual": [
+              -0.8440885670877539,
+              0.5362037774127874
+            ],
+            "predicted": [
+              -0.8440885670877538,
+              0.5362037774127864
+            ],
+            "error": 1.0053497077208614e-15
+          }
+        ]
+      }
+    },
+    {
+      "world": "special_relativity",
+      "physicalExperiences": 2,
+      "signature": {
+        "determinant": 0.9999999999999997,
+        "trace": 2.0733439450701,
+        "discriminant": 0.2987551145588463,
+        "geometricClass": "hyperbolic",
+        "observedBodyColumns": [
+          [
+            1.0366719725350502,
+            -0.273292478198197
+          ],
+          [
+            -0.27329247819819713,
+            1.03667197253505
+          ]
+        ]
+      },
+      "heldout": {
+        "predictions": 1536,
+        "meanVectorError": 1.86807068506445e-14,
+        "staticMeanVectorError": 16.86866452409341,
+        "maxVectorError": 2.612633851249802e-13,
+        "preview": [
+          {
+            "step": 1,
+            "actual": [
+              2.3382966828176315,
+              -0.8224126326203731
+            ],
+            "predicted": [
+              2.3382966828176315,
+              -0.8224126326203731
+            ],
+            "error": 0
+          },
+          {
+            "step": 2,
+            "actual": [
+              2.6488058210190437,
+              -1.4916110213061597
+            ],
+            "predicted": [
+              2.6488058210190437,
+              -1.4916110213061597
+            ],
+            "error": 0
+          },
+          {
+            "step": 3,
+            "actual": [
+              3.153588827858639,
+              -2.270210046804582
+            ],
+            "predicted": [
+              3.1535888278586386,
+              -2.270210046804582
+            ],
+            "error": 4.440892098500626e-16
+          }
+        ]
+      }
+    },
+    {
+      "world": "free_newtonian",
+      "physicalExperiences": 2,
+      "signature": {
+        "determinant": 1,
+        "trace": 2,
+        "discriminant": 0,
+        "geometricClass": "parabolic",
+        "observedBodyColumns": [
+          [
+            1,
+            0
+          ],
+          [
+            0.22999999999999998,
+            1
+          ]
+        ]
+      },
+      "heldout": {
+        "predictions": 1536,
+        "meanVectorError": 6.430507346496156e-16,
+        "staticMeanVectorError": 1.5534541310468202,
+        "maxVectorError": 4.636427468134552e-15,
+        "preview": [
+          {
+            "step": 1,
+            "actual": [
+              -1.10044812601991,
+              -1.42276709433645
+            ],
+            "predicted": [
+              -1.10044812601991,
+              -1.42276709433645
+            ],
+            "error": 0
+          },
+          {
+            "step": 2,
+            "actual": [
+              -1.4276845577172934,
+              -1.42276709433645
+            ],
+            "predicted": [
+              -1.427684557717293,
+              -1.4227670943364503
+            ],
+            "error": 4.965068306494546e-16
+          },
+          {
+            "step": 3,
+            "actual": [
+              -1.754920989414677,
+              -1.42276709433645
+            ],
+            "predicted": [
+              -1.7549209894146762,
+              -1.4227670943364505
+            ],
+            "error": 8.005932084973443e-16
+          }
+        ]
+      }
+    },
+    {
+      "world": "nonlinear_quartic",
+      "physicalExperiences": 2,
+      "signature": {
+        "determinant": 1.1469755987578654,
+        "trace": 2.084598878444766,
+        "discriminant": -0.24234991101828562,
+        "geometricClass": "elliptic",
+        "observedBodyColumns": [
+          [
+            0.9687381462245683,
+            -0.2693283597977277
+          ],
+          [
+            0.24504935771208203,
+            1.1158607322201977
+          ]
+        ]
+      },
+      "heldout": {
+        "predictions": 1536,
+        "meanVectorError": 2.028047529330362,
+        "staticMeanVectorError": 2.5469163771819896,
+        "maxVectorError": 10.194960305586859,
+        "preview": [
+          {
+            "step": 1,
+            "actual": [
+              -0.4603219572123158,
+              1.947207342099475
+            ],
+            "predicted": [
+              -0.43316711603158353,
+              2.1851833363992617
+            ],
+            "error": 0.2395202690014414
+          },
+          {
+            "step": 2,
+            "actual": [
+              -0.0036564771858352456,
+              2.0042378553124376
+            ],
+            "predicted": [
+              0.11585226407790561,
+              2.5550244666689528
+            ],
+            "error": 0.5636029014191078
+          },
+          {
+            "step": 3,
+            "actual": [
+              0.45321366852086153,
+              1.9490826173290314
+            ],
+            "predicted": [
+              0.7383376120346306,
+              2.8198491719547825
+            ],
+            "error": 0.9162587275544195
+          }
+        ]
+      }
+    }
+  ],
+  "verdict": "Known 2D transformation geometry can be induced from 2 physical action consequences and correctly forecasts unseen dynamics of selected linear worlds; fails for nonlinear quartic oscillator. No new physical law or general relativity unification.",
+  "caveats": [
+    "World context ID supplies a sensor environment identifier; not an autonomous discovered context.",
+    "Two-dimensional linear combination is a preselected existing mathematical family.",
+    "Deterministic simulator; experimental measurement uncertainty omitted in this test.",
+    "Special relativity is not general relativity or quantum gravity.",
+    "Trace discriminant classification is standard mathematics, not a discovered law."
+  ]
+}
