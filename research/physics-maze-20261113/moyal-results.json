@@ -1,0 +1,193 @@
+{
+  "date": "2026-11-13",
+  "originalV17Commit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "nativeMazeWins": 149,
+  "candidateCount": 450,
+  "cases": [
+    {
+      "type": "quartic",
+      "training": 300,
+      "model": {
+        "terms": [
+          {
+            "order": 3,
+            "ax": 1,
+            "bl": 1,
+            "ch": 2
+          },
+          {
+            "order": 5,
+            "ax": 1,
+            "bl": 1,
+            "ch": 2
+          }
+        ],
+        "coefficients": [
+          -0.24988846087303235,
+          0.0006481825176835169
+        ],
+        "paths": [
+          {
+            "steps": 7,
+            "goalReached": true
+          },
+          {
+            "steps": 2,
+            "goalReached": true
+          }
+        ],
+        "validation": {
+          "n": 160,
+          "mae": 0.0001123422764631995,
+          "mse": 4.7530203640087444e-8,
+          "zeroMse": 0.0014794203621058455,
+          "r2": 0.9999678724148608
+        }
+      },
+      "test": {
+        "n": 320,
+        "mae": 0.00011886884307866524,
+        "mse": 7.0072388037193e-8,
+        "zeroMse": 0.001869259475020971,
+        "r2": 0.9999625132899025
+      },
+      "shifted": {
+        "n": 160,
+        "mae": 0.00012582770736579174,
+        "mse": 4.159118562383909e-8,
+        "zeroMse": 0.006317339912932096,
+        "r2": 0.9999934163451394
+      },
+      "harmonic": {
+        "n": 80,
+        "mae": 0,
+        "mse": 0,
+        "zeroMse": 0,
+        "r2": 1
+      },
+      "classical": {
+        "n": 80,
+        "mae": 0,
+        "mse": 0,
+        "zeroMse": 0,
+        "r2": 1
+      }
+    },
+    {
+      "type": "sextic",
+      "training": 300,
+      "model": {
+        "terms": [
+          {
+            "order": 3,
+            "ax": 3,
+            "bl": 1,
+            "ch": 2
+          },
+          {
+            "order": 5,
+            "ax": 1,
+            "bl": 1,
+            "ch": 4
+          }
+        ],
+        "coefficients": [
+          -0.8365608730198504,
+          0.06605424108374586
+        ],
+        "paths": [
+          {
+            "steps": 9,
+            "goalReached": true
+          },
+          {
+            "steps": 6,
+            "goalReached": true
+          }
+        ],
+        "validation": {
+          "n": 160,
+          "mae": 0.002005518020776208,
+          "mse": 0.000015879135572608778,
+          "zeroMse": 0.05506345007726956,
+          "r2": 0.9997116211288918
+        }
+      },
+      "test": {
+        "n": 320,
+        "mae": 0.0016015358439241266,
+        "mse": 0.000010840286911761894,
+        "zeroMse": 0.0380283550402869,
+        "r2": 0.9997149419978782
+      },
+      "shifted": {
+        "n": 160,
+        "mae": 0.009505092361832286,
+        "mse": 0.00021290948593768013,
+        "zeroMse": 0.5621633359291807,
+        "r2": 0.9996212675705971
+      },
+      "harmonic": {
+        "n": 80,
+        "mae": 0,
+        "mse": 0,
+        "zeroMse": 0,
+        "r2": 1
+      },
+      "classical": {
+        "n": 80,
+        "mae": 0,
+        "mse": 0,
+        "zeroMse": 0,
+        "r2": 1
+      }
+    }
+  ],
+  "controls": {
+    "quarticOnSextic": {
+      "n": 320,
+      "mae": 0.08796207069683969,
+      "mse": 0.026957082401886462,
+      "zeroMse": 0.0380283550402869,
+      "r2": 0.29113204151669536
+    },
+    "shuffled": {
+      "n": 320,
+      "mae": 0.022757768056150436,
+      "mse": 0.0016224518595512848,
+      "zeroMse": 0.001869259475020971,
+      "r2": 0.13203496826833916
+    },
+    "shuffledModel": {
+      "terms": [
+        {
+          "order": 3,
+          "ax": 1,
+          "bl": 2,
+          "ch": 0
+        }
+      ],
+      "coefficients": [
+        -0.018907553414600913
+      ],
+      "paths": [
+        {
+          "steps": 6,
+          "goalReached": true
+        }
+      ],
+      "validation": {
+        "n": 160,
+        "mae": 0.02070455404832946,
+        "mse": 0.0012450280010783033,
+        "zeroMse": 0.0014794203621058455,
+        "r2": 0.15843526764353977
+      }
+    }
+  },
+  "knownPhysicsOracleOnly": {
+    "quartic": "-(hbar*hbar*lambda*x/4) D3p W",
+    "sextic": "-(5/6)*hbar*hbar*lambda*x^3 D3p W + hbar^4*lambda*x/16 D5p W"
+  },
+  "warning": "KNOWN-LAW rediscovery from synthetic Moyal oracle, NOT discovery of new physics. Candidate differential grammar and coefficient fitting preselected. Native Discoverer shapeGraph navigates hypothesis lattice but is not the sole inference component."
+}
