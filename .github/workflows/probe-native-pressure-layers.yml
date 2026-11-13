@@ -1,0 +1,17 @@
+name: Probe real archived atmospheric pressure layers
+on:
+  push:
+    paths:
+      - 'experiments/atmospheric-native-20261113/probe-real-pressure-layers.mjs'
+      - '.github/workflows/probe-native-pressure-layers.yml'
+  workflow_dispatch:
+jobs:
+  verify-real-vertical-wind-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node experiments/atmospheric-native-20261113/probe-real-pressure-layers.mjs
