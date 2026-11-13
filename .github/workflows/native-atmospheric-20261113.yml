@@ -26,10 +26,16 @@ jobs:
         env:
           V42_ORIGINAL_TEST_ROOT: /tmp/original-v42
         run: node experiments/atmospheric-native-20261113/native-weather-blind.mjs
+      - name: Run genuine-weather graph maze with original Discoverer.shapeGraph
+        env:
+          V42_ORIGINAL_TEST_ROOT: /tmp/original-v42
+        run: |
+          node --check experiments/atmospheric-native-20261113/wind-field-shapegraph.mjs
+          node experiments/atmospheric-native-20261113/wind-field-shapegraph.mjs
       - name: Upload real raw predictions (only if run produced any)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: magicperspective-native-atmospheric-real-weather-results
-          path: experiments/atmospheric-native-20261113/results/latest.json
+          path: experiments/atmospheric-native-20261113/results/*.json
           if-no-files-found: warn
