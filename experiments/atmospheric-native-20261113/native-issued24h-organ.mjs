@@ -35,7 +35,15 @@ async function fetchMulti(host,vars){
   hourly:vars.join(',')
  };
  for(const [k,v] of Object.entries(params))u.searchParams.set(k,String(v));
- const res=await fetch(u,{signal:AbortSignal.timeout(90000)});
+ let res=null;
+ for(let attempt=1;attempt<=3;attempt++){
+  try{res=await fetch(u,{signal:AbortSignal.timeout(90000)});break;}
+  catch(err){
+   console.error('REMOTE_DATA_CONNECTION_RETRY',JSON.stringify({host:u.host,attempt,error:String(err)}));
+   if(attempt===3)throw err;
+   await new Promise(resolve=>setTimeout(resolve,3000*attempt));
+  }
+ }
  const text=await res.text();
  if(!res.ok)throw Error('TRUE_ARCHIVE_HTTP_'+res.status+' '+text.slice(0,360));
  const json=JSON.parse(text);
