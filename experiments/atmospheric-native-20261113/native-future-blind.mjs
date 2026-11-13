@@ -19,7 +19,7 @@ const stations=[
  {name:'Budapest',lat:47.4979,lon:19.0402},
  {name:'Bucharest',lat:44.4268,lon:26.1025}
 ];
-const START='2025-08-01',END='2025-10-31',HORIZONS=[6,12,24];
+const START=process.env.ATMOS_START||'2025-08-01',END=process.env.ATMOS_END||'2025-10-31',HORIZONS=[6,12,24];
 const TRAIN_H=24*50,VAL_H=24*12;
 const HEAD=220,ST_BASE=180,FUT_BASE=130;
 const DIR=(d)=>Math.floor((((d%360)+360)%360+22.5)/45)%8;
@@ -175,7 +175,9 @@ for(const H of HORIZONS){
  });
  report.scores[H]={validation:summarize(V),test:summarize(T)};
 }
-const location='experiments/atmospheric-native-20261113/results/native-future-prediction.json';
+const runTag=process.env.ATMOS_RUN_TAG||'original';
+if(!/^[a-zA-Z0-9_-]{1,40}$/.test(runTag))throw Error('Unsafe report identifier');
+const location='experiments/atmospheric-native-20261113/results/native-future-prediction-'+runTag+'.json';
 fs.mkdirSync(path.dirname(location),{recursive:true});
 fs.writeFileSync(location,JSON.stringify(report,null,2));
 console.log('NATIVE_FUTURE_WEATHER_RESULT',JSON.stringify({hash:sha,trainLivedSymbols:nativeLived,seconds:Math.round((Date.now()-started)/1000),results:Object.fromEntries(HORIZONS.map(H=>[H,{validation:report.scores[H].validation.selected,test:report.scores[H].test.selected,baseline:report.scores[H].test.persistence,stationMode:report.scores[H].test.stationMode,n:report.scores[H].test.n}]))}));
