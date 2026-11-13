@@ -1,0 +1,355 @@
+{
+  "date": "2026-11-13",
+  "status": "CROSS-DOMAIN PROJECT EXPERIMENT; NO NEW PHYSICAL LAW",
+  "originalV17Commit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "organismClass": "PhysicsDiscoverer extends original Discoverer",
+  "actionSelector": "unchanged original Discoverer.shapeGraph; real body actions",
+  "quantumAnswersHiddenUntilScoring": true,
+  "metricLearning": "unlabeled observed centroids and channel variances",
+  "causalLearning": "observed classical before/after complex correlation",
+  "oneQuantumInterventionForHandedness": true,
+  "result": {
+    "nativeMazeSolved": 149,
+    "rawClassicalEnvironments": [
+      {
+        "world": 0,
+        "rawMetricRatio": 0.8841614355060564,
+        "truePhysicalRatio_FOR_SCORING_ONLY": 0.9099999999999999,
+        "experiences": 512
+      },
+      {
+        "world": 1,
+        "rawMetricRatio": 0.8813502401335477,
+        "truePhysicalRatio_FOR_SCORING_ONLY": 0.903,
+        "experiences": 512
+      },
+      {
+        "world": 2,
+        "rawMetricRatio": 11.14909447747028,
+        "truePhysicalRatio_FOR_SCORING_ONLY": 11.340000000000002,
+        "experiences": 512
+      }
+    ],
+    "learnedNativeMotor": [
+      0.9736484593047217,
+      -0.22805411132786435
+    ],
+    "quantumUnlabeledMetric": {
+      "mean": [
+        0.009115219116210938,
+        -0.07761955261230469
+      ],
+      "scale": [
+        0.739318555894581,
+        0.6691213005148733
+      ]
+    },
+    "singleInterventionGauge": {
+      "selected": -1,
+      "consistentError": 0.0029397198501477997,
+      "excludedError": 0.4621089263703669
+    },
+    "transfer": {
+      "predictions": 1536,
+      "mae": 0.026393238125308915,
+      "staticObservationMAE": 0.38645125291894394,
+      "preview": [
+        {
+          "world": 0,
+          "step": 1,
+          "initial": -0.8974609375,
+          "predicted": 0.003728284584007313,
+          "actual": 0.01402814671102378,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 0,
+          "step": 2,
+          "initial": -0.8974609375,
+          "predicted": 0,
+          "actual": 0.000013832065426200454,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 0,
+          "step": 3,
+          "initial": -0.8974609375,
+          "predicted": 0,
+          "actual": 0.012332393918159393,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 0,
+          "step": 4,
+          "initial": -0.8974609375,
+          "predicted": 0.022484027283707075,
+          "actual": 0.0503350479853599,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 1,
+          "step": 1,
+          "initial": 0.67578125,
+          "predicted": 0.9183720814046146,
+          "actual": 0.9050669336952255,
+          "staticP": 0.837890625
+        },
+        {
+          "world": 1,
+          "step": 2,
+          "initial": 0.67578125,
+          "predicted": 0.9770442400189123,
+          "actual": 0.9612253946286723,
+          "staticP": 0.837890625
+        },
+        {
+          "world": 1,
+          "step": 3,
+          "initial": 0.67578125,
+          "predicted": 1,
+          "actual": 0.9930924008508357,
+          "staticP": 0.837890625
+        },
+        {
+          "world": 1,
+          "step": 4,
+          "initial": 0.67578125,
+          "predicted": 1,
+          "actual": 0.9989896060532847,
+          "staticP": 0.837890625
+        }
+      ]
+    },
+    "withoutGaugeCalibration": {
+      "predictions": 1536,
+      "mae": 0.48024558788241695,
+      "staticObservationMAE": 0.38645125291894394,
+      "preview": [
+        {
+          "world": 0,
+          "step": 1,
+          "initial": -0.8974609375,
+          "predicted": 0.12270045640043376,
+          "actual": 0.01402814671102378,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 0,
+          "step": 2,
+          "initial": -0.8974609375,
+          "predicted": 0.21425643017330276,
+          "actual": 0.000013832065426200454,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 0,
+          "step": 3,
+          "initial": -0.8974609375,
+          "predicted": 0.32111217063106356,
+          "actual": 0.012332393918159393,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 0,
+          "step": 4,
+          "initial": -0.8974609375,
+          "predicted": 0.4376360509873228,
+          "actual": 0.0503350479853599,
+          "staticP": 0.05126953125
+        },
+        {
+          "world": 1,
+          "step": 1,
+          "initial": 0.67578125,
+          "predicted": 0.7398414915523915,
+          "actual": 0.9050669336952255,
+          "staticP": 0.837890625
+        },
+        {
+          "world": 1,
+          "step": 2,
+          "initial": 0.67578125,
+          "predicted": 0.629392172522152,
+          "actual": 0.9612253946286723,
+          "staticP": 0.837890625
+        },
+        {
+          "world": 1,
+          "step": 3,
+          "initial": 0.67578125,
+          "predicted": 0.5123636873596638,
+          "actual": 0.9930924008508357,
+          "staticP": 0.837890625
+        },
+        {
+          "world": 1,
+          "step": 4,
+          "initial": 0.67578125,
+          "predicted": 0.3949237978434589,
+          "actual": 0.9989896060532847,
+          "staticP": 0.837890625
+        }
+      ]
+    },
+    "shuffledCausalPairs": {
+      "motor": [
+        0.6087485325943418,
+        -0.7933632358915024
+      ],
+      "gauge": {
+        "selected": -1,
+        "consistentError": 1.253027825654222,
+        "excludedError": 2.8504029634472534
+      },
+      "forecast": {
+        "predictions": 1536,
+        "mae": 0.4065030367386968,
+        "staticObservationMAE": 0.38645125291894394,
+        "preview": [
+          {
+            "world": 0,
+            "step": 1,
+            "initial": -0.8974609375,
+            "predicted": 0.02167671986749875,
+            "actual": 0.01402814671102378,
+            "staticP": 0.05126953125
+          },
+          {
+            "world": 0,
+            "step": 2,
+            "initial": -0.8974609375,
+            "predicted": 0.3699396218321968,
+            "actual": 0.000013832065426200454,
+            "staticP": 0.05126953125
+          },
+          {
+            "world": 0,
+            "step": 3,
+            "initial": -0.8974609375,
+            "predicted": 0.8235414942708121,
+            "actual": 0.012332393918159393,
+            "staticP": 0.05126953125
+          },
+          {
+            "world": 0,
+            "step": 4,
+            "initial": -0.8974609375,
+            "predicted": 1,
+            "actual": 0.0503350479853599,
+            "staticP": 0.05126953125
+          },
+          {
+            "world": 1,
+            "step": 1,
+            "initial": 0.67578125,
+            "predicted": 1,
+            "actual": 0.9050669336952255,
+            "staticP": 0.837890625
+          },
+          {
+            "world": 1,
+            "step": 2,
+            "initial": 0.67578125,
+            "predicted": 0.796355104472849,
+            "actual": 0.9612253946286723,
+            "staticP": 0.837890625
+          },
+          {
+            "world": 1,
+            "step": 3,
+            "initial": 0.67578125,
+            "predicted": 0.34636474759814995,
+            "actual": 0.9930924008508357,
+            "staticP": 0.837890625
+          },
+          {
+            "world": 1,
+            "step": 4,
+            "initial": 0.67578125,
+            "predicted": 0.02016076947331752,
+            "actual": 0.9989896060532847,
+            "staticP": 0.837890625
+          }
+        ]
+      }
+    },
+    "mismatchedActionStrength": {
+      "predictions": 1536,
+      "mae": 0.06552626794156251,
+      "staticObservationMAE": 0.394682288776054,
+      "preview": [
+        {
+          "world": 0,
+          "step": 1,
+          "initial": 0.75390625,
+          "predicted": 0.936473277534658,
+          "actual": 0.9571531553625797,
+          "staticP": 0.876953125
+        },
+        {
+          "world": 0,
+          "step": 2,
+          "initial": 0.75390625,
+          "predicted": 0.9732301434660912,
+          "actual": 0.9908585691131631,
+          "staticP": 0.876953125
+        },
+        {
+          "world": 0,
+          "step": 3,
+          "initial": 0.75390625,
+          "predicted": 0.9852865226974532,
+          "actual": 0.9993761494245124,
+          "staticP": 0.876953125
+        },
+        {
+          "world": 0,
+          "step": 4,
+          "initial": 0.75390625,
+          "predicted": 0.9720070068928381,
+          "actual": 0.9984194094816556,
+          "staticP": 0.876953125
+        },
+        {
+          "world": 1,
+          "step": 1,
+          "initial": -0.7353515625,
+          "predicted": 0.22278586741220496,
+          "actual": 0.24260567495982116,
+          "staticP": 0.13232421875
+        },
+        {
+          "world": 1,
+          "step": 2,
+          "initial": -0.7353515625,
+          "predicted": 0.3280977551342843,
+          "actual": 0.35284078998382207,
+          "staticP": 0.13232421875
+        },
+        {
+          "world": 1,
+          "step": 3,
+          "initial": -0.7353515625,
+          "predicted": 0.4427096209262282,
+          "actual": 0.5169457199974749,
+          "staticP": 0.13232421875
+        },
+        {
+          "world": 1,
+          "step": 4,
+          "initial": -0.7353515625,
+          "predicted": 0.5605810662968801,
+          "actual": 0.5911781473544573,
+          "staticP": 0.13232421875
+        }
+      ]
+    }
+  },
+  "caveats": [
+    "The experimental motor increment is shared by design in the two worlds.",
+    "The 2D observable channels are chosen by the researcher; not discovered de novo.",
+    "The complex multiplication motor is an added existing mathematical operation, not a physics-law discovery.",
+    "All detectors and classical positions are simulations; not measured laboratory data.",
+    "General relativity and nonharmonic quantum dynamics not tested; physics is not unified."
+  ]
+}
