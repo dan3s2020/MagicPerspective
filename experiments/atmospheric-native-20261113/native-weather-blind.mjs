@@ -121,7 +121,7 @@ for(let t=split;t<Math.min(N,split+24);t++)for(let s=0;s<stations.length;s++){
 // Rolling causal test: predict current hidden weather; only AFTER prediction
 // reveal it to the same original Brain.live() for the next hour.
 const rows=[],names=['native','shuffled','shape_native','shape_shuffled','persistence','training_mode'];
-const shapeTriples={native:0,shuffled:0,direction:0,speed:0,rain:0};
+const shapeTriples={native:0,shuffled:0,direction:0,speed:0,rain:0,alwaysDry:0,speedPersistence:0};
 const totals=Object.fromEntries(names.map(k=>[k,0]));
 const byStation=Object.fromEntries(stations.map(s=>[s.name,Object.fromEntries(names.map(k=>[k,0]))]));
 for(let t=split;t<N;t++){
@@ -139,6 +139,8 @@ for(let t=split;t<N;t++){
     shapeTriples.direction+=Number(shapeN[0]===expectedTriplet[0]);
     shapeTriples.speed+=Number(shapeN[1]===expectedTriplet[1]);
     shapeTriples.rain+=Number(shapeN[2]===expectedTriplet[2]);
+    shapeTriples.alwaysDry+=Number(obs.rain===0);
+    shapeTriples.speedPersistence+=Number(stations[s].obs[t-1].speed===obs.speed);
     const predictions={
       native:predict(brainOriginal),
       shape_native:shapeN[0]-40,
@@ -171,7 +173,7 @@ const result={
   results:Object.fromEntries(names.map(k=>[k,{hits:totals[k],n:heldoutN,accuracy:ratio(totals[k],heldoutN)}])),
   perStation:Object.fromEntries(stations.map(s=>[s.name,Object.fromEntries(names.map(k=>[k,ratio(byStation[s.name][k],N-split)]))])),
   strictFrozen24h:{hits:frozen.filter(x=>x.pred===x.actual).length,n:frozen.length,accuracy:ratio(frozen.filter(x=>x.pred===x.actual).length,frozen.length)},
-  nativeShapeThreeSymbols:{wholeTriplet:{hits:shapeTriples.native,n:heldoutN,accuracy:ratio(shapeTriples.native,heldoutN)},shuffledTriplet:{hits:shapeTriples.shuffled,n:heldoutN,accuracy:ratio(shapeTriples.shuffled,heldoutN)},direction:{hits:shapeTriples.direction,n:heldoutN,accuracy:ratio(shapeTriples.direction,heldoutN)},speed:{hits:shapeTriples.speed,n:heldoutN,accuracy:ratio(shapeTriples.speed,heldoutN)},rain:{hits:shapeTriples.rain,n:heldoutN,accuracy:ratio(shapeTriples.rain,heldoutN)}},
+  nativeShapeThreeSymbols:{wholeTriplet:{hits:shapeTriples.native,n:heldoutN,accuracy:ratio(shapeTriples.native,heldoutN)},shuffledTriplet:{hits:shapeTriples.shuffled,n:heldoutN,accuracy:ratio(shapeTriples.shuffled,heldoutN)},direction:{hits:shapeTriples.direction,n:heldoutN,accuracy:ratio(shapeTriples.direction,heldoutN)},speed:{hits:shapeTriples.speed,n:heldoutN,accuracy:ratio(shapeTriples.speed,heldoutN)},rain:{hits:shapeTriples.rain,n:heldoutN,accuracy:ratio(shapeTriples.rain,heldoutN)},alwaysDryBaseline:{hits:shapeTriples.alwaysDry,n:heldoutN,accuracy:ratio(shapeTriples.alwaysDry,heldoutN)},speedPersistenceBaseline:{hits:shapeTriples.speedPersistence,n:heldoutN,accuracy:ratio(shapeTriples.speedPersistence,heldoutN)}},
   evaluationRows:rows,
   strictFrozenRows:frozen
 };
