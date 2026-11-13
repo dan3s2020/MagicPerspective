@@ -1,0 +1,408 @@
+{
+  "date": "2026-11-13",
+  "originalCommit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "sourceClasses": [
+    "Discoverer",
+    "playExercise",
+    "makeMaze"
+  ],
+  "nativeMaze": {
+    "episodes": 160,
+    "solved": 149,
+    "learnedGoalAttraction": 0.9932885906040269,
+    "learnedWallConductance": 0.14285714285714285,
+    "self": 3,
+    "knownMovements": 4
+  },
+  "interference": {
+    "trainingSamples": [
+      {
+        "phaseIndex": 0,
+        "photons": 64,
+        "detectorCounts": [
+          64,
+          0
+        ],
+        "majority": 0
+      },
+      {
+        "phaseIndex": 8,
+        "photons": 64,
+        "detectorCounts": [
+          0,
+          64
+        ],
+        "majority": 1
+      }
+    ],
+    "periodicGeometrySupplied": true,
+    "heldout": [
+      {
+        "phaseIndex": 1,
+        "phaseRadians": 0.39269908169872414,
+        "pD0": 0.9619397662556434,
+        "organismDetector": 0,
+        "mostLikelyQuantumDetector": 0,
+        "correct": true,
+        "path": [
+          0,
+          16
+        ]
+      },
+      {
+        "phaseIndex": 2,
+        "phaseRadians": 0.7853981633974483,
+        "pD0": 0.8535533905932737,
+        "organismDetector": 0,
+        "mostLikelyQuantumDetector": 0,
+        "correct": true,
+        "path": [
+          1,
+          0,
+          16
+        ]
+      },
+      {
+        "phaseIndex": 3,
+        "phaseRadians": 1.1780972450961724,
+        "pD0": 0.6913417161825449,
+        "organismDetector": 0,
+        "mostLikelyQuantumDetector": 0,
+        "correct": true,
+        "path": [
+          2,
+          1,
+          0,
+          16
+        ]
+      },
+      {
+        "phaseIndex": 5,
+        "phaseRadians": 1.9634954084936207,
+        "pD0": 0.3086582838174552,
+        "organismDetector": 1,
+        "mostLikelyQuantumDetector": 1,
+        "correct": true,
+        "path": [
+          6,
+          7,
+          8,
+          17
+        ]
+      },
+      {
+        "phaseIndex": 6,
+        "phaseRadians": 2.356194490192345,
+        "pD0": 0.1464466094067263,
+        "organismDetector": 1,
+        "mostLikelyQuantumDetector": 1,
+        "correct": true,
+        "path": [
+          7,
+          8,
+          17
+        ]
+      },
+      {
+        "phaseIndex": 7,
+        "phaseRadians": 2.748893571891069,
+        "pD0": 0.038060233744356645,
+        "organismDetector": 1,
+        "mostLikelyQuantumDetector": 1,
+        "correct": true,
+        "path": [
+          8,
+          17
+        ]
+      },
+      {
+        "phaseIndex": 9,
+        "phaseRadians": 3.5342917352885173,
+        "pD0": 0.03806023374435659,
+        "organismDetector": 1,
+        "mostLikelyQuantumDetector": 1,
+        "correct": true,
+        "path": [
+          8,
+          17
+        ]
+      },
+      {
+        "phaseIndex": 10,
+        "phaseRadians": 3.9269908169872414,
+        "pD0": 0.1464466094067262,
+        "organismDetector": 1,
+        "mostLikelyQuantumDetector": 1,
+        "correct": true,
+        "path": [
+          9,
+          8,
+          17
+        ]
+      },
+      {
+        "phaseIndex": 11,
+        "phaseRadians": 4.319689898685965,
+        "pD0": 0.3086582838174548,
+        "organismDetector": 1,
+        "mostLikelyQuantumDetector": 1,
+        "correct": true,
+        "path": [
+          10,
+          9,
+          8,
+          17
+        ]
+      },
+      {
+        "phaseIndex": 13,
+        "phaseRadians": 5.105088062083414,
+        "pD0": 0.691341716182545,
+        "organismDetector": 0,
+        "mostLikelyQuantumDetector": 0,
+        "correct": true,
+        "path": [
+          14,
+          15,
+          0,
+          16
+        ]
+      },
+      {
+        "phaseIndex": 14,
+        "phaseRadians": 5.497787143782138,
+        "pD0": 0.8535533905932737,
+        "organismDetector": 0,
+        "mostLikelyQuantumDetector": 0,
+        "correct": true,
+        "path": [
+          15,
+          0,
+          16
+        ]
+      },
+      {
+        "phaseIndex": 15,
+        "phaseRadians": 5.890486225480862,
+        "pD0": 0.9619397662556434,
+        "organismDetector": 0,
+        "mostLikelyQuantumDetector": 0,
+        "correct": true,
+        "path": [
+          0,
+          16
+        ]
+      }
+    ],
+    "correctMostLikely": 12,
+    "total": 12,
+    "phaseBlind": {
+      "at0": {
+        "path": [
+          1,
+          3
+        ],
+        "reached": true
+      },
+      "atPi": {
+        "path": [
+          1,
+          3
+        ],
+        "reached": true
+      },
+      "correctOfTwo": 1
+    },
+    "shuffledControl": {
+      "trials": 200,
+      "meanCorrect": 6.08,
+      "min": 1,
+      "max": 10
+    },
+    "probabilityMAE": 0.16438837565617928
+  },
+  "tunneling": [
+    {
+      "hbar": 0,
+      "physicalTransmissionProbability": 0,
+      "trials": 512,
+      "observedTransmissions": 0,
+      "organismBarrierOnly": {
+        "path": null,
+        "reached": false
+      },
+      "organismWithObservedEdge": {
+        "path": null,
+        "reached": false
+      }
+    },
+    {
+      "hbar": 0.1,
+      "physicalTransmissionProbability": 8.244614455767397e-9,
+      "trials": 512,
+      "observedTransmissions": 0,
+      "organismBarrierOnly": {
+        "path": null,
+        "reached": false
+      },
+      "organismWithObservedEdge": {
+        "path": null,
+        "reached": false
+      }
+    },
+    {
+      "hbar": 0.25,
+      "physicalTransmissionProbability": 0.0013409506830258972,
+      "trials": 512,
+      "observedTransmissions": 1,
+      "organismBarrierOnly": {
+        "path": null,
+        "reached": false
+      },
+      "organismWithObservedEdge": {
+        "path": [
+          2
+        ],
+        "reached": true
+      }
+    },
+    {
+      "hbar": 0.5,
+      "physicalTransmissionProbability": 0.07065082485316446,
+      "trials": 512,
+      "observedTransmissions": 43,
+      "organismBarrierOnly": {
+        "path": null,
+        "reached": false
+      },
+      "organismWithObservedEdge": {
+        "path": [
+          2
+        ],
+        "reached": true
+      }
+    },
+    {
+      "hbar": 1,
+      "physicalTransmissionProbability": 0.4199743416140261,
+      "trials": 512,
+      "observedTransmissions": 208,
+      "organismBarrierOnly": {
+        "path": null,
+        "reached": false
+      },
+      "organismWithObservedEdge": {
+        "path": [
+          2
+        ],
+        "reached": true
+      }
+    },
+    {
+      "hbar": 2,
+      "physicalTransmissionProbability": 0.7864477329659274,
+      "trials": 512,
+      "observedTransmissions": 392,
+      "organismBarrierOnly": {
+        "path": null,
+        "reached": false
+      },
+      "organismWithObservedEdge": {
+        "path": [
+          2
+        ],
+        "reached": true
+      }
+    }
+  ],
+  "correspondence": [
+    {
+      "m": 1,
+      "w": 0.5,
+      "x0": 2,
+      "p0": -1,
+      "quantumHilbertDimension": 48,
+      "samples": 201,
+      "maxPositionError": 1.7763568394002505e-15,
+      "maxMomentumError": 8.881784197001252e-16,
+      "nativeGraphShape": {
+        "path": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "reached": true
+      }
+    },
+    {
+      "m": 2,
+      "w": 1.3,
+      "x0": -1,
+      "p0": 0.7,
+      "quantumHilbertDimension": 48,
+      "samples": 201,
+      "maxPositionError": 1.4710455076283324e-15,
+      "maxMomentumError": 3.9968028886505635e-15,
+      "nativeGraphShape": {
+        "path": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "reached": true
+      }
+    },
+    {
+      "m": 0.4,
+      "w": 2.5,
+      "x0": 0.6,
+      "p0": 1.8,
+      "quantumHilbertDimension": 48,
+      "samples": 201,
+      "maxPositionError": 4.107825191113079e-15,
+      "maxMomentumError": 4.274358644806853e-15,
+      "nativeGraphShape": {
+        "path": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "reached": true
+      }
+    }
+  ],
+  "verdict": "NO NEW PHYSICS LAW FOUND. Phase-conditioned graph navigation succeeds only when circular phase geometry and observed endpoint outcomes are supplied. Original graph mechanism does not recover quantum amplitudes, Born probabilities or unified gravity.",
+  "constraints": [
+    "Do not treat supplied graph topology or target kinds as discovery.",
+    "Shuffled control tests geometry dependence, not novelty of law.",
+    "Finite Fock propagation is an independent numerical known-law control.",
+    "No modifications to original V17 source or original model checkpoints."
+  ]
+}
