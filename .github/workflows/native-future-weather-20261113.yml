@@ -9,6 +9,14 @@ jobs:
   original-brain-future-blind:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        season:
+          - {tag: winter-2025, start: '2025-01-01', end: '2025-03-31'}
+          - {tag: spring-2025, start: '2025-04-01', end: '2025-06-30'}
+          - {tag: summer-2025, start: '2025-08-01', end: '2025-10-31'}
+          - {tag: winter-2026, start: '2025-11-01', end: '2026-01-31'}
     permissions:
       contents: read
     steps:
@@ -26,11 +34,14 @@ jobs:
       - name: One original Brain lives real weather and predicts actual unseen future
         env:
           V42_ORIGINAL_TEST_ROOT: /tmp/original-v42
+          ATMOS_START: ${{ matrix.season.start }}
+          ATMOS_END: ${{ matrix.season.end }}
+          ATMOS_RUN_TAG: ${{ matrix.season.tag }}
         run: node --max-old-space-size=6000 experiments/atmospheric-native-20261113/native-future-blind.mjs
       - name: Preserve full raw validation and test forecasts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: native-brain-future-blind-full-evidence
-          path: experiments/atmospheric-native-20261113/results/native-future-prediction.json
+          name: native-brain-future-${{ matrix.season.tag }}
+          path: experiments/atmospheric-native-20261113/results/native-future-prediction-${{ matrix.season.tag }}.json
           if-no-files-found: warn
