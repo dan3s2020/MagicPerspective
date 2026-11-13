@@ -1,0 +1,34 @@
+name: Real original Brain lives preissued 24h future forecast donor
+on:
+  push:
+    paths:
+      - 'experiments/atmospheric-native-20261113/native-issued24h-organ.mjs'
+      - '.github/workflows/native-issued24h-organ.yml'
+  workflow_dispatch:
+jobs:
+  no-separate-donor-inference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify exact original MagicPerspective V42 code
+        run: |
+          git clone --depth 1 --branch perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107 https://github.com/dan3s2020/MagicPerspective.git /tmp/original-v42
+          test "$(git -C /tmp/original-v42 rev-parse HEAD)" = "ac205b5bc561274b957584a7dee058a1110ab6f8"
+      - name: Syntax
+        run: node --check experiments/atmospheric-native-20261113/native-issued24h-organ.mjs
+      - name: Original Brain lives genuine pre-issued 24h donor and predicts hidden historical future
+        env:
+          V42_ORIGINAL_TEST_ROOT: /tmp/original-v42
+        run: node --max-old-space-size=6000 experiments/atmospheric-native-20261113/native-issued24h-organ.mjs
+      - name: Preserve full source provenance and raw evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-preissued-weather-donor-real-evidence
+          path: experiments/atmospheric-native-20261113/results/native-issued24h-organ.json
+          if-no-files-found: warn
