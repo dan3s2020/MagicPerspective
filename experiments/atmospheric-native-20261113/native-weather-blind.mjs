@@ -120,7 +120,8 @@ for(let t=split;t<Math.min(N,split+24);t++)for(let s=0;s<stations.length;s++){
 
 // Rolling causal test: predict current hidden weather; only AFTER prediction
 // reveal it to the same original Brain.live() for the next hour.
-const rows=[],names=['native','shuffled','persistence','training_mode'];
+const rows=[],names=['native','shuffled','shape_native','shape_shuffled','persistence','training_mode'];
+const shapeTriples={native:0,shuffled:0,direction:0,speed:0,rain:0};
 const totals=Object.fromEntries(names.map(k=>[k,0]));
 const byStation=Object.fromEntries(stations.map(s=>[s.name,Object.fromEntries(names.map(k=>[k,0]))]));
 for(let t=split;t<N;t++){
@@ -128,14 +129,26 @@ for(let t=split;t<N;t++){
     const obs=stations[s].obs[t],persistence=stations[s].obs[t-1].dir;
     lived(brainOriginal,t,s);
     lived(brainShuffled,t,s);
+    // Native AligningGraph predicts a 3-symbol FUTURE SHAPE without seeing
+    // the actual wind, speed or rain at this hour. No replacement planner.
+    const shapeN=brainOriginal.align.imagineAhead(3).map(x=>x.guess);
+    const shapeS=brainShuffled.align.imagineAhead(3).map(x=>x.guess);
+    const expectedTriplet=[40+obs.dir,SPEED_BASE+obs.speed,RAIN_BASE+obs.rain];
+    shapeTriples.native+=Number(shapeN.every((x,i)=>x===expectedTriplet[i]));
+    shapeTriples.shuffled+=Number(shapeS.every((x,i)=>x===expectedTriplet[i]));
+    shapeTriples.direction+=Number(shapeN[0]===expectedTriplet[0]);
+    shapeTriples.speed+=Number(shapeN[1]===expectedTriplet[1]);
+    shapeTriples.rain+=Number(shapeN[2]===expectedTriplet[2]);
     const predictions={
       native:predict(brainOriginal),
+      shape_native:shapeN[0]-40,
+      shape_shuffled:shapeS[0]-40,
       shuffled:predict(brainShuffled),
       persistence,
       training_mode:mode[s]
     };
     for(const k of names)if(predictions[k]===obs.dir){totals[k]++;byStation[stations[s].name][k]++}
-    rows.push({timestamp:obs.time,station:stations[s].name,actualDirectionBin:obs.dir,predictions,wind100mMps:obs.windMps,precipitationMm:obs.precipitationMm});
+    rows.push({timestamp:obs.time,station:stations[s].name,actualDirectionBin:obs.dir,predictions,predictedShape:shapeN,expectedShape:expectedTriplet,wind100mMps:obs.windMps,precipitationMm:obs.precipitationMm});
     reveal(brainOriginal,obs);
     reveal(brainShuffled,obs);
   }
@@ -158,11 +171,12 @@ const result={
   results:Object.fromEntries(names.map(k=>[k,{hits:totals[k],n:heldoutN,accuracy:ratio(totals[k],heldoutN)}])),
   perStation:Object.fromEntries(stations.map(s=>[s.name,Object.fromEntries(names.map(k=>[k,ratio(byStation[s.name][k],N-split)]))])),
   strictFrozen24h:{hits:frozen.filter(x=>x.pred===x.actual).length,n:frozen.length,accuracy:ratio(frozen.filter(x=>x.pred===x.actual).length,frozen.length)},
+  nativeShapeThreeSymbols:{wholeTriplet:{hits:shapeTriples.native,n:heldoutN,accuracy:ratio(shapeTriples.native,heldoutN)},shuffledTriplet:{hits:shapeTriples.shuffled,n:heldoutN,accuracy:ratio(shapeTriples.shuffled,heldoutN)},direction:{hits:shapeTriples.direction,n:heldoutN,accuracy:ratio(shapeTriples.direction,heldoutN)},speed:{hits:shapeTriples.speed,n:heldoutN,accuracy:ratio(shapeTriples.speed,heldoutN)},rain:{hits:shapeTriples.rain,n:heldoutN,accuracy:ratio(shapeTriples.rain,heldoutN)}},
   evaluationRows:rows,
   strictFrozenRows:frozen
 };
 if(rows.length<100||new Set(rows.map(x=>x.timestamp)).size<24)throw Error('No sufficiently large REAL heldout evaluation');
 fs.mkdirSync('experiments/atmospheric-native-20261113/results',{recursive:true});
 fs.writeFileSync('experiments/atmospheric-native-20261113/results/latest.json',JSON.stringify(result,null,2));
-console.log('ATMOSPHERE_TEST_RESULT',JSON.stringify({source:'real historical ERA5',...result.results,strictFrozen24h:result.strictFrozen24h,trainHours:split,testHours:N-split,sha256:checksum}));
+console.log('ATMOSPHERE_TEST_RESULT',JSON.stringify({source:'real historical ERA5',...result.results,strictFrozen24h:result.strictFrozen24h,nativeShapeThreeSymbols:result.nativeShapeThreeSymbols,trainHours:split,testHours:N-split,sha256:checksum}));
 console.log('REPORT_FILE experiments/atmospheric-native-20261113/results/latest.json');
