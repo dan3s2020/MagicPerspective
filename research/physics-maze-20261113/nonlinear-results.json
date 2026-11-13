@@ -1,0 +1,429 @@
+{
+  "date": "2026-11-13",
+  "originalCommit": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "originalNativeMazeEpisodes": 160,
+  "mazeWins": 149,
+  "physicalModelInOrganism": "none; observed 2D before/after actions only",
+  "goalPrediction": "unchanged original Discoverer.shapeGraph",
+  "learnedBody": "nearest local causal experiences and local triangle geometry",
+  "samples": [
+    {
+      "observedInterventions": 64,
+      "validation": [
+        {
+          "method": "nearest",
+          "mae": 0.3401649928546708
+        },
+        {
+          "method": "weighted",
+          "mae": 0.3342378128885002
+        },
+        {
+          "method": "triangle",
+          "mae": 0.2714036431427389
+        },
+        {
+          "method": "hybrid",
+          "mae": 0.2714036431427389
+        }
+      ],
+      "winner": "triangle",
+      "heldout": {
+        "count": 1536,
+        "mae": 0.41316791669819813,
+        "static": 2.4361469850250552,
+        "max": 5.124828053766651,
+        "meanPredictedEnergyDrift": 0.39478222247245215,
+        "preview": [
+          {
+            "step": 1,
+            "predicted": [
+              1.1192654454054136,
+              -0.7423788699332856
+            ],
+            "trueState": [
+              1.1227373282550939,
+              -0.7125815409867329
+            ],
+            "error": 0.029998913028157763
+          },
+          {
+            "step": 2,
+            "predicted": [
+              0.8898516066004591,
+              -1.2191718699764515
+            ],
+            "trueState": [
+              0.9117979015274293,
+              -1.0983024525600553
+            ],
+            "error": 0.12284565896929606
+          },
+          {
+            "step": 3,
+            "predicted": [
+              0.5793843936061168,
+              -1.4564225504936672
+            ],
+            "trueState": [
+              0.6284595526136991,
+              -1.3428475155905433
+            ],
+            "error": 0.12372412773935933
+          },
+          {
+            "step": 4,
+            "predicted": [
+              0.22944037640415943,
+              -1.5676428089070784
+            ],
+            "trueState": [
+              0.30338000851066654,
+              -1.466430498625286
+            ],
+            "error": 0.1253435317382729
+          }
+        ]
+      }
+    },
+    {
+      "observedInterventions": 256,
+      "validation": [
+        {
+          "method": "nearest",
+          "mae": 0.19575685537996682
+        },
+        {
+          "method": "weighted",
+          "mae": 0.16483240295699086
+        },
+        {
+          "method": "triangle",
+          "mae": 0.11282209913824683
+        },
+        {
+          "method": "hybrid",
+          "mae": 0.11282209913824683
+        }
+      ],
+      "winner": "triangle",
+      "heldout": {
+        "count": 1536,
+        "mae": 0.20030202000821926,
+        "static": 2.4361469850250552,
+        "max": 3.923711424530285,
+        "meanPredictedEnergyDrift": 0.08842484286532602,
+        "preview": [
+          {
+            "step": 1,
+            "predicted": [
+              1.1223079333288637,
+              -0.7165173947647625
+            ],
+            "trueState": [
+              1.1227373282550939,
+              -0.7125815409867329
+            ],
+            "error": 0.003959207618287065
+          },
+          {
+            "step": 2,
+            "predicted": [
+              0.910092627216273,
+              -1.1057478796731763
+            ],
+            "trueState": [
+              0.9117979015274293,
+              -1.0983024525600553
+            ],
+            "error": 0.007638216111965356
+          },
+          {
+            "step": 3,
+            "predicted": [
+              0.624487902659802,
+              -1.3548957867429996
+            ],
+            "trueState": [
+              0.6284595526136991,
+              -1.3428475155905433
+            ],
+            "error": 0.012686009661016424
+          },
+          {
+            "step": 4,
+            "predicted": [
+              0.2957899617349045,
+              -1.4844950709626847
+            ],
+            "trueState": [
+              0.30338000851066654,
+              -1.466430498625286
+            ],
+            "error": 0.019594325295640178
+          }
+        ]
+      }
+    },
+    {
+      "observedInterventions": 1024,
+      "validation": [
+        {
+          "method": "nearest",
+          "mae": 0.13153533507307646
+        },
+        {
+          "method": "weighted",
+          "mae": 0.11529265589702803
+        },
+        {
+          "method": "triangle",
+          "mae": 0.08762772414297781
+        },
+        {
+          "method": "hybrid",
+          "mae": 0.08762772414297781
+        }
+      ],
+      "winner": "triangle",
+      "heldout": {
+        "count": 1536,
+        "mae": 0.1648977506488714,
+        "static": 2.4361469850250552,
+        "max": 3.597006666648537,
+        "meanPredictedEnergyDrift": 0.06748953156682203,
+        "preview": [
+          {
+            "step": 1,
+            "predicted": [
+              1.1225685940167989,
+              -0.7140819737031284
+            ],
+            "trueState": [
+              1.1227373282550939,
+              -0.7125815409867329
+            ],
+            "error": 0.0015098905853084595
+          },
+          {
+            "step": 2,
+            "predicted": [
+              0.9111840268902416,
+              -1.1007023735385855
+            ],
+            "trueState": [
+              0.9117979015274293,
+              -1.0983024525600553
+            ],
+            "error": 0.0024771884815999565
+          },
+          {
+            "step": 3,
+            "predicted": [
+              0.6269842486847862,
+              -1.347839351997228
+            ],
+            "trueState": [
+              0.6284595526136991,
+              -1.3428475155905433
+            ],
+            "error": 0.005205281202180093
+          },
+          {
+            "step": 4,
+            "predicted": [
+              0.3005671698171391,
+              -1.4728424232032824
+            ],
+            "trueState": [
+              0.30338000851066654,
+              -1.466430498625286
+            ],
+            "error": 0.007001773940203911
+          }
+        ]
+      }
+    }
+  ],
+  "controls": {
+    "shuffledBeforeAfter": {
+      "count": 1536,
+      "mae": 2.1188277663890314,
+      "static": 2.4361469850250552,
+      "max": 6.473149960849819,
+      "meanPredictedEnergyDrift": 1.7756094092391048,
+      "preview": [
+        {
+          "step": 1,
+          "predicted": [
+            0.8386365244399602,
+            1.916362592114032
+          ],
+          "trueState": [
+            1.1227373282550939,
+            -0.7125815409867329
+          ],
+          "error": 2.644250465007681
+        },
+        {
+          "step": 2,
+          "predicted": [
+            -0.08487598741752317,
+            0.16813903883740022
+          ],
+          "trueState": [
+            0.9117979015274293,
+            -1.0983024525600553
+          ],
+          "error": 1.6115932774858759
+        },
+        {
+          "step": 3,
+          "predicted": [
+            0.697203978644044,
+            0.03971709424616171
+          ],
+          "trueState": [
+            0.6284595526136991,
+            -1.3428475155905433
+          ],
+          "error": 1.3842726236125462
+        },
+        {
+          "step": 4,
+          "predicted": [
+            0.4172185081683715,
+            -1.9362299408223969
+          ],
+          "trueState": [
+            0.30338000851066654,
+            -1.466430498625286
+          ],
+          "error": 0.4833949936573958
+        }
+      ]
+    },
+    "unseenPotentialStrength": {
+      "count": 1536,
+      "mae": 0.8417905554636613,
+      "static": 2.527734069851294,
+      "max": 7.1150313998226435,
+      "meanPredictedEnergyDrift": 0.4888967052306843,
+      "preview": [
+        {
+          "step": 1,
+          "predicted": [
+            1.1225685940167989,
+            -0.7140819737031284
+          ],
+          "trueState": [
+            1.0979616124178988,
+            -0.9132727540895801
+          ],
+          "error": 0.20070493400604833
+        },
+        {
+          "step": 2,
+          "predicted": [
+            0.9111840268902416,
+            -1.1007023735385855
+          ],
+          "trueState": [
+            0.828623937045794,
+            -1.384746813530071
+          ],
+          "error": 0.29579961515390757
+        },
+        {
+          "step": 3,
+          "predicted": [
+            0.6269842486847862,
+            -1.347839351997228
+          ],
+          "trueState": [
+            0.4795477172081043,
+            -1.6170488580457993
+          ],
+          "error": 0.3069385752244093
+        },
+        {
+          "step": 4,
+          "predicted": [
+            0.3005671698171391,
+            -1.4728424232032824
+          ],
+          "trueState": [
+            0.09668723661106872,
+            -1.692874142047577
+          ],
+          "error": 0.2999683057619362
+        }
+      ]
+    },
+    "unseenActionDuration": {
+      "count": 1536,
+      "mae": 1.3295962408616324,
+      "static": 2.3668420263701324,
+      "max": 7.183320329679854,
+      "meanPredictedEnergyDrift": 0.06748953156682203,
+      "preview": [
+        {
+          "step": 1,
+          "predicted": [
+            1.1225685940167989,
+            -0.7140819737031284
+          ],
+          "trueState": [
+            1.0596263914030397,
+            -0.8625437512594802
+          ],
+          "error": 0.1612532798583123
+        },
+        {
+          "step": 2,
+          "predicted": [
+            0.9111840268902416,
+            -1.1007023735385855
+          ],
+          "trueState": [
+            0.7204202230652067,
+            -1.2826472493633565
+          ],
+          "error": 0.26361860080177907
+        },
+        {
+          "step": 3,
+          "predicted": [
+            0.6269842486847862,
+            -1.347839351997228
+          ],
+          "trueState": [
+            0.28869998092815685,
+            -1.4695466934285804
+          ],
+          "error": 0.3595120620645803
+        },
+        {
+          "step": 4,
+          "predicted": [
+            0.3005671698171391,
+            -1.4728424232032824
+          ],
+          "trueState": [
+            -0.1735456361674178,
+            -1.4881562405319015
+          ],
+          "error": 0.47436005923741564
+        }
+      ]
+    }
+  },
+  "verdict": "State-local learned physical effects generalize in a nonlinear quartic maze when sufficiently dense true action experiences are available. Neither equations nor universal physics were discovered; shifted physics may require further real interventions.",
+  "limitations": [
+    "This is local interpolation, a known mathematical method.",
+    "Physical 2D state variables are chosen by the experimenter.",
+    "Test states are within the trained phase-space rectangle; extrapolation not established.",
+    "Hyperparameters and method are chosen using separate validation simulations.",
+    "No quantum gravity, anharmonic quantum state or actual laboratory measurement."
+  ]
+}
