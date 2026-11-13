@@ -1,0 +1,35 @@
+name: Native MagicPerspective blind historical atmospheric pilot
+on:
+  push:
+    paths:
+      - 'experiments/atmospheric-native-20261113/**'
+      - '.github/workflows/native-atmospheric-20261113.yml'
+  workflow_dispatch:
+jobs:
+  original-brain-real-weather:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Clone pinned original V42 without modifying original code
+        run: |
+          git clone --depth 1 --branch perf/V42-FAST-EXACT-CPU-RESUME-V41FAST-20261107 https://github.com/dan3s2020/MagicPerspective.git /tmp/original-v42
+          test "$(git -C /tmp/original-v42 rev-parse HEAD)" = "ac205b5bc561274b957584a7dee058a1110ab6f8"
+      - name: Check original-Brain experiment syntax
+        run: node --check experiments/atmospheric-native-20261113/native-weather-blind.mjs
+      - name: Run blinded actual organism on genuine ERA5 historical observations
+        env:
+          V42_ORIGINAL_TEST_ROOT: /tmp/original-v42
+        run: node experiments/atmospheric-native-20261113/native-weather-blind.mjs
+      - name: Upload real raw predictions (only if run produced any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: magicperspective-native-atmospheric-real-weather-results
+          path: experiments/atmospheric-native-20261113/results/latest.json
+          if-no-files-found: warn
