@@ -1,0 +1,152 @@
+{
+  "date": "2026-11-13",
+  "source": "independent Schrodinger density-matrix commutator Fourier integral",
+  "trainingAndOriginalNativeSource": "ac205b5bc561274b957584a7dee058a1110ab6f8",
+  "noRefitOnIndependentQuantumObservations": true,
+  "cases": [
+    {
+      "potential": "quartic",
+      "frozenTerms": [
+        {
+          "order": 3,
+          "ax": 1,
+          "bl": 1,
+          "ch": 2
+        },
+        {
+          "order": 5,
+          "ax": 1,
+          "bl": 1,
+          "ch": 2
+        }
+      ],
+      "frozenCoefficients": [
+        -0.24988846087303235,
+        0.0006481825176835169
+      ],
+      "test": {
+        "n": 200,
+        "mae": 0.00015331336917230465,
+        "r2": 0.9999607608692906,
+        "zeroModelMse": 0.0025247207334889686,
+        "oracleAgreementMAE": 3.8462398176607964e-17,
+        "examples": [
+          {
+            "schrodingerPotentialKernel": 0.00009817903124884862,
+            "frozenOrganismPrediction": 0.0001010103723123309,
+            "knownMoyalDiagnostic": 0.00009817903124884844
+          },
+          {
+            "schrodingerPotentialKernel": 0.0014064319177240433,
+            "frozenOrganismPrediction": 0.001408899793086433,
+            "knownMoyalDiagnostic": 0.0014064319177240418
+          },
+          {
+            "schrodingerPotentialKernel": 0.0002823949688011145,
+            "frozenOrganismPrediction": 0.0002872620173703015,
+            "knownMoyalDiagnostic": 0.00028239496880111447
+          }
+        ]
+      },
+      "shifted": {
+        "n": 100,
+        "mae": 0.00017910599447342157,
+        "r2": 0.9999919459329102,
+        "zeroModelMse": 0.009305100550745068,
+        "oracleAgreementMAE": 8.760814339606182e-17,
+        "examples": [
+          {
+            "schrodingerPotentialKernel": -0.018405378783775607,
+            "frozenOrganismPrediction": -0.018261899846706807,
+            "knownMoyalDiagnostic": -0.018405378783775603
+          },
+          {
+            "schrodingerPotentialKernel": 0.10889259334862977,
+            "frozenOrganismPrediction": 0.10890532967798602,
+            "knownMoyalDiagnostic": 0.10889259334862958
+          },
+          {
+            "schrodingerPotentialKernel": 0.12576116298534024,
+            "frozenOrganismPrediction": 0.12560513216213276,
+            "knownMoyalDiagnostic": 0.12576116298534032
+          }
+        ]
+      }
+    },
+    {
+      "potential": "sextic",
+      "frozenTerms": [
+        {
+          "order": 3,
+          "ax": 3,
+          "bl": 1,
+          "ch": 2
+        },
+        {
+          "order": 5,
+          "ax": 1,
+          "bl": 1,
+          "ch": 4
+        }
+      ],
+      "frozenCoefficients": [
+        -0.8365608730198504,
+        0.06605424108374586
+      ],
+      "test": {
+        "n": 200,
+        "mae": 0.0016336680421706218,
+        "r2": 0.9998666128520657,
+        "zeroModelMse": 0.056785998182743075,
+        "oracleAgreementMAE": 1.3317417067932376e-16,
+        "examples": [
+          {
+            "schrodingerPotentialKernel": 0.054888123332517455,
+            "frozenOrganismPrediction": 0.05437888829653548,
+            "knownMoyalDiagnostic": 0.05488812333251747
+          },
+          {
+            "schrodingerPotentialKernel": 0.029679753612266338,
+            "frozenOrganismPrediction": 0.03038067018551431,
+            "knownMoyalDiagnostic": 0.02967975361226636
+          },
+          {
+            "schrodingerPotentialKernel": 0.008127298345527906,
+            "frozenOrganismPrediction": 0.008397184157898686,
+            "knownMoyalDiagnostic": 0.008127298345527905
+          }
+        ]
+      },
+      "shifted": {
+        "n": 100,
+        "mae": 0.011120484335046336,
+        "r2": 0.9995890447742164,
+        "zeroModelMse": 0.6916616815967958,
+        "oracleAgreementMAE": 4.276657153412522e-16,
+        "examples": [
+          {
+            "schrodingerPotentialKernel": -0.11621513316910599,
+            "frozenOrganismPrediction": -0.11826062315212232,
+            "knownMoyalDiagnostic": -0.11621513316910628
+          },
+          {
+            "schrodingerPotentialKernel": -0.37426214323958146,
+            "frozenOrganismPrediction": -0.38164541018797205,
+            "knownMoyalDiagnostic": -0.3742621432395815
+          },
+          {
+            "schrodingerPotentialKernel": 0.23868868020786385,
+            "frozenOrganismPrediction": 0.2483567185255673,
+            "knownMoyalDiagnostic": 0.2386886802078631
+          }
+        ]
+      }
+    }
+  ],
+  "verdict": "Known quantum correction rediscovered within a restricted hypothesis grammar, corroborated by an independently implemented instantaneous Schrodinger generator. No new law.",
+  "limits": [
+    "Instantaneous potential generator, not full Schrodinger integration.",
+    "Initial states are pure coherent-state Gaussians, not laboratory observations.",
+    "Researcher selected 450 candidate derivative/power operators."
+  ]
+}
