@@ -129,21 +129,18 @@ function evalMethod(brain,method,{validation=false,nonlinear={}}={}){
     meanPredictedEnergyDrift:energyDrift/count,preview};
 }
 export function runNonlinear(){
-  const base=new LocalFieldDiscoverer(17);let mazeWins=0;
-  for(let i=0;i<160;i++)
-    mazeWins+=Number(playExercise(makeMaze(1000003+i*7919,7,.3),base).solved);
+  const trainFullNative=()=>{
+    const brain=new LocalFieldDiscoverer(17);let wins=0;
+    for(let i=0;i<160;i++)
+      wins+=Number(playExercise(makeMaze(1000003+i*7919,7,.3),brain).solved);
+    return {brain,wins};
+  };
+  const {wins:mazeWins}=trainFullNative();
   const samples=[];
   for(const n of [64,256,1024]){
-    const brain=new LocalFieldDiscoverer(17);
-    // share native maze learning state, no invented checkpoint:
-    // copy native learned state exactly, retain its prototype.
-    // But never use target outcomes in original maze learning.
-    const D=base;
-    // For scientific isolation, each new body uses the SAME original
-    // trained Discoverer, with independent local physics experience.
-    const independent=Object.assign(brain,{
-      pass:D.pass.slice(),block:D.block.slice(),enter:D.enter.slice(),
-      endIn:D.endIn.slice()});
+    // Replay the complete original world for every independent body.
+    // Do not copy only attractive/repulsive counters from another brain.
+    const {brain:independent}=trainFullNative();
     experiencePhysicalWorld(independent,n);
     const methods=["nearest","weighted","triangle","hybrid"];
     const validation=methods.map(method=>({method,...evalMethod(independent,method,{validation:true})}));
@@ -152,14 +149,10 @@ export function runNonlinear(){
     samples.push({observedInterventions:n,validation:validation.map(x=>({
       method:x.method,mae:x.mae})),winner,heldout});
   }
-  const best=samples.at(-1),scrambled=new LocalFieldDiscoverer(17);
-  scrambled.pass=base.pass.slice();scrambled.block=base.block.slice();
-  scrambled.enter=base.enter.slice();scrambled.endIn=base.endIn.slice();
+  const best=samples.at(-1),{brain:scrambled}=trainFullNative();
   experiencePhysicalWorld(scrambled,1024,true);
   const shuffled=evalMethod(scrambled,best.winner);
-  const shifted=new LocalFieldDiscoverer(17);
-  shifted.pass=base.pass.slice();shifted.block=base.block.slice();
-  shifted.enter=base.enter.slice();shifted.endIn=base.endIn.slice();
+  const {brain:shifted}=trainFullNative();
   experiencePhysicalWorld(shifted,1024);
   const changedStrength=evalMethod(shifted,best.winner,
     {nonlinear:{lambda:1.15,dt:.23}});
