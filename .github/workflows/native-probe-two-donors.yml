@@ -1,0 +1,16 @@
+name: Two separate genuine forecast donor probe
+on:
+  push:
+    paths:
+      - 'experiments/atmospheric-native-20261113/probe-two-donor-models.mjs'
+      - '.github/workflows/native-probe-two-donors.yml'
+  workflow_dispatch:
+jobs:
+  actual-independent-forecast-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node experiments/atmospheric-native-20261113/probe-two-donor-models.mjs
