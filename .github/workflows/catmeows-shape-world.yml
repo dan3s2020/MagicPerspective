@@ -1,0 +1,40 @@
+name: Braivour original Discoverer shapeGraph on real cat acoustic routes
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_acoustic_shape_world.mjs'
+      - '.github/workflows/catmeows-shape-world.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-discoverer-acoustic-route:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Original 440 audio samples checksum
+        run: python research/catmeows_native/prepare.py
+      - name: Original uncut extra recordings checksum
+        run: python research/catmeows_native/audit_extras.py
+      - name: Extract time ordered genuine uncut acoustic bursts
+        run: python research/catmeows_native/prepare_sequences.py
+      - name: Original Brain DISCOVERER shapeGraph predicts unseen physical audio route before acting
+        run: node --max-old-space-size=6000 research/catmeows_native/native_acoustic_shape_world.mjs
+      - name: Store independent full trajectory tests (no audio redistribution)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmeows-real-audio-original-brain-discoverer-shape-graph
+          path: |
+            runtime/catmeows/native_acoustic_shape_world.json
+            runtime/catmeows/native_acoustic_shape_world_predictions.jsonl
+          if-no-files-found: warn
