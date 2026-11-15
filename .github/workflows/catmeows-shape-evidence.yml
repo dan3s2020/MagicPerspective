@@ -1,0 +1,37 @@
+name: Native Discoverer empirical transition evidence corrects shortcut-to-silence
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_acoustic_shape_evidence.mjs'
+      - '.github/workflows/catmeows-shape-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  same-native-brain-causal-path-intervention:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - run: python research/catmeows_native/prepare.py
+      - run: python research/catmeows_native/audit_extras.py
+      - run: python research/catmeows_native/prepare_sequences.py
+      - name: Original shapeGraph with actual experienced edge probabilities (no oracle goal and no separate model)
+        run: node --max-old-space-size=6000 research/catmeows_native/native_acoustic_shape_evidence.mjs
+      - name: Preserve authentic paired native predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmeows-original-shape-with-grounded-edge-evidence
+          path: |
+            runtime/catmeows/native_acoustic_shape_world_empirical_edge.json
+            runtime/catmeows/native_acoustic_shape_world_empirical_edge_predictions.jsonl
+          if-no-files-found: warn
