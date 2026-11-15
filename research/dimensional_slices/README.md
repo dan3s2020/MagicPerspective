@@ -4,6 +4,20 @@
 - "Ying yang is our a and c perspectives or something that works better"
 - "We just need to make it like with those shapes,s transformation of the forms by slice of dimensions and yes everything you i said"
 
+## Executed results and full research ledger
+
+**See [RESULTS_20261116.md](./RESULTS_20261116.md)** for all three executed original-organism tests, including the failed passive predictor, successful native motor learning, the learned causal A/C morphology advantage, object-cluster confidence intervals, and all caveats.
+
+Run the actual original-body stages (unchanged source imported from V17) on Node 22:
+
+```bash
+node research/dimensional_slices/native_ac_pairing.mjs
+node research/dimensional_slices/native_ac_action_world.mjs
+node research/dimensional_slices/native_ac_lived_form.mjs
+```
+
+The third test actually ran on GitHub Actions (25 unseen physical 4D orientations). Cross-perspective moving actions: native paired-learning occupancy F1 71.99% (combination weighted by 83+83 paired actions), shuffled-learning F1 68.11%; gain 3.885 percentage points, exploratory object-cluster sign-flip p≈0.0058. Exact full-form recovery is still not achieved, and no claim of GGUF intelligence transfer is made.
+
 ## Original-organism execution
 `native_ac_pairing.mjs` imports the **existing unchanged** `Brain` and uses its native `live` and `predict` methods directly. The Brain's persistent `Discoverer` remains part of the same organism and is checked for frozen-evaluation mutations. This is not a new neural network, generic autoencoder, GAN, classifier, or standalone substitute. This experimental stage tests native perceptual prediction, **not** full `Discoverer.shapeGraph` navigation; claiming that would be incorrect.
 
