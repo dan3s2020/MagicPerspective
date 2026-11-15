@@ -1,0 +1,45 @@
+name: Braivour native 24-frame genuine acoustic-time fidelity test
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/prepare_highres.py'
+      - 'research/catmeows_native/native_highres_world.mjs'
+      - '.github/workflows/catmeows-highres.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-real-time-resolution:
+    strategy:
+      fail-fast: false
+      matrix:
+        fold: ['0','1','2']
+    name: 24-real-audio-frames-owner-heldout-fold-${{ matrix.fold }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Verify authentic WAV and retain 24 sound frames with no context in sensor input
+        run: python research/catmeows_native/prepare_highres.py
+      - name: Original single Brain learns physical time-change trajectory, then tests on unseen cats
+        env:
+          CATMEOWS_FOLDS: ${{ matrix.fold }}
+        run: node --max-old-space-size=6000 research/catmeows_native/native_highres_world.mjs
+      - name: Preserve all heldout predictions for causal audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-native-real-audio-24frame-${{ matrix.fold }}
+          path: |
+            runtime/catmeows/highres_provenance.json
+            runtime/catmeows/native_highres_world_results.json
+            runtime/catmeows/native_highres_world_predictions.jsonl
+          if-no-files-found: warn
