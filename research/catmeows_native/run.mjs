@@ -13,8 +13,11 @@ if(!fs.existsSync(DATA))throw Error('REAL CatMeows sensory.json missing. No synt
 const rows=JSON.parse(fs.readFileSync(DATA,'utf8'));
 if(rows.length!==440)throw Error('Expected all 440 CatMeows recordings');
 const CLASSES=['B','F','I'];
-const TOKENS={B:4,F:5,I:6};
-const REVERSE={4:'B',5:'F',6:'I'};
+const tokenMode=process.env.CATMEOWS_TOKEN_MODE||'original';
+const sampling=process.env.CATMEOWS_SAMPLING||'all';
+const TOKENS=tokenMode==='high'?{B:240,F:241,I:242}:{B:4,F:5,I:6};
+const REVERSE=Object.fromEntries(Object.entries(TOKENS).map(([k,v])=>[v,k]));
+const START=tokenMode==='high'?245:15, CUT=tokenMode==='high'?246:16, END=tokenMode==='high'?247:17;
 const BASE={depth:1,off:['R2','R4'],budEvery:100,empty:true,maxWires:32,fold:false};
 const OUT='runtime/catmeows';
 const variants=process.env.CATMEOWS_VARIANTS?process.env.CATMEOWS_VARIANTS.split(','):['audio_absolute','audio_change'];
@@ -71,32 +74,39 @@ function sense(record,variant,reverseFrames=false){
   const audio=record[variant];
   if(!Array.isArray(audio)||audio.length!==72||audio.some(x=>!Number.isInteger(x)||x<20||x>127))
     throw Error('Invalid label-free audio sensory stream');
-  if(!reverseFrames)return audio;
+  if(!reverseFrames)return tokenMode==='high'?audio.map(y=>y+108):audio;
   const frames=[];
   for(let i=0;i<audio.length;i+=9)frames.push(audio.slice(i,i+9));
-  return frames.reverse().flat();
+  const flipped=frames.reverse().flat();return tokenMode==='high'?flipped.map(y=>y+108):flipped;
 }
 function majority(train){
   const c=Object.fromEntries(CLASSES.map(k=>[k,train.filter(x=>x.context===k).length]));
   return CLASSES.slice().sort((a,b)=>c[b]-c[a]||a.localeCompare(b))[0];
 }
 function trainBrain(brain,trainingRows,variant,labelMode,seed){
-  const seen=shuffle(trainingRows,seed);
+  const all=shuffle(trainingRows,seed);
+  let seen=all;
+  if(sampling==='undersample'){
+    const counts=Object.fromEntries(CLASSES.map(k=>[k,all.filter(r=>r.context===k).length]));
+    const minimum=Math.min(...Object.values(counts));
+    seen=shuffle(CLASSES.flatMap(k=>all.filter(r=>r.context===k).slice(0,minimum)),seed+101);
+  }
+  if(sampling!=='all'&&sampling!=='undersample')throw Error('Unknown sampling');
   const originalLabels=seen.map(r=>r.context);
   const labels=labelMode==='shuffled_labels'?shuffle(originalLabels,seed+9001):originalLabels;
   for(let i=0;i<seen.length;i++){
-    brain.live(15);
+    brain.live(START);
     for(const acousticEvent of sense(seen[i],variant))brain.live(acousticEvent);
-    brain.live(16);                  // this is the boundary before a TRAINING context
+    brain.live(CUT);                  // this is the boundary before a TRAINING context
     brain.live(TOKENS[labels[i]]);   // only training recordings reveal this context
-    brain.live(17);
+    brain.live(END);
   }
   return {lived:brain.lived,trainingRecords:seen.length,
     preservedTrainingClassCounts:Object.fromEntries(CLASSES.map(k=>[k,labels.filter(y=>y===k).length]))};
 }
 function predict(brain,record,variant,reverseFrames=false){
   // ABSOLUTELY NO context, ID, label or session metadata is given to native Brain.
-  const input=[15,...sense(record,variant,reverseFrames),16];
+  const input=[START,...sense(record,variant,reverseFrames),CUT];
   const before=brain.lived;
   const result=brain.align.write(input,{max:1,T:0});
   if(brain.lived!==before)throw Error('Heldout prediction learned from a test recording');
@@ -117,14 +127,14 @@ for(const variant of variants)for(const labelMode of shamModes){
       const r=predict(brain,record,variant,true);
       truth.push(record.context);
       pred.push(p.context);reversed.push(r.context);major.push(majorityLabel);
-      predictionRows.push({variant,labelMode,fold,owner:record.owner,cat:record.cat,
+      predictionRows.push({variant,labelMode,tokenMode,sampling,fold,owner:record.owner,cat:record.cat,
         recording:record.recording,truth:record.context,prediction:p.context,
         nativeEvent:p.nativeNextEvent,reversePrediction:r.context});
     }
     const metrics=foldMetrics(truth,pred);
     const baseline=foldMetrics(truth,major);
     const reverseMetrics=foldMetrics(truth,reversed);
-    const record={variant,labelMode,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
+    const record={variant,labelMode,tokenMode,sampling,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
       trainCats:new Set(train.map(x=>x.cat)).size,testCats:new Set(test.map(x=>x.cat)).size,
       ...info,majorityClass:majorityLabel,
       abstainRate:pred.filter(x=>x==='?').length/Math.max(1,test.length),
@@ -145,7 +155,7 @@ function aggregate(variant,labelMode){
       fold:r.fold,trainN:r.trainN,testN:r.testN,accuracy:r.metrics.accuracy,
       balancedAccuracy:r.metrics.balancedAccuracy,majority:r.majorityBaseline.accuracy}))};
 }
-const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().toISOString(),
+const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().toISOString(),tokenMode,sampling,
   source:'Zenodo 4008297, 440 official WAV files; MD5 checked by prepare.py',
   sourceBrain:'MagicPerspective V42 ac205b5bc561274b957584a7dee058a1110ab6f8/v17/transcend/torus-aether/devour/brain.mjs',
   originalBrainOwnsLearning:true,trainLabelsOnly:true,heldoutSameOwner:false,heldoutSameCat:false,
@@ -154,7 +164,7 @@ const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().
   runs:variants.flatMap(variant=>shamModes.map(mode=>aggregate(variant,mode))),
   foldMetrics:summary};
 fs.mkdirSync(OUT,{recursive:true});
-fs.writeFileSync(path.join(OUT,'results.json'),JSON.stringify(report,null,2));
-fs.writeFileSync(path.join(OUT,'heldout_predictions.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
+fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'.json'),JSON.stringify(report,null,2));
+fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
 console.log('CATMEOWS_SUMMARY '+JSON.stringify(report.runs));
 console.log('CATMEOWS_ORIGINAL_BRAIN_TRIAL_COMPLETED '+completed);

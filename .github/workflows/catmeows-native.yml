@@ -10,9 +10,23 @@ on:
 permissions:
   contents: read
 jobs:
-  genuine-audio-original-brain:
+  native-auditory-causal-controls:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: high-audio-unbalanced
+            token: high
+            sampling: all
+          - name: high-audio-balanced
+            token: high
+            sampling: undersample
+          - name: original-audio-balanced
+            token: original
+            sampling: undersample
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,20 +35,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install numeric reader
+      - name: Install numeric reader only
         run: python -m pip install numpy
-      - name: Download and checksum genuine CatMeows WAV recordings
+      - name: Download verified CatMeows WAVs, extract label-blind sensory events
         run: python research/catmeows_native/prepare.py
-      - name: Run actual original organism on unseen cats
+      - name: Train and measure actual original V42 Brain on cats and owners never seen in training
         env:
           CATMEOWS_FULL: '1'
+          CATMEOWS_TOKEN_MODE: ${{ matrix.token }}
+          CATMEOWS_SAMPLING: ${{ matrix.sampling }}
         run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
-      - name: Upload raw heldout predictions and evidence
+      - name: Upload raw heldout predictions and metrics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: actual-catmeows-original-brain
+          name: ${{ matrix.name }}-raw-real-audio
           path: |
-            runtime/catmeows/results.json
-            runtime/catmeows/heldout_predictions.jsonl
+            runtime/catmeows/results-*.json
+            runtime/catmeows/heldout_predictions-*.jsonl
           if-no-files-found: warn
