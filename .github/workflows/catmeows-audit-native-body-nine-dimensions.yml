@@ -1,0 +1,38 @@
+name: CatMeows original Braivour sound-body realism: ALL NINE acoustic dimensions
+on:
+  push:
+    branches: [experiment/CATMEOWS-CONTINUE-NATIVE-BODY-20261116]
+    paths:
+      - 'research/catmeows_native/audit_original_body_9d_realism.py'
+      - '.github/workflows/catmeows-audit-native-body-nine-dimensions.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-body-reality-vs-true-real-wav:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Checksum-verify and perceive original 440 real CatMeows WAVs without labels
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Retrieve actual previously generated original Brain body dreams, NOT re-create them
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43749222486 --repo dan3s2020/MagicPerspective --name braivour-temporal-audio-body-chronological --dir runtime/catmeows
+          test -s runtime/catmeows/native_temporal_embodied_audio_game.json
+      - name: Compare genuine 9-D acoustic dynamics and native imagined 9-D WAV-state transitions to never-seen real cats
+        run: python research/catmeows_native/audit_original_body_9d_realism.py
+      - name: Preserve complete numeric evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: braivour-original-body-9d-acoustic-novelty-reality-audit
+          path: runtime/catmeows/native_body_9d_audio_realism_audit.json
+          if-no-files-found: warn
