@@ -186,7 +186,9 @@ function compareFrozen(brain,seed,wrongSeed=null){
   const r=rand(seed);
   let targetCorrect=0,targetN=0,nextAcc=0,nextF1=0,nextWhole=0,
     nextOutside=0,shapeOffered=0,gamesSolved=0,games=0,moves=0,
-    movementPredicted=0,mutation=false;
+    movementPredicted=0,mutation=false,
+    copyAcc=0,copyF1=0,alwaysOnF1=0;
+  const buckets=new Map();
   for(let i=0;i<4;i++){
     let pos=starts[i],goal=goals[i];
     if(pos===goal)continue;
@@ -207,6 +209,13 @@ function compareFrozen(brain,seed,wrongSeed=null){
       if(pred!==null&&nextTruth!==pos){
         const target=physicalFrame(seed,nextTruth).slice(3,19);
         const s=score(pred,target);
+        const copy=score(trace.slice(3,19),target),always=score(new Array(16).fill(49),target);
+        copyAcc+=copy.exact;copyF1+=copy.f1;alwaysOnF1+=always.f1;
+        const ty=bodyTransformType(pos,nextTruth),b=buckets.get(ty)||{
+          n:0,accuracy:0,f1:0,copyAccuracy:0,copyF1:0,full:0};
+        b.n++;b.accuracy+=s.exact/16;b.f1+=s.f1;
+        b.copyAccuracy+=copy.exact/16;b.copyF1+=copy.f1;b.full+=s.whole;
+        buckets.set(ty,b);
         nextAcc+=s.exact;nextF1+=s.f1;nextWhole+=s.whole;
         nextOutside+=s.unsupported;targetN++;
         movementPredicted+=+(nextGuess===nextTruth);
@@ -227,6 +236,13 @@ function compareFrozen(brain,seed,wrongSeed=null){
    occupancyF1:targetN?nextF1/targetN:null,wholeFrameRate:targetN?nextWhole/targetN:null,
    outOfRangeRate:targetN?nextOutside/(16*targetN):null,
    nativeMotorPredictionAccuracy:targetN?movementPredicted/targetN:null,
+   sourceCopyCellAccuracy:targetN?copyAcc/(16*targetN):null,
+   sourceCopyOccupancyF1:targetN?copyF1/targetN:null,
+   allOccupiedOccupancyF1:targetN?alwaysOnF1/targetN:null,
+   transitions:Object.fromEntries([...buckets.entries()].map(([type,b])=>[type,{
+     n:b.n,accuracy:b.accuracy/b.n,occupancyF1:b.f1/b.n,
+     copyAccuracy:b.copyAccuracy/b.n,copyF1:b.copyF1/b.n,
+     fullExactRate:b.full/b.n}])),
    nativeShapeOffered:shapeOffered,actualMovements:moves,games,
    goalReached:games?gamesSolved/games:null};
 }
@@ -251,7 +267,9 @@ function run(trainWrong=false){
     training.push(playTraining(B,seed,start,goal,wrong));
   }
   const frozenBefore=snapshot(B);
-  let n=0,acc=0,f1=0,whole=0,range=0,motor=0,solved=0;
+  let n=0,acc=0,f1=0,whole=0,range=0,motor=0,solved=0,
+    copyAcc=0,copyF1=0,allF1=0;
+  const transitionBuckets=new Map();
   let examples=[];
   for(const seed of TEST){
     const trial=compareFrozen(B,seed);
@@ -262,6 +280,14 @@ function run(trainWrong=false){
       whole+=trial.wholeFrameRate*trial.targetN;
       range+=trial.outOfRangeRate*trial.targetN;
       motor+=trial.nativeMotorPredictionAccuracy*trial.targetN;
+      copyAcc+=trial.sourceCopyCellAccuracy*trial.targetN;
+      copyF1+=trial.sourceCopyOccupancyF1*trial.targetN;
+      allF1+=trial.allOccupiedOccupancyF1*trial.targetN;
+      for(const [type,s] of Object.entries(trial.transitions)){
+        const b=transitionBuckets.get(type)||{n:0,acc:0,f1:0,copyF1:0};
+        b.n+=s.n;b.acc+=s.accuracy*s.n;b.f1+=s.occupancyF1*s.n;
+        b.copyF1+=s.copyF1*s.n;transitionBuckets.set(type,b);
+      }
     }
     solved+=trial.goalReached;
     examples.push(...trial.samples.slice(0,Math.max(0,10-examples.length)));
@@ -279,6 +305,11 @@ function run(trainWrong=false){
       wholeFrameRate:n?whole/n:null,
       outOfRangeRate:n?range/n:null,
       nativeMotorPredictionAccuracy:n?motor/n:null,
+      sourceCopyCellAccuracy:n?copyAcc/n:null,
+      sourceCopyOccupancyF1:n?copyF1/n:null,
+      alwaysOnOccupancyF1:n?allF1/n:null,
+      byTransform:Object.fromEntries([...transitionBuckets.entries()].map(([ty,b])=>[ty,{
+        n:b.n,accuracy:b.acc/b.n,occupancyF1:b.f1/b.n,copyF1:b.copyF1/b.n}])),
       goalReachedRate:solved/(TEST.length*1),examples}
   };
 }
