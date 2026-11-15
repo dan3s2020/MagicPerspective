@@ -228,14 +228,14 @@ export class NativeTemporalAuditoryBody extends NativeAuditoryBody{
   return this.play(episode,{learn:true,...options});
  }
  dream({seed=731,length=48,start=null,desired=null}={}){
-  const D=this.brain.disc,rand=rand(seed);
+  const D=this.brain.disc,random=rand(seed);
   if(D.self()!==KIND.self)throw Error('Original body cannot yet identify itself');
-  const starts=this.cells.filter(i=>this.early[i]>0&&this.adjacency[i].length>0);
   const ends=this.cells.filter(i=>this.terminal[i]>0);
+  const starts=this.cells.filter(i=>this.early[i]>0&&this.adjacency[i].length>0 && ends.some(g=>this.toWorld(i,g,1,28)));
   if(!starts.length||!ends.length)throw Error('No genuine acoustic body start/end');
-  let current=start===null?starts[Math.floor(rand()*starts.length)]:start;
+  let current=start===null?starts[Math.floor(random()*starts.length)]:start;
   const options=()=>ends.filter(i=>this.toWorld(current,i,1,28));
-  let goals=options(),goal=desired===null?goals[Math.floor(rand()*goals.length)]:desired;
+  let goals=options(),goal=desired===null?goals[Math.floor(random()*goals.length)]:desired;
   if(!this.toWorld(current,goal,1,28))goal=goals[0];
   if(goal==null)throw Error('Native audio body has no reachable dream target');
   const frames=[this.atCell(current)],cells=[current],goalsReached=[],outputs=[],plans=[];
@@ -244,7 +244,7 @@ export class NativeTemporalAuditoryBody extends NativeAuditoryBody{
    if(current===goal){
     goalsReached.push(goal);goals=options();
     if(!goals.length)goals=this.cells.filter(i=>this.toWorld(current,i,1,28));
-    if(goals.length)goal=goals[Math.floor(rand()*goals.length)];
+    if(goals.length)goal=goals[Math.floor(random()*goals.length)];
     visits.fill(0);
    }
    const ret=this.retina({wall:this.wall,goal},current);
