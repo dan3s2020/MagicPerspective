@@ -20,19 +20,35 @@ const OUT='runtime/catmeows';
 const variants=process.env.CATMEOWS_VARIANTS?process.env.CATMEOWS_VARIANTS.split(','):['audio_absolute','audio_change'];
 const FULL_RUN=process.env.CATMEOWS_FULL!=='0';
 const shamModes=FULL_RUN?['true','shuffled_labels']:['true'];
-const foldCount=3;const selectedFolds=process.env.CATMEOWS_FOLDS?process.env.CATMEOWS_FOLDS.split(',').map(Number):[0,1,2];
 function rng(seed){let x=seed>>>0;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296;};}
 function shuffle(arr,seed){const a=arr.slice(),r=rng(seed);for(let i=a.length-1;i>0;i--){let j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 const owners=[...new Set(rows.map(r=>r.owner))].sort();
+const parents=new Map();
+function root(k){if(!parents.has(k))parents.set(k,k);const p=parents.get(k);if(p!==k)parents.set(k,root(p));return parents.get(k);}
+function join(a,b){const x=root(a),y=root(b);if(x!==y)parents.set(x,y);}
+for(const r of rows)join('cat:'+r.cat,'owner:'+r.owner);
+const groupMap=new Map();
+for(const r of rows){const k=root('cat:'+r.cat);if(!groupMap.has(k))groupMap.set(k,{owners:new Set(),cats:new Set(),count:0});const g=groupMap.get(k);g.owners.add(r.owner);g.cats.add(r.cat);g.count++;}
+const components=[...groupMap.values()].sort((a,b)=>b.count-a.count || [...a.owners][0].localeCompare([...b.owners][0]));
+if(components.length<2)throw Error('Cannot form genuinely unseen-cat and unseen-owner partitions');
+const foldCount=Math.min(3,components.length);
+const selectedFolds=process.env.CATMEOWS_FOLDS?process.env.CATMEOWS_FOLDS.split(',').map(Number):Array.from({length:foldCount},(_,i)=>i);
 const foldedOwners=Array.from({length:foldCount},()=>[]);
-owners.forEach((o,i)=>foldedOwners[i%foldCount].push(o));
+const foldSizes=Array(foldCount).fill(0);
+for(const group of components){
+  let ix=foldSizes.indexOf(Math.min(...foldSizes));
+  foldedOwners[ix].push(...group.owners);
+  foldSizes[ix]+=group.count;
+}
+console.log('CATMEOWS_GROUPING '+JSON.stringify({components:components.map(g=>({owners:[...g.owners],cats:[...g.cats],clips:g.count})),foldSizes}));
 const ownerSplit=foldedOwners.map(group=>{
   const test=rows.filter(r=>group.includes(r.owner));
   const train=rows.filter(r=>!group.includes(r.owner));
   const trainCats=new Set(train.map(r=>r.cat)),testCats=new Set(test.map(r=>r.cat));
-  if([...testCats].some(cat=>trainCats.has(cat)))throw Error('CAT ID LEAKAGE across owner folds');
+  if([...testCats].some(cat=>trainCats.has(cat)))throw Error('CAT ID LEAKAGE across heldout groups');
   if(train.some(x=>test.some(y=>x.owner===y.owner)))throw Error('OWNER ID LEAKAGE');
   if(new Set(train.map(r=>r.context)).size!==3)throw Error('Missing training class in fold');
+  if(test.length===0)throw Error('Empty heldout partition');
   return {group,train,test};
 });
 const summary=[];
