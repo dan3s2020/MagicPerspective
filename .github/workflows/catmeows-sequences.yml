@@ -1,0 +1,45 @@
+name: Native Braivour real uncut cat-vocalization succession
+on:
+  push:
+    branches: [experiment/CATMEOWS-CAUSAL-AUDIT-20261115]
+    paths:
+      - 'research/catmeows_native/run_sequences.mjs'
+      - 'research/catmeows_native/prepare_sequences.py'
+      - '.github/workflows/catmeows-sequences.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-multicall:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numeric waveform reader only, not a trained model
+        run: python -m pip install numpy
+      - name: Validate original CatMeows WAVs
+        run: python research/catmeows_native/prepare.py
+      - name: Verify and inspect original uncut extras
+        run: python research/catmeows_native/audit_extras.py
+      - name: Observe real time-order of separated acoustic bursts
+        run: python research/catmeows_native/prepare_sequences.py
+      - name: Learn and evaluate time-ordered real acoustic events with the SAME original native Brain
+        env:
+          BRAIVOUR_AUDIO_FORM_BIN: '0'
+        run: node --max-old-space-size=6000 research/catmeows_native/run_sequences.mjs
+      - name: Publish verifiable audio sequence metrics without redistributing recording bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-brain-real-uncut-audio-results
+          path: |
+            runtime/catmeows/real_sequences_metadata.json
+            runtime/catmeows/uncut_native_sequence_results.json
+            runtime/catmeows/uncut_native_sequence_predictions.jsonl
+          if-no-files-found: warn
