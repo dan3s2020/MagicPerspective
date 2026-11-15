@@ -27,9 +27,7 @@ jobs:
         run: python research/catmeows_native/prepare.py
       - name: Run actual original organism on unseen cats
         env:
-          CATMEOWS_FULL: '0'
-          CATMEOWS_VARIANTS: 'audio_absolute'
-          CATMEOWS_FOLDS: '0'
+          CATMEOWS_FULL: '1'
         run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
       - name: Upload raw heldout predictions and evidence
         if: always()
