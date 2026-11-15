@@ -51,20 +51,23 @@ for(let i=0;i<train.length;i++){
 }
 const sensed=body.finishPerception();
 const trainTasks=train.map(x=>body.fromRecording(x)).filter(Boolean);
+const firstSuccessExperiences=train.map(x=>body.fromRecording(x,{difficulty:'near'})).filter(Boolean);
 const unseenTasks=held.map(x=>body.fromRecording(x)).filter(Boolean);
 console.log('CATMEOWS_REAL_NATIVE_BODY_SENSING '+JSON.stringify({
  fold:FOLD,trainN:train.length,unseenN:held.length,
- order:ORDER,trainTasks:trainTasks.length,unseenTasks:unseenTasks.length,...sensed}));
-if(trainTasks.length<12||unseenTasks.length<8)
+ order:ORDER,trainTasks:trainTasks.length,firstSuccessExperiences:firstSuccessExperiences.length,unseenTasks:unseenTasks.length,...sensed}));
+if(trainTasks.length<12||firstSuccessExperiences.length<12||unseenTasks.length<8)
  throw Error('Genuine auditory support is too sparse: cannot validate original body without inventing world states');
 const priorEffects=[0,1,2,3,4,5,6,7].map(x=>brain.disc.effect(x));
 const learnRuns=[];
 const games=Number(process.env.CATMEOWS_BODY_GAMES??320);
 if(!Number.isInteger(games)||games<50||games>750)throw Error('Training games 50..750 only');
 for(let i=0;i<games;i++){
- const task=trainTasks[(i*17+Math.floor(i/Math.max(1,trainTasks.length)))%trainTasks.length];
+ const early=i<Math.min(190,Math.floor(games*0.58));
+ const pool=early?firstSuccessExperiences:trainTasks;
+ const task=pool[(i*17+Math.floor(i/Math.max(1,pool.length)))%pool.length];
  const res=body.train(task);
- learnRuns.push({i,solved:res.solved,steps:res.steps,optimal:res.optimal,
+ learnRuns.push({i,curriculum:early?'experienced-next-sound-state':'full-sound-transform-target',solved:res.solved,steps:res.steps,optimal:res.optimal,
     learnedSelf:res.knows?.knows??res.knows?.self,
     effects:res.knows?.moves,wallRepels:res.knows?.wallRepels,targetAttracts:res.knows?.targetAttracts});
  if(i===0||i===24||i===99||i===199||i===games-1){
@@ -140,6 +143,8 @@ const output={
      heldoutCats:new Set(held.map(x=>x.cat)).size,trainWAVs:train.length,unseenWAVs:held.length},
  trueSoundWorld:sensed,
  gamesPlayed:learnRuns.length,trainingGameWinRate:learnRuns.filter(r=>r.solved).length/learnRuns.length,
+ trainingStageSuccess:{genuineCloseAuditoryTargets:learnRuns.filter(r=>r.curriculum==='experienced-next-sound-state'&&r.solved).length/Math.max(1,learnRuns.filter(r=>r.curriculum==='experienced-next-sound-state').length),
+ fullAuditoryTargets:learnRuns.filter(r=>r.curriculum==='full-sound-transform-target'&&r.solved).length/Math.max(1,learnRuns.filter(r=>r.curriculum==='full-sound-transform-target').length)},
  learnedOriginalNativeBody:{priorEffects,afterEffects:[0,1,2,3,4,5,6,7].map(a=>brain.disc.effect(a)),
    nativeSelf:brain.disc.self(),trust:brain.disc.trust,
    nativeConductance:[0,1,2,3].map(k=>brain.disc.conduct(k)),
