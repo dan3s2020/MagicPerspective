@@ -167,7 +167,7 @@ export class NativeTemporalAuditoryBody extends NativeAuditoryBody{
   // Original world is presented once to the same living Brain.
   if(learn){
    for(const kind of this.retina(w,pos))brain.live(rawSymbols[kind]);
-   brain.live(245);for(const v of this.atCell(pos))brain.live(20+12*f[0].indexOf(v)+v);
+   brain.live(245);const initialSound=this.atCell(pos);for(let j=0;j<C;j++)brain.live(20+12*j+initialSound[j]);
   }
   while(pos!==w.goal&&steps<max){
    const before=this.retina(w,pos);
