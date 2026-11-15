@@ -1,0 +1,29 @@
+name: Original V17 Brain — true 4D A/C dimensional sections
+on:
+  push:
+    branches:
+      - experiment/V17-AC-4D-LIVED-SLICE-20261116
+    paths:
+      - 'research/dimensional_slices/**'
+      - '.github/workflows/v17-ac-dimensional-slices.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-brain-4d-slices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V17 organism lives and predicts 4D dimensional slices
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_ac_pairing.mjs
+      - name: Upload honest result and real frozen heldout traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-brain-4d-ac-slices
+          path: runtime/dimensional_slices/real_4d_native_ac.json
+          if-no-files-found: warn
