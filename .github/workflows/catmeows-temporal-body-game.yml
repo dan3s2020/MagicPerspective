@@ -1,0 +1,52 @@
+name: Braivour native BODY plays actual time-forward CATMEOWS sound transformations
+on:
+  push:
+    branches: [experiment/CATMEOWS-TEMPORAL-BODY-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_temporal_body.mjs'
+      - 'research/catmeows_native/run_temporal_body_game.mjs'
+      - 'research/catmeows_native/render_temporal_body_audio.py'
+      - '.github/workflows/catmeows-temporal-body-game.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-magicperspective-embodied-sound-transformations:
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [chronological, shuffled]
+    name: real acoustic temporal physics ${{ matrix.order }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Verify REAL CatMeows PCM and sense complete pitch loudness harmonicity timbre
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Native Original Brain Discoverer plays actual observed time-forward sound transformation world
+        env:
+          CATMEOWS_BODY_FOLD: '0'
+          CATMEOWS_BODY_GAMES: '320'
+          CATMEOWS_BODY_AUDIO_ORDER: ${{ matrix.order }}
+        run: node --max-old-space-size=6000 research/catmeows_native/run_temporal_body_game.mjs
+      - name: Render playable WAV files from original body's actually supported acoustic action trajectories
+        run: python research/catmeows_native/render_temporal_body_audio.py
+      - name: Upload actual native body moves, frozen heldout trials, WAV recordings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: braivour-temporal-audio-body-${{ matrix.order }}
+          path: |
+            runtime/catmeows/generative_perception_summary.json
+            runtime/catmeows/native_temporal_embodied_audio_game.json
+            runtime/catmeows/native_temporal_embodied_audio_metrics.json
+            runtime/catmeows/temporal_embodied_audio/*.wav
+            runtime/catmeows/temporal_embodied_audio/README.txt
+          if-no-files-found: warn
