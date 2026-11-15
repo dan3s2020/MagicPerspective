@@ -1,0 +1,47 @@
+name: Braivour native 24frame acoustics independent source validation
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_external_highres_validation.mjs'
+      - '.github/workflows/catmeows-highres-external.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authentic-highres-cross-source:
+    strategy:
+      fail-fast: false
+      matrix:
+        fold: ['0','1','2']
+    name: independent extras 24 frames unseen owner fold ${{matrix.fold}}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Verify real 440 WAV and generate 24 frame acoustic observations
+        run: python research/catmeows_native/prepare_highres.py
+      - name: Check separate official extras WAV MD5
+        run: python research/catmeows_native/audit_extras.py
+      - name: Segment real extra acoustic events with same highres ear
+        run: python research/catmeows_native/prepare_sequences_highres.py
+      - name: Test native original Brain high-resolution true audio on separate source, unseen cats
+        env:
+          CATMEOWS_FOLDS: ${{matrix.fold}}
+        run: node --max-old-space-size=6000 research/catmeows_native/native_external_highres_validation.mjs
+      - name: Preserve actual independent per-frame results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-native-catmeows-highres-external-${{matrix.fold}}
+          path: |
+            runtime/catmeows/native_external_highres_validation.json
+            runtime/catmeows/native_external_highres_validation_predictions.jsonl
+          if-no-files-found: warn
