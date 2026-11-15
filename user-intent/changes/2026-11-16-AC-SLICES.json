@@ -1,0 +1,29 @@
+{
+  "title": "A/C lived 4D cross-sections within original V17 Brain",
+  "date": "2026-11-16",
+  "userSource": "current chat, 2026-11-16 (conversation text, not a repository artifact)",
+  "verbatimUserQuotes": [
+    "Ying yang is our a and c perspectives or something that works better",
+    "We just need to make it like with those shapes,s transformation of the forms by slice of dimensions and yes everything you i said",
+    "Ok so??"
+  ],
+  "priority": "current explicit user request; no older baseline overwritten",
+  "originalOrganism": "v17/transcend/torus-aether/devour/brain.mjs: Brain.live(), Brain.predict(); Brain.disc is the same original Discoverer",
+  "baselineBranch": "experiment/CATMEOWS-TEMPORAL-BODY-WORLD-20261115",
+  "newFiles": [
+    "user-intent/changes/2026-11-16-AC-SLICES.json",
+    "research/dimensional_slices/native_ac_pairing.mjs",
+    "research/dimensional_slices/README.md",
+    ".github/workflows/v17-ac-dimensional-slices.yml"
+  ],
+  "changedOriginalFiles": [],
+  "scope": "True 4D tesseract hyperplane sections, complementary A/C sensor views, original Brain learning and fully self-generated frozen C projection before further experience. Paired vs shuffled original-organism controls; no geometric answer supplied during inference.",
+  "preservation": "Main, V17 production, GGUF, CatMeows, controls, saved training, and other branches untouched",
+  "goalDefinition": "The user's hypothesized hyperdimensional target is not equated to the visible physical goal shape. Exercise reference C is an evaluation target only.",
+  "evidence": "Measured only after GH Actions run; unknown before execution. New experiment does not assert intelligence/quantum nature or full shape reconstruction.",
+  "openLimitations": [
+    "Finite 2D sensor projections need not uniquely identify a 4D solid",
+    "Only native Brain ability on synthetic geometries tested",
+    "No GGUF or physical quantum sample tested"
+  ]
+}
