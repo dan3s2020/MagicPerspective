@@ -58,7 +58,8 @@ def main():
                     "start":round(a/sr,4),"stop":round(b/sr,4),
                     "audio_global":acoustic["audio_global"],
                     "audio_duration":acoustic["audio_duration"],
-                    "audio_absolute":acoustic["audio_absolute"]
+                    "audio_absolute":acoustic["audio_absolute"],
+                    "audio_change":acoustic["audio_change"]
                 })
             episodes.append({"recording":name, "cat":p[1],"owner":p[4],
                              "context_for_audit_only":p[0],
