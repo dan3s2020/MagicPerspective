@@ -198,11 +198,13 @@ function compareFrozen(brain,seed,wrongSeed=null){
       if(steps===0)firstShape=plan;
       shapeOffered+=+(!!plan?.length);
       const nextGuess=sensedMovement(pos,choice.o,D);
+      // The original Brain.disc's learned body predicts geometry BEFORE
+      // the evaluator executes the action or exposes the real next state.
+      const pred=nextGuess===null?null:
+        predictShapeFromBody(D,trace.slice(3,19),pos,nextGuess);
       const nextTruth=destination(pos,choice.o,D);
-      // Purely causal: prediction occurs BEFORE computing the next sensory
-      // frame. In particular the test never supplies the real C symbols.
-      if(nextGuess!==null&&nextTruth!==pos){
-        const pred=predictShapeFromBody(D,trace.slice(3,19),pos,nextGuess);
+      // Score only actual motor changes; no inflated success from stillness.
+      if(pred!==null&&nextTruth!==pos){
         const target=physicalFrame(seed,nextTruth).slice(3,19);
         const s=score(pred,target);
         nextAcc+=s.exact;nextF1+=s.f1;nextWhole+=s.whole;
