@@ -1,0 +1,46 @@
+name: Braivour native cat acoustic body RESTORE and new dream, no retraining
+on:
+  push:
+    branches: [experiment/CATMEOWS-TEMPORAL-BODY-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/resume_temporal_body.mjs'
+      - 'research/catmeows_native/render_resumed_body.py'
+      - '.github/workflows/catmeows-verify-resumed-body.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  loaded-original-brain-not-new-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Download exactly the previously executed full ORIGINAL Braivour Brain .v8 checkpoint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p runtime/catmeows
+          gh run download 43749811152 --repo dan3s2020/MagicPerspective --name original-braivour-temporal-cat-audio-body-resumable-v8 --dir runtime/catmeows
+          ls -lh runtime/catmeows/Original_Braivour_CatMeows_TemporalBody.v8
+      - name: Resume the full original organism directly; produce new autonomous auditory dream without training
+        run: node --max-old-space-size=6000 research/catmeows_native/resume_temporal_body.mjs runtime/catmeows/Original_Braivour_CatMeows_TemporalBody.v8 29173
+      - name: Decode actual resumed original Brain physical 9D auditory state into real WAV
+        run: python research/catmeows_native/render_resumed_body.py
+      - name: Preserve reload proof and newly generated playable audio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-cat-auditory-body-resumed-without-retraining
+          path: |
+            runtime/catmeows/resumed_native_temporal_dream.json
+            runtime/catmeows/resumed_native_body_render_metrics.json
+            runtime/catmeows/temporal_embodied_audio/resumed_original_brain_*.wav
+          if-no-files-found: warn
