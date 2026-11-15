@@ -1,0 +1,29 @@
+name: Original V17 body acts and senses true 4D dimensional sections
+on:
+  push:
+    branches: [experiment/V17-AC-4D-LIVED-SLICE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_ac_action_world.mjs'
+      - 'research/dimensional_slices/physical_sections.mjs'
+      - '.github/workflows/v17-ac-dimensional-body.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-body-causal-slices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original unchanged Brain acts before observing true 4D hyperplane cross-sections
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_ac_action_world.mjs
+      - name: Upload genuine frozen action traces and matched vs shuffled controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-brain-causal-4d-body-action
+          path: runtime/dimensional_slices/real_4d_native_body_action.json
+          if-no-files-found: warn
