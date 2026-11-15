@@ -1,0 +1,37 @@
+name: Braivour CatMeows original constructed-acoustic-world learning
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_acoustic_world.mjs'
+      - '.github/workflows/catmeows-observed-audio-world.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-auditory-physical-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install waveform-reader numerical utility (NOT a second model)
+        run: python -m pip install numpy
+      - name: Acquire verify and extract 440 real unlabeled CatMeows sound observations
+        run: python research/catmeows_native/prepare.py
+      - name: Original Brain learns actual experienced transitions, predicts BEFORE observation, owner/cat unseen tests
+        run: node --max-old-space-size=6000 research/catmeows_native/native_acoustic_world.mjs
+      - name: Preserve authentic native causal results and frozen predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-native-acoustic-world-physical-heldout
+          path: |
+            runtime/catmeows/native_acoustic_world_results.json
+            runtime/catmeows/native_acoustic_world_predictions.jsonl
+          if-no-files-found: warn
