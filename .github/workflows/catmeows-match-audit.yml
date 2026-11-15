@@ -1,0 +1,37 @@
+name: Original native Braivour suffix match audit (real 440 cat meows)
+on:
+  push:
+    branches: [experiment/CATMEOWS-CAUSAL-AUDIT-20261115]
+    paths:
+      - 'research/catmeows_native/inspect_match_provenance.mjs'
+      - '.github/workflows/catmeows-match-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-observed-suffix-length:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install numpy
+      - run: python research/catmeows_native/prepare.py
+      - name: Record native actual exact matched suffix lengths and available class evidence
+        env:
+          BRAIVOUR_AUDIO_FORM_BIN: '0'
+        run: node --max-old-space-size=6000 research/catmeows_native/inspect_match_provenance.mjs
+      - name: Preserve individual provenance measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-cat-audio-actual-suffix-k
+          path: |
+            runtime/catmeows/native_match_provenance.json
+            runtime/catmeows/native_match_provenance_raw.jsonl
+          if-no-files-found: warn
