@@ -1,4 +1,4 @@
-name: CatMeows original Brain prior-corrected perception
+name: CatMeows original native organism multi-perspective acoustic experience
 on:
   push:
     branches: [experiment/CATMEOWS-NATIVE-BRAIN-20261115]
@@ -10,12 +10,12 @@ on:
 permissions:
   contents: read
 jobs:
-  native-decode:
+  native-perspectives:
     strategy:
       fail-fast: false
       matrix:
-        alpha: [0, 0.5, 1]
-    name: original-brain-prior-correction-${{matrix.alpha}}
+        n: [1, 3, 9]
+    name: native-acoustic-views-${{matrix.n}}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -28,22 +28,23 @@ jobs:
           python-version: '3.11'
       - name: Install numpy
         run: python -m pip install numpy
-      - name: Checksum and extract genuine CatMeows auditory events
+      - name: Verify official 440 CatMeows WAV and construct unlabeled audio
         run: python research/catmeows_native/prepare.py
-      - name: Blind owner-fold training and explicit shuffled-label causal control
+      - name: Test original organism across rotated sensory perspectives without owner/cat overlap
         env:
           CATMEOWS_FULL: '1'
           CATMEOWS_TOKEN_MODE: high
           CATMEOWS_SAMPLING: undersample
-          CATMEOWS_VARIANTS: audio_absolute,audio_duration,audio_change
+          CATMEOWS_VARIANTS: audio_global,audio_duration
           BRAIVOUR_AUDIO_FORM_BIN: '2'
-          CATMEOWS_PRIOR_ALPHA: ${{matrix.alpha}}
+          CATMEOWS_PRIOR_ALPHA: '0'
+          CATMEOWS_PERSPECTIVES: ${{matrix.n}}
         run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
-      - name: Save complete outcome journal
+      - name: Save owner-separated raw scores and controls
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: native-brain-alpha-${{matrix.alpha}}-raw
+          name: native-acoustic-perspectives-${{matrix.n}}
           path: |
             runtime/catmeows/results-*.json
             runtime/catmeows/heldout_predictions-*.jsonl

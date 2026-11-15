@@ -17,6 +17,9 @@ const tokenMode=process.env.CATMEOWS_TOKEN_MODE||'original';
 const sampling=process.env.CATMEOWS_SAMPLING||'all';
 const audioFormBin=Number(process.env.BRAIVOUR_AUDIO_FORM_BIN||0);
 const priorAlpha=Number(process.env.CATMEOWS_PRIOR_ALPHA||0);
+const perspectiveCount=Number(process.env.CATMEOWS_PERSPECTIVES||1);
+if(![1,3,9].includes(perspectiveCount))throw Error('Only fixed native sensory perspective counts 1/3/9');
+const shifts=perspectiveCount===1?[0]:perspectiveCount===3?[0,3,6]:[0,1,2,3,4,5,6,7,8];
 if(![0,0.5,1].includes(priorAlpha))throw Error('Only preregistered prior corrections permitted');
 const TOKENS=tokenMode==='high'?{B:240,F:241,I:242}:{B:4,F:5,I:6};
 const REVERSE=Object.fromEntries(Object.entries(TOKENS).map(([k,v])=>[v,k]));
@@ -82,6 +85,19 @@ function sense(record,variant,reverseFrames=false){
   for(let i=0;i<audio.length;i+=9)frames.push(audio.slice(i,i+9));
   const flipped=frames.reverse().flat();return tokenMode==='high'?flipped.map(y=>y+108):flipped;
 }
+function rotateSensed(sound,shift){
+  if(!shift)return sound;
+  if(sound.length!==9)throw Error('Perceptual angle rotation only for one global acoustic frame');
+  return sound.slice(shift).concat(sound.slice(0,shift));
+}
+function choosePerspective(votes){
+  const valid=votes.filter(x=>CLASSES.includes(x));
+  if(!valid.length)return '?';
+  const counts=Object.fromEntries(CLASSES.map(x=>[x,valid.filter(z=>z===x).length]));
+  const max=Math.max(...Object.values(counts));
+  // Agreement of repeated original-Brain perspectives, no external learned head.
+  return valid.find(x=>counts[x]===max);
+}
 function majority(train){
   const c=Object.fromEntries(CLASSES.map(k=>[k,train.filter(x=>x.context===k).length]));
   return CLASSES.slice().sort((a,b)=>c[b]-c[a]||a.localeCompare(b))[0];
@@ -104,13 +120,13 @@ function trainBrain(brain,trainingRows,variant,labelMode,seed){
     brain.live(TOKENS[labels[i]]);   // only training recordings reveal this context
     brain.live(END);
   }
-  return {lived:brain.lived,trainingRecords:seen.length,
+  return {lived:brain.lived,trainingRecords:seen.length,trainedPerspectives:seen.length*shifts.length,
     preservedTrainingClassCounts:Object.fromEntries(CLASSES.map(k=>[k,labels.filter(y=>y===k).length]))};
 }
-function predict(brain,record,variant,reverseFrames=false,priorCounts=null){
+function predict(brain,record,variant,reverseFrames=false,priorCounts=null,shift=0){
   // Exact ORIGINAL Brain/AligningGraph provides BOTH the full trained symbolic
   // distribution and the native greedy selection; no external learned head.
-  const input=[START,...sense(record,variant,reverseFrames),CUT];
+  const input=[START,...rotateSensed(sense(record,variant,reverseFrames),shift),CUT];
   const before=brain.lived;
   let nativeDistribution=null;
   const result=brain.align.write(input,{
@@ -142,18 +158,20 @@ for(const variant of variants)for(const labelMode of shamModes){
     const truth=[],pred=[],reversed=[],major=[];
     const majorityLabel=majority(train);
     for(const record of test){
-      const p=predict(brain,record,variant,false,info.preservedTrainingClassCounts);
-      const r=predict(brain,record,variant,true,info.preservedTrainingClassCounts);
+      const perspectives=shifts.map(shift=>predict(brain,record,variant,false,info.preservedTrainingClassCounts,shift));
+      const reversePerspectives=shifts.map(shift=>predict(brain,record,variant,true,info.preservedTrainingClassCounts,shift));
+      const p={nativeNextEvent:perspectives[0].nativeNextEvent,context:choosePerspective(perspectives.map(x=>x.context))};
+      const r={context:choosePerspective(reversePerspectives.map(x=>x.context))};
       truth.push(record.context);
       pred.push(p.context);reversed.push(r.context);major.push(majorityLabel);
       predictionRows.push({variant,labelMode,tokenMode,sampling,audioFormBin,fold,owner:record.owner,cat:record.cat,
         recording:record.recording,truth:record.context,prediction:p.context,
-        nativeEvent:p.nativeNextEvent,reversePrediction:r.context});
+        nativeEvent:p.nativeNextEvent,viewVotes:perspectives.map(x=>x.context),reversePrediction:r.context});
     }
     const metrics=foldMetrics(truth,pred);
     const baseline=foldMetrics(truth,major);
     const reverseMetrics=foldMetrics(truth,reversed);
-    const record={variant,labelMode,tokenMode,sampling,audioFormBin,priorAlpha,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
+    const record={variant,labelMode,tokenMode,sampling,audioFormBin,priorAlpha,perspectiveCount,perspectiveCount,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
       trainCats:new Set(train.map(x=>x.cat)).size,testCats:new Set(test.map(x=>x.cat)).size,
       ...info,majorityClass:majorityLabel,
       abstainRate:pred.filter(x=>x==='?').length/Math.max(1,test.length),
@@ -183,7 +201,7 @@ const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().
   runs:variants.flatMap(variant=>shamModes.map(mode=>aggregate(variant,mode))),
   foldMetrics:summary};
 fs.mkdirSync(OUT,{recursive:true});
-fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'-alpha'+priorAlpha+'.json'),JSON.stringify(report,null,2));
-fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'-alpha'+priorAlpha+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
+fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'-alpha'+priorAlpha+'-views'+perspectiveCount+'.json'),JSON.stringify(report,null,2));
+fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'-alpha'+priorAlpha+'-views'+perspectiveCount+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
 console.log('CATMEOWS_SUMMARY '+JSON.stringify(report.runs));
 console.log('CATMEOWS_ORIGINAL_BRAIN_TRIAL_COMPLETED '+completed);
