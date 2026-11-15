@@ -1,0 +1,40 @@
+name: Braivour independently validates native acoustic world on separate real uncut recordings
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_external_validation.mjs'
+      - '.github/workflows/catmeows-external-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-independent-uncut-validity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Obtain original 440 WAV and verify audio checksum
+        run: python research/catmeows_native/prepare.py
+      - name: Obtain original 30 uncut separate WAV and verify audio checksum
+        run: python research/catmeows_native/audit_extras.py
+      - name: Construct time ordered true acoustic bursts from uncut recordings without human context
+        run: python research/catmeows_native/prepare_sequences.py
+      - name: Validate previously selected fixed original Brain policy on separate real source
+        run: node --max-old-space-size=6000 research/catmeows_native/native_external_validation.mjs
+      - name: Upload independent uncut heldout results and individual predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmeows-original-brain-independent-extras-validation
+          path: |
+            runtime/catmeows/native_external_validation.json
+            runtime/catmeows/native_external_validation_predictions.jsonl
+          if-no-files-found: warn
