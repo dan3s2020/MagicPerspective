@@ -170,6 +170,38 @@ const output={
  heldoutGameMetrics:results
 };
 fs.mkdirSync('runtime/catmeows',{recursive:true});
+// CHECKPOINT IS OPTIONAL. Save the ENTIRE ORIGINAL Brain, not a replacement
+// classifier or a manually reconstructed approximation. The attached body's
+// back-reference is temporarily removed to avoid serializing Brain twice.
+// After load, restore only its class methods; all physical memories, motor
+// learning, original Discoverer and native transition edges come from v8.
+if(process.env.CATMEOWS_SAVE_NATIVE_BRAIN==='1'){
+ const checkpoint='runtime/catmeows/Original_Braivour_CatMeows_TemporalBody.v8';
+ const original=body.brain;
+ body.brain=null;
+ let bytes;
+ try{bytes=brain.save(checkpoint);}
+ finally{body.brain=original;}
+ const revived=Brain.load(checkpoint);
+ if(!revived?.auditoryBody||!revived?.disc||!revived?.constructedPaths?.links)
+   throw Error('Original Brain checkpoint did not retain native sound body');
+ Object.setPrototypeOf(revived.auditoryBody,NativeTemporalAuditoryBody.prototype);
+ revived.auditoryBody.brain=revived;
+ const smoke=revived.auditoryBody.frozenPlay(evaluation[0]);
+ if(!smoke.solved || revived.disc.self()!==brain.disc.self() ||
+     revived.constructedPaths.links.observations!==brain.constructedPaths.links.observations)
+   throw Error('Original native body checkpoint lost its shape/motor knowledge');
+ const checkpointReport={status:'ORIGINAL_BRAIN_SAVE_LOAD_ACTUALLY_VERIFIED',
+   originalBrainCheckpoint:checkpoint,sizeBytes:bytes,
+   originalNativeSelf:revived.disc.self(),
+   originalNativeTimeFlowObservations:revived.constructedPaths.links.observations,
+   sameAuditoryBodyMemoryCells:revived.auditoryBody.cells.length===body.cells.length,
+   frozenAfterReloadGoalReached:smoke.solved,
+   noExternalModelUsed:true};
+ output.checkpoint=checkpointReport;
+ fs.writeFileSync('runtime/catmeows/native_body_checkpoint_audit.json',JSON.stringify(checkpointReport,null,2));
+ console.log('CATMEOWS_ORIGINAL_NATIVE_BODY_CHECKPOINT '+JSON.stringify(checkpointReport));
+}
 fs.writeFileSync('runtime/catmeows/native_temporal_embodied_audio_game.json',JSON.stringify(output,null,2));
 console.log('CATMEOWS_NATIVE_TEMPORAL_BODY_COMPLETE '+JSON.stringify({
  fold:FOLD,order:ORDER,trainedAudioWorldCells:sensed.experiencedCells,
