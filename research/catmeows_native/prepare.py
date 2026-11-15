@@ -108,7 +108,21 @@ def audio_only_events(x, sr):
     def encode(m):
         return [int(20 + column * 12 + m[frame, column])
                 for frame in range(m.shape[0]) for column in range(m.shape[1])]
-    return encode(absolute), encode(differential)
+    median = np.clip(np.rint(np.median(matrix, axis=0)), 0, 11).astype(int).reshape(1, -1)
+    spread = np.clip(np.rint(np.std(matrix, axis=0) * 2.0), 0, 11).astype(int).reshape(1, -1)
+    # Distinct sensory perspectives of actual acoustic events only. No context
+    # classification, external model or label information enters this function.
+    duration_bin = int(np.clip(round((len(x)/sr - 0.25) / 0.24), 0, 11))
+    duration_summary = median.copy()
+    duration_summary[0, -1] = duration_bin
+    return {
+        "audio_absolute": encode(absolute),
+        "audio_change": encode(differential),
+        "audio_global": encode(median),
+        "audio_shape": encode(np.concatenate([spread, median], axis=0)),
+        "audio_contextual": encode(absolute) + encode(median),
+        "audio_duration": encode(duration_summary),
+    }
 
 def main():
     root = Path("runtime/catmeows")
@@ -124,11 +138,11 @@ def main():
             if len(parts) < 6 or parts[0] not in CONTEXT:
                 raise ValueError(f"Unexpected official CatMeows filename: {name}")
             x, sr = load_wav(z.read(name))
-            a, b = audio_only_events(x, sr)
+            auditory = audio_only_events(x, sr)
             samples.append({
                 "context": parts[0], "cat": parts[1], "owner": parts[4],
                 "recording": stem, "duration": round(len(x)/sr, 5),
-                "audio_absolute": a, "audio_change": b,
+                **auditory,
             })
     if len(samples) != 440:
         raise RuntimeError(f"Expected 440 genuine audio clips, found {len(samples)}")

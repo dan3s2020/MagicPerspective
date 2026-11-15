@@ -73,7 +73,7 @@ function foldMetrics(truth,pred){
 function interpret(value){return REVERSE[value]||'?';}
 function sense(record,variant,reverseFrames=false){
   const audio=record[variant];
-  if(!Array.isArray(audio)||audio.length!==72||audio.some(x=>!Number.isInteger(x)||x<20||x>127))
+  if(!Array.isArray(audio)||!([9,18,72,81].includes(audio.length))||audio.some(x=>!Number.isInteger(x)||x<20||x>127))
     throw Error('Invalid label-free audio sensory stream');
   if(!reverseFrames)return tokenMode==='high'?audio.map(y=>y+108):audio;
   const frames=[];

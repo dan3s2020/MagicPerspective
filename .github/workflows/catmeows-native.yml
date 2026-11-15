@@ -1,4 +1,4 @@
-name: CatMeows native Brain acoustic form experiment
+name: CatMeows original Brain acoustic global-shape test
 on:
   push:
     branches: [experiment/CATMEOWS-NATIVE-BRAIN-20261115]
@@ -10,12 +10,12 @@ on:
 permissions:
   contents: read
 jobs:
-  native-forms:
+  native-acoustic-shapes:
     strategy:
       fail-fast: false
       matrix:
-        bin: [0, 2, 3, 4, 6, 12]
-    name: audio-form-bin-${{matrix.bin}}
+        bin: [0, 2, 6]
+    name: summary-and-contour-bin-${{matrix.bin}}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -26,23 +26,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install numeric reader
+      - name: Install numpy
         run: python -m pip install numpy
-      - name: Verify dataset MD5 and create label-blind audio event stream
+      - name: Download original CatMeows and derive real label-blind acoustic frames
         run: python research/catmeows_native/prepare.py
-      - name: Train original Brain in a genuinely different sensory FORM geometry
+      - name: Test four acoustic-shape representations with owner heldout and permutation controls
         env:
           CATMEOWS_FULL: '1'
           CATMEOWS_TOKEN_MODE: high
           CATMEOWS_SAMPLING: undersample
-          CATMEOWS_VARIANTS: audio_absolute
+          CATMEOWS_VARIANTS: audio_global,audio_shape,audio_contextual,audio_duration
           BRAIVOUR_AUDIO_FORM_BIN: ${{matrix.bin}}
         run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
-      - name: Upload original-organism predictions and controls
+      - name: Upload all raw grouped predictions
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: audio-form-bin-${{matrix.bin}}-genuine-results
+          name: acoustic-summary-bin-${{matrix.bin}}-genuine-results
           path: |
             runtime/catmeows/results-*.json
             runtime/catmeows/heldout_predictions-*.jsonl
