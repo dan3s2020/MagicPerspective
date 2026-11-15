@@ -1,0 +1,42 @@
+name: CatMeows native Brain actual WAV research
+on:
+  push:
+    branches:
+      - experiment/CATMEOWS-NATIVE-BRAIN-20261115
+    paths:
+      - 'research/catmeows_native/**'
+      - '.github/workflows/catmeows-native.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-audio-original-brain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numeric reader
+        run: python -m pip install numpy
+      - name: Download and checksum genuine CatMeows WAV recordings
+        run: python research/catmeows_native/prepare.py
+      - name: Run actual original organism on unseen cats
+        env:
+          CATMEOWS_FULL: '0'
+          CATMEOWS_VARIANTS: 'audio_absolute'
+          CATMEOWS_FOLDS: '0'
+        run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
+      - name: Upload raw heldout predictions and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: actual-catmeows-original-brain
+          path: |
+            runtime/catmeows/results.json
+            runtime/catmeows/heldout_predictions.jsonl
+          if-no-files-found: warn
