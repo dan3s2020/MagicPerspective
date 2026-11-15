@@ -1,0 +1,39 @@
+name: Braivour original acoustic memory bottleneck intervention
+on:
+  push:
+    branches: [experiment/CATMEOWS-CAUSAL-AUDIT-20261115]
+    paths:
+      - 'research/catmeows_native/run_audio_horizon.mjs'
+      - '.github/workflows/catmeows-horizon.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-causal-horizon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - run: python research/catmeows_native/prepare.py
+      - run: python research/catmeows_native/audit_extras.py
+      - run: python research/catmeows_native/prepare_sequences.py
+      - name: Compare 6 vs 64 native memory depth in EXACT SAME original Brain and true acoustic sequences
+        env:
+          BRAIVOUR_AUDIO_FORM_BIN: '0'
+        run: node --max-old-space-size=6000 research/catmeows_native/run_audio_horizon.mjs
+      - name: Upload all per-recording predictions and controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: braivour-original-cat-audio-6-vs-64
+          path: |
+            runtime/catmeows/uncut_native_horizon_results.json
+            runtime/catmeows/uncut_native_horizon_predictions.jsonl
+          if-no-files-found: warn
