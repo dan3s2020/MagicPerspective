@@ -1,0 +1,44 @@
+name: Braivour original Brain real feline intercall transition and cross-scale acoustic transfer
+on:
+  push:
+    branches: [experiment/CATMEOWS-OBSERVED-AUDIO-WORLD-20261115]
+    paths:
+      - 'research/catmeows_native/native_intercall_world.mjs'
+      - '.github/workflows/catmeows-intercall-world.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-real-intercall-world:
+    strategy:
+      fail-fast: false
+      matrix:
+        pretrain: [none, within-call, within-call-permuted]
+    name: native intercall - ${{ matrix.pretrain }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - run: python research/catmeows_native/prepare.py
+      - run: python research/catmeows_native/audit_extras.py
+      - run: python research/catmeows_native/prepare_sequences.py
+      - name: Test original native audio call-to-call world with causal cross-scale transfers
+        env:
+          CATMEOWS_PRETRAIN: ${{ matrix.pretrain }}
+        run: node --max-old-space-size=6000 research/catmeows_native/native_intercall_world.mjs
+      - name: Preserve original organism's per-call real predictions, no WAV redistribution
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-brain-intercall-${{ matrix.pretrain }}
+          path: |
+            runtime/catmeows/native_intercall_*_results.json
+            runtime/catmeows/native_intercall_*_predictions.jsonl
+          if-no-files-found: warn
