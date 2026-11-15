@@ -1,0 +1,28 @@
+name: Original V17 native Discoverer learns form changes from true 4D slice actions
+on:
+  push:
+    branches: [experiment/V17-AC-4D-LIVED-SLICE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_ac_lived_form.mjs'
+      - '.github/workflows/v17-ac-native-living-form.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  body-learns-form-physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test original organism's native motor consequence-memory against heldout 4D sections
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_ac_lived_form.mjs
+      - name: Upload actual frozen original-organism form predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-native-discoverer-4d-form-consequences
+          path: runtime/dimensional_slices/real_4d_native_body_action.json
+          if-no-files-found: warn
