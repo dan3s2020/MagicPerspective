@@ -1,0 +1,47 @@
+name: Braivour native real temporal acoustic body generalizes to remaining unseen cats
+on:
+  push:
+    branches: [experiment/CATMEOWS-TEMPORAL-BODY-WORLD-20261115]
+    paths:
+      - '.github/workflows/catmeows-temporal-body-other-folds.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-body-unseen-other-cats:
+    strategy:
+      fail-fast: false
+      matrix:
+        fold: ['1','2']
+    name: original Brain native body - unseen cat and owner fold ${{ matrix.fold }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Verify and fully sense actual original 440 CatMeows WAVs
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Same original Brain and Discoverer sound body 320 action-consequence episodes with genuine native graph physics
+        env:
+          CATMEOWS_BODY_FOLD: ${{matrix.fold}}
+          CATMEOWS_BODY_GAMES: '320'
+          CATMEOWS_BODY_AUDIO_ORDER: chronological
+        run: node --max-old-space-size=6000 research/catmeows_native/run_temporal_body_game.mjs
+      - name: Render original organism's audio trajectories
+        run: python research/catmeows_native/render_temporal_body_audio.py
+      - name: Preserve raw actual player decisions and audio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-body-temporal-unseen-fold-${{matrix.fold}}
+          path: |
+            runtime/catmeows/native_temporal_embodied_audio_game.json
+            runtime/catmeows/native_temporal_embodied_audio_metrics.json
+            runtime/catmeows/temporal_embodied_audio/*.wav
+          if-no-files-found: warn
