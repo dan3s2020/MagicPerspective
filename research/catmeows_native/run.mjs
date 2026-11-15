@@ -120,7 +120,7 @@ function trainBrain(brain,trainingRows,variant,labelMode,seed){
     brain.live(TOKENS[labels[i]]);   // only training recordings reveal this context
     brain.live(END);
   }
-  return {lived:brain.lived,trainingRecords:seen.length,trainedPerspectives:seen.length*shifts.length,
+  return {lived:brain.lived,trainingRecords:seen.length,trainedPerspectives:1,experiencedOriginalSoundEpisodes:seen.length,
     preservedTrainingClassCounts:Object.fromEntries(CLASSES.map(k=>[k,labels.filter(y=>y===k).length]))};
 }
 function predict(brain,record,variant,reverseFrames=false,priorCounts=null,shift=0){
@@ -171,7 +171,7 @@ for(const variant of variants)for(const labelMode of shamModes){
     const metrics=foldMetrics(truth,pred);
     const baseline=foldMetrics(truth,major);
     const reverseMetrics=foldMetrics(truth,reversed);
-    const record={variant,labelMode,tokenMode,sampling,audioFormBin,priorAlpha,perspectiveCount,perspectiveCount,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
+    const record={variant,labelMode,tokenMode,sampling,audioFormBin,priorAlpha,perspectiveCount,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
       trainCats:new Set(train.map(x=>x.cat)).size,testCats:new Set(test.map(x=>x.cat)).size,
       ...info,majorityClass:majorityLabel,
       abstainRate:pred.filter(x=>x==='?').length/Math.max(1,test.length),
