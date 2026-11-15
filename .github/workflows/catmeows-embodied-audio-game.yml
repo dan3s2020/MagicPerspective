@@ -1,0 +1,53 @@
+name: CatMeows real-audio embodied ORIGINAL Braivour transformations game
+on:
+  push:
+    branches: [experiment/CATMEOWS-NATIVE-GENERATIVE-AUDIO-20261115]
+    paths:
+      - 'research/catmeows_native/auditory_body.mjs'
+      - 'research/catmeows_native/run_embodied_audio_game.mjs'
+      - 'research/catmeows_native/prepare_generative.py'
+      - 'research/catmeows_native/render_embodied_audio.py'
+      - '.github/workflows/catmeows-embodied-audio-game.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-body-sound-world:
+    strategy:
+      fail-fast: false
+      matrix:
+        audio_order: [chronological, shuffled]
+    name: real audio body / ${{ matrix.audio_order }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Verify and perceive genuine CatMeows 440 WAV pitch harmonics gain and spectrum
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Original Brain Discoverer learns its bodily sound transformations by PLAYING
+        env:
+          CATMEOWS_BODY_FOLD: '0'
+          CATMEOWS_BODY_GAMES: '320'
+          CATMEOWS_BODY_AUDIO_ORDER: ${{ matrix.audio_order }}
+        run: node --max-old-space-size=6000 research/catmeows_native/run_embodied_audio_game.mjs
+      - name: Render acoustic sounds only from actual native body movements
+        run: python research/catmeows_native/render_embodied_audio.py
+      - name: Preserve raw native action traces, target games, and real synthesised audio
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: braivour-catmeows-embodied-${{ matrix.audio_order }}
+          path: |
+            runtime/catmeows/generative_perception_summary.json
+            runtime/catmeows/native_embodied_audio_game.json
+            runtime/catmeows/native_embodied_audio_metrics.json
+            runtime/catmeows/embodied_audio/*.wav
+            runtime/catmeows/embodied_audio/README.txt
+          if-no-files-found: warn
