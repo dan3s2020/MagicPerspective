@@ -1,30 +1,21 @@
-name: CatMeows native Brain actual WAV research
+name: CatMeows native Brain acoustic form experiment
 on:
   push:
-    branches:
-      - experiment/CATMEOWS-NATIVE-BRAIN-20261115
+    branches: [experiment/CATMEOWS-NATIVE-BRAIN-20261115]
     paths:
       - 'research/catmeows_native/**'
+      - 'v17/transcend/torus-aether/align.mjs'
       - '.github/workflows/catmeows-native.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  native-auditory-causal-controls:
+  native-forms:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: high-audio-unbalanced
-            token: high
-            sampling: all
-          - name: high-audio-balanced
-            token: high
-            sampling: undersample
-          - name: original-audio-balanced
-            token: original
-            sampling: undersample
-    name: ${{ matrix.name }}
+        bin: [0, 2, 3, 4, 6, 12]
+    name: audio-form-bin-${{matrix.bin}}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -35,21 +26,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install numeric reader only
+      - name: Install numeric reader
         run: python -m pip install numpy
-      - name: Download verified CatMeows WAVs, extract label-blind sensory events
+      - name: Verify dataset MD5 and create label-blind audio event stream
         run: python research/catmeows_native/prepare.py
-      - name: Train and measure actual original V42 Brain on cats and owners never seen in training
+      - name: Train original Brain in a genuinely different sensory FORM geometry
         env:
           CATMEOWS_FULL: '1'
-          CATMEOWS_TOKEN_MODE: ${{ matrix.token }}
-          CATMEOWS_SAMPLING: ${{ matrix.sampling }}
+          CATMEOWS_TOKEN_MODE: high
+          CATMEOWS_SAMPLING: undersample
+          CATMEOWS_VARIANTS: audio_absolute
+          BRAIVOUR_AUDIO_FORM_BIN: ${{matrix.bin}}
         run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
-      - name: Upload raw heldout predictions and metrics
+      - name: Upload original-organism predictions and controls
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}-raw-real-audio
+          name: audio-form-bin-${{matrix.bin}}-genuine-results
           path: |
             runtime/catmeows/results-*.json
             runtime/catmeows/heldout_predictions-*.jsonl

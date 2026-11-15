@@ -15,6 +15,7 @@ if(rows.length!==440)throw Error('Expected all 440 CatMeows recordings');
 const CLASSES=['B','F','I'];
 const tokenMode=process.env.CATMEOWS_TOKEN_MODE||'original';
 const sampling=process.env.CATMEOWS_SAMPLING||'all';
+const audioFormBin=Number(process.env.BRAIVOUR_AUDIO_FORM_BIN||0);
 const TOKENS=tokenMode==='high'?{B:240,F:241,I:242}:{B:4,F:5,I:6};
 const REVERSE=Object.fromEntries(Object.entries(TOKENS).map(([k,v])=>[v,k]));
 const START=tokenMode==='high'?245:15, CUT=tokenMode==='high'?246:16, END=tokenMode==='high'?247:17;
@@ -127,14 +128,14 @@ for(const variant of variants)for(const labelMode of shamModes){
       const r=predict(brain,record,variant,true);
       truth.push(record.context);
       pred.push(p.context);reversed.push(r.context);major.push(majorityLabel);
-      predictionRows.push({variant,labelMode,tokenMode,sampling,fold,owner:record.owner,cat:record.cat,
+      predictionRows.push({variant,labelMode,tokenMode,sampling,audioFormBin,fold,owner:record.owner,cat:record.cat,
         recording:record.recording,truth:record.context,prediction:p.context,
         nativeEvent:p.nativeNextEvent,reversePrediction:r.context});
     }
     const metrics=foldMetrics(truth,pred);
     const baseline=foldMetrics(truth,major);
     const reverseMetrics=foldMetrics(truth,reversed);
-    const record={variant,labelMode,tokenMode,sampling,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
+    const record={variant,labelMode,tokenMode,sampling,audioFormBin,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
       trainCats:new Set(train.map(x=>x.cat)).size,testCats:new Set(test.map(x=>x.cat)).size,
       ...info,majorityClass:majorityLabel,
       abstainRate:pred.filter(x=>x==='?').length/Math.max(1,test.length),
@@ -155,7 +156,7 @@ function aggregate(variant,labelMode){
       fold:r.fold,trainN:r.trainN,testN:r.testN,accuracy:r.metrics.accuracy,
       balancedAccuracy:r.metrics.balancedAccuracy,majority:r.majorityBaseline.accuracy}))};
 }
-const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().toISOString(),tokenMode,sampling,
+const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().toISOString(),tokenMode,sampling,audioFormBin,
   source:'Zenodo 4008297, 440 official WAV files; MD5 checked by prepare.py',
   sourceBrain:'MagicPerspective V42 ac205b5bc561274b957584a7dee058a1110ab6f8/v17/transcend/torus-aether/devour/brain.mjs',
   originalBrainOwnsLearning:true,trainLabelsOnly:true,heldoutSameOwner:false,heldoutSameCat:false,
@@ -164,7 +165,7 @@ const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().
   runs:variants.flatMap(variant=>shamModes.map(mode=>aggregate(variant,mode))),
   foldMetrics:summary};
 fs.mkdirSync(OUT,{recursive:true});
-fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'.json'),JSON.stringify(report,null,2));
-fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
+fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'.json'),JSON.stringify(report,null,2));
+fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
 console.log('CATMEOWS_SUMMARY '+JSON.stringify(report.runs));
 console.log('CATMEOWS_ORIGINAL_BRAIN_TRIAL_COMPLETED '+completed);

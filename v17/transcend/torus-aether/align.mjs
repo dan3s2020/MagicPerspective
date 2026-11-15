@@ -8,7 +8,16 @@
 // The past is indexed as suffix arrays of the reversed memory: a big one rebuilt when the memory has grown by a
 // quarter, and a small one over the newest part rebuilt often, so nothing lived is ever outside the alignment.
 
-const DIG = 48, isD = c => c >= 48 && c <= 57, form = c => (isD(c) ? DIG : c);
+// OPT-IN CATMEOWS EXPERIMENT ONLY: the ORIGINAL organism's form-memory now
+// optionally treats neighboring quantized acoustic intensities as the same
+// perceptual form (bins 2/3/4/6/12). All non-audio symbols are byte-identical.
+const AUDIO_FORM_BIN = Number(process.env.BRAIVOUR_AUDIO_FORM_BIN || 0);
+if (![0,2,3,4,6,12].includes(AUDIO_FORM_BIN)) throw Error('Unrecognized audio form bin');
+const DIG = 48, isD = c => c >= 48 && c <= 57,
+      form = c => isD(c) ? DIG :
+        (AUDIO_FORM_BIN > 1 && c >= 128 && c < 236
+          ? 128 + 12*Math.floor((c-128)/12) + AUDIO_FORM_BIN*Math.floor(((c-128)%12)/AUDIO_FORM_BIN)
+          : c);
 
 function suffixArray(s, n) {                                                // prefix doubling with radix sort, s reversed memory
   let sa = new Int32Array(n), rk = new Int32Array(n), tmp = new Int32Array(n);
