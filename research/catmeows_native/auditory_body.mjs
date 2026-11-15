@@ -109,27 +109,43 @@ export class NativeAuditoryBody {
   m[0]=pos%N;m[1]=Math.floor(pos/N);
   return m;
  }
- toWorld(start,goal){
+ toWorld(start,goal,minDistance=2,maxDistance=18){
   if(!this.wall)throw Error("Original auditory body must live first");
   if(!this.majorComponent.has(start)||!this.majorComponent.has(goal)||start===goal)return null;
   const wall=this.wall.slice(),dist=bfs(N,wall,goal),d=dist[start];
-  if(d<2||d>18||d>=ABSENT)return null;
+  if(d<minDistance||d>maxDistance||d>=ABSENT)return null;
   return {n:N,wall,start,goal,dist,seed:start*1009+goal};
  }
- fromRecording(record){
+ fromRecording(record,{difficulty='full'}={}){
+  if(!['full','near'].includes(difficulty))throw Error('Unknown audition world episode difficulty');
   if(!record.frames||record.frames.length!==48)throw Error("No genuine auditory frame sequence");
   const f=record.frames;
   let best=null,score=-1;
   // Desired final acoustic state is supplied to the sound-game as a goal,
   // exactly as MagicPerspective maze displays the goal. No intermediate
   // future waveform is exposed to Brain during heldout evaluation.
-  for(let a=0;a<12;a++)for(let b=30;b<48;b+=2){
-   if(!frameValid(f[a])||!frameValid(f[b]))continue;
-   const start=audioCell(f[a]),end=audioCell(f[b]);
-   const w=this.toWorld(start,end);if(!w)continue;
-   if(w.dist[w.start]>score){score=w.dist[w.start];best={world:w,
-     source:record.name,startTime:a,targetTime:b,
-     physicallyObservedGoalInUnseenCall:true};}
+  if(difficulty==='near'){
+   // GENUINE tiny successor experiences, not teacher commands: start and
+   // target BOTH appear in the chronological real WAV and are adjacent
+   // pitch/loudness changes. The organism must act to reach them itself.
+   for(let a=0;a<40;a++)for(let b=a+1;b<Math.min(48,a+13);b++){
+    if(!frameValid(f[a])||!frameValid(f[b]))continue;
+    const w=this.toWorld(audioCell(f[a]),audioCell(f[b]),1,2);
+    if(!w)continue;
+    const merit=100/(1+w.dist[w.start])+10/(1+b-a);
+    if(merit>score){score=merit;best={world:w,
+      source:record.name,startTime:a,targetTime:b,realAudioTemporalDifference:b-a,
+      physicallyObservedGoalInUnseenCall:true};}
+   }
+  }else{
+   for(let a=0;a<12;a++)for(let b=30;b<48;b+=2){
+    if(!frameValid(f[a])||!frameValid(f[b]))continue;
+    const start=audioCell(f[a]),end=audioCell(f[b]);
+    const w=this.toWorld(start,end);if(!w)continue;
+    if(w.dist[w.start]>score){score=w.dist[w.start];best={world:w,
+      source:record.name,startTime:a,targetTime:b,
+      physicallyObservedGoalInUnseenCall:true};}
+   }
   }
   return best;
  }
