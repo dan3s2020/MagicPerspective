@@ -16,6 +16,8 @@ const CLASSES=['B','F','I'];
 const tokenMode=process.env.CATMEOWS_TOKEN_MODE||'original';
 const sampling=process.env.CATMEOWS_SAMPLING||'all';
 const audioFormBin=Number(process.env.BRAIVOUR_AUDIO_FORM_BIN||0);
+const priorAlpha=Number(process.env.CATMEOWS_PRIOR_ALPHA||0);
+if(![0,0.5,1].includes(priorAlpha))throw Error('Only preregistered prior corrections permitted');
 const TOKENS=tokenMode==='high'?{B:240,F:241,I:242}:{B:4,F:5,I:6};
 const REVERSE=Object.fromEntries(Object.entries(TOKENS).map(([k,v])=>[v,k]));
 const START=tokenMode==='high'?245:15, CUT=tokenMode==='high'?246:16, END=tokenMode==='high'?247:17;
@@ -105,13 +107,29 @@ function trainBrain(brain,trainingRows,variant,labelMode,seed){
   return {lived:brain.lived,trainingRecords:seen.length,
     preservedTrainingClassCounts:Object.fromEntries(CLASSES.map(k=>[k,labels.filter(y=>y===k).length]))};
 }
-function predict(brain,record,variant,reverseFrames=false){
-  // ABSOLUTELY NO context, ID, label or session metadata is given to native Brain.
+function predict(brain,record,variant,reverseFrames=false,priorCounts=null){
+  // Exact ORIGINAL Brain/AligningGraph provides BOTH the full trained symbolic
+  // distribution and the native greedy selection; no external learned head.
   const input=[START,...sense(record,variant,reverseFrames),CUT];
   const before=brain.lived;
-  const result=brain.align.write(input,{max:1,T:0});
+  let nativeDistribution=null;
+  const result=brain.align.write(input,{
+    max:1,T:0,
+    ...(priorAlpha>0?{onStep:step=>{nativeDistribution=step.distribution;}}:{})
+  });
   if(brain.lived!==before)throw Error('Heldout prediction learned from a test recording');
-  return {nativeNextEvent:result[0]??null,context:interpret(result[0])};
+  const raw=result[0]??null;
+  if(priorAlpha===0)return {nativeNextEvent:raw,context:interpret(raw)};
+  if(!nativeDistribution||!priorCounts)throw Error('Original Brain distribution unavailable');
+  const total=Object.values(priorCounts).reduce((n,k)=>n+k,0);
+  // Native sequence score readout corrected only using TRAINING class priors.
+  // Known calibration intervention, NOT a new learned classifier / language translation.
+  const ranked=CLASSES.map(k=>{
+    const p=priorCounts[k]/total;
+    return {k,score:(nativeDistribution.get(TOKENS[k])||0)/Math.pow(Math.max(1e-12,p),priorAlpha)};
+  }).sort((a,b)=>b.score-a.score||a.k.localeCompare(b.k));
+  return {nativeNextEvent:raw,context:ranked[0].k,
+    nativeClassScores:Object.fromEntries(ranked.map(x=>[x.k,x.score]))};
 }
 let completed=0;
 for(const variant of variants)for(const labelMode of shamModes){
@@ -124,8 +142,8 @@ for(const variant of variants)for(const labelMode of shamModes){
     const truth=[],pred=[],reversed=[],major=[];
     const majorityLabel=majority(train);
     for(const record of test){
-      const p=predict(brain,record,variant,false);
-      const r=predict(brain,record,variant,true);
+      const p=predict(brain,record,variant,false,info.preservedTrainingClassCounts);
+      const r=predict(brain,record,variant,true,info.preservedTrainingClassCounts);
       truth.push(record.context);
       pred.push(p.context);reversed.push(r.context);major.push(majorityLabel);
       predictionRows.push({variant,labelMode,tokenMode,sampling,audioFormBin,fold,owner:record.owner,cat:record.cat,
@@ -135,7 +153,7 @@ for(const variant of variants)for(const labelMode of shamModes){
     const metrics=foldMetrics(truth,pred);
     const baseline=foldMetrics(truth,major);
     const reverseMetrics=foldMetrics(truth,reversed);
-    const record={variant,labelMode,tokenMode,sampling,audioFormBin,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
+    const record={variant,labelMode,tokenMode,sampling,audioFormBin,priorAlpha,fold,ownersHeldout:group,trainN:train.length,testN:test.length,
       trainCats:new Set(train.map(x=>x.cat)).size,testCats:new Set(test.map(x=>x.cat)).size,
       ...info,majorityClass:majorityLabel,
       abstainRate:pred.filter(x=>x==='?').length/Math.max(1,test.length),
@@ -156,7 +174,7 @@ function aggregate(variant,labelMode){
       fold:r.fold,trainN:r.trainN,testN:r.testN,accuracy:r.metrics.accuracy,
       balancedAccuracy:r.metrics.balancedAccuracy,majority:r.majorityBaseline.accuracy}))};
 }
-const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().toISOString(),tokenMode,sampling,audioFormBin,
+const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().toISOString(),tokenMode,sampling,audioFormBin,priorAlpha,
   source:'Zenodo 4008297, 440 official WAV files; MD5 checked by prepare.py',
   sourceBrain:'MagicPerspective V42 ac205b5bc561274b957584a7dee058a1110ab6f8/v17/transcend/torus-aether/devour/brain.mjs',
   originalBrainOwnsLearning:true,trainLabelsOnly:true,heldoutSameOwner:false,heldoutSameCat:false,
@@ -165,7 +183,7 @@ const report={status:'EXECUTED_REAL_AUDIO_IF_DATA_PRESENT',timestamp:new Date().
   runs:variants.flatMap(variant=>shamModes.map(mode=>aggregate(variant,mode))),
   foldMetrics:summary};
 fs.mkdirSync(OUT,{recursive:true});
-fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'.json'),JSON.stringify(report,null,2));
-fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
+fs.writeFileSync(path.join(OUT,'results-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'-alpha'+priorAlpha+'.json'),JSON.stringify(report,null,2));
+fs.writeFileSync(path.join(OUT,'heldout_predictions-'+tokenMode+'-'+sampling+'-bin'+audioFormBin+'-alpha'+priorAlpha+'.jsonl'),predictionRows.map(x=>JSON.stringify(x)).join('\n')+'\n');
 console.log('CATMEOWS_SUMMARY '+JSON.stringify(report.runs));
 console.log('CATMEOWS_ORIGINAL_BRAIN_TRIAL_COMPLETED '+completed);

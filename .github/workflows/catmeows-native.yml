@@ -1,4 +1,4 @@
-name: CatMeows original Brain acoustic global-shape test
+name: CatMeows original Brain prior-corrected perception
 on:
   push:
     branches: [experiment/CATMEOWS-NATIVE-BRAIN-20261115]
@@ -10,12 +10,12 @@ on:
 permissions:
   contents: read
 jobs:
-  native-acoustic-shapes:
+  native-decode:
     strategy:
       fail-fast: false
       matrix:
-        bin: [0, 2, 6]
-    name: summary-and-contour-bin-${{matrix.bin}}
+        alpha: [0, 0.5, 1]
+    name: original-brain-prior-correction-${{matrix.alpha}}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -28,21 +28,22 @@ jobs:
           python-version: '3.11'
       - name: Install numpy
         run: python -m pip install numpy
-      - name: Download original CatMeows and derive real label-blind acoustic frames
+      - name: Checksum and extract genuine CatMeows auditory events
         run: python research/catmeows_native/prepare.py
-      - name: Test four acoustic-shape representations with owner heldout and permutation controls
+      - name: Blind owner-fold training and explicit shuffled-label causal control
         env:
           CATMEOWS_FULL: '1'
           CATMEOWS_TOKEN_MODE: high
           CATMEOWS_SAMPLING: undersample
-          CATMEOWS_VARIANTS: audio_global,audio_shape,audio_contextual,audio_duration
-          BRAIVOUR_AUDIO_FORM_BIN: ${{matrix.bin}}
+          CATMEOWS_VARIANTS: audio_absolute,audio_duration,audio_change
+          BRAIVOUR_AUDIO_FORM_BIN: '2'
+          CATMEOWS_PRIOR_ALPHA: ${{matrix.alpha}}
         run: node --max-old-space-size=6000 research/catmeows_native/run.mjs
-      - name: Upload all raw grouped predictions
+      - name: Save complete outcome journal
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: acoustic-summary-bin-${{matrix.bin}}-genuine-results
+          name: native-brain-alpha-${{matrix.alpha}}-raw
           path: |
             runtime/catmeows/results-*.json
             runtime/catmeows/heldout_predictions-*.jsonl
