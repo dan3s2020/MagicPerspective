@@ -270,9 +270,10 @@ function run(trainWrong=false){
   let n=0,acc=0,f1=0,whole=0,range=0,motor=0,solved=0,
     copyAcc=0,copyF1=0,allF1=0;
   const transitionBuckets=new Map();
-  let examples=[];
+  let examples=[],seedScores=[];
   for(const seed of TEST){
     const trial=compareFrozen(B,seed);
+    seedScores.push({seed,n:trial.targetN,transforms:trial.transitions});
     if(trial.targetN){
       n+=trial.targetN;
       acc+=trial.cellAccuracy*trial.targetN;
@@ -310,12 +311,59 @@ function run(trainWrong=false){
       alwaysOnOccupancyF1:n?allF1/n:null,
       byTransform:Object.fromEntries([...transitionBuckets.entries()].map(([ty,b])=>[ty,{
         n:b.n,accuracy:b.acc/b.n,occupancyF1:b.f1/b.n,copyF1:b.copyF1/b.n}])),
-      goalReachedRate:solved/(TEST.length*1),examples}
+      goalReachedRate:solved/(TEST.length*1),examples,bySeed:seedScores}
   };
 }
 function D_SELF(B){return B.disc.self();}
+// Repeatable independent-object paired test: 25 distinct 4D rotations
+// are the sampling units, never 562 falsely independent image cells.
+function clusterAssessment(matched,shuffled,kind='switch'){
+  const kinds=kind==='switch'?['A>C:0','C>A:0']:kind==='AC'?['A>C:0']:['C>A:0'];
+  const units=matched.heldout.bySeed.map((a,i)=>{
+    const b=shuffled.heldout.bySeed[i];
+    assert.equal(a.seed,b.seed);
+    let n=0,ms=0,bs=0;
+    for(const type of kinds){
+      const m=a.transforms[type],z=b.transforms[type];
+      assert.equal(m?.n??0,z?.n??0,'Control action discrepancy');
+      const count=m?.n??0;
+      n+=count;ms+=count*(m?.occupancyF1??0);
+      bs+=count*(z?.occupancyF1??0);
+    }
+    return {seed:a.seed,n,matched:n?ms/n:null,control:n?bs/n:null,
+      delta:n?(ms-bs)/n:null};
+  }).filter(u=>u.n>0);
+  const effect=ids=>{
+    let s=0,weight=0;
+    for(const i of ids){const u=units[i];s+=u.n*u.delta;weight+=u.n;}
+    return s/weight;
+  };
+  const exact=effect(units.map((_,i)=>i));
+  const r=rand(2026111633+kind.length*97),boot=[],signR=[];
+  const loops=6000;
+  for(let it=0;it<loops;it++){
+    const draw=Array.from({length:units.length},()=>Math.floor(r()*units.length));
+    boot.push(effect(draw));
+    let sum=0,w=0;
+    for(const u of units){sum+=(r()<.5?-1:1)*u.n*u.delta;w+=u.n;}
+    signR.push(sum/w);
+  }
+  boot.sort((a,b)=>a-b);
+  const p=(1+signR.filter(x=>Math.abs(x)>=Math.abs(exact)-1e-14).length)/(loops+1);
+  return {comparison:kind,independentHeldoutObjects:units.length,
+    actualComparedMoves:units.reduce((s,x)=>s+x.n,0),
+    measuredMatchedMinusShuffledF1:exact,
+    clusterBootstrap95Percent:[boot[Math.floor(.025*loops)],boot[Math.floor(.975*loops)]],
+    approximateTwoSidedObjectSignFlipP:p,
+    testedOnlyGeometricViews:true,
+    perObject:units};
+}
+
 const matched=run(false);
 const shuffled=run(true);
+const clusterChecks={switch:clusterAssessment(matched,shuffled,'switch'),
+    AtoC:clusterAssessment(matched,shuffled,'AC'),
+    CtoA:clusterAssessment(matched,shuffled,'CA')};
 const result={
  status:'ORIGINAL_V17_NATIVE_CAUSAL_GEOMETRIC_METAMORPHOSIS_FROM_LIVED_ACTIONS',
  executedBody:true,
@@ -324,7 +372,7 @@ const result={
  beforeActionPrediction:'Original Brain.disc learned causal visual consequence memory predicts full 16-cell next section from current section and ORIGINAL learned motor-inferred next position; no oracle real next section',
  physicalWorld:'4D rotated tesseract; actual 3D w=h sections projected into 4x4 complementary 2D sensor views on 5 depths',
  observationalBaseline:'Original native Braivour A/C passive heldout test 63.0% paired vs 63.0% shuffled, 0% exact, F1=0',
- matched,shuffled,
+ matched,shuffled,clusterChecks,
  differences:{cellAccuracy:(matched.heldout.cellAccuracy??0)-(shuffled.heldout.cellAccuracy??0),
    occupancyF1:(matched.heldout.occupancyF1??0)-(shuffled.heldout.occupancyF1??0),
    nativeMotorAccuracy:(matched.heldout.nativeMotorPredictionAccuracy??0)-
@@ -340,6 +388,7 @@ const result={
 fs.mkdirSync('runtime/dimensional_slices',{recursive:true});
 fs.writeFileSync('runtime/dimensional_slices/real_4d_native_body_action.json',JSON.stringify(result,null,2));
 console.log('REAL_4D_NATIVE_BODY_ACTION_RESULT '+JSON.stringify({
- matched:{train:matched.train,heldout:{...matched.heldout,examples:undefined}},
- shuffled:{train:shuffled.train,heldout:{...shuffled.heldout,examples:undefined}},
+ matched:{train:matched.train,heldout:{...matched.heldout,examples:undefined,bySeed:undefined}},
+ shuffled:{train:shuffled.train,heldout:{...shuffled.heldout,examples:undefined,bySeed:undefined}},
+ clusterChecks:Object.fromEntries(Object.entries(clusterChecks).map(([k,v])=>[k,{...v,perObject:undefined}])),
  differences:result.differences}));
