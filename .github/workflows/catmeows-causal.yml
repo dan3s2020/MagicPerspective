@@ -1,0 +1,44 @@
+name: CatMeows causal native-Brain discovery audit
+on:
+  push:
+    branches:
+      - experiment/CATMEOWS-CAUSAL-AUDIT-20261115
+    paths:
+      - 'research/catmeows_native/causal_audit.mjs'
+      - 'research/catmeows_native/audit_extras.py'
+      - '.github/workflows/catmeows-causal.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  causal-original-brain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install numeric waveform analyzer (NOT a classifier)
+        run: python -m pip install numpy
+      - name: Validate and observe original 440 CatMeows WAVs
+        run: python research/catmeows_native/prepare.py
+      - name: Causal original-Brain experiment with acoustics and no-label future sound
+        env:
+          BRAIVOUR_AUDIO_FORM_BIN: '0'
+        run: node --max-old-space-size=6000 research/catmeows_native/causal_audit.mjs
+      - name: Audit 4.1MB official uncut sequences / excluded vocalizations
+        run: python research/catmeows_native/audit_extras.py
+      - name: Preserve exact real-audio predictions and research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catmeows-original-brain-causal-and-uncut-audio
+          path: |
+            runtime/catmeows/causal_audit.json
+            runtime/catmeows/causal_holdout.jsonl
+            runtime/catmeows/extras_audit.json
+          if-no-files-found: warn
