@@ -76,7 +76,7 @@ function pathAndScores(brain,model,current){
   routeBeforeAct:native?.firstPredictionBeforeAction===true,
   observedNeighbors:neighbors[current].length};
 }
-function train(brain,training,model,mode,seed){
+function trainBrainAcousticWorld(brain,training,model,mode,seed){
  let n=0,terminations=0;
  for(const r of shuffle(training,seed)){
   let frames=signalFrames(r);
@@ -112,11 +112,7 @@ for(let gran of granularity){
   if(test.some(r=>train.some(t=>t.cat===r.cat||t.owner===r.owner)))throw Error("Identity leakage");
   for(const mode of modes){
    const brain=new Brain({rules:RULES,seed:2206+fold});
-   const trained=trainBrainInvariant();
-   function trainBrainInvariant(){return trainAndCheck();}
-   function trainAndCheck(){return trainNative();}
-   function trainNative(){return trainAudio();}
-   function trainAudio(){return train(brain,train,model,mode,2206+fold);}
+   const trained=trainBrainAcousticWorld(brain,train,model,mode,2206+fold);
    const old=brain.constructedPaths.links.observations;
    let correctFirst=0,localFirst=0,routeNeeded=0,planFound=0,routeReached=0,routeLength=0,exactNext=0,pathPrefix=0,fullyExactRoute=0;
    for(const record of test)for(let burstIndex=0;burstIndex<record.bursts.length;burstIndex++){
