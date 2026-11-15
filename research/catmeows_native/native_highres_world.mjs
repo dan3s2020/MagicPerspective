@@ -189,7 +189,7 @@ for(const row of summary.filter(x=>x.mode==="chronological"&&x.policy!=="continu
  const reversed=byCell.get([row.view,row.fold,"reversed",row.policy].join(":"));
  const permuted=byCell.get([row.view,row.fold,"permuted-within-call",row.policy].join(":"));
  row.causes={deltaAgainstPhysicalContinuity:row.exactSymbolAccuracy-baseline.exactSymbolAccuracy,
- deltaAgainstReversedTraining:row.exactSymbolAccuracy-reversed.exactSymbolAccuracy,
+ deltaAgainstReversedTraining:reversed?row.exactSymbolAccuracy-reversed.exactSymbolAccuracy:null,
  deltaAgainstPermutedTraining:row.exactSymbolAccuracy-permuted.exactSymbolAccuracy,
  ownerHeldoutCount:row.testCount};
 }
@@ -198,7 +198,7 @@ const out={source:"CatMeows v1.0.2 REAL WAV verified in prepare_highres.py",nWav
  learner:"brain.constructedPaths.scales[i].observe(from, action, observed successor)",
  player:"brain.constructedPaths.scales[i].predict(from, action) on frozen heldout episodes",
  originalBrainStillLivesEveryRealAudioEvent:true,trainedOnContextLabels:false,
- acousticChannels:9,timeFrames:8,trainHasCatOrOwnerLeakage:false,
+ acousticChannels:9,timeFrames:STEPS,trainHasCatOrOwnerLeakage:false,
  noHumanSemanticLabels:true,results:summary};
 fs.mkdirSync("runtime/catmeows",{recursive:true});
 fs.writeFileSync("runtime/catmeows/native_highres_world_results.json",JSON.stringify(out,null,2));
