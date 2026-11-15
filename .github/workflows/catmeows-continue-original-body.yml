@@ -1,0 +1,45 @@
+name: CatMeows actual ORIGINAL Brain checkpoint CONTINUED training, frozen before vs after
+on:
+  push:
+    branches: [experiment/CATMEOWS-CONTINUE-NATIVE-BODY-20261116]
+    paths:
+      - 'research/catmeows_native/continue_saved_original_brain.mjs'
+      - '.github/workflows/catmeows-continue-original-body.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  real-checkpoint-no-reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Recreate only physical sensory INPUT from official checksum-verified CatMeows WAV
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Download the ALREADY TRAINED original 34.9 MB Braivour organism - no new Brain constructor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43749811152 --repo dan3s2020/MagicPerspective --name original-braivour-temporal-cat-audio-body-resumable-v8 --dir runtime/catmeows
+          test -s runtime/catmeows/Original_Braivour_CatMeows_TemporalBody.v8
+      - name: Load same original Brain and train 220 MORE full audio world games, frozen unseen cats before and after, save reload
+        env:
+          CATMEOWS_CONTINUE_GAMES: '220'
+        run: node --max-old-space-size=7000 research/catmeows_native/continue_saved_original_brain.mjs
+      - name: Store real original Brain v8 after continued episodes and raw auditable before/after
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-continued-auditory-body-540-game-checkpoint
+          path: |
+            runtime/catmeows/native_body_continued_training_audit.json
+            runtime/catmeows/Original_Braivour_CatMeows_TemporalBody_Continued.v8
+          if-no-files-found: warn
