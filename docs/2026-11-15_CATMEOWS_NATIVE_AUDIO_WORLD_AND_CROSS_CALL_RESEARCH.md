@@ -70,6 +70,36 @@ Across 130 actual next-call situations (1,170 acoustic feature forecasts), chron
 3. Audio-only native graph learns partial within-call temporal dynamics but cannot yet transfer stronger than basic continuity to the unseen external audio source, nor infer between-call structure.
 4. Purely pursuing context-label % or artificial end-of-file goals is explicitly rejected. We need native perception/action/trajectory learning with real receiver/environment feedback to ground actual biological communication.
 
+### NEW final experiment: actually tested acoustic fidelity 8 -> 24 frames, NEGATIVE result
+
+Source preserved: original CatMeows 440 WAV files, MD5 verified. New sensory input: **24 true sequential frames** (3x older temporal observations), 512-sample FFT windows at 8kHz (64ms physical window vs old 256ms). 440 files, 21 cats, 12 owners; median acoustically trimmed recording **0.768 s**, min 0.192 s, max 3.072 s; no duplicate frame center positions. The first run failed only in reporting because the code referenced a reversed-training control that was intentionally omitted; the error was fixed without changing learner, results, or selection of controls. All three corrected jobs passed and saved raw predictions.
+
+Actual GitHub Actions: https://github.com/dan3s2020/MagicPerspective/actions/runs/43744088780
+
+Original same native Brain's fixed multiscale physical transition policy vs repeat prior frame on **91,080 heldout next-time-step feature values per representation** (cat/owner-disjoint):
+
+- 24-frame *relative spectral movement*: native chronological **50,325 / 91,080 = 55.254%** vs continuity **50,382 / 91,080 = 55.316%**. **No advantage**; -57 correct.
+- Chronology-broken (frames permuted) native **38,053 / 91,080 = 41.780%**. This preserves evidence of temporal learning, but that alone is NOT enough to beat continuity.
+- 24-frame *absolute audio*: native chronological **48,526 / 91,080 = 53.278%** vs repeat **49,626 / 91,080 = 54.486%** (regression).
+- Therefore the hypothesis that simple greater time resolution repairs actual heldout native prediction was **falsified**. Do not tune this into a fake "winner."
+
+Independent-source high-fidelity confirmation: verified original 30 extras.zip recordings, 160 energy-segmented sound bursts. Same 24-frame ear, fixed native policy and cat/owner holdout. Real 33,120 next-channel events, 3 folds; no original context labels in sensory input.
+
+Actual GitHub Actions: https://github.com/dan3s2020/MagicPerspective/actions/runs/43744132371
+
+- Native chronological **67.207%** versus previous frame **68.511%**, **-1.304 percentage points**.
+- Native reversed training **67.301%** versus same baseline, also negative.
+- Native time-permuted training **53.312%**, confirming some temporally ordered acoustics is learned but still insufficient.
+- Increasing acoustic measurement fidelity therefore does NOT recover robust cross-source predictive advantage. Mark as important negative result; DO NOT merge new 24frame code into production.
+
+New external literature control: A peer-reviewed 2025 study of domestic cat vocalisations explicitly rejected CatMeows from its own training data due to low-cost Bluetooth audio artifacts, broad noise, and waveform interruptions. This independently supports investigating the **physical recording quality/data-grounding limitation**, not claiming a new cat language from these PCM files alone. https://www.nature.com/articles/s41598-025-17986-z
+
+### Research conclusion after all executed CatMeows experiments
+
+We have proven a limited **genuine ORIGINAL-organism learned within-call time dependence** (the 8-frame original native transition actor differs materially under chronology interventions). The old symbol-copy route had none. We have **NOT** proven generalized next-call structure or decoded communication/meaning. Both the separate uncut source and the 24-frame higher-fidelity source limit or reverse the apparent advantage. The original Discoverer.shapeGraph is correctly exercised, but the endpoint silence is a useless proxy for animal intent, producing short/collapsed paths. The original call-to-call temporal-world transfer fails the true last-call control.
+
+**No more blind feature/granularity/clock/memory sweeps are justified.** Any plausible next experiment for actual *meaning* needs a temporally synced **receiver's observed response** (orientation/approach/withdrawal/reciprocal vocalization, ideally randomized playback controlled for context and identity) and must use original Brain action-consequence observations to predict a real behavioral effect before an acoustic intervention. CatMeows contains no such receiver-outcome evidence, by original Zenodo description. Do not fabricate it, and do not equate dataset context labels with messages.
+
 ### Next falsifiable experiment (not rerun of an old failure)
 
 - Keep the SAME original Brain world/action ontology and test physically improved fidelity: 24 waveform-derived acoustic frames at a 512-sample FFT window vs old 8 frames at 2048 samples. Source code `prepare_highres.py`, `native_highres_world.mjs`, fixed original policy; strictly owner/cat heldout, time-permuted negative controls.
