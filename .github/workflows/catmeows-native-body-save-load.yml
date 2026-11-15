@@ -1,0 +1,44 @@
+name: Braivour original learned auditory body save/resume verification
+on:
+  push:
+    branches: [experiment/CATMEOWS-TEMPORAL-BODY-WORLD-20261115]
+    paths:
+      - '.github/workflows/catmeows-native-body-save-load.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-original-brain-auditory-body-checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install numpy
+      - name: Original checksum verified CatMeows WAV acoustic frames
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Train native Brain acoustic body, save actual full original v8 and prove restored sound navigation
+        env:
+          CATMEOWS_BODY_FOLD: '0'
+          CATMEOWS_BODY_GAMES: '320'
+          CATMEOWS_BODY_AUDIO_ORDER: chronological
+          CATMEOWS_SAVE_NATIVE_BRAIN: '1'
+        run: node --max-old-space-size=6000 research/catmeows_native/run_temporal_body_game.mjs
+      - name: Verify and render sound synthesized from native Brain auditory actions
+        run: python research/catmeows_native/render_temporal_body_audio.py
+      - name: Preserve real ORIGINAL native Brain checkpoint, not external model
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-temporal-cat-audio-body-resumable-v8
+          path: |
+            runtime/catmeows/native_body_checkpoint_audit.json
+            runtime/catmeows/Original_Braivour_CatMeows_TemporalBody.v8
+            runtime/catmeows/native_temporal_embodied_audio_game.json
+            runtime/catmeows/native_temporal_embodied_audio_metrics.json
+          if-no-files-found: warn
