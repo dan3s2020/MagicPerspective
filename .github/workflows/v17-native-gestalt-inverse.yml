@@ -1,0 +1,28 @@
+name: Original Braivour - globally coherent 4D hidden-form reconstruction
+on:
+  push:
+    branches: [experiment/V17-NATIVE-GESTALT-INVERSE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_gestalt_whole_form.mjs'
+      - '.github/workflows/v17-native-gestalt-inverse.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-world-morphology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V17 organism learns admissible whole-form hypotheses and predicts hidden 4D section
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_gestalt_whole_form.mjs
+      - name: Upload frozen independent-world gestalt comparison and form-template ceiling
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: braivour-native-gestalt-full-form-test
+          path: runtime/dimensional_slices/native_gestalt_whole_form.json
+          if-no-files-found: warn
