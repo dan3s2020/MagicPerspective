@@ -203,6 +203,7 @@ for(const seed of TEST){
   const randomIndex=Math.floor(((seed*1664525+1013904223)>>>0)/4294967296*options.length);
   const selected={active:decision.selected,fixedC4:"C4",random:options[randomIndex]};
   const candidates={},policyPaths={};
+  let actualActiveTrace=null;
   for(const [policy,view] of Object.entries(selected)){
     const state=new Map(baseTrace);
     const r=navigate(B,seed,POS.A3,POS[view],state,{learn:false,hidden:true});
@@ -210,21 +211,17 @@ for(const seed of TEST){
     assert.ok(state.has(POS[view]),"Native body did not really observe chosen perspective");
     assert.ok(!state.has(POS.C3),"C3 leaked during true original-body action");
     candidates[policy]=nativeFormPrediction(state,[...BASE,view]);
+    if(policy==='active')actualActiveTrace=state;
     policyPaths[policy]={selected:view,physicalActions:r.steps,moved:r.moved,
       sensedLocations:[...state.keys()].map(p=>viewNames.find(k=>POS[k]===p))};
   }
   if(failed){routeFailure++;continue;}
   candidates.base=nativeFormPrediction(baseTrace,BASE);
-  candidates.wrongLabels=nativeFormPrediction(baseTrace,[...BASE,selected.active],{wrongLabels:true});
-  // IMPORTANT: wrong-label control needs the active view observation; use
-  // the active route's actual sensor, not missing baseTrace.
-  const activeView=selected.active;
-  if(!baseTrace.has(POS[activeView])){
-    const activeState=new Map(baseTrace);
-    const r=navigate(B,seed,POS.A3,POS[activeView],activeState,{learn:false,hidden:true});
-    assert.ok(r.solved);
-    candidates.wrongLabels=nativeFormPrediction(activeState,[...BASE,activeView],{wrongLabels:true});
-  }
+  // Sham condition scrambles only native learned C3 links; it uses exactly
+  // the same physically experienced active sensor and no future information.
+  assert.ok(actualActiveTrace?.has(POS[selected.active]));
+  candidates.wrongLabels=nativeFormPrediction(actualActiveTrace,
+    [...BASE,selected.active],{wrongLabels:true});
   assert.ok(!baseTrace.has(POS.C3),"Hidden target previously revealed");
   // Evaluator alone now reads actual hidden 4D section, after all predictions.
   const truth=pixels(physical(seed,POS.C3)),scores={};
