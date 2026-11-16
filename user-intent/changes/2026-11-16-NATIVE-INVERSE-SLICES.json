@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-16",
+  "userExact": "Ok continua ,adu rezultatele mari !",
+  "continuity": "Follows existing verified native A/C dimensional slices: research/dimensional_slices/RESULTS_20261116.md",
+  "base": "experiment/V17-AC-4D-LIVED-SLICE-20261116",
+  "original": "v17/transcend/torus-aether/devour/brain.mjs unchanged; Brain.disc is original Discoverer with its original shape(), choose(), learnStep(), endEpisode()",
+  "experiment": "Novel question for this project: reconstruct a strictly unvisited 3D 4D-hyperplane section's 2D sensor pattern from three independently traveled bodily views, with original native Discoverer learning direct three-anchor causal geometry conditioned on its own physical observations.",
+  "newFiles": [
+    "research/dimensional_slices/native_inverse_3anchors.mjs",
+    "research/dimensional_slices/INVERSE_RESULTS_20261116.md",
+    ".github/workflows/v17-active-hyperslice-inverse.yml",
+    "user-intent/changes/2026-11-16-NATIVE-INVERSE-SLICES.json"
+  ],
+  "modifiedOriginalFiles": [],
+  "trainInputs": "Original Brain physically explores actual 4D tesseract 5-level A/C sensor positions and learns original motor physics. A single organism additionally stores observed four-view co-occurrences in its native Discoverer after actually traversing the world; no 4D orientation parameters or shape identities exposed.",
+  "hiddenView": "Heldout pose C3 must never be entered or sensed by the organism; only evaluator may query its true sensor image.",
+  "controls": "Same original organism with A3 blinded, shuffled A3 learned relationship, copy C2, copy C4, naive intersection and union, always 0 and always 1. Compare independent object-level heldout accuracy/F1/exact, not only pixel accuracy.",
+  "caveat": "Learning three-view occupancy statistics is not proof of reconstructing 4D coordinates, hidden physics of real world, quantum states or GGUF intelligence. No claims until actual CI run."
+}
