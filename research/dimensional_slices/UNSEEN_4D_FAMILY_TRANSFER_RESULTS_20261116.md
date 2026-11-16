@@ -41,6 +41,23 @@ Additional observed controls in the mixed condition on the SAME 200 hidden targe
 3. **No evidence yet of a learned optimal policy choosing when not to look.** Existing experimental active choice of a fourth view dropped exact C3 from 21.5% to 17.5%. The body needs *relevance and reliability gating* of dimensions, not more input blindly.
 4. **One source Brain, multiple families** improved both previously seen-family heldout and now a never-trained related family, under fixed original-organism motor mechanics. This supports further research, not universal high-dimensional intelligence.
 
+
+### Independent paired statistical verification (completed)
+
+A read-only job downloaded **both actual original-Brain JSON artifacts** from source run `43799511355`, checked all 200 world seeds and exact hidden targets match, checked identical 360-world training budgets and frozen unseen evaluation, and performed **10,000 paired object-level bootstraps and 10,000 paired sign-flip trials**, rather than treating 16 pixels per world as independent observations.
+
+Audit execution: https://github.com/dan3s2020/MagicPerspective/actions/runs/43800090058
+
+| Comparison | Measured difference | Independent-world 95% bootstrap | Exploratory paired p |
+|---|---:|---:|---:|
+| Mixed minus specialized, **3-view exact** | **+21.5 pp** | **[+16.0, +27.5] pp** | ≈0.00010 |
+| Mixed minus specialized, **3-view occupied F1** | **+23.46 pp** | **[+21.36, +25.65] pp** | ≈0.00010 |
+| Mixed minus specialized, **nine-view exact** | +5.5 pp | [+2.5, +9.0] pp | ≈0.00120 |
+| Mixed **three minus nine views**, exact | **+16.0 pp** | **[+10.5, +22.0] pp** | ≈0.00010 |
+| Mixed **three minus nine views**, occupied F1 | +12.07 pp | [+9.57, +14.52] pp | ≈0.00010 |
+
+The statistical validation supports **both** the 3-view zero-shot related-family gain and the surprising negative effect of adding six further views. These controls do not establish a general new 4D physical law or an unconstrained higher-dimensional latent reconstruction.
+
 ### What is NOT supported
 
 - The reconstructed target is a 4×4 **binary 2D silhouette** of an authentic 3D section of a 4D polytope. **No continuous 3D or 4D latent geometry was reconstructed.**
@@ -48,7 +65,7 @@ Additional observed controls in the mixed condition on the SAME 200 hidden targe
 - Original V17 Brain source untouched; the added `nativeActive4DAtlas` is an experimental sensory memory, with matching rule attached to the original Brain, not an automatic general cognitive theory.
 - The trained 5-cell and new truncated 5-cell have shared geometrical ancestry; broader transfer to wholly unrelated hidden domains is untested.
 - These results do NOT demonstrate quantum entanglement, Platonic metamorphosis as physical laws, consciousness, human language, GGUF intelligence assimilation, or general superintelligence.
-- The paired-source statistical workflow is being added; **do not report a paired confidence interval or p-value without a completed run log**.
+- A separate **completed** paired statistical audit validates that the same 200 heldout 4D objects and hidden targets are compared, using 10,000 independent-world bootstraps and paired sign-flip trials. Source: https://github.com/dan3s2020/MagicPerspective/actions/runs/43800090058. These p-values remain exploratory after related research decisions.
 
 ### Exact source and reproducibility
 
@@ -58,7 +75,7 @@ Additional observed controls in the mixed condition on the SAME 200 hidden targe
 - Original Brain embodied training and frozen target evaluation: `research/dimensional_slices/native_zero_shot_truncated_5cell.mjs`.
 - Read-only paired analysis over real original Brain JSON artifacts: `research/dimensional_slices/paired_unseen_truncated_5cell.mjs`.
 - GitHub Actions both conditions: https://github.com/dan3s2020/MagicPerspective/actions/runs/43799511355
-- Independent paired audit, when executed: `github/workflows/v17-unseen-truncated-5cell.yml` (dependent audit job) and `.github/workflows/v17-unseen-4d-paired.yml`.
+- Independent paired audit: https://github.com/dan3s2020/MagicPerspective/actions/runs/43800090058 and `.github/workflows/v17-unseen-4d-paired.yml`; an additional audit also runs as a dependent job within `.github/workflows/v17-unseen-truncated-5cell.yml`.
 
 ```bash
 NATIVE_4D_TRAIN_MODE=tesseract-only node research/dimensional_slices/native_zero_shot_truncated_5cell.mjs
