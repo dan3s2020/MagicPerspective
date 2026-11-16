@@ -1,0 +1,36 @@
+name: Original Braivour equal-budget mixed 4D paired statistical audit
+on:
+  push:
+    branches: [experiment/V17-MIXED-4D-ONE-BODY-20261116]
+    paths:
+      - 'research/dimensional_slices/compare_mixed_4d_results.mjs'
+      - '.github/workflows/v17-mixed-4d-paired-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-body-independent-objects-paired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 43798852508
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: original-braivour-4d-*
+          path: compare_input
+          merge-multiple: false
+      - name: Audit paired original-body heldout effect with object-level bootstrap
+        run: node research/dimensional_slices/compare_mixed_4d_results.mjs
+      - name: Upload paired statistics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-4d-comparison-paired-statistics
+          path: runtime/dimensional_slices/paired_mixed_4d_statistical_audit.json
+          if-no-files-found: warn
