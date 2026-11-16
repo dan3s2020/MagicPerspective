@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101521">
+<title>Braivour • Corp acustic viu</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#e8ecf6;background:#0d111b;font-size:15px;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 75% -5%,#273c52 0%,#0d111b 35%,#0d111b 100%)}
+main{max-width:850px;margin:0 auto;padding:20px 15px 75px}
+header{display:flex;align-items:center;gap:14px;padding:9px 0 24px}
+.logo{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;border:1px solid #6d9fc990;background:#19364b;font-size:29px}
+h1{font-size:1.65rem;font-weight:720;letter-spacing:-.06em;margin:0}
+.small{color:#a7b4c9;font-size:.88rem;line-height:1.5}
+p{line-height:1.55}h2{font-size:1.05rem;font-weight:690;margin:0 0 15px}
+.panel{border:1px solid #344158a8;background:#172033d9;border-radius:17px;margin-bottom:15px;padding:18px}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.between{justify-content:space-between}
+.pill{padding:7px 12px;border:1px solid #50627e;border-radius:30px;color:#b6cbe6;font-size:.77rem}
+.pill.ok{border-color:#408c81;color:#9bdbcc;background:#163a38}
+.pill.warn{border-color:#af7939;color:#f9cf84}
+button{min-height:43px;cursor:pointer;border:1px solid #5a6c89;background:#283954;color:#f5f8ff;border-radius:11px;padding:10px 15px;font:inherit;font-weight:640}
+button.primary{background:#65bbcc;border-color:#65bbcc;color:#091420}
+button.red{background:#542638;border-color:#ae5c72;color:#ffe0e8}
+button:disabled{opacity:.42;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid #a7daf3;outline-offset:2px}
+.sub{font-size:.85rem;color:#aebbd0}
+#oscilloscope{width:100%;height:120px;display:block;background:#101927;border:1px solid #35415a;border-radius:12px}
+#micNotice{min-height:25px}
+.switch{font-size:.84rem;line-height:1.5;color:#b4c6dd}
+label{display:flex;align-items:center;gap:8px}
+label span{white-space:nowrap}
+input[type=range]{width:100%;accent-color:#74cbd1}
+input[type=file]{display:none}
+.fileLabel{display:inline-flex;align-items:center;cursor:pointer;border-radius:10px;padding:12px 15px;border:1px dashed #687fa2;background:#1a273b;font-weight:650}
+.metricGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.metric{border:1px solid #33435b;border-radius:11px;padding:13px;background:#111b2b}
+.number{font-size:1.35rem;font-weight:750;font-variant-numeric:tabular-nums}
+.metric .small{font-size:.74rem}
+#message{min-height:48px;word-break:break-word;padding:12px;border:1px solid #3f526b;border-radius:9px;background:#111d2e;color:#c9d9e9;margin:10px 0 0}
+#message.err{border-color:#bc556c;color:#ffc5d4}
+#message.good{border-color:#4eac99}
+audio{width:100%;margin-top:8px}
+#outputStats,#latest{font-size:.86rem;color:#b8c7d9;line-height:1.6}
+a{color:#9ad3ff;text-decoration:underline;text-underline-offset:3px}
+kbd{background:#293647;border-radius:5px;padding:1px 5px}
+progress{height:11px;width:100%;accent-color:#70c3c5}
+footer{color:#8697ad;font-size:.77rem;line-height:1.5;margin:20px 4px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:570px){.metricGrid{grid-template-columns:repeat(2,1fr)}.pair{grid-template-columns:1fr}main{padding:12px 11px 50px}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div class="logo" aria-hidden="true">◉</div>
+ <div style="flex:1">
+  <h1>Braivour <span style="color:#7fc8d4">Audio Body</span></h1>
+  <div class="small">MagicPerspective • Organismul original, local în Termux</div>
+ </div>
+ <div id="online" class="pill">Se conectează…</div>
+</header>
+
+<section class="panel">
+ <div class="row between" style="margin-bottom:13px">
+  <h2 style="margin:0">01 · Ascultă lumea sonoră</h2>
+  <span id="micState" class="pill">Microfon oprit</span>
+ </div>
+ <canvas id="oscilloscope" width="760" height="120" aria-label="Nivel acustic real captat de microfon"></canvas>
+ <p id="micNotice" class="small">Înregistrează sunetul unei pisici, al unei voci sau orice audio. Organismul percepe 9 caracteristici fizice și generează un răspuns din mișcările lui.</p>
+ <div class="row">
+  <button id="startMic" class="primary">🎙 Înregistrează</button>
+  <button id="stopMic" class="red" disabled>■ Oprește și răspunde</button>
+  <label class="fileLabel" for="audioFile">＋ Încarcă audio</label>
+  <input type="file" id="audioFile" accept="audio/*,.wav,.mp3,.ogg,.m4a,.aac,.webm">
+ </div>
+ <div class="small" style="margin-top:12px">Microfonul folosește permisiunea browserului. Datele audio sunt procesate numai de serverul local <kbd>127.0.0.1</kbd>.</div>
+</section>
+
+<section class="panel">
+ <div class="row between">
+  <h2>02 · Răspunsul organismului</h2>
+  <span class="pill">Nu este traducere</span>
+ </div>
+ <div class="row between">
+  <label style="flex:1;min-width:180px">
+   <span>Variație</span>
+   <input id="creativity" type="range" min="0" max="100" value="48">
+  </label>
+  <span id="creativityText" class="sub">48%</span>
+ </div>
+ <div class="row" style="margin:13px 0 4px">
+  <button id="reply" class="primary" disabled>▶ Să răspundă la ultimul audio</button>
+  <span id="currentSound" class="small">Niciun audio primit</span>
+ </div>
+ <audio id="voice" controls preload="metadata" aria-label="Sunet generat de Braivour"></audio>
+ <div class="row" style="margin-top:8px">
+  <a id="downloadVoice" href="#" download hidden>Salvează WAV-ul generat</a>
+ </div>
+ <p id="outputStats">Vei auzi sunete sintetizate din stările acustice alese de organism. Ele nu sunt încă vocalizări naturale confirmate.</p>
+</section>
+
+<section class="panel">
+ <h2>03 · Antrenează același corp din ce aude</h2>
+ <p class="small">Apasă „Antrenează” pentru ca organismul restaurat să absoarbă efectiv cadrele audio, să învețe transformări native noi, să joace ținte acustice care există în sunet și să-și salveze memoria. Nu creează un Brain nou.</p>
+ <div class="pair">
+  <label style="display:block">
+   <div class="row between"><span>Jocuri suplimentare</span><strong id="gamesText">25</strong></div>
+   <input id="games" type="range" min="1" max="150" value="25">
+  </label>
+  <div class="row" style="justify-content:flex-end;align-items:end">
+   <button id="train" class="primary" disabled>⚡ Antrenează din audio</button>
+   <button id="stopTrain" disabled>Oprește</button>
+  </div>
+ </div>
+ <progress id="trainingProgress" max="100" value="0" aria-label="Progres real antrenare"></progress>
+ <div id="trainingDetail" class="small">Nicio sesiune nouă în desfășurare.</div>
+</section>
+
+<section class="panel">
+ <div class="row between" style="margin-bottom:14px">
+  <h2 style="margin:0">04 · Memoria organismului</h2>
+  <button id="save">💾 Salvează acum</button>
+ </div>
+ <div class="metricGrid">
+  <div class="metric"><div class="number" id="episodes">—</div><div class="small">Jocuri originale în memorie</div></div>
+  <div class="metric"><div class="number" id="observations">—</div><div class="small">Observații de tranziție native</div></div>
+  <div class="metric"><div class="number" id="additionalClips">—</div><div class="small">Fragmente audio noi absorbite</div></div>
+  <div class="metric"><div class="number" id="cells">—</div><div class="small">Stări corporale sonore</div></div>
+  <div class="metric"><div class="number" id="responses">—</div><div class="small">Răspunsuri sonore create</div></div>
+  <div class="metric"><div class="number" id="checkpoint">—</div><div class="small">Checkpoint local</div></div>
+ </div>
+ <p id="latest">Memoria originală rămâne salvată pe telefon. Ultimul checkpoint este păstrat și în copie de siguranță după salvări.</p>
+ <div id="message" role="status" aria-live="polite">Conectare la organism…</div>
+</section>
+
+<footer>Experiment de sinteză acustică, nu comunicare felină descifrată. Caracteristicile audio și acțiunile sunt reale, dar asemănarea sunetelor generate cu mieunaturile naturale nu a fost validată. Pentru o conversație inteligibilă în sens semantic sunt necesare și observații ale reacțiilor animalelor.</footer>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let recorder=null,micStream=null,context=null,analyser=null,animation=null,fragments=[],
+ latestId=null,inFlight=false,lastTrainingSignature=null;
+const qs=name=>location.searchParams?.get(name);
+function message(text,type){
+ const e=$("message");e.textContent=text;e.className=type||"";
+}
+function setCurrent(id,summary){
+ latestId=id;$("reply").disabled=false;$("train").disabled=false;
+ $("currentSound").textContent=summary||"Audio primit";
+}
+async function api(path,options={}){
+ const r=await fetch(path,{cache:"no-store",...options});
+ let data;
+ try{data=await r.json();}catch{throw Error("Serverul nu a returnat un răspuns valid");}
+ if(!r.ok)throw Error(data.error||"Cererea locală a eșuat ("+r.status+")");
+ return data;
+}
+function drawMic(){
+ if(!analyser)return;
+ const canvas=$("oscilloscope"),ctx=canvas.getContext("2d");
+ const arr=new Uint8Array(analyser.fftSize);
+ analyser.getByteTimeDomainData(arr);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle="#101927";ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.beginPath();
+ for(let i=0;i<canvas.width;i++){
+  const y=arr[Math.floor(i*arr.length/canvas.width)]/255*canvas.height;
+  if(i===0)ctx.moveTo(i,y);else ctx.lineTo(i,y);
+ }
+ ctx.strokeStyle="#89d2da";ctx.lineWidth=2;ctx.stroke();
+ animation=requestAnimationFrame(drawMic);
+}
+function blankScope(){
+ const c=$("oscilloscope"),x=c.getContext("2d");
+ x.clearRect(0,0,c.width,c.height);
+ x.fillStyle="#101927";x.fillRect(0,0,c.width,c.height);
+ x.strokeStyle="#52677b";x.beginPath();x.moveTo(0,c.height/2);
+ x.lineTo(c.width,c.height/2);x.stroke();
+}
+async function uploadAudio(blob,replyNow=true){
+ if(inFlight)return;
+ inFlight=true;
+ $("reply").disabled=true;$("train").disabled=true;
+ message("Percepție reală: decodare audio și 48 × 9 caracteristici per fragment…");
+ try{
+  const upload=await api("/api/upload",{method:"POST",body:blob,
+    headers:{"Content-Type":blob.type||"application/octet-stream"}});
+  const r=upload.recording;
+  setCurrent(r.id,r.duration_seconds+" secunde, "+r.realClips+
+    " fragmente, SHA "+r.shaPrefix);
+  message("Audio perceput și pregătit. Poți antrena sau solicita răspuns.", "good");
+  if(replyNow){inFlight=false;await replyToAudio();}
+ }catch(e){message(e.message,"err");inFlight=false;}
+ finally{inFlight=false;$("reply").disabled=!latestId;$("train").disabled=!latestId;}
+}
+async function replyToAudio(){
+ if(inFlight||!latestId)return;
+ inFlight=true;$("reply").disabled=true;
+ message("Organismul își caută poziția în corpul sonor și imaginează 47 de acțiuni…");
+ try{
+  const data=await api("/api/reply",{method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({id:latestId,creativity:Number($("creativity").value)/100})});
+  const r=data.reply;
+  const player=$("voice");
+  player.src=r.audio+"?t="+Date.now();
+  player.load();
+  $("downloadVoice").href=r.audio;
+  $("downloadVoice").hidden=false;
+  $("outputStats").textContent="Input: tonalitate "+r.inputPitch.toFixed(2)+
+    ", intensitate "+r.inputLoudness.toFixed(2)+". Corpul a pornit din starea "+
+    r.start+", a urmărit starea "+r.goal+", a executat "+r.nativeActions+
+    " acțiuni originale și a folosit "+r.originalNativeEffects+
+    " efecte acustice susținute de memoria nativă. Durată audio: 0,96 secunde.";
+  try{await player.play();}catch{
+   message("Răspunsul este gata. Apasă ▶ pe player pentru ascultare.", "good");
+  }
+  message("Braivour a generat audio nou ca răspuns la sunetul primit.", "good");
+ }catch(e){message(e.message,"err");}
+ finally{inFlight=false;$("reply").disabled=!latestId;refresh();}
+}
+async function startMic(){
+ if(recorder?.state==="recording")return;
+ try{
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)
+   throw Error("Acest browser nu permite înregistrarea. Folosește încărcarea fișierului audio.");
+  micStream=await navigator.mediaDevices.getUserMedia({
+   audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  context=new (window.AudioContext||window.webkitAudioContext)();
+  const source=context.createMediaStreamSource(micStream);
+  analyser=context.createAnalyser();analyser.fftSize=2048;
+  source.connect(analyser);drawMic();
+  const preferred=["audio/webm;codecs=opus","audio/webm","audio/mp4"]
+      .find(x=>MediaRecorder.isTypeSupported(x));
+  recorder=preferred?new MediaRecorder(micStream,{mimeType:preferred}):new MediaRecorder(micStream);
+  fragments=[];
+  recorder.ondataavailable=e=>{if(e.data?.size)fragments.push(e.data);};
+  recorder.onerror=e=>message("Eroare microfon: "+(e.error?.message||"necunoscută"),"err");
+  recorder.onstop=()=>{
+   const clip=new Blob(fragments,{type:recorder.mimeType||"audio/webm"});
+   finishMic();
+   uploadAudio(clip,true);
+  };
+  recorder.start(250);
+  $("startMic").disabled=true;$("stopMic").disabled=false;
+  $("micState").textContent="● Înregistrează";
+  $("micState").className="pill warn";
+  $("micNotice").textContent="Microfonul REAL este activ. Apasă «Oprește și răspunde» când ai terminat.";
+  message("Braivour ascultă. Audio rămâne pe telefon.","good");
+ }catch(e){
+  finishMic();message("Nu pot porni microfonul: "+e.message,"err");
+ }
+}
+function finishMic(){
+ if(animation)cancelAnimationFrame(animation);
+ animation=null;analyser=null;
+ if(context){context.close().catch(()=>{});context=null;}
+ if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+ $("startMic").disabled=false;$("stopMic").disabled=true;
+ $("micState").textContent="Microfon oprit";$("micState").className="pill";
+ $("micNotice").textContent="Audio real. Fără server extern sau transcriere text.";
+ blankScope();
+}
+$("startMic").addEventListener("click",startMic);
+$("stopMic").addEventListener("click",()=>{
+ if(recorder&&recorder.state!=="inactive")recorder.stop();
+});
+$("audioFile").addEventListener("change",e=>{
+ const file=e.target.files[0];if(file)uploadAudio(file,true);e.target.value="";
+});
+$("reply").addEventListener("click",replyToAudio);
+$("creativity").addEventListener("input",()=>$("creativityText").textContent=$("creativity").value+"%");
+$("games").addEventListener("input",()=>$("gamesText").textContent=$("games").value);
+$("train").addEventListener("click",async()=>{
+ if(!latestId||inFlight)return;
+ try{
+  const r=await api("/api/train",{method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({id:latestId,episodes:Number($("games").value)})});
+  message("Antrenarea pe audio real a fost acceptată. Vezi progresul mai jos.","good");
+  $("train").disabled=true;$("stopTrain").disabled=false;
+ }catch(e){message(e.message,"err");}
+});
+$("stopTrain").addEventListener("click",async()=>{
+ try{await api("/api/stop",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+ message("Cerere de oprire primită. Organismul salvează experiența acumulată.");}
+ catch(e){message(e.message,"err");}
+});
+$("save").addEventListener("click",async()=>{
+ $("save").disabled=true;message("Salvez și verific fișierul complet al organismului original…");
+ try{
+  const s=await api("/api/save",{method:"POST",
+   headers:{"Content-Type":"application/json"},body:"{}"});
+  message("Memorie salvată și verificată: "+(s.bytes/1e6).toFixed(2)+
+   " MB, "+s.originalEpisodes+" jocuri; backup disponibil.","good");
+ }catch(e){message(e.message,"err");}
+ finally{$("save").disabled=false;refresh();}
+});
+async function refresh(){
+ try{
+  const st=await api("/api/status");
+  $("online").textContent="● Organism activ";$("online").className="pill ok";
+  $("episodes").textContent=st.originalBrainTrainingEpisodes.toLocaleString("ro-RO");
+  $("observations").textContent=st.originalNativeAuditoryGraphObservations.toLocaleString("ro-RO");
+  $("additionalClips").textContent=st.additionalUserAudioClipsAbsorbed;
+  $("cells").textContent=st.soundWorldKnownCells;
+  $("responses").textContent=st.audioRepliesGenerated;
+  $("checkpoint").textContent=(st.savedCheckpointBytes/1e6).toFixed(1)+" MB";
+  $("latest").textContent="Checkpoint: "+(st.lastSaved?
+     "ultima salvare "+new Date(st.lastSaved).toLocaleString("ro-RO"):
+     "încărcat din checkpointul inițial")+". Cele 7 efecte acustice se află în grafurile native ale aceluiași Brain.";
+  const t=st.training;
+  if(t){
+   const done=t.gamesPlayed??0,need=t.requestedGames||1;
+   $("trainingProgress").value=Math.round(100*done/need);
+   $("trainingDetail").textContent=t.status+" • "+done+"/"+need+
+     " jocuri • "+(t.solved||0)+" rezolvate"+
+     (t.originalSoundLearning?
+     " • "+t.originalSoundLearning.originalNativeAuditorySevenDimEffectObservations+
+       " observații noi de efect acustic":"")+
+     (t.error?" • "+t.error:"");
+   $("stopTrain").disabled=!st.busy||["completed","failed","stopped_by_user"].includes(t.status);
+   $("train").disabled=!latestId||st.busy;
+   if(["completed","failed","stopped_by_user"].includes(t.status)&&
+       lastTrainingSignature!==t.started){
+    lastTrainingSignature=t.started;
+    message(t.status==="completed"?
+       "Antrenare reală încheiată; memoria originală a fost salvată.":
+       "Antrenare "+t.status+"; verifică rezultatul.",t.status==="completed"?"good":"err");
+   }
+  }
+  if(!latestId&&st.recentRecordings?.length){
+   const r=st.recentRecordings.at(-1);setCurrent(r.id,r.seconds+" sec / "+r.clips+" fragmente salvate");
+  }
+  if(!latestId&&st.recentResponses?.length){
+   const r=st.recentResponses.at(-1);
+   $("voice").src=r.audio;$("downloadVoice").href=r.audio;$("downloadVoice").hidden=false;
+  }
+ }catch(e){
+  $("online").textContent="Deconectat";$("online").className="pill warn";
+  message("Braivour local indisponibil: "+e.message,"err");
+ }
+}
+blankScope();refresh();setInterval(refresh,1800);
+</script>
+</body>
+</html>
