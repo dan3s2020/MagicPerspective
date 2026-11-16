@@ -18,31 +18,35 @@ if [ -s "$TARGET" ]; then
   echo "Keeping original active native Brain, not resetting its training."
 else
   FOUND=""
-  if [ "$#" -gt 0 ] && [ -f "$1" ]; then
-    FOUND="$1"
-  else
-    if [ -d "$HOME/storage/downloads" ]; then
-      FOUND="$(find "$HOME/storage/downloads" -maxdepth 1 -type f -name '*Braivour*9D*zip' | head -1)"
+  for item in "$@" "$HOME/storage/downloads/"*Braivour*9D*zip "$HOME/storage/downloads/"Original_Braivour_9D*.v8; do
+    [ -s "$item" ] || continue
+    if [ "$(basename "$item")" = "$NAME" ]; then
+      cp "$item" "$TARGET.new"
+    elif [[ "$item" == *.zip ]] && unzip -Z -1 "$item" 2>/dev/null | grep -Fxq "$NAME"; then
+      unzip -p "$item" "$NAME" > "$TARGET.new"
+    else
+      echo "Skipping unrelated audio ZIP / unexpected checkpoint: $item"
+      continue
     fi
-  fi
+    if [ "$(wc -c < "$TARGET.new")" -le 25000000 ]; then
+      rm -f "$TARGET.new"
+      echo "Skipping incomplete original Brain: $item"
+      continue
+    fi
+    mv "$TARGET.new" "$TARGET"
+    FOUND="$item"
+    break
+  done
   if [ -z "$FOUND" ]; then
-    echo "Download Braivour_Native_9D_Sound_Transform_WAVs_And_Brain.zip from the chat into Android Downloads."
-    echo "Run termux-setup-storage, grant access, and rerun this installer."
-    echo "Or pass the full zip path as the first argument."
+    echo "No valid original trained 9D Brain checkpoint found. A blank Brain will NOT be started."
+    echo "Download Braivour_Native_9D_Sound_Transform_WAVs_And_Brain.zip into Android Downloads."
+    echo "Run termux-setup-storage, grant access and rerun install.sh."
+    echo "Or pass the full path to that ZIP as the first argument."
     exit 3
   fi
-  echo "Installing exactly the original native 9D body from $FOUND"
-  if [ "$FOUND" = "$NAME" ]; then
-    cp "$FOUND" "$TARGET.new"
-  elif unzip -Z -1 "$FOUND" | grep -Fxq "$NAME"; then
-    unzip -p "$FOUND" "$NAME" > "$TARGET.new"
-  else
-    echo "Archive does not contain the original 9D Brain; refusing to start empty."
-    exit 4
-  fi
-  [ "$(wc -c < "$TARGET.new")" -gt 25000000 ] || { rm -f "$TARGET.new"; echo "Truncated original Brain"; exit 5; }
-  mv "$TARGET.new" "$TARGET"
+  echo "Installed original nine-dimensional checkpoint from: $FOUND"
 fi
+
 test -s "$TARGET"
 test -f "v17/transcend/torus-aether/devour/brain.mjs"
 test -f "research/catmeows_native/native_temporal_body.mjs"
