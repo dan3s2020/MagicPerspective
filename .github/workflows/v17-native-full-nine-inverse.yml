@@ -1,0 +1,28 @@
+name: Original V17 Brain - devour all 9 visible views, predict hidden tenth 4D slice
+on:
+  push:
+    branches: [experiment/V17-NATIVE-FULL-SLICE-INVERSE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_full_nine_view_inverse.mjs'
+      - '.github/workflows/v17-native-full-nine-inverse.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  all-nine-body-hidden-tenth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original V17 Brain physically travels all 9 genuine 4D perspectives and predicts inaccessible C3
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_full_nine_view_inverse.mjs
+      - name: Upload all genuine reconstructions and independent heldout controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-native-all-nine-4d-views
+          path: runtime/dimensional_slices/native_full_nine_view_inverse.json
+          if-no-files-found: warn
