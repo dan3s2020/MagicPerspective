@@ -1,0 +1,34 @@
+name: One original Braivour body - mixed 4D families vs matched 360 tesseracts
+on:
+  push:
+    branches: [experiment/V17-MIXED-4D-ONE-BODY-20261116]
+    paths:
+      - 'research/dimensional_slices/native_mixed_4d_one_body.mjs'
+      - '.github/workflows/v17-mixed-4d-one-body.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-body-representation-across-families:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ['tesseract-only','mixed-4d']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Train original single Brain on controlled family distribution and test four families blind
+        env:
+          NATIVE_4D_TRAIN_MODE: ${{ matrix.mode }}
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_mixed_4d_one_body.mjs
+      - name: Upload genuine original Brain metrics by family and training distribution
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-4d-${{ matrix.mode }}
+          path: runtime/dimensional_slices/native_mixed_4d_comparison_${{ matrix.mode }}.json
+          if-no-files-found: warn
