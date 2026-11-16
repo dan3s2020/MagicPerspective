@@ -1,0 +1,36 @@
+name: Braivour original native body — paired novel 4D family transfer statistics
+on:
+  push:
+    branches: [experiment/V17-UNSEEN-TRUNCATED-5CELL-20261116]
+    paths:
+      - 'research/dimensional_slices/paired_unseen_truncated_5cell.mjs'
+      - '.github/workflows/v17-unseen-4d-paired.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-4d-shape-paired-evaluator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 43799511355
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: original-braivour-unseen-polytope-*
+          path: compared
+          merge-multiple: false
+      - name: Compare paired zero-shot outcomes of actual original organism artifacts
+        run: node research/dimensional_slices/paired_unseen_truncated_5cell.mjs
+      - name: Upload paired stats
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-original-braivour-unseen-4d-paired
+          path: runtime/dimensional_slices/paired_true_unseen_4d_shape.json
+          if-no-files-found: warn
