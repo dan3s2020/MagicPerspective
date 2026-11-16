@@ -1,4 +1,4 @@
-name: CatMeows original Braivour sound-body realism: ALL NINE acoustic dimensions
+name: 'CatMeows original Braivour sound-body realism - ALL NINE acoustic dimensions'
 on:
   push:
     branches: [experiment/CATMEOWS-CONTINUE-NATIVE-BODY-20261116]
