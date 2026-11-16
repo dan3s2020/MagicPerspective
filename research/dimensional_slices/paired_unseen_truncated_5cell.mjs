@@ -1,4 +1,5 @@
 // Read-only paired independent-new-world audit; no organism training.
+// Provenance: both matched 360-world-body runs completed in GitHub Actions #43799511355.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=x=>JSON.parse(fs.readFileSync('compared/original-braivour-unseen-polytope-'+x+
