@@ -1,0 +1,28 @@
+name: Original V17 Brain — learned active view for genuinely hidden 4D section
+on:
+  push:
+    branches: [experiment/V17-ACTIVE-VIEW-INFORMATION-20261116]
+    paths:
+      - 'research/dimensional_slices/native_active_view_information.mjs'
+      - '.github/workflows/v17-native-active-view.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  active-perspective-body:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original Brain lives actual 4D shapes and chooses active complementary perspective
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_active_view_information.mjs
+      - name: Upload independent hidden-slice paired and shuffled results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-brain-active-4d-view-comparison
+          path: runtime/dimensional_slices/native_active_view_information.json
+          if-no-files-found: warn
