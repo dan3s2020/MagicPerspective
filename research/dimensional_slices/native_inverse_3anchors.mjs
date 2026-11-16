@@ -17,7 +17,7 @@ const good=(x,y)=>x>=1&&x<=5&&(y===2||y===3);
 const POS={A1:cell(1,2),A2:cell(2,2),A3:cell(3,2),A4:cell(4,2),
   C2:cell(2,3),C3:cell(3,3),C4:cell(4,3)};
 const TRAIN=Array.from({length:360},(_,i)=>2026111601+i*613);
-const TEST=Array.from({length:150},(_,i)=>2026190001+i*907);
+const TEST=Array.from({length:150},(_,i)=>2026600001+i*907);
 assert.equal(new Set([...TRAIN,...TEST]).size,TRAIN.length+TEST.length);
 const world=new Map([...TRAIN,...TEST].map(seed=>[seed,frames(seed)]));
 function raw(seed,p){
