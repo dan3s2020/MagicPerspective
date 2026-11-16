@@ -42,6 +42,7 @@ function next(D,pos,action,hidden=false){
   const to=cell(x+dx,y+dy);
   return good(x+dx,y+dy)&&(!hidden||to!==POS.C3)?to:pos;
 }
+const sensed=r=>r.map(x=>+(x>48));
 const observed=(r,j)=>+(r[j]>48);
 const adjacent=(r,j)=>{const x=j%4,y=Math.floor(j/4);
   let out=0;for(const [dx,dy] of DIR){const xx=x+dx,yy=y+dy;
@@ -212,7 +213,6 @@ const frozen={lived:B.lived,episodes:B.disc.episodes,
   motorTries:B.disc.tries.slice(),
   memories:B.disc.nativeInverse.size};
 function pixels(prob,threshold=0.5){return prob.map(p=>p>=threshold?1:0);}
-const sensed=r=>r.map(x=>+(x>48));
 function stats(bin,truth,p=null){
   let tp=0,fp=0,fn=0,correct=0,brier=0;
   for(let j=0;j<truth.length;j++){
