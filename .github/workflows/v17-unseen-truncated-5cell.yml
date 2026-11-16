@@ -33,3 +33,27 @@ jobs:
           name: original-braivour-unseen-polytope-${{ matrix.mode }}
           path: runtime/dimensional_slices/native_zero_shot_truncated_5cell_${{ matrix.mode }}.json
           if-no-files-found: warn
+
+  paired-independent-world-audit:
+    needs: original-body-unseen-new-polytope
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: original-braivour-unseen-polytope-*
+          path: compared
+          merge-multiple: false
+      - name: Verify actual paired original-Brain zero-shot outcomes and 10000 object bootstrap trials
+        run: node research/dimensional_slices/paired_unseen_truncated_5cell.mjs
+      - name: Upload independent-world paired statistics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-zero-shot-independent-paired-audit
+          path: runtime/dimensional_slices/paired_true_unseen_4d_shape.json
+          if-no-files-found: warn
