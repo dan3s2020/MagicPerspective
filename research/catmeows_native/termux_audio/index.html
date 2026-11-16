@@ -142,7 +142,7 @@ footer{color:#8697ad;font-size:.77rem;line-height:1.5;margin:20px 4px}
 const $=id=>document.getElementById(id);
 let recorder=null,micStream=null,context=null,analyser=null,animation=null,fragments=[],
  latestId=null,inFlight=false,lastTrainingSignature=null;
-const qs=name=>location.searchParams?.get(name);
+
 function message(text,type){
  const e=$("message");e.textContent=text;e.className=type||"";
 }
@@ -334,7 +334,7 @@ async function refresh(){
   if(!latestId&&st.recentRecordings?.length){
    const r=st.recentRecordings.at(-1);setCurrent(r.id,r.seconds+" sec / "+r.clips+" fragmente salvate");
   }
-  if(!latestId&&st.recentResponses?.length){
+  if(st.recentResponses?.length&&!$("voice").getAttribute("src")){
    const r=st.recentResponses.at(-1);
    $("voice").src=r.audio;$("downloadVoice").href=r.audio;$("downloadVoice").hidden=false;
   }
