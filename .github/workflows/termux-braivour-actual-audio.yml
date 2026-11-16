@@ -92,7 +92,8 @@ jobs:
             sleep 1
           done
           if [ "$ready" != 1 ]; then cat /tmp/original-braivour-phone.log; exit 3; fi
-          python research/catmeows_native/termux_audio/smoke_test.py full             runtime/termux_cat_audio/real_cat_fixture_1.wav             runtime/termux_cat_audio/real_cat_fixture_2.wav || {
+          ffmpeg -nostdin -y -hide_banner -loglevel error -i runtime/termux_cat_audio/real_cat_fixture_1.wav -ac 1 -c:a libopus -b:a 32k -f webm runtime/termux_cat_audio/browser_microphone_opus.webm
+          python research/catmeows_native/termux_audio/smoke_test.py full runtime/termux_cat_audio/real_cat_fixture_1.wav runtime/termux_cat_audio/real_cat_fixture_2.wav runtime/termux_cat_audio/browser_microphone_opus.webm || {
               cat /tmp/original-braivour-phone.log
               exit 5
             }
