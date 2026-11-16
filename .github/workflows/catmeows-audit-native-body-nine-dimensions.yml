@@ -25,7 +25,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh run download 43749222486 --repo dan3s2020/MagicPerspective --name braivour-temporal-audio-body-chronological --dir runtime/catmeows
+          mkdir -p /tmp/actual_original_native_dream
+          gh run download 43749222486 --repo dan3s2020/MagicPerspective --name braivour-temporal-audio-body-chronological --dir /tmp/actual_original_native_dream
+          cp /tmp/actual_original_native_dream/native_temporal_embodied_audio_game.json runtime/catmeows/native_temporal_embodied_audio_game.json
           test -s runtime/catmeows/native_temporal_embodied_audio_game.json
       - name: Compare genuine 9-D acoustic dynamics and native imagined 9-D WAV-state transitions to never-seen real cats
         run: python research/catmeows_native/audit_original_body_9d_realism.py
