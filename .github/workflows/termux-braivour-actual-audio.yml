@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22','26']
+        node: ['22','24','26']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,6 +41,21 @@ jobs:
           gh run download 43778465862 --repo dan3s2020/MagicPerspective --name original-braivour-full9d-audio-consequence-chronological --dir /tmp/original9dbraivour
           cp /tmp/original9dbraivour/Original_Braivour_9D_SoundTransform_Body_chronological.v8 runtime/termux_cat_audio/checkpoints/active.v8
           test "$(wc -c < runtime/termux_cat_audio/checkpoints/active.v8)" -gt 40000000
+      - name: Verify actual Termux install script from the previously learned Brain ZIP (not a new Brain)
+        run: |
+          python - <<'PY'
+          import zipfile,shutil
+          from pathlib import Path
+          root=Path("runtime/termux_cat_audio/checkpoints")
+          src=root/"active.v8"
+          copied=Path("/tmp/Original_Braivour_9D_SoundTransform_Body_chronological.v8")
+          shutil.move(src,copied)
+          with zipfile.ZipFile("/tmp/Braivour_Native_9D_Sound_Transform_WAVs_And_Brain.zip","w",compression=zipfile.ZIP_STORED) as z:
+            z.write(copied,arcname=copied.name)
+          PY
+          bash research/catmeows_native/termux_audio/install.sh /tmp/Braivour_Native_9D_Sound_Transform_WAVs_And_Brain.zip
+          test "$(wc -c < runtime/termux_cat_audio/checkpoints/active.v8)" -gt 40000000
+          bash research/catmeows_native/termux_audio/install.sh /tmp/Braivour_Native_9D_Sound_Transform_WAVs_And_Brain.zip
       - name: Verify official CatMeows 440 real WAVs and select two different actual cats
         run: |
           python research/catmeows_native/prepare_generative.py
