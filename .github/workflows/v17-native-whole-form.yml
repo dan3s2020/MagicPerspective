@@ -1,0 +1,28 @@
+name: Original Braivour - native whole form memory hidden 4D cross section
+on:
+  push:
+    branches: [experiment/V17-ACTIVE-HYPERSLICE-INVERSE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_inverse_whole_form.mjs'
+      - '.github/workflows/v17-native-whole-form.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-body-whole-form:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Native original Brain physically learns whole 4D worlds and predicts unvisited C3
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_inverse_whole_form.mjs
+      - name: Original Brain heldout whole-form reconstructions and all controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-whole-4d-form-native-atlas
+          path: runtime/dimensional_slices/active_native_inverse_whole_form.json
+          if-no-files-found: warn
