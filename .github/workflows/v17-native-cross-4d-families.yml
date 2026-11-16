@@ -1,0 +1,29 @@
+name: Original V17 Braivour — unseen 4D polytopes cross-family generalization test
+on:
+  push:
+    branches: [experiment/V17-CROSS-FAMILY-4D-FORMS-20261116]
+    paths:
+      - 'research/dimensional_slices/native_cross_family_4d_inverse.mjs'
+      - 'research/dimensional_slices/physical_new_4d_families.mjs'
+      - '.github/workflows/v17-native-cross-4d-families.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-hyperpolytope-family-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original Brain trained on tesseracts must reconstruct hidden sections of 5-cell 16-cell 24-cell
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_cross_family_4d_inverse.mjs
+      - name: Upload actual 4D family-specific independent heldout predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-cross-polytope-4d-transfer
+          path: runtime/dimensional_slices/native_cross_family_4d_inverse.json
+          if-no-files-found: warn
