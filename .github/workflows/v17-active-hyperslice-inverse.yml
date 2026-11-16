@@ -1,0 +1,29 @@
+name: Original V17 Brain - active 4D hidden cross-section inverse (3 real views)
+on:
+  push:
+    branches: [experiment/V17-ACTIVE-HYPERSLICE-INVERSE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_inverse_3anchors.mjs'
+      - 'research/dimensional_slices/physical_sections.mjs'
+      - '.github/workflows/v17-active-hyperslice-inverse.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-body-hidden-section:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute original Brain with physical interventions and predict NEVER SEEN C3
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_inverse_3anchors.mjs
+      - name: Upload authentic hidden 4D observations and complete heldout scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-brain-active-three-view-four-d-inverse
+          path: runtime/dimensional_slices/active_native_inverse_3anchors.json
+          if-no-files-found: warn
