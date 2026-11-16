@@ -1,0 +1,57 @@
+name: 'Braivour original 540-game BRAIN learns real nine-dimensional sound body consequences'
+on:
+  push:
+    branches: [experiment/CATMEOWS-CONTINUE-NATIVE-BODY-20261116]
+    paths:
+      - 'research/catmeows_native/learn_original_body_9d_sound_transform.mjs'
+      - 'research/catmeows_native/render_original_body_9d_audio.py'
+      - '.github/workflows/catmeows-native-nine-dim-real-sound.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-real-nine-dim-audio:
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [chronological, shuffled]
+    name: native original Brain / actual 7D effects ${{ matrix.order }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Reverify original 440 genuine CatMeows PCM acoustic sensory world
+        run: python research/catmeows_native/prepare_generative.py
+      - name: EXACT same original 540-game trained Braivour Brain, not another organism
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 43777501089 --repo dan3s2020/MagicPerspective --name original-braivour-continued-auditory-body-540-game-checkpoint --dir runtime/catmeows
+          test -s runtime/catmeows/Original_Braivour_CatMeows_TemporalBody_Continued.v8
+      - name: Let original Brain devour REAL audio conditional acoustic transformations as physical motor consequences
+        env:
+          CATMEOWS_9D_TRANSFORM_ORDER: ${{ matrix.order }}
+        run: node --max-old-space-size=8000 research/catmeows_native/learn_original_body_9d_sound_transform.mjs
+      - name: Synthesize actual original Brain 9D sound dreams plus old naive auditory body control
+        env:
+          CATMEOWS_9D_TRANSFORM_ORDER: ${{ matrix.order }}
+        run: python research/catmeows_native/render_original_body_9d_audio.py
+      - name: Preserve all actual original Brain newly learned acoustic transformations, 9D frozen eval and playable WAV pairs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-full9d-audio-consequence-${{ matrix.order }}
+          path: |
+            runtime/catmeows/original_native_9d_action_consequence_*.json
+            runtime/catmeows/native_9d_audio_physical_render_*.json
+            runtime/catmeows/native_9d_bodily_audio_*/*.wav
+            runtime/catmeows/Original_Braivour_9D_SoundTransform_Body_*.v8
+          if-no-files-found: warn
