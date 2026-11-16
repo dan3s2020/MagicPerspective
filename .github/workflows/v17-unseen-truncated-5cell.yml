@@ -1,0 +1,35 @@
+name: Original Braivour - truly unseen 4D truncated simplex transfer
+on:
+  push:
+    branches: [experiment/V17-UNSEEN-TRUNCATED-5CELL-20261116]
+    paths:
+      - 'research/dimensional_slices/native_zero_shot_truncated_5cell.mjs'
+      - 'research/dimensional_slices/physical_unseen_truncated_5cell.mjs'
+      - '.github/workflows/v17-unseen-truncated-5cell.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-body-unseen-new-polytope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: ['tesseract-only','mixed-4d']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original native Brain faces 200 never trained truncated 4-simplex bodies
+        env:
+          NATIVE_4D_TRAIN_MODE: ${{ matrix.mode }}
+        run: node --max-old-space-size=6000 research/dimensional_slices/native_zero_shot_truncated_5cell.mjs
+      - name: Upload 200 heldout real new family body traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-unseen-polytope-${{ matrix.mode }}
+          path: runtime/dimensional_slices/native_zero_shot_truncated_5cell_${{ matrix.mode }}.json
+          if-no-files-found: warn
