@@ -56,7 +56,7 @@ function rng(seed){let x=seed>>>0;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x
 function shuffled(frames,seed){const a=frames.slice(),r=rng(seed);for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function cell(f){return 12*f[1]+f[0];}
 function valid(f){return Array.isArray(f)&&f.length===BANDS&&f.every(x=>Number.isInteger(x)&&x>=0&&x<=11);}
-function allowed(a,b){return a===b||body.adjacency[a].some(x=>x.to===b);}
+function allowed(a,b){return !!body.seen[a]&&!!body.seen[b]&&(a===b||body.adjacency[a].some(x=>x.to===b));}
 function keys(a,b,ch,value){
  const key='body9d:v1:'+ch+':';
  return [
