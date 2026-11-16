@@ -1,0 +1,43 @@
+name: 'Native original Braivour physically learned audio effect selection - blind seven-dimensional test'
+on:
+  push:
+    branches: [experiment/CATMEOWS-CONTINUE-NATIVE-BODY-20261116]
+    paths:
+      - 'research/catmeows_native/audit_native_acoustic_effect_policy.mjs'
+      - '.github/workflows/catmeows-physical-audio-effect-policy.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  native-original-brain-effect-confidence-withheld-cats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install numpy
+      - name: Original verified CatMeows genuine 440 WAV physical feature perception
+        run: python research/catmeows_native/prepare_generative.py
+      - name: Get ACTUAL previously trained Braivour full9D temporal-audio learned Brain no retraining
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/same_real_original_brain9d
+          gh run download 43778465862 --repo dan3s2020/MagicPerspective --name original-braivour-full9d-audio-consequence-chronological --dir /tmp/same_real_original_brain9d
+          cp /tmp/same_real_original_brain9d/Original_Braivour_9D_SoundTransform_Body_chronological.v8 runtime/catmeows/
+          test -s runtime/catmeows/Original_Braivour_9D_SoundTransform_Body_chronological.v8
+      - name: Original Brain actually reasons over its own acoustic effect memory on fresh real cats
+        run: node --max-old-space-size=7000 research/catmeows_native/audit_native_acoustic_effect_policy.mjs
+      - name: Preserve every objective heldout effect-selection result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-braivour-real-acoustic-native-effect-control-policy
+          path: runtime/catmeows/original_body_native_effect_policy_test.json
+          if-no-files-found: warn
