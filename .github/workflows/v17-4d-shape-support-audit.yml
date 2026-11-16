@@ -1,0 +1,28 @@
+name: Native 4D complete-form support ceiling (read-only geometry evaluator)
+on:
+  push:
+    branches: [experiment/V17-NATIVE-GESTALT-INVERSE-20261116]
+    paths:
+      - 'research/dimensional_slices/native_gestalt_support_audit.mjs'
+      - '.github/workflows/v17-4d-shape-support-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-form-memory-support:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Measure whether unseen target shape even exists in previous original Brain experiences
+        run: node research/dimensional_slices/native_gestalt_support_audit.mjs
+      - name: Upload auditor shape support and identifiability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-4d-genuine-memory-support-audit
+          path: runtime/dimensional_slices/native_gestalt_support_audit.json
+          if-no-files-found: warn
