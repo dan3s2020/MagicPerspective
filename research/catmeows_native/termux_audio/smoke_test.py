@@ -60,10 +60,10 @@ def main():
         }))
         return
     assert stage=="full"
-    assert len(sys.argv)==4
+    assert len(sys.argv) in {4,5}
     uploads=[]
     responses=[]
-    for name in sys.argv[2:4]:
+    for name in sys.argv[2:]:
         wav=Path(name).read_bytes()
         a=call("/api/upload",wav,"audio/wav")["recording"]
         uploads.append(a)
@@ -96,6 +96,8 @@ def main():
     result={"status":"REAL_ORIGINAL_BRAIVOUR_TERMUX_AUDIO_HARDWARE_INDEPENDENT_SMOKE_PASS",
       "inputSoundsGenuineOriginalCatMeows":True,
       "freshDistinctInputSha":[a["shaPrefix"] for a in uploads],
+      "microphoneWebmOpusAudioTested":len(sys.argv)==5,
+      "recordedWebmDecodedToRealNineDimensionalStates":len(sys.argv)==5,
       "differentRealBrainNativeAudioResponses":[r["actualRenderedWavSha256"] for r in responses],
       "originalBrainNativeActions":[r["reply"]["nativeActions"] for r in responses],
       "nativeGraphObservationsBefore":base["originalNativeAuditoryGraphObservations"],
