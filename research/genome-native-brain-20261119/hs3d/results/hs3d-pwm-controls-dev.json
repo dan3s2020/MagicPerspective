@@ -1,0 +1,162 @@
+{
+  "status": "EXECUTED_EXTERNAL_BASELINES_NOT_PART_OF_NATIVE_ORGANISM",
+  "phase": "dev",
+  "source": "OluwadareLab EnsembleSplice HS3D balanced donor human 140nt",
+  "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+  "nTrain": 1400,
+  "nDev": 400,
+  "nTest": null,
+  "excluded": null,
+  "centralGT": {
+    "train": 1400,
+    "eval": 400
+  },
+  "baselines": {
+    "centralGT": {
+      "positions": [
+        70,
+        72
+      ],
+      "n": 400,
+      "accuracy": 0.5,
+      "confusion": {
+        "P": {
+          "P": 200,
+          "N": 0
+        },
+        "N": {
+          "P": 200,
+          "N": 0
+        }
+      },
+      "macroF1": 0.3333333333333333,
+      "balancedAccuracy": 0.5,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.5,
+          "recall": 1,
+          "f1": 0.6666666666666666
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        }
+      ]
+    },
+    "sameNativeView": {
+      "positions": [
+        72,
+        76
+      ],
+      "n": 400,
+      "accuracy": 0.85,
+      "confusion": {
+        "P": {
+          "P": 171,
+          "N": 29
+        },
+        "N": {
+          "P": 31,
+          "N": 169
+        }
+      },
+      "macroF1": 0.8499962499062477,
+      "balancedAccuracy": 0.85,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.8465346534653465,
+          "recall": 0.855,
+          "f1": 0.8507462686567164
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.8535353535353535,
+          "recall": 0.845,
+          "f1": 0.8492462311557789
+        }
+      ]
+    },
+    "local20": {
+      "positions": [
+        60,
+        80
+      ],
+      "n": 400,
+      "accuracy": 0.91,
+      "confusion": {
+        "P": {
+          "P": 188,
+          "N": 12
+        },
+        "N": {
+          "P": 24,
+          "N": 176
+        }
+      },
+      "macroF1": 0.9099189270343309,
+      "balancedAccuracy": 0.9099999999999999,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.8867924528301887,
+          "recall": 0.94,
+          "f1": 0.912621359223301
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.9361702127659575,
+          "recall": 0.88,
+          "f1": 0.9072164948453608
+        }
+      ]
+    },
+    "entire140": {
+      "positions": [
+        0,
+        140
+      ],
+      "n": 400,
+      "accuracy": 0.8225,
+      "confusion": {
+        "P": {
+          "P": 164,
+          "N": 36
+        },
+        "N": {
+          "P": 35,
+          "N": 165
+        }
+      },
+      "macroF1": 0.8224988906180664,
+      "balancedAccuracy": 0.8225,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.8241206030150754,
+          "recall": 0.82,
+          "f1": 0.8220551378446115
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.8208955223880597,
+          "recall": 0.825,
+          "f1": 0.8229426433915212
+        }
+      ]
+    }
+  },
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44613929286",
+  "role": "SCIENTIFIC_BASELINE_ONLY"
+}
