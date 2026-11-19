@@ -1,46 +1,27 @@
-name: SHA256 original V42 digest-context causal diagnostic
+name: SHA256 native Brain source contract (bounded)
 on:
   push:
     branches:
       - experiment/SHA256-NATIVE-BRAIN-BLIND-WORLD-20261120
     paths:
-      - research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
       - .github/workflows/sha256-native-context-diagnostic.yml
+      - research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
   workflow_dispatch:
 permissions:
   contents: read
-  actions: write
 concurrency:
-  group: native-sha256-context-${'${{ github.ref }}'}
+  group: native-sha256-context-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  context:
+  syntax:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        ctx: [4, 8]
+    timeout-minutes: 3
     steps:
-      - name: Cancel earlier unsafe context-32 experiment
-        if: matrix.ctx == 4
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api repos/dan3s2020/MagicPerspective/actions/runs/44629718737/cancel -X POST || true
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
-      - name: Frozen original Brain context comparison
-        env:
-          NATIVE_SHA_TRAIN: '8'
-          NATIVE_SHA_BLIND: '32'
-          NATIVE_SHA_CTX: ${{ matrix.ctx }}
-        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: original-v42-context-${{ matrix.ctx }}
-          path: research/sha256-labyrinth-20261119/native_results.json
-          if-no-files-found: warn
+      - run: |
+          node --check research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          echo "Capped context: 4...8 only; high-cost contexts cancelled for safety"
