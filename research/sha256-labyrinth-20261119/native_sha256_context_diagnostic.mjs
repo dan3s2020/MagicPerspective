@@ -46,7 +46,7 @@ assert.equal(new Set(training.map(w=>w.msgHex).concat(heldout.map(w=>w.msgHex)))
 
 // This is the EXACT pinned V42 Brain: its own EmergentChain/AligningGraph learns through Brain.live.
 const contextCap=Number(process.env.NATIVE_SHA_CTX||4);
-assert(Number.isInteger(contextCap)&&contextCap>=4&&contextCap<=32);
+assert(Number.isInteger(contextCap)&&contextCap>=4&&contextCap<=8);
 const brain=new Brain({rules:{depth:2},c:{cap:contextCap},seed:43});
 const D=brain.disc;
 let livedChars=0,physicalEdges=0,knownPathSolved=0;

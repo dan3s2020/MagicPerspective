@@ -9,6 +9,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: write
+concurrency:
+  group: native-sha256-context-${'${{ github.ref }}'}
+  cancel-in-progress: true
 jobs:
   context:
     runs-on: ubuntu-latest
@@ -16,8 +20,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ctx: [4, 32]
+        ctx: [4, 8]
     steps:
+      - name: Cancel earlier unsafe context-32 experiment
+        if: matrix.ctx == 4
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/dan3s2020/MagicPerspective/actions/runs/44629718737/cancel -X POST || true
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
