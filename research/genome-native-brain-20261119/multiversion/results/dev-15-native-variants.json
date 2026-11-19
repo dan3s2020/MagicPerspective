@@ -1,0 +1,1110 @@
+{
+  "experiment": "V42/V43 real-native code 15-way version comparison",
+  "phase": "exploratory_dev400",
+  "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44601837562",
+  "methodSelectionCriterion": "maximum macroF1 on development set",
+  "winner": "v42-no-trust",
+  "selectedBeforeFinal": true,
+  "pretestContract": "PRETEST_CONTRACT.md",
+  "data": [
+    {
+      "mode": "v42-no-trust",
+      "job_id": 135835014867,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3"
+        ]
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 347,
+        "accuracy": 0.8675,
+        "macroF1": 0.8362039868614793,
+        "balancedAccuracy": 0.8709076992659082,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9797979797979798,
+            "precision": 0.8151260504201681,
+            "f1": 0.8899082568807339
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6385542168674698,
+            "f1": 0.7066666666666667
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.8418803418803419,
+            "precision": 0.9949494949494949,
+            "f1": 0.9120370370370371
+          }
+        ],
+        "confusion": [
+          [
+            97,
+            1,
+            1,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            8,
+            29,
+            197,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-no-bud",
+      "job_id": 135835014646,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R5"
+        ]
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-log",
+      "job_id": 135835014704,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "log"
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v43-native",
+      "job_id": 135835014721,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/comparison-checkouts/v43/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-blend",
+      "job_id": 135835014745,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "blend"
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-concept",
+      "job_id": 135835014779,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "concept"
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-c4",
+      "job_id": 135835014792,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-resistance-ablation",
+      "job_id": 135835014845,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R2"
+        ]
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-3sat",
+      "job_id": 135835014930,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/comparison-checkouts/v42-3sat/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-deep-a",
+      "job_id": 135835015066,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 4,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 313,
+        "accuracy": 0.7825,
+        "macroF1": 0.7676393824797235,
+        "balancedAccuracy": 0.818589646947856,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9595959595959596,
+            "precision": 0.6168831168831169,
+            "f1": 0.7509881422924901
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.7910447761194029,
+            "precision": 0.6794871794871795,
+            "f1": 0.7310344827586207
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7051282051282052,
+            "precision": 0.9821428571428571,
+            "f1": 0.8208955223880597
+          }
+        ],
+        "confusion": [
+          [
+            95,
+            1,
+            3,
+            0
+          ],
+          [
+            14,
+            53,
+            0,
+            0
+          ],
+          [
+            45,
+            24,
+            165,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-c3",
+      "job_id": 135835014718,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 277,
+        "accuracy": 0.6925,
+        "macroF1": 0.6536389330506976,
+        "balancedAccuracy": 0.692011968131371,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.8080808080808081,
+            "precision": 0.6504065040650406,
+            "f1": 0.7207207207207207
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0.5970149253731343,
+            "precision": 0.3883495145631068,
+            "f1": 0.47058823529411764
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.6709401709401709,
+            "precision": 0.9022988505747126,
+            "f1": 0.7696078431372549
+          }
+        ],
+        "confusion": [
+          [
+            80,
+            2,
+            17,
+            0
+          ],
+          [
+            27,
+            40,
+            0,
+            0
+          ],
+          [
+            16,
+            61,
+            157,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-c2",
+      "job_id": 135835014148,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 276,
+        "accuracy": 0.69,
+        "macroF1": 0.49488497114396396,
+        "balancedAccuracy": 0.5815850815850815,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9797979797979798,
+            "precision": 0.5418994413407822,
+            "f1": 0.697841726618705
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7649572649572649,
+            "precision": 0.8099547511312217,
+            "f1": 0.7868131868131868
+          }
+        ],
+        "confusion": [
+          [
+            97,
+            0,
+            2,
+            0
+          ],
+          [
+            27,
+            0,
+            40,
+            0
+          ],
+          [
+            55,
+            0,
+            179,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-c1",
+      "job_id": 135835014766,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "chain",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 276,
+        "accuracy": 0.69,
+        "macroF1": 0.49488497114396396,
+        "balancedAccuracy": 0.5815850815850815,
+        "invalidReadout": 0,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.9797979797979798,
+            "precision": 0.5418994413407822,
+            "f1": 0.697841726618705
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0.7649572649572649,
+            "precision": 0.8099547511312217,
+            "f1": 0.7868131868131868
+          }
+        ],
+        "confusion": [
+          [
+            97,
+            0,
+            2,
+            0
+          ],
+          [
+            27,
+            0,
+            40,
+            0
+          ],
+          [
+            55,
+            0,
+            179,
+            0
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-align",
+      "job_id": 135835014794,
+      "status": "SUCCESS",
+      "nativeRules": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16
+      },
+      "readout": "alignment",
+      "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "observed": {
+        "n": 400,
+        "correct": 12,
+        "accuracy": 0.03,
+        "macroF1": 0.07017543859649122,
+        "balancedAccuracy": 0.04040404040404041,
+        "invalidReadout": 385,
+        "perClass": [
+          {
+            "label": "EI",
+            "support": 99,
+            "recall": 0.12121212121212122,
+            "precision": 0.8,
+            "f1": 0.21052631578947367
+          },
+          {
+            "label": "IE",
+            "support": 67,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          },
+          {
+            "label": "N",
+            "support": 234,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": [
+          [
+            12,
+            0,
+            0,
+            87
+          ],
+          [
+            3,
+            0,
+            0,
+            64
+          ],
+          [
+            0,
+            0,
+            0,
+            234
+          ]
+        ]
+      },
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      },
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+      "train": 900,
+      "dev": 400
+    },
+    {
+      "mode": "v42-c-only",
+      "job_id": 135835014989,
+      "status": "FAILED_NATIVE_INCOMPATIBILITY",
+      "errors": [
+        "2026-11-19T19:46:56.9780870Z TypeError: Cannot read properties of undefined (reading 'wires')",
+        "2026-11-19T19:46:56.9845087Z ##[error]Process completed with exit code 1."
+      ]
+    }
+  ]
+}
