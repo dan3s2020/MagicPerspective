@@ -62,3 +62,15 @@ The official score is **NOT YET MEASURED**.
 The user's main Braivour Qwen-intelligence assimilation mission and all prior
 bans remain unaffected; this is isolated, real-DNA MagicPerspective research,
 not another GGUF chat or synthetic Qwen surrogate.
+
+## Executed results and significance (19 Nov 2026)
+
+The controlled native four-nt perspective achieved **77.66% accuracy and 76.97% macro-F1** on a frozen 197-record confirmatory subset, versus 52.79% for the majority rule and **88.83%** for the simple canonical GT/AG motif rule. Perturbing central DNA reduced native accuracy to 42.13%. This is a real, limited short-sequence result, **not** AlphaGenome 2 superiority.
+
+The initial 400-record development set was used to explore perspective representations, so the best observed development score is *not* an untouched final result. No additional training, autonomous perspective search, or functional-variant prediction has been run yet.
+
+- [Full measured results, raw provenance and known limitations](./RESULTS.md)
+- [Scientific meaning: what is interesting and what is still hypothesis](./SCIENTIFIC_SIGNIFICANCE_AND_HYPOTHESES.md)
+- [More-training/scaling and new-task experimental roadmap](./TRAINING_SCALE_AND_GENERALIZATION_PLAN.md)
+- [Concise external research brief (English)](./DEEPMIND_RESEARCH_BRIEF.md)
+- [Rezumat științific în română](./REZUMAT_RO_IMPORTANTA_SI_ANTRENARE.md)
