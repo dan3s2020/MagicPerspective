@@ -1,0 +1,47 @@
+name: HS3D original native Brain frozen winner official test once
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-DISCOVERY-20261119
+    paths:
+      - .github/workflows/hs3d-native-donor-untouched-official-test.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-hs3d-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout genuine HS3D official train and previously unopened official test
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+            ENSdatasets/hs3d_bal/Test
+      - name: Syntax-check unmodified organism research harness
+        run: node --check research/genome-native-brain-20261119/hs3d/run-native-donor.mjs
+      - name: Train frozen original native R2R3-off Brain and score OFFICIAL Test once
+        shell: bash
+        env:
+          HS3D_TEST_UNLOCK: FROZEN_NATIVE_VIEW
+          HS3D_RAW_RESULT_FILE: /tmp/hs3d-frozen-official-test-predictions.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/run-native-donor.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal R2R3-off-down72 --phase=test | tee /tmp/hs3d-frozen-official-test.log
+      - name: Preserve complete original Test predictions and metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-HS3D-original-BRAIN-frozen-official-Test
+          path: |
+            /tmp/hs3d-frozen-official-test-predictions.json
+            /tmp/hs3d-frozen-official-test.log
+          if-no-files-found: warn
