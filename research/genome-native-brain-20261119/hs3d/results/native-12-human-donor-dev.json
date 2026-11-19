@@ -1,0 +1,621 @@
+{
+  "date": "2026-11-19",
+  "phase": "DEV_SELECTION_ONLY_NOT_FINAL",
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44612785045",
+  "selectedMode": "R2R3-off-down72",
+  "criterion": "macroF1",
+  "results": [
+    {
+      "mode": "R2R3-off-down72",
+      "job_id": 135873460033,
+      "accuracy": 0.835,
+      "macroF1": 0.8329790464621925,
+      "balancedAccuracy": 0.835,
+      "confusion": {
+        "P": {
+          "P": 189,
+          "N": 11
+        },
+        "N": {
+          "P": 55,
+          "N": 145
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.945,
+          "precision": 0.7745901639344263,
+          "f1": 0.8513513513513513
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.725,
+          "precision": 0.9294871794871795,
+          "f1": 0.8146067415730337
+        }
+      ],
+      "config": {
+        "start": 72,
+        "off": [
+          "R2",
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-down72",
+      "job_id": 135873459902,
+      "accuracy": 0.815,
+      "macroF1": 0.8133151694038698,
+      "balancedAccuracy": 0.815,
+      "confusion": {
+        "P": {
+          "P": 182,
+          "N": 18
+        },
+        "N": {
+          "P": 56,
+          "N": 144
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.91,
+          "precision": 0.7647058823529411,
+          "f1": 0.8310502283105022
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.72,
+          "precision": 0.8888888888888888,
+          "f1": 0.7955801104972375
+        }
+      ],
+      "config": {
+        "start": 72,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-up66",
+      "job_id": 135873459252,
+      "accuracy": 0.745,
+      "macroF1": 0.744078683259735,
+      "balancedAccuracy": 0.7450000000000001,
+      "confusion": {
+        "P": {
+          "P": 161,
+          "N": 39
+        },
+        "N": {
+          "P": 63,
+          "N": 137
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.805,
+          "precision": 0.71875,
+          "f1": 0.7594339622641509
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.685,
+          "precision": 0.7784090909090909,
+          "f1": 0.7287234042553191
+        }
+      ],
+      "config": {
+        "start": 66,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R2R3-off-up66",
+      "job_id": 135873459912,
+      "accuracy": 0.745,
+      "macroF1": 0.744078683259735,
+      "balancedAccuracy": 0.7450000000000001,
+      "confusion": {
+        "P": {
+          "P": 161,
+          "N": 39
+        },
+        "N": {
+          "P": 63,
+          "N": 137
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.805,
+          "precision": 0.71875,
+          "f1": 0.7594339622641509
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.685,
+          "precision": 0.7784090909090909,
+          "f1": 0.7287234042553191
+        }
+      ],
+      "config": {
+        "start": 66,
+        "off": [
+          "R2",
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-core70",
+      "job_id": 135873459975,
+      "accuracy": 0.735,
+      "macroF1": 0.7340425531914894,
+      "balancedAccuracy": 0.7350000000000001,
+      "confusion": {
+        "P": {
+          "P": 159,
+          "N": 41
+        },
+        "N": {
+          "P": 65,
+          "N": 135
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.795,
+          "precision": 0.7098214285714286,
+          "f1": 0.75
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.675,
+          "precision": 0.7670454545454546,
+          "f1": 0.7180851063829787
+        }
+      ],
+      "config": {
+        "start": 70,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-down74",
+      "job_id": 135873459867,
+      "accuracy": 0.73,
+      "macroF1": 0.7263813939347876,
+      "balancedAccuracy": 0.73,
+      "confusion": {
+        "P": {
+          "P": 169,
+          "N": 31
+        },
+        "N": {
+          "P": 77,
+          "N": 123
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.845,
+          "precision": 0.6869918699186992,
+          "f1": 0.757847533632287
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.615,
+          "precision": 0.7987012987012987,
+          "f1": 0.6949152542372882
+        }
+      ],
+      "config": {
+        "start": 74,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-default-core70",
+      "job_id": 135873459811,
+      "accuracy": 0.6875,
+      "macroF1": 0.6871695728613347,
+      "balancedAccuracy": 0.6875,
+      "confusion": {
+        "P": {
+          "P": 131,
+          "N": 69
+        },
+        "N": {
+          "P": 56,
+          "N": 144
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.655,
+          "precision": 0.7005347593582888,
+          "f1": 0.6770025839793282
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.72,
+          "precision": 0.676056338028169,
+          "f1": 0.6973365617433414
+        }
+      ],
+      "config": {
+        "start": 70,
+        "off": []
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-up68",
+      "job_id": 135873459907,
+      "accuracy": 0.6925,
+      "macroF1": 0.6836236664930455,
+      "balancedAccuracy": 0.6925,
+      "confusion": {
+        "P": {
+          "P": 172,
+          "N": 28
+        },
+        "N": {
+          "P": 95,
+          "N": 105
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.86,
+          "precision": 0.6441947565543071,
+          "f1": 0.7366167023554604
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.525,
+          "precision": 0.7894736842105263,
+          "f1": 0.6306306306306306
+        }
+      ],
+      "config": {
+        "start": 68,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-up58",
+      "job_id": 135873459904,
+      "accuracy": 0.58,
+      "macroF1": 0.5797373358348967,
+      "balancedAccuracy": 0.5800000000000001,
+      "confusion": {
+        "P": {
+          "P": 121,
+          "N": 79
+        },
+        "N": {
+          "P": 89,
+          "N": 111
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.605,
+          "precision": 0.5761904761904761,
+          "f1": 0.5902439024390244
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.555,
+          "precision": 0.5842105263157895,
+          "f1": 0.5692307692307692
+        }
+      ],
+      "config": {
+        "start": 58,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-up62",
+      "job_id": 135873459860,
+      "accuracy": 0.5725,
+      "macroF1": 0.5699168128572237,
+      "balancedAccuracy": 0.5725,
+      "confusion": {
+        "P": {
+          "P": 130,
+          "N": 70
+        },
+        "N": {
+          "P": 101,
+          "N": 99
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.65,
+          "precision": 0.5627705627705628,
+          "f1": 0.6032482598607889
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.495,
+          "precision": 0.5857988165680473,
+          "f1": 0.5365853658536586
+        }
+      ],
+      "config": {
+        "start": 62,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-remote100",
+      "job_id": 135873459938,
+      "accuracy": 0.5525,
+      "macroF1": 0.5524300671979997,
+      "balancedAccuracy": 0.5525,
+      "confusion": {
+        "P": {
+          "P": 108,
+          "N": 92
+        },
+        "N": {
+          "P": 87,
+          "N": 113
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.54,
+          "precision": 0.5538461538461539,
+          "f1": 0.5468354430379747
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.565,
+          "precision": 0.551219512195122,
+          "f1": 0.5580246913580247
+        }
+      ],
+      "config": {
+        "start": 100,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    },
+    {
+      "mode": "R3-off-down78",
+      "job_id": 135873460001,
+      "accuracy": 0.51,
+      "macroF1": 0.5090057366166487,
+      "balancedAccuracy": 0.51,
+      "confusion": {
+        "P": {
+          "P": 111,
+          "N": 89
+        },
+        "N": {
+          "P": 107,
+          "N": 93
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "recall": 0.555,
+          "precision": 0.5091743119266054,
+          "f1": 0.5311004784688995
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "recall": 0.465,
+          "precision": 0.510989010989011,
+          "f1": 0.4869109947643979
+        }
+      ],
+      "config": {
+        "start": 78,
+        "off": [
+          "R3"
+        ]
+      },
+      "motif": {
+        "n": 400,
+        "gt": 400,
+        "near": 400
+      },
+      "train": 1400,
+      "dev": 400,
+      "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "datasetFiles": {
+        "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+        "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+      }
+    }
+  ]
+}
