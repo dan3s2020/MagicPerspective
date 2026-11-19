@@ -4,7 +4,7 @@ on:
     branches:
       - research/AG2-REAL-GENOME-NATIVE-BRAIN-20261119
     paths:
-      - research/genome-native-brain-20261119/**
+      - research/genome-native-brain-20261119/run.mjs
       - .github/workflows/alphagenome2-native-brain.yml
   workflow_dispatch:
 permissions:
