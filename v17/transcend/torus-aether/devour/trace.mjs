@@ -29,7 +29,7 @@ export class GraphTrace {
     this.seen++; this.hitC += cByte === y; this.hitF += fin === y;
     this.node("s:" + y, "sym", ch(y)); if (this.nodes.has("s:" + ctx[0])) this.edge("s:" + ctx[0], "s:" + y, "world", .2);
     this.node(cWire, "C", cLabel(cWire.slice(2))); if (cByte === y) this.edge(cWire, "s:" + y, "see", .3);
-    const A = chain.A[0];
+    const A = chain.A[0] || {wires: []}; // Native C-only has no A to visualize; all existing A stay identical
     for (const w of A.wires) { const id = "a:" + w.id; if (!this.nodes.has(id)) { this.node(id, "A", "A·" + (w.kind === "exact" ? w.L : w.kind[0] + w.L));
       if (w.parent) this.edge("a:" + w.parent.id, id, "bud", 2); } }
     if (detailed) {                                                          // the costly part only now and then
