@@ -1,0 +1,41 @@
+name: SHA256 native Brain active full-motor 64-target diagnostic
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ACTIVE-INTERVENTION-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_active_calibrated.mjs
+      - .github/workflows/sha256-active-full-motor-64.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-active-full-motor-64
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original unmodified Brain and syntax
+        run: |
+          node --check research/sha256-labyrinth-20261119/native_sha256_active_calibrated.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/worlds/exercise.mjs
+      - name: Real SHA256 64-round actions, 64 blind targets with equal budgets
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '64'
+          NATIVE_SHA_ACTIVE_COUNT: '64'
+          NATIVE_SHA_ACTIVE_BUDGET: '64'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_active_calibrated.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sha256-native-full-motor-64targets
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
