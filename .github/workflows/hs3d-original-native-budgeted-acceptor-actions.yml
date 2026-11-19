@@ -1,0 +1,50 @@
+name: HS3D original Brain genuinely budgeted active AG genome actions
+on:
+  push:
+    branches:
+      - research/HS3D-ACCEPTOR-BUDGETED-NATIVE-ACTIONS-20261119
+    paths:
+      - .github/workflows/hs3d-original-native-budgeted-acceptor-actions.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-native-two-observation-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [native-zero, native-200, native-1000]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout ONLY genuine human acceptor TRAIN, never official Test
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Syntax-check unmodified native Brain research code
+        run: node --check research/genome-native-brain-20261119/hs3d/budgeted-native-actions/run.mjs
+      - name: Original Brain learns to move one physical genome view from actually seen first view
+        shell: bash
+        env:
+          HS3D_BUDGETED_ACTIONS_RESULT_FILE: /tmp/native-budgeted-AG-actions.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/budgeted-native-actions/run.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/native-budgeted-AG-actions.log
+      - name: Archive actual native movements, weights, per-example traces and metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-real-budgeted-AG-${{ matrix.mode }}
+          path: |
+            /tmp/native-budgeted-AG-actions.json
+            /tmp/native-budgeted-AG-actions.log
+          if-no-files-found: warn
