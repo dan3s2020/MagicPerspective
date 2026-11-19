@@ -25,12 +25,12 @@
     "original real UCI v42-c-only 900/400",
     "original real UCI v42-c4 900/400 exact parity"
   ],
-  "actual_observed_results": "NOT_YET_TESTED — record actual run",
+  "actual_observed_results": "EXECUTED: fixed only GraphTrace fallback for missing A; original native C-only and original baseline both measured 0.7825 accuracy / 0.7676393824797235 macro-F1 on same UCI 900/400; exact parity of original observed confusion.",
   "limitations": [
     "Only a display guard so native C-only can run",
     "No genomic generalization claim",
     "Any default-mode parity mismatch blocks release"
   ],
-  "verification_status": "NOT_VERIFIED",
+  "verification_status": "VERIFIED_RESEARCH_ONLY",
   "full_verbatim_gate": "BLOCKED"
 }
