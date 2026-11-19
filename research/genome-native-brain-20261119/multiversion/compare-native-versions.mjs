@@ -13,13 +13,17 @@ const LABELS=["EI","IE","N"];
 const SYMBOLS=LABELS.map(x=>x.charCodeAt(0));
 const VERSIONS={
   "v42-c4":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:4,readout:"chain"},
-  "v42-c16":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:16,readout:"chain"},
-  "v42-c32":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:32,readout:"chain"},
+  "v42-c1":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:1,readout:"chain"},
+  "v42-c2":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:2,readout:"chain"},
+  "v42-c3":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:3,readout:"chain"},
   "v42-c-only":{tree:ROOT,rules:{depth:0,seeker:"C",budEvery:400,maxWires:16},cap:4,readout:"chain"},
   "v42-deep-a":{tree:ROOT,rules:{depth:4,seeker:"C",budEvery:400,maxWires:16},cap:4,readout:"chain"},
   "v42-blend":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,fold:"blend"},cap:4,readout:"chain"},
   "v42-log":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,fold:"log"},cap:4,readout:"chain"},
   "v42-concept":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,fold:"concept"},cap:4,readout:"chain"},
+  "v42-no-bud":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,off:["R5"]},cap:4,readout:"chain"},
+  "v42-no-trust":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,off:["R3"]},cap:4,readout:"chain"},
+  "v42-resistance-ablation":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,off:["R2"]},cap:4,readout:"chain"},
   "v42-align":{tree:ROOT,rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:4,readout:"alignment"},
   "v43-native":{tree:path.join(ROOT,"comparison-checkouts/v43"),rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:4,readout:"chain"},
   "v42-3sat":{tree:path.join(ROOT,"comparison-checkouts/v42-3sat"),rules:{depth:2,seeker:"C",budEvery:400,maxWires:16},cap:4,readout:"chain"}
