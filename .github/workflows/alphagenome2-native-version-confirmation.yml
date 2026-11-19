@@ -1,0 +1,45 @@
+name: AG2 frozen native R3 winner 702 independent-group confirmation
+on:
+  push:
+    branches:
+      - research/AG2-NATIVE-VERSION-COMPARISON-20261119
+    paths:
+      - .github/workflows/alphagenome2-native-version-confirmation.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-native-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify experiment syntax
+        run: node --check research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs
+      - name: Fetch original real UCI genomic sequences
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Final frozen native R3-disabled Brain after development-only selection
+        env:
+          ALPHAGENOME_FINAL_UNLOCK: FROZEN_SELECTED_WINNER
+          GENOME_RESULT_PATH: /tmp/genome-native-R3-frozen-final.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs /tmp/uci-splice.data v42-no-trust --phase=final | tee /tmp/genome-native-R3-final.log
+      - name: Save 702-row real raw predictions and measured failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-R3-702-previously-unseen-final
+          path: |
+            /tmp/genome-native-R3-frozen-final.json
+            /tmp/genome-native-R3-final.log
+          if-no-files-found: warn
