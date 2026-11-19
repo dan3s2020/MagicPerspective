@@ -1,0 +1,959 @@
+{
+  "study": "Actual original native Brain C5 D/A world-conditioned cross-world transfer",
+  "sourceAction": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44621219668",
+  "phase": "EXPLORATORY_UPSTREAM_ACCEPTOR_TRAIN_ONLY_DEV400",
+  "confirmedExternalTest": false,
+  "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+  "pretestProtocol": "PRETEST_NATIVE_WORLD_CONDITIONING.md",
+  "numberOfArms": 12,
+  "results": [
+    {
+      "job_id": 135903081922,
+      "startingState": "donor",
+      "shots": 0,
+      "metrics": {
+        "n": 400,
+        "correct": 207,
+        "accuracy": 0.5175,
+        "macroF1": 0.4899273873314349,
+        "balancedAccuracy": 0.5175,
+        "confusion": {
+          "P": {
+            "P": 57,
+            "N": 143
+          },
+          "N": {
+            "P": 50,
+            "N": 150
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.5327102803738317,
+            "recall": 0.285,
+            "f1": 0.3713355048859935
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5119453924914675,
+            "recall": 0.75,
+            "f1": 0.6085192697768763
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 0,
+        "finalLived": 205800,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081580,
+      "startingState": "donor",
+      "shots": 40,
+      "metrics": {
+        "n": 400,
+        "correct": 195,
+        "accuracy": 0.4875,
+        "macroF1": 0.35554350474304264,
+        "balancedAccuracy": 0.4875,
+        "confusion": {
+          "P": {
+            "P": 7,
+            "N": 193
+          },
+          "N": {
+            "P": 12,
+            "N": 188
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.3684210526315789,
+            "recall": 0.035,
+            "f1": 0.0639269406392694
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.49343832020997375,
+            "recall": 0.94,
+            "f1": 0.6471600688468159
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 5880,
+        "finalLived": 211680,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081813,
+      "startingState": "donor",
+      "shots": 200,
+      "metrics": {
+        "n": 400,
+        "correct": 230,
+        "accuracy": 0.575,
+        "macroF1": 0.5749893747343684,
+        "balancedAccuracy": 0.575,
+        "confusion": {
+          "P": {
+            "P": 114,
+            "N": 86
+          },
+          "N": {
+            "P": 84,
+            "N": 116
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.5757575757575758,
+            "recall": 0.57,
+            "f1": 0.5728643216080402
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5742574257425742,
+            "recall": 0.58,
+            "f1": 0.5771144278606966
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 29400,
+        "finalLived": 235200,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081709,
+      "startingState": "donor",
+      "shots": 800,
+      "metrics": {
+        "n": 400,
+        "correct": 228,
+        "accuracy": 0.57,
+        "macroF1": 0.5686953032924598,
+        "balancedAccuracy": 0.5700000000000001,
+        "confusion": {
+          "P": {
+            "P": 125,
+            "N": 75
+          },
+          "N": {
+            "P": 97,
+            "N": 103
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.5630630630630631,
+            "recall": 0.625,
+            "f1": 0.5924170616113744
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5786516853932584,
+            "recall": 0.515,
+            "f1": 0.544973544973545
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 117600,
+        "finalLived": 323400,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081570,
+      "startingState": "donor-inverted",
+      "shots": 0,
+      "metrics": {
+        "n": 400,
+        "correct": 193,
+        "accuracy": 0.4825,
+        "macroF1": 0.45292730143837834,
+        "balancedAccuracy": 0.4825,
+        "confusion": {
+          "P": {
+            "P": 143,
+            "N": 57
+          },
+          "N": {
+            "P": 150,
+            "N": 50
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.4880546075085324,
+            "recall": 0.715,
+            "f1": 0.5801217038539553
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.4672897196261682,
+            "recall": 0.25,
+            "f1": 0.3257328990228013
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 0,
+        "finalLived": 205800,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": true
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081899,
+      "startingState": "donor-inverted",
+      "shots": 40,
+      "metrics": {
+        "n": 400,
+        "correct": 200,
+        "accuracy": 0.5,
+        "macroF1": 0.3333333333333333,
+        "balancedAccuracy": 0.5,
+        "confusion": {
+          "P": {
+            "P": 0,
+            "N": 200
+          },
+          "N": {
+            "P": 0,
+            "N": 200
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.6666666666666666
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 5880,
+        "finalLived": 211680,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": true
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081716,
+      "startingState": "donor-inverted",
+      "shots": 200,
+      "metrics": {
+        "n": 400,
+        "correct": 202,
+        "accuracy": 0.505,
+        "macroF1": 0.4902687673772011,
+        "balancedAccuracy": 0.505,
+        "confusion": {
+          "P": {
+            "P": 135,
+            "N": 65
+          },
+          "N": {
+            "P": 133,
+            "N": 67
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.503731343283582,
+            "recall": 0.675,
+            "f1": 0.5769230769230769
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5075757575757576,
+            "recall": 0.335,
+            "f1": 0.4036144578313253
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 29400,
+        "finalLived": 235200,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": true
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081851,
+      "startingState": "donor-inverted",
+      "shots": 800,
+      "metrics": {
+        "n": 400,
+        "correct": 226,
+        "accuracy": 0.565,
+        "macroF1": 0.5610383713009914,
+        "balancedAccuracy": 0.565,
+        "confusion": {
+          "P": {
+            "P": 132,
+            "N": 68
+          },
+          "N": {
+            "P": 106,
+            "N": 94
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.5546218487394958,
+            "recall": 0.66,
+            "f1": 0.6027397260273972
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5802469135802469,
+            "recall": 0.47,
+            "f1": 0.5193370165745856
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 205800,
+        "donorLivedSymbols": 205800,
+        "acceptorLivedSymbols": 117600,
+        "finalLived": 323400,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": true
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081576,
+      "startingState": "fresh",
+      "shots": 0,
+      "metrics": {
+        "n": 400,
+        "correct": 200,
+        "accuracy": 0.5,
+        "macroF1": 0.3333333333333333,
+        "balancedAccuracy": 0.5,
+        "confusion": {
+          "P": {
+            "P": 200,
+            "N": 0
+          },
+          "N": {
+            "P": 200,
+            "N": 0
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.6666666666666666
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 0,
+        "donorLivedSymbols": 0,
+        "acceptorLivedSymbols": 0,
+        "finalLived": 0,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081883,
+      "startingState": "fresh",
+      "shots": 40,
+      "metrics": {
+        "n": 400,
+        "correct": 209,
+        "accuracy": 0.5225,
+        "macroF1": 0.5214202043360332,
+        "balancedAccuracy": 0.5225,
+        "confusion": {
+          "P": {
+            "P": 114,
+            "N": 86
+          },
+          "N": {
+            "P": 105,
+            "N": 95
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.5205479452054794,
+            "recall": 0.57,
+            "f1": 0.5441527446300716
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.5248618784530387,
+            "recall": 0.475,
+            "f1": 0.49868766404199477
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 0,
+        "donorLivedSymbols": 0,
+        "acceptorLivedSymbols": 5880,
+        "finalLived": 5880,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081653,
+      "startingState": "fresh",
+      "shots": 200,
+      "metrics": {
+        "n": 400,
+        "correct": 199,
+        "accuracy": 0.4975,
+        "macroF1": 0.4974214721050164,
+        "balancedAccuracy": 0.4975,
+        "confusion": {
+          "P": {
+            "P": 102,
+            "N": 98
+          },
+          "N": {
+            "P": 103,
+            "N": 97
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.4975609756097561,
+            "recall": 0.51,
+            "f1": 0.5037037037037037
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.49743589743589745,
+            "recall": 0.485,
+            "f1": 0.4911392405063291
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 0,
+        "donorLivedSymbols": 0,
+        "acceptorLivedSymbols": 29400,
+        "finalLived": 29400,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    },
+    {
+      "job_id": 135903081638,
+      "startingState": "fresh",
+      "shots": 800,
+      "metrics": {
+        "n": 400,
+        "correct": 252,
+        "accuracy": 0.63,
+        "macroF1": 0.6266303388077399,
+        "balancedAccuracy": 0.63,
+        "confusion": {
+          "P": {
+            "P": 145,
+            "N": 55
+          },
+          "N": {
+            "P": 93,
+            "N": 107
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.6092436974789915,
+            "recall": 0.725,
+            "f1": 0.6621004566210046
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.6604938271604939,
+            "recall": 0.535,
+            "f1": 0.5911602209944752
+          }
+        ]
+      },
+      "continuity": {
+        "brainReinstantiatedBetweenWorlds": false,
+        "initialLived": 0,
+        "livedAfterDonor": 0,
+        "donorLivedSymbols": 0,
+        "acceptorLivedSymbols": 117600,
+        "finalLived": 117600,
+        "originalSameBrain": true,
+        "fakeBiologicalFeedback": false
+      },
+      "datasetSHA": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "biologicalMotifs": {
+        "donor": {
+          "motif": "GT",
+          "index": 70,
+          "n": 1400,
+          "matching": 1400
+        },
+        "acceptorTrain": {
+          "motif": "AG",
+          "index": 68,
+          "n": 1200,
+          "matching": 1200
+        },
+        "acceptorDev": {
+          "motif": "AG",
+          "index": 68,
+          "n": 400,
+          "matching": 400
+        }
+      },
+      "status": "GENUINE_ORIGINAL_BRAIN_WORLD_CONDITIONED_DONOR_TO_ACCEPTOR_TEST"
+    }
+  ]
+}
