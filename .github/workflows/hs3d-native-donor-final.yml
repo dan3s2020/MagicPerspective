@@ -1,0 +1,52 @@
+name: HS3D original native Brain true false donor official frozen final
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-DISCOVERY-20261119
+    paths:
+      - .github/workflows/hs3d-native-donor-final.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-original-human-donor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned authentic HS3D Train and official never-inspected Test
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+            ENSdatasets/hs3d_bal/Test
+      - name: Source integrity and syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/hs3d/run-native-donor.mjs
+          test -f research/genome-native-brain-20261119/hs3d/FROZEN_SELECTION_BEFORE_OFFICIAL_TEST.md
+          sha256sum comparison-checkouts/hs3d/ENSdatasets/hs3d_bal/{Train,Test}/Donor_*.txt
+      - name: Relearn only official HS3D TRAIN and predict untouched Test
+        shell: bash
+        env:
+          HS3D_TEST_UNLOCK: FROZEN_NATIVE_VIEW
+          HS3D_RAW_RESULT_FILE: /tmp/hs3d-native-real-official-test.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/run-native-donor.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal R2R3-off-down72 --phase=test | tee /tmp/hs3d-native-real-official-test.log
+      - name: Preserve untouched official Test individual predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HS3D-real-official-Test-native-frozen-R2R3
+          path: |
+            /tmp/hs3d-native-real-official-test.json
+            /tmp/hs3d-native-real-official-test.log
+          if-no-files-found: warn
