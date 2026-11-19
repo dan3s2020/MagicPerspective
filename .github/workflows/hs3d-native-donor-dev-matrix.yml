@@ -1,0 +1,62 @@
+name: HS3D real human donor native organism context discovery pretest
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-DISCOVERY-20261119
+    paths:
+      - .github/workflows/hs3d-native-donor-dev-matrix.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-v42-native-hs3d:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode:
+          - R3-default-core70
+          - R3-off-core70
+          - R3-off-up58
+          - R3-off-up62
+          - R3-off-up66
+          - R3-off-up68
+          - R3-off-down72
+          - R3-off-down74
+          - R3-off-down78
+          - R3-off-remote100
+          - R2R3-off-up66
+          - R2R3-off-down72
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout only true original HS3D TRAIN sequences at pinned research SHA
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify native-only code syntax
+        run: node --check research/genome-native-brain-20261119/hs3d/run-native-donor.mjs
+      - name: Train original V42 on authentic 140nt human positive and negative donors
+        shell: bash
+        env:
+          HS3D_RAW_RESULT_FILE: /tmp/native-hs3d-raw-predictions.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/run-native-donor.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' --phase=dev | tee /tmp/native-hs3d-metrics.log
+      - name: Preserve original biological prediction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-HS3D-donor-${{ matrix.mode }}
+          path: |
+            /tmp/native-hs3d-raw-predictions.json
+            /tmp/native-hs3d-metrics.log
+          if-no-files-found: warn
