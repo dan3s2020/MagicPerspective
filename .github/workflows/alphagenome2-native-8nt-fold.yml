@@ -1,0 +1,40 @@
+name: AG2 native 8nt folded geometry causal test
+on:
+  push:
+    branches:
+      - research/AG2-REAL-GENOME-NATIVE-BRAIN-20261119
+    paths:
+      - .github/workflows/alphagenome2-native-8nt-fold.yml
+      - research/genome-native-brain-20261119/run-8nt-folded.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-fold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check research/genome-native-brain-20261119/run-8nt-folded.mjs
+      - name: Fetch original UCI DNA observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Native organism blind heldout test
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/run-8nt-folded.mjs /tmp/uci-splice.data | tee /tmp/native-8nt-results.log
+      - name: Publish measured results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-8nt-fold-results
+          path: /tmp/native-8nt-results.log
+          if-no-files-found: warn
