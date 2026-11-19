@@ -96,3 +96,14 @@ Raw original evidence: [confirmatory-untouched-real-uci.json](./results/confirma
 - [native 4nt raw JSON](./results/causal-window-real-uci.json)
 - [native 8nt raw JSON](./results/8nt-fold-real-uci.json)
 - [confirmatory raw JSON](./results/confirmatory-untouched-real-uci.json)
+
+## Scientific interpretation, significance and scaling hypotheses (documentation only)
+
+This experiment's real sequence dependence and native perspective gain are documented in greater depth, with strict separation between **MEASURED**, **INTERPRETATION**, **HYPOTHESIS** and **NOT EVALUATED**:
+
+- [Scientific significance and falsifiable research hypotheses](./SCIENTIFIC_SIGNIFICANCE_AND_HYPOTHESES.md)
+- [Training scale, autonomous perspective discovery, validation gates and path to AG2](./TRAINING_SCALE_AND_GENERALIZATION_PLAN.md)
+- [One-page scientific evaluation brief](./DEEPMIND_RESEARCH_BRIEF.md)
+- [Rezumat complet în limba română: rezultate, importanță, mai mult antrenament](./REZUMAT_RO_IMPORTANTA_SI_ANTRENARE.md)
+
+**Training scale status:** only the 900-example run was actually executed. Additional amounts (up to 2,408 train-eligible records in this split), larger contexts and endogenous perspective selection are proposals without measured outcomes. More training is not predicted to beat a motif baseline or AlphaGenome 2.
