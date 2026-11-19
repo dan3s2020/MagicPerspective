@@ -1,0 +1,490 @@
+{
+  "source": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44603103247",
+  "experiment": "Original native V42 unique DNA sequence dose-response",
+  "phase": "EXPLORATORY_FIXED_400_DEV",
+  "noIndependentExtraTest": true,
+  "trainingSizes": [
+    300,
+    900,
+    1500,
+    2408
+  ],
+  "modes": [
+    "v42-c4",
+    "v42-no-trust"
+  ],
+  "observations": [
+    {
+      "mode": "v42-c4",
+      "train": 300,
+      "job_id": 135839492987,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.71,
+      "macroF1": 0.648413133448763,
+      "balancedAccuracy": 0.7182077182077182,
+      "confusion": [
+        [
+          39,
+          51,
+          9,
+          0
+        ],
+        [
+          0,
+          67,
+          0,
+          0
+        ],
+        [
+          31,
+          25,
+          178,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.3939393939393939,
+          "precision": 0.5571428571428572,
+          "f1": 0.46153846153846156
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 1,
+          "precision": 0.46853146853146854,
+          "f1": 0.638095238095238
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.7606837606837606,
+          "precision": 0.9518716577540107,
+          "f1": 0.8456057007125891
+        }
+      ],
+      "trainedLabels": {
+        "EI": 61,
+        "IE": 86,
+        "N": 153
+      },
+      "trainSymbols": 19800,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-c4",
+      "train": 900,
+      "job_id": 135839492858,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.7825,
+      "macroF1": 0.7676393824797235,
+      "balancedAccuracy": 0.818589646947856,
+      "confusion": [
+        [
+          95,
+          1,
+          3,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          45,
+          24,
+          165,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9595959595959596,
+          "precision": 0.6168831168831169,
+          "f1": 0.7509881422924901
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6794871794871795,
+          "f1": 0.7310344827586207
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.7051282051282052,
+          "precision": 0.9821428571428571,
+          "f1": 0.8208955223880597
+        }
+      ],
+      "trainedLabels": {
+        "EI": 212,
+        "IE": 215,
+        "N": 473
+      },
+      "trainSymbols": 59400,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-c4",
+      "train": 1500,
+      "job_id": 135839492912,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.685,
+      "macroF1": 0.6298383182106718,
+      "balancedAccuracy": 0.6430609191803222,
+      "confusion": [
+        [
+          57,
+          1,
+          41,
+          0
+        ],
+        [
+          27,
+          40,
+          0,
+          0
+        ],
+        [
+          7,
+          50,
+          177,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.5757575757575758,
+          "precision": 0.6263736263736264,
+          "f1": 0.6
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.5970149253731343,
+          "precision": 0.43956043956043955,
+          "f1": 0.5063291139240507
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.7564102564102564,
+          "precision": 0.8119266055045872,
+          "f1": 0.7831858407079646
+        }
+      ],
+      "trainedLabels": {
+        "EI": 347,
+        "IE": 346,
+        "N": 807
+      },
+      "trainSymbols": 99000,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-c4",
+      "train": 2408,
+      "job_id": 135839492720,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.8575,
+      "macroF1": 0.8280064253408046,
+      "balancedAccuracy": 0.8574396857978948,
+      "confusion": [
+        [
+          93,
+          1,
+          5,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          13,
+          24,
+          197,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9393939393939394,
+          "precision": 0.775,
+          "f1": 0.8493150684931506
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6794871794871795,
+          "f1": 0.7310344827586207
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8418803418803419,
+          "precision": 0.9752475247524752,
+          "f1": 0.9036697247706422
+        }
+      ],
+      "trainedLabels": {
+        "EI": 545,
+        "IE": 547,
+        "N": 1316
+      },
+      "trainSymbols": 158928,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-no-trust",
+      "train": 300,
+      "job_id": 135839492809,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.8425,
+      "macroF1": 0.8134516722813552,
+      "balancedAccuracy": 0.8566626850208939,
+      "confusion": [
+        [
+          97,
+          2,
+          0,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          17,
+          30,
+          187,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.7578125,
+          "f1": 0.8546255506607929
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6235294117647059,
+          "f1": 0.6973684210526315
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.7991452991452992,
+          "precision": 1,
+          "f1": 0.8883610451306413
+        }
+      ],
+      "trainedLabels": {
+        "EI": 61,
+        "IE": 86,
+        "N": 153
+      },
+      "trainSymbols": 19800,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-no-trust",
+      "train": 900,
+      "job_id": 135839492266,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.8675,
+      "macroF1": 0.8362039868614793,
+      "balancedAccuracy": 0.8709076992659082,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          29,
+          197,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6385542168674698,
+          "f1": 0.7066666666666667
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8418803418803419,
+          "precision": 0.9949494949494949,
+          "f1": 0.9120370370370371
+        }
+      ],
+      "trainedLabels": {
+        "EI": 212,
+        "IE": 215,
+        "N": 473
+      },
+      "trainSymbols": 59400,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-no-trust",
+      "train": 1500,
+      "job_id": 135839492593,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.8175,
+      "macroF1": 0.7390297510306612,
+      "balancedAccuracy": 0.7572027198892871,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          27,
+          29,
+          11,
+          0
+        ],
+        [
+          13,
+          20,
+          201,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.708029197080292,
+          "f1": 0.8220338983050848
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.43283582089552236,
+          "precision": 0.58,
+          "f1": 0.49572649572649574
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8589743589743589,
+          "precision": 0.9436619718309859,
+          "f1": 0.8993288590604027
+        }
+      ],
+      "trainedLabels": {
+        "EI": 347,
+        "IE": 346,
+        "N": 807
+      },
+      "trainSymbols": 99000,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    },
+    {
+      "mode": "v42-no-trust",
+      "train": 2408,
+      "job_id": 135839492774,
+      "status": "EXECUTED_SUCCESS",
+      "accuracy": 0.88,
+      "macroF1": 0.8484759551658261,
+      "balancedAccuracy": 0.8780302063884152,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          24,
+          202,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6794871794871795,
+          "f1": 0.7310344827586207
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8632478632478633,
+          "precision": 0.9950738916256158,
+          "f1": 0.9244851258581236
+        }
+      ],
+      "trainedLabels": {
+        "EI": 545,
+        "IE": 547,
+        "N": 1316
+      },
+      "trainSymbols": 158928,
+      "datasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f"
+    }
+  ]
+}
