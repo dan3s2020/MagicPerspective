@@ -1,0 +1,37 @@
+name: SHA256 native original V42 Brain smoke and frozen blind
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-BRAIN-BLIND-WORLD-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_motors_v2.mjs
+      - .github/workflows/sha256-native-v42-research.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact original Brain code and isolated program syntax
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check research/sha256-labyrinth-20261119/native_sha256_motors_v2.mjs
+      - name: Original Brain receives SHA256 rounds and learns observed motors
+        env:
+          NATIVE_SHA_TRAIN: '2'
+          NATIVE_SHA_BLIND: '4'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_motors_v2.mjs
+      - name: Upload original experiment results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-sha256-original-brain-smoke
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
