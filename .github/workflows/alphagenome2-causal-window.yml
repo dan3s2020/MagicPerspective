@@ -1,0 +1,41 @@
+name: AG2 causal native perception-window test
+on:
+  push:
+    branches:
+      - research/AG2-REAL-GENOME-NATIVE-BRAIN-20261119
+    paths:
+      - .github/workflows/alphagenome2-causal-window.yml
+      - research/genome-native-brain-20261119/run-causal-window.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  causal-window:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original organism executable syntax
+        run: node --check research/genome-native-brain-20261119/run-causal-window.mjs
+      - name: Fetch original UCI biological observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Measure same original V42 Brain after causal temporal intervention
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/run-causal-window.mjs /tmp/uci-splice.data | tee /tmp/genome-causal-window.log
+      - name: Publish all measured outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-causal-window-results
+          path: /tmp/genome-causal-window.log
+          if-no-files-found: warn
