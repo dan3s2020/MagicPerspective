@@ -1,0 +1,45 @@
+name: AG2 original Brain true motif equivalence diagnosis
+on:
+  push:
+    branches:
+      - research/AG2-NATIVE-VERSION-COMPARISON-20261119
+    paths:
+      - .github/workflows/alphagenome2-motif-equivalence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-motif-diagnosis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse full native diagnostic source
+        run: node --check research/genome-native-brain-20261119/multiversion/explain-motif-equivalence.mjs
+      - name: Obtain original UCI observations, not synthetic sequences
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Train original organism, then compare each native answer and flank intervention
+        env:
+          GENOME_TRAIN_LIMIT: '2408'
+          GENOME_RESULT_PATH: /tmp/native-motif-mechanism.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/multiversion/explain-motif-equivalence.mjs /tmp/uci-splice.data v42-no-trust --phase=dev | tee /tmp/native-motif-mechanism.log
+      - name: Save actual discrepancies and controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-motif-equivalence-flank-diagnosis
+          path: |
+            /tmp/native-motif-mechanism.json
+            /tmp/native-motif-mechanism.log
+          if-no-files-found: warn
