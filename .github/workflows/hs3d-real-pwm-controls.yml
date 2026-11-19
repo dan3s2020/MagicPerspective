@@ -1,0 +1,53 @@
+name: HS3D external PWM scientific controls native comparison
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-DISCOVERY-20261119
+    paths:
+      - .github/workflows/hs3d-real-pwm-controls.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixed-external-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        phase: [dev, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned original HS3D source
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+            ENSdatasets/hs3d_bal/Test
+      - name: Check frozen external-control implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/hs3d/measure-pwm-controls.mjs
+          test -f research/genome-native-brain-20261119/hs3d/EXTERNAL_CONTROL_PROTOCOL.md
+          test -f research/genome-native-brain-20261119/hs3d/FROZEN_SELECTION_BEFORE_OFFICIAL_TEST.md
+      - name: Evaluate non-native scientific baseline on same real DNA
+        env:
+          HS3D_TEST_UNLOCK: FROZEN_NATIVE_VIEW
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/measure-pwm-controls.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '--phase=${{ matrix.phase }}' | tee /tmp/hs3d-pwm.log
+      - name: Preserve real control scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HS3D-external-PWM-${{ matrix.phase }}
+          path: /tmp/hs3d-pwm.log
+          if-no-files-found: warn
