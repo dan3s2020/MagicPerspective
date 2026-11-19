@@ -1,0 +1,853 @@
+{
+  "date": "2026-11-19",
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44616476817",
+  "phase": "EXPLORATORY_GENUINE_HS3D_TRAIN_SUBSET_DEV",
+  "pretestProtocol": "FACTORIAL_ABLATION_PROTOCOL.md",
+  "note": "The 1000-calibration/topology fourth arm was already executed in action 44615809820 (80.00% accuracy, 79.84% macro-F1). These three arms complete its two-factor causal comparison. Effective calibration is 200 or1000 as dictated by calibrationAmount, not the 'rows:1000' field describing available pool.",
+  "data": [
+    {
+      "mode": "R2R3-200-topology-all",
+      "job_id": 135886412449,
+      "effectiveCalibrationUsed": 200,
+      "availableCalibration": 1000,
+      "sourceNote": "Existing raw calibration.rows states available pool=1000, whereas calibrationAmount and nativeFeedback show actually consumed rows.",
+      "results": {
+        "status": "ACTUAL_ORIGINAL_BRAIN_NATIVE_FEATURE_CREDIT_FACTORIAL_HS3D",
+        "method": "Original V42 Brain C5 and native ConstructedPathLearner, 2-factor causal ablation of geometry feature and reward count",
+        "mode": "R2R3-200-topology-all",
+        "phase": "TRAIN_ONLY_DEV_FACTORIAL_EXPLORATORY",
+        "noOfficialTestViewed": true,
+        "calibrationFeedback": "all",
+        "calibrationAmount": 200,
+        "viewFeature": "topology",
+        "source": "OluwadareLab EnsembleSplice HS3D balanced human donor 140nt",
+        "pinnedCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+        "sourceChecksums": {
+          "positive": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "negative": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "sourceCounts": {
+          "positive": 2198,
+          "negative": 2198
+        },
+        "rejectedSourceRows": {
+          "positive": 0,
+          "negative": 1
+        },
+        "duplicates": {
+          "P": 2,
+          "N": 1
+        },
+        "training": {
+          "rows": 1200,
+          "livedSymbols": 100800,
+          "viewActions": 14400
+        },
+        "calibration": {
+          "rows": 1000,
+          "nativeFeedback": 2400,
+          "nativePathPolicyBefore": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "nativePathPolicyAfter": [
+            0.1684729279962163,
+            -0.15201941516845732,
+            0.366112775924997,
+            0.1976398479287809,
+            0.057529283326561154,
+            0.5645525895048381
+          ],
+          "initialNativeCorrect": 152
+        },
+        "development": {
+          "rows": 400,
+          "selectedPositions": {
+            "62": 2,
+            "66": 11,
+            "68": 119,
+            "70": 227,
+            "72": 30,
+            "74": 11
+          },
+          "metrics": {
+            "native": {
+              "n": 400,
+              "correct": 324,
+              "accuracy": 0.81,
+              "macroF1": 0.8056265984654731,
+              "balancedAccuracy": 0.81,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7384615384615385,
+                  "recall": 0.96,
+                  "f1": 0.8347826086956521
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.9428571428571428,
+                  "recall": 0.66,
+                  "f1": 0.7764705882352941
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 192,
+                  "N": 8
+                },
+                "N": {
+                  "P": 68,
+                  "N": 132
+                }
+              }
+            },
+            "fixed72": {
+              "n": 400,
+              "correct": 273,
+              "accuracy": 0.6825,
+              "macroF1": 0.6733350052407868,
+              "balancedAccuracy": 0.6825,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.6367041198501873,
+                  "recall": 0.85,
+                  "f1": 0.728051391862955
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.7744360902255639,
+                  "recall": 0.515,
+                  "f1": 0.6186186186186187
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 170,
+                  "N": 30
+                },
+                "N": {
+                  "P": 97,
+                  "N": 103
+                }
+              }
+            },
+            "fixed70": {
+              "n": 400,
+              "correct": 308,
+              "accuracy": 0.77,
+              "macroF1": 0.7686989314896291,
+              "balancedAccuracy": 0.77,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7347826086956522,
+                  "recall": 0.845,
+                  "f1": 0.786046511627907
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8176470588235294,
+                  "recall": 0.695,
+                  "f1": 0.7513513513513513
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 169,
+                  "N": 31
+                },
+                "N": {
+                  "P": 61,
+                  "N": 139
+                }
+              }
+            },
+            "fixed66": {
+              "n": 400,
+              "correct": 294,
+              "accuracy": 0.735,
+              "macroF1": 0.7307936507936508,
+              "balancedAccuracy": 0.735,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.688,
+                  "recall": 0.86,
+                  "f1": 0.7644444444444445
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8133333333333334,
+                  "recall": 0.61,
+                  "f1": 0.6971428571428572
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 172,
+                  "N": 28
+                },
+                "N": {
+                  "P": 78,
+                  "N": 122
+                }
+              }
+            },
+            "confidence": {
+              "n": 400,
+              "correct": 277,
+              "accuracy": 0.6925,
+              "macroF1": 0.6908751625732759,
+              "balancedAccuracy": 0.6925,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7251461988304093,
+                  "recall": 0.62,
+                  "f1": 0.6684636118598383
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.6681222707423581,
+                  "recall": 0.765,
+                  "f1": 0.7132867132867133
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 124,
+                  "N": 76
+                },
+                "N": {
+                  "P": 47,
+                  "N": 153
+                }
+              }
+            },
+            "deterministicRandom": {
+              "n": 400,
+              "correct": 236,
+              "accuracy": 0.59,
+              "macroF1": 0.5893429487179487,
+              "balancedAccuracy": 0.5900000000000001,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.5833333333333334,
+                  "recall": 0.63,
+                  "f1": 0.6057692307692307
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.5978260869565217,
+                  "recall": 0.55,
+                  "f1": 0.5729166666666666
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 126,
+                  "N": 74
+                },
+                "N": {
+                  "P": 90,
+                  "N": 110
+                }
+              }
+            }
+          }
+        },
+        "originalBrainPredictsAllClasses": true,
+        "policyIsOriginalBrainConstructedPaths": true,
+        "nativeActionSpaceManuallyEnumerated": true,
+        "allViewpointsScannedBeforeSelection": true,
+        "autonomousDiscoveryOfArbitraryViews": false,
+        "officialAlphaGenome2Comparison": false
+      }
+    },
+    {
+      "mode": "R2R3-200-diversity-all",
+      "job_id": 135886412943,
+      "effectiveCalibrationUsed": 200,
+      "availableCalibration": 1000,
+      "sourceNote": "Existing raw calibration.rows states available pool=1000, whereas calibrationAmount and nativeFeedback show actually consumed rows.",
+      "results": {
+        "status": "ACTUAL_ORIGINAL_BRAIN_NATIVE_FEATURE_CREDIT_FACTORIAL_HS3D",
+        "method": "Original V42 Brain C5 and native ConstructedPathLearner, 2-factor causal ablation of geometry feature and reward count",
+        "mode": "R2R3-200-diversity-all",
+        "phase": "TRAIN_ONLY_DEV_FACTORIAL_EXPLORATORY",
+        "noOfficialTestViewed": true,
+        "calibrationFeedback": "all",
+        "calibrationAmount": 200,
+        "viewFeature": "diversity",
+        "source": "OluwadareLab EnsembleSplice HS3D balanced human donor 140nt",
+        "pinnedCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+        "sourceChecksums": {
+          "positive": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "negative": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "sourceCounts": {
+          "positive": 2198,
+          "negative": 2198
+        },
+        "rejectedSourceRows": {
+          "positive": 0,
+          "negative": 1
+        },
+        "duplicates": {
+          "P": 2,
+          "N": 1
+        },
+        "training": {
+          "rows": 1200,
+          "livedSymbols": 100800,
+          "viewActions": 14400
+        },
+        "calibration": {
+          "rows": 1000,
+          "nativeFeedback": 2400,
+          "nativePathPolicyBefore": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "nativePathPolicyAfter": [
+            0.3481112084744564,
+            -0.242086174970349,
+            0.422743738131719,
+            0.07463252965726097,
+            0.14829126606388676,
+            0.03010835315513727
+          ],
+          "initialNativeCorrect": 131
+        },
+        "development": {
+          "rows": 400,
+          "selectedPositions": {
+            "54": 79,
+            "58": 59,
+            "62": 48,
+            "66": 37,
+            "68": 67,
+            "70": 76,
+            "72": 16,
+            "74": 11,
+            "78": 5,
+            "82": 2
+          },
+          "metrics": {
+            "native": {
+              "n": 400,
+              "correct": 292,
+              "accuracy": 0.73,
+              "macroF1": 0.7229064039408868,
+              "balancedAccuracy": 0.73,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.6742424242424242,
+                  "recall": 0.89,
+                  "f1": 0.7672413793103449
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8382352941176471,
+                  "recall": 0.57,
+                  "f1": 0.6785714285714286
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 178,
+                  "N": 22
+                },
+                "N": {
+                  "P": 86,
+                  "N": 114
+                }
+              }
+            },
+            "fixed72": {
+              "n": 400,
+              "correct": 273,
+              "accuracy": 0.6825,
+              "macroF1": 0.6733350052407868,
+              "balancedAccuracy": 0.6825,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.6367041198501873,
+                  "recall": 0.85,
+                  "f1": 0.728051391862955
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.7744360902255639,
+                  "recall": 0.515,
+                  "f1": 0.6186186186186187
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 170,
+                  "N": 30
+                },
+                "N": {
+                  "P": 97,
+                  "N": 103
+                }
+              }
+            },
+            "fixed70": {
+              "n": 400,
+              "correct": 308,
+              "accuracy": 0.77,
+              "macroF1": 0.7686989314896291,
+              "balancedAccuracy": 0.77,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7347826086956522,
+                  "recall": 0.845,
+                  "f1": 0.786046511627907
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8176470588235294,
+                  "recall": 0.695,
+                  "f1": 0.7513513513513513
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 169,
+                  "N": 31
+                },
+                "N": {
+                  "P": 61,
+                  "N": 139
+                }
+              }
+            },
+            "fixed66": {
+              "n": 400,
+              "correct": 294,
+              "accuracy": 0.735,
+              "macroF1": 0.7307936507936508,
+              "balancedAccuracy": 0.735,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.688,
+                  "recall": 0.86,
+                  "f1": 0.7644444444444445
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8133333333333334,
+                  "recall": 0.61,
+                  "f1": 0.6971428571428572
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 172,
+                  "N": 28
+                },
+                "N": {
+                  "P": 78,
+                  "N": 122
+                }
+              }
+            },
+            "confidence": {
+              "n": 400,
+              "correct": 277,
+              "accuracy": 0.6925,
+              "macroF1": 0.6908751625732759,
+              "balancedAccuracy": 0.6925,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7251461988304093,
+                  "recall": 0.62,
+                  "f1": 0.6684636118598383
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.6681222707423581,
+                  "recall": 0.765,
+                  "f1": 0.7132867132867133
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 124,
+                  "N": 76
+                },
+                "N": {
+                  "P": 47,
+                  "N": 153
+                }
+              }
+            },
+            "deterministicRandom": {
+              "n": 400,
+              "correct": 236,
+              "accuracy": 0.59,
+              "macroF1": 0.5893429487179487,
+              "balancedAccuracy": 0.5900000000000001,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.5833333333333334,
+                  "recall": 0.63,
+                  "f1": 0.6057692307692307
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.5978260869565217,
+                  "recall": 0.55,
+                  "f1": 0.5729166666666666
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 126,
+                  "N": 74
+                },
+                "N": {
+                  "P": 90,
+                  "N": 110
+                }
+              }
+            }
+          }
+        },
+        "originalBrainPredictsAllClasses": true,
+        "policyIsOriginalBrainConstructedPaths": true,
+        "nativeActionSpaceManuallyEnumerated": true,
+        "allViewpointsScannedBeforeSelection": true,
+        "autonomousDiscoveryOfArbitraryViews": false,
+        "officialAlphaGenome2Comparison": false
+      }
+    },
+    {
+      "mode": "R2R3-1000-diversity-all",
+      "job_id": 135886412948,
+      "effectiveCalibrationUsed": 1000,
+      "availableCalibration": 1000,
+      "sourceNote": "Existing raw calibration.rows states available pool=1000, whereas calibrationAmount and nativeFeedback show actually consumed rows.",
+      "results": {
+        "status": "ACTUAL_ORIGINAL_BRAIN_NATIVE_FEATURE_CREDIT_FACTORIAL_HS3D",
+        "method": "Original V42 Brain C5 and native ConstructedPathLearner, 2-factor causal ablation of geometry feature and reward count",
+        "mode": "R2R3-1000-diversity-all",
+        "phase": "TRAIN_ONLY_DEV_FACTORIAL_EXPLORATORY",
+        "noOfficialTestViewed": true,
+        "calibrationFeedback": "all",
+        "calibrationAmount": 1000,
+        "viewFeature": "diversity",
+        "source": "OluwadareLab EnsembleSplice HS3D balanced human donor 140nt",
+        "pinnedCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+        "sourceChecksums": {
+          "positive": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "negative": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "sourceCounts": {
+          "positive": 2198,
+          "negative": 2198
+        },
+        "rejectedSourceRows": {
+          "positive": 0,
+          "negative": 1
+        },
+        "duplicates": {
+          "P": 2,
+          "N": 1
+        },
+        "training": {
+          "rows": 1200,
+          "livedSymbols": 100800,
+          "viewActions": 14400
+        },
+        "calibration": {
+          "rows": 1000,
+          "nativeFeedback": 12000,
+          "nativePathPolicyBefore": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "nativePathPolicyAfter": [
+            0.5608707163811396,
+            -0.5391808789495952,
+            1.4802161272372338,
+            0.919345410856093,
+            0.19491655020318413,
+            0.052197890647245566
+          ],
+          "initialNativeCorrect": 696
+        },
+        "development": {
+          "rows": 400,
+          "selectedPositions": {
+            "54": 53,
+            "58": 47,
+            "62": 48,
+            "66": 37,
+            "68": 69,
+            "70": 74,
+            "72": 19,
+            "74": 17,
+            "78": 13,
+            "82": 11,
+            "90": 10,
+            "100": 2
+          },
+          "metrics": {
+            "native": {
+              "n": 400,
+              "correct": 299,
+              "accuracy": 0.7475,
+              "macroF1": 0.7474857960760293,
+              "balancedAccuracy": 0.7475,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.751269035532995,
+                  "recall": 0.74,
+                  "f1": 0.7455919395465995
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.7438423645320197,
+                  "recall": 0.755,
+                  "f1": 0.749379652605459
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 148,
+                  "N": 52
+                },
+                "N": {
+                  "P": 49,
+                  "N": 151
+                }
+              }
+            },
+            "fixed72": {
+              "n": 400,
+              "correct": 273,
+              "accuracy": 0.6825,
+              "macroF1": 0.6733350052407868,
+              "balancedAccuracy": 0.6825,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.6367041198501873,
+                  "recall": 0.85,
+                  "f1": 0.728051391862955
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.7744360902255639,
+                  "recall": 0.515,
+                  "f1": 0.6186186186186187
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 170,
+                  "N": 30
+                },
+                "N": {
+                  "P": 97,
+                  "N": 103
+                }
+              }
+            },
+            "fixed70": {
+              "n": 400,
+              "correct": 308,
+              "accuracy": 0.77,
+              "macroF1": 0.7686989314896291,
+              "balancedAccuracy": 0.77,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7347826086956522,
+                  "recall": 0.845,
+                  "f1": 0.786046511627907
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8176470588235294,
+                  "recall": 0.695,
+                  "f1": 0.7513513513513513
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 169,
+                  "N": 31
+                },
+                "N": {
+                  "P": 61,
+                  "N": 139
+                }
+              }
+            },
+            "fixed66": {
+              "n": 400,
+              "correct": 294,
+              "accuracy": 0.735,
+              "macroF1": 0.7307936507936508,
+              "balancedAccuracy": 0.735,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.688,
+                  "recall": 0.86,
+                  "f1": 0.7644444444444445
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.8133333333333334,
+                  "recall": 0.61,
+                  "f1": 0.6971428571428572
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 172,
+                  "N": 28
+                },
+                "N": {
+                  "P": 78,
+                  "N": 122
+                }
+              }
+            },
+            "confidence": {
+              "n": 400,
+              "correct": 277,
+              "accuracy": 0.6925,
+              "macroF1": 0.6908751625732759,
+              "balancedAccuracy": 0.6925,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.7251461988304093,
+                  "recall": 0.62,
+                  "f1": 0.6684636118598383
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.6681222707423581,
+                  "recall": 0.765,
+                  "f1": 0.7132867132867133
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 124,
+                  "N": 76
+                },
+                "N": {
+                  "P": 47,
+                  "N": 153
+                }
+              }
+            },
+            "deterministicRandom": {
+              "n": 400,
+              "correct": 236,
+              "accuracy": 0.59,
+              "macroF1": 0.5893429487179487,
+              "balancedAccuracy": 0.5900000000000001,
+              "perClass": [
+                {
+                  "label": "P",
+                  "support": 200,
+                  "precision": 0.5833333333333334,
+                  "recall": 0.63,
+                  "f1": 0.6057692307692307
+                },
+                {
+                  "label": "N",
+                  "support": 200,
+                  "precision": 0.5978260869565217,
+                  "recall": 0.55,
+                  "f1": 0.5729166666666666
+                }
+              ],
+              "confusion": {
+                "P": {
+                  "P": 126,
+                  "N": 74
+                },
+                "N": {
+                  "P": 90,
+                  "N": 110
+                }
+              }
+            }
+          }
+        },
+        "originalBrainPredictsAllClasses": true,
+        "policyIsOriginalBrainConstructedPaths": true,
+        "nativeActionSpaceManuallyEnumerated": true,
+        "allViewpointsScannedBeforeSelection": true,
+        "autonomousDiscoveryOfArbitraryViews": false,
+        "officialAlphaGenome2Comparison": false
+      }
+    }
+  ]
+}
