@@ -153,4 +153,4 @@ To call the system competitive with AG2, we need biologically real reference/var
 - [Frozen winner and 702 group-separated confirmation](./FROZEN_WINNER_BEFORE_FINAL.md)
 - [Previous V42 genomic baseline](../RESULTS.md), [scientific context](../SCIENTIFIC_SIGNIFICANCE_AND_HYPOTHESES.md).
 
-All raw machine-readable outcomes are in [results/](./results/) with provenance. **No source weights, fonts, secrets, local Windows process or prior checkpoint has been modified.**
+Aggregated machine-readable outcomes are in [results/](./results/) with provenance; full per-example prediction records are retained as GitHub Actions artifacts on the linked CI runs. **No source weights, secrets, local Windows process or prior checkpoint has been modified.**
