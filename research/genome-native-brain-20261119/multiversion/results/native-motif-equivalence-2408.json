@@ -1,0 +1,125 @@
+{
+  "status": "EXECUTED_SCALING_NATIVE_BRAIN_REAL_DNA",
+  "evaluationPhase": "EXPLORATORY_DEV_SCALING_NOT_NEW_UNTOUCHED_HOLDOUT",
+  "trainLimit": 2408,
+  "scientificClaim": "HYPOTHESIS_TEST_ONLY_NOT_AG2_COMPARISON",
+  "mode": "v42-no-trust",
+  "phase": "dev",
+  "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+  "builtInReadout": "chain",
+  "nativeRules": {
+    "depth": 2,
+    "seeker": "C",
+    "budEvery": 400,
+    "maxWires": 16,
+    "off": [
+      "R3"
+    ]
+  },
+  "nativeCcap": 4,
+  "rawDatasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+  "trainingRows": 2408,
+  "trainingSymbols": 158928,
+  "availableTrain": 2408,
+  "availableOriginalTest": 597,
+  "devRows": 400,
+  "availableFinal": 0,
+  "usedTrainingGroups": 1174,
+  "finalGroups": 0,
+  "excludedCrossDuplicates": 48,
+  "usedLabels": {
+    "EI": 545,
+    "IE": 547,
+    "N": 1316
+  },
+  "testLabels": {
+    "EI": 99,
+    "IE": 67,
+    "N": 234
+  },
+  "observed": {
+    "n": 400,
+    "correct": 352,
+    "accuracy": 0.88,
+    "macroF1": 0.8484759551658261,
+    "balancedAccuracy": 0.8780302063884152,
+    "invalidReadout": 0,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 99,
+        "recall": 0.9797979797979798,
+        "precision": 0.8151260504201681,
+        "f1": 0.8899082568807339
+      },
+      {
+        "label": "IE",
+        "support": 67,
+        "recall": 0.7910447761194029,
+        "precision": 0.6794871794871795,
+        "f1": 0.7310344827586207
+      },
+      {
+        "label": "N",
+        "support": 234,
+        "recall": 0.8632478632478633,
+        "precision": 0.9950738916256158,
+        "f1": 0.9244851258581236
+      }
+    ],
+    "confusion": [
+      [
+        97,
+        1,
+        1,
+        0
+      ],
+      [
+        14,
+        53,
+        0,
+        0
+      ],
+      [
+        8,
+        24,
+        202,
+        0
+      ]
+    ]
+  },
+  "controls": {
+    "majority": {
+      "accuracy": 0.585,
+      "macroF1": 0.24605678233438485
+    },
+    "fixedGTAG": {
+      "accuracy": 0.88,
+      "macroF1": 0.8484759551658261
+    }
+  },
+  "exactNativeMotifAgreement": {
+    "n": 400,
+    "matched": 400,
+    "fraction": 1,
+    "exceptions": []
+  },
+  "flankOnlyShuffleNativeInvariance": {
+    "n": 400,
+    "unchanged": 400,
+    "fraction": 1,
+    "changed": []
+  },
+  "provenance": {
+    "originalBrainUnchanged": true,
+    "trainedOnActualUCI": true,
+    "testAnswerGivenToOriginalBrain": false,
+    "noSeparateTrainedClassifier": true,
+    "evalWithinHistoricalUCI": true,
+    "fullOriginalBraivourGGUFTest": false,
+    "alphagenome2Compared": false
+  },
+  "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44603886645",
+  "jobId": 135842309983,
+  "interpretation": "EXACT_400_OF_400_EQUIVALENCE_TO_SIMPLE_GTAG; EXACT_400_OF_400_FLANK_INVARIANCE; NO_EVIDENCE_OF_LONG_RANGE_GENOMIC_USE"
+}
