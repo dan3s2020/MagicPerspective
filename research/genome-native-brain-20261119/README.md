@@ -74,3 +74,13 @@ The initial 400-record development set was used to explore perspective represent
 - [More-training/scaling and new-task experimental roadmap](./TRAINING_SCALE_AND_GENERALIZATION_PLAN.md)
 - [Concise external research brief (English)](./DEEPMIND_RESEARCH_BRIEF.md)
 - [Rezumat științific în română](./REZUMAT_RO_IMPORTANTA_SI_ANTRENARE.md)
+
+## Multiversion native-organism results — 19 November 2026
+
+Additional research tested original native V42/V43 branch Brain implementations, original `EmergentChain`/A-organ mechanisms, eight unique-data scaling runs, a native R3/R2 interaction factorial, and a real 702-sequence group-disjoint stress-test. The strongest development improvement involved disabling the built-in R3 trust readback, but a decisive 2,408-training-example diagnostic found **400/400 exact equivalence to the simple GT/AG motif rule and 400/400 flanking-sequence perturbation invariance**. AlphaGenome 2 has **NOT** been beaten or directly tested; increased local motif accuracy must not be presented as regulatory-genome discovery.
+
+- [Full measured native-version research report](./multiversion/RESULTS.md)
+- [All original pretests and scripts](./multiversion/PRETEST_CONTRACT.md)
+- [Frozen 702-record UCI group-separated evaluation](./multiversion/results/frozen-R3-702-final.json)
+- [Original Brain versus GT/AG exact equivalence](./multiversion/results/native-motif-equivalence-2408.json)
+- [Native R3/A organ interactions](./multiversion/results/native-r3-12-organ-interactions.json)
