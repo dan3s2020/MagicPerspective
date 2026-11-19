@@ -1,0 +1,47 @@
+name: HS3D original Brain reward-1000 official acceptor Test FROZEN
+on:
+  push:
+    branches:
+      - research/HS3D-ACCEPTOR-NATIVE-REWARD-TRANSITIONS-20261119
+    paths:
+      - .github/workflows/hs3d-native-reward-official-acceptor-frozen.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-shot-human-acceptor-native-reward-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned authentic Train AND now first official Test acceptor genome records
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+            ENSdatasets/hs3d_bal/Test
+      - name: Syntax-check EXACT fixed original native Brain reward test
+        run: node --check research/genome-native-brain-20261119/hs3d/reward-transitions/run-official-frozen.mjs
+      - name: ONE frozen reward-1000 original organism native policy, previously unopened Test
+        shell: bash
+        env:
+          HS3D_ACCEPTOR_OFFICIAL_UNLOCK: FROZEN_REWARD_1000
+          HS3D_NATIVE_REWARD_FILE: /tmp/hs3d-human-AG-frozen-official-native.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/reward-transitions/run-official-frozen.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal reward-1000 | tee /tmp/hs3d-human-AG-frozen-official-native.log
+      - name: Preserve original Test provenance and original-native physical action traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-reward1000-HS3D-human-AG-official-Test
+          path: |
+            /tmp/hs3d-human-AG-frozen-official-native.json
+            /tmp/hs3d-human-AG-frozen-official-native.log
+          if-no-files-found: warn
