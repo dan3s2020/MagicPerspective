@@ -1,0 +1,54 @@
+name: HS3D original native genome-view selection causal factor split
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-ACTIONS-20261119
+    paths:
+      - .github/workflows/hs3d-native-feature-factorial.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-view-feedback-factorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [R2R3-200-topology-all, R2R3-1000-diversity-all, R2R3-200-diversity-all]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pinned authentic HS3D human donor TRAIN only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify full original-learner experiment code and prior protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/hs3d/native-actions/run-feature-factorial.mjs
+          test -f research/genome-native-brain-20261119/hs3d/native-actions/FACTORIAL_ABLATION_PROTOCOL.md
+      - name: Original native Brain trains on real DNA, original pathPolicy learns view-selection geometry
+        shell: bash
+        env:
+          HS3D_NATIVE_ACTIONS_RESULT_FILE: /tmp/hs3d-native-factorial.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/native-actions/run-feature-factorial.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-native-factorial.log
+      - name: Preserve all results, errors and learned native organ state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HS3D-original-native-factorial-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-native-factorial.json
+            /tmp/hs3d-native-factorial.log
+          if-no-files-found: warn
