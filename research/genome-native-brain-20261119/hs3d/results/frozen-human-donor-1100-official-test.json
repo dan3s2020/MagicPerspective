@@ -1,0 +1,111 @@
+{
+  "status": "ACTUAL_EXECUTED_ORIGINAL_V42_BRAIN_REAL_HUMAN_HS3D",
+  "study": "Human HS3D donor true-vs-false splice-site classification; 140nt",
+  "scope": "Central GT motif shared by true and false; NOT AlphaGenome2 assay",
+  "mode": "R2R3-off-down72",
+  "phase": "test",
+  "config": {
+    "start": 72,
+    "off": [
+      "R2",
+      "R3"
+    ]
+  },
+  "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+  "sourceFiles": {
+    "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+    "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+  },
+  "sourceCounts": {
+    "positive": 2198,
+    "negative": 2198
+  },
+  "motifs": {
+    "training": {
+      "n": 1400,
+      "gt": 1400,
+      "near": 1400
+    },
+    "dev": {
+      "n": 400,
+      "gt": 400,
+      "near": 400
+    },
+    "final": {
+      "n": 1100,
+      "gt": 1100,
+      "near": 1100
+    }
+  },
+  "split": {
+    "train": 1400,
+    "dev": 400,
+    "test": 1100,
+    "excludedConflictDNA": 0,
+    "excludedDuplicateDNA": 3,
+    "excludedFinal": {
+      "crossSplitIdentical": 0,
+      "duplicates": 0,
+      "conflictingTruth": 0
+    }
+  },
+  "nativeBrain": {
+    "learnedSymbols": 204400,
+    "mode": "original EmergentChain with original C/A organs",
+    "noSeparateLearnedClassifier": true,
+    "originalBrainUnchanged": true,
+    "labelAtInference": false
+  },
+  "measured": {
+    "n": 1100,
+    "correct": 871,
+    "accuracy": 0.7918181818181819,
+    "macroF1": 0.7876009190750226,
+    "balancedAccuracy": 0.7918181818181818,
+    "perClass": [
+      {
+        "label": "P",
+        "support": 550,
+        "recall": 0.9327272727272727,
+        "precision": 0.7276595744680852,
+        "f1": 0.8175298804780876
+      },
+      {
+        "label": "N",
+        "support": 550,
+        "recall": 0.6509090909090909,
+        "precision": 0.9063291139240506,
+        "f1": 0.7576719576719577
+      }
+    ],
+    "confusion": {
+      "P": {
+        "P": 513,
+        "N": 37
+      },
+      "N": {
+        "P": 192,
+        "N": 358
+      }
+    }
+  },
+  "baselines": {
+    "majority": {
+      "accuracy": 0.5,
+      "macroF1": 0.3333333333333333
+    },
+    "coreGTOnly": {
+      "accuracy": 0.5,
+      "macroF1": 0.3333333333333333
+    }
+  },
+  "comparedWithAlphaGenome2": false,
+  "outcomeStatus": "MEASURED_NOT_AG2_COMPARISON",
+  "provenance": {
+    "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44613600273",
+    "job": 135876267569,
+    "selectionFreeze": "research/genome-native-brain-20261119/hs3d/FROZEN_SELECTION_BEFORE_OFFICIAL_TEST.md",
+    "fullPredictions": "GitHub Actions artifact attached to run",
+    "interpretation": "TRUE_FALSE_GT_MOTIF_EVIDENCE; NOT_LONG_RANGE_OR_AG2"
+  }
+}
