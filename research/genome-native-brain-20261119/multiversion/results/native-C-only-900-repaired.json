@@ -1,0 +1,108 @@
+{
+  "status": "EXECUTED_ON_REAL_DNA_NATIVE_ORGANISM",
+  "scientificClaim": "HYPOTHESIS_TEST_ONLY_NOT_AG2_COMPARISON",
+  "mode": "v42-c-only",
+  "phase": "dev",
+  "originalBrainFile": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+  "builtInReadout": "chain",
+  "nativeRules": {
+    "depth": 0,
+    "seeker": "C",
+    "budEvery": 400,
+    "maxWires": 16
+  },
+  "nativeCcap": 4,
+  "rawDatasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+  "trainingRows": 900,
+  "trainingSymbols": 59400,
+  "availableTrain": 2408,
+  "availableOriginalTest": 597,
+  "devRows": 400,
+  "availableFinal": 702,
+  "usedTrainingGroups": 513,
+  "finalGroups": 661,
+  "excludedCrossDuplicates": 48,
+  "usedLabels": {
+    "EI": 212,
+    "IE": 215,
+    "N": 473
+  },
+  "testLabels": {
+    "EI": 99,
+    "IE": 67,
+    "N": 234
+  },
+  "observed": {
+    "n": 400,
+    "correct": 313,
+    "accuracy": 0.7825,
+    "macroF1": 0.7676393824797235,
+    "balancedAccuracy": 0.818589646947856,
+    "invalidReadout": 0,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 99,
+        "recall": 0.9595959595959596,
+        "precision": 0.6168831168831169,
+        "f1": 0.7509881422924901
+      },
+      {
+        "label": "IE",
+        "support": 67,
+        "recall": 0.7910447761194029,
+        "precision": 0.6794871794871795,
+        "f1": 0.7310344827586207
+      },
+      {
+        "label": "N",
+        "support": 234,
+        "recall": 0.7051282051282052,
+        "precision": 0.9821428571428571,
+        "f1": 0.8208955223880597
+      }
+    ],
+    "confusion": [
+      [
+        95,
+        1,
+        3,
+        0
+      ],
+      [
+        14,
+        53,
+        0,
+        0
+      ],
+      [
+        45,
+        24,
+        165,
+        0
+      ]
+    ]
+  },
+  "controls": {
+    "majority": {
+      "accuracy": 0.585,
+      "macroF1": 0.24605678233438485
+    },
+    "fixedGTAG": {
+      "accuracy": 0.88,
+      "macroF1": 0.8484759551658261
+    }
+  },
+  "provenance": {
+    "originalBrainUnchanged": true,
+    "trainedOnActualUCI": true,
+    "testAnswerGivenToOriginalBrain": false,
+    "noSeparateTrainedClassifier": true,
+    "evalWithinHistoricalUCI": true,
+    "fullOriginalBraivourGGUFTest": false,
+    "alphagenome2Compared": false
+  },
+  "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44604312971",
+  "jobId": 135843782378,
+  "interpretation": "ONE_LINE_VISUALIZER_COMPATIBILITY_FIXED; C_ONLY_EQUALS_400_DEV_BASELINE_AGGREGATE"
+}
