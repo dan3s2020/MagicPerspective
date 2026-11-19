@@ -1,0 +1,40 @@
+name: SHA256 real causal target-action V42 Brain test
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ACTIVE-INTERVENTION-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_causal_target_actions.mjs
+      - .github/workflows/sha256-causal-target-actions.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-native-causal-target-actions
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original V42 Brain and sensor syntax
+        run: |
+          node --check research/sha256-labyrinth-20261119/native_sha256_causal_target_actions.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+      - name: Real native causal motor training and hidden digest-only evaluation
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '32'
+          NATIVE_SHA_ACTIVE_COUNT: '32'
+          NATIVE_SHA_ACTIVE_BUDGET: '32'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_causal_target_actions.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-causal-target-action-traces
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
