@@ -1,0 +1,54 @@
+name: HS3D original Brain single-action credit causal experiment
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-ACTIONS-20261119
+    paths:
+      - .github/workflows/hs3d-native-bandit-credit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-bandit-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [R2R3-bandit-topology, R2R3-allviews-topology]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout only original pinned HS3D TRAIN (never official Test)
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Syntax and experimental freeze
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/hs3d/native-actions/run-bandit-credit.mjs
+          test -f research/genome-native-brain-20261119/hs3d/native-actions/BANDIT_CREDIT_PRETEST.md
+      - name: Live true HS3D donor observations in same Brain, reward native chosen action only
+        shell: bash
+        env:
+          HS3D_NATIVE_ACTIONS_RESULT_FILE: /tmp/hs3d-native-bandit-raw.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/native-actions/run-bandit-credit.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-native-bandit-results.log
+      - name: Keep complete real native policy and confusion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-HS3D-Bandit-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-native-bandit-raw.json
+            /tmp/hs3d-native-bandit-results.log
+          if-no-files-found: warn
