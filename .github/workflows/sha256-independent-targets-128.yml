@@ -1,0 +1,40 @@
+name: SHA256 native body policies 128 independently shuffled targets
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ACTIVE-INTERVENTION-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_body_coupled_randomized.mjs
+      - .github/workflows/sha256-independent-targets-128.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-independent-targets-128
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact native Brain and independent target randomization
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          node --check research/sha256-labyrinth-20261119/native_sha256_body_coupled_randomized.mjs
+      - name: Frozen 128-target test, identical per-method SHA-world budgets
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '128'
+          NATIVE_SHA_ACTIVE_COUNT: '128'
+          NATIVE_SHA_ACTIVE_BUDGET: '64'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_body_coupled_randomized.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-SHA256-128-independent-targets
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
