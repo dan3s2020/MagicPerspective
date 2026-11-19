@@ -26,7 +26,12 @@
 ### Diagnostic suplimentar
 - `research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs` compară un context original de 4 cu un context mărit în condiții identice, plus recall pe train pentru a testa dacă Brain poate folosi chiar exemplele cunoscute.
 - [Run 44629718737](https://github.com/dan3s2020/MagicPerspective/actions/runs/44629718737): la context 4, **1/8 recall train**, 1 singur candidat distinct pe train și blind, **0/32 blind**, 32/32 full map. Context 32 **anulat intenționat** (generatorul `candidates(maxLag)` din sursa originală are complexitate exponențială `2^maxLag`; nu este un test economic sau legitim pentru hardware-ul utilizatorului).
-- Comparația sigură context 4/8 este în [workflow 44630176327](https://github.com/dan3s2020/MagicPerspective/actions/runs/44630176327); **nu raporta niciun scor pentru context 8 fără a citi logul încheiat și artifact-ul**.
+- Comparația sigură context 4/8 este în [workflow 44630176327](https://github.com/dan3s2020/MagicPerspective/actions/runs/44630176327); **ambele joburi SUCCESS, loguri și artifacte verificate**:
+  - context 4: 1/8 recall pentru exemple văzute; **un singur candidat «5c»** pentru toate cele 8 hash-uri train și 32 hash-uri blind, 0/32 blind, 32/32 cu harta completă, 0/32 dacă mappingul motor este schimbat.
+  - context 8: **exact aceleași rezultate**: 1/8 train, doar «5c» pentru toate cele 40 de hash-uri evaluate, 0/32 blind, 32/32 cu harta completă, 0/32 control motor.
+  - sursa reală: [GitHub run 44630176327](https://github.com/dan3s2020/MagicPerspective/actions/runs/44630176327), artifacte \`original-v42-context-4\` (ID 14582315073) și \`original-v42-context-8\` (ID 14581831356); ambele Node 22 CI au ieșit 0.
+  - context 8 a fost semnificativ mai lent (aprox. patru minute de training, față de câteva secunde pentru context 4) fără îmbunătățire. Contextul 32, exponențial neeconomic, a fost anulat. Workflowul ulterior a fost redus la verificarea sintaxei pentru a nu consuma execuții suplimentare.
+  - **VERDICT CAUZAL:** lungimea contextului 4 vs 8 NU a rezolvat blocajul. Organismul reproduce exemplul de training «5c», dar nu învață o regulă care să transfere hash→preimagine pe mesaje noi. Un nou hiperparametru nu substituie fizica invizibilă a lui SHA-256.
 
 ## 3. Concluzie fără confuzii
 **Confirmat:** Braivour/MagicPerspective original Brain V42 rulează efectiv, trăiește runde SHA-256 prin `Brain.live`, învață corpul/motoarele prin propriul `Discoverer.learnStep`, transferă motorul la lumi noi cu hartă completă și are un test blind reproductibil.
