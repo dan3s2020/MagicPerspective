@@ -1,0 +1,55 @@
+name: HS3D genuine original Brain native perspective policy real DNA
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PERSPECTIVE-ACTIONS-20261119
+    paths:
+      - .github/workflows/hs3d-native-original-perspective-actions.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-view-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [R3-native-path, R2R3-native-path]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout ONLY upstream HS3D donor TRAIN at pinned SHA
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Syntax and frozen scientific protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/hs3d/native-actions/run.mjs
+          test -f research/genome-native-brain-20261119/hs3d/native-actions/PRETEST.md
+          sha256sum comparison-checkouts/hs3d/ENSdatasets/hs3d_bal/Train/Donor_Train_*.txt
+      - name: Train original Brain, calibrate its original constructed paths, freeze and score
+        shell: bash
+        env:
+          HS3D_NATIVE_ACTIONS_RESULT_FILE: /tmp/hs3d-native-policy-raw.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/native-actions/run.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-native-policy.log
+      - name: Preserve learned original-Brain policy and actual predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HS3D-native-perspective-policy-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-native-policy-raw.json
+            /tmp/hs3d-native-policy.log
+          if-no-files-found: warn
