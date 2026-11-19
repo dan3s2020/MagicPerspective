@@ -1,0 +1,39 @@
+name: SHA256 original Brain 128 blind target falsification
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ACTIVE-INTERVENTION-20261120
+    paths:
+      - .github/workflows/sha256-body-coupled-128.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-native-body-coupled-128
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact original Brain and causal action source
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          node --check research/sha256-labyrinth-20261119/native_sha256_body_coupled_policies.mjs
+      - name: Real 64-round SHA256, 128 hidden targets, 64 world queries per policy and target
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '128'
+          NATIVE_SHA_ACTIVE_COUNT: '128'
+          NATIVE_SHA_ACTIVE_BUDGET: '64'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_body_coupled_policies.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: original-v42-128target-shuffled-causal-test
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
