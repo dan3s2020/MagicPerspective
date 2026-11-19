@@ -1,0 +1,42 @@
+name: SHA256 original native active intervention test
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ACTIVE-INTERVENTION-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_active_interventions.mjs
+      - .github/workflows/sha256-original-active-intervention.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-original-active
+  cancel-in-progress: true
+jobs:
+  active:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check unchanged original Brain and new world syntax
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/worlds/exercise.mjs
+          node --check research/sha256-labyrinth-20261119/native_sha256_active_interventions.mjs
+      - name: Native active SHA world, 8 hidden targets, 32 exact SHA evaluations per task
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '32'
+          NATIVE_SHA_ACTIVE_COUNT: '8'
+          NATIVE_SHA_ACTIVE_BUDGET: '32'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_active_interventions.mjs
+      - name: Upload actual JSON without invented scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHA256-original-active-8targets
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
