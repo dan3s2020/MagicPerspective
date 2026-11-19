@@ -1,0 +1,872 @@
+{
+  "experiment": "Original V42 Brain native R3 x A organ interaction test",
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44604897189",
+  "n": 400,
+  "train": 900,
+  "phase": "EXPLORATORY_DEVELOPMENT",
+  "dataset_sha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+  "pretestProtocol": "R3_MASKED_ORGANS_PRETEST.md",
+  "noNewUntouchedValidation": true,
+  "results": [
+    {
+      "mode": "r3off-no-resistance",
+      "job_id": 135845851162,
+      "status": "SUCCESS",
+      "accuracy": 0.8725,
+      "macroF1": 0.8410583881137299,
+      "balancedAccuracy": 0.873756702114911,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          27,
+          199,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.654320987654321,
+          "f1": 0.7162162162162162
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8504273504273504,
+          "precision": 0.995,
+          "f1": 0.9170506912442397
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3",
+          "R2"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-depth4",
+      "job_id": 135845850807,
+      "status": "SUCCESS",
+      "accuracy": 0.87,
+      "macroF1": 0.838622435477855,
+      "balancedAccuracy": 0.8723322006904096,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          28,
+          198,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6463414634146342,
+          "f1": 0.7114093959731543
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8461538461538461,
+          "precision": 0.9949748743718593,
+          "f1": 0.9145496535796767
+        }
+      ],
+      "config": {
+        "depth": 4,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-baseline",
+      "job_id": 135845851121,
+      "status": "SUCCESS",
+      "accuracy": 0.8675,
+      "macroF1": 0.8362039868614793,
+      "balancedAccuracy": 0.8709076992659082,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          29,
+          197,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6385542168674698,
+          "f1": 0.7066666666666667
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8418803418803419,
+          "precision": 0.9949494949494949,
+          "f1": 0.9120370370370371
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-deepweight",
+      "job_id": 135845851132,
+      "status": "SUCCESS",
+      "accuracy": 0.8675,
+      "macroF1": 0.8362039868614793,
+      "balancedAccuracy": 0.8709076992659082,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          29,
+          197,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6385542168674698,
+          "f1": 0.7066666666666667
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8418803418803419,
+          "precision": 0.9949494949494949,
+          "f1": 0.9120370370370371
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "weigh": "deep",
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-depth1",
+      "job_id": 135845850929,
+      "status": "SUCCESS",
+      "accuracy": 0.855,
+      "macroF1": 0.8243588828367524,
+      "balancedAccuracy": 0.8637851921434011,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          53,
+          0,
+          0
+        ],
+        [
+          8,
+          34,
+          192,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7910447761194029,
+          "precision": 0.6022727272727273,
+          "f1": 0.6838709677419355
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8205128205128205,
+          "precision": 0.9948186528497409,
+          "f1": 0.8992974238875878
+        }
+      ],
+      "config": {
+        "depth": 1,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-concept",
+      "job_id": 135845851059,
+      "status": "SUCCESS",
+      "accuracy": 0.86,
+      "macroF1": 0.8226142835868862,
+      "balancedAccuracy": 0.8488810802243637,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          48,
+          5,
+          0
+        ],
+        [
+          8,
+          27,
+          199,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7164179104477612,
+          "precision": 0.631578947368421,
+          "f1": 0.6713286713286714
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8504273504273504,
+          "precision": 0.9707317073170731,
+          "f1": 0.9066059225512528
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "concept",
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-precedent",
+      "job_id": 135845851091,
+      "status": "SUCCESS",
+      "accuracy": 0.86,
+      "macroF1": 0.8226142835868862,
+      "balancedAccuracy": 0.8488810802243637,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          48,
+          5,
+          0
+        ],
+        [
+          8,
+          27,
+          199,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7164179104477612,
+          "precision": 0.631578947368421,
+          "f1": 0.6713286713286714
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8504273504273504,
+          "precision": 0.9707317073170731,
+          "f1": 0.9066059225512528
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "weigh": "precedent",
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-event",
+      "job_id": 135845851402,
+      "status": "SUCCESS",
+      "accuracy": 0.86,
+      "macroF1": 0.8226142835868862,
+      "balancedAccuracy": 0.8488810802243637,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          48,
+          5,
+          0
+        ],
+        [
+          8,
+          27,
+          199,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7164179104477612,
+          "precision": 0.631578947368421,
+          "f1": 0.6713286713286714
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8504273504273504,
+          "precision": 0.9707317073170731,
+          "f1": 0.9066059225512528
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "event",
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-blend",
+      "job_id": 135845850849,
+      "status": "SUCCESS",
+      "accuracy": 0.8575,
+      "macroF1": 0.8202281708628322,
+      "balancedAccuracy": 0.8474565787998624,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          48,
+          5,
+          0
+        ],
+        [
+          8,
+          28,
+          198,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7164179104477612,
+          "precision": 0.6233766233766234,
+          "f1": 0.6666666666666666
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8461538461538461,
+          "precision": 0.9705882352941176,
+          "f1": 0.9041095890410958
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "blend",
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-log",
+      "job_id": 135845850956,
+      "status": "SUCCESS",
+      "accuracy": 0.8575,
+      "macroF1": 0.8202281708628322,
+      "balancedAccuracy": 0.8474565787998624,
+      "confusion": [
+        [
+          97,
+          1,
+          1,
+          0
+        ],
+        [
+          14,
+          48,
+          5,
+          0
+        ],
+        [
+          8,
+          28,
+          198,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9797979797979798,
+          "precision": 0.8151260504201681,
+          "f1": 0.8899082568807339
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7164179104477612,
+          "precision": 0.6233766233766234,
+          "f1": 0.6666666666666666
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.8461538461538461,
+          "precision": 0.9705882352941176,
+          "f1": 0.9041095890410958
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "fold": "log",
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-no-bud",
+      "job_id": 135845850925,
+      "status": "SUCCESS",
+      "accuracy": 0.835,
+      "macroF1": 0.8049523575839365,
+      "balancedAccuracy": 0.8375179270701659,
+      "confusion": [
+        [
+          93,
+          1,
+          5,
+          0
+        ],
+        [
+          16,
+          51,
+          0,
+          0
+        ],
+        [
+          20,
+          24,
+          190,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9393939393939394,
+          "precision": 0.7209302325581395,
+          "f1": 0.8157894736842105
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.7611940298507462,
+          "precision": 0.6710526315789473,
+          "f1": 0.7132867132867133
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.811965811965812,
+          "precision": 0.9743589743589743,
+          "f1": 0.8857808857808858
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3",
+          "R5"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    },
+    {
+      "mode": "r3off-c3",
+      "job_id": 135845851500,
+      "status": "SUCCESS",
+      "accuracy": 0.73,
+      "macroF1": 0.6377934327936775,
+      "balancedAccuracy": 0.6698964385531548,
+      "confusion": [
+        [
+          96,
+          2,
+          1,
+          0
+        ],
+        [
+          27,
+          19,
+          21,
+          0
+        ],
+        [
+          22,
+          35,
+          177,
+          0
+        ]
+      ],
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "recall": 0.9696969696969697,
+          "precision": 0.6620689655172414,
+          "f1": 0.7868852459016393
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "recall": 0.2835820895522388,
+          "precision": 0.3392857142857143,
+          "f1": 0.3089430894308943
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "recall": 0.7564102564102564,
+          "precision": 0.8894472361809045,
+          "f1": 0.8175519630484989
+        }
+      ],
+      "config": {
+        "depth": 2,
+        "seeker": "C",
+        "budEvery": 400,
+        "maxWires": 16,
+        "off": [
+          "R3"
+        ]
+      },
+      "source": "<workspace>/v17/transcend/torus-aether/devour/brain.mjs",
+      "controls": {
+        "majority": {
+          "accuracy": 0.585,
+          "macroF1": 0.24605678233438485
+        },
+        "fixedGTAG": {
+          "accuracy": 0.88,
+          "macroF1": 0.8484759551658261
+        }
+      }
+    }
+  ]
+}
