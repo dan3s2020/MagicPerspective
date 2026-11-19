@@ -1,0 +1,41 @@
+{
+  "schema": "magicperspective.user-intent.change-contract.v1",
+  "regression_guard": "MP-REG-2026-11-06-001",
+  "contract_id": "AG2-20261119-MULTIVERSION-NATIVE-COMPARISON",
+  "mode": "DIRECT_IMPLEMENTATION",
+  "source": {
+    "path": "verbatim/2026-11-19-USER-MULTIVERSION-GENOME-REQUEST.md",
+    "exact_user_quote": "IA CONTINUA SA TESTEZI CU TOATE METODELE DE PRIN BRAIVOUR SI MAGIC PERSPECTIVE,UNELE VERSIUNI POSIBIL SA FIE CHIAR MAI BUNE"
+  },
+  "original_baseline": {
+    "source_path": "v17/transcend/torus-aether/devour/brain.mjs",
+    "algorithm": "Native V42 Brain.live(), Brain.predict(), EmergentChain, LeanC and AligningGraph with original V43 / 3SAT Brain branch checkouts",
+    "reuse_without_substitution": true,
+    "preserve_user_definitions": true
+  },
+  "changed_code_paths": [
+    "research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs",
+    "research/genome-native-brain-20261119/multiversion/PRETEST_CONTRACT.md",
+    ".github/workflows/alphagenome2-native-version-matrix.yml",
+    "research/genome-native-brain-20261119/multiversion/RESULTS.md",
+    "verbatim/2026-11-19-USER-MULTIVERSION-GENOME-REQUEST.md",
+    "user-intent/changes/AG2-20261119-MULTIVERSION-NATIVE-COMPARISON.json"
+  ],
+  "added_mechanisms": [
+    "Comparative native-organism empirical protocol using real version-specific Brain code and original built-in organs; no new learned classifier"
+  ],
+  "additional_user_authorization_quote": "IA CONTINUA SA TESTEZI CU TOATE METODELE DE PRIN BRAIVOUR SI MAGIC PERSPECTIVE,UNELE VERSIUNI POSIBIL SA FIE CHIAR MAI BUNE",
+  "authorize_original_algorithm_replacement_quote": null,
+  "acceptance_tests": [
+    "node research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs /path/to/splice.data v42-c4 --phase=dev"
+  ],
+  "actual_observed_results": "PENDING — no multiversion tests executed as of contract creation",
+  "limitations": [
+    "Not every historical version maps to blind DNA classification",
+    "Braivour V43 requires genuine GGUF donor, not a toy source",
+    "UCI task not directly comparable with AlphaGenome 2",
+    "Unknown independent species or homology leakage, small original dataset"
+  ],
+  "verification_status": "NOT_VERIFIED",
+  "full_verbatim_gate": "BLOCKED"
+}
