@@ -107,3 +107,9 @@ This experiment's real sequence dependence and native perspective gain are docum
 - [Rezumat complet în limba română: rezultate, importanță, mai mult antrenament](./REZUMAT_RO_IMPORTANTA_SI_ANTRENARE.md)
 
 **Training scale status:** only the 900-example run was actually executed. Additional amounts (up to 2,408 train-eligible records in this split), larger contexts and endogenous perspective selection are proposals without measured outcomes. More training is not predicted to beat a motif baseline or AlphaGenome 2.
+
+## Addendum — real original-native comparison across versions and A organs (2026-11-19)
+
+The original 900/197 experiment above remains historically correct. A separate, isolated [expanded research comparison](./multiversion/RESULTS.md) now records 39 real native runs/attempts (including baseline repetitions and one repaired compatibility failure), including actual V43 branch Brain code, R3/R2 ablations, 300→2,408 unique-example learning-volume curves, and a new 702-record severe-class-shift stress test.
+
+**Critical new limit:** after 2,408 training records, V42 R3-off produced **identical predictions to the simple GT/AG motif rule on all 400 development records**, and its classification remained unchanged on **all 400** after shuffling only the other 56 nucleotides while fixing the central 4. More training reproduced an already-known local biological rule; neither long-range DNA interpretation nor AlphaGenome 2 competitiveness was established. See [complete negative and positive evidence](./multiversion/RESULTS.md).
