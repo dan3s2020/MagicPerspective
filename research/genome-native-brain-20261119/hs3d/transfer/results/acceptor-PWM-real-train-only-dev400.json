@@ -1,0 +1,198 @@
+{
+  "status": "EXECUTED_EXTERNAL_BASELINES_NOT_PART_OF_NATIVE_ORGANISM",
+  "phase": "dev",
+  "source": "OluwadareLab EnsembleSplice HS3D balanced ACCEPTOR human 140nt",
+  "datasetCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+  "nTrain": 1200,
+  "nDev": 400,
+  "nTest": null,
+  "excluded": null,
+  "centralAG": {
+    "train": 1200,
+    "eval": 400
+  },
+  "baselines": {
+    "centralAG": {
+      "positions": [
+        68,
+        70
+      ],
+      "n": 400,
+      "accuracy": 0.5,
+      "confusion": {
+        "P": {
+          "P": 200,
+          "N": 0
+        },
+        "N": {
+          "P": 200,
+          "N": 0
+        }
+      },
+      "macroF1": 0.3333333333333333,
+      "balancedAccuracy": 0.5,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.5,
+          "recall": 1,
+          "f1": 0.6666666666666666
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        }
+      ]
+    },
+    "sameNativeDownstream4": {
+      "positions": [
+        70,
+        74
+      ],
+      "n": 400,
+      "accuracy": 0.6225,
+      "confusion": {
+        "P": {
+          "P": 138,
+          "N": 62
+        },
+        "N": {
+          "P": 89,
+          "N": 111
+        }
+      },
+      "macroF1": 0.6207721430768941,
+      "balancedAccuracy": 0.6225,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.6079295154185022,
+          "recall": 0.69,
+          "f1": 0.6463700234192038
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.6416184971098265,
+          "recall": 0.555,
+          "f1": 0.5951742627345844
+        }
+      ]
+    },
+    "upstream4": {
+      "positions": [
+        64,
+        68
+      ],
+      "n": 400,
+      "accuracy": 0.7925,
+      "confusion": {
+        "P": {
+          "P": 171,
+          "N": 29
+        },
+        "N": {
+          "P": 54,
+          "N": 146
+        }
+      },
+      "macroF1": 0.7916862745098039,
+      "balancedAccuracy": 0.7925,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.76,
+          "recall": 0.855,
+          "f1": 0.8047058823529412
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.8342857142857143,
+          "recall": 0.73,
+          "f1": 0.7786666666666666
+        }
+      ]
+    },
+    "local20": {
+      "positions": [
+        58,
+        78
+      ],
+      "n": 400,
+      "accuracy": 0.89,
+      "confusion": {
+        "P": {
+          "P": 184,
+          "N": 16
+        },
+        "N": {
+          "P": 28,
+          "N": 172
+        }
+      },
+      "macroF1": 0.8899009108197378,
+      "balancedAccuracy": 0.89,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.8679245283018868,
+          "recall": 0.92,
+          "f1": 0.8932038834951457
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.9148936170212766,
+          "recall": 0.86,
+          "f1": 0.8865979381443299
+        }
+      ]
+    },
+    "entire140": {
+      "positions": [
+        0,
+        140
+      ],
+      "n": 400,
+      "accuracy": 0.845,
+      "confusion": {
+        "P": {
+          "P": 182,
+          "N": 18
+        },
+        "N": {
+          "P": 44,
+          "N": 156
+        }
+      },
+      "macroF1": 0.8443423464135975,
+      "balancedAccuracy": 0.845,
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.8053097345132744,
+          "recall": 0.91,
+          "f1": 0.8544600938967136
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.896551724137931,
+          "recall": 0.78,
+          "f1": 0.8342245989304813
+        }
+      ]
+    }
+  },
+  "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44621663555",
+  "researchPurpose": "Independent simple statistical reference ONLY, not inserted into the native organism"
+}
