@@ -5,6 +5,7 @@ on:
       - research/HS3D-ACCEPTOR-BUDGETED-NATIVE-ACTIONS-20261119
     paths:
       - .github/workflows/hs3d-original-native-budgeted-acceptor-actions.yml
+      - research/genome-native-brain-20261119/hs3d/budgeted-native-actions/run.mjs
   workflow_dispatch:
 permissions:
   contents: read
