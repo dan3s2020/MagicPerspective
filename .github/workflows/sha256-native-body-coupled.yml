@@ -1,0 +1,41 @@
+name: SHA256 original Brain coupled body-action policies
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ACTIVE-INTERVENTION-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_body_coupled_policies.mjs
+      - .github/workflows/sha256-native-body-coupled.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-native-body-coupled
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check and original unmodified source
+        run: |
+          node --check research/sha256-labyrinth-20261119/native_sha256_body_coupled_policies.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/worlds/exercise.mjs
+      - name: Original Brain and Discoverer coupled target-conditioned physical SHA actions
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '32'
+          NATIVE_SHA_ACTIVE_COUNT: '32'
+          NATIVE_SHA_ACTIVE_BUDGET: '32'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_body_coupled_policies.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: SHA256-original-brain-body-coupled-results
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
