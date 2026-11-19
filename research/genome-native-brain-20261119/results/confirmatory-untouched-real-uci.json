@@ -1,0 +1,266 @@
+{
+  "status": "EXECUTED_NATIVE_BRAIN_ONLY",
+  "evaluationPhase": "PRE_REGISTERED_FINAL_UNTOUCHED_197",
+  "experiment": "2026-11-19-AG2-CONFIRMATORY-native-perception-window",
+  "source": "UCI Molecular Biology Splice-Junction Gene Sequences (1991), 3190 sequences",
+  "rawDatasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+  "scope": "3-class 60nt splice-junction detection; NOT AlphaGenome 2 direct benchmark",
+  "originalCode": "v17/transcend/torus-aether/devour/brain.mjs:Brain.live/Brain.predict",
+  "replacedOriginalMethod": false,
+  "frozenTest": true,
+  "testLabelSeenAtInference": false,
+  "trainLimit": 900,
+  "testLimit": 400,
+  "samples": {
+    "raw": 3190,
+    "availableTrain": 2408,
+    "availableTest": 597,
+    "train": 900,
+    "test": 197,
+    "excludedCrossSplit": 48,
+    "trainGenes": 1174,
+    "testGenes": 299,
+    "trainLabels": {
+      "EI": 212,
+      "IE": 215,
+      "N": 473
+    },
+    "testLabels": {
+      "EI": 35,
+      "IE": 58,
+      "N": 104
+    }
+  },
+  "nativeBrainLearning": {
+    "trainingExercises": 900,
+    "livedSymbols": 59400
+  },
+  "untrainedNativeBrain": {
+    "n": 197,
+    "accuracy": 0.17766497461928935,
+    "macroF1": 0.10057471264367816,
+    "balancedAccuracy": 0.3333333333333333,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 35,
+        "f1": 0.3017241379310345,
+        "recall": 1
+      },
+      {
+        "label": "IE",
+        "support": 58,
+        "f1": 0,
+        "recall": 0
+      },
+      {
+        "label": "N",
+        "support": 104,
+        "f1": 0,
+        "recall": 0
+      }
+    ],
+    "confusion": [
+      [
+        35,
+        0,
+        0
+      ],
+      [
+        58,
+        0,
+        0
+      ],
+      [
+        104,
+        0,
+        0
+      ]
+    ]
+  },
+  "trainedNativeBrain": {
+    "n": 197,
+    "accuracy": 0.7766497461928934,
+    "macroF1": 0.7696728558797524,
+    "balancedAccuracy": 0.8323196918024504,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 35,
+        "f1": 0.6538461538461539,
+        "recall": 0.9714285714285714
+      },
+      {
+        "label": "IE",
+        "support": 58,
+        "f1": 0.8620689655172413,
+        "recall": 0.8620689655172413
+      },
+      {
+        "label": "N",
+        "support": 104,
+        "f1": 0.7931034482758621,
+        "recall": 0.6634615384615384
+      }
+    ],
+    "confusion": [
+      [
+        34,
+        0,
+        1
+      ],
+      [
+        8,
+        50,
+        0
+      ],
+      [
+        27,
+        8,
+        69
+      ]
+    ]
+  },
+  "shuffledCentralDNAControl": {
+    "n": 197,
+    "accuracy": 0.4213197969543147,
+    "macroF1": 0.29647313470842884,
+    "balancedAccuracy": 0.3305197675887331,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 35,
+        "f1": 0.20454545454545456,
+        "recall": 0.2571428571428571
+      },
+      {
+        "label": "IE",
+        "support": 58,
+        "f1": 0.08823529411764706,
+        "recall": 0.05172413793103448
+      },
+      {
+        "label": "N",
+        "support": 104,
+        "f1": 0.5966386554621849,
+        "recall": 0.6826923076923077
+      }
+    ],
+    "confusion": [
+      [
+        9,
+        2,
+        24
+      ],
+      [
+        16,
+        3,
+        39
+      ],
+      [
+        28,
+        5,
+        71
+      ]
+    ]
+  },
+  "baselines": {
+    "majority": {
+      "n": 197,
+      "accuracy": 0.5279187817258884,
+      "macroF1": 0.23034330011074197,
+      "balancedAccuracy": 0.3333333333333333,
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 35,
+          "f1": 0,
+          "recall": 0
+        },
+        {
+          "label": "IE",
+          "support": 58,
+          "f1": 0,
+          "recall": 0
+        },
+        {
+          "label": "N",
+          "support": 104,
+          "f1": 0.6910299003322259,
+          "recall": 1
+        }
+      ],
+      "confusion": [
+        [
+          0,
+          0,
+          35
+        ],
+        [
+          0,
+          0,
+          58
+        ],
+        [
+          0,
+          0,
+          104
+        ]
+      ]
+    },
+    "canonicalMotif": {
+      "n": 197,
+      "accuracy": 0.8883248730964467,
+      "macroF1": 0.874412450132322,
+      "balancedAccuracy": 0.9091511936339524,
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 35,
+          "f1": 0.8333333333333334,
+          "recall": 1
+        },
+        {
+          "label": "IE",
+          "support": 58,
+          "f1": 0.8620689655172413,
+          "recall": 0.8620689655172413
+        },
+        {
+          "label": "N",
+          "support": 104,
+          "f1": 0.9278350515463918,
+          "recall": 0.8653846153846154
+        }
+      ],
+      "confusion": [
+        [
+          35,
+          0,
+          0
+        ],
+        [
+          8,
+          50,
+          0
+        ],
+        [
+          6,
+          8,
+          90
+        ]
+      ]
+    }
+  },
+  "beatsMajority": true,
+  "beatsCanonicalMotif": false,
+  "beatsAlphaGenome2": "NOT_EVALUATED — AG2 predictions and shared target benchmark absent",
+  "provenance": {
+    "github_run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44536477353",
+    "job_id": 135603132880,
+    "actual_ci_status": "success",
+    "protocol": "research/genome-native-brain-20261119/CONFIRMATORY_PROTOCOL.md",
+    "protocol_commit": "9371970a9ee0d5905fdb3af2652bb1e1e1687194",
+    "interpretation": "PRE_REGISTERED_197_NEVER_USED_FOR_DEV; NATIVE_GENOMIC_SIGNAL_PRESENT; BELOW_CANONICAL_MOTIF; AG2_NOT_EVALUATED"
+  }
+}
