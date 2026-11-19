@@ -1,0 +1,51 @@
+name: AG2 real-DNA native original Brain learning volume curve
+on:
+  push:
+    branches:
+      - research/AG2-NATIVE-VERSION-COMPARISON-20261119
+    paths:
+      - .github/workflows/alphagenome2-native-data-scaling.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-sequence-scaling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        mode: [v42-c4, v42-no-trust]
+        amount: [300, 900, 1500, 2408]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check native dose-response test
+        run: node --check research/genome-native-brain-20261119/multiversion/compare-training-scale.mjs
+      - name: Retrieve original genuine DNA data
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Learn authentic DNA in original Brain with frozen test protocol
+        env:
+          GENOME_TRAIN_LIMIT: ${{ matrix.amount }}
+          GENOME_RESULT_PATH: /tmp/native-scaling-result.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/multiversion/compare-training-scale.mjs /tmp/uci-splice.data '${{ matrix.mode }}' --phase=dev | tee /tmp/native-scaling-results.log
+      - name: Save exact results and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-scaling-${{ matrix.mode }}-N${{ matrix.amount }}
+          path: |
+            /tmp/native-scaling-result.json
+            /tmp/native-scaling-results.log
+          if-no-files-found: warn
