@@ -1,0 +1,264 @@
+{
+  "status": "EXECUTED_NATIVE_BRAIN_ONLY",
+  "experiment": "2026-11-19-AG2-genomics-native-Brain-blind-splice",
+  "source": "UCI Molecular Biology Splice-Junction Gene Sequences (1991), 3190 sequences",
+  "rawDatasetSha256": "ebbae10c85d3c285e2a2489a37e42bc2ee8d91d15005e391a9962fa3389a114f",
+  "scope": "3-class 60nt splice-junction detection; NOT AlphaGenome 2 direct benchmark",
+  "originalCode": "v17/transcend/torus-aether/devour/brain.mjs:Brain.live/Brain.predict",
+  "replacedOriginalMethod": false,
+  "frozenTest": true,
+  "testLabelSeenAtInference": false,
+  "trainLimit": 900,
+  "testLimit": 400,
+  "samples": {
+    "raw": 3190,
+    "availableTrain": 2408,
+    "availableTest": 597,
+    "train": 900,
+    "test": 400,
+    "excludedCrossSplit": 48,
+    "trainGenes": 1174,
+    "testGenes": 299,
+    "trainLabels": {
+      "EI": 212,
+      "IE": 215,
+      "N": 473
+    },
+    "testLabels": {
+      "EI": 99,
+      "IE": 67,
+      "N": 234
+    }
+  },
+  "nativeBrainLearning": {
+    "trainingExercises": 900,
+    "livedSymbols": 64800
+  },
+  "untrainedNativeBrain": {
+    "n": 400,
+    "accuracy": 0.2475,
+    "macroF1": 0.13226452905811623,
+    "balancedAccuracy": 0.3333333333333333,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 99,
+        "f1": 0.3967935871743487,
+        "recall": 1
+      },
+      {
+        "label": "IE",
+        "support": 67,
+        "f1": 0,
+        "recall": 0
+      },
+      {
+        "label": "N",
+        "support": 234,
+        "f1": 0,
+        "recall": 0
+      }
+    ],
+    "confusion": [
+      [
+        99,
+        0,
+        0
+      ],
+      [
+        67,
+        0,
+        0
+      ],
+      [
+        234,
+        0,
+        0
+      ]
+    ]
+  },
+  "trainedNativeBrain": {
+    "n": 400,
+    "accuracy": 0.585,
+    "macroF1": 0.24605678233438485,
+    "balancedAccuracy": 0.3333333333333333,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 99,
+        "f1": 0,
+        "recall": 0
+      },
+      {
+        "label": "IE",
+        "support": 67,
+        "f1": 0,
+        "recall": 0
+      },
+      {
+        "label": "N",
+        "support": 234,
+        "f1": 0.7381703470031545,
+        "recall": 1
+      }
+    ],
+    "confusion": [
+      [
+        0,
+        0,
+        99
+      ],
+      [
+        0,
+        0,
+        67
+      ],
+      [
+        0,
+        0,
+        234
+      ]
+    ]
+  },
+  "shuffledCentralDNAControl": {
+    "n": 400,
+    "accuracy": 0.585,
+    "macroF1": 0.24605678233438485,
+    "balancedAccuracy": 0.3333333333333333,
+    "perClass": [
+      {
+        "label": "EI",
+        "support": 99,
+        "f1": 0,
+        "recall": 0
+      },
+      {
+        "label": "IE",
+        "support": 67,
+        "f1": 0,
+        "recall": 0
+      },
+      {
+        "label": "N",
+        "support": 234,
+        "f1": 0.7381703470031545,
+        "recall": 1
+      }
+    ],
+    "confusion": [
+      [
+        0,
+        0,
+        99
+      ],
+      [
+        0,
+        0,
+        67
+      ],
+      [
+        0,
+        0,
+        234
+      ]
+    ]
+  },
+  "baselines": {
+    "majority": {
+      "n": 400,
+      "accuracy": 0.585,
+      "macroF1": 0.24605678233438485,
+      "balancedAccuracy": 0.3333333333333333,
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "f1": 0,
+          "recall": 0
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "f1": 0,
+          "recall": 0
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "f1": 0.7381703470031545,
+          "recall": 1
+        }
+      ],
+      "confusion": [
+        [
+          0,
+          0,
+          99
+        ],
+        [
+          0,
+          0,
+          67
+        ],
+        [
+          0,
+          0,
+          234
+        ]
+      ]
+    },
+    "canonicalMotif": {
+      "n": 400,
+      "accuracy": 0.88,
+      "macroF1": 0.8484759551658261,
+      "balancedAccuracy": 0.8780302063884152,
+      "perClass": [
+        {
+          "label": "EI",
+          "support": 99,
+          "f1": 0.8899082568807339,
+          "recall": 0.9797979797979798
+        },
+        {
+          "label": "IE",
+          "support": 67,
+          "f1": 0.7310344827586207,
+          "recall": 0.7910447761194029
+        },
+        {
+          "label": "N",
+          "support": 234,
+          "f1": 0.9244851258581236,
+          "recall": 0.8632478632478633
+        }
+      ],
+      "confusion": [
+        [
+          97,
+          1,
+          1
+        ],
+        [
+          14,
+          53,
+          0
+        ],
+        [
+          8,
+          24,
+          202
+        ]
+      ]
+    }
+  },
+  "beatsMajority": false,
+  "beatsCanonicalMotif": false,
+  "beatsAlphaGenome2": "NOT_EVALUATED — AG2 predictions and shared target benchmark absent",
+  "provenance": {
+    "github_run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44534970860",
+    "commit": "39da93357da90181a958230f5e3d53f6a0fcf602",
+    "job_id": 135597847008,
+    "actual_ci_status": "success",
+    "interpretation": "NO_GENOMIC_CLASS_DISCRIMINATION; all 400 heldout predictions N; equals majority"
+  }
+}
