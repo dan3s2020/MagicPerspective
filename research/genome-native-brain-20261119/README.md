@@ -84,3 +84,16 @@ Additional research tested original native V42/V43 branch Brain implementations,
 - [Frozen 702-record UCI group-separated evaluation](./multiversion/results/frozen-R3-702-final.json)
 - [Original Brain versus GT/AG exact equivalence](./multiversion/results/native-motif-equivalence-2408.json)
 - [Native R3/A organ interactions](./multiversion/results/native-r3-12-organ-interactions.json)
+
+## Human HS3D 140-nt donor results and learned native viewpoint policy (19 Nov 2026)
+
+**New real biological task:** classify authentic human **true vs false donor sites, all with central GT** (unlike earlier UCI EI/IE/N motif recognition), using the original native V42 Brain only. Frozen original V42 `off:[R2,R3]` with 4nt downstream view achieved **79.18% accuracy / 78.76% macro-F1 on official 1,100 human HS3D Test records** after 1,400 training examples, versus 50% central-GT-only and **91.18% for a simple external 20nt PWM control**. The traditional PWM is *not* installed in the organism.
+
+A genuine original Brain-owned `ConstructedPathLearner.pathPolicy` was trained to select among twelve real four-base observations from historical outcome feedback. On a **different, exploratory 400 development subset**, its learned geometrical viewpoint policy achieved **80% accuracy (1,000 calibration rows)** or **81% (200 calibration rows)** versus 77% from the same Brain's fixed70 observation. The positions and distance-to-known-site feature were **provided**, not independently discovered. It is not an AlphaGenome 2 variant-impact prediction.
+
+- [Complete measured science report and limitations](./hs3d/RESULTS_20261119.md)
+- [Genuine native official HS3D 1,100 Test JSON](./hs3d/results/frozen-human-donor-1100-official-test.json)
+- [Native 12-position original Brain comparison](./hs3d/results/native-12-human-donor-dev.json)
+- [Original native learned perspective policy / negative initial result](./hs3d/native-actions/results/learned-native-perspective-2-modes.json)
+- [Original Brain policy bandit vs all-window feedback](./hs3d/native-actions/results/bandit-versus-allviews-topology-real.json)
+- [Native geometric topology vs data-amount causal ablation](./hs3d/native-actions/results/topology-vs-amount-factorial-real.json)
