@@ -1,0 +1,61 @@
+name: AG2 real DNA native R3 readback x A organ interactions
+on:
+  push:
+    branches:
+      - research/AG2-NATIVE-VERSION-COMPARISON-20261119
+    paths:
+      - .github/workflows/alphagenome2-native-r3-organ-interactions.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-r3-interaction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode:
+          - r3off-baseline
+          - r3off-depth1
+          - r3off-depth4
+          - r3off-blend
+          - r3off-log
+          - r3off-concept
+          - r3off-event
+          - r3off-no-bud
+          - r3off-no-resistance
+          - r3off-precedent
+          - r3off-deepweight
+          - r3off-c3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate native interaction source
+        run: node --check research/genome-native-brain-20261119/multiversion/compare-r3-organ-interactions.mjs
+      - name: Retrieve authentic biological DNA labels
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Native V42 original A-organ and R3 interaction
+        env:
+          GENOME_RESULT_PATH: /tmp/native-r3-organ.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/multiversion/compare-r3-organ-interactions.mjs /tmp/uci-splice.data '${{ matrix.mode }}' --phase=dev | tee /tmp/native-r3-organ.log
+      - name: Store complete original-organism results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-AG2-${{ matrix.mode }}
+          path: |
+            /tmp/native-r3-organ.json
+            /tmp/native-r3-organ.log
+          if-no-files-found: warn
