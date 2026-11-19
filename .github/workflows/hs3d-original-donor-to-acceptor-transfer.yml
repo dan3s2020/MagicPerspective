@@ -1,0 +1,51 @@
+name: HS3D original Brain GT donor to AG acceptor state transfer
+on:
+  push:
+    branches:
+      - research/HS3D-ACCEPTOR-CROSS-WORLD-TRANSFER-20261119
+    paths:
+      - .github/workflows/hs3d-original-donor-to-acceptor-transfer.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-original-crossworld:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        initial: [fresh, donor, donor-inverted]
+        acceptor_shots: [0, 40, 200, 800]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout authentic donor and acceptor original TRAIN only, never official Test
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Validate untouched native Brain cross-world experiment source
+        run: node --check research/genome-native-brain-20261119/hs3d/transfer/run-original-cross-world.mjs
+      - name: Original Brain source DNA learn and acceptor AG blind predict
+        shell: bash
+        env:
+          HS3D_TRANSFER_RESULT_PATH: /tmp/hs3d-native-crossworld-raw.json
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/transfer/run-original-cross-world.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.initial }}' '${{ matrix.acceptor_shots }}' | tee /tmp/hs3d-native-crossworld-metrics.log
+      - name: Preserve full raw per-example original Brain predictions and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-AG-transfer-${{ matrix.initial }}-${{ matrix.acceptor_shots }}
+          path: |
+            /tmp/hs3d-native-crossworld-raw.json
+            /tmp/hs3d-native-crossworld-metrics.log
+          if-no-files-found: warn
