@@ -1,0 +1,51 @@
+name: HS3D genuine original Brain world-conditioned GT to AG transfer
+on:
+  push:
+    branches:
+      - research/HS3D-ACCEPTOR-CROSS-WORLD-TRANSFER-20261119
+    paths:
+      - .github/workflows/hs3d-native-world-conditioned-transfer.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-native-world-conditioned:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        initial: [fresh, donor, donor-inverted]
+        acceptor_shots: [0, 40, 200, 800]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Authentic original human donor and acceptor TRAIN only, no official Test
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Validate original native Brain C5 experiment source
+        run: node --check research/genome-native-brain-20261119/hs3d/transfer/run-native-world-conditioned.mjs
+      - name: Original native Brain with genuine domain tag, four real DNA bases and blind outcomes
+        shell: bash
+        env:
+          HS3D_TRANSFER_RESULT_PATH: /tmp/native-hs3d-world-conditioned.json
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/transfer/run-native-world-conditioned.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.initial }}' '${{ matrix.acceptor_shots }}' | tee /tmp/native-hs3d-world-conditioned.log
+      - name: Archive original-native real results, all labels hidden from inference
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-world-conditioned-${{ matrix.initial }}-${{ matrix.acceptor_shots }}
+          path: |
+            /tmp/native-hs3d-world-conditioned.json
+            /tmp/native-hs3d-world-conditioned.log
+          if-no-files-found: warn
