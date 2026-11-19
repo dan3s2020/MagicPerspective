@@ -19,7 +19,10 @@
     ".github/workflows/alphagenome2-native-version-matrix.yml",
     "research/genome-native-brain-20261119/multiversion/RESULTS.md",
     "verbatim/2026-11-19-USER-MULTIVERSION-GENOME-REQUEST.md",
-    "user-intent/changes/AG2-20261119-MULTIVERSION-NATIVE-COMPARISON.json"
+    "user-intent/changes/AG2-20261119-MULTIVERSION-NATIVE-COMPARISON.json",
+    "research/genome-native-brain-20261119/multiversion/compare-training-scale.mjs",
+    "research/genome-native-brain-20261119/multiversion/explain-motif-equivalence.mjs",
+    "research/genome-native-brain-20261119/multiversion/compare-r3-organ-interactions.mjs"
   ],
   "added_mechanisms": [
     "Comparative native-organism empirical protocol using real version-specific Brain code and original built-in organs; no new learned classifier"
@@ -29,13 +32,13 @@
   "acceptance_tests": [
     "node research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs /path/to/splice.data v42-c4 --phase=dev"
   ],
-  "actual_observed_results": "PENDING — no multiversion tests executed as of contract creation",
+  "actual_observed_results": "EXECUTED: 15 native version/config attempts (14 succeeded, C-only originally crashed in GraphTrace); new repaired C-only parity passed; 8 real data-scaling tests, 12 R3/A interaction tests, one 702 group stress-test, and exact 400/400 native-GTAG motif equivalence diagnostic. Full metrics in multiversion/RESULTS.md.",
   "limitations": [
     "Not every historical version maps to blind DNA classification",
     "Braivour V43 requires genuine GGUF donor, not a toy source",
     "UCI task not directly comparable with AlphaGenome 2",
     "Unknown independent species or homology leakage, small original dataset"
   ],
-  "verification_status": "NOT_VERIFIED",
+  "verification_status": "EXECUTED_WITH_NEGATIVE_AND_POSITIVE_RESULTS",
   "full_verbatim_gate": "BLOCKED"
 }
