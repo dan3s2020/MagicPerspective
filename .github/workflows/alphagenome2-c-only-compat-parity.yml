@@ -1,0 +1,50 @@
+name: AG2 genuine original C-only compatibility and V42 parity
+on:
+  push:
+    branches:
+      - research/AG2-NATIVE-VERSION-COMPARISON-20261119
+    paths:
+      - .github/workflows/alphagenome2-c-only-compat-parity.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-c-vs-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [v42-c-only, v42-c4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source syntax before learning
+        shell: bash
+        run: |
+          node --check v17/transcend/torus-aether/devour/trace.mjs
+          node --check research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs
+      - name: Fetch real original UCI splice observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+      - name: Run original Brain with native C-only or parity configuration
+        env:
+          GENOME_RESULT_PATH: /tmp/native-c-only-metrics.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs /tmp/uci-splice.data '${{ matrix.mode }}' --phase=dev | tee /tmp/native-c-only-results.log
+      - name: Save original C-only and baseline results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-C-only-compat-${{ matrix.mode }}
+          path: |
+            /tmp/native-c-only-metrics.json
+            /tmp/native-c-only-results.log
+          if-no-files-found: warn
