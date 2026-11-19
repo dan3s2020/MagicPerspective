@@ -234,7 +234,7 @@ const activeProtocol=(name,targetDigest,idx)=>{
     const before=board.slice(),from=pos;
     const dir=D.world.moves.indexOf(output);
     if(dir>=0){
-      const nx=pos%N16+ACT_DIRS[dir][0],ny=Math.floor(pos/N16)+ACT_DIRS[dir][1];
+      const nx=pos%N16+ACTS[dir][0],ny=Math.floor(pos/N16)+ACTS[dir][1];
       if(nx>=0&&nx<N16&&ny>=0&&ny<N16){
         pos=ny*N16+nx;
         board[from]=KIND.floor;board[pos]=KIND.self;
