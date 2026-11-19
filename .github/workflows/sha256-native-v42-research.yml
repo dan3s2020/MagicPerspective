@@ -25,8 +25,8 @@ jobs:
           node --check research/sha256-labyrinth-20261119/native_sha256_motors_v2.mjs
       - name: Original Brain receives SHA256 rounds and learns observed motors
         env:
-          NATIVE_SHA_TRAIN: '2'
-          NATIVE_SHA_BLIND: '4'
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '32'
         run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_motors_v2.mjs
       - name: Upload original experiment results
         if: always()
