@@ -22,13 +22,18 @@ No replacement learned head, no second trained model, no synthetic DNA, no assum
 
 ## Version/method matrix (predefined BEFORE result viewing)
 - v42-c4 — original V42 EmergentChain depth 2, native C cap 4 (exact prior baseline).
-- v42-c16 — same native learner, C allowed up to 16 temporal positions (capacity intervention).
-- v42-c32 — same native learner, C cap 32 (remote evidence capacity intervention).
+- v42-c1 — original native C with one-step context (reduced temporal capacity).
+- v42-c2 — original native C with two-step context.
+- v42-c3 — original native C with three-step context.
+- v42-c16 and v42-c32 — **PREFLIGHT REJECTED**, NOT RUN: `LeanC.observe()` calls `candidates(maxLag)` with about `3*(2^lag - 1)` programs per lived byte; cap16 is already far too expensive for 59,400 symbols and cap32 uses a JS bit-shift overflow. Treating them as safe capacity improvements would be a regression.
 - v42-c-only — original native C, depth 0 (native A ablation).
 - v42-deep-a — original C plus 4 native A organs.
 - v42-blend — original native blend-sensory wire geometry in A.
 - v42-log — original native log-time BINS wire view in A.
 - v42-concept — original native concept/geometry wire view in A.
+- v42-no-bud — built-in R5 ablation: no native wire budding.
+- v42-no-trust — built-in R3 ablation: native trust readback disabled.
+- v42-resistance-ablation — built-in R2 ablation: A learns even without rejection.
 - v42-align — original AligningGraph.write rather than chain.play as readout; unrecognized symbols count as *incorrect*, not silently mapped.
 - v43-native — actual V43 original Brain from the V43 GitHub branch.
 - v42-3sat — actual original Brain from the 3SAT hypermaze branch.
