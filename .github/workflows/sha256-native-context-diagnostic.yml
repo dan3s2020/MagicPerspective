@@ -1,0 +1,37 @@
+name: SHA256 original V42 digest-context causal diagnostic
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-BRAIN-BLIND-WORLD-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
+      - .github/workflows/sha256-native-context-diagnostic.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  context:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        ctx: [4, 32]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
+      - name: Frozen original Brain context comparison
+        env:
+          NATIVE_SHA_TRAIN: '8'
+          NATIVE_SHA_BLIND: '32'
+          NATIVE_SHA_CTX: ${{ matrix.ctx }}
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_context_diagnostic.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: original-v42-context-${{ matrix.ctx }}
+          path: research/sha256-labyrinth-20261119/native_results.json
+          if-no-files-found: warn
