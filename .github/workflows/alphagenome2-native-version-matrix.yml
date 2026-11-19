@@ -1,0 +1,77 @@
+name: AG2 native Brain versions and original organ ablations
+on:
+  push:
+    branches:
+      - research/AG2-NATIVE-VERSION-COMPARISON-20261119
+    paths:
+      - .github/workflows/alphagenome2-native-version-matrix.yml
+      - research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-genome-native-version-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        variant:
+          - v42-c4
+          - v42-c1
+          - v42-c2
+          - v42-c3
+          - v42-c-only
+          - v42-deep-a
+          - v42-blend
+          - v42-log
+          - v42-concept
+          - v42-no-bud
+          - v42-no-trust
+          - v42-resistance-ablation
+          - v42-align
+          - v43-native
+          - v42-3sat
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout original V43 Brain branch when selected
+        if: matrix.variant == 'v43-native'
+        uses: actions/checkout@v4
+        with:
+          ref: feature/V43-NATIVE-V42-ONE-UNIVERSE-20261108
+          path: comparison-checkouts/v43
+      - name: Checkout original V42 3SAT Brain branch when selected
+        if: matrix.variant == 'v42-3sat'
+        uses: actions/checkout@v4
+        with:
+          ref: experiment/V42-3SAT-REAL-HYPERMAZE-20261107
+          path: comparison-checkouts/v42-3sat
+      - name: Syntax-check exact native test harness
+        run: node --check research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs
+      - name: Fetch actual UCI DNA records and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Native organism frozen 900-train 400-development experiment
+        shell: bash
+        env:
+          GENOME_RESULT_PATH: /tmp/native-version-metrics.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/multiversion/compare-native-versions.mjs /tmp/uci-splice.data '${{ matrix.variant }}' --phase=dev | tee /tmp/native-version-results.log
+      - name: Save real predictions and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-DNA-${{ matrix.variant }}
+          path: |
+            /tmp/native-version-metrics.json
+            /tmp/native-version-results.log
+          if-no-files-found: warn
