@@ -1,0 +1,823 @@
+{
+  "study": "Original V42 Brain's existing ConstructedPathLearner selects one unseen genome window with budget=2 after seeing first; real human HS3D AG acceptors",
+  "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44622845252",
+  "priorRuntimeOnlyFailure": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44622629017",
+  "protocol": "PRETEST.md",
+  "exploratoryOnly": true,
+  "noOfficialAcceptorTestOpened": true,
+  "biologicallyMeaningfulNegative": "Even after 1000 native action rewards, original pathPolicy chose position58 in ALL 400 evaluation cases and remained at 64.75% accuracy; fixed66 original Brain on same data scored 70.25%. No learned improvement in location selection.",
+  "data": [
+    {
+      "job_id": 135908789676,
+      "name": "native-zero",
+      "mode": "native-zero",
+      "calibration": {
+        "rows": 0,
+        "feedback": 0,
+        "chosenPositions": {},
+        "rewardCorrect": 0,
+        "exploration": 0,
+        "weightsBefore": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "weightsAfter": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "policyUpdates": 0
+      },
+      "evaluation": {
+        "actualNativeViewBudget": 2,
+        "initialViewPosition": 70,
+        "actualNativeAdditionalActions": 1,
+        "candidates": [
+          58,
+          62,
+          64,
+          66,
+          74,
+          78
+        ],
+        "devExamples": 400,
+        "nativeSelectionHistogram": {
+          "58": 400
+        },
+        "metrics": {
+          "native": {
+            "n": 400,
+            "correct": 259,
+            "accuracy": 0.6475,
+            "macroF1": 0.6450843553938997,
+            "balancedAccuracy": 0.6475,
+            "confusion": {
+              "P": {
+                "P": 146,
+                "N": 54
+              },
+              "N": {
+                "P": 87,
+                "N": 113
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6266094420600858,
+                "recall": 0.73,
+                "f1": 0.674364896073903
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6766467065868264,
+                "recall": 0.565,
+                "f1": 0.6158038147138964
+              }
+            ]
+          },
+          "fixedInitial70": {
+            "n": 400,
+            "correct": 207,
+            "accuracy": 0.5175,
+            "macroF1": 0.5149504583466847,
+            "balancedAccuracy": 0.5175,
+            "confusion": {
+              "P": {
+                "P": 89,
+                "N": 111
+              },
+              "N": {
+                "P": 82,
+                "N": 118
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.52046783625731,
+                "recall": 0.445,
+                "f1": 0.4797843665768194
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5152838427947598,
+                "recall": 0.59,
+                "f1": 0.5501165501165501
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 279,
+            "accuracy": 0.6975,
+            "macroF1": 0.6831942398952708,
+            "balancedAccuracy": 0.6975,
+            "confusion": {
+              "P": {
+                "P": 182,
+                "N": 18
+              },
+              "N": {
+                "P": 103,
+                "N": 97
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6385964912280702,
+                "recall": 0.91,
+                "f1": 0.7505154639175258
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8434782608695652,
+                "recall": 0.485,
+                "f1": 0.6158730158730159
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 281,
+            "accuracy": 0.7025,
+            "macroF1": 0.6944310704541807,
+            "balancedAccuracy": 0.7025,
+            "confusion": {
+              "P": {
+                "P": 173,
+                "N": 27
+              },
+              "N": {
+                "P": 92,
+                "N": 108
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6528301886792452,
+                "recall": 0.865,
+                "f1": 0.7440860215053764
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8,
+                "recall": 0.54,
+                "f1": 0.6447761194029851
+              }
+            ]
+          },
+          "randomSecond": {
+            "n": 400,
+            "correct": 241,
+            "accuracy": 0.6025,
+            "macroF1": 0.5994331601322627,
+            "balancedAccuracy": 0.6025,
+            "confusion": {
+              "P": {
+                "P": 138,
+                "N": 62
+              },
+              "N": {
+                "P": 97,
+                "N": 103
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5872340425531914,
+                "recall": 0.69,
+                "f1": 0.6344827586206897
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6242424242424243,
+                "recall": 0.515,
+                "f1": 0.5643835616438356
+              }
+            ]
+          },
+          "confidenceAllSix": {
+            "n": 400,
+            "correct": 291,
+            "accuracy": 0.7275,
+            "macroF1": 0.7274846710127445,
+            "balancedAccuracy": 0.7275,
+            "confusion": {
+              "P": {
+                "P": 147,
+                "N": 53
+              },
+              "N": {
+                "P": 56,
+                "N": 144
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.7241379310344828,
+                "recall": 0.735,
+                "f1": 0.7295285359801489
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7309644670050761,
+                "recall": 0.72,
+                "f1": 0.72544080604534
+              }
+            ]
+          }
+        },
+        "confidenceAllSixIsOutsideBudget": true,
+        "allCandidateDNAHiddenDuringNativeActionSelection": true,
+        "originalBrainFrozenDuringEval": true
+      },
+      "training": {
+        "examples": 1200,
+        "realViewsPerTrainingExample": 7,
+        "livedSymbols": 58800,
+        "biologicalCenter": "AG bases68:70",
+        "worldIdentity": "human-acceptor"
+      },
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "originalAlgorithms": [
+        "Brain.live",
+        "Brain.predict",
+        "ConstructedPathLearner.transferableScore",
+        "ConstructedPathLearner.learnTransferable"
+      ]
+    },
+    {
+      "job_id": 135908789583,
+      "name": "native-200",
+      "mode": "native-200",
+      "calibration": {
+        "rows": 200,
+        "feedback": 200,
+        "chosenPositions": {
+          "58": 174,
+          "62": 3,
+          "64": 3,
+          "66": 12,
+          "74": 4,
+          "78": 4
+        },
+        "rewardCorrect": 134,
+        "exploration": 37,
+        "weightsBefore": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "weightsAfter": [
+          0.1934735522427166,
+          -0.2955750614978874,
+          0.08640959702748434,
+          -0.10706395521523235,
+          0.06171599551532563,
+          0.0406382936902155
+        ],
+        "policyUpdates": 200
+      },
+      "evaluation": {
+        "actualNativeViewBudget": 2,
+        "initialViewPosition": 70,
+        "actualNativeAdditionalActions": 1,
+        "candidates": [
+          58,
+          62,
+          64,
+          66,
+          74,
+          78
+        ],
+        "devExamples": 400,
+        "nativeSelectionHistogram": {
+          "58": 400
+        },
+        "metrics": {
+          "native": {
+            "n": 400,
+            "correct": 259,
+            "accuracy": 0.6475,
+            "macroF1": 0.6450843553938997,
+            "balancedAccuracy": 0.6475,
+            "confusion": {
+              "P": {
+                "P": 146,
+                "N": 54
+              },
+              "N": {
+                "P": 87,
+                "N": 113
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6266094420600858,
+                "recall": 0.73,
+                "f1": 0.674364896073903
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6766467065868264,
+                "recall": 0.565,
+                "f1": 0.6158038147138964
+              }
+            ]
+          },
+          "fixedInitial70": {
+            "n": 400,
+            "correct": 207,
+            "accuracy": 0.5175,
+            "macroF1": 0.5149504583466847,
+            "balancedAccuracy": 0.5175,
+            "confusion": {
+              "P": {
+                "P": 89,
+                "N": 111
+              },
+              "N": {
+                "P": 82,
+                "N": 118
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.52046783625731,
+                "recall": 0.445,
+                "f1": 0.4797843665768194
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5152838427947598,
+                "recall": 0.59,
+                "f1": 0.5501165501165501
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 279,
+            "accuracy": 0.6975,
+            "macroF1": 0.6831942398952708,
+            "balancedAccuracy": 0.6975,
+            "confusion": {
+              "P": {
+                "P": 182,
+                "N": 18
+              },
+              "N": {
+                "P": 103,
+                "N": 97
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6385964912280702,
+                "recall": 0.91,
+                "f1": 0.7505154639175258
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8434782608695652,
+                "recall": 0.485,
+                "f1": 0.6158730158730159
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 281,
+            "accuracy": 0.7025,
+            "macroF1": 0.6944310704541807,
+            "balancedAccuracy": 0.7025,
+            "confusion": {
+              "P": {
+                "P": 173,
+                "N": 27
+              },
+              "N": {
+                "P": 92,
+                "N": 108
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6528301886792452,
+                "recall": 0.865,
+                "f1": 0.7440860215053764
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8,
+                "recall": 0.54,
+                "f1": 0.6447761194029851
+              }
+            ]
+          },
+          "randomSecond": {
+            "n": 400,
+            "correct": 241,
+            "accuracy": 0.6025,
+            "macroF1": 0.5994331601322627,
+            "balancedAccuracy": 0.6025,
+            "confusion": {
+              "P": {
+                "P": 138,
+                "N": 62
+              },
+              "N": {
+                "P": 97,
+                "N": 103
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5872340425531914,
+                "recall": 0.69,
+                "f1": 0.6344827586206897
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6242424242424243,
+                "recall": 0.515,
+                "f1": 0.5643835616438356
+              }
+            ]
+          },
+          "confidenceAllSix": {
+            "n": 400,
+            "correct": 291,
+            "accuracy": 0.7275,
+            "macroF1": 0.7274846710127445,
+            "balancedAccuracy": 0.7275,
+            "confusion": {
+              "P": {
+                "P": 147,
+                "N": 53
+              },
+              "N": {
+                "P": 56,
+                "N": 144
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.7241379310344828,
+                "recall": 0.735,
+                "f1": 0.7295285359801489
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7309644670050761,
+                "recall": 0.72,
+                "f1": 0.72544080604534
+              }
+            ]
+          }
+        },
+        "confidenceAllSixIsOutsideBudget": true,
+        "allCandidateDNAHiddenDuringNativeActionSelection": true,
+        "originalBrainFrozenDuringEval": true
+      },
+      "training": {
+        "examples": 1200,
+        "realViewsPerTrainingExample": 7,
+        "livedSymbols": 58800,
+        "biologicalCenter": "AG bases68:70",
+        "worldIdentity": "human-acceptor"
+      },
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "originalAlgorithms": [
+        "Brain.live",
+        "Brain.predict",
+        "ConstructedPathLearner.transferableScore",
+        "ConstructedPathLearner.learnTransferable"
+      ]
+    },
+    {
+      "job_id": 135908788956,
+      "name": "native-1000",
+      "mode": "native-1000",
+      "calibration": {
+        "rows": 1000,
+        "feedback": 1000,
+        "chosenPositions": {
+          "58": 818,
+          "62": 31,
+          "64": 38,
+          "66": 44,
+          "74": 33,
+          "78": 36
+        },
+        "rewardCorrect": 636,
+        "exploration": 218,
+        "weightsBefore": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "weightsAfter": [
+          0.22885850724898976,
+          -0.2155673302897331,
+          0.035129939354594936,
+          -0.19372856789439497,
+          0.1547879842681321,
+          0.17452032067373427
+        ],
+        "policyUpdates": 1000
+      },
+      "evaluation": {
+        "actualNativeViewBudget": 2,
+        "initialViewPosition": 70,
+        "actualNativeAdditionalActions": 1,
+        "candidates": [
+          58,
+          62,
+          64,
+          66,
+          74,
+          78
+        ],
+        "devExamples": 400,
+        "nativeSelectionHistogram": {
+          "58": 400
+        },
+        "metrics": {
+          "native": {
+            "n": 400,
+            "correct": 259,
+            "accuracy": 0.6475,
+            "macroF1": 0.6450843553938997,
+            "balancedAccuracy": 0.6475,
+            "confusion": {
+              "P": {
+                "P": 146,
+                "N": 54
+              },
+              "N": {
+                "P": 87,
+                "N": 113
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6266094420600858,
+                "recall": 0.73,
+                "f1": 0.674364896073903
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6766467065868264,
+                "recall": 0.565,
+                "f1": 0.6158038147138964
+              }
+            ]
+          },
+          "fixedInitial70": {
+            "n": 400,
+            "correct": 207,
+            "accuracy": 0.5175,
+            "macroF1": 0.5149504583466847,
+            "balancedAccuracy": 0.5175,
+            "confusion": {
+              "P": {
+                "P": 89,
+                "N": 111
+              },
+              "N": {
+                "P": 82,
+                "N": 118
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.52046783625731,
+                "recall": 0.445,
+                "f1": 0.4797843665768194
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5152838427947598,
+                "recall": 0.59,
+                "f1": 0.5501165501165501
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 279,
+            "accuracy": 0.6975,
+            "macroF1": 0.6831942398952708,
+            "balancedAccuracy": 0.6975,
+            "confusion": {
+              "P": {
+                "P": 182,
+                "N": 18
+              },
+              "N": {
+                "P": 103,
+                "N": 97
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6385964912280702,
+                "recall": 0.91,
+                "f1": 0.7505154639175258
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8434782608695652,
+                "recall": 0.485,
+                "f1": 0.6158730158730159
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 281,
+            "accuracy": 0.7025,
+            "macroF1": 0.6944310704541807,
+            "balancedAccuracy": 0.7025,
+            "confusion": {
+              "P": {
+                "P": 173,
+                "N": 27
+              },
+              "N": {
+                "P": 92,
+                "N": 108
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6528301886792452,
+                "recall": 0.865,
+                "f1": 0.7440860215053764
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8,
+                "recall": 0.54,
+                "f1": 0.6447761194029851
+              }
+            ]
+          },
+          "randomSecond": {
+            "n": 400,
+            "correct": 241,
+            "accuracy": 0.6025,
+            "macroF1": 0.5994331601322627,
+            "balancedAccuracy": 0.6025,
+            "confusion": {
+              "P": {
+                "P": 138,
+                "N": 62
+              },
+              "N": {
+                "P": 97,
+                "N": 103
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5872340425531914,
+                "recall": 0.69,
+                "f1": 0.6344827586206897
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6242424242424243,
+                "recall": 0.515,
+                "f1": 0.5643835616438356
+              }
+            ]
+          },
+          "confidenceAllSix": {
+            "n": 400,
+            "correct": 291,
+            "accuracy": 0.7275,
+            "macroF1": 0.7274846710127445,
+            "balancedAccuracy": 0.7275,
+            "confusion": {
+              "P": {
+                "P": 147,
+                "N": 53
+              },
+              "N": {
+                "P": 56,
+                "N": 144
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.7241379310344828,
+                "recall": 0.735,
+                "f1": 0.7295285359801489
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7309644670050761,
+                "recall": 0.72,
+                "f1": 0.72544080604534
+              }
+            ]
+          }
+        },
+        "confidenceAllSixIsOutsideBudget": true,
+        "allCandidateDNAHiddenDuringNativeActionSelection": true,
+        "originalBrainFrozenDuringEval": true
+      },
+      "training": {
+        "examples": 1200,
+        "realViewsPerTrainingExample": 7,
+        "livedSymbols": 58800,
+        "biologicalCenter": "AG bases68:70",
+        "worldIdentity": "human-acceptor"
+      },
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "originalAlgorithms": [
+        "Brain.live",
+        "Brain.predict",
+        "ConstructedPathLearner.transferableScore",
+        "ConstructedPathLearner.learnTransferable"
+      ]
+    }
+  ]
+}
