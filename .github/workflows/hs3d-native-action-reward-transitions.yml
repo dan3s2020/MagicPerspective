@@ -1,0 +1,50 @@
+name: HS3D original Brain learns physical AG genome action reward transitions
+on:
+  push:
+    branches:
+      - research/HS3D-ACCEPTOR-NATIVE-REWARD-TRANSITIONS-20261119
+    paths:
+      - .github/workflows/hs3d-native-action-reward-transitions.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-brain-transition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [reward-zero, reward-200, reward-1000]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout original real HS3D acceptor TRAIN only, not official Test
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Validate native unmodified Brain input and action-reward script
+        run: node --check research/genome-native-brain-20261119/hs3d/reward-transitions/run.mjs
+      - name: Learn actual physical action -> success transitions with original Brain only
+        shell: bash
+        env:
+          HS3D_NATIVE_REWARD_FILE: /tmp/hs3d-native-reward-transitions.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/reward-transitions/run.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-native-reward-transitions.log
+      - name: Save full original action, reward and hidden-label provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-original-Brain-action-reward-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-native-reward-transitions.json
+            /tmp/hs3d-native-reward-transitions.log
+          if-no-files-found: warn
