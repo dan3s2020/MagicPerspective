@@ -1,0 +1,40 @@
+name: AG2 original Brain untouched confirmatory heldout
+on:
+  push:
+    branches:
+      - research/AG2-REAL-GENOME-NATIVE-BRAIN-20261119
+    paths:
+      - .github/workflows/alphagenome2-confirmatory.yml
+      - research/genome-native-brain-20261119/run-confirmatory.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  frozen-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check research/genome-native-brain-20261119/run-confirmatory.mjs
+      - name: Retrieve original public biological data
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.data
+      - name: Test frozen original Brain on never-evaluated final genome rows
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/run-confirmatory.mjs /tmp/uci-splice.data | tee /tmp/genome-confirmatory-results.log
+      - name: Retain untouched final results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-frozen-confirmatory-uci
+          path: /tmp/genome-confirmatory-results.log
+          if-no-files-found: warn
