@@ -1,0 +1,43 @@
+name: AlphaGenome2 real-DNA original V42 Brain blind benchmark
+on:
+  push:
+    branches:
+      - research/AG2-REAL-GENOME-NATIVE-BRAIN-20261119
+    paths:
+      - research/genome-native-brain-20261119/**
+      - .github/workflows/alphagenome2-native-brain.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-biological-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source syntax
+        run: node --check research/genome-native-brain-20261119/run.mjs
+      - name: Fetch original real UCI splicing data
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --retry 4 --retry-delay 3 -fsSL 'https://archive.ics.uci.edu/static/public/69/molecular+biology+splice+junction+gene+sequences.zip' -o /tmp/uci-splice.zip
+          unzip -l /tmp/uci-splice.zip
+          unzip -p /tmp/uci-splice.zip splice.data > /tmp/uci-splice.data
+          sha256sum /tmp/uci-splice.zip /tmp/uci-splice.data
+          test "$(wc -l < /tmp/uci-splice.data)" -ge 3190
+      - name: Run untouched native V42 Brain with hidden held-out labels
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/run.mjs /tmp/uci-splice.data | tee /tmp/genome-native-brain-results.log
+      - name: Upload measured results, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ag2-original-brain-uci-splice-logs
+          path: /tmp/genome-native-brain-results.log
+          if-no-files-found: warn
