@@ -1,0 +1,41 @@
+name: HS3D acceptor AG scientific reference baselines only
+on:
+  push:
+    branches:
+      - research/HS3D-ACCEPTOR-CROSS-WORLD-TRANSFER-20261119
+    paths:
+      - .github/workflows/hs3d-acceptor-reference-controls.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  external-reference-not-original-brain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original 140nt HS3D acceptor TRAIN only, official Test not fetched
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Validate baseline-only script
+        run: node --check research/genome-native-brain-20261119/hs3d/transfer/measure-acceptor-reference-only.mjs
+      - name: Evaluate human AG acceptor 2/4/20/140 nt PWM external controls
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/transfer/measure-acceptor-reference-only.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal --phase=dev | tee /tmp/hs3d-acceptor-reference-controls.log
+      - name: Save genuine scientific baseline metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HS3D-acceptor-reference-PWM-not-original-Brain
+          path: /tmp/hs3d-acceptor-reference-controls.log
+          if-no-files-found: warn
