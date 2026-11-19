@@ -20,7 +20,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 function readFasta(file,label) {
   const raw=fs.readFileSync(file),lines=raw.toString("utf8").split(/\r?\n/);
-  const rows=[],rejected={length:0,bases:0},seenSource=0;
+  const rows=[],rejected={length:0,bases:0};let seenSource=0;
   let header=null;
   for(const original of lines) {
     const line=original.trim();
