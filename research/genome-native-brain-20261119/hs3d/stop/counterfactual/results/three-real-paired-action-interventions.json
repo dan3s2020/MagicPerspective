@@ -1,0 +1,2459 @@
+{
+  "scientificStatus": "EXECUTED_NEGATIVE_FOR_PROPOSED_CAUSAL_STOP_LEARNING",
+  "date": "2026-11-20",
+  "sourceRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44656926687",
+  "failedFirstRunDueResearchOnlyImportPath": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44656716605",
+  "preregistration": "PRETEST.md",
+  "finding": "Pairwise stop/continue value of information did not create useful conditional action learning. Paired-advantage learned STOP in all 400 dev examples (50.5% acc) versus same Brain forced-full 60.75%; paired-absolute almost always GO, 53.75% vs full 54.25%; destroyed reward poorer.",
+  "records": [
+    {
+      "job_id": 136025323809,
+      "mode": "paired-advantage",
+      "originalSource": "v17/transcend/torus-aether/devour/brain.mjs",
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 500,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 16000,
+        "totalFrozenLived": 90800
+      },
+      "nativeGate": {
+        "episodes": 500,
+        "physicallyComparedStopVsGo": 1000,
+        "physicalBranchPredictions": 1500,
+        "actualSourcePositive": 250,
+        "actualSourceNegative": 250,
+        "trainingActionFeedback": 2000,
+        "nativeLivedSymbols": 16000,
+        "actualUsefulContinueStage0": 122,
+        "actualUsefulContinueStage1": 146,
+        "actualUsefulStopStage0": 378,
+        "actualUsefulStopStage1": 354,
+        "confusionBetweenEqualUtilities": 0,
+        "positiveRewards": 1000,
+        "negativeRewards": 1000,
+        "feedbackByAction": {
+          "g": {
+            "positive": 268,
+            "negative": 732
+          },
+          "s": {
+            "positive": 732,
+            "negative": 268
+          }
+        },
+        "firstTwenty": [
+          {
+            "id": 0,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 1,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 2,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                70
+              ],
+              [
+                70,
+                70,
+                66
+              ]
+            ]
+          },
+          {
+            "id": 3,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                70
+              ],
+              [
+                70,
+                70,
+                70
+              ]
+            ]
+          },
+          {
+            "id": 4,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 5,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 6,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 7,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 8,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 9,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 10,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 11,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 12,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 13,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 14,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 15,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 16,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 17,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 18,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 19,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 202,
+            "accuracy": 0.505,
+            "macroF1": 0.44029850746268656,
+            "balancedAccuracy": 0.505,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5029761904761905,
+                "recall": 0.845,
+                "f1": 0.6305970149253731
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.515625,
+                "recall": 0.165,
+                "f1": 0.25
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 169,
+                "N": 31
+              },
+              "N": {
+                "P": 167,
+                "N": 33
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 243,
+            "accuracy": 0.6075,
+            "macroF1": 0.5570446129430435,
+            "balancedAccuracy": 0.6074999999999999,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.564179104477612,
+                "recall": 0.945,
+                "f1": 0.7065420560747664
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8307692307692308,
+                "recall": 0.27,
+                "f1": 0.4075471698113208
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 189,
+                "N": 11
+              },
+              "N": {
+                "P": 146,
+                "N": 54
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 304,
+            "66": 55,
+            "70": 41
+          },
+          "primitiveSequences": {
+            "left>left": 108,
+            "undo>new": 55,
+            "undo>undo": 41,
+            "new>new": 63,
+            "new>left": 16,
+            "left>new": 117
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 202,
+            "accuracy": 0.505,
+            "macroF1": 0.44029850746268656,
+            "balancedAccuracy": 0.505,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5029761904761905,
+                "recall": 0.845,
+                "f1": 0.6305970149253731
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.515625,
+                "recall": 0.165,
+                "f1": 0.25
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 169,
+                "N": 31
+              },
+              "N": {
+                "P": 167,
+                "N": 33
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 243,
+            "accuracy": 0.6075,
+            "macroF1": 0.5570446129430435,
+            "balancedAccuracy": 0.6074999999999999,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.564179104477612,
+                "recall": 0.945,
+                "f1": 0.7065420560747664
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8307692307692308,
+                "recall": 0.27,
+                "f1": 0.4075471698113208
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 189,
+                "N": 11
+              },
+              "N": {
+                "P": 146,
+                "N": 54
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 304,
+            "66": 55,
+            "70": 41
+          },
+          "primitiveSequences": {
+            "left>left": 108,
+            "undo>new": 55,
+            "undo>undo": 41,
+            "new>new": 63,
+            "new>left": 16,
+            "left>new": 117
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 224,
+            "accuracy": 0.56,
+            "macroF1": 0.5240027045300879,
+            "balancedAccuracy": 0.5599999999999999,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5387096774193548,
+                "recall": 0.835,
+                "f1": 0.6549019607843137
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6333333333333333,
+                "recall": 0.285,
+                "f1": 0.3931034482758621
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 167,
+                "N": 33
+              },
+              "N": {
+                "P": 143,
+                "N": 57
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 73,
+            "66": 96,
+            "70": 231
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "undo": 22,
+            "undo>new": 22,
+            "new": 22,
+            "left": 52,
+            "left>left": 28,
+            "left>new": 32,
+            "undo>undo": 4,
+            "new>left": 2,
+            "new>new": 11
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": true,
+        "preservedAccuracyWithin1_5ppVsOwnFull": false,
+        "preservedMacroF1Within2ppVsOwnFull": false,
+        "conditionalNativeGateChoices": false
+      }
+    },
+    {
+      "job_id": 136025323910,
+      "mode": "paired-absolute",
+      "originalSource": "v17/transcend/torus-aether/devour/brain.mjs",
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 500,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 16000,
+        "totalFrozenLived": 90800
+      },
+      "nativeGate": {
+        "episodes": 500,
+        "physicallyComparedStopVsGo": 1000,
+        "physicalBranchPredictions": 1500,
+        "actualSourcePositive": 250,
+        "actualSourceNegative": 250,
+        "trainingActionFeedback": 2000,
+        "nativeLivedSymbols": 16000,
+        "actualUsefulContinueStage0": 120,
+        "actualUsefulContinueStage1": 154,
+        "actualUsefulStopStage0": 380,
+        "actualUsefulStopStage1": 346,
+        "confusionBetweenEqualUtilities": 0,
+        "positiveRewards": 1148,
+        "negativeRewards": 852,
+        "feedbackByAction": {
+          "g": {
+            "positive": 630,
+            "negative": 370
+          },
+          "s": {
+            "positive": 518,
+            "negative": 482
+          }
+        },
+        "firstTwenty": [
+          {
+            "id": 0,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 1,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 2,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                70
+              ],
+              [
+                70,
+                70,
+                66
+              ]
+            ]
+          },
+          {
+            "id": 3,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                70
+              ],
+              [
+                70,
+                70,
+                70
+              ]
+            ]
+          },
+          {
+            "id": 4,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 5,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 6,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 7,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 8,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 9,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 10,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 11,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 12,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 13,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 14,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 15,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 16,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 17,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 18,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 19,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 215,
+            "accuracy": 0.5375,
+            "macroF1": 0.4340733716226034,
+            "balancedAccuracy": 0.5375,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5202156334231806,
+                "recall": 0.965,
+                "f1": 0.6760070052539404
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7586206896551724,
+                "recall": 0.11,
+                "f1": 0.19213973799126638
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 193,
+                "N": 7
+              },
+              "N": {
+                "P": 178,
+                "N": 22
+              }
+            }
+          },
+          "meanViews": 2.9,
+          "viewCounts": {
+            "1": 18,
+            "2": 4,
+            "3": 378
+          },
+          "stopActions": {
+            "g>g": 378,
+            "s": 18,
+            "g>s": 4
+          },
+          "finalPositions": {
+            "64": 328,
+            "70": 60,
+            "74": 4,
+            "78": 8
+          },
+          "primitiveSequences": {
+            "left>left": 45,
+            "new>left": 45,
+            "new>new": 137,
+            "left>new": 101,
+            "none": 18,
+            "undo>undo": 20,
+            "right>new": 8,
+            "right": 4,
+            "right>left": 18,
+            "right>undo": 4
+          },
+          "stage0Gates": {
+            "g": 382,
+            "s": 18
+          },
+          "stage1Gates": {
+            "g": 378,
+            "not-reached": 18,
+            "s": 4
+          },
+          "totalViewObservations": 1160,
+          "nontrivialConditionalActions": 3
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 217,
+            "accuracy": 0.5425,
+            "macroF1": 0.4372304356851259,
+            "balancedAccuracy": 0.5425,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5227882037533512,
+                "recall": 0.975,
+                "f1": 0.680628272251309
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8148148148148148,
+                "recall": 0.11,
+                "f1": 0.19383259911894274
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 195,
+                "N": 5
+              },
+              "N": {
+                "P": 178,
+                "N": 22
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 328,
+            "70": 64,
+            "78": 8
+          },
+          "primitiveSequences": {
+            "left>left": 45,
+            "new>left": 45,
+            "new>new": 137,
+            "left>new": 101,
+            "undo>undo": 38,
+            "right>new": 8,
+            "right>undo": 8,
+            "right>left": 18
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 201,
+            "accuracy": 0.5025,
+            "macroF1": 0.4118994318475667,
+            "balancedAccuracy": 0.5025000000000001,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5014005602240896,
+                "recall": 0.895,
+                "f1": 0.6427289048473968
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5116279069767442,
+                "recall": 0.11,
+                "f1": 0.18106995884773663
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 179,
+                "N": 21
+              },
+              "N": {
+                "P": 178,
+                "N": 22
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 217,
+            "accuracy": 0.5425,
+            "macroF1": 0.4372304356851259,
+            "balancedAccuracy": 0.5425,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5227882037533512,
+                "recall": 0.975,
+                "f1": 0.680628272251309
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8148148148148148,
+                "recall": 0.11,
+                "f1": 0.19383259911894274
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 195,
+                "N": 5
+              },
+              "N": {
+                "P": 178,
+                "N": 22
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 328,
+            "70": 64,
+            "78": 8
+          },
+          "primitiveSequences": {
+            "left>left": 45,
+            "new>left": 45,
+            "new>new": 137,
+            "left>new": 101,
+            "undo>undo": 38,
+            "right>new": 8,
+            "right>undo": 8,
+            "right>left": 18
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 217,
+            "accuracy": 0.5425,
+            "macroF1": 0.46646841449281706,
+            "balancedAccuracy": 0.5425,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5242165242165242,
+                "recall": 0.92,
+                "f1": 0.6678765880217786
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.673469387755102,
+                "recall": 0.165,
+                "f1": 0.26506024096385544
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 184,
+                "N": 16
+              },
+              "N": {
+                "P": 167,
+                "N": 33
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 83,
+            "66": 72,
+            "70": 234,
+            "74": 11
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "new": 42,
+            "new>left": 9,
+            "left": 30,
+            "left>left": 13,
+            "undo": 13,
+            "new>new": 27,
+            "undo>undo": 6,
+            "left>new": 34,
+            "right": 11,
+            "right>left": 8,
+            "right>undo": 2
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": false,
+        "preservedAccuracyWithin1_5ppVsOwnFull": true,
+        "preservedMacroF1Within2ppVsOwnFull": true,
+        "conditionalNativeGateChoices": true
+      }
+    },
+    {
+      "job_id": 136025323503,
+      "mode": "paired-destroyed",
+      "originalSource": "v17/transcend/torus-aether/devour/brain.mjs",
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 500,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 16000,
+        "totalFrozenLived": 90800
+      },
+      "nativeGate": {
+        "episodes": 500,
+        "physicallyComparedStopVsGo": 1000,
+        "physicalBranchPredictions": 1500,
+        "actualSourcePositive": 250,
+        "actualSourceNegative": 250,
+        "trainingActionFeedback": 2000,
+        "nativeLivedSymbols": 16000,
+        "actualUsefulContinueStage0": 140,
+        "actualUsefulContinueStage1": 156,
+        "actualUsefulStopStage0": 360,
+        "actualUsefulStopStage1": 344,
+        "confusionBetweenEqualUtilities": 0,
+        "positiveRewards": 1011,
+        "negativeRewards": 989,
+        "feedbackByAction": {
+          "g": {
+            "positive": 508,
+            "negative": 492
+          },
+          "s": {
+            "positive": 503,
+            "negative": 497
+          }
+        },
+        "firstTwenty": [
+          {
+            "id": 0,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 1,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 2,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                70
+              ],
+              [
+                70,
+                70,
+                66
+              ]
+            ]
+          },
+          {
+            "id": 3,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                70
+              ],
+              [
+                70,
+                70,
+                70
+              ]
+            ]
+          },
+          {
+            "id": 4,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 5,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 6,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 7,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 8,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 9,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 10,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 11,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 12,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 13,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 14,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 15,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 16,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 17,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 18,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": true,
+            "actualCorrectStopTwo": false,
+            "actualCorrectFullThree": true,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          },
+          {
+            "id": 19,
+            "expectedLabelHiddenUntilAfterIntervention": true,
+            "actualCorrectStopOne": false,
+            "actualCorrectStopTwo": true,
+            "actualCorrectFullThree": false,
+            "locations": [
+              [
+                70
+              ],
+              [
+                70,
+                66
+              ],
+              [
+                70,
+                66,
+                64
+              ]
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 207,
+            "accuracy": 0.5175,
+            "macroF1": 0.5174969843561522,
+            "balancedAccuracy": 0.5175000000000001,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5174129353233831,
+                "recall": 0.52,
+                "f1": 0.5187032418952618
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5175879396984925,
+                "recall": 0.515,
+                "f1": 0.5162907268170426
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 104,
+                "N": 96
+              },
+              "N": {
+                "P": 97,
+                "N": 103
+              }
+            }
+          },
+          "meanViews": 1.745,
+          "viewCounts": {
+            "1": 177,
+            "2": 148,
+            "3": 75
+          },
+          "stopActions": {
+            "s": 177,
+            "g>g": 75,
+            "g>s": 148
+          },
+          "finalPositions": {
+            "64": 50,
+            "66": 153,
+            "70": 190,
+            "74": 7
+          },
+          "primitiveSequences": {
+            "none": 177,
+            "new>new": 17,
+            "undo>new": 13,
+            "new": 85,
+            "left": 54,
+            "left>new": 11,
+            "new>left": 16,
+            "undo>right": 7,
+            "open": 1,
+            "undo": 8,
+            "left>left": 6,
+            "new>right": 2,
+            "open>new": 1,
+            "left>right": 2
+          },
+          "stage0Gates": {
+            "s": 177,
+            "g": 223
+          },
+          "stage1Gates": {
+            "not-reached": 177,
+            "g": 75,
+            "s": 148
+          },
+          "totalViewObservations": 698,
+          "nontrivialConditionalActions": 3
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 246,
+            "accuracy": 0.615,
+            "macroF1": 0.571078431372549,
+            "balancedAccuracy": 0.615,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5701219512195121,
+                "recall": 0.935,
+                "f1": 0.7083333333333334
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8194444444444444,
+                "recall": 0.295,
+                "f1": 0.4338235294117647
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 187,
+                "N": 13
+              },
+              "N": {
+                "P": 141,
+                "N": 59
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 334,
+            "66": 33,
+            "70": 24,
+            "74": 9
+          },
+          "primitiveSequences": {
+            "new>left": 79,
+            "new>new": 131,
+            "left>new": 78,
+            "undo>new": 32,
+            "left>left": 46,
+            "new>right": 10,
+            "undo>right": 7,
+            "open>right": 2,
+            "left>undo": 10,
+            "open>new": 1,
+            "left>right": 4
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 194,
+            "accuracy": 0.485,
+            "macroF1": 0.43217839521486257,
+            "balancedAccuracy": 0.485,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.4906832298136646,
+                "recall": 0.79,
+                "f1": 0.6053639846743295
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.46153846153846156,
+                "recall": 0.18,
+                "f1": 0.2589928057553957
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 158,
+                "N": 42
+              },
+              "N": {
+                "P": 164,
+                "N": 36
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 246,
+            "accuracy": 0.615,
+            "macroF1": 0.571078431372549,
+            "balancedAccuracy": 0.615,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5701219512195121,
+                "recall": 0.935,
+                "f1": 0.7083333333333334
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8194444444444444,
+                "recall": 0.295,
+                "f1": 0.4338235294117647
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 187,
+                "N": 13
+              },
+              "N": {
+                "P": 141,
+                "N": 59
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 334,
+            "66": 33,
+            "70": 24,
+            "74": 9
+          },
+          "primitiveSequences": {
+            "new>left": 79,
+            "new>new": 131,
+            "left>new": 78,
+            "undo>new": 32,
+            "left>left": 46,
+            "new>right": 10,
+            "undo>right": 7,
+            "open>right": 2,
+            "left>undo": 10,
+            "open>new": 1,
+            "left>right": 4
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 208,
+            "accuracy": 0.52,
+            "macroF1": 0.5048355899419729,
+            "balancedAccuracy": 0.52,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5148148148148148,
+                "recall": 0.695,
+                "f1": 0.5914893617021276
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5307692307692308,
+                "recall": 0.345,
+                "f1": 0.41818181818181815
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 139,
+                "N": 61
+              },
+              "N": {
+                "P": 131,
+                "N": 69
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 81,
+            "66": 95,
+            "70": 221,
+            "74": 3
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "left": 32,
+            "new": 53,
+            "new>left": 20,
+            "left>left": 10,
+            "new>new": 37,
+            "new>right": 2,
+            "undo>right": 2,
+            "undo": 10,
+            "undo>new": 10,
+            "left>new": 14,
+            "open": 1,
+            "left>right": 1,
+            "open>right": 1,
+            "left>undo": 2
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": true,
+        "preservedAccuracyWithin1_5ppVsOwnFull": false,
+        "preservedMacroF1Within2ppVsOwnFull": false,
+        "conditionalNativeGateChoices": true
+      }
+    }
+  ]
+}
