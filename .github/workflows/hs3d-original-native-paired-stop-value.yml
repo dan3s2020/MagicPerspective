@@ -1,0 +1,50 @@
+name: HS3D original Brain paired physical STOP GO information value
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-COUNTERFACTUAL-VALUE-OF-INFORMATION-20261120
+    paths:
+      - .github/workflows/hs3d-original-native-paired-stop-value.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-original-brain-interventions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [paired-advantage, paired-absolute, paired-destroyed]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout genuine human HS3D acceptor Train only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Syntax check true original Brain intervention code
+        run: node --check research/genome-native-brain-20261119/hs3d/stop/counterfactual/run-native-paired.mjs
+      - name: Same original Brain physically compares real STOP and GO branches and learns their outcomes
+        shell: bash
+        env:
+          HS3D_STOP_RESULT_FILE: /tmp/hs3d-original-native-paired.json
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/stop/counterfactual/run-native-paired.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-original-native-paired.log
+      - name: Archive paired original Brain physical branches and all evaluation traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-paired-VOI-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-original-native-paired.json
+            /tmp/hs3d-original-native-paired.log
+          if-no-files-found: warn
