@@ -1,0 +1,46 @@
+name: Original Brain native STOP vs CONTINUE on real human AG DNA
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-STOP-COST-20261120
+    paths:
+      - .github/workflows/hs3d-original-native-stop-cost.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [stop-real, stop-destroyed]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Check exact original Brain STOP experiment syntax
+        run: node --check research/genome-native-brain-20261119/hs3d/stop/run-stop.mjs
+      - name: Test original Brain native STOP against destroyed STOP feedback
+        env:
+          HS3D_PRIMITIVE_RESULT_PATH: /tmp/original-brain-native-stop.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/stop/run-stop.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/original-brain-native-stop.log
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-native-STOP-${{ matrix.mode }}
+          path: |
+            /tmp/original-brain-native-stop.json
+            /tmp/original-brain-native-stop.log
+          if-no-files-found: warn
