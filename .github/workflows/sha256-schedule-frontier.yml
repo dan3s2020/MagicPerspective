@@ -1,0 +1,35 @@
+name: SHA256 W16 schedule-expansion frontier ablation
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ROUND-CONSTRAINTS-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/sha256_schedule_frontier_ablation.mjs
+      - .github/workflows/sha256-schedule-frontier.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-w16-frontier
+  cancel-in-progress: true
+jobs:
+  mathematical-ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check isolated physics test; original Brain files untouched
+        run: |
+          node --check research/sha256-labyrinth-20261119/sha256_schedule_frontier_ablation.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+      - name: SHA256 schedule W16 causal ablation with actual vs oracle expanded words
+        run: node research/sha256-labyrinth-20261119/sha256_schedule_frontier_ablation.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sha256-w16-frontier-128targets
+          path: research/sha256-labyrinth-20261119/schedule_frontier_results.json
+          if-no-files-found: warn
