@@ -1,0 +1,287 @@
+{
+  "githubAction": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44624417694",
+  "jobId": 135914320795,
+  "selectionCommittedBeforeOfficialTest": "579d1121221b957a75b12d80f437f7cc3f26eae3",
+  "scientificInterpretation": "Confirms learned native physical action movement 64/58 vs 0-reward 58-only, but does NOT surpass matched fixed64 control on official Test and does NOT approach AG2",
+  "status": "ACTUAL_FROZEN_ORIGINAL_BRAIN_NATIVE_REWARD_OFFICIAL_ACCEPTOR_TEST",
+  "task": "Genuine human HS3D AG acceptor true/false site discrimination",
+  "source": "OluwadareLab EnsembleSplice original TRAIN + previously unopened OFFICIAL ACCEPTOR TEST",
+  "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+  "phase": "FROZEN_ONE_SHOT_OFFICIAL_ACCEPTOR_TEST",
+  "mode": "reward-1000",
+  "originalBrainUnchanged": true,
+  "originalNativeMechanisms": [
+    "Brain.live",
+    "Brain.predict",
+    "LeanC",
+    "EmergentChain",
+    "native 5-symbol sensory window"
+  ],
+  "originalPathPolicyNotUsedForAction": true,
+  "sourceChecksums": {
+    "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+    "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+  },
+  "sourceCounts": {
+    "P": 2200,
+    "N": 2200
+  },
+  "availableUnique": {
+    "P": 2197,
+    "N": 2190
+  },
+  "rejected": {
+    "duplicates": 13,
+    "contradictions": 0,
+    "invalid": {
+      "P": {
+        "length": 0,
+        "bases": 0
+      },
+      "N": {
+        "length": 0,
+        "bases": 0
+      }
+    }
+  },
+  "training": {
+    "rows": 1200,
+    "actualPhysicalViewportsPerTrainingRow": 7,
+    "livedSymbols": 58800
+  },
+  "calibration": {
+    "rows": 1000,
+    "positiveRewards": 610,
+    "negativeRewards": 390,
+    "exploration": 253,
+    "chosenPositions": {
+      "58": 528,
+      "62": 116,
+      "64": 200,
+      "66": 46,
+      "74": 43,
+      "78": 67
+    },
+    "nativeTransitionSymbols": 7000,
+    "livedBefore": 58800,
+    "livedAfter": 65800,
+    "updatesOriginalBrain": 7000
+  },
+  "evaluation": {
+    "nativePhysicalObservationsPerExample": 2,
+    "nativeActionsPerExample": 1,
+    "possibleUnobservedDestinations": [
+      58,
+      62,
+      64,
+      66,
+      74,
+      78
+    ],
+    "selectedHistogram": {
+      "58": 245,
+      "64": 851
+    },
+    "examples": 1096,
+    "results": {
+      "native": {
+        "n": 1096,
+        "correct": 794,
+        "accuracy": 0.7244525547445255,
+        "macroF1": 0.7168142804342172,
+        "balancedAccuracy": 0.724155269844124,
+        "confusion": {
+          "P": {
+            "P": 487,
+            "N": 62
+          },
+          "N": {
+            "P": 240,
+            "N": 307
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 549,
+            "precision": 0.6698762035763411,
+            "recall": 0.8870673952641166,
+            "f1": 0.7633228840125392
+          },
+          {
+            "label": "N",
+            "support": 547,
+            "precision": 0.8319783197831978,
+            "recall": 0.5612431444241316,
+            "f1": 0.6703056768558951
+          }
+        ]
+      },
+      "fixedInitial70": {
+        "n": 1096,
+        "correct": 561,
+        "accuracy": 0.5118613138686131,
+        "macroF1": 0.5105374355053186,
+        "balancedAccuracy": 0.5119579224982768,
+        "confusion": {
+          "P": {
+            "P": 252,
+            "N": 297
+          },
+          "N": {
+            "P": 238,
+            "N": 309
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 549,
+            "precision": 0.5142857142857142,
+            "recall": 0.45901639344262296,
+            "f1": 0.4850818094321463
+          },
+          {
+            "label": "N",
+            "support": 547,
+            "precision": 0.5099009900990099,
+            "recall": 0.5648994515539305,
+            "f1": 0.5359930615784909
+          }
+        ]
+      },
+      "fixed64": {
+        "n": 1096,
+        "correct": 798,
+        "accuracy": 0.7281021897810219,
+        "macroF1": 0.7171147450110864,
+        "balancedAccuracy": 0.7277449775726517,
+        "confusion": {
+          "P": {
+            "P": 507,
+            "N": 42
+          },
+          "N": {
+            "P": 256,
+            "N": 291
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 549,
+            "precision": 0.6644823066841415,
+            "recall": 0.9234972677595629,
+            "f1": 0.7728658536585366
+          },
+          {
+            "label": "N",
+            "support": 547,
+            "precision": 0.8738738738738738,
+            "recall": 0.5319926873857403,
+            "f1": 0.6613636363636364
+          }
+        ]
+      },
+      "fixed66": {
+        "n": 1096,
+        "correct": 547,
+        "accuracy": 0.4990875912408759,
+        "macroF1": 0.3329275715155204,
+        "balancedAccuracy": 0.5,
+        "confusion": {
+          "P": {
+            "P": 0,
+            "N": 549
+          },
+          "N": {
+            "P": 0,
+            "N": 547
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 549,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          {
+            "label": "N",
+            "support": 547,
+            "precision": 0.4990875912408759,
+            "recall": 1,
+            "f1": 0.6658551430310408
+          }
+        ]
+      },
+      "randomSecond": {
+        "n": 1096,
+        "correct": 659,
+        "accuracy": 0.6012773722627737,
+        "macroF1": 0.6003427883849143,
+        "balancedAccuracy": 0.6013676187051078,
+        "confusion": {
+          "P": {
+            "P": 303,
+            "N": 246
+          },
+          "N": {
+            "P": 191,
+            "N": 356
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 549,
+            "precision": 0.6133603238866396,
+            "recall": 0.5519125683060109,
+            "f1": 0.5810162991371045
+          },
+          {
+            "label": "N",
+            "support": 547,
+            "precision": 0.5913621262458472,
+            "recall": 0.6508226691042047,
+            "f1": 0.6196692776327241
+          }
+        ]
+      }
+    },
+    "truthHiddenAtPrediction": true,
+    "unobservedWindowNeverReadForNativeActionChoice": true,
+    "fixedCounterfactualControlsAreNotNativeActionObservations": true
+  },
+  "frozenPriorToOfficialTestCommit": "579d1121221b957a75b12d80f437f7cc3f26eae3",
+  "officialTestData": {
+    "P": {
+      "sha256": "16ca7da4611fb2b6120b6c1940b2e9dff0284309cfdf0e7423818112c5b35f15",
+      "source": 550,
+      "rejected": {
+        "length": 0,
+        "bases": 0
+      }
+    },
+    "N": {
+      "sha256": "0e2099226b0866a46701cba869085a1693a309490837081b16bd5015c4a74d03",
+      "source": 550,
+      "rejected": {
+        "length": 0,
+        "bases": 0
+      }
+    },
+    "rawRows": 1100,
+    "retainedRows": 1096,
+    "excluded": {
+      "crossTrainDNA": 1,
+      "duplicateTestDNA": 3,
+      "conflictingTestDNA": 0
+    },
+    "observedMotifAllAG": true
+  },
+  "methodNoveltyVsLiterature": "UNVERIFIED",
+  "abilityToDiscoverArbitraryGenomeCoordinates": false,
+  "alphaGenome2Compared": false
+}
