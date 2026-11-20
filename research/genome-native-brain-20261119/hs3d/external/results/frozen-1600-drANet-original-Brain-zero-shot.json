@@ -1,0 +1,688 @@
+{
+  "evidence": "COMPLETED_ZERO_SHOT_INDEPENDENT_SOURCE",
+  "date": "2026-11-20",
+  "upstreamActions": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44657306160",
+  "declaredBeforeExternalFullSourceInspection": "EXTERNAL_HUMAN_TRANSFER_PRETEST.md",
+  "frozenRegistrationCommit": "892e1a95200a9cf124273dcde9c22ddfd4dfda48",
+  "biologicalSource": "XueyanLiu-creator/DRANetSplicer",
+  "biologyIndependentFromHS3DSource": true,
+  "limitation": "unknown gene-family independence; only short four-base windows; binary motif-controlled classification; no direct AG2 benchmark",
+  "originalBrainUsed": true,
+  "noExternalTraining": true,
+  "status": "FROZEN_ORIGINAL_BRAIN_ZERO_SHOT_INDEPENDENT_HUMAN_AG_ACCEPTORS",
+  "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+  "source": "TRAIN ONLY from authentic HS3D human acceptors, ZERO-SHOT external human acceptor evaluation from DRANetSplicer",
+  "phase": "FROZEN_DIFFERENT_SOURCE_HUMAN_402NT_AG_ZERO_SHOT_TEST",
+  "pretest": "EXTERNAL_HUMAN_TRANSFER_PRETEST.md",
+  "originalFreezeCommit": "892e1a95200a9cf124273dcde9c22ddfd4dfda48",
+  "externalHumanSource": {
+    "source": "XueyanLiu-creator/DRANetSplicer",
+    "sourceCommit": "fe300cd8e4a55471268e1271621df208430157a5",
+    "originalPositiveFileSHA256": "7837826e5ab646a2f557247d45e06d86802070911dd9de32c4622c213347fb1a",
+    "originalNegativeFileSHA256": "2f69dad0fb30fb64abe3feeaffda0bb86a4b0241aa9db557ac079dc582af84dd",
+    "originalRawRows": {
+      "P": 137455,
+      "N": 137455
+    },
+    "sourceNonCanonical": {
+      "P": 0,
+      "N": 0
+    },
+    "sourceWrongLength": {
+      "P": 0,
+      "N": 0
+    },
+    "sourceWrongCentralMotif": {
+      "P": 706,
+      "N": 0
+    },
+    "uniqueUsableExternal": {
+      "P": 135413,
+      "N": 137243
+    },
+    "excluded": {
+      "duplicateInExternal": 851,
+      "contradictoryExternal": 0,
+      "exactOverlapWithOriginalHS3D": 697
+    },
+    "selected": {
+      "P": 800,
+      "N": 800
+    },
+    "exactExternalWindow": "402nt to 140nt: external.slice(132,272)",
+    "originalNativeReferenceMotif": "AG at internal [68,70) equals external [200,202)",
+    "noExternalLabeledExampleEverUsedForNativeLearning": true,
+    "externalSequenceTruthOnlyRevealedAfterNativePrediction": true,
+    "exactKnownHS3DUsedDNAOverlapExcluded": true,
+    "geneOrFamilyHomologyDisjointUnproven": true
+  },
+  "inspiration": "Braivour discovery_maze_v5.py primitives and n-step delayed credit; actual Python V5 IS NOT used",
+  "mode": "chain-delayed",
+  "sourceChecksums": {
+    "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+    "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+  },
+  "sourceCounts": {
+    "P": 2200,
+    "N": 2200
+  },
+  "availableUnique": {
+    "P": 2197,
+    "N": 2190
+  },
+  "exclusions": {
+    "duplicateOrContradictory": 13,
+    "distinctContradictoryDNAs": 0,
+    "invalid": {
+      "P": {
+        "nonCanonical": 0,
+        "wrongLength": 0
+      },
+      "N": {
+        "nonCanonical": 0,
+        "wrongLength": 0
+      }
+    }
+  },
+  "training": {
+    "actualHumanGenomeExamples": 1200,
+    "viewsPerSupervisedExample": 7,
+    "nativeBrainLearnedSymbols": 58800,
+    "capacity": 6,
+    "originalNativeR2R3off": true
+  },
+  "calibration": {
+    "episodes": 1000,
+    "trueSuccess": 609,
+    "trueFailure": 391,
+    "trueRewardSymbolsLived": 609,
+    "falseRewardSymbolsLived": 391,
+    "firstActionRewardPassages": 1000,
+    "lastActionRewardPassages": 1000,
+    "primitivePairs": {
+      "again > again": 6,
+      "undo > undo": 37,
+      "undo > left": 6,
+      "left > left": 48,
+      "open > undo": 5,
+      "left > undo": 15,
+      "new > left": 80,
+      "open > new": 15,
+      "new > new": 369,
+      "again > new": 23,
+      "right > left": 8,
+      "open > again": 3,
+      "left > open": 13,
+      "again > open": 5,
+      "open > open": 3,
+      "right > right": 6,
+      "undo > right": 18,
+      "new > right": 43,
+      "new > undo": 27,
+      "right > new": 18,
+      "left > new": 99,
+      "undo > new": 25,
+      "new > open": 20,
+      "open > left": 16,
+      "again > left": 3,
+      "left > right": 10,
+      "left > again": 7,
+      "new > again": 23,
+      "undo > again": 4,
+      "open > right": 18,
+      "right > undo": 7,
+      "right > open": 5,
+      "right > again": 4,
+      "undo > open": 4,
+      "again > right": 5,
+      "again > undo": 2
+    },
+    "initialActions": {
+      "again": 44,
+      "undo": 94,
+      "left": 192,
+      "open": 60,
+      "new": 562,
+      "right": 48
+    },
+    "finalDestinations": {
+      "64": 596,
+      "66": 134,
+      "70": 199,
+      "74": 47,
+      "78": 24
+    },
+    "livedRewardSymbols": 16000,
+    "finalBrainLived": 74800,
+    "realActualCalibrationCases": 1000,
+    "exampleTransitions": [
+      {
+        "id": 0,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "again",
+          "again"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 1,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "undo",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 2,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "undo",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 3,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "undo",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 4,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "undo",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 5,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "undo",
+          "left"
+        ],
+        "positions": [
+          70,
+          70,
+          66
+        ]
+      },
+      {
+        "id": 6,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "undo",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 7,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "left",
+          "left"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      },
+      {
+        "id": 8,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "left",
+          "left"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      },
+      {
+        "id": 9,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "left",
+          "left"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      },
+      {
+        "id": 10,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "undo",
+          "left"
+        ],
+        "positions": [
+          70,
+          70,
+          66
+        ]
+      },
+      {
+        "id": 11,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "open",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 12,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "undo",
+          "undo"
+        ],
+        "positions": [
+          70,
+          70,
+          70
+        ]
+      },
+      {
+        "id": 13,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "left",
+          "undo"
+        ],
+        "positions": [
+          70,
+          66,
+          70
+        ]
+      },
+      {
+        "id": 14,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "left",
+          "undo"
+        ],
+        "positions": [
+          70,
+          66,
+          70
+        ]
+      },
+      {
+        "id": 15,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "new",
+          "left"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      },
+      {
+        "id": 16,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "open",
+          "new"
+        ],
+        "positions": [
+          70,
+          70,
+          66
+        ]
+      },
+      {
+        "id": 17,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "new",
+          "new"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      },
+      {
+        "id": 18,
+        "actualReward": "+",
+        "livedReward": "+",
+        "primitives": [
+          "new",
+          "new"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      },
+      {
+        "id": 19,
+        "actualReward": "-",
+        "livedReward": "-",
+        "primitives": [
+          "new",
+          "new"
+        ],
+        "positions": [
+          70,
+          66,
+          64
+        ]
+      }
+    ]
+  },
+  "development": {
+    "examples": 1600,
+    "realDNAViewsPerOriginalActionPrediction": 3,
+    "physicalActionsPerPrediction": 2,
+    "nativeSelectionHistogram": {
+      "first": {
+        "left": 1029,
+        "undo": 306,
+        "new": 265
+      },
+      "second": {
+        "new": 920,
+        "left": 659,
+        "undo": 21
+      },
+      "pair": {
+        "left > new": 443,
+        "undo > new": 285,
+        "left > left": 586,
+        "new > new": 192,
+        "new > left": 73,
+        "undo > undo": 21
+      },
+      "destinations": {
+        "64": 1294,
+        "66": 285,
+        "70": 21
+      }
+    },
+    "differentLocationAfterSecondAction": 1579,
+    "results": {
+      "native": {
+        "n": 1600,
+        "correct": 1005,
+        "accuracy": 0.628125,
+        "macroF1": 0.6032009016342538,
+        "balancedAccuracy": 0.628125,
+        "perClass": [
+          {
+            "label": "P",
+            "support": 800,
+            "precision": 0.585345545378851,
+            "recall": 0.87875,
+            "f1": 0.7026486756621689
+          },
+          {
+            "label": "N",
+            "support": 800,
+            "precision": 0.7568922305764411,
+            "recall": 0.3775,
+            "f1": 0.5037531276063386
+          }
+        ],
+        "confusion": {
+          "P": {
+            "P": 703,
+            "N": 97
+          },
+          "N": {
+            "P": 498,
+            "N": 302
+          }
+        }
+      },
+      "fixed64": {
+        "n": 1600,
+        "correct": 925,
+        "accuracy": 0.578125,
+        "macroF1": 0.48874263351509795,
+        "balancedAccuracy": 0.578125,
+        "perClass": [
+          {
+            "label": "P",
+            "support": 800,
+            "precision": 0.5425459496255957,
+            "recall": 0.99625,
+            "f1": 0.7025121198765977
+          },
+          {
+            "label": "N",
+            "support": 800,
+            "precision": 0.9770992366412213,
+            "recall": 0.16,
+            "f1": 0.2749731471535983
+          }
+        ],
+        "confusion": {
+          "P": {
+            "P": 797,
+            "N": 3
+          },
+          "N": {
+            "P": 672,
+            "N": 128
+          }
+        }
+      },
+      "fixed66": {
+        "n": 1600,
+        "correct": 800,
+        "accuracy": 0.5,
+        "macroF1": 0.3333333333333333,
+        "balancedAccuracy": 0.5,
+        "perClass": [
+          {
+            "label": "P",
+            "support": 800,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          },
+          {
+            "label": "N",
+            "support": 800,
+            "precision": 0.5,
+            "recall": 1,
+            "f1": 0.6666666666666666
+          }
+        ],
+        "confusion": {
+          "P": {
+            "P": 0,
+            "N": 800
+          },
+          "N": {
+            "P": 0,
+            "N": 800
+          }
+        }
+      },
+      "initial70": {
+        "n": 1600,
+        "correct": 827,
+        "accuracy": 0.516875,
+        "macroF1": 0.4718842859527967,
+        "balancedAccuracy": 0.516875,
+        "perClass": [
+          {
+            "label": "P",
+            "support": 800,
+            "precision": 0.510655090765588,
+            "recall": 0.80875,
+            "f1": 0.6260280599903242
+          },
+          {
+            "label": "N",
+            "support": 800,
+            "precision": 0.5405405405405406,
+            "recall": 0.225,
+            "f1": 0.3177405119152692
+          }
+        ],
+        "confusion": {
+          "P": {
+            "P": 647,
+            "N": 153
+          },
+          "N": {
+            "P": 620,
+            "N": 180
+          }
+        }
+      },
+      "randomTwo": {
+        "n": 1600,
+        "correct": 819,
+        "accuracy": 0.511875,
+        "macroF1": 0.5076048181908812,
+        "balancedAccuracy": 0.511875,
+        "perClass": [
+          {
+            "label": "P",
+            "support": 800,
+            "precision": 0.5100105374077977,
+            "recall": 0.605,
+            "f1": 0.5534591194968553
+          },
+          {
+            "label": "N",
+            "support": 800,
+            "precision": 0.5145929339477726,
+            "recall": 0.41875,
+            "f1": 0.461750516884907
+          }
+        ],
+        "confusion": {
+          "P": {
+            "P": 484,
+            "N": 316
+          },
+          "N": {
+            "P": 465,
+            "N": 335
+          }
+        }
+      },
+      "fixedLeftLeft": {
+        "n": 1600,
+        "correct": 925,
+        "accuracy": 0.578125,
+        "macroF1": 0.48874263351509795,
+        "balancedAccuracy": 0.578125,
+        "perClass": [
+          {
+            "label": "P",
+            "support": 800,
+            "precision": 0.5425459496255957,
+            "recall": 0.99625,
+            "f1": 0.7025121198765977
+          },
+          {
+            "label": "N",
+            "support": 800,
+            "precision": 0.9770992366412213,
+            "recall": 0.16,
+            "f1": 0.2749731471535983
+          }
+        ],
+        "confusion": {
+          "P": {
+            "P": 797,
+            "N": 3
+          },
+          "N": {
+            "P": 672,
+            "N": 128
+          }
+        }
+      }
+    },
+    "noOutcomeOrUnobservedNucleotidesInNativeActionSelection": true,
+    "comparedControlsAreReadOnly": true
+  },
+  "scientificScope": {
+    "newCausalQuestion": "Can same original Brain learn two-step primitive composition from delayed real action feedback?",
+    "manuallySpecifiedPrimitives": true,
+    "originalBrainOnly": true,
+    "originalBraivourDiscoveryMazeV5NotRerun": true,
+    "realGGUFNotUsed": true,
+    "officialAcceptorTestNotUsed": true,
+    "alphaGenome2NotRun": true,
+    "independentExternalValidation": false,
+    "previousHS3DAcceptorDevPreviouslyOpened": true,
+    "newEvaluationRowsWereNeverScoredBeforeThisRun": true,
+    "groupHomologyDisjoint": false,
+    "independentExternalDataset": true
+  }
+}
