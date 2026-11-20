@@ -45,7 +45,7 @@ function world(byte) {
 // verified native runner and still checked against node:crypto by world().
 const RUN_SEED=0x6c29d5a1;
 let rngState=RUN_SEED;function rng(){rngState^=rngState<<13;rngState^=rngState>>>17;rngState^=rngState<<5;return rngState>>>0;}
-const bits=x=>{x=x>>>0;x=x-((x>>>1)&0x55555555);x=(x&0x33333333)+((x>>>2)&0x33333333);return (((x+(x>>>4))&0x0f0f0f0f)*0x01010101)>>>24;};
+const bits=x=>{x=x>>>0;x=x-((x>>>1)&0x55555555);x=(x&0x33333333)+((x>>>2)&0x33333333);return Math.imul(((x+(x>>>4))&0x0f0f0f0f),0x01010101)>>>24;};
 const IV2=IV.slice(), ACTS8=[5,6,7,8,11,12,14,15]; // output symbols, one for each candidate-bit physical motor
 const perm=Array.from({length:256},(_,i)=>i);
 for(let i=perm.length-1;i>0;i--){const j=rng()%(i+1);[perm[i],perm[j]]=[perm[j],perm[i]];}
@@ -54,7 +54,6 @@ const MAX_QUERY=Number(process.env.SHA_ROUND_BUDGET||64);
 assert(TRAIN>=4&&TRAIN<=24&&BLIND>=16&&BLIND<=200&&TRAIN+BLIND<=256);
 assert(MAX_QUERY>=8&&MAX_QUERY<=256);
 const train=perm.slice(0,TRAIN).map(world),held=perm.slice(TRAIN,TRAIN+BLIND).map(world);
-const oracleTargetMap=new Map(train.map(x=>[x.digest,x.msgHex]));
 const W0=x=>(((x<<24)>>>0)+0x800000)>>>0; // one-byte padding: W[0] contains 8 message bits + 0x80
 function schedule(x) {
   const b=Buffer.alloc(64);b[0]=x;b[1]=128;b.writeUInt32BE(8,60);
@@ -86,8 +85,8 @@ function invertAll(digest,candidate) {
 const hammingIV=state=>state.reduce((sum,x,i)=>sum+bits(x^IV[i]),0);
 const inverseScore=(targetDigest,candidate)=>hammingIV(invertAll(targetDigest,candidate));
 const firstScore=(observedRound1,candidate)=>hammingIV(backRound(observedRound1,0,W0(candidate)));
-const digestScore=(targetDigest,candidate)=>{
-  const obtained=world(candidate).digest;
+const digestScore=(targetDigest,candidate,alreadyComputedDigest=null)=>{
+  const obtained=alreadyComputedDigest??world(candidate).digest;
   let h=0;for(let i=0;i<8;i++)h+=bits(parseInt(targetDigest.slice(i*8,i*8+8),16)^parseInt(obtained.slice(i*8,i*8+8),16));
   return h;
 };
@@ -115,7 +114,7 @@ const trainingSummary={};
 for(const kind of ['round1','full64']){
   const brain=new Brain({rules:{depth:2},c:{cap:4},seed:43});
   let acts=0,physicalQueries=0;
-  for(const target of train)for(let ep=0;ep<24;ep++){
+  for(const target of train)for(let ep=0;ep<8;ep++){
     // Candidate starts 2-5 bits away from known target for causal motor training.
     let mask=0;while(bits(mask)<2||bits(mask)>5)mask=rng()&255;
     let candidate=target.byte^mask;
@@ -176,7 +175,7 @@ function blindTrial(target,index,kind,policy) {
         if(res.digest===digest){
           hit=true;candidate=newC;break;
         }
-        const sc=policy==='inverse_greedy'?inverseScore(digest,newC):digestScore(digest,newC);
+        const sc=policy==='inverse_greedy'?inverseScore(digest,newC):digestScore(digest,newC,res.digest);
         trials.push({b,sc,visited:visited.has(newC)});
       }
       if(hit||!trials.length)break;
@@ -210,15 +209,15 @@ for(const kind of ['round1','full64']){
 // DO NOT attribute this reference calculation to the Brain.
 const reference={oneRoundAnalyticExact:tests.filter(t=>analyticFirstByte(t.states[1])===t.byte).length,
   full64KnownScheduleRoundTrip:tests.filter(t=>inverseScore(t.digest,t.byte)===0).length};
-let gradient={full:{correctedBetter:0,incorrectBetter:0,observations:0},first:{correctedBetter:0,incorrectBetter:0,observations:0}};
+let gradient={full:{correctedBetter:0,incorrectBetter:0,correctedObservations:0,incorrectObservations:0},first:{correctedBetter:0,incorrectBetter:0,correctedObservations:0,incorrectObservations:0}};
 for(const [i,target] of tests.entries()){
   let mask=(rng()&255);while(bits(mask)<3||bits(mask)>5)mask=rng()&255;
   const candidate=target.byte^mask, correctBits=[],wrongBits=[];
   for(let b=0;b<8;b++)((mask&(1<<b))?correctBits:wrongBits).push(b);
   for(const [key,score] of [['full',x=>inverseScore(target.digest,x)],['first',x=>firstScore(target.states[1],x)]]){
     const baseline=score(candidate);
-    for(const b of correctBits){gradient[key].observations++;if(score(candidate^(1<<b))<baseline)gradient[key].correctedBetter++;}
-    for(const b of wrongBits)if(score(candidate^(1<<b))<baseline)gradient[key].incorrectBetter++;
+    for(const b of correctBits){gradient[key].correctedObservations++;if(score(candidate^(1<<b))<baseline)gradient[key].correctedBetter++;}
+    for(const b of wrongBits){gradient[key].incorrectObservations++;if(score(candidate^(1<<b))<baseline)gradient[key].incorrectBetter++;}
   }
 }
 const finalResult={status:'EXECUTED_ONLY_WHEN_CI_SUCCESS',seed:RUN_SEED,
