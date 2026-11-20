@@ -1,6 +1,6 @@
 # 2026-11-20 — V5 primitive discovery transferred into the ACTUAL original V42 Brain, with real SHA-256 action feedback
 
-**Status: original Brain executed, two full GitHub Actions runs SUCCESS, raw per-trial artifacts audited. One further in-distribution state-swap control is currently isolated and independently tracked. No SHA-256 cryptographic weakness has been shown.**
+**Status: original Brain executed, THREE GitHub Actions experiments SUCCESS, all three raw per-trial artifacts and exact Brain checkpoint verified. No SHA-256 cryptographic weakness has been shown.**
 
 ## Exact provenance and source distinction
 
@@ -60,3 +60,40 @@ A controlled **in-distribution real-state permutation** experiment is isolated a
 No result here provides blind inference of unknown `W[t]`, unknown intermediate register states or an advantage over generic SHA-256 preimage search. This is science of **which experiments are informative in an instrumented SHA universe** and the first strong same-Brain transfer demonstration on that meta-discovery task. Internal SHA word observations are part of the experimental instrument, not something inferred from a hidden hash. Source `docs/SHA256_ORIGINAL_BRAIN_INVERSE_W16_BOUNDARY_20261120.md` explains why first-round/internal-`W` access is a privileged diagnostic.
 
 If we want actual SHA preimage advancement, the next step is to ask whether this learned exploration skill can guide branch consistency constraints from **public final digest only**, and require a wrong-digest, uniform unique-candidate, and matched-compute control. **No cryptanalytic vulnerability demonstrated; no security report warranted.**
+
+## Experiment C: Real in-distribution state swaps + ORIGINAL Brain checkpoint persistence
+
+**Actually EXECUTED:** [GitHub run 44654032980](https://github.com/dan3s2020/MagicPerspective/actions/runs/44654032980), **SUCCESS**. Source `research/sha256-labyrinth-20261119/native_v5_sha_in_distribution_state_test.mjs`; full raw artifact ID **14591708821**; it contains `native_v5_sha_in_distribution_ablation_results.json` (288,572 bytes) and the actual new original Brain checkpoint `original_v42_sha_discovery_rewarded.v8` (**56,416,433 bytes**).
+
+Training is **identical** to A and B: same original 80 worlds, 2,584 actions, 1,280 observable discoveries, each real original Brain experiences 301,968 tokens; 25 heldout worlds per size (8/16/24). This experiment evaluated **52,103** SHA-256 operations (all independently checked against Node crypto).
+
+Causal control 1: at each step, keep the original trained Brain unchanged but feed a real map-state token sampled in a *permuted time order* from that SAME world's authentic rewarded Brain trajectory.
+
+Causal control 2: feed an authentic map-state token from a DIFFERENT heldout world of the same size at a matching step. Both interventions preserve in-domain token patterns better than fabricated `S00XX` strings.
+
+| Heldout world | Correct own map state | SAME-world genuine states but time-permuted | OTHER-world genuine state at current step |
+| --- | ---: | ---: | ---: |
+| 8 outputs | **21.16** actions | 23.48 | 23.84 |
+| 16 outputs | **44.12** | 50.44 | 53.48 (24/25 completed) |
+| 24 outputs | **63.44** | 72.68 | 71.20 |
+
+**Same-world shuffled states** are worse than correctly timed states: trained Brain wins on **19/25**, **21/25**, **22/25** cases by size. Bootstrap paired 95% resampled CI for extra steps due to same-world time permutation:
+- 8 outputs: **+2.32** steps, CI **[+0.52,+3.92]**.
+- 16 outputs: **+6.32** steps, CI **[+2.16,+9.84]**.
+- 24 outputs: **+9.24** steps, CI **[+4.32,+13.92]**.
+
+The OTHER-world wrong-state control adds +2.68/+9.36/+7.76 steps. Its 95% paired CIs include zero for 8 and 16 outputs, and exclude zero for 24; those specific two effects are not individually conclusive in this sample. In-domain same-world time permutation is the clearer evidence that timing of the original map state contributes to action choice.
+
+### Trained original V42 checkpoint: SAVE/LOAD actually verified
+
+- Actual API `Brain.save(file)` serialized the original trained Brain to `research/sha256-labyrinth-20261119/original_v42_sha_discovery_rewarded.v8`, **56,416,433 bytes**, stored in CI artifact (not committed to Git, preserving repo history).
+- `Brain.load(file)` returned a revived original Brain with `lived === 301968` and **bit-identical action-token predictive scores** at four specified fixed test contexts: `S33XX`, `S00XX`, `S22AB`, `S11GH`.
+- Log `SHA_ORIGINAL_BRAIN_CHECKPOINT` returned `status=exact_native_restore_verified`, `parity=true`.
+- This proves correct SAVE/LOAD for the tested probes and basic state restoration. It is **not** an exhaustive proof that all future stochastic trajectories are identical, nor evidence that the learned policy can invert SHA-256.
+- Future experiments can use this artifact to avoid re-running 80-world training. Always verify an original-Brain checkpoint loader with the exact pinned class and model/constructor source.
+
+### Narrow combined conclusion
+
+Three distinct controls (reward shuffling, fake state ablations, authentic in-distribution state shuffling) support an actual, learned native V42 ability to choose primitive experiments according to what its own instrumented SHA discovery map says and WHEN that status was observed. A transparent 16/32/48-step handcoded own-map heuristic still beats the original Brain; no spontaneous invention of primitive operators or reward gate was observed.
+
+**No preimage attack:** A controlled 8-to-24-action map discovery task using a privileged SHA word schedule instrument is not the same as an unknown-hash inversion. `W[16]`/`W[20]` observed in this experiment is not available from a final SHA digest alone. This entire work demonstrates a transferable **research-experiment selection policy**, not general SHA-256 cryptanalysis. No vulnerability report warranted.
