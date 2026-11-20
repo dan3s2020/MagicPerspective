@@ -1,0 +1,51 @@
+name: HS3D original Brain V5 composition 1600 frozen new human acceptors
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-TWO-STEP-DISCOVERY-20261120
+    paths:
+      - .github/workflows/hs3d-native-primitive-composition-frozen-1600.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-frozen-compound:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [chain-delayed, chain-last-repeat, chain-shuffled]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout authentic HS3D upstream Train only (new unused within-dataset rows)
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Syntax-check frozen original Brain native action composition runner
+        run: node --check research/genome-native-brain-20261119/hs3d/composition/run-frozen-1600.mjs
+      - name: Three preregistered original-Brain mechanisms on new 800P and 800N cases
+        shell: bash
+        env:
+          HS3D_COMPOSED_FINAL_UNLOCK: FROZEN_1600_AFTER_DEV_SELECTION
+          HS3D_PRIMITIVE_RESULT_PATH: /tmp/original-native-v5-1600-real-acceptor.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/composition/run-frozen-1600.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/original-native-v5-1600.log
+      - name: Preserve physical choice, raw genomic predictions, controls and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-V5-compound-1600-${{ matrix.mode }}
+          path: |
+            /tmp/original-native-v5-1600-real-acceptor.json
+            /tmp/original-native-v5-1600.log
+          if-no-files-found: warn
