@@ -1,0 +1,50 @@
+name: HS3D original Brain V5-inspired two-step composition real genomic actions
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-TWO-STEP-DISCOVERY-20261120
+    paths:
+      - .github/workflows/hs3d-original-native-two-step-v5-mechanism.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-two-step:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode: [chain-zero, chain-last, chain-last-repeat, chain-delayed, chain-shuffled]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout genuine HS3D human acceptor TRAIN only (never official Test)
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify original-native 2-step composition code syntax
+        run: node --check research/genome-native-brain-20261119/hs3d/composition/run.mjs
+      - name: Original Brain lives physical primitive sequences, then blind P/N predictions
+        shell: bash
+        env:
+          HS3D_PRIMITIVE_RESULT_PATH: /tmp/hs3d-original-v5-composition.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/composition/run.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-original-v5-composition.log
+      - name: Preserve full native per-example physical-action traces and failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-AG-two-step-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-original-v5-composition.json
+            /tmp/hs3d-original-v5-composition.log
+          if-no-files-found: warn
