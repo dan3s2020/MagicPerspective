@@ -5,6 +5,7 @@ on:
       - research/HS3D-NATIVE-COUNTERFACTUAL-VALUE-OF-INFORMATION-20261120
     paths:
       - .github/workflows/hs3d-original-native-paired-stop-value.yml
+      - research/genome-native-brain-20261119/hs3d/stop/counterfactual/run-native-paired.mjs
   workflow_dispatch:
 permissions:
   contents: read
