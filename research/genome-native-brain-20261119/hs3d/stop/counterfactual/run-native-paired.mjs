@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import {Brain} from "../../../../v17/transcend/torus-aether/devour/brain.mjs";
+import {Brain} from "../../../../../v17/transcend/torus-aether/devour/brain.mjs";
 
 const SOURCE_COMMIT="e04aa5aeb4035adac9ce6c65c2143c2ef7163332";
 const MODES=["paired-advantage","paired-absolute","paired-destroyed"];
