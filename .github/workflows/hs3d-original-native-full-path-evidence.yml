@@ -1,0 +1,50 @@
+name: HS3D original Brain actually learns all 3 genomic observations in its 32-symbol history
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PATH-HISTORY-FUSION-20261120
+    paths:
+      - .github/workflows/hs3d-original-native-full-path-evidence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-chronological-real-genome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [history-noextra, history-true, history-broken]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine human HS3D acceptor AG original Train only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Syntax check unmodified original Brain temporal multi-view runner
+        run: node --check research/genome-native-brain-20261119/hs3d/fusion/run-native-historical-evidence.mjs
+      - name: Same original Brain lives and predicts entire actual physical genome path vs destroyed history
+        shell: bash
+        env:
+          HS3D_HISTORY_RESULT_FILE: /tmp/hs3d-original-native-path-history.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/fusion/run-native-historical-evidence.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-original-native-path-history.log
+      - name: Archive actual original Brain full path and negative causality traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-real-history-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-original-native-path-history.json
+            /tmp/hs3d-original-native-path-history.log
+          if-no-files-found: warn
