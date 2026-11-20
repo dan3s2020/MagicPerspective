@@ -1,0 +1,1517 @@
+{
+  "evidence": "EXECUTED_4_ORIGINAL_BRAIN_NATIVE_STOP_GATE_ARMS",
+  "timestamp": "2026-11-20",
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44655782477",
+  "preregistered": "BEFORE_FIRST_TEST.md",
+  "source": "run-native-stop.mjs",
+  "phase": "EXPLORATORY_WITHIN_HS3D_TRAIN_DEV400",
+  "originalCodeUnchanged": true,
+  "resultSummary": "stop-real-free learned nonconstant stop choices: 2.7025 vs 3 views (9.92% fewer); 63.25% acc vs matched full 60.75%, free-F1 62.82% vs 59.88%. Did NOT meet >=15% observation reduction. Cost=5% learning always full 3 views, fails native conditional-stop gate. No external validation.",
+  "out": [
+    {
+      "job_id": 136021528836,
+      "status": "ACTUAL_ORIGINAL_V42_BRAIN_NATIVE_STOP_OR_OBSERVE",
+      "source": "Real 140nt human HS3D AG acceptor original TRAIN only",
+      "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "studyPhase": "EXPLORATORY_PREVIOUSLY_SEEN_HS3D_TRAIN_DEV400",
+      "mode": "stop-no-train",
+      "originalNativeCode": "v17/transcend/torus-aether/devour/brain.mjs",
+      "originalBrainSameObjectThroughAllPhases": true,
+      "originalV5PythonNotUsed": true,
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "sourceCounts": {
+        "P": 2200,
+        "N": 2200
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 0,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 0,
+        "totalFrozenLived": 74800
+      },
+      "nativeGate": {
+        "episodes": 0,
+        "rewardPlus": 0,
+        "rewardMinus": 0,
+        "correctFinal": 0,
+        "stopAt0": 0,
+        "stopAt1": 0,
+        "fullBudget": 0,
+        "livedSymbols": 0,
+        "chosenGateSequences": {},
+        "trueHumanDNAObserved": 0
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 195,
+            "accuracy": 0.4875,
+            "macroF1": 0.4358794433093238,
+            "balancedAccuracy": 0.48750000000000004,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.49221183800623053,
+                "recall": 0.79,
+                "f1": 0.6065259117082533
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.46835443037974683,
+                "recall": 0.185,
+                "f1": 0.26523297491039427
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 158,
+                "N": 42
+              },
+              "N": {
+                "P": 163,
+                "N": 37
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 255,
+            "accuracy": 0.6375,
+            "macroF1": 0.6084229572168325,
+            "balancedAccuracy": 0.6375,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5889967637540453,
+                "recall": 0.91,
+                "f1": 0.7151277013752456
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8021978021978022,
+                "recall": 0.365,
+                "f1": 0.5017182130584192
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 182,
+                "N": 18
+              },
+              "N": {
+                "P": 127,
+                "N": 73
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 342,
+            "66": 55,
+            "70": 3
+          },
+          "primitiveSequences": {
+            "left>left": 123,
+            "undo>new": 55,
+            "left>new": 140,
+            "new>new": 63,
+            "new>left": 16,
+            "undo>undo": 3
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 195,
+            "accuracy": 0.4875,
+            "macroF1": 0.4358794433093238,
+            "balancedAccuracy": 0.48750000000000004,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.49221183800623053,
+                "recall": 0.79,
+                "f1": 0.6065259117082533
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.46835443037974683,
+                "recall": 0.185,
+                "f1": 0.26523297491039427
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 158,
+                "N": 42
+              },
+              "N": {
+                "P": 163,
+                "N": 37
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 255,
+            "accuracy": 0.6375,
+            "macroF1": 0.6084229572168325,
+            "balancedAccuracy": 0.6375,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5889967637540453,
+                "recall": 0.91,
+                "f1": 0.7151277013752456
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8021978021978022,
+                "recall": 0.365,
+                "f1": 0.5017182130584192
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 182,
+                "N": 18
+              },
+              "N": {
+                "P": 127,
+                "N": 73
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 342,
+            "66": 55,
+            "70": 3
+          },
+          "primitiveSequences": {
+            "left>left": 123,
+            "undo>new": 55,
+            "left>new": 140,
+            "new>new": 63,
+            "new>left": 16,
+            "undo>undo": 3
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 213,
+            "accuracy": 0.5325,
+            "macroF1": 0.5275361769591773,
+            "balancedAccuracy": 0.5325,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5269709543568465,
+                "recall": 0.635,
+                "f1": 0.5759637188208617
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5408805031446541,
+                "recall": 0.43,
+                "f1": 0.479108635097493
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 127,
+                "N": 73
+              },
+              "N": {
+                "P": 114,
+                "N": 86
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 77,
+            "66": 105,
+            "70": 218
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "left": 61,
+            "undo": 13,
+            "undo>new": 22,
+            "new": 22,
+            "left>left": 29,
+            "left>new": 35,
+            "new>left": 2,
+            "new>new": 11
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": true,
+        "preservedAccuracyWithin1_5ppVsOwnFull": false,
+        "preservedMacroF1Within2ppVsOwnFull": false,
+        "conditionalNativeGateChoices": false
+      },
+      "alphaGenome2NotRun": true,
+      "donorGGUFNotRun": true,
+      "independentBiologicalValidation": false
+    },
+    {
+      "job_id": 136021528983,
+      "status": "ACTUAL_ORIGINAL_V42_BRAIN_NATIVE_STOP_OR_OBSERVE",
+      "source": "Real 140nt human HS3D AG acceptor original TRAIN only",
+      "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "studyPhase": "EXPLORATORY_PREVIOUSLY_SEEN_HS3D_TRAIN_DEV400",
+      "mode": "stop-real-cost",
+      "originalNativeCode": "v17/transcend/torus-aether/devour/brain.mjs",
+      "originalBrainSameObjectThroughAllPhases": true,
+      "originalV5PythonNotUsed": true,
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "sourceCounts": {
+        "P": 2200,
+        "N": 2200
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 1000,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 14208,
+        "totalFrozenLived": 89008
+      },
+      "nativeGate": {
+        "episodes": 1000,
+        "rewardPlus": 581,
+        "rewardMinus": 419,
+        "correctFinal": 615,
+        "stopAt0": 224,
+        "stopAt1": 123,
+        "fullBudget": 653,
+        "livedSymbols": 14208,
+        "chosenGateSequences": {
+          "s": 224,
+          "g>s": 123,
+          "g>g": 653
+        },
+        "trueHumanDNAObserved": 2429
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 277,
+            "accuracy": 0.6925,
+            "macroF1": 0.6688006139305693,
+            "balancedAccuracy": 0.6925,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6254071661237784,
+                "recall": 0.96,
+                "f1": 0.757396449704142
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.9139784946236559,
+                "recall": 0.425,
+                "f1": 0.5802047781569966
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 192,
+                "N": 8
+              },
+              "N": {
+                "P": 115,
+                "N": 85
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 138,
+            "66": 220,
+            "70": 42
+          },
+          "primitiveSequences": {
+            "new>open": 173,
+            "new>new": 123,
+            "new>again": 59,
+            "left>undo": 11,
+            "left>open": 19,
+            "left>new": 15
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 277,
+            "accuracy": 0.6925,
+            "macroF1": 0.6688006139305693,
+            "balancedAccuracy": 0.6925,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6254071661237784,
+                "recall": 0.96,
+                "f1": 0.757396449704142
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.9139784946236559,
+                "recall": 0.425,
+                "f1": 0.5802047781569966
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 192,
+                "N": 8
+              },
+              "N": {
+                "P": 115,
+                "N": 85
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 138,
+            "66": 220,
+            "70": 42
+          },
+          "primitiveSequences": {
+            "new>open": 173,
+            "new>new": 123,
+            "new>again": 59,
+            "left>undo": 11,
+            "left>open": 19,
+            "left>new": 15
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 202,
+            "accuracy": 0.505,
+            "macroF1": 0.42648592283628783,
+            "balancedAccuracy": 0.505,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5028735632183908,
+                "recall": 0.875,
+                "f1": 0.6386861313868614
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5192307692307693,
+                "recall": 0.135,
+                "f1": 0.21428571428571427
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 175,
+                "N": 25
+              },
+              "N": {
+                "P": 173,
+                "N": 27
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 277,
+            "accuracy": 0.6925,
+            "macroF1": 0.6688006139305693,
+            "balancedAccuracy": 0.6925,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6254071661237784,
+                "recall": 0.96,
+                "f1": 0.757396449704142
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.9139784946236559,
+                "recall": 0.425,
+                "f1": 0.5802047781569966
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 192,
+                "N": 8
+              },
+              "N": {
+                "P": 115,
+                "N": 85
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 138,
+            "66": 220,
+            "70": 42
+          },
+          "primitiveSequences": {
+            "new>open": 173,
+            "new>new": 123,
+            "new>again": 59,
+            "left>undo": 11,
+            "left>open": 19,
+            "left>new": 15
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 232,
+            "accuracy": 0.58,
+            "macroF1": 0.5337348394438123,
+            "balancedAccuracy": 0.5800000000000001,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.549079754601227,
+                "recall": 0.895,
+                "f1": 0.6806083650190115
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7162162162162162,
+                "recall": 0.265,
+                "f1": 0.38686131386861317
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 179,
+                "N": 21
+              },
+              "N": {
+                "P": 147,
+                "N": 53
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 33,
+            "66": 150,
+            "70": 217
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "new": 84,
+            "new>open": 47,
+            "left": 12,
+            "new>new": 32,
+            "left>open": 5,
+            "new>again": 14,
+            "left>new": 1
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": false,
+        "preservedAccuracyWithin1_5ppVsOwnFull": true,
+        "preservedMacroF1Within2ppVsOwnFull": true,
+        "conditionalNativeGateChoices": false
+      },
+      "alphaGenome2NotRun": true,
+      "donorGGUFNotRun": true,
+      "independentBiologicalValidation": false
+    },
+    {
+      "job_id": 136021528928,
+      "status": "ACTUAL_ORIGINAL_V42_BRAIN_NATIVE_STOP_OR_OBSERVE",
+      "source": "Real 140nt human HS3D AG acceptor original TRAIN only",
+      "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "studyPhase": "EXPLORATORY_PREVIOUSLY_SEEN_HS3D_TRAIN_DEV400",
+      "mode": "stop-real-free",
+      "originalNativeCode": "v17/transcend/torus-aether/devour/brain.mjs",
+      "originalBrainSameObjectThroughAllPhases": true,
+      "originalV5PythonNotUsed": true,
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "sourceCounts": {
+        "P": 2200,
+        "N": 2200
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 1000,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 14472,
+        "totalFrozenLived": 89272
+      },
+      "nativeGate": {
+        "episodes": 1000,
+        "rewardPlus": 624,
+        "rewardMinus": 376,
+        "correctFinal": 624,
+        "stopAt0": 191,
+        "stopAt1": 119,
+        "fullBudget": 690,
+        "livedSymbols": 14472,
+        "chosenGateSequences": {
+          "s": 191,
+          "g>s": 119,
+          "g>g": 690
+        },
+        "trueHumanDNAObserved": 2499
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 253,
+            "accuracy": 0.6325,
+            "macroF1": 0.6282034258398619,
+            "balancedAccuracy": 0.6325000000000001,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6090534979423868,
+                "recall": 0.74,
+                "f1": 0.6681715575620768
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6687898089171974,
+                "recall": 0.525,
+                "f1": 0.5882352941176471
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 148,
+                "N": 52
+              },
+              "N": {
+                "P": 95,
+                "N": 105
+              }
+            }
+          },
+          "meanViews": 2.7025,
+          "viewCounts": {
+            "1": 8,
+            "2": 103,
+            "3": 289
+          },
+          "stopActions": {
+            "g>g": 289,
+            "g>s": 103,
+            "s": 8
+          },
+          "finalPositions": {
+            "64": 222,
+            "66": 72,
+            "70": 106
+          },
+          "primitiveSequences": {
+            "left>new": 121,
+            "left": 24,
+            "undo": 49,
+            "new>new": 101,
+            "undo>undo": 49,
+            "undo>new": 18,
+            "new": 30,
+            "none": 8
+          },
+          "stage0Gates": {
+            "g": 392,
+            "s": 8
+          },
+          "stage1Gates": {
+            "g": 289,
+            "s": 103,
+            "not-reached": 8
+          },
+          "totalViewObservations": 1081,
+          "nontrivialConditionalActions": 3
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 243,
+            "accuracy": 0.6075,
+            "macroF1": 0.5987707562660124,
+            "balancedAccuracy": 0.6075,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.583011583011583,
+                "recall": 0.755,
+                "f1": 0.6579520697167756
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6524822695035462,
+                "recall": 0.46,
+                "f1": 0.5395894428152492
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 151,
+                "N": 49
+              },
+              "N": {
+                "P": 108,
+                "N": 92
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 276,
+            "66": 37,
+            "70": 87
+          },
+          "primitiveSequences": {
+            "left>new": 145,
+            "undo>undo": 87,
+            "new>new": 131,
+            "undo>new": 37
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 221,
+            "accuracy": 0.5525,
+            "macroF1": 0.5512631691098591,
+            "balancedAccuracy": 0.5525,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5586592178770949,
+                "recall": 0.5,
+                "f1": 0.5277044854881267
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5475113122171946,
+                "recall": 0.605,
+                "f1": 0.5748218527315915
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 100,
+                "N": 100
+              },
+              "N": {
+                "P": 79,
+                "N": 121
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 245,
+            "accuracy": 0.6125,
+            "macroF1": 0.6044682330575244,
+            "balancedAccuracy": 0.6125,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5875486381322957,
+                "recall": 0.755,
+                "f1": 0.6608315098468271
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6573426573426573,
+                "recall": 0.47,
+                "f1": 0.5481049562682215
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 151,
+                "N": 49
+              },
+              "N": {
+                "P": 106,
+                "N": 94
+              }
+            }
+          },
+          "meanViews": 2.955,
+          "viewCounts": {
+            "1": 8,
+            "2": 2,
+            "3": 390
+          },
+          "stopActions": {
+            "g>g": 390,
+            "g>s": 2,
+            "s": 8
+          },
+          "finalPositions": {
+            "64": 270,
+            "66": 37,
+            "70": 93
+          },
+          "primitiveSequences": {
+            "left>new": 141,
+            "undo>undo": 85,
+            "new>new": 129,
+            "undo>new": 35,
+            "left": 1,
+            "none": 8,
+            "new": 1
+          },
+          "stage0Gates": {
+            "g": 392,
+            "s": 8
+          },
+          "stage1Gates": {
+            "g": 390,
+            "s": 2,
+            "not-reached": 8
+          },
+          "totalViewObservations": 1182,
+          "nontrivialConditionalActions": 3
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 238,
+            "accuracy": 0.595,
+            "macroF1": 0.5945032665014642,
+            "balancedAccuracy": 0.595,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5887850467289719,
+                "recall": 0.63,
+                "f1": 0.6086956521739131
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6021505376344086,
+                "recall": 0.56,
+                "f1": 0.5803108808290155
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 126,
+                "N": 74
+              },
+              "N": {
+                "P": 88,
+                "N": 112
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 67,
+            "66": 75,
+            "70": 258
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "left": 29,
+            "undo": 32,
+            "new>new": 35,
+            "left>new": 32,
+            "undo>new": 11,
+            "new": 35,
+            "undo>undo": 21
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": false,
+        "preservedAccuracyWithin1_5ppVsOwnFull": true,
+        "preservedMacroF1Within2ppVsOwnFull": true,
+        "conditionalNativeGateChoices": true
+      },
+      "alphaGenome2NotRun": true,
+      "donorGGUFNotRun": true,
+      "independentBiologicalValidation": false
+    },
+    {
+      "job_id": 136021528549,
+      "status": "ACTUAL_ORIGINAL_V42_BRAIN_NATIVE_STOP_OR_OBSERVE",
+      "source": "Real 140nt human HS3D AG acceptor original TRAIN only",
+      "sourceCommit": "e04aa5aeb4035adac9ce6c65c2143c2ef7163332",
+      "studyPhase": "EXPLORATORY_PREVIOUSLY_SEEN_HS3D_TRAIN_DEV400",
+      "mode": "stop-shuffled",
+      "originalNativeCode": "v17/transcend/torus-aether/devour/brain.mjs",
+      "originalBrainSameObjectThroughAllPhases": true,
+      "originalV5PythonNotUsed": true,
+      "sourceChecksums": {
+        "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+      },
+      "sourceCounts": {
+        "P": 2200,
+        "N": 2200
+      },
+      "counts": {
+        "train": 1200,
+        "primitiveCalibration": 1000,
+        "nativeStopCalibration": 1000,
+        "evaluation": 400
+      },
+      "originalLearning": {
+        "supervisedSymbols": 58800,
+        "primitiveNativeRewardSymbols": 16000,
+        "stopGateRewardSymbols": 12848,
+        "totalFrozenLived": 87648
+      },
+      "nativeGate": {
+        "episodes": 1000,
+        "rewardPlus": 467,
+        "rewardMinus": 533,
+        "correctFinal": 575,
+        "stopAt0": 394,
+        "stopAt1": 234,
+        "fullBudget": 372,
+        "livedSymbols": 12848,
+        "chosenGateSequences": {
+          "s": 394,
+          "g>s": 234,
+          "g>g": 372
+        },
+        "trueHumanDNAObserved": 1978
+      },
+      "observed": {
+        "native": {
+          "score": {
+            "n": 400,
+            "correct": 210,
+            "accuracy": 0.525,
+            "macroF1": 0.4009899429364104,
+            "balancedAccuracy": 0.525,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5130890052356021,
+                "recall": 0.98,
+                "f1": 0.6735395189003437
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7777777777777778,
+                "recall": 0.07,
+                "f1": 0.12844036697247707
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 196,
+                "N": 4
+              },
+              "N": {
+                "P": 186,
+                "N": 14
+              }
+            }
+          },
+          "meanViews": 1.46,
+          "viewCounts": {
+            "1": 308,
+            "3": 92
+          },
+          "stopActions": {
+            "g>g": 92,
+            "s": 308
+          },
+          "finalPositions": {
+            "64": 92,
+            "70": 308
+          },
+          "primitiveSequences": {
+            "new>new": 92,
+            "none": 308
+          },
+          "stage0Gates": {
+            "g": 92,
+            "s": 308
+          },
+          "stage1Gates": {
+            "g": 92,
+            "not-reached": 308
+          },
+          "totalViewObservations": 584,
+          "nontrivialConditionalActions": 2
+        },
+        "sameBrainFull": {
+          "score": {
+            "n": 400,
+            "correct": 240,
+            "accuracy": 0.6,
+            "macroF1": 0.5423210046053949,
+            "balancedAccuracy": 0.6,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5584795321637427,
+                "recall": 0.955,
+                "f1": 0.7047970479704797
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8448275862068966,
+                "recall": 0.245,
+                "f1": 0.3798449612403101
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 191,
+                "N": 9
+              },
+              "N": {
+                "P": 151,
+                "N": 49
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 400
+          },
+          "primitiveSequences": {
+            "new>new": 400
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "oneView": {
+          "score": {
+            "n": 400,
+            "correct": 188,
+            "accuracy": 0.47,
+            "macroF1": 0.42832488404702834,
+            "balancedAccuracy": 0.47,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.4805194805194805,
+                "recall": 0.74,
+                "f1": 0.5826771653543307
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.43478260869565216,
+                "recall": 0.2,
+                "f1": 0.273972602739726
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 148,
+                "N": 52
+              },
+              "N": {
+                "P": 160,
+                "N": 40
+              }
+            }
+          },
+          "meanViews": 1,
+          "viewCounts": {
+            "1": 400
+          },
+          "stopActions": {
+            "s": 400
+          },
+          "finalPositions": {
+            "70": 400
+          },
+          "primitiveSequences": {
+            "none": 400
+          },
+          "stage0Gates": {
+            "s": 400
+          },
+          "stage1Gates": {
+            "not-reached": 400
+          },
+          "totalViewObservations": 400,
+          "nontrivialConditionalActions": 1
+        },
+        "threshold80": {
+          "score": {
+            "n": 400,
+            "correct": 240,
+            "accuracy": 0.6,
+            "macroF1": 0.5423210046053949,
+            "balancedAccuracy": 0.6,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5584795321637427,
+                "recall": 0.955,
+                "f1": 0.7047970479704797
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8448275862068966,
+                "recall": 0.245,
+                "f1": 0.3798449612403101
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 191,
+                "N": 9
+              },
+              "N": {
+                "P": 151,
+                "N": 49
+              }
+            }
+          },
+          "meanViews": 3,
+          "viewCounts": {
+            "3": 400
+          },
+          "stopActions": {
+            "g>g": 400
+          },
+          "finalPositions": {
+            "64": 400
+          },
+          "primitiveSequences": {
+            "new>new": 400
+          },
+          "stage0Gates": {
+            "g": 400
+          },
+          "stage1Gates": {
+            "g": 400
+          },
+          "totalViewObservations": 1200,
+          "nontrivialConditionalActions": 1
+        },
+        "randomStop": {
+          "score": {
+            "n": 400,
+            "correct": 209,
+            "accuracy": 0.5225,
+            "macroF1": 0.5169173764313852,
+            "balancedAccuracy": 0.5225,
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5185185185185185,
+                "recall": 0.63,
+                "f1": 0.5688487584650113
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5286624203821656,
+                "recall": 0.415,
+                "f1": 0.4649859943977591
+              }
+            ],
+            "confusion": {
+              "P": {
+                "P": 126,
+                "N": 74
+              },
+              "N": {
+                "P": 117,
+                "N": 83
+              }
+            }
+          },
+          "meanViews": 1.735,
+          "viewCounts": {
+            "1": 205,
+            "2": 96,
+            "3": 99
+          },
+          "stopActions": {
+            "s": 205,
+            "g>s": 96,
+            "g>g": 99
+          },
+          "finalPositions": {
+            "64": 99,
+            "66": 96,
+            "70": 205
+          },
+          "primitiveSequences": {
+            "none": 205,
+            "new": 96,
+            "new>new": 99
+          },
+          "stage0Gates": {
+            "s": 205,
+            "g": 195
+          },
+          "stage1Gates": {
+            "not-reached": 205,
+            "s": 96,
+            "g": 99
+          },
+          "totalViewObservations": 694,
+          "nontrivialConditionalActions": 3
+        }
+      },
+      "successChecks": {
+        "nativeControlsOwnActions": true,
+        "hiddenNucleotidesNotReadBeforeMovement": true,
+        "noTrueClassAtDecision": true,
+        "maxPhysicalViews": 3,
+        "originalBrainPredictionUsedForStopAndMoveAndClass": true,
+        "achievedViewReduction15pct": true,
+        "preservedAccuracyWithin1_5ppVsOwnFull": false,
+        "preservedMacroF1Within2ppVsOwnFull": false,
+        "conditionalNativeGateChoices": true
+      },
+      "alphaGenome2NotRun": true,
+      "donorGGUFNotRun": true,
+      "independentBiologicalValidation": false
+    }
+  ]
+}
