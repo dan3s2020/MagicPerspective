@@ -1,0 +1,41 @@
+name: SHA256 inverse round constraints original Brain blind
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ROUND-CONSTRAINTS-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_true_inverse_constraints.mjs
+      - .github/workflows/sha256-original-inverse-constraints.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-inverse-constraints-original
+  cancel-in-progress: true
+jobs:
+  inverse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original V42 and world syntax
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          node --check research/sha256-labyrinth-20261119/native_sha256_true_inverse_constraints.mjs
+      - name: Native Brain explores real algebraic inverse SHA constraints under blind targets
+        env:
+          SHA_ROUND_TRAIN: '8'
+          SHA_ROUND_BLIND: '64'
+          SHA_ROUND_EVAL_TARGETS: '64'
+          SHA_ROUND_BUDGET: '64'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_true_inverse_constraints.mjs
+      - name: Upload complete raw metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha256-original-inverse-constraints-64
+          path: research/sha256-labyrinth-20261119/inverse_constraint_results.json
+          if-no-files-found: warn
