@@ -1,0 +1,55 @@
+name: Original Brain frozen external human DRANet acceptor zero-shot
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-TWO-STEP-DISCOVERY-20261120
+    paths:
+      - .github/workflows/hs3d-original-native-zero-shot-external-human.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-independent-real-human-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original HS3D human acceptor TRAIN labels only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: DIFFERENT independently published DRANetSplicer human acceptor genome, no native learning
+        uses: actions/checkout@v4
+        with:
+          repository: XueyanLiu-creator/DRANetSplicer
+          ref: fe300cd8e4a55471268e1271621df208430157a5
+          path: comparison-checkouts/dranet
+          sparse-checkout: |
+            data/dna_sequences/homo_acceptor_positive.txt
+            data/dna_sequences/homo_acceptor_negative.txt
+      - name: Check exact frozen original-native external transfer syntax
+        run: node --check research/genome-native-brain-20261119/hs3d/external/run-homo-402-zero-shot.mjs
+      - name: Original trained Brain navigates never-trained separate-source 402nt human DNA
+        shell: bash
+        env:
+          HS3D_EXTERNAL_TRANSFER_UNLOCK: EXTERNAL_HOMO_PRE_FROZEN
+          HS3D_PRIMITIVE_RESULT_PATH: /tmp/hs3d-original-external-zero-shot.json
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/external/run-homo-402-zero-shot.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal comparison-checkouts/dranet/data/dna_sequences chain-delayed | tee /tmp/hs3d-original-external-zero-shot.log
+      - name: Preserve unfiltered external source provenance and every native action prediction
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-zero-shot-external-Human-DRANet
+          path: |
+            /tmp/hs3d-original-external-zero-shot.json
+            /tmp/hs3d-original-external-zero-shot.log
+          if-no-files-found: warn
