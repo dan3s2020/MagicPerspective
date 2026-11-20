@@ -1,0 +1,42 @@
+name: Original V42 SHA discovery in-distribution causal state swaps and checkpoint
+on:
+  push:
+    branches:
+      - experiment/SHA256-V5-META-DISCOVERY-NATIVE-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_v5_sha_in_distribution_state_test.mjs
+      - .github/workflows/sha256-v5-native-in-distribution-state.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-v5-native-in-distribution-state
+  cancel-in-progress: true
+jobs:
+  causal-swap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check native original V42 source and state swap syntax
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          node --check research/sha256-labyrinth-20261119/native_v5_sha_in_distribution_state_test.mjs
+      - name: Test same-world time-permuted and cross-world real states at identical 80-world training
+        env:
+          SHA_DISCOVERY_TRAIN: '80'
+          SHA_DISCOVERY_TEST: '25'
+          SHA_DISCOVERY_MAX_STEPS: '160'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_v5_sha_in_distribution_state_test.mjs
+      - name: Preserve JSON, replay metrics and actual V42 checkpoint if produced
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-v42-sha-v5-causal-swaps-and-brain-checkpoint
+          path: |
+            research/sha256-labyrinth-20261119/native_v5_sha_in_distribution_ablation_results.json
+            research/sha256-labyrinth-20261119/original_v42_sha_discovery_rewarded.v8
+          if-no-files-found: warn
