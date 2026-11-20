@@ -1,0 +1,41 @@
+name: SHA256 original Brain internal inverse gradient depth ladder
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-ROUND-CONSTRAINTS-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_inverse_depth_ladder.mjs
+      - .github/workflows/sha256-original-depth-ladder.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-original-depth-ladder
+  cancel-in-progress: true
+jobs:
+  depth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify unchanged original Brain and algebraic world syntax
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          node --check research/sha256-labyrinth-20261119/native_sha256_inverse_depth_ladder.mjs
+      - name: Brain training and heldout internal depth-control experiments
+        env:
+          SHA_ROUND_TRAIN: '8'
+          SHA_ROUND_BLIND: '64'
+          SHA_ROUND_EVAL_TARGETS: '64'
+          SHA_ROUND_BUDGET: '64'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_inverse_depth_ladder.mjs
+      - name: Capture complete results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-v42-SHA-inverse-depth-ladder
+          path: research/sha256-labyrinth-20261119/inverse_constraint_results.json
+          if-no-files-found: warn
