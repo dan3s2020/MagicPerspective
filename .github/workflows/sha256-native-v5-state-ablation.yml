@@ -1,0 +1,39 @@
+name: Original V42 Brain SHA meta-discovery causal map-state ablation
+on:
+  push:
+    branches:
+      - experiment/SHA256-V5-META-DISCOVERY-NATIVE-20261120
+    paths:
+      - research/sha256-labyrinth-20261119/native_v5_sha_state_ablation.mjs
+      - .github/workflows/sha256-native-v5-state-ablation.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-v5-state-causal-ablation
+  cancel-in-progress: true
+jobs:
+  causal-state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original V42 source and ablation syntax
+        run: |
+          node --check research/sha256-labyrinth-20261119/native_v5_sha_state_ablation.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+      - name: Test original Brain with correct versus broken state, history and prior controls
+        env:
+          SHA_DISCOVERY_TRAIN: '80'
+          SHA_DISCOVERY_TEST: '25'
+          SHA_DISCOVERY_MAX_STEPS: '160'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_v5_sha_state_ablation.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: original-V42-SHA-v5-state-causal-ablation
+          path: research/sha256-labyrinth-20261119/native_v5_sha_state_ablation_results.json
+          if-no-files-found: warn
