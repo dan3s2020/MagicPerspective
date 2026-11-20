@@ -1,0 +1,50 @@
+name: HS3D original Brain learns when to STOP genomic observation
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-STOP-UNCERTAINTY-20261120
+    paths:
+      - .github/workflows/hs3d-original-native-stop-observe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-Brain-native-stop-or-continue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        mode: [stop-no-train, stop-real-cost, stop-real-free, stop-shuffled]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout authentic HS3D human acceptor upstream TRAIN only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Static syntax check of original native Brain stop experiment
+        run: node --check research/genome-native-brain-20261119/hs3d/stop/run-native-stop.mjs
+      - name: Same original Brain chooses stop or observe on real human DNA and receives delayed real reward
+        shell: bash
+        env:
+          HS3D_STOP_RESULT_FILE: /tmp/hs3d-original-native-stop.json
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/stop/run-native-stop.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-original-native-stop.log
+      - name: Preserve exact original Brain gate choices, biology and confusion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-native-stop-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-original-native-stop.json
+            /tmp/hs3d-original-native-stop.log
+          if-no-files-found: warn
