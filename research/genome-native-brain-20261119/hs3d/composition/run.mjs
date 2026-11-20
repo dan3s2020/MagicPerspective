@@ -242,16 +242,19 @@ for(let i=0;i<calibrationStats.episodes;i++){
   calibrationStats[livedReward==="+"?"trueRewardSymbolsLived":"falseRewardSymbolsLived"]++;
   const lastState=one.transitionStates[1];
   if(!lastState||one.transitionStates.length!==2)fail("Two real primitive moves absent");
+  if(mode==="chain-delayed"||mode==="chain-shuffled"){
+    // After the final outcome, the original Brain re-lives the real
+    // first -> second physical action sequence in the same temporal order.
+    livedTrajectory(brain,one.transitionStates[0],livedReward);
+    calibrationStats.firstActionRewardPassages++;
+  }
   livedTrajectory(brain,lastState,livedReward);
   calibrationStats.lastActionRewardPassages++;
   if(mode==="chain-last-repeat"){
+    // Exposure-count control: no false first-action teacher, just repeat
+    // the actual terminal experience at the exact matched lived length.
     livedTrajectory(brain,lastState,livedReward);
     calibrationStats.lastActionRewardPassages++;
-  }else if(mode==="chain-delayed"||mode==="chain-shuffled"){
-    // Explicit delayed whole-composition credit: native Brain lives first and
-    // second actual choices only AFTER final observed action outcome exists.
-    livedTrajectory(brain,one.transitionStates[0],livedReward);
-    calibrationStats.firstActionRewardPassages++;
   }
   const pair=one.primitiveTrail.join(" > ");
   calibrationStats.primitivePairs[pair]=(calibrationStats.primitivePairs[pair]||0)+1;
