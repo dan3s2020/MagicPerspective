@@ -97,3 +97,15 @@ A genuine original Brain-owned `ConstructedPathLearner.pathPolicy` was trained t
 - [Original native learned perspective policy / negative initial result](./hs3d/native-actions/results/learned-native-perspective-2-modes.json)
 - [Original Brain policy bandit vs all-window feedback](./hs3d/native-actions/results/bandit-versus-allviews-topology-real.json)
 - [Native geometric topology vs data-amount causal ablation](./hs3d/native-actions/results/topology-vs-amount-factorial-real.json)
+
+## 2026-11-21 — Original native C8 two-real-DNA-view causal fusion
+
+A NEW genuine native original V42 Brain capability is now measured, distinct from the previous C6 32-slot history experiment and from Python V5: original native `LeanC cap8` learned a context across **two actual four-nucleotide human AG acceptor views** in one P/N decision, with no changed original learning equations.
+
+- Pre-studied HS3D dev400: real pair70+64 **74.75% accuracy / 74.11% macro-F1**, single64 **71.75% / 71.70%**, destroyed cross-record first view **70.25% / 69.17%**.
+- Frozen DIFFERENT human DRANet source n1600, no external training and full-source exact DNA overlap excluded: real **1125/1600 = 70.3125% accuracy / 70.10% F1**, single-view **1083/1600 = 67.6875% / 67.63%**, crossed-source **1059/1600 = 66.1875% / 65.55%**.
+- A SAME trained original Brain causal intervention changed **65/400** dev predictions and **330/1600** external predictions when ONLY the first real viewport was swapped, with no changes under sham. External accuracy real **70.31%** versus first-view replaced **66.56%**, paired discordance 195 vs135; p≈0.00113 conditional on independent records (unproven homology independence). Original C selected mask `exact:149` spanning both viewed regions.
+- No tissue/variant-effect benchmark, no AlphaGenome 2 comparable score, no self-invented coordinates, and no combined original active movement + C8 sensory fusion in one trained native model yet.
+
+[**Complete original native C8 reports, all programs and actual CI evidence**](./hs3d/c8-fusion/RESULTS.md). All code changes remain additive in a separate research branch, original Brain unchanged.
+
