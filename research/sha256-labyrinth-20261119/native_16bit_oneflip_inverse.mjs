@@ -50,13 +50,19 @@ const rng=rng32(seed);
 const values=Array.from({length:65536},(_,i)=>i);
 for(let i=values.length-1;i>0;i--){const j=rng()%(i+1);[values[i],values[j]]=[values[j],values[i]];}
 const trainBytes=values.slice(0,NTRAIN);
-const blindBytes=values.slice(NTRAIN,NTRAIN+NTEST);
 const trainSet=new Set(trainBytes);
+// Strict holdout: a blind secret may NEVER have appeared even as a *candidate*
+// of ANY one-bit demonstration during native training.
+const forbidden=new Set(trainBytes);
+for(const known of trainBytes)for(let b=0;b<16;b++)forbidden.add(known^(1<<b));
+const blindBytes=values.slice(NTRAIN).filter(v=>!forbidden.has(v)).slice(0,NTEST);
+assert.equal(blindBytes.length,NTEST,'enough separated secret targets');
 const msg=n=>Buffer.from([n>>>8,n&255]);
 const digest=n=>physicalSHA(msg(n)).digest;
 const trainDigests=trainBytes.map(digest);
 const blindDigests=blindBytes.map(digest);
 assert.equal(new Set(trainBytes.concat(blindBytes)).size,NTRAIN+NTEST,'train/test secret disjoint');
+assert(blindBytes.every(v=>!forbidden.has(v)),'no hidden secret previously seen as training example or candidate');
 const digestBytes=hex=>Buffer.from(hex,'hex');
 function sensorViews(targetDigest,candidateDigest){
   const a=digestBytes(targetDigest),b=digestBytes(candidateDigest);
