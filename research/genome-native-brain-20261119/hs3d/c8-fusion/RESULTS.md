@@ -1,7 +1,7 @@
 # Original MagicPerspective V42 learns to fuse two real human DNA perspectives in native C8 — measured findings
 
 **Date:** 2026-11-21  
-**Status:** completed original-native 4-arm HS3D exploratory test, pre-frozen 3-arm DIFFERENT-source DRANet zero-shot verification, and original same-Brain within-model causal first-viewport intervention. A supplementary source-external within-model causal intervention was initiated later and has its own source-linked results.  
+**Status:** four genuine original-native HS3D control runs, three frozen DRANet source-external verification runs, and TWO original SAME-Brain causal first-view interventions (dev400 and external n1600) all COMPLETED successfully, with full machine-readable summaries.  
 **Do not call this AGI, new molecular gene law, a clinical predictor or a matched AlphaGenome 2 benchmark.**
 
 ## Starting point and genuine change in capability
@@ -72,7 +72,25 @@ This establishes that the first real physical viewport has a **measured causal e
 **CI:** https://github.com/dan3s2020/MagicPerspective/actions/runs/44920346507  
 **Raw causal summary:** [results/native-C8-same-brain-first-four-causal-ablation-400.json](./results/native-C8-same-brain-first-four-causal-ablation-400.json).
 
-## 4. Strict limits and the next falsifiable capability
+
+## 4. Source-external causal first-view intervention on SAME original Brain (n=1600)
+
+After scoring the frozen external comparison, this separate mechanistic experiment was declared in [EXTERNAL_CAUSAL_SWAP_PROTOCOL.md](./EXTERNAL_CAUSAL_SWAP_PROTOCOL.md). One original V42 C8 Brain trained only on genuine HS3D human P/N was frozen; its P/N output on the external DRANet real two-view input was compared to (i) changing ONLY the first four viewed genomic bases to a different human record while keeping the final four real bases and weights fixed, and (ii) a sham repeating the unchanged original input. No external labels supplied during native prediction.
+
+| Original C8 Brain, external human n=1600 | Correct | Accuracy | Macro-F1 |
+|---|---:|---:|---:|
+| Genuine two real biological views | **1125** | **70.3125%** | **70.0996%** |
+| Only first 4 bases swapped across different human rows | 1065 | 66.5625% | 66.2779% |
+| Identical same-input sham | 1125 | 70.3125% | 70.0996% |
+
+**330/1600 (20.625%) real same-model predictions changed**, versus **zero sham prediction changes**. Among the discordant cases, the genuine original real viewpoint was correct **195** times and the mismatched first viewpoint was correct **135** times. Two-sided exact paired McNemar/conditional binomial p = **0.001130871916** assuming independent records. This is strong conditional evidence of the first input view's causal contribution to THIS trained Brain; biological homology can violate independent-sample assumptions, and the DRANet public source was used in other earlier experiments. Do not interpret the p-value as independent gene-family clinical evidence.
+
+The original C selected exact:149 remains a native attention mask spanning both real four-base sensory regions. This external causal diagnostic uses the original algorithm, not a new predictor.
+
+**Executed CI:** https://github.com/dan3s2020/MagicPerspective/actions/runs/44920632334  
+**Full native metrics:** [results/native-C8-external-1600-same-Brain-first4-causal-ablation.json](./results/native-C8-external-1600-same-Brain-first4-causal-ablation.json).
+
+## 5. Strict limits and the next falsifiable capability
 
 - No AlphaGenome 2 same-target head-to-head; no 1Mb, cell-conditioned tissue regulation, causal variant effect, measured splice strength or clinical validation. **Do not say AlphaGenome2 was outperformed.**
 - No generative text/GGUF Qwen donor inference assimilation.
@@ -80,7 +98,7 @@ This establishes that the first real physical viewport has a **measured causal e
 - These experiments test **fusion with fixed actual physical views**, not the joint operation of earlier original learned two-step primitive movement AND C8 fused classification simultaneously. That is the logical next actual engineering objective: unify both abilities in the SAME organism rather than using separate outside trained modules.
 - The external study has the same kind of binary true/false historical source as training, although from an independently published dataset; no family/homology-disjoint guarantee. Need an additional genuinely novel measured biological assay and per-sample paired CI/statistical uncertainty for stronger claims.
 - Accuracy alone hides P/N differences; preserve confusion and macro-F1.
-- An extra **same-Brain external first-viewport causal intervention** has its own declared protocol, [EXTERNAL_CAUSAL_SWAP_PROTOCOL.md](./EXTERNAL_CAUSAL_SWAP_PROTOCOL.md). Its measured results will be recorded independently, not assumed.
+- An additional SAME original Brain, external source causal intervention was executed after the external comparison and is documented below; it is a mechanistic diagnostic rather than a virgin evaluation.
 
 ## Provenance and reproducibility
 
