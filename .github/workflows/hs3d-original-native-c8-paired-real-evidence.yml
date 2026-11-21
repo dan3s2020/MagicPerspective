@@ -1,0 +1,54 @@
+name: Original V42 native C8 physical two-view evidence versus controls
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-C8-EVIDENCE-FUSION-20261121
+    paths:
+      - .github/workflows/hs3d-original-native-c8-paired-real-evidence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-original-brain-two-views:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        mode:
+          - single-64-c8
+          - joint-70-64-c8
+          - joint-70-64-scrambled-c8
+          - joint-70-66-c8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned source authentic human HS3D TRAIN only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify actual original-native C8 research script syntax
+        run: node --check research/genome-native-brain-20261119/hs3d/c8-fusion/run-native-paired-evidence.mjs
+      - name: Train native V42 same real-source 1200 and score 400 previously studied dev
+        shell: bash
+        env:
+          HS3D_C8_RAW_PATH: /tmp/hs3d-C8-genuine-original-brain.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/c8-fusion/run-native-paired-evidence.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/hs3d-C8-genuine-original-brain.log
+      - name: Preserve all original native predictions and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-Brain-real-C8-${{ matrix.mode }}
+          path: |
+            /tmp/hs3d-C8-genuine-original-brain.json
+            /tmp/hs3d-C8-genuine-original-brain.log
+          if-no-files-found: warn
