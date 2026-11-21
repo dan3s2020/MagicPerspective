@@ -1,0 +1,60 @@
+name: Original V42 Brain C8 frozen two real views DRANet human zero-shot
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-C8-EVIDENCE-FUSION-20261121
+    paths:
+      - .github/workflows/hs3d-original-native-c8-frozen-external-human.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-two-real-views-external:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [joint-70-64-c8, single-64-c8, joint-70-64-scrambled-c8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine human HS3D TRAIN-only original Brain learning
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Pinned DIFFERENT source DRANetSplicer human 402nt positive and negative acceptors
+        uses: actions/checkout@v4
+        with:
+          repository: XueyanLiu-creator/DRANetSplicer
+          ref: fe300cd8e4a55471268e1271621df208430157a5
+          path: comparison-checkouts/dranet
+          sparse-checkout: |
+            data/dna_sequences/homo_acceptor_positive.txt
+            data/dna_sequences/homo_acceptor_negative.txt
+      - name: Check original native C8 external test source
+        run: node --check research/genome-native-brain-20261119/hs3d/c8-fusion/run-frozen-homo402-native-c8.mjs
+      - name: Frozen original-native real two-view zero-shot human external evaluation
+        shell: bash
+        env:
+          HS3D_C8_EXTERNAL_UNLOCK: FROZEN_EXTERNAL_C8_WINNER_20261121
+          HS3D_C8_RAW_PATH: /tmp/native-C8-external-1600-real-human.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/c8-fusion/run-frozen-homo402-native-c8.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal comparison-checkouts/dranet/data/dna_sequences '${{ matrix.mode }}' | tee /tmp/native-C8-external-1600-real-human.log
+      - name: Preserve actual 1600 per-row native predictions and source checksums
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-C8-external-Human-${{ matrix.mode }}
+          path: |
+            /tmp/native-C8-external-1600-real-human.json
+            /tmp/native-C8-external-1600-real-human.log
+          if-no-files-found: warn
