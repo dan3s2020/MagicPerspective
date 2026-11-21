@@ -1,0 +1,209 @@
+{
+  "workflow": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44920632334",
+  "study": "Same ORIGINAL V42 Brain original C8 different-source real human AG first-view causal interference",
+  "preregisteredIn": "EXTERNAL_CAUSAL_SWAP_PROTOCOL.md",
+  "source": {
+    "source": "XueyanLiu-creator/DRANetSplicer",
+    "sourceCommit": "fe300cd8e4a55471268e1271621df208430157a5",
+    "originalPositiveFileSHA256": "7837826e5ab646a2f557247d45e06d86802070911dd9de32c4622c213347fb1a",
+    "originalNegativeFileSHA256": "2f69dad0fb30fb64abe3feeaffda0bb86a4b0241aa9db557ac079dc582af84dd",
+    "originalRawRows": {
+      "P": 137455,
+      "N": 137455
+    },
+    "sourceNonCanonical": {
+      "P": 0,
+      "N": 0
+    },
+    "sourceWrongLength": {
+      "P": 0,
+      "N": 0
+    },
+    "sourceWrongCentralMotif": {
+      "P": 706,
+      "N": 0
+    },
+    "uniqueUsableExternal": {
+      "P": 135307,
+      "N": 137243
+    },
+    "excluded": {
+      "duplicateInExternal": 850,
+      "contradictoryExternal": 0,
+      "exactOverlapWithOriginalHS3D": 804
+    },
+    "selected": {
+      "P": 800,
+      "N": 800
+    },
+    "exactExternalWindow": "402nt to 140nt: external.slice(132,272)",
+    "originalNativeReferenceMotif": "AG at internal [68,70) equals external [200,202)",
+    "noExternalLabeledExampleEverUsedForNativeLearning": true,
+    "externalSequenceTruthOnlyRevealedAfterNativePrediction": true,
+    "exactKnownHS3DUsedDNAOverlapExcluded": true,
+    "geneOrFamilyHomologyDisjointUnproven": true
+  },
+  "native": {
+    "originalBrainFile": "v17/transcend/torus-aether/devour/brain.mjs",
+    "originalAlgorithms": [
+      "Brain.live",
+      "Brain.predict",
+      "LeanC",
+      "EmergentChain"
+    ],
+    "originalSourceUnchanged": true,
+    "cap": 8,
+    "learnedSymbols": 12000,
+    "cMaxLagAfterTraining": 8,
+    "cActiveAfterTraining": "exact:149",
+    "nativeCModelCount": 765
+  },
+  "data": {
+    "train": 1200,
+    "external": 1600,
+    "source": {
+      "P": {
+        "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "rows": 2200,
+        "invalid": {
+          "badLength": 0,
+          "nonACGT": 0,
+          "nonAG": 0
+        },
+        "unique": 2197
+      },
+      "N": {
+        "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+        "rows": 2200,
+        "invalid": {
+          "badLength": 0,
+          "nonACGT": 0,
+          "nonAG": 0
+        },
+        "unique": 2190
+      }
+    },
+    "excluded": 13,
+    "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+    "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba"
+  },
+  "measured": {
+    "n": 1600,
+    "correct": 1125,
+    "accuracy": 0.703125,
+    "macroF1": 0.7009963509752043,
+    "balancedAccuracy": 0.703125,
+    "confusion": {
+      "P": {
+        "P": 630,
+        "N": 170
+      },
+      "N": {
+        "P": 305,
+        "N": 495
+      }
+    },
+    "perClass": [
+      {
+        "label": "P",
+        "support": 800,
+        "precision": 0.6737967914438503,
+        "recall": 0.7875,
+        "f1": 0.7262247838616714
+      },
+      {
+        "label": "N",
+        "support": 800,
+        "precision": 0.7443609022556391,
+        "recall": 0.61875,
+        "f1": 0.6757679180887372
+      }
+    ]
+  },
+  "causal": {
+    "genuine": {
+      "n": 1600,
+      "correct": 1125,
+      "accuracy": 0.703125,
+      "macroF1": 0.7009963509752043,
+      "balancedAccuracy": 0.703125,
+      "confusion": {
+        "P": {
+          "P": 630,
+          "N": 170
+        },
+        "N": {
+          "P": 305,
+          "N": 495
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 800,
+          "precision": 0.6737967914438503,
+          "recall": 0.7875,
+          "f1": 0.7262247838616714
+        },
+        {
+          "label": "N",
+          "support": 800,
+          "precision": 0.7443609022556391,
+          "recall": 0.61875,
+          "f1": 0.6757679180887372
+        }
+      ]
+    },
+    "crossedFirst4": {
+      "n": 1600,
+      "correct": 1065,
+      "accuracy": 0.665625,
+      "macroF1": 0.6627785081179377,
+      "balancedAccuracy": 0.6656249999999999,
+      "confusion": {
+        "P": {
+          "P": 606,
+          "N": 194
+        },
+        "N": {
+          "P": 341,
+          "N": 459
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 800,
+          "precision": 0.6399155227032735,
+          "recall": 0.7575,
+          "f1": 0.6937607326846021
+        },
+        {
+          "label": "N",
+          "support": 800,
+          "precision": 0.7029096477794793,
+          "recall": 0.57375,
+          "f1": 0.6317962835512733
+        }
+      ]
+    },
+    "changedPredictions": 330,
+    "changedFraction": 0.20625,
+    "shamParityFailures": 0,
+    "changedByTruth": {
+      "P": 172,
+      "N": 158
+    },
+    "originalNativeSelectedMask": "exact:149",
+    "interventionPreservedFinalBiologicalFourBases": true,
+    "actualBiologicalLabelsNeverEnteredBrainDuringPrediction": true
+  },
+  "pairedExactScoreChange": {
+    "genuineOnlyCorrect": 195,
+    "corruptedOnlyCorrect": 135,
+    "discordantPredictions": 330,
+    "exactTwoSidedMcNemarConditionalIndependentSamples": 0.0011308719161677453,
+    "explanation": "For paired binary labels, each class prediction flip changes correctness. Conditional exact two-sided binomial under null equal discordant win probability; NOT adjusted for biological sequence homology or reused source."
+  },
+  "context": "DIFFERENT_SOURCE_PREVIOUSLY_USED_BY_OLDER_RESEARCH_NOT_NEW_BIOLOGICAL_HOMOLOGY_DISJOINT_COHORT"
+}
