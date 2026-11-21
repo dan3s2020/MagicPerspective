@@ -1,0 +1,40 @@
+name: Original V42 Brain SHA256 16-bit blind local inverse
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-16BIT-BLIND-INVERSE-20261121
+    paths:
+      - research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse.mjs
+      - .github/workflows/sha256-native-16bit-oneflip-inverse.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-native-16bit-blind-local-inverse
+  cancel-in-progress: true
+jobs:
+  inverse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original Brain and exact SHA-256 inverse game syntax
+        run: |
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          node --check research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse.mjs
+      - name: Train original V42 Brain with known examples and test frozen 16-bit hidden targets
+        env:
+          SHA_INVERSE_TRAIN: '384'
+          SHA_INVERSE_TEST: '256'
+          SHA_INVERSE_TRAIN_PAIRS: '4'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse.mjs
+      - name: Preserve raw metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-v42-sha256-16bit-oneflip-blind
+          path: research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse_results.json
+          if-no-files-found: warn
