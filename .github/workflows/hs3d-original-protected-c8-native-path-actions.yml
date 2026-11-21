@@ -1,0 +1,50 @@
+name: Original one Brain protected C8 classifier and internal native graph actions
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-PROTECTED-PATH-C8-20261121
+    paths:
+      - .github/workflows/hs3d-original-protected-c8-native-path-actions.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-native-protected-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [protected-zero, protected-real, protected-shuffled]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned real human 140nt HS3D P/N AG acceptor TRAIN only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify exact actual original Brain protected-native graph script syntax
+        run: node --check research/genome-native-brain-20261119/hs3d/native-protected-path/run-protected-original-Brain.mjs
+      - name: One unmodified original Brain learns real physical paths in original graph without C8 interference
+        env:
+          HS3D_PROTECTED_NATIVE_RESULT: /tmp/original-native-protected-brain.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/native-protected-path/run-protected-original-Brain.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/original-native-protected-brain.log
+      - name: Store all real action and outcome traces and complete negative controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-protected-native-C8-${{ matrix.mode }}
+          path: |
+            /tmp/original-native-protected-brain.json
+            /tmp/original-native-protected-brain.log
+          if-no-files-found: warn
