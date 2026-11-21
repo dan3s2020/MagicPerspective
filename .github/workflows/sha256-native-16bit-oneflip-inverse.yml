@@ -15,7 +15,7 @@ concurrency:
 jobs:
   inverse:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,5 +36,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: original-v42-sha256-16bit-oneflip-blind
-          path: research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse_results.json
+          path: research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse_ascii_results.json
           if-no-files-found: warn
