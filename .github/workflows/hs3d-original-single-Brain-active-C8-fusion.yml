@@ -1,0 +1,55 @@
+name: Real original ONE Brain active physical DNA moves plus C8 causal fusion
+on:
+  push:
+    branches:
+      - research/HS3D-ONE-BRAIN-ACTIVE-C8-FUSION-20261121
+    paths:
+      - .github/workflows/hs3d-original-single-Brain-active-C8-fusion.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-original-Brain-active-fused-human-AG:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode:
+          - active-zero
+          - active-delayed
+          - active-shuffled
+          - active-delayed-class
+          - active-shuffled-class
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Genuine public human HS3D AG acceptor TRAIN data only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify unmodified original Brain in new single-object living-world research
+        run: node --check research/genome-native-brain-20261119/hs3d/one-brain-active-c8/run-one-native-Brain-active-C8.mjs
+      - name: One original Brain physically chooses, sees, fuses and lives human genomic outcomes
+        shell: bash
+        env:
+          HS3D_ONE_BRAIN_RAW: /tmp/real-original-single-Brain-active-fusion.json
+        run: |
+          set -euo pipefail
+          node research/genome-native-brain-20261119/hs3d/one-brain-active-c8/run-one-native-Brain-active-C8.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' | tee /tmp/real-original-single-Brain-active-fusion.log
+      - name: Preserve native whole-body sequence and each real DNA observation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-single-Brain-active-C8-${{ matrix.mode }}
+          path: |
+            /tmp/real-original-single-Brain-active-fusion.json
+            /tmp/real-original-single-Brain-active-fusion.log
+          if-no-files-found: warn
