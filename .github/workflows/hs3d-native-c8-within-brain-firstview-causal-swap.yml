@@ -1,0 +1,45 @@
+name: Original C8 Brain same-trained causal real first-view DNA intervention
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-C8-EVIDENCE-FUSION-20261121
+    paths:
+      - .github/workflows/hs3d-native-c8-within-brain-firstview-causal-swap.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-same-brain-causal-genome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Use authentic pinned 140nt human HS3D acceptor TRAIN only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Verify original native frozen causal intervention code
+        run: node --check research/genome-native-brain-20261119/hs3d/c8-fusion/run-causal-first-view-swap.mjs
+      - name: Original native Brain genuine pair vs first-window swapped on same trained weights
+        shell: bash
+        env:
+          HS3D_C8_RAW_PATH: /tmp/native-C8-same-Brain-causal-intervention.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/c8-fusion/run-causal-first-view-swap.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal joint-70-64-c8 | tee /tmp/native-C8-same-Brain-causal-intervention.log
+      - name: Preserve causal first-view swap traces and complete metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-C8-first-view-causal-swap-sham
+          path: |
+            /tmp/native-C8-same-Brain-causal-intervention.json
+            /tmp/native-C8-same-Brain-causal-intervention.log
+          if-no-files-found: warn
