@@ -115,10 +115,7 @@ function metrics(rows){
 }
 const [dir,mode,...extra]=process.argv.slice(2);
 if(!dir||mode!=="joint-70-64-c8"||extra.length)
-  fail("Causal intervention only on pre-frozen genuine joint70+64 original Brain");
-// Original pretest exact mode must be the genuine biological pair.
-if(false)
-  fail("Usage: node run-native-paired-evidence.mjs HS3D_DIR single-64-c8|joint-70-64-c8|joint-70-64-scrambled-c8|joint-70-66-c8");
+  fail("Usage: node run-causal-first-view-swap.mjs HS3D_DIR joint-70-64-c8");
 const data=loadData(dir);
 const brain=new Brain({rules:{depth:2,seeker:"C",budEvery:400,maxWires:16,
   off:["R2","R3"]},c:{cap:8},seed:20261121});
