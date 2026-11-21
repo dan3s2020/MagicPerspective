@@ -1,0 +1,53 @@
+name: Original Brain C8 source external same-weights first-view causal ablation
+on:
+  push:
+    branches:
+      - research/HS3D-NATIVE-C8-EVIDENCE-FUSION-20261121
+    paths:
+      - .github/workflows/hs3d-original-c8-external-firstview-causal-swap.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-original-C8-external-causal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - uses: actions/checkout@v4
+        with:
+          repository: XueyanLiu-creator/DRANetSplicer
+          ref: fe300cd8e4a55471268e1271621df208430157a5
+          path: comparison-checkouts/dranet
+          sparse-checkout: |
+            data/dna_sequences/homo_acceptor_positive.txt
+            data/dna_sequences/homo_acceptor_negative.txt
+      - name: Syntax-verify original Brain native external causal diagnostic
+        run: node --check research/genome-native-brain-20261119/hs3d/c8-fusion/run-external-same-brain-causal-view-swap.mjs
+      - name: Same frozen original Brain cross swaps first real 4 bases, retains second 4
+        shell: bash
+        env:
+          HS3D_C8_EXTERNAL_UNLOCK: FROZEN_EXTERNAL_C8_WINNER_20261121
+          HS3D_C8_RAW_PATH: /tmp/original-native-C8-same-Brain-external-causal.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/c8-fusion/run-external-same-brain-causal-view-swap.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal comparison-checkouts/dranet/data/dna_sequences joint-70-64-c8 | tee /tmp/original-native-C8-same-Brain-external-causal.log
+      - name: Preserve all 1600 per-example same-model real vs crossed predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-native-C8-external-same-model-causal
+          path: |
+            /tmp/original-native-C8-same-Brain-external-causal.json
+            /tmp/original-native-C8-same-Brain-external-causal.log
+          if-no-files-found: warn
