@@ -43,7 +43,7 @@ assert(Number.isInteger(NTRAIN)&&NTRAIN>=128&&NTRAIN<=2048);
 assert(Number.isInteger(NTEST)&&NTEST>=64&&NTEST<=1000);
 assert(Number.isInteger(PAIRS_PER_TRAIN)&&PAIRS_PER_TRAIN>=1&&PAIRS_PER_TRAIN<=16);
 assert(NTRAIN+NTEST<=65536);
-const ACT=Array.from({length:16},(_,bit)=>224+bit);
+const ACT=Array.from({length:16},(_,bit)=>65+bit); // Original EmergentChain uses N=128; all action symbols MUST be ASCII
 const seed=0x4a6d129c;
 function rng32(seed0){let st=seed0>>>0;return ()=>{st^=st<<13;st^=st>>>17;st^=st<<5;return st>>>0;};}
 const rng=rng32(seed);
@@ -65,17 +65,27 @@ assert.equal(new Set(trainBytes.concat(blindBytes)).size,NTRAIN+NTEST,'train/tes
 assert(blindBytes.every(v=>!forbidden.has(v)),'no hidden secret previously seen as training example or candidate');
 const digestBytes=hex=>Buffer.from(hex,'hex');
 function sensorViews(targetDigest,candidateDigest){
-  const a=digestBytes(targetDigest),b=digestBytes(candidateDigest);
-  const views=[];
-  for(let i=0;i<32;i+=4)
-    views.push([a[i]^b[i],a[i+1]^b[i+1],a[i+2]^b[i+2],a[i+3]^b[i+3]]);
-  for(let i=0;i<32;i+=4)
-    views.push([a[i],b[i],a[i+1],b[i+1]]);
-  assert.equal(views.length,16);
+  const a=digestBytes(targetDigest),b=digestBytes(candidateDigest),views=[];
+  // The ORIGINAL native EmergentChain uses N=128 and SparseCounter has 128 slots.
+  // Encode every digest byte LOSSLESSLY as two ASCII hexadecimal symbols.
+  // Each direct-context includes both target and candidate bytes. All 32 bytes
+  // of each 256-bit digest participate. Also include all 32 XOR bytes in 16 views.
+  const H='0123456789abcdef';
+  const nib=x=>H.charCodeAt(x&15);
+  for(let i=0;i<32;i++)
+    views.push([nib(a[i]>>4),nib(a[i]),nib(b[i]>>4),nib(b[i])]);
+  for(let i=0;i<32;i+=2){
+    const x=a[i]^b[i],y=a[i+1]^b[i+1];
+    views.push([nib(x>>4),nib(x),nib(y>>4),nib(y)]);
+  }
+  assert.equal(views.length,48);
+  for(const view of views)assert(view.length===4&&view.every(v=>Number.isInteger(v)&&v>=0&&v<128),
+    'Original Brain input alphabet is ASCII 0..127 only');
   return views;
 }
 const trained=new Brain({rules:{depth:2},c:{cap:4},seed:43});
 const shuffled=new Brain({rules:{depth:2},c:{cap:4},seed:43});
+assert(ACT.every(x=>x>=0&&x<128),'Original Brain output alphabet N=128');
 let samples=0;
 for(let idx=0;idx<NTRAIN;idx++){
   const target=trainBytes[idx],targetDigest=trainDigests[idx];
@@ -161,7 +171,7 @@ assert.equal(trained.lived,trainedLived,'No original Brain training on hidden ta
 assert.equal(shuffled.lived,shuffledLived,'No control training on hidden targets');
 const p=ACT.length;
 const result={
-  status:'NATIVE_BRAIN_16BIT_ONE_BIT_LOCAL_INVERSE_EXECUTED',
+  status:'NATIVE_BRAIN_16BIT_ONE_BIT_LOCAL_INVERSE_EXECUTED_ASCII_FIXED',
   meaning:'Frozen original V42 Brain ranks which ONE of 16 input message bits differs from a hidden 16-bit preimage; only target/candidate full SHA digests are accessible.',
   importantLimitations:[
     'The candidate starts exactly 1 bit from the true 16-bit target. This is artificial privileged experimental task construction; in a real preimage search no one supplies a 1-bit-close candidate.',
@@ -173,12 +183,12 @@ const result={
   ],
   originalBrain:'v17/transcend/torus-aether/devour/brain.mjs',seed,
   trainTargets:NTRAIN,trainSamples:samples,blindTargets:NTEST,
-  trainLivedSymbols:trainedLived,
+  trainLivedSymbols:trainedLived,sensorViewsPerExample:48,modelAlphabet:'ASCII 0..127 exactly (EmergentChain N=128)',
   referenceRandomTop1:NTEST/p,
   referenceRandomTop4:NTEST*4/p,
   physicsChecks,counts,paired,first12:trace
 };
 fs.mkdirSync('research/sha256-labyrinth-20261119',{recursive:true});
-const out='research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse_results.json';
+const out='research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse_ascii_results.json';
 fs.writeFileSync(out,JSON.stringify(result,null,2));
 console.log('SHA256_NATIVE_16BIT_ONEFLIP_INVERSE '+JSON.stringify({train:NTRAIN,trainSamples:samples,test:NTEST,physicsChecks,counts,paired,trainLived:trainedLived,results:out}));
