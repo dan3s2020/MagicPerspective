@@ -1,0 +1,1400 @@
+{
+  "title": "Original single Brain C8 physical 2-step active navigation plus real paired DNA fusion",
+  "pretest": "PRETEST.md",
+  "githubAction": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44921982774",
+  "status": "ALL_FIVE_ACTUAL_EXPERIMENTS_COMPLETED",
+  "exploratory": true,
+  "previousHS3DdevUsed": true,
+  "originalBrainUnmodified": true,
+  "learningProblem": "Action reward lived in global native Brain modifies class memory and changes C8 selected rule; best true-reward mode learns fixed destination64 on all development cases but fails to outperform same-Brain fixed64; the earlier class-only C8 fixed64 on same dev achieved 74.75% accuracy.",
+  "results": [
+    {
+      "mode": "active-zero",
+      "job_id": 136899812961,
+      "architecture": {
+        "context": 8,
+        "seed": 20261121,
+        "activeRule": "exact:149",
+        "maxLag": 8,
+        "initialClassLived": 12000,
+        "totalNativeLived": 12000,
+        "originalBrainSameForActionsAndFusedClass": true
+      },
+      "source": {
+        "train": 1200,
+        "calibration": 1000,
+        "dev": 400,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba",
+        "upstreamFiles": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        }
+      },
+      "calibration": {
+        "episodes": 0,
+        "trueSuccess": 0,
+        "trueFailure": 0,
+        "actionExperiences": 0,
+        "realEncounteredClassFeedback": 0,
+        "physicalPairs": {},
+        "finalPositions": {},
+        "actualCorrectPositiveReward": 0,
+        "actualCorrectNegativeReward": 0,
+        "rewardSource": "+/- actual native prediction outcome"
+      },
+      "evaluation": {
+        "devN": 400,
+        "actualPhysicalPrimitiveMovesPerNativeExample": 2,
+        "actualGenomicViewExposuresPerNativeExample": 3,
+        "finalNativeClassInput": "real initial four bases + actual physical destination final four bases",
+        "causalOrderNativeActionsBeforeUnvisitedDNAArrives": true,
+        "hiddenP_N_truthUntilEvaluation": true,
+        "movementHistogram": {
+          "70": 400
+        },
+        "pairHistogram": {
+          "again > again": 400
+        },
+        "firstLocationChanged": 0,
+        "secondLocationChanged": 0,
+        "scores": {
+          "native": {
+            "n": 400,
+            "correct": 225,
+            "accuracy": 0.5625,
+            "macroF1": 0.5610487173216447,
+            "balancedAccuracy": 0.5625,
+            "confusion": {
+              "P": {
+                "P": 101,
+                "N": 99
+              },
+              "N": {
+                "P": 76,
+                "N": 124
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5706214689265536,
+                "recall": 0.505,
+                "f1": 0.5358090185676393
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5560538116591929,
+                "recall": 0.62,
+                "f1": 0.5862884160756501
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 299,
+            "accuracy": 0.7475,
+            "macroF1": 0.7410770936544662,
+            "balancedAccuracy": 0.7475,
+            "confusion": {
+              "P": {
+                "P": 181,
+                "N": 19
+              },
+              "N": {
+                "P": 82,
+                "N": 118
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.688212927756654,
+                "recall": 0.905,
+                "f1": 0.7818574514038877
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.8613138686131386,
+                "recall": 0.59,
+                "f1": 0.7002967359050445
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 200,
+            "accuracy": 0.5,
+            "macroF1": 0.3333333333333333,
+            "balancedAccuracy": 0.5,
+            "confusion": {
+              "P": {
+                "P": 0,
+                "N": 200
+              },
+              "N": {
+                "P": 0,
+                "N": 200
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5,
+                "recall": 1,
+                "f1": 0.6666666666666666
+              }
+            ]
+          },
+          "fixed70": {
+            "n": 400,
+            "correct": 225,
+            "accuracy": 0.5625,
+            "macroF1": 0.5610487173216447,
+            "balancedAccuracy": 0.5625,
+            "confusion": {
+              "P": {
+                "P": 101,
+                "N": 99
+              },
+              "N": {
+                "P": 76,
+                "N": 124
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5706214689265536,
+                "recall": 0.505,
+                "f1": 0.5358090185676393
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5560538116591929,
+                "recall": 0.62,
+                "f1": 0.5862884160756501
+              }
+            ]
+          },
+          "random": {
+            "n": 400,
+            "correct": 223,
+            "accuracy": 0.5575,
+            "macroF1": 0.5431049503417033,
+            "balancedAccuracy": 0.5575,
+            "confusion": {
+              "P": {
+                "P": 76,
+                "N": 124
+              },
+              "N": {
+                "P": 53,
+                "N": 147
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5891472868217055,
+                "recall": 0.38,
+                "f1": 0.46200607902735563
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5424354243542435,
+                "recall": 0.735,
+                "f1": 0.6242038216560509
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "nativeVsSameBrainFixed64Correct": -74,
+        "nativeVsSameBrainRandomCorrect": 2
+      }
+    },
+    {
+      "mode": "active-delayed",
+      "job_id": 136899813198,
+      "architecture": {
+        "context": 8,
+        "seed": 20261121,
+        "activeRule": "fold:131",
+        "maxLag": 8,
+        "initialClassLived": 12000,
+        "totalNativeLived": 32000,
+        "originalBrainSameForActionsAndFusedClass": true
+      },
+      "source": {
+        "train": 1200,
+        "calibration": 1000,
+        "dev": 400,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba",
+        "upstreamFiles": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        }
+      },
+      "calibration": {
+        "episodes": 1000,
+        "trueSuccess": 660,
+        "trueFailure": 340,
+        "actionExperiences": 2000,
+        "realEncounteredClassFeedback": 0,
+        "physicalPairs": {
+          "again > again": 3,
+          "open > open": 6,
+          "open > new": 27,
+          "open > undo": 4,
+          "left > new": 47,
+          "left > left": 416,
+          "open > left": 17,
+          "left > open": 24,
+          "open > right": 2,
+          "new > left": 184,
+          "left > again": 18,
+          "left > undo": 30,
+          "undo > again": 1,
+          "again > new": 12,
+          "undo > left": 18,
+          "left > right": 29,
+          "again > undo": 2,
+          "right > undo": 2,
+          "right > left": 15,
+          "new > open": 11,
+          "undo > new": 9,
+          "again > left": 19,
+          "undo > open": 2,
+          "undo > undo": 5,
+          "new > right": 19,
+          "new > new": 33,
+          "new > undo": 12,
+          "right > open": 2,
+          "right > again": 1,
+          "new > again": 10,
+          "undo > right": 1,
+          "right > new": 10,
+          "again > open": 1,
+          "right > right": 3,
+          "open > again": 3,
+          "again > right": 2
+        },
+        "finalPositions": {
+          "64": 680,
+          "66": 142,
+          "70": 157,
+          "74": 8,
+          "78": 13
+        },
+        "actualCorrectPositiveReward": 660,
+        "actualCorrectNegativeReward": 340,
+        "rewardSource": "+/- actual native prediction outcome"
+      },
+      "evaluation": {
+        "devN": 400,
+        "actualPhysicalPrimitiveMovesPerNativeExample": 2,
+        "actualGenomicViewExposuresPerNativeExample": 3,
+        "finalNativeClassInput": "real initial four bases + actual physical destination final four bases",
+        "causalOrderNativeActionsBeforeUnvisitedDNAArrives": true,
+        "hiddenP_N_truthUntilEvaluation": true,
+        "movementHistogram": {
+          "64": 400
+        },
+        "pairHistogram": {
+          "new > left": 400
+        },
+        "firstLocationChanged": 400,
+        "secondLocationChanged": 400,
+        "scores": {
+          "native": {
+            "n": 400,
+            "correct": 281,
+            "accuracy": 0.7025,
+            "macroF1": 0.6928219722636311,
+            "balancedAccuracy": 0.7025,
+            "confusion": {
+              "P": {
+                "P": 176,
+                "N": 24
+              },
+              "N": {
+                "P": 95,
+                "N": 105
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6494464944649446,
+                "recall": 0.88,
+                "f1": 0.7473460721868365
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.813953488372093,
+                "recall": 0.525,
+                "f1": 0.6382978723404256
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 281,
+            "accuracy": 0.7025,
+            "macroF1": 0.6928219722636311,
+            "balancedAccuracy": 0.7025,
+            "confusion": {
+              "P": {
+                "P": 176,
+                "N": 24
+              },
+              "N": {
+                "P": 95,
+                "N": 105
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6494464944649446,
+                "recall": 0.88,
+                "f1": 0.7473460721868365
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.813953488372093,
+                "recall": 0.525,
+                "f1": 0.6382978723404256
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 200,
+            "accuracy": 0.5,
+            "macroF1": 0.3333333333333333,
+            "balancedAccuracy": 0.5,
+            "confusion": {
+              "P": {
+                "P": 0,
+                "N": 200
+              },
+              "N": {
+                "P": 0,
+                "N": 200
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5,
+                "recall": 1,
+                "f1": 0.6666666666666666
+              }
+            ]
+          },
+          "fixed70": {
+            "n": 400,
+            "correct": 217,
+            "accuracy": 0.5425,
+            "macroF1": 0.5400825589504834,
+            "balancedAccuracy": 0.5425,
+            "confusion": {
+              "P": {
+                "P": 94,
+                "N": 106
+              },
+              "N": {
+                "P": 77,
+                "N": 123
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5497076023391813,
+                "recall": 0.47,
+                "f1": 0.5067385444743935
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.537117903930131,
+                "recall": 0.615,
+                "f1": 0.5734265734265734
+              }
+            ]
+          },
+          "random": {
+            "n": 400,
+            "correct": 222,
+            "accuracy": 0.555,
+            "macroF1": 0.5433087027914614,
+            "balancedAccuracy": 0.5549999999999999,
+            "confusion": {
+              "P": {
+                "P": 79,
+                "N": 121
+              },
+              "N": {
+                "P": 57,
+                "N": 143
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5808823529411765,
+                "recall": 0.395,
+                "f1": 0.47023809523809523
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5416666666666666,
+                "recall": 0.715,
+                "f1": 0.6163793103448276
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "nativeVsSameBrainFixed64Correct": 0,
+        "nativeVsSameBrainRandomCorrect": 59
+      }
+    },
+    {
+      "mode": "active-shuffled",
+      "job_id": 136899813099,
+      "architecture": {
+        "context": 8,
+        "seed": 20261121,
+        "activeRule": "exact:131",
+        "maxLag": 8,
+        "initialClassLived": 12000,
+        "totalNativeLived": 32000,
+        "originalBrainSameForActionsAndFusedClass": true
+      },
+      "source": {
+        "train": 1200,
+        "calibration": 1000,
+        "dev": 400,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba",
+        "upstreamFiles": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        }
+      },
+      "calibration": {
+        "episodes": 1000,
+        "trueSuccess": 569,
+        "trueFailure": 431,
+        "actionExperiences": 2000,
+        "realEncounteredClassFeedback": 0,
+        "physicalPairs": {
+          "again > again": 78,
+          "open > new": 7,
+          "again > undo": 8,
+          "left > new": 43,
+          "left > left": 161,
+          "open > left": 17,
+          "again > open": 10,
+          "undo > left": 17,
+          "undo > undo": 17,
+          "undo > open": 8,
+          "open > open": 12,
+          "right > open": 47,
+          "open > right": 13,
+          "new > new": 16,
+          "new > again": 7,
+          "undo > again": 3,
+          "again > new": 18,
+          "new > left": 14,
+          "left > again": 68,
+          "open > again": 17,
+          "left > right": 106,
+          "right > left": 49,
+          "new > open": 2,
+          "undo > new": 1,
+          "again > left": 27,
+          "right > right": 58,
+          "left > open": 27,
+          "left > undo": 19,
+          "right > undo": 8,
+          "right > again": 40,
+          "again > right": 11,
+          "new > undo": 5,
+          "new > right": 18,
+          "right > new": 39,
+          "undo > right": 3,
+          "open > undo": 6
+        },
+        "finalPositions": {
+          "64": 234,
+          "66": 171,
+          "70": 407,
+          "74": 91,
+          "78": 97
+        },
+        "actualCorrectPositiveReward": 521,
+        "actualCorrectNegativeReward": 479,
+        "rewardSource": "INDEPENDENT_SHA_DETERMINISTIC"
+      },
+      "evaluation": {
+        "devN": 400,
+        "actualPhysicalPrimitiveMovesPerNativeExample": 2,
+        "actualGenomicViewExposuresPerNativeExample": 3,
+        "finalNativeClassInput": "real initial four bases + actual physical destination final four bases",
+        "causalOrderNativeActionsBeforeUnvisitedDNAArrives": true,
+        "hiddenP_N_truthUntilEvaluation": true,
+        "movementHistogram": {
+          "78": 400
+        },
+        "pairHistogram": {
+          "right > new": 400
+        },
+        "firstLocationChanged": 400,
+        "secondLocationChanged": 400,
+        "scores": {
+          "native": {
+            "n": 400,
+            "correct": 215,
+            "accuracy": 0.5375,
+            "macroF1": 0.5241494170830359,
+            "balancedAccuracy": 0.5375,
+            "confusion": {
+              "P": {
+                "P": 74,
+                "N": 126
+              },
+              "N": {
+                "P": 59,
+                "N": 141
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.556390977443609,
+                "recall": 0.37,
+                "f1": 0.4444444444444444
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5280898876404494,
+                "recall": 0.705,
+                "f1": 0.6038543897216274
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 279,
+            "accuracy": 0.6975,
+            "macroF1": 0.6902974807875658,
+            "balancedAccuracy": 0.6975,
+            "confusion": {
+              "P": {
+                "P": 170,
+                "N": 30
+              },
+              "N": {
+                "P": 91,
+                "N": 109
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6513409961685823,
+                "recall": 0.85,
+                "f1": 0.737527114967462
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7841726618705036,
+                "recall": 0.545,
+                "f1": 0.6430678466076696
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 200,
+            "accuracy": 0.5,
+            "macroF1": 0.3333333333333333,
+            "balancedAccuracy": 0.5,
+            "confusion": {
+              "P": {
+                "P": 0,
+                "N": 200
+              },
+              "N": {
+                "P": 0,
+                "N": 200
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5,
+                "recall": 1,
+                "f1": 0.6666666666666666
+              }
+            ]
+          },
+          "fixed70": {
+            "n": 400,
+            "correct": 219,
+            "accuracy": 0.5475,
+            "macroF1": 0.5435948837238622,
+            "balancedAccuracy": 0.5475,
+            "confusion": {
+              "P": {
+                "P": 91,
+                "N": 109
+              },
+              "N": {
+                "P": 72,
+                "N": 128
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.558282208588957,
+                "recall": 0.455,
+                "f1": 0.5013774104683195
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.540084388185654,
+                "recall": 0.64,
+                "f1": 0.585812356979405
+              }
+            ]
+          },
+          "random": {
+            "n": 400,
+            "correct": 225,
+            "accuracy": 0.5625,
+            "macroF1": 0.5498710702136826,
+            "balancedAccuracy": 0.5625,
+            "confusion": {
+              "P": {
+                "P": 79,
+                "N": 121
+              },
+              "N": {
+                "P": 54,
+                "N": 146
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5939849624060151,
+                "recall": 0.395,
+                "f1": 0.4744744744744745
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5468164794007491,
+                "recall": 0.73,
+                "f1": 0.6252676659528907
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "nativeVsSameBrainFixed64Correct": -64,
+        "nativeVsSameBrainRandomCorrect": -10
+      }
+    },
+    {
+      "mode": "active-delayed-class",
+      "job_id": 136899812782,
+      "architecture": {
+        "context": 8,
+        "seed": 20261121,
+        "activeRule": "exact:195",
+        "maxLag": 8,
+        "initialClassLived": 12000,
+        "totalNativeLived": 42000,
+        "originalBrainSameForActionsAndFusedClass": true
+      },
+      "source": {
+        "train": 1200,
+        "calibration": 1000,
+        "dev": 400,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba",
+        "upstreamFiles": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        }
+      },
+      "calibration": {
+        "episodes": 1000,
+        "trueSuccess": 666,
+        "trueFailure": 334,
+        "actionExperiences": 2000,
+        "realEncounteredClassFeedback": 1000,
+        "physicalPairs": {
+          "again > again": 5,
+          "open > open": 2,
+          "open > new": 23,
+          "open > undo": 4,
+          "left > new": 100,
+          "left > left": 313,
+          "open > left": 14,
+          "undo > undo": 14,
+          "left > open": 20,
+          "open > right": 7,
+          "new > left": 216,
+          "new > again": 11,
+          "new > new": 42,
+          "new > open": 10,
+          "again > undo": 5,
+          "undo > new": 13,
+          "again > new": 7,
+          "left > undo": 20,
+          "undo > left": 9,
+          "left > again": 17,
+          "left > right": 23,
+          "right > left": 18,
+          "right > new": 10,
+          "new > right": 16,
+          "again > left": 23,
+          "right > right": 16,
+          "right > open": 3,
+          "new > undo": 19,
+          "undo > open": 3,
+          "right > undo": 4,
+          "right > again": 1,
+          "again > open": 1,
+          "undo > again": 3,
+          "open > again": 4,
+          "undo > right": 2,
+          "again > right": 2
+        },
+        "finalPositions": {
+          "64": 671,
+          "66": 131,
+          "70": 158,
+          "74": 14,
+          "78": 26
+        },
+        "actualCorrectPositiveReward": 666,
+        "actualCorrectNegativeReward": 334,
+        "rewardSource": "+/- actual native prediction outcome"
+      },
+      "evaluation": {
+        "devN": 400,
+        "actualPhysicalPrimitiveMovesPerNativeExample": 2,
+        "actualGenomicViewExposuresPerNativeExample": 3,
+        "finalNativeClassInput": "real initial four bases + actual physical destination final four bases",
+        "causalOrderNativeActionsBeforeUnvisitedDNAArrives": true,
+        "hiddenP_N_truthUntilEvaluation": true,
+        "movementHistogram": {
+          "64": 400
+        },
+        "pairHistogram": {
+          "left > left": 400
+        },
+        "firstLocationChanged": 400,
+        "secondLocationChanged": 400,
+        "scores": {
+          "native": {
+            "n": 400,
+            "correct": 279,
+            "accuracy": 0.6975,
+            "macroF1": 0.6902974807875658,
+            "balancedAccuracy": 0.6975,
+            "confusion": {
+              "P": {
+                "P": 170,
+                "N": 30
+              },
+              "N": {
+                "P": 91,
+                "N": 109
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6513409961685823,
+                "recall": 0.85,
+                "f1": 0.737527114967462
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7841726618705036,
+                "recall": 0.545,
+                "f1": 0.6430678466076696
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 279,
+            "accuracy": 0.6975,
+            "macroF1": 0.6902974807875658,
+            "balancedAccuracy": 0.6975,
+            "confusion": {
+              "P": {
+                "P": 170,
+                "N": 30
+              },
+              "N": {
+                "P": 91,
+                "N": 109
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6513409961685823,
+                "recall": 0.85,
+                "f1": 0.737527114967462
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.7841726618705036,
+                "recall": 0.545,
+                "f1": 0.6430678466076696
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 221,
+            "accuracy": 0.5525,
+            "macroF1": 0.47813030707220894,
+            "balancedAccuracy": 0.5525,
+            "confusion": {
+              "P": {
+                "P": 35,
+                "N": 165
+              },
+              "N": {
+                "P": 14,
+                "N": 186
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.7142857142857143,
+                "recall": 0.175,
+                "f1": 0.28112449799196787
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5299145299145299,
+                "recall": 0.93,
+                "f1": 0.6751361161524501
+              }
+            ]
+          },
+          "fixed70": {
+            "n": 400,
+            "correct": 233,
+            "accuracy": 0.5825,
+            "macroF1": 0.5796389173814274,
+            "balancedAccuracy": 0.5825,
+            "confusion": {
+              "P": {
+                "P": 100,
+                "N": 100
+              },
+              "N": {
+                "P": 67,
+                "N": 133
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.5988023952095808,
+                "recall": 0.5,
+                "f1": 0.5449591280653951
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5708154506437768,
+                "recall": 0.665,
+                "f1": 0.6143187066974596
+              }
+            ]
+          },
+          "random": {
+            "n": 400,
+            "correct": 234,
+            "accuracy": 0.585,
+            "macroF1": 0.5794380684553216,
+            "balancedAccuracy": 0.585,
+            "confusion": {
+              "P": {
+                "P": 94,
+                "N": 106
+              },
+              "N": {
+                "P": 60,
+                "N": 140
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6103896103896104,
+                "recall": 0.47,
+                "f1": 0.5310734463276836
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.5691056910569106,
+                "recall": 0.7,
+                "f1": 0.6278026905829597
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "nativeVsSameBrainFixed64Correct": 0,
+        "nativeVsSameBrainRandomCorrect": 45
+      }
+    },
+    {
+      "mode": "active-shuffled-class",
+      "job_id": 136899813042,
+      "architecture": {
+        "context": 8,
+        "seed": 20261121,
+        "activeRule": "exact:141",
+        "maxLag": 8,
+        "initialClassLived": 12000,
+        "totalNativeLived": 42000,
+        "originalBrainSameForActionsAndFusedClass": true
+      },
+      "source": {
+        "train": 1200,
+        "calibration": 1000,
+        "dev": 400,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba",
+        "upstreamFiles": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        }
+      },
+      "calibration": {
+        "episodes": 1000,
+        "trueSuccess": 583,
+        "trueFailure": 417,
+        "actionExperiences": 2000,
+        "realEncounteredClassFeedback": 1000,
+        "physicalPairs": {
+          "again > again": 131,
+          "again > new": 34,
+          "again > undo": 15,
+          "left > new": 23,
+          "left > left": 130,
+          "open > left": 10,
+          "open > new": 10,
+          "new > new": 24,
+          "undo > undo": 94,
+          "open > open": 29,
+          "right > right": 18,
+          "new > left": 17,
+          "left > open": 21,
+          "new > open": 11,
+          "open > right": 5,
+          "new > undo": 26,
+          "new > again": 14,
+          "undo > new": 24,
+          "left > undo": 68,
+          "open > again": 19,
+          "undo > again": 7,
+          "undo > right": 7,
+          "right > undo": 15,
+          "again > left": 28,
+          "right > again": 26,
+          "left > right": 55,
+          "undo > left": 15,
+          "right > left": 14,
+          "left > again": 25,
+          "open > undo": 16,
+          "new > right": 7,
+          "undo > open": 8,
+          "again > open": 12,
+          "right > open": 8,
+          "right > new": 10,
+          "again > right": 24
+        },
+        "finalPositions": {
+          "64": 194,
+          "66": 167,
+          "70": 548,
+          "74": 63,
+          "78": 28
+        },
+        "actualCorrectPositiveReward": 521,
+        "actualCorrectNegativeReward": 479,
+        "rewardSource": "INDEPENDENT_SHA_DETERMINISTIC"
+      },
+      "evaluation": {
+        "devN": 400,
+        "actualPhysicalPrimitiveMovesPerNativeExample": 2,
+        "actualGenomicViewExposuresPerNativeExample": 3,
+        "finalNativeClassInput": "real initial four bases + actual physical destination final four bases",
+        "causalOrderNativeActionsBeforeUnvisitedDNAArrives": true,
+        "hiddenP_N_truthUntilEvaluation": true,
+        "movementHistogram": {
+          "70": 376,
+          "74": 11,
+          "78": 13
+        },
+        "pairHistogram": {
+          "undo > undo": 43,
+          "again > again": 130,
+          "left > undo": 51,
+          "new > undo": 139,
+          "open > open": 5,
+          "right > undo": 1,
+          "right > again": 11,
+          "right > new": 11,
+          "right > left": 7,
+          "right > right": 2
+        },
+        "firstLocationChanged": 222,
+        "secondLocationChanged": 211,
+        "scores": {
+          "native": {
+            "n": 400,
+            "correct": 247,
+            "accuracy": 0.6175,
+            "macroF1": 0.616,
+            "balancedAccuracy": 0.6175,
+            "confusion": {
+              "P": {
+                "P": 111,
+                "N": 89
+              },
+              "N": {
+                "P": 64,
+                "N": 136
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6342857142857142,
+                "recall": 0.555,
+                "f1": 0.592
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6044444444444445,
+                "recall": 0.68,
+                "f1": 0.64
+              }
+            ]
+          },
+          "fixed64": {
+            "n": 400,
+            "correct": 291,
+            "accuracy": 0.7275,
+            "macroF1": 0.7175708502024292,
+            "balancedAccuracy": 0.7275,
+            "confusion": {
+              "P": {
+                "P": 183,
+                "N": 17
+              },
+              "N": {
+                "P": 92,
+                "N": 108
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6654545454545454,
+                "recall": 0.915,
+                "f1": 0.7705263157894737
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.864,
+                "recall": 0.54,
+                "f1": 0.6646153846153846
+              }
+            ]
+          },
+          "fixed66": {
+            "n": 400,
+            "correct": 254,
+            "accuracy": 0.635,
+            "macroF1": 0.6301081806896203,
+            "balancedAccuracy": 0.635,
+            "confusion": {
+              "P": {
+                "P": 104,
+                "N": 96
+              },
+              "N": {
+                "P": 50,
+                "N": 150
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6753246753246753,
+                "recall": 0.52,
+                "f1": 0.5875706214689266
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6097560975609756,
+                "recall": 0.75,
+                "f1": 0.672645739910314
+              }
+            ]
+          },
+          "fixed70": {
+            "n": 400,
+            "correct": 248,
+            "accuracy": 0.62,
+            "macroF1": 0.6196576919227305,
+            "balancedAccuracy": 0.62,
+            "confusion": {
+              "P": {
+                "P": 118,
+                "N": 82
+              },
+              "N": {
+                "P": 70,
+                "N": 130
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6276595744680851,
+                "recall": 0.59,
+                "f1": 0.6082474226804123
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6132075471698113,
+                "recall": 0.65,
+                "f1": 0.6310679611650486
+              }
+            ]
+          },
+          "random": {
+            "n": 400,
+            "correct": 246,
+            "accuracy": 0.615,
+            "macroF1": 0.6140350877192982,
+            "balancedAccuracy": 0.615,
+            "confusion": {
+              "P": {
+                "P": 113,
+                "N": 87
+              },
+              "N": {
+                "P": 67,
+                "N": 133
+              }
+            },
+            "perClass": [
+              {
+                "label": "P",
+                "support": 200,
+                "precision": 0.6277777777777778,
+                "recall": 0.565,
+                "f1": 0.5947368421052631
+              },
+              {
+                "label": "N",
+                "support": 200,
+                "precision": 0.6045454545454545,
+                "recall": 0.665,
+                "f1": 0.6333333333333333
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": {
+        "nativeVsSameBrainFixed64Correct": -44,
+        "nativeVsSameBrainRandomCorrect": 1
+      }
+    }
+  ]
+}
