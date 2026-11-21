@@ -1,0 +1,336 @@
+{
+  "status": "EXECUTED_ON_ORIGINAL_UNMODIFIED_V42_BRAIN",
+  "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44919874765",
+  "study": "Real HS3D human AG acceptor native C8 two physical viewport fusion",
+  "pretest": "PRETEST.md",
+  "validation": "EXPLORATORY_PREVIOUSLY_USED_DEV400",
+  "alphaGenome2Compared": false,
+  "train": 1200,
+  "dev": 400,
+  "results": [
+    {
+      "mode": "single-64-c8",
+      "job_id": 136893366008,
+      "native": {
+        "originalBrainFile": "v17/transcend/torus-aether/devour/brain.mjs",
+        "originalAlgorithms": [
+          "Brain.live",
+          "Brain.predict",
+          "LeanC",
+          "EmergentChain"
+        ],
+        "originalSourceUnchanged": true,
+        "cap": 8,
+        "learnedSymbols": 12000,
+        "cMaxLagAfterTraining": 8,
+        "cActiveAfterTraining": "exact:86",
+        "nativeCModelCount": 765
+      },
+      "data": {
+        "train": 1200,
+        "dev": 400,
+        "source": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        },
+        "excluded": 13,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba"
+      },
+      "measured": {
+        "n": 400,
+        "correct": 287,
+        "accuracy": 0.7175,
+        "macroF1": 0.7169888110399409,
+        "balancedAccuracy": 0.7175,
+        "confusion": {
+          "P": {
+            "P": 152,
+            "N": 48
+          },
+          "N": {
+            "P": 65,
+            "N": 135
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.7004608294930875,
+            "recall": 0.76,
+            "f1": 0.7290167865707434
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.7377049180327869,
+            "recall": 0.675,
+            "f1": 0.7049608355091384
+          }
+        ]
+      }
+    },
+    {
+      "mode": "joint-70-64-c8",
+      "job_id": 136893366069,
+      "native": {
+        "originalBrainFile": "v17/transcend/torus-aether/devour/brain.mjs",
+        "originalAlgorithms": [
+          "Brain.live",
+          "Brain.predict",
+          "LeanC",
+          "EmergentChain"
+        ],
+        "originalSourceUnchanged": true,
+        "cap": 8,
+        "learnedSymbols": 12000,
+        "cMaxLagAfterTraining": 8,
+        "cActiveAfterTraining": "exact:149",
+        "nativeCModelCount": 765
+      },
+      "data": {
+        "train": 1200,
+        "dev": 400,
+        "source": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        },
+        "excluded": 13,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba"
+      },
+      "measured": {
+        "n": 400,
+        "correct": 299,
+        "accuracy": 0.7475,
+        "macroF1": 0.7410770936544662,
+        "balancedAccuracy": 0.7475,
+        "confusion": {
+          "P": {
+            "P": 181,
+            "N": 19
+          },
+          "N": {
+            "P": 82,
+            "N": 118
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.688212927756654,
+            "recall": 0.905,
+            "f1": 0.7818574514038877
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.8613138686131386,
+            "recall": 0.59,
+            "f1": 0.7002967359050445
+          }
+        ]
+      }
+    },
+    {
+      "mode": "joint-70-64-scrambled-c8",
+      "job_id": 136893365799,
+      "native": {
+        "originalBrainFile": "v17/transcend/torus-aether/devour/brain.mjs",
+        "originalAlgorithms": [
+          "Brain.live",
+          "Brain.predict",
+          "LeanC",
+          "EmergentChain"
+        ],
+        "originalSourceUnchanged": true,
+        "cap": 8,
+        "learnedSymbols": 12000,
+        "cMaxLagAfterTraining": 8,
+        "cActiveAfterTraining": "exact:163",
+        "nativeCModelCount": 765
+      },
+      "data": {
+        "train": 1200,
+        "dev": 400,
+        "source": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        },
+        "excluded": 13,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba"
+      },
+      "measured": {
+        "n": 400,
+        "correct": 281,
+        "accuracy": 0.7025,
+        "macroF1": 0.6916599190283401,
+        "balancedAccuracy": 0.7025,
+        "confusion": {
+          "P": {
+            "P": 178,
+            "N": 22
+          },
+          "N": {
+            "P": 97,
+            "N": 103
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.6472727272727272,
+            "recall": 0.89,
+            "f1": 0.7494736842105263
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.824,
+            "recall": 0.515,
+            "f1": 0.6338461538461538
+          }
+        ]
+      }
+    },
+    {
+      "mode": "joint-70-66-c8",
+      "job_id": 136893366214,
+      "native": {
+        "originalBrainFile": "v17/transcend/torus-aether/devour/brain.mjs",
+        "originalAlgorithms": [
+          "Brain.live",
+          "Brain.predict",
+          "LeanC",
+          "EmergentChain"
+        ],
+        "originalSourceUnchanged": true,
+        "cap": 8,
+        "learnedSymbols": 12000,
+        "cMaxLagAfterTraining": 8,
+        "cActiveAfterTraining": "exact:77",
+        "nativeCModelCount": 765
+      },
+      "data": {
+        "train": 1200,
+        "dev": 400,
+        "source": {
+          "P": {
+            "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2197
+          },
+          "N": {
+            "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+            "rows": 2200,
+            "invalid": {
+              "badLength": 0,
+              "nonACGT": 0,
+              "nonAG": 0
+            },
+            "unique": 2190
+          }
+        },
+        "excluded": 13,
+        "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+        "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba"
+      },
+      "measured": {
+        "n": 400,
+        "correct": 286,
+        "accuracy": 0.715,
+        "macroF1": 0.7059961315280464,
+        "balancedAccuracy": 0.7150000000000001,
+        "confusion": {
+          "P": {
+            "P": 178,
+            "N": 22
+          },
+          "N": {
+            "P": 92,
+            "N": 108
+          }
+        },
+        "perClass": [
+          {
+            "label": "P",
+            "support": 200,
+            "precision": 0.6592592592592592,
+            "recall": 0.89,
+            "f1": 0.7574468085106383
+          },
+          {
+            "label": "N",
+            "support": 200,
+            "precision": 0.8307692307692308,
+            "recall": 0.54,
+            "f1": 0.6545454545454545
+          }
+        ]
+      }
+    }
+  ]
+}
