@@ -41,3 +41,44 @@ The first execution [44921082206](https://github.com/dan3s2020/MagicPerspective/
 ## Decision and mission boundary
 
 **Actual global SHA-256 inversion remains unsolved** in the current work. This is one falsifiable diagnostic where the actual original organism has to choose a correction based on the target hash, rather than receive credit for completing a discovery map. Follow-up modifications must be driven by actual test data; repeat neither Python V5 nor reward-map completion as a substitute for the user's preimage mission.
+
+## FINAL VERIFIED EVIDENCE — all numeric results are ACTUAL original Brain executions (2026-11-21)
+
+### A. Corrected native ASCII SHA-256 inverse-bit diagnostic, completed
+
+[GitHub Actions 44921412185](https://github.com/dan3s2020/MagicPerspective/actions/runs/44921412185) — **SUCCESS**, raw artifact `original-v42-sha256-16bit-oneflip-blind` (ID `14713499098`). Full JSON `native_16bit_oneflip_inverse_ascii_results.json` opened independently after download. Actual original V42 Brain trained for **368,640** symbols across 384 known 16-bit targets × four supervised single-bit correction examples (1,536 experiences × 48 four-character ASCII SHA sensor views + label). Physics crosschecks `2444` full 64-round SHA-256 operations. **256** hidden two-byte targets (completely excluded from training targets and all their one-bit neighbors).
+
+| Policy | Correct bit as first action /256 | True bit among first four /256 | True bit among first eight /256 |
+| --- | ---: | ---: | ---: |
+| Original trained Brain, **correct** public target digest | **16** | 59 | 129 |
+| **Same** trained Brain, wrong heldout target digest | **16** | 61 | 124 |
+| Original Brain with deliberately incorrect training action labels | 16 | 65 | 127 |
+| Random ordering of 16 distinct bit flips | **17** | **78** | 136 |
+| Exact random expectation | 16 | 64 | 128 |
+
+Paired correct-target versus wrong-target top-1: **16 successes shared, correct-only 0, wrong-only 0**. Native first action was bit10 in **255/256** correct-target tasks and **252/256** wrong-target tasks, with no measurable target-conditioned improvement. It is not enough to train on public SHA target/candidate digest pairs: this exact original-Brain feature path did not identify the correcting bit on never-trained 16-bit targets any better than random.
+
+**Important evaluation precision:** top-k counts rank the genuinely correcting bit (a hidden bit label available only to evaluator); 64-round SHA verification is performed on target/candidate computations, and actual top-1 candidate SHA verification is explicitly recorded for the first 12 trials. Since each starting candidate is constructed as exactly one bit from its target and the correct action is that bit, bit-hit metrics correspond to returning the constructed preimage in this highly restricted local task. Do NOT imply all top-k proposed candidate hashes were separately evaluated as SHA-world queries or that arbitrary unknown preimages were recovered.
+
+**Why previous 16/256 is invalid**: [44921082206](https://github.com/dan3s2020/MagicPerspective/actions/runs/44921082206) used raw digest symbols and action labels outside the original N=128 alphabet. That run was structurally invalid, not evidence. Corrected run 44921412185 is the evidence above.
+
+### B. Positive control: native organism actually can learn action selection from a public SHA digest
+
+[GitHub Actions 44922285244](https://github.com/dan3s2020/MagicPerspective/actions/runs/44922285244) **SUCCESS**, raw artifact `sha256-original-v42-ascii-positive-control` ID `14713389685`, `native_ascii_wiring_positive_results.json` inspected. The ORIGINAL V42 `Brain.live` saw a simple and deliberately informative public digest nibble (ASCII hexadecimal character), then the corresponding action label A..P. Frozen `Brain.predict` on **512 distinct unseen 16-bit-message hashes**:
+- **512/512** correct actions, all 16 actions produced;
+- if the digest nibble was **masked**, only **30/512 = 5.86%**, near the 1/16 = 6.25% chance baseline.
+- 512 known training cases / 2,560 native `live` symbols. This validates the native ASCII sensor/action interface and proves the exact Brain can condition on public digest information when there is a learnable rule. **It is an intentionally trivial control, not cryptographic inversion.**
+
+### Exact conclusion and user objective
+
+This task finally scored a *real unknown-target inverse action* rather than completion of an instrumented discovery map. The experimental model did NOT beat the wrong-target and random controls. This does not establish any SHA-256 cryptographic flaw. More seed tuning or increasing `c.cap` without a new mechanism would repeat already tested dead ends. The unmodified native Brain's learned short-context patterns did not discover a generalized relation from public full SHA256 digests to the required message bit flip.
+
+The mission remains **recover an arbitrary unknown preimage from only its final SHA256 digest at lower compute than generic search**. An artificially one-bit-close 16-bit candidate is NOT this mission, and 75/75 V5 map completions are NOT this mission. Any next proposal must include novel source-level causal SHA schedule inference from **public** target information with stronger heldout/generalization and shuffled-target matched-compute controls.
+
+### Raw source and verified evidence
+
+- [Original native 16-bit SHA inverse-bit source](../research/sha256-labyrinth-20261119/native_16bit_oneflip_inverse.mjs)
+- [Positive original-native SHA digest wiring control source](../research/sha256-labyrinth-20261119/native_sha256_ascii_positive_control.mjs)
+- [Corrected 16-bit original Brain CI](https://github.com/dan3s2020/MagicPerspective/actions/runs/44921412185)
+- [Native positive-control CI](https://github.com/dan3s2020/MagicPerspective/actions/runs/44922285244)
+- No changes to original `v17/transcend/torus-aether/devour/brain.mjs`, `main`, production UI, checkpoints or active processes.
