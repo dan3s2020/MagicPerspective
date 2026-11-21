@@ -1,0 +1,162 @@
+{
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/44920346507",
+  "jobId": 136894805172,
+  "preregisteredIn": "CAUSAL_INPUT_ABLATION_PROTOCOL.md",
+  "nature": "SAME original Brain weights; only first 4 real DNA bases swapped in native context8 at prediction",
+  "training": {
+    "train": 1200,
+    "dev": 400,
+    "source": {
+      "P": {
+        "sha256": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+        "rows": 2200,
+        "invalid": {
+          "badLength": 0,
+          "nonACGT": 0,
+          "nonAG": 0
+        },
+        "unique": 2197
+      },
+      "N": {
+        "sha256": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd",
+        "rows": 2200,
+        "invalid": {
+          "badLength": 0,
+          "nonACGT": 0,
+          "nonAG": 0
+        },
+        "unique": 2190
+      }
+    },
+    "excluded": 13,
+    "trainDNAHash": "e14f4ad5449681bcfd82ab22368a27a0e911da58bc12e7b41698ed802ab36ec2",
+    "devDNAHash": "a2946e6650b3c486e159a35cb7f9ba204719ab7b5f44e0d54cb64de082e984ba"
+  },
+  "organism": {
+    "originalBrainFile": "v17/transcend/torus-aether/devour/brain.mjs",
+    "originalAlgorithms": [
+      "Brain.live",
+      "Brain.predict",
+      "LeanC",
+      "EmergentChain"
+    ],
+    "originalSourceUnchanged": true,
+    "cap": 8,
+    "learnedSymbols": 12000,
+    "cMaxLagAfterTraining": 8,
+    "cActiveAfterTraining": "exact:149",
+    "nativeCModelCount": 765
+  },
+  "original": {
+    "n": 400,
+    "correct": 299,
+    "accuracy": 0.7475,
+    "macroF1": 0.7410770936544662,
+    "balancedAccuracy": 0.7475,
+    "confusion": {
+      "P": {
+        "P": 181,
+        "N": 19
+      },
+      "N": {
+        "P": 82,
+        "N": 118
+      }
+    },
+    "perClass": [
+      {
+        "label": "P",
+        "support": 200,
+        "precision": 0.688212927756654,
+        "recall": 0.905,
+        "f1": 0.7818574514038877
+      },
+      {
+        "label": "N",
+        "support": 200,
+        "precision": 0.8613138686131386,
+        "recall": 0.59,
+        "f1": 0.7002967359050445
+      }
+    ]
+  },
+  "causal": {
+    "originalMetrics": {
+      "n": 400,
+      "correct": 299,
+      "accuracy": 0.7475,
+      "macroF1": 0.7410770936544662,
+      "balancedAccuracy": 0.7475,
+      "confusion": {
+        "P": {
+          "P": 181,
+          "N": 19
+        },
+        "N": {
+          "P": 82,
+          "N": 118
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.688212927756654,
+          "recall": 0.905,
+          "f1": 0.7818574514038877
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.8613138686131386,
+          "recall": 0.59,
+          "f1": 0.7002967359050445
+        }
+      ]
+    },
+    "crossedFirstViewMetrics": {
+      "n": 400,
+      "correct": 272,
+      "accuracy": 0.68,
+      "macroF1": 0.6721227490458259,
+      "balancedAccuracy": 0.6799999999999999,
+      "confusion": {
+        "P": {
+          "P": 167,
+          "N": 33
+        },
+        "N": {
+          "P": 95,
+          "N": 105
+        }
+      },
+      "perClass": [
+        {
+          "label": "P",
+          "support": 200,
+          "precision": 0.6374045801526718,
+          "recall": 0.835,
+          "f1": 0.7229437229437229
+        },
+        {
+          "label": "N",
+          "support": 200,
+          "precision": 0.7608695652173914,
+          "recall": 0.525,
+          "f1": 0.621301775147929
+        }
+      ]
+    },
+    "changedPredictions": 65,
+    "changedFraction": 0.1625,
+    "shamParityFailures": 0,
+    "changedByTrueLabel": {
+      "P": 32,
+      "N": 33
+    },
+    "selectedNativeCMask": "exact:149",
+    "originalBOTHRealViews": true,
+    "testCrossPairIsNonBiologicalIntervention": true
+  },
+  "phase": "EXPLORATORY_HS3D_DEV400_PREVIOUSLY_USED"
+}
