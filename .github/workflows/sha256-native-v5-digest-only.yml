@@ -1,0 +1,41 @@
+name: Original Brain V42 V5 transfer from PUBLIC SHA digest-only sensors
+on:
+  push:
+    branches:
+      - experiment/SHA256-V5-DIGEST-ONLY-OBSERVATION-20261121
+    paths:
+      - research/sha256-labyrinth-20261119/native_v5_sha_digest_only_transfer.mjs
+      - .github/workflows/sha256-native-v5-digest-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sha256-native-v5-digest-only
+  cancel-in-progress: true
+jobs:
+  native-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source and enforce no privileged SHA word observations
+        run: |
+          node --check research/sha256-labyrinth-20261119/native_v5_sha_digest_only_transfer.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          ! grep -E 'after\.w\[|before\.w\[|\.w16|\.w20' research/sha256-labyrinth-20261119/native_v5_sha_digest_only_transfer.mjs
+      - name: Train original Brain on PUBLIC SHA digests of its OWN candidate interventions
+        env:
+          SHA_DISCOVERY_TRAIN: '80'
+          SHA_DISCOVERY_TEST: '25'
+          SHA_DISCOVERY_MAX_STEPS: '160'
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_v5_sha_digest_only_transfer.mjs
+      - name: Capture full raw per-world results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-V42-public-digest-only-discovery-transfer
+          path: research/sha256-labyrinth-20261119/native_v5_sha_digest_only_results.json
+          if-no-files-found: warn
