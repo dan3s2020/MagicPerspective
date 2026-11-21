@@ -1,0 +1,32 @@
+name: Original Brain SHA digest ASCII alphabet positive control
+on:
+  push:
+    branches:
+      - experiment/SHA256-NATIVE-16BIT-BLIND-INVERSE-20261121
+    paths:
+      - research/sha256-labyrinth-20261119/native_sha256_ascii_positive_control.mjs
+      - .github/workflows/sha256-original-ascii-positive-control.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  positive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact original Brain unchanged and sensor syntax valid
+        run: |
+          node --check research/sha256-labyrinth-20261119/native_sha256_ascii_positive_control.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+      - name: Positive native digest-symbol to motor learning and masked-control comparison
+        run: node --max-old-space-size=4096 research/sha256-labyrinth-20261119/native_sha256_ascii_positive_control.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sha256-original-v42-ascii-positive-control
+          path: research/sha256-labyrinth-20261119/native_ascii_wiring_positive_results.json
+          if-no-files-found: warn
