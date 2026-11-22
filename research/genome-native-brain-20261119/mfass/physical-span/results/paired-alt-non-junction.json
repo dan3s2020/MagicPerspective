@@ -1,0 +1,109 @@
+{
+  "status": "AUTHENTIC_MFASS_ORIGINAL_V42_BRAIN_PHYSICALLY_REAL_TWO_LOCATION_170NT_GENE_SPAN",
+  "phase": "TRAIN_ONLY_INTERNAL_GENE_GROUP_DEV_DO_NOT_TOUCH_CANONICAL_TEST",
+  "mode": "paired-alt-non-junction",
+  "scientificTarget": "Original MFASS minigene experimentally measured rare human splicing-disrupting variants",
+  "source": {
+    "sourceSHA256": "a637ca0e307e66ff48811ec7efa22b9ce453bc7883b04f0cacb867f7283132d8",
+    "correctedSplitSHA256": "999ebcb7e63a5c5eaa8780fa468e59ac1f934260ad50102814174c396317f052",
+    "canonicalCounts": {
+      "trainN": 19409,
+      "trainSDV": 735,
+      "officialTestProtectedN": 8324,
+      "officialTestProtectedSDV": 315,
+      "testGroupCount": 463
+    },
+    "internalActualGroupSplit": {
+      "train": {
+        "n": 14498,
+        "sdv": 548,
+        "groups": 827,
+        "exons": 1124
+      },
+      "calibration": {
+        "n": 2421,
+        "sdv": 95,
+        "groups": 150,
+        "exons": 190
+      },
+      "dev": {
+        "n": 2490,
+        "sdv": 92,
+        "groups": 150,
+        "exons": 207
+      }
+    },
+    "originalMFASSSource": "KosuriLab/MFASS@9a8e4f27106be52aeb11acad27f95f5cded663a8"
+  },
+  "native": {
+    "onlyActualOriginalBrain": true,
+    "originalSourceUnchanged": true,
+    "actualPhysicalViewMode": "paired-alt-non-junction",
+    "methodUsesAuthenticTwoSourceWindows": true,
+    "humanDefinedSourceJunctionCoordinate": true,
+    "devActuallySeparatedViews": 2028,
+    "devJunctionViewOverlapsRealMutation": 120,
+    "manualPhysicalContext": "two real genuine four-nucleotide windows selected from authentic MFASS REF/ALT 170nt reporter constructs",
+    "physicallyObservedGenomeBases": 8,
+    "originalReporterConstructBases": 170,
+    "originalBrainLived": 144980,
+    "originalCUpdates": 14498,
+    "nativeSelectedC": "exact:1",
+    "maxLag": 8,
+    "originalNativeCModels": 765
+  },
+  "internalDevelopment": {
+    "native": {
+      "n": 2490,
+      "positive": 92,
+      "negative": 2398,
+      "prevalence": 0.036947791164658635,
+      "averagePrecision": 0.03233834906797586,
+      "AUROC": 0.4444985857780034,
+      "expectedPrecisionAt100UnderTies": 0.02,
+      "expectedTruePositivesAt100UnderTies": 2,
+      "precisionInTop10PercentWithTieFraction": 0.024096385542168676,
+      "distinctOriginalNativeScores": 862,
+      "top100NativeScores": {
+        "highest": 0.05102644090188278,
+        "rank100": 0.047622012110506255,
+        "lowest": 0.026586173750241804
+      }
+    },
+    "empiricalSourceOnly": {
+      "n": 2490,
+      "positive": 92,
+      "negative": 2398,
+      "prevalence": 0.036947791164658635,
+      "averagePrecision": 0.1656100703980956,
+      "AUROC": 0.7502402364289081,
+      "expectedPrecisionAt100UnderTies": 0.19444444444444442,
+      "expectedTruePositivesAt100UnderTies": 19.444444444444443,
+      "precisionInTop10PercentWithTieFraction": 0.15261044176706828,
+      "distinctOriginalNativeScores": 146,
+      "top100NativeScores": {
+        "highest": 0.5094655172413793,
+        "rank100": 0.12110442651014917,
+        "lowest": 0.0002427055702917772
+      }
+    },
+    "differenceNativeMinusEmpirical": {
+      "averagePrecision": -0.13327172133011975,
+      "AUROC": -0.30574165065090475,
+      "expectedPrecisionAt100": -0.17444444444444443
+    },
+    "randomPrevalenceReference": 0.036947791164658635,
+    "empiricalActualTrainCategories": 178
+  },
+  "biologicalLimitations": [
+    "Original MFASS minigene rather than patient-derived RNA",
+    "Original native C sees 4 of the 170 human bases near mutation",
+    "Source grouping is exon+gene connected but not independent by remote homology",
+    "No official corrected MFASS TEST scored by native organism",
+    "AlphaGenome 2 same-split predictions not available"
+  ],
+  "noOfficialTestPrediction": true,
+  "officialTestLockedN": 8324,
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45058768658",
+  "job": 137319758882
+}
