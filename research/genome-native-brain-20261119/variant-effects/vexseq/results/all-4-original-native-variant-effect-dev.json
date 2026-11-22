@@ -1,0 +1,1107 @@
+{
+  "experiment": "Original V42 native paired true REF ALT measured three-way ΔPSI on 16-group development; no official AlphaGenome API or final heldout scoring",
+  "source": "scottiadamson/Vex-seq@36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+  "CI": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45052650881",
+  "pretest": "research/genome-native-brain-20261119/variant-effects/vexseq/PRETEST_NATIVE_VARIANT_EFFECT.md",
+  "status": "FOUR_COMPLETED_REAL_NATIVE_RUNS_ALL_BELOW_SIMPLE_CONTROL_AT_MACRO_F1",
+  "primaryMetric": "macroF1",
+  "nDev": 390,
+  "nTrain": 1303,
+  "nFinalNotEvaluated": 267,
+  "selectedDevHighestNativeMacroF1": "native-C9-corrupted-position",
+  "caveat": "Winning mode has CORRUPTED physical position and only 0.2856 F1, vs simple context statistical baseline 0.3407. Do not freeze this as biologically meaningful method.",
+  "results": [
+    {
+      "mode": "native-C8-pair",
+      "jobId": 137300959805,
+      "metrics": {
+        "n": 390,
+        "correct": 256,
+        "accuracy": 0.6564102564102564,
+        "macroF1": 0.28498637279298494,
+        "balancedAccuracy": 0.33925637699956773,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 257,
+            "precision": 0.6640419947506562,
+            "recall": 0.9844357976653697,
+            "f1": 0.7931034482758621
+          },
+          {
+            "label": "-",
+            "support": 90,
+            "precision": 0.42857142857142855,
+            "recall": 0.03333333333333333,
+            "f1": 0.061855670103092786
+          },
+          {
+            "label": "+",
+            "support": 43,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 253,
+            "-": 2,
+            "+": 2
+          },
+          "-": {
+            "0": 87,
+            "-": 3,
+            "+": 0
+          },
+          "+": {
+            "0": 41,
+            "-": 2,
+            "+": 0
+          }
+        },
+        "continuousDeltaPSIRankSpearman": 0.035784860147119894,
+        "strongEffectSignedClassExactAccuracy": 0.022556390977443608,
+        "strongEffectN": 133
+      },
+      "controls": {
+        "majority": {
+          "classLabel": "0",
+          "n": 390,
+          "correct": 257,
+          "accuracy": 0.658974358974359,
+          "macroF1": 0.26481195260175167,
+          "balancedAccuracy": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.658974358974359,
+              "recall": 1,
+              "f1": 0.794435857805255
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 257,
+              "-": 0,
+              "+": 0
+            },
+            "-": {
+              "0": 90,
+              "-": 0,
+              "+": 0
+            },
+            "+": {
+              "0": 43,
+              "-": 0,
+              "+": 0
+            }
+          }
+        },
+        "substitution": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.28088588543691256,
+          "balancedAccuracy": 0.33277129269347167,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6631016042780749,
+              "recall": 0.9649805447470817,
+              "f1": 0.786053882725832
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.1875,
+              "recall": 0.03333333333333333,
+              "f1": 0.05660377358490566
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 248,
+              "-": 9,
+              "+": 0
+            },
+            "-": {
+              "0": 87,
+              "-": 3,
+              "+": 0
+            },
+            "+": {
+              "0": 39,
+              "-": 4,
+              "+": 0
+            }
+          }
+        },
+        "substitutionDistance": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.34073914293931545,
+          "balancedAccuracy": 0.36165153480328577,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6723646723646723,
+              "recall": 0.9182879377431906,
+              "f1": 0.7763157894736842
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.46875,
+              "recall": 0.16666666666666666,
+              "f1": 0.2459016393442623
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 236,
+              "-": 15,
+              "+": 6
+            },
+            "-": {
+              "0": 74,
+              "-": 15,
+              "+": 1
+            },
+            "+": {
+              "0": 41,
+              "-": 2,
+              "+": 0
+            }
+          }
+        }
+      },
+      "training": {
+        "records": 1303,
+        "livedSymbols": 13030,
+        "selectedC": "exact:170",
+        "maxLag": 8,
+        "originalNativeModelCandidates": null
+      },
+      "source": {
+        "commit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "hashes": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "validatedVariants": 1960,
+        "events": 110,
+        "rejected": {
+          "notSNV": 95,
+          "controlUnavailable": 0,
+          "multipleSequence": 0,
+          "lengthMismatch": 0,
+          "notOneBase": 0,
+          "unknownAllele": 0,
+          "nonCanonicalDNA": 0,
+          "missingDistance": 0,
+          "invalidEffect": 0,
+          "missingControlGroup": 0,
+          "sourceStrandMismatch": 0
+        },
+        "train": {
+          "n": 1303,
+          "groups": 77,
+          "labels": {
+            "0": 729,
+            "+": 269,
+            "-": 305
+          },
+          "strands": {
+            "forward": 780,
+            "reverse": 523
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 165
+          },
+          "measuredEffect": {
+            "min": -85.34348007943147,
+            "max": 51.28235052495923
+          }
+        },
+        "dev": {
+          "n": 390,
+          "groups": 16,
+          "labels": {
+            "0": 257,
+            "+": 43,
+            "-": 90
+          },
+          "strands": {
+            "forward": 315,
+            "reverse": 75
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 164
+          },
+          "measuredEffect": {
+            "min": -83.0311998660604,
+            "max": 30.661467029868934
+          }
+        },
+        "finalLocked": true,
+        "finalCount": 267
+      }
+    },
+    {
+      "mode": "native-C9-position",
+      "jobId": 137300959705,
+      "metrics": {
+        "n": 390,
+        "correct": 252,
+        "accuracy": 0.6461538461538462,
+        "macroF1": 0.26833118556701036,
+        "balancedAccuracy": 0.3292549358697218,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 257,
+            "precision": 0.6553524804177546,
+            "recall": 0.9766536964980544,
+            "f1": 0.784375
+          },
+          {
+            "label": "-",
+            "support": 90,
+            "precision": 0.14285714285714285,
+            "recall": 0.011111111111111112,
+            "f1": 0.020618556701030927
+          },
+          {
+            "label": "+",
+            "support": 43,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 251,
+            "-": 6,
+            "+": 0
+          },
+          "-": {
+            "0": 89,
+            "-": 1,
+            "+": 0
+          },
+          "+": {
+            "0": 43,
+            "-": 0,
+            "+": 0
+          }
+        },
+        "continuousDeltaPSIRankSpearman": 0.061008724679817466,
+        "strongEffectSignedClassExactAccuracy": 0.007518796992481203,
+        "strongEffectN": 133
+      },
+      "controls": {
+        "majority": {
+          "classLabel": "0",
+          "n": 390,
+          "correct": 257,
+          "accuracy": 0.658974358974359,
+          "macroF1": 0.26481195260175167,
+          "balancedAccuracy": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.658974358974359,
+              "recall": 1,
+              "f1": 0.794435857805255
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 257,
+              "-": 0,
+              "+": 0
+            },
+            "-": {
+              "0": 90,
+              "-": 0,
+              "+": 0
+            },
+            "+": {
+              "0": 43,
+              "-": 0,
+              "+": 0
+            }
+          }
+        },
+        "substitution": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.28088588543691256,
+          "balancedAccuracy": 0.33277129269347167,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6631016042780749,
+              "recall": 0.9649805447470817,
+              "f1": 0.786053882725832
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.1875,
+              "recall": 0.03333333333333333,
+              "f1": 0.05660377358490566
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 248,
+              "-": 9,
+              "+": 0
+            },
+            "-": {
+              "0": 87,
+              "-": 3,
+              "+": 0
+            },
+            "+": {
+              "0": 39,
+              "-": 4,
+              "+": 0
+            }
+          }
+        },
+        "substitutionDistance": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.34073914293931545,
+          "balancedAccuracy": 0.36165153480328577,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6723646723646723,
+              "recall": 0.9182879377431906,
+              "f1": 0.7763157894736842
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.46875,
+              "recall": 0.16666666666666666,
+              "f1": 0.2459016393442623
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 236,
+              "-": 15,
+              "+": 6
+            },
+            "-": {
+              "0": 74,
+              "-": 15,
+              "+": 1
+            },
+            "+": {
+              "0": 41,
+              "-": 2,
+              "+": 0
+            }
+          }
+        }
+      },
+      "training": {
+        "records": 1303,
+        "livedSymbols": 14333,
+        "selectedC": "exact:89",
+        "maxLag": 9,
+        "originalNativeModelCandidates": null
+      },
+      "source": {
+        "commit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "hashes": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "validatedVariants": 1960,
+        "events": 110,
+        "rejected": {
+          "notSNV": 95,
+          "controlUnavailable": 0,
+          "multipleSequence": 0,
+          "lengthMismatch": 0,
+          "notOneBase": 0,
+          "unknownAllele": 0,
+          "nonCanonicalDNA": 0,
+          "missingDistance": 0,
+          "invalidEffect": 0,
+          "missingControlGroup": 0,
+          "sourceStrandMismatch": 0
+        },
+        "train": {
+          "n": 1303,
+          "groups": 77,
+          "labels": {
+            "0": 729,
+            "+": 269,
+            "-": 305
+          },
+          "strands": {
+            "forward": 780,
+            "reverse": 523
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 165
+          },
+          "measuredEffect": {
+            "min": -85.34348007943147,
+            "max": 51.28235052495923
+          }
+        },
+        "dev": {
+          "n": 390,
+          "groups": 16,
+          "labels": {
+            "0": 257,
+            "+": 43,
+            "-": 90
+          },
+          "strands": {
+            "forward": 315,
+            "reverse": 75
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 164
+          },
+          "measuredEffect": {
+            "min": -83.0311998660604,
+            "max": 30.661467029868934
+          }
+        },
+        "finalLocked": true,
+        "finalCount": 267
+      }
+    },
+    {
+      "mode": "native-C9-corrupted-position",
+      "jobId": 137300959467,
+      "metrics": {
+        "n": 390,
+        "correct": 257,
+        "accuracy": 0.658974358974359,
+        "macroF1": 0.2856159484589861,
+        "balancedAccuracy": 0.3405533938607869,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 257,
+            "precision": 0.6649214659685864,
+            "recall": 0.9883268482490273,
+            "f1": 0.7949921752738655
+          },
+          {
+            "label": "-",
+            "support": 90,
+            "precision": 0.42857142857142855,
+            "recall": 0.03333333333333333,
+            "f1": 0.061855670103092786
+          },
+          {
+            "label": "+",
+            "support": 43,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 254,
+            "-": 2,
+            "+": 1
+          },
+          "-": {
+            "0": 87,
+            "-": 3,
+            "+": 0
+          },
+          "+": {
+            "0": 41,
+            "-": 2,
+            "+": 0
+          }
+        },
+        "continuousDeltaPSIRankSpearman": 0.03731586688126377,
+        "strongEffectSignedClassExactAccuracy": 0.022556390977443608,
+        "strongEffectN": 133
+      },
+      "controls": {
+        "majority": {
+          "classLabel": "0",
+          "n": 390,
+          "correct": 257,
+          "accuracy": 0.658974358974359,
+          "macroF1": 0.26481195260175167,
+          "balancedAccuracy": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.658974358974359,
+              "recall": 1,
+              "f1": 0.794435857805255
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 257,
+              "-": 0,
+              "+": 0
+            },
+            "-": {
+              "0": 90,
+              "-": 0,
+              "+": 0
+            },
+            "+": {
+              "0": 43,
+              "-": 0,
+              "+": 0
+            }
+          }
+        },
+        "substitution": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.28088588543691256,
+          "balancedAccuracy": 0.33277129269347167,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6631016042780749,
+              "recall": 0.9649805447470817,
+              "f1": 0.786053882725832
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.1875,
+              "recall": 0.03333333333333333,
+              "f1": 0.05660377358490566
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 248,
+              "-": 9,
+              "+": 0
+            },
+            "-": {
+              "0": 87,
+              "-": 3,
+              "+": 0
+            },
+            "+": {
+              "0": 39,
+              "-": 4,
+              "+": 0
+            }
+          }
+        },
+        "substitutionDistance": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.34073914293931545,
+          "balancedAccuracy": 0.36165153480328577,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6723646723646723,
+              "recall": 0.9182879377431906,
+              "f1": 0.7763157894736842
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.46875,
+              "recall": 0.16666666666666666,
+              "f1": 0.2459016393442623
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 236,
+              "-": 15,
+              "+": 6
+            },
+            "-": {
+              "0": 74,
+              "-": 15,
+              "+": 1
+            },
+            "+": {
+              "0": 41,
+              "-": 2,
+              "+": 0
+            }
+          }
+        }
+      },
+      "training": {
+        "records": 1303,
+        "livedSymbols": 14333,
+        "selectedC": "exact:170",
+        "maxLag": 9,
+        "originalNativeModelCandidates": null
+      },
+      "source": {
+        "commit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "hashes": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "validatedVariants": 1960,
+        "events": 110,
+        "rejected": {
+          "notSNV": 95,
+          "controlUnavailable": 0,
+          "multipleSequence": 0,
+          "lengthMismatch": 0,
+          "notOneBase": 0,
+          "unknownAllele": 0,
+          "nonCanonicalDNA": 0,
+          "missingDistance": 0,
+          "invalidEffect": 0,
+          "missingControlGroup": 0,
+          "sourceStrandMismatch": 0
+        },
+        "train": {
+          "n": 1303,
+          "groups": 77,
+          "labels": {
+            "0": 729,
+            "+": 269,
+            "-": 305
+          },
+          "strands": {
+            "forward": 780,
+            "reverse": 523
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 165
+          },
+          "measuredEffect": {
+            "min": -85.34348007943147,
+            "max": 51.28235052495923
+          }
+        },
+        "dev": {
+          "n": 390,
+          "groups": 16,
+          "labels": {
+            "0": 257,
+            "+": 43,
+            "-": 90
+          },
+          "strands": {
+            "forward": 315,
+            "reverse": 75
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 164
+          },
+          "measuredEffect": {
+            "min": -83.0311998660604,
+            "max": 30.661467029868934
+          }
+        },
+        "finalLocked": true,
+        "finalCount": 267
+      }
+    },
+    {
+      "mode": "native-C9-position-R3",
+      "jobId": 137300959695,
+      "metrics": {
+        "n": 390,
+        "correct": 247,
+        "accuracy": 0.6333333333333333,
+        "macroF1": 0.2788196149020891,
+        "balancedAccuracy": 0.3275832252485949,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 257,
+            "precision": 0.6541554959785523,
+            "recall": 0.9494163424124513,
+            "f1": 0.7746031746031746
+          },
+          {
+            "label": "-",
+            "support": 90,
+            "precision": 0.42857142857142855,
+            "recall": 0.03333333333333333,
+            "f1": 0.061855670103092786
+          },
+          {
+            "label": "+",
+            "support": 43,
+            "precision": 0,
+            "recall": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 244,
+            "-": 4,
+            "+": 9
+          },
+          "-": {
+            "0": 86,
+            "-": 3,
+            "+": 1
+          },
+          "+": {
+            "0": 43,
+            "-": 0,
+            "+": 0
+          }
+        },
+        "continuousDeltaPSIRankSpearman": 0.04622614312685061,
+        "strongEffectSignedClassExactAccuracy": 0.022556390977443608,
+        "strongEffectN": 133
+      },
+      "controls": {
+        "majority": {
+          "classLabel": "0",
+          "n": 390,
+          "correct": 257,
+          "accuracy": 0.658974358974359,
+          "macroF1": 0.26481195260175167,
+          "balancedAccuracy": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.658974358974359,
+              "recall": 1,
+              "f1": 0.794435857805255
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 257,
+              "-": 0,
+              "+": 0
+            },
+            "-": {
+              "0": 90,
+              "-": 0,
+              "+": 0
+            },
+            "+": {
+              "0": 43,
+              "-": 0,
+              "+": 0
+            }
+          }
+        },
+        "substitution": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.28088588543691256,
+          "balancedAccuracy": 0.33277129269347167,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6631016042780749,
+              "recall": 0.9649805447470817,
+              "f1": 0.786053882725832
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.1875,
+              "recall": 0.03333333333333333,
+              "f1": 0.05660377358490566
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 248,
+              "-": 9,
+              "+": 0
+            },
+            "-": {
+              "0": 87,
+              "-": 3,
+              "+": 0
+            },
+            "+": {
+              "0": 39,
+              "-": 4,
+              "+": 0
+            }
+          }
+        },
+        "substitutionDistance": {
+          "n": 390,
+          "correct": 251,
+          "accuracy": 0.6435897435897436,
+          "macroF1": 0.34073914293931545,
+          "balancedAccuracy": 0.36165153480328577,
+          "perClass": [
+            {
+              "label": "0",
+              "support": 257,
+              "precision": 0.6723646723646723,
+              "recall": 0.9182879377431906,
+              "f1": 0.7763157894736842
+            },
+            {
+              "label": "-",
+              "support": 90,
+              "precision": 0.46875,
+              "recall": 0.16666666666666666,
+              "f1": 0.2459016393442623
+            },
+            {
+              "label": "+",
+              "support": 43,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "0": {
+              "0": 236,
+              "-": 15,
+              "+": 6
+            },
+            "-": {
+              "0": 74,
+              "-": 15,
+              "+": 1
+            },
+            "+": {
+              "0": 41,
+              "-": 2,
+              "+": 0
+            }
+          }
+        }
+      },
+      "training": {
+        "records": 1303,
+        "livedSymbols": 14333,
+        "selectedC": "exact:89",
+        "maxLag": 9,
+        "originalNativeModelCandidates": null
+      },
+      "source": {
+        "commit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "hashes": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "validatedVariants": 1960,
+        "events": 110,
+        "rejected": {
+          "notSNV": 95,
+          "controlUnavailable": 0,
+          "multipleSequence": 0,
+          "lengthMismatch": 0,
+          "notOneBase": 0,
+          "unknownAllele": 0,
+          "nonCanonicalDNA": 0,
+          "missingDistance": 0,
+          "invalidEffect": 0,
+          "missingControlGroup": 0,
+          "sourceStrandMismatch": 0
+        },
+        "train": {
+          "n": 1303,
+          "groups": 77,
+          "labels": {
+            "0": 729,
+            "+": 269,
+            "-": 305
+          },
+          "strands": {
+            "forward": 780,
+            "reverse": 523
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 165
+          },
+          "measuredEffect": {
+            "min": -85.34348007943147,
+            "max": 51.28235052495923
+          }
+        },
+        "dev": {
+          "n": 390,
+          "groups": 16,
+          "labels": {
+            "0": 257,
+            "+": 43,
+            "-": 90
+          },
+          "strands": {
+            "forward": 315,
+            "reverse": 75
+          },
+          "mutationPositions": {
+            "min": 1,
+            "max": 164
+          },
+          "measuredEffect": {
+            "min": -83.0311998660604,
+            "max": 30.661467029868934
+          }
+        },
+        "finalLocked": true,
+        "finalCount": 267
+      }
+    }
+  ]
+}
