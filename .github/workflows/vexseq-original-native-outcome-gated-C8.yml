@@ -1,0 +1,61 @@
+name: Vexseq genuine original Brain outcome-conditioned native C perspective mechanism
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-OUTCOME-GATED-C8-20261122
+    paths:
+      - .github/workflows/vexseq-original-native-outcome-gated-C8.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-native-outcome-perspective:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode: [global-true-first, outcome-true-first, outcome-true-last, outcome-blind-last, alt-only-true-last]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pinned genuine original Adamson Vexseq human K562 HepG2 REF ALT and measured delta PSI
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Validate exact original native Brain and frozen real assay outcome test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/vexseq-source.mjs
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/outcome-gated/run-native-outcome-gated.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/outcome-gated/PRETEST.md
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/lean-c.mjs
+      - name: Execute same original Brain 67 train events 10 blind C-choice calibration events 16 evaluation events
+        shell: bash
+        env:
+          VEXSEQ_OUTCOME_PHASE: dev
+          VEXSEQ_OUTCOME_RAW_FILE: /tmp/vexseq-authentic-native-outcome-gated-result.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/outcome-gated/run-native-outcome-gated.mjs comparison-checkouts/vexseq '${{ matrix.mode }}' | tee /tmp/vexseq-native-outcome-gated-result.log
+      - name: Preserve source hashes, calibrated native C masks and ALL per-example predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vexseq-native-outcome-gated-${{ matrix.mode }}
+          path: |
+            /tmp/vexseq-authentic-native-outcome-gated-result.json
+            /tmp/vexseq-native-outcome-gated-result.log
+          if-no-files-found: warn
