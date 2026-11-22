@@ -109,3 +109,24 @@ A NEW genuine native original V42 Brain capability is now measured, distinct fro
 
 [**Complete original native C8 reports, all programs and actual CI evidence**](./hs3d/c8-fusion/RESULTS.md). All code changes remain additive in a separate research branch, original Brain unchanged.
 
+## Measured human functional genetic variant effects — Vex-seq, 22 Nov 2026
+
+The earlier UCI/HS3D splice motif tasks are useful controls, but the research target is now **authentic measured functional consequences of REF→ALT human variants**. Original published Adamson Vex-seq reporter assay `delta_PSI` contains 2,055 measured effects, of which **1,960** are exact source-verified single-base ref/alt pairs. Source original controls group the dataset into 77 independent-from-train 1,303-SNV training, 16-event 390-SNV development and **17-event 267-SNV final yet-unscored** partitions.
+
+On true experimentally measured variant-effect categories, FOUR unchanged original native V42 Brain configurations C8/C9 failed to surpass a simple mutation+splice-distance statistical baseline: native macro-F1 **26.83%–28.56%** versus external baseline **34.07%**, with continuous ΔPSI rank Spearman only **0.036–0.061**. This is an actual negative functional-genomic benchmark, not a win.
+
+A pre-registered TRAIN-only analysis of original experimentally measured **K562** and **HepG2** `delta_psi_K/H` outcomes showed **340/1303** authentic SNVs with different effect categories by cell, including **188** apparently neutral average responses that are substantial in at least one condition and **10** strongly opposite-condition effects. The original publication already discusses this biological dependence; the project-specific result is a precisely verified missing dimension in our target labels.
+
+Six additional native C8 experiments used one unchanged original Brain with losslessly encoded actual ref/alt pairs + true cell symbol versus constant X, at both input token positions, plus authentic repeated class-balanced exposure. True-cell FIRST improved macro-F1 from constant-cell **25.72% to 32.41%**, but predicted different responses for only **1/390** dev variants. True-cell LAST changed predictions for **14/390** DNA pairs but reduced macro-F1 to **29.62%**. Authentic class balancing unlocked **29/100** large positive effects, but hurt global accuracy to **34.36%**; constant-cell balanced scored **35.49%** macro-F1 and could not differentiate K/H.
+
+**Crucial exact source-level diagnosis:** the actually selected original `LeanC` mask in each of these real runs omits either **cell identity, ALT mutated nucleotide, or mutation offset**, so the native C perspective cannot jointly use the biological causal variables. This is supported by inspecting untouched `Brain.ctxOf()` / `LeanC.keyN()`, not inferred from a decorative visualizer. The original A path may contribute other information; the observation is about selected native C specifically.
+
+The true next target is to make the SAME original organism select **outcome-specific joint genomic perspectives** and actually preserve real 20+ nucleotide biological context, then show correct K/H differences on new assay events. **No AlphaGenome 2 predictions were obtained, no tissue-conditioned genomic superiority established, and the 267-event-separated final variants remain unscored.**
+
+- [Original lab REF/ALT source, all four genuine C8/C9 native negative results](./variant-effects/vexseq/RESULTS.md)
+- [Original-native cell condition actual experiments, exact C bit-mask diagnosis, all controls and failures](./variant-effects/vexseq/conditioned/RESULTS.md)
+- [Human measured K/H discordance, training groups only](./variant-effects/vexseq/results/train-only-cell-dependent-effect-audit.json)
+- [Actual 1960 paired-variant validated source](./variant-effects/vexseq/vexseq-source.mjs)
+- [Source context: published Vex-seq](https://pmc.ncbi.nlm.nih.gov/articles/PMC5984807/)
+
+**These are measured results, not a simulation or claim of AlphaGenome 2 parity.**
