@@ -1,0 +1,5241 @@
+{
+  "status": "ALL_FIVE_GENUINE_ORIGINAL_BRAIN_FULL_NATIVE_CALIBRATION_ARMS_COMPLETED",
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45056569574",
+  "protocol": "research/genome-native-brain-20261119/variant-effects/vexseq/full-chain-select/PRETEST.md",
+  "data": [
+    {
+      "mode": "global-true-first",
+      "jobId": 137313010931,
+      "training": {
+        "oneOriginalBrain": true,
+        "sameRealBiologicalInputBytesForAllModes": true,
+        "nativeCObservesOnlyGenuineOutcome": false,
+        "nativeCObservesOnlyAltBase": false,
+        "allOtherBrainOrgansStillLiveEveryInputAndRealLabel": true,
+        "actualBrainLivedSymbols": 22340,
+        "originalCObserveCalls": 22340,
+        "originalCMaxLag": 8,
+        "originalSelfSelectedC": "exact:71",
+        "originalCActiveAfterScoring": "exact:71",
+        "originalCNativeModelCount": 765,
+        "noExternalTrainablePredictionHead": true
+      },
+      "source": {
+        "repo": "scottiadamson/Vex-seq",
+        "pinnedCommit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "originalSha256": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "trueSNVs": 1960,
+        "trainVariants": 1117,
+        "trainOriginalEventGroups": 67,
+        "calibrationVariants": 186,
+        "calibrationEventGroups": 10,
+        "devVariants": 390,
+        "devOriginalEventGroups": 16,
+        "finalVariantsLocked": 267,
+        "finalEventGroups": 17,
+        "calibrationOriginalSourceEventIDs": [
+          25,
+          42,
+          43,
+          53,
+          59,
+          60,
+          65,
+          72,
+          73,
+          98
+        ],
+        "actualTrainSourceEvents": [
+          5,
+          83,
+          101,
+          55,
+          61,
+          86,
+          1,
+          27,
+          66,
+          52,
+          13,
+          109,
+          79,
+          49,
+          80,
+          69,
+          37,
+          9,
+          21,
+          22,
+          90,
+          74,
+          40,
+          46,
+          51,
+          36,
+          0,
+          87,
+          76,
+          44,
+          108,
+          103,
+          68,
+          14,
+          89,
+          84,
+          99,
+          106,
+          107,
+          32,
+          88,
+          78,
+          15,
+          3,
+          10,
+          23,
+          30,
+          24,
+          12,
+          81,
+          45,
+          26,
+          33,
+          17,
+          34,
+          63,
+          100,
+          82,
+          70,
+          93,
+          6,
+          77,
+          104,
+          47,
+          2,
+          58,
+          16
+        ]
+      },
+      "calibration": {
+        "selfSelectedBeforeCalibration": "exact:71",
+        "nCandidateMasks": 60,
+        "selectedByTruth": {
+          "id": "exact:175",
+          "mask": 175,
+          "kind": "exact",
+          "selectedTokens": [
+            "ALT",
+            "REF3",
+            "REF2",
+            "REF1",
+            "mutationOffset",
+            "cell"
+          ],
+          "correctCalibrationMacroF1": 0.343475984818741,
+          "calibrationAccuracy": 0.6129032258064516,
+          "shuffledCalibrationMacroF1": 0.28113684945251494
+        },
+        "selectedByShuffledTruth": {
+          "id": "exact:253",
+          "mask": 253,
+          "kind": "exact",
+          "selectedTokens": [
+            "ALT",
+            "REF2",
+            "REF1",
+            "REF0",
+            "mutationOffset",
+            "spliceBin",
+            "cell"
+          ],
+          "correctCalibrationMacroF1": 0.27084429315591313,
+          "calibrationAccuracy": 0.5510752688172043,
+          "shuffledCalibrationMacroF1": 0.3011501366754345
+        },
+        "maxLag": 8,
+        "trainOnlyCOutcomeCount": 22340,
+        "calibrationCases": 372,
+        "calibrationLabels": {
+          "0": 220,
+          "-": 85,
+          "+": 67
+        },
+        "topFiveReal": [
+          {
+            "id": "exact:175",
+            "mask": 175,
+            "kind": "exact",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.343475984818741,
+            "calibrationAccuracy": 0.6129032258064516,
+            "shuffledCalibrationMacroF1": 0.28113684945251494
+          },
+          {
+            "id": "fold:175",
+            "mask": 175,
+            "kind": "fold",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.343475984818741,
+            "calibrationAccuracy": 0.6129032258064516,
+            "shuffledCalibrationMacroF1": 0.28113684945251494
+          },
+          {
+            "id": "exact:239",
+            "mask": 239,
+            "kind": "exact",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "spliceBin",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.33253660110143374,
+            "calibrationAccuracy": 0.6048387096774194,
+            "shuffledCalibrationMacroF1": 0.28195226602306245
+          },
+          {
+            "id": "fold:239",
+            "mask": 239,
+            "kind": "fold",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "spliceBin",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.33253660110143374,
+            "calibrationAccuracy": 0.6048387096774194,
+            "shuffledCalibrationMacroF1": 0.28195226602306245
+          },
+          {
+            "id": "exact:171",
+            "mask": 171,
+            "kind": "exact",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF1",
+              "mutationOffset",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.3230356890957822,
+            "calibrationAccuracy": 0.5860215053763441,
+            "shuffledCalibrationMacroF1": 0.2786308768111561
+          }
+        ],
+        "nativeCandidateIds": [
+          "exact:163",
+          "fold:163",
+          "exact:165",
+          "fold:165",
+          "exact:167",
+          "fold:167",
+          "exact:169",
+          "fold:169",
+          "exact:171",
+          "fold:171",
+          "exact:173",
+          "fold:173",
+          "exact:175",
+          "fold:175",
+          "exact:177",
+          "fold:177",
+          "exact:179",
+          "fold:179",
+          "exact:181",
+          "fold:181",
+          "exact:183",
+          "fold:183",
+          "exact:185",
+          "fold:185",
+          "exact:187",
+          "fold:187",
+          "exact:189",
+          "fold:189",
+          "exact:191",
+          "fold:191",
+          "exact:227",
+          "fold:227",
+          "exact:229",
+          "fold:229",
+          "exact:231",
+          "fold:231",
+          "exact:233",
+          "fold:233",
+          "exact:235",
+          "fold:235",
+          "exact:237",
+          "fold:237",
+          "exact:239",
+          "fold:239",
+          "exact:241",
+          "fold:241",
+          "exact:243",
+          "fold:243",
+          "exact:245",
+          "fold:245",
+          "exact:247",
+          "fold:247",
+          "exact:249",
+          "fold:249",
+          "exact:251",
+          "fold:251",
+          "exact:253",
+          "fold:253",
+          "exact:255",
+          "fold:255"
+        ]
+      },
+      "evaluation": {
+        "auto": {
+          "activeNativeC": "exact:71",
+          "combined": {
+            "n": 780,
+            "correct": 465,
+            "accuracy": 0.5961538461538461,
+            "macroF1": 0.2812847403597594,
+            "balancedAccuracy": 0.3292158968850698,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6256906077348067,
+                "recall": 0.9244897959183673,
+                "f1": 0.7462932454695222
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.21428571428571427,
+                "recall": 0.06315789473684211,
+                "f1": 0.0975609756097561
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 453,
+                "-": 37,
+                "+": 0
+              },
+              "-": {
+                "0": 178,
+                "-": 12,
+                "+": 0
+              },
+              "+": {
+                "0": 93,
+                "-": 7,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 219,
+              "accuracy": 0.5615384615384615,
+              "macroF1": 0.2698264698264698,
+              "balancedAccuracy": 0.3256423258958756,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5883977900552486,
+                  "recall": 0.9181034482758621,
+                  "f1": 0.7171717171717171
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.21428571428571427,
+                  "recall": 0.058823529411764705,
+                  "f1": 0.09230769230769231
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 213,
+                  "-": 19,
+                  "+": 0
+                },
+                "-": {
+                  "0": 96,
+                  "-": 6,
+                  "+": 0
+                },
+                "+": {
+                  "0": 53,
+                  "-": 3,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 246,
+              "accuracy": 0.6307692307692307,
+              "macroF1": 0.2925472747497219,
+              "balancedAccuracy": 0.3328047921071177,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6629834254143646,
+                  "recall": 0.9302325581395349,
+                  "f1": 0.7741935483870968
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.21428571428571427,
+                  "recall": 0.06818181818181818,
+                  "f1": 0.10344827586206896
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 240,
+                  "-": 18,
+                  "+": 0
+                },
+                "-": {
+                  "0": 82,
+                  "-": 6,
+                  "+": 0
+                },
+                "+": {
+                  "0": 40,
+                  "-": 4,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 188,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.08176626226933671,
+          "spearmanByCell": {
+            "K": 0.05369667953436654,
+            "H": 0.11477089331039168
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 465,
+            "accuracy": 0.5961538461538461,
+            "macroF1": 0.2812847403597594,
+            "balancedAccuracy": 0.3292158968850698,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6256906077348067,
+                "recall": 0.9244897959183673,
+                "f1": 0.7462932454695222
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.21428571428571427,
+                "recall": 0.06315789473684211,
+                "f1": 0.0975609756097561
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 453,
+                "-": 37,
+                "+": 0
+              },
+              "-": {
+                "0": 178,
+                "-": 12,
+                "+": 0
+              },
+              "+": {
+                "0": 93,
+                "-": 7,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 188,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "calibrationNativeC": {
+          "activeNativeC": "exact:175",
+          "combined": {
+            "n": 780,
+            "correct": 465,
+            "accuracy": 0.5961538461538461,
+            "macroF1": 0.2924803518390134,
+            "balancedAccuracy": 0.3340171858216971,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6267409470752089,
+                "recall": 0.9183673469387755,
+                "f1": 0.7450331125827815
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.24561403508771928,
+                "recall": 0.07368421052631578,
+                "f1": 0.11336032388663968
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.2,
+                "recall": 0.01,
+                "f1": 0.01904761904761905
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 450,
+                "-": 36,
+                "+": 4
+              },
+              "-": {
+                "0": 176,
+                "-": 14,
+                "+": 0
+              },
+              "+": {
+                "0": 92,
+                "-": 7,
+                "+": 1
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 215,
+              "accuracy": 0.5512820512820513,
+              "macroF1": 0.28582632882750447,
+              "balancedAccuracy": 0.328073183296307,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5885714285714285,
+                  "recall": 0.8879310344827587,
+                  "f1": 0.7079037800687286
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.22857142857142856,
+                  "recall": 0.0784313725490196,
+                  "f1": 0.11678832116788321
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.2,
+                  "recall": 0.017857142857142856,
+                  "f1": 0.03278688524590164
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 206,
+                  "-": 22,
+                  "+": 4
+                },
+                "-": {
+                  "0": 94,
+                  "-": 8,
+                  "+": 0
+                },
+                "+": {
+                  "0": 50,
+                  "-": 5,
+                  "+": 1
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 250,
+              "accuracy": 0.6410256410256411,
+              "macroF1": 0.29621454158195376,
+              "balancedAccuracy": 0.33797275076344846,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6630434782608695,
+                  "recall": 0.9457364341085271,
+                  "f1": 0.7795527156549521
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.2727272727272727,
+                  "recall": 0.06818181818181818,
+                  "f1": 0.10909090909090909
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 244,
+                  "-": 14,
+                  "+": 0
+                },
+                "-": {
+                  "0": 82,
+                  "-": 6,
+                  "+": 0
+                },
+                "+": {
+                  "0": 42,
+                  "-": 2,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 36,
+            "bothCellOutcomesCorrect": 180,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.029069498581948506,
+          "spearmanByCell": {
+            "K": 0.011726263911608251,
+            "H": 0.06354359113506886
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 474,
+            "accuracy": 0.6076923076923076,
+            "macroF1": 0.30968610607857733,
+            "balancedAccuracy": 0.346015037593985,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6337047353760445,
+                "recall": 0.9285714285714286,
+                "f1": 0.7533112582781457
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.2982456140350877,
+                "recall": 0.08947368421052632,
+                "f1": 0.13765182186234817
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.4,
+                "recall": 0.02,
+                "f1": 0.0380952380952381
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 455,
+                "-": 32,
+                "+": 3
+              },
+              "-": {
+                "0": 173,
+                "-": 17,
+                "+": 0
+              },
+              "+": {
+                "0": 90,
+                "-": 8,
+                "+": 2
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 36,
+            "bothCellOutcomesCorrect": 184,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 4,
+            "correctlyChangedCellResponse": 4
+          }
+        },
+        "shuffledCalibrationNativeC": {
+          "activeNativeC": "exact:253",
+          "combined": {
+            "n": 780,
+            "correct": 468,
+            "accuracy": 0.6,
+            "macroF1": 0.27778870293127617,
+            "balancedAccuracy": 0.329108485499463,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6248294679399727,
+                "recall": 0.9346938775510204,
+                "f1": 0.7489779231398201
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.2127659574468085,
+                "recall": 0.05263157894736842,
+                "f1": 0.08438818565400844
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 458,
+                "-": 32,
+                "+": 0
+              },
+              "-": {
+                "0": 180,
+                "-": 10,
+                "+": 0
+              },
+              "+": {
+                "0": 95,
+                "-": 5,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 221,
+              "accuracy": 0.5666666666666667,
+              "macroF1": 0.2717421700223714,
+              "balancedAccuracy": 0.3285158891142664,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5906593406593407,
+                  "recall": 0.9267241379310345,
+                  "f1": 0.7214765100671141
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.23076923076923078,
+                  "recall": 0.058823529411764705,
+                  "f1": 0.09375
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 215,
+                  "-": 17,
+                  "+": 0
+                },
+                "-": {
+                  "0": 96,
+                  "-": 6,
+                  "+": 0
+                },
+                "+": {
+                  "0": 53,
+                  "-": 3,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 247,
+              "accuracy": 0.6333333333333333,
+              "macroF1": 0.28283803754590814,
+              "balancedAccuracy": 0.32910500352360816,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6585365853658537,
+                  "recall": 0.9418604651162791,
+                  "f1": 0.7751196172248804
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.19047619047619047,
+                  "recall": 0.045454545454545456,
+                  "f1": 0.07339449541284404
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 243,
+                  "-": 15,
+                  "+": 0
+                },
+                "-": {
+                  "0": 84,
+                  "-": 4,
+                  "+": 0
+                },
+                "+": {
+                  "0": 42,
+                  "-": 2,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 23,
+            "bothCellOutcomesCorrect": 183,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.025113278460797462,
+          "spearmanByCell": {
+            "K": 0.013341893459838317,
+            "H": 0.035031674478353855
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 471,
+            "accuracy": 0.6038461538461538,
+            "macroF1": 0.2816918577706017,
+            "balancedAccuracy": 0.3322234156820623,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6275579809004093,
+                "recall": 0.9387755102040817,
+                "f1": 0.7522485690923958
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.23404255319148937,
+                "recall": 0.05789473684210526,
+                "f1": 0.09282700421940929
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 460,
+                "-": 30,
+                "+": 0
+              },
+              "-": {
+                "0": 179,
+                "-": 11,
+                "+": 0
+              },
+              "+": {
+                "0": 94,
+                "-": 6,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 23,
+            "bothCellOutcomesCorrect": 184,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 1,
+            "correctlyChangedCellResponse": 1
+          }
+        },
+        "matchedStatisticalReference": {
+          "alwaysNeutral": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "substitutionDistanceCell": {
+            "n": 780,
+            "correct": 478,
+            "accuracy": 0.6128205128205129,
+            "macroF1": 0.3432304664197232,
+            "balancedAccuracy": 0.36484783387039027,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6406926406926406,
+                "recall": 0.9061224489795918,
+                "f1": 0.7506339814032121
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4444444444444444,
+                "recall": 0.16842105263157894,
+                "f1": 0.24427480916030533
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.13333333333333333,
+                "recall": 0.02,
+                "f1": 0.034782608695652174
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 444,
+                "-": 36,
+                "+": 10
+              },
+              "-": {
+                "0": 155,
+                "-": 32,
+                "+": 3
+              },
+              "+": {
+                "0": 94,
+                "-": 4,
+                "+": 2
+              }
+            }
+          },
+          "majorityFromTrain": "0"
+        }
+      }
+    },
+    {
+      "mode": "outcome-true-first",
+      "jobId": 137313010837,
+      "training": {
+        "oneOriginalBrain": true,
+        "sameRealBiologicalInputBytesForAllModes": true,
+        "nativeCObservesOnlyGenuineOutcome": true,
+        "nativeCObservesOnlyAltBase": false,
+        "allOtherBrainOrgansStillLiveEveryInputAndRealLabel": true,
+        "actualBrainLivedSymbols": 22340,
+        "originalCObserveCalls": 2234,
+        "originalCMaxLag": 8,
+        "originalSelfSelectedC": "exact:72",
+        "originalCActiveAfterScoring": "exact:72",
+        "originalCNativeModelCount": 765,
+        "noExternalTrainablePredictionHead": true
+      },
+      "source": {
+        "repo": "scottiadamson/Vex-seq",
+        "pinnedCommit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "originalSha256": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "trueSNVs": 1960,
+        "trainVariants": 1117,
+        "trainOriginalEventGroups": 67,
+        "calibrationVariants": 186,
+        "calibrationEventGroups": 10,
+        "devVariants": 390,
+        "devOriginalEventGroups": 16,
+        "finalVariantsLocked": 267,
+        "finalEventGroups": 17,
+        "calibrationOriginalSourceEventIDs": [
+          25,
+          42,
+          43,
+          53,
+          59,
+          60,
+          65,
+          72,
+          73,
+          98
+        ],
+        "actualTrainSourceEvents": [
+          5,
+          83,
+          101,
+          55,
+          61,
+          86,
+          1,
+          27,
+          66,
+          52,
+          13,
+          109,
+          79,
+          49,
+          80,
+          69,
+          37,
+          9,
+          21,
+          22,
+          90,
+          74,
+          40,
+          46,
+          51,
+          36,
+          0,
+          87,
+          76,
+          44,
+          108,
+          103,
+          68,
+          14,
+          89,
+          84,
+          99,
+          106,
+          107,
+          32,
+          88,
+          78,
+          15,
+          3,
+          10,
+          23,
+          30,
+          24,
+          12,
+          81,
+          45,
+          26,
+          33,
+          17,
+          34,
+          63,
+          100,
+          82,
+          70,
+          93,
+          6,
+          77,
+          104,
+          47,
+          2,
+          58,
+          16
+        ]
+      },
+      "calibration": {
+        "selfSelectedBeforeCalibration": "exact:72",
+        "nCandidateMasks": 60,
+        "selectedByTruth": {
+          "id": "exact:175",
+          "mask": 175,
+          "kind": "exact",
+          "selectedTokens": [
+            "ALT",
+            "REF3",
+            "REF2",
+            "REF1",
+            "mutationOffset",
+            "cell"
+          ],
+          "correctCalibrationMacroF1": 0.38358568286628153,
+          "calibrationAccuracy": 0.5913978494623656,
+          "shuffledCalibrationMacroF1": 0.308142153136854
+        },
+        "selectedByShuffledTruth": {
+          "id": "exact:235",
+          "mask": 235,
+          "kind": "exact",
+          "selectedTokens": [
+            "ALT",
+            "REF3",
+            "REF1",
+            "mutationOffset",
+            "spliceBin",
+            "cell"
+          ],
+          "correctCalibrationMacroF1": 0.36537417024344504,
+          "calibrationAccuracy": 0.5752688172043011,
+          "shuffledCalibrationMacroF1": 0.32579900061885425
+        },
+        "maxLag": 8,
+        "trainOnlyCOutcomeCount": 2234,
+        "calibrationCases": 372,
+        "calibrationLabels": {
+          "0": 220,
+          "-": 85,
+          "+": 67
+        },
+        "topFiveReal": [
+          {
+            "id": "exact:175",
+            "mask": 175,
+            "kind": "exact",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.38358568286628153,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.308142153136854
+          },
+          {
+            "id": "fold:175",
+            "mask": 175,
+            "kind": "fold",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.38358568286628153,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.308142153136854
+          },
+          {
+            "id": "exact:235",
+            "mask": 235,
+            "kind": "exact",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF1",
+              "mutationOffset",
+              "spliceBin",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.36537417024344504,
+            "calibrationAccuracy": 0.5752688172043011,
+            "shuffledCalibrationMacroF1": 0.32579900061885425
+          },
+          {
+            "id": "fold:235",
+            "mask": 235,
+            "kind": "fold",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF1",
+              "mutationOffset",
+              "spliceBin",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.36537417024344504,
+            "calibrationAccuracy": 0.5752688172043011,
+            "shuffledCalibrationMacroF1": 0.32579900061885425
+          },
+          {
+            "id": "exact:231",
+            "mask": 231,
+            "kind": "exact",
+            "selectedTokens": [
+              "ALT",
+              "REF3",
+              "REF2",
+              "mutationOffset",
+              "spliceBin",
+              "cell"
+            ],
+            "correctCalibrationMacroF1": 0.3472697158901943,
+            "calibrationAccuracy": 0.5672043010752689,
+            "shuffledCalibrationMacroF1": 0.2655316883618517
+          }
+        ],
+        "nativeCandidateIds": [
+          "exact:163",
+          "fold:163",
+          "exact:165",
+          "fold:165",
+          "exact:167",
+          "fold:167",
+          "exact:169",
+          "fold:169",
+          "exact:171",
+          "fold:171",
+          "exact:173",
+          "fold:173",
+          "exact:175",
+          "fold:175",
+          "exact:177",
+          "fold:177",
+          "exact:179",
+          "fold:179",
+          "exact:181",
+          "fold:181",
+          "exact:183",
+          "fold:183",
+          "exact:185",
+          "fold:185",
+          "exact:187",
+          "fold:187",
+          "exact:189",
+          "fold:189",
+          "exact:191",
+          "fold:191",
+          "exact:227",
+          "fold:227",
+          "exact:229",
+          "fold:229",
+          "exact:231",
+          "fold:231",
+          "exact:233",
+          "fold:233",
+          "exact:235",
+          "fold:235",
+          "exact:237",
+          "fold:237",
+          "exact:239",
+          "fold:239",
+          "exact:241",
+          "fold:241",
+          "exact:243",
+          "fold:243",
+          "exact:245",
+          "fold:245",
+          "exact:247",
+          "fold:247",
+          "exact:249",
+          "fold:249",
+          "exact:251",
+          "fold:251",
+          "exact:253",
+          "fold:253",
+          "exact:255",
+          "fold:255"
+        ]
+      },
+      "evaluation": {
+        "auto": {
+          "activeNativeC": "exact:72",
+          "combined": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.2987516522249963,
+            "balancedAccuracy": 0.3483709273182957,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6363636363636364,
+                "recall": 0.9714285714285714,
+                "f1": 0.7689822294022617
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4666666666666667,
+                "recall": 0.07368421052631578,
+                "f1": 0.12727272727272726
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 476,
+                "-": 12,
+                "+": 2
+              },
+              "-": {
+                "0": 176,
+                "-": 14,
+                "+": 0
+              },
+              "+": {
+                "0": 96,
+                "-": 4,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 231,
+              "accuracy": 0.5923076923076923,
+              "macroF1": 0.2863106823502863,
+              "balancedAccuracy": 0.3447148974532342,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5989304812834224,
+                  "recall": 0.9655172413793104,
+                  "f1": 0.7392739273927392
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.4666666666666667,
+                  "recall": 0.06862745098039216,
+                  "f1": 0.11965811965811966
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 224,
+                  "-": 7,
+                  "+": 1
+                },
+                "-": {
+                  "0": 95,
+                  "-": 7,
+                  "+": 0
+                },
+                "+": {
+                  "0": 55,
+                  "-": 1,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 259,
+              "accuracy": 0.6641025641025641,
+              "macroF1": 0.31113022817582237,
+              "balancedAccuracy": 0.3520965468639887,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6737967914438503,
+                  "recall": 0.9767441860465116,
+                  "f1": 0.7974683544303798
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.4666666666666667,
+                  "recall": 0.07954545454545454,
+                  "f1": 0.13592233009708737
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 252,
+                  "-": 5,
+                  "+": 1
+                },
+                "-": {
+                  "0": 81,
+                  "-": 7,
+                  "+": 0
+                },
+                "+": {
+                  "0": 41,
+                  "-": 3,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 201,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.08602935039375369,
+          "spearmanByCell": {
+            "K": 0.10548905077305284,
+            "H": 0.06544679668789576
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.2987516522249963,
+            "balancedAccuracy": 0.3483709273182957,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6363636363636364,
+                "recall": 0.9714285714285714,
+                "f1": 0.7689822294022617
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4666666666666667,
+                "recall": 0.07368421052631578,
+                "f1": 0.12727272727272726
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 476,
+                "-": 12,
+                "+": 2
+              },
+              "-": {
+                "0": 176,
+                "-": 14,
+                "+": 0
+              },
+              "+": {
+                "0": 96,
+                "-": 4,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 201,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "calibrationNativeC": {
+          "activeNativeC": "exact:175",
+          "combined": {
+            "n": 780,
+            "correct": 453,
+            "accuracy": 0.5807692307692308,
+            "macroF1": 0.3573038073038073,
+            "balancedAccuracy": 0.36786251342642323,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6430769230769231,
+                "recall": 0.8530612244897959,
+                "f1": 0.7333333333333333
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.28378378378378377,
+                "recall": 0.11052631578947368,
+                "f1": 0.1590909090909091
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.25,
+                "recall": 0.14,
+                "f1": 0.1794871794871795
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 418,
+                "-": 43,
+                "+": 29
+              },
+              "-": {
+                "0": 156,
+                "-": 21,
+                "+": 13
+              },
+              "+": {
+                "0": 76,
+                "-": 10,
+                "+": 14
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 210,
+              "accuracy": 0.5384615384615384,
+              "macroF1": 0.368800309435698,
+              "balancedAccuracy": 0.37788563701342603,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.6138613861386139,
+                  "recall": 0.8017241379310345,
+                  "f1": 0.6953271028037383
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.2553191489361702,
+                  "recall": 0.11764705882352941,
+                  "f1": 0.1610738255033557
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.3,
+                  "recall": 0.21428571428571427,
+                  "f1": 0.25
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 186,
+                  "-": 27,
+                  "+": 19
+                },
+                "-": {
+                  "0": 81,
+                  "-": 12,
+                  "+": 9
+                },
+                "+": {
+                  "0": 36,
+                  "-": 8,
+                  "+": 12
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 243,
+              "accuracy": 0.6230769230769231,
+              "macroF1": 0.3300435181858107,
+              "balancedAccuracy": 0.34898402630960773,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6685878962536023,
+                  "recall": 0.8992248062015504,
+                  "f1": 0.7669421487603306
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.3333333333333333,
+                  "recall": 0.10227272727272728,
+                  "f1": 0.1565217391304348
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0.125,
+                  "recall": 0.045454545454545456,
+                  "f1": 0.06666666666666667
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 232,
+                  "-": 16,
+                  "+": 10
+                },
+                "-": {
+                  "0": 75,
+                  "-": 9,
+                  "+": 4
+                },
+                "+": {
+                  "0": 40,
+                  "-": 2,
+                  "+": 2
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 74,
+            "bothCellOutcomesCorrect": 166,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 6,
+            "correctlyChangedCellResponse": 6
+          },
+          "spearmanCombined": 0.06942386144003558,
+          "spearmanByCell": {
+            "K": 0.07900552933907237,
+            "H": 0.06710492719286683
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 445,
+            "accuracy": 0.5705128205128205,
+            "macroF1": 0.34505582137161084,
+            "balancedAccuracy": 0.35761904761904767,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6353846153846154,
+                "recall": 0.8428571428571429,
+                "f1": 0.724561403508772
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.25675675675675674,
+                "recall": 0.1,
+                "f1": 0.14393939393939395
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.23214285714285715,
+                "recall": 0.13,
+                "f1": 0.16666666666666666
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 413,
+                "-": 45,
+                "+": 32
+              },
+              "-": {
+                "0": 160,
+                "-": 19,
+                "+": 11
+              },
+              "+": {
+                "0": 77,
+                "-": 10,
+                "+": 13
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 74,
+            "bothCellOutcomesCorrect": 163,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 3,
+            "correctlyChangedCellResponse": 3
+          }
+        },
+        "shuffledCalibrationNativeC": {
+          "activeNativeC": "exact:235",
+          "combined": {
+            "n": 780,
+            "correct": 444,
+            "accuracy": 0.5692307692307692,
+            "macroF1": 0.33386870268142416,
+            "balancedAccuracy": 0.349484425349087,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6351145038167939,
+                "recall": 0.8489795918367347,
+                "f1": 0.7266375545851529
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.22666666666666666,
+                "recall": 0.08947368421052632,
+                "f1": 0.12830188679245283
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.22,
+                "recall": 0.11,
+                "f1": 0.14666666666666667
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 416,
+                "-": 48,
+                "+": 26
+              },
+              "-": {
+                "0": 160,
+                "-": 17,
+                "+": 13
+              },
+              "+": {
+                "0": 79,
+                "-": 10,
+                "+": 11
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 211,
+              "accuracy": 0.541025641025641,
+              "macroF1": 0.3462083616901748,
+              "balancedAccuracy": 0.3594288290028655,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.6075949367088608,
+                  "recall": 0.8275862068965517,
+                  "f1": 0.7007299270072993
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.24444444444444444,
+                  "recall": 0.10784313725490197,
+                  "f1": 0.14965986394557823
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.27586206896551724,
+                  "recall": 0.14285714285714285,
+                  "f1": 0.18823529411764706
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 192,
+                  "-": 26,
+                  "+": 14
+                },
+                "-": {
+                  "0": 84,
+                  "-": 11,
+                  "+": 7
+                },
+                "+": {
+                  "0": 40,
+                  "-": 8,
+                  "+": 8
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 233,
+              "accuracy": 0.5974358974358974,
+              "macroF1": 0.31480712267698047,
+              "balancedAccuracy": 0.33486023020906736,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6607669616519174,
+                  "recall": 0.8682170542635659,
+                  "f1": 0.7504187604690117
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.2,
+                  "recall": 0.06818181818181818,
+                  "f1": 0.1016949152542373
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0.14285714285714285,
+                  "recall": 0.06818181818181818,
+                  "f1": 0.09230769230769231
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 224,
+                  "-": 22,
+                  "+": 12
+                },
+                "-": {
+                  "0": 76,
+                  "-": 6,
+                  "+": 6
+                },
+                "+": {
+                  "0": 39,
+                  "-": 2,
+                  "+": 3
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 56,
+            "bothCellOutcomesCorrect": 166,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 4,
+            "correctlyChangedCellResponse": 4
+          },
+          "spearmanCombined": 0.016534255887774692,
+          "spearmanByCell": {
+            "K": 0.0025635385896875637,
+            "H": 0.034563043554619394
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 445,
+            "accuracy": 0.5705128205128205,
+            "macroF1": 0.3363796654857048,
+            "balancedAccuracy": 0.3517436448263516,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6366412213740458,
+                "recall": 0.8510204081632653,
+                "f1": 0.7283842794759825
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.21333333333333335,
+                "recall": 0.08421052631578947,
+                "f1": 0.12075471698113208
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.24,
+                "recall": 0.12,
+                "f1": 0.16
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 417,
+                "-": 50,
+                "+": 23
+              },
+              "-": {
+                "0": 159,
+                "-": 16,
+                "+": 15
+              },
+              "+": {
+                "0": 79,
+                "-": 9,
+                "+": 12
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 56,
+            "bothCellOutcomesCorrect": 166,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 4,
+            "correctlyChangedCellResponse": 4
+          }
+        },
+        "matchedStatisticalReference": {
+          "alwaysNeutral": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "substitutionDistanceCell": {
+            "n": 780,
+            "correct": 478,
+            "accuracy": 0.6128205128205129,
+            "macroF1": 0.3432304664197232,
+            "balancedAccuracy": 0.36484783387039027,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6406926406926406,
+                "recall": 0.9061224489795918,
+                "f1": 0.7506339814032121
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4444444444444444,
+                "recall": 0.16842105263157894,
+                "f1": 0.24427480916030533
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.13333333333333333,
+                "recall": 0.02,
+                "f1": 0.034782608695652174
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 444,
+                "-": 36,
+                "+": 10
+              },
+              "-": {
+                "0": 155,
+                "-": 32,
+                "+": 3
+              },
+              "+": {
+                "0": 94,
+                "-": 4,
+                "+": 2
+              }
+            }
+          },
+          "majorityFromTrain": "0"
+        }
+      }
+    },
+    {
+      "mode": "outcome-true-last",
+      "jobId": 137313010564,
+      "training": {
+        "oneOriginalBrain": true,
+        "sameRealBiologicalInputBytesForAllModes": true,
+        "nativeCObservesOnlyGenuineOutcome": true,
+        "nativeCObservesOnlyAltBase": false,
+        "allOtherBrainOrgansStillLiveEveryInputAndRealLabel": true,
+        "actualBrainLivedSymbols": 22340,
+        "originalCObserveCalls": 2234,
+        "originalCMaxLag": 8,
+        "originalSelfSelectedC": "exact:82",
+        "originalCActiveAfterScoring": "exact:82",
+        "originalCNativeModelCount": 765,
+        "noExternalTrainablePredictionHead": true
+      },
+      "source": {
+        "repo": "scottiadamson/Vex-seq",
+        "pinnedCommit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "originalSha256": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "trueSNVs": 1960,
+        "trainVariants": 1117,
+        "trainOriginalEventGroups": 67,
+        "calibrationVariants": 186,
+        "calibrationEventGroups": 10,
+        "devVariants": 390,
+        "devOriginalEventGroups": 16,
+        "finalVariantsLocked": 267,
+        "finalEventGroups": 17,
+        "calibrationOriginalSourceEventIDs": [
+          25,
+          42,
+          43,
+          53,
+          59,
+          60,
+          65,
+          72,
+          73,
+          98
+        ],
+        "actualTrainSourceEvents": [
+          5,
+          83,
+          101,
+          55,
+          61,
+          86,
+          1,
+          27,
+          66,
+          52,
+          13,
+          109,
+          79,
+          49,
+          80,
+          69,
+          37,
+          9,
+          21,
+          22,
+          90,
+          74,
+          40,
+          46,
+          51,
+          36,
+          0,
+          87,
+          76,
+          44,
+          108,
+          103,
+          68,
+          14,
+          89,
+          84,
+          99,
+          106,
+          107,
+          32,
+          88,
+          78,
+          15,
+          3,
+          10,
+          23,
+          30,
+          24,
+          12,
+          81,
+          45,
+          26,
+          33,
+          17,
+          34,
+          63,
+          100,
+          82,
+          70,
+          93,
+          6,
+          77,
+          104,
+          47,
+          2,
+          58,
+          16
+        ]
+      },
+      "calibration": {
+        "selfSelectedBeforeCalibration": "exact:82",
+        "nCandidateMasks": 60,
+        "selectedByTruth": {
+          "id": "exact:119",
+          "mask": 119,
+          "kind": "exact",
+          "selectedTokens": [
+            "cell",
+            "ALT",
+            "REF3",
+            "REF1",
+            "REF0",
+            "mutationOffset"
+          ],
+          "correctCalibrationMacroF1": 0.3169075363744135,
+          "calibrationAccuracy": 0.5913978494623656,
+          "shuffledCalibrationMacroF1": 0.2697669064309429
+        },
+        "selectedByShuffledTruth": {
+          "id": "exact:95",
+          "mask": 95,
+          "kind": "exact",
+          "selectedTokens": [
+            "cell",
+            "ALT",
+            "REF3",
+            "REF2",
+            "REF1",
+            "mutationOffset"
+          ],
+          "correctCalibrationMacroF1": 0.31541377257362285,
+          "calibrationAccuracy": 0.5913978494623656,
+          "shuffledCalibrationMacroF1": 0.28194399450040913
+        },
+        "maxLag": 8,
+        "trainOnlyCOutcomeCount": 2234,
+        "calibrationCases": 372,
+        "calibrationLabels": {
+          "0": 220,
+          "-": 85,
+          "+": 67
+        },
+        "topFiveReal": [
+          {
+            "id": "exact:119",
+            "mask": 119,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF1",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.3169075363744135,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.2697669064309429
+          },
+          {
+            "id": "fold:119",
+            "mask": 119,
+            "kind": "fold",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF1",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.3169075363744135,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.2697669064309429
+          },
+          {
+            "id": "exact:95",
+            "mask": 95,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.31541377257362285,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.28194399450040913
+          },
+          {
+            "id": "fold:95",
+            "mask": 95,
+            "kind": "fold",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.31541377257362285,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.28194399450040913
+          },
+          {
+            "id": "exact:207",
+            "mask": 207,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "mutationOffset",
+              "spliceBin"
+            ],
+            "correctCalibrationMacroF1": 0.31439810137944507,
+            "calibrationAccuracy": 0.6075268817204301,
+            "shuffledCalibrationMacroF1": 0.2639917371286522
+          }
+        ],
+        "nativeCandidateIds": [
+          "exact:71",
+          "fold:71",
+          "exact:75",
+          "fold:75",
+          "exact:79",
+          "fold:79",
+          "exact:83",
+          "fold:83",
+          "exact:87",
+          "fold:87",
+          "exact:91",
+          "fold:91",
+          "exact:95",
+          "fold:95",
+          "exact:99",
+          "fold:99",
+          "exact:103",
+          "fold:103",
+          "exact:107",
+          "fold:107",
+          "exact:111",
+          "fold:111",
+          "exact:115",
+          "fold:115",
+          "exact:119",
+          "fold:119",
+          "exact:123",
+          "fold:123",
+          "exact:127",
+          "fold:127",
+          "exact:199",
+          "fold:199",
+          "exact:203",
+          "fold:203",
+          "exact:207",
+          "fold:207",
+          "exact:211",
+          "fold:211",
+          "exact:215",
+          "fold:215",
+          "exact:219",
+          "fold:219",
+          "exact:223",
+          "fold:223",
+          "exact:227",
+          "fold:227",
+          "exact:231",
+          "fold:231",
+          "exact:235",
+          "fold:235",
+          "exact:239",
+          "fold:239",
+          "exact:243",
+          "fold:243",
+          "exact:247",
+          "fold:247",
+          "exact:251",
+          "fold:251",
+          "exact:255",
+          "fold:255"
+        ]
+      },
+      "evaluation": {
+        "auto": {
+          "activeNativeC": "exact:82",
+          "combined": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 232,
+              "accuracy": 0.5948717948717949,
+              "macroF1": 0.24866023579849947,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5948717948717949,
+                  "recall": 1,
+                  "f1": 0.7459807073954984
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 232,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 102,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 56,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 258,
+              "accuracy": 0.6615384615384615,
+              "macroF1": 0.2654320987654321,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6615384615384615,
+                  "recall": 1,
+                  "f1": 0.7962962962962963
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 258,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 88,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 44,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.03089047530150966,
+          "spearmanByCell": {
+            "K": 0.0038135053187926386,
+            "H": 0.0620468567408632
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "calibrationNativeC": {
+          "activeNativeC": "exact:119",
+          "combined": {
+            "n": 780,
+            "correct": 472,
+            "accuracy": 0.6051282051282051,
+            "macroF1": 0.292043321677774,
+            "balancedAccuracy": 0.33713569638381674,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.625,
+                "recall": 0.9387755102040817,
+                "f1": 0.7504078303425775
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.30303030303030304,
+                "recall": 0.05263157894736842,
+                "f1": 0.08968609865470852
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.18181818181818182,
+                "recall": 0.02,
+                "f1": 0.036036036036036036
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 460,
+                "-": 22,
+                "+": 8
+              },
+              "-": {
+                "0": 179,
+                "-": 10,
+                "+": 1
+              },
+              "+": {
+                "0": 97,
+                "-": 1,
+                "+": 2
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 219,
+              "accuracy": 0.5615384615384615,
+              "macroF1": 0.2995936732873853,
+              "balancedAccuracy": 0.33833590907627425,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5887323943661972,
+                  "recall": 0.9008620689655172,
+                  "f1": 0.7120954003407155
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.3333333333333333,
+                  "recall": 0.0784313725490196,
+                  "f1": 0.12698412698412698
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.18181818181818182,
+                  "recall": 0.03571428571428571,
+                  "f1": 0.05970149253731343
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 209,
+                  "-": 15,
+                  "+": 8
+                },
+                "-": {
+                  "0": 93,
+                  "-": 8,
+                  "+": 1
+                },
+                "+": {
+                  "0": 53,
+                  "-": 1,
+                  "+": 2
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 253,
+              "accuracy": 0.6487179487179487,
+              "macroF1": 0.27561320577147497,
+              "balancedAccuracy": 0.3318651632605121,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6587926509186351,
+                  "recall": 0.9728682170542635,
+                  "f1": 0.7856025039123631
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.2222222222222222,
+                  "recall": 0.022727272727272728,
+                  "f1": 0.041237113402061855
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 251,
+                  "-": 7,
+                  "+": 0
+                },
+                "-": {
+                  "0": 86,
+                  "-": 2,
+                  "+": 0
+                },
+                "+": {
+                  "0": 44,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 38,
+            "bothCellOutcomesCorrect": 186,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 5,
+            "correctlyChangedCellResponse": 5
+          },
+          "spearmanCombined": 0.05446718262337675,
+          "spearmanByCell": {
+            "K": 0.05265445515050714,
+            "H": 0.048831036057998184
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 473,
+            "accuracy": 0.6064102564102564,
+            "macroF1": 0.290141332636157,
+            "balancedAccuracy": 0.33674185463659145,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6277173913043478,
+                "recall": 0.9428571428571428,
+                "f1": 0.7536704730831973
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.2727272727272727,
+                "recall": 0.04736842105263158,
+                "f1": 0.08071748878923767
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.18181818181818182,
+                "recall": 0.02,
+                "f1": 0.036036036036036036
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 462,
+                "-": 20,
+                "+": 8
+              },
+              "-": {
+                "0": 180,
+                "-": 9,
+                "+": 1
+              },
+              "+": {
+                "0": 94,
+                "-": 4,
+                "+": 2
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 38,
+            "bothCellOutcomesCorrect": 185,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 4,
+            "correctlyChangedCellResponse": 4
+          }
+        },
+        "shuffledCalibrationNativeC": {
+          "activeNativeC": "exact:95",
+          "combined": {
+            "n": 780,
+            "correct": 478,
+            "accuracy": 0.6128205128205129,
+            "macroF1": 0.3191699642205383,
+            "balancedAccuracy": 0.3529036877909058,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6341127922971114,
+                "recall": 0.9408163265306122,
+                "f1": 0.7576006573541495
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.3055555555555556,
+                "recall": 0.05789473684210526,
+                "f1": 0.09734513274336283
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.35294117647058826,
+                "recall": 0.06,
+                "f1": 0.10256410256410256
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 461,
+                "-": 20,
+                "+": 9
+              },
+              "-": {
+                "0": 177,
+                "-": 11,
+                "+": 2
+              },
+              "+": {
+                "0": 89,
+                "-": 5,
+                "+": 6
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 220,
+              "accuracy": 0.5641025641025641,
+              "macroF1": 0.3063618141320455,
+              "balancedAccuracy": 0.34684793457612934,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5955056179775281,
+                  "recall": 0.9137931034482759,
+                  "f1": 0.7210884353741497
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.11764705882352941,
+                  "recall": 0.0196078431372549,
+                  "f1": 0.03361344537815126
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.35294117647058826,
+                  "recall": 0.10714285714285714,
+                  "f1": 0.1643835616438356
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 212,
+                  "-": 11,
+                  "+": 9
+                },
+                "-": {
+                  "0": 98,
+                  "-": 2,
+                  "+": 2
+                },
+                "+": {
+                  "0": 46,
+                  "-": 4,
+                  "+": 6
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 258,
+              "accuracy": 0.6615384615384615,
+              "macroF1": 0.31998573614846293,
+              "balancedAccuracy": 0.3557963354474982,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6711590296495957,
+                  "recall": 0.9651162790697675,
+                  "f1": 0.7917329093799682
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.47368421052631576,
+                  "recall": 0.10227272727272728,
+                  "f1": 0.16822429906542055
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 249,
+                  "-": 9,
+                  "+": 0
+                },
+                "-": {
+                  "0": 79,
+                  "-": 9,
+                  "+": 0
+                },
+                "+": {
+                  "0": 43,
+                  "-": 1,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 39,
+            "bothCellOutcomesCorrect": 185,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 4,
+            "correctlyChangedCellResponse": 4
+          },
+          "spearmanCombined": 0.0683118516958733,
+          "spearmanByCell": {
+            "K": 0.05902478556327939,
+            "H": 0.09370139629404478
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 472,
+            "accuracy": 0.6051282051282051,
+            "macroF1": 0.30558277232603337,
+            "balancedAccuracy": 0.343515932688865,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6286107290233838,
+                "recall": 0.9326530612244898,
+                "f1": 0.7510271158586689
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.3055555555555556,
+                "recall": 0.05789473684210526,
+                "f1": 0.09734513274336283
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.23529411764705882,
+                "recall": 0.04,
+                "f1": 0.06837606837606838
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 457,
+                "-": 21,
+                "+": 12
+              },
+              "-": {
+                "0": 178,
+                "-": 11,
+                "+": 1
+              },
+              "+": {
+                "0": 92,
+                "-": 4,
+                "+": 4
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 39,
+            "bothCellOutcomesCorrect": 183,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 2,
+            "correctlyChangedCellResponse": 2
+          }
+        },
+        "matchedStatisticalReference": {
+          "alwaysNeutral": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "substitutionDistanceCell": {
+            "n": 780,
+            "correct": 478,
+            "accuracy": 0.6128205128205129,
+            "macroF1": 0.3432304664197232,
+            "balancedAccuracy": 0.36484783387039027,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6406926406926406,
+                "recall": 0.9061224489795918,
+                "f1": 0.7506339814032121
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4444444444444444,
+                "recall": 0.16842105263157894,
+                "f1": 0.24427480916030533
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.13333333333333333,
+                "recall": 0.02,
+                "f1": 0.034782608695652174
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 444,
+                "-": 36,
+                "+": 10
+              },
+              "-": {
+                "0": 155,
+                "-": 32,
+                "+": 3
+              },
+              "+": {
+                "0": 94,
+                "-": 4,
+                "+": 2
+              }
+            }
+          },
+          "majorityFromTrain": "0"
+        }
+      }
+    },
+    {
+      "mode": "outcome-blind-last",
+      "jobId": 137313010946,
+      "training": {
+        "oneOriginalBrain": true,
+        "sameRealBiologicalInputBytesForAllModes": true,
+        "nativeCObservesOnlyGenuineOutcome": true,
+        "nativeCObservesOnlyAltBase": false,
+        "allOtherBrainOrgansStillLiveEveryInputAndRealLabel": true,
+        "actualBrainLivedSymbols": 22340,
+        "originalCObserveCalls": 2234,
+        "originalCMaxLag": 8,
+        "originalSelfSelectedC": "exact:82",
+        "originalCActiveAfterScoring": "exact:82",
+        "originalCNativeModelCount": 765,
+        "noExternalTrainablePredictionHead": true
+      },
+      "source": {
+        "repo": "scottiadamson/Vex-seq",
+        "pinnedCommit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "originalSha256": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "trueSNVs": 1960,
+        "trainVariants": 1117,
+        "trainOriginalEventGroups": 67,
+        "calibrationVariants": 186,
+        "calibrationEventGroups": 10,
+        "devVariants": 390,
+        "devOriginalEventGroups": 16,
+        "finalVariantsLocked": 267,
+        "finalEventGroups": 17,
+        "calibrationOriginalSourceEventIDs": [
+          25,
+          42,
+          43,
+          53,
+          59,
+          60,
+          65,
+          72,
+          73,
+          98
+        ],
+        "actualTrainSourceEvents": [
+          5,
+          83,
+          101,
+          55,
+          61,
+          86,
+          1,
+          27,
+          66,
+          52,
+          13,
+          109,
+          79,
+          49,
+          80,
+          69,
+          37,
+          9,
+          21,
+          22,
+          90,
+          74,
+          40,
+          46,
+          51,
+          36,
+          0,
+          87,
+          76,
+          44,
+          108,
+          103,
+          68,
+          14,
+          89,
+          84,
+          99,
+          106,
+          107,
+          32,
+          88,
+          78,
+          15,
+          3,
+          10,
+          23,
+          30,
+          24,
+          12,
+          81,
+          45,
+          26,
+          33,
+          17,
+          34,
+          63,
+          100,
+          82,
+          70,
+          93,
+          6,
+          77,
+          104,
+          47,
+          2,
+          58,
+          16
+        ]
+      },
+      "calibration": {
+        "selfSelectedBeforeCalibration": "exact:82",
+        "nCandidateMasks": 60,
+        "selectedByTruth": {
+          "id": "exact:95",
+          "mask": 95,
+          "kind": "exact",
+          "selectedTokens": [
+            "cell",
+            "ALT",
+            "REF3",
+            "REF2",
+            "REF1",
+            "mutationOffset"
+          ],
+          "correctCalibrationMacroF1": 0.3348128891779288,
+          "calibrationAccuracy": 0.5940860215053764,
+          "shuffledCalibrationMacroF1": 0.2992656452206148
+        },
+        "selectedByShuffledTruth": {
+          "id": "exact:95",
+          "mask": 95,
+          "kind": "exact",
+          "selectedTokens": [
+            "cell",
+            "ALT",
+            "REF3",
+            "REF2",
+            "REF1",
+            "mutationOffset"
+          ],
+          "correctCalibrationMacroF1": 0.3348128891779288,
+          "calibrationAccuracy": 0.5940860215053764,
+          "shuffledCalibrationMacroF1": 0.2992656452206148
+        },
+        "maxLag": 8,
+        "trainOnlyCOutcomeCount": 2234,
+        "calibrationCases": 372,
+        "calibrationLabels": {
+          "0": 220,
+          "-": 85,
+          "+": 67
+        },
+        "topFiveReal": [
+          {
+            "id": "exact:95",
+            "mask": 95,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.3348128891779288,
+            "calibrationAccuracy": 0.5940860215053764,
+            "shuffledCalibrationMacroF1": 0.2992656452206148
+          },
+          {
+            "id": "fold:95",
+            "mask": 95,
+            "kind": "fold",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.3348128891779288,
+            "calibrationAccuracy": 0.5940860215053764,
+            "shuffledCalibrationMacroF1": 0.2992656452206148
+          },
+          {
+            "id": "exact:223",
+            "mask": 223,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "spliceBin"
+            ],
+            "correctCalibrationMacroF1": 0.32615293508031684,
+            "calibrationAccuracy": 0.6021505376344086,
+            "shuffledCalibrationMacroF1": 0.27184839736471983
+          },
+          {
+            "id": "fold:223",
+            "mask": 223,
+            "kind": "fold",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF1",
+              "mutationOffset",
+              "spliceBin"
+            ],
+            "correctCalibrationMacroF1": 0.32615293508031684,
+            "calibrationAccuracy": 0.6021505376344086,
+            "shuffledCalibrationMacroF1": 0.27184839736471983
+          },
+          {
+            "id": "exact:207",
+            "mask": 207,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "mutationOffset",
+              "spliceBin"
+            ],
+            "correctCalibrationMacroF1": 0.3085703044942176,
+            "calibrationAccuracy": 0.5994623655913979,
+            "shuffledCalibrationMacroF1": 0.266729797979798
+          }
+        ],
+        "nativeCandidateIds": [
+          "exact:71",
+          "fold:71",
+          "exact:75",
+          "fold:75",
+          "exact:79",
+          "fold:79",
+          "exact:83",
+          "fold:83",
+          "exact:87",
+          "fold:87",
+          "exact:91",
+          "fold:91",
+          "exact:95",
+          "fold:95",
+          "exact:99",
+          "fold:99",
+          "exact:103",
+          "fold:103",
+          "exact:107",
+          "fold:107",
+          "exact:111",
+          "fold:111",
+          "exact:115",
+          "fold:115",
+          "exact:119",
+          "fold:119",
+          "exact:123",
+          "fold:123",
+          "exact:127",
+          "fold:127",
+          "exact:199",
+          "fold:199",
+          "exact:203",
+          "fold:203",
+          "exact:207",
+          "fold:207",
+          "exact:211",
+          "fold:211",
+          "exact:215",
+          "fold:215",
+          "exact:219",
+          "fold:219",
+          "exact:223",
+          "fold:223",
+          "exact:227",
+          "fold:227",
+          "exact:231",
+          "fold:231",
+          "exact:235",
+          "fold:235",
+          "exact:239",
+          "fold:239",
+          "exact:243",
+          "fold:243",
+          "exact:247",
+          "fold:247",
+          "exact:251",
+          "fold:251",
+          "exact:255",
+          "fold:255"
+        ]
+      },
+      "evaluation": {
+        "auto": {
+          "activeNativeC": "exact:82",
+          "combined": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 232,
+              "accuracy": 0.5948717948717949,
+              "macroF1": 0.24866023579849947,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5948717948717949,
+                  "recall": 1,
+                  "f1": 0.7459807073954984
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 232,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 102,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 56,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 258,
+              "accuracy": 0.6615384615384615,
+              "macroF1": 0.2654320987654321,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6615384615384615,
+                  "recall": 1,
+                  "f1": 0.7962962962962963
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 258,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 88,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 44,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.04362809475335035,
+          "spearmanByCell": {
+            "K": 0.026663502701349696,
+            "H": 0.06342327678756161
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "calibrationNativeC": {
+          "activeNativeC": "exact:95",
+          "combined": {
+            "n": 780,
+            "correct": 479,
+            "accuracy": 0.6141025641025641,
+            "macroF1": 0.32186428715466825,
+            "balancedAccuracy": 0.3541532402434658,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6336088154269972,
+                "recall": 0.9387755102040817,
+                "f1": 0.756578947368421
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.3684210526315789,
+                "recall": 0.07368421052631578,
+                "f1": 0.12280701754385964
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.3125,
+                "recall": 0.05,
+                "f1": 0.08620689655172414
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 460,
+                "-": 20,
+                "+": 10
+              },
+              "-": {
+                "0": 175,
+                "-": 14,
+                "+": 1
+              },
+              "+": {
+                "0": 91,
+                "-": 4,
+                "+": 5
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 228,
+              "accuracy": 0.5846153846153846,
+              "macroF1": 0.3140751961941801,
+              "balancedAccuracy": 0.3539513506552046,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.6005509641873278,
+                  "recall": 0.9396551724137931,
+                  "f1": 0.7327731092436974
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.3684210526315789,
+                  "recall": 0.06862745098039216,
+                  "f1": 0.11570247933884298
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.375,
+                  "recall": 0.05357142857142857,
+                  "f1": 0.09375
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 218,
+                  "-": 10,
+                  "+": 4
+                },
+                "-": {
+                  "0": 94,
+                  "-": 7,
+                  "+": 1
+                },
+                "+": {
+                  "0": 51,
+                  "-": 2,
+                  "+": 3
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 251,
+              "accuracy": 0.6435897435897436,
+              "macroF1": 0.32905076071810463,
+              "balancedAccuracy": 0.354328165374677,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6666666666666666,
+                  "recall": 0.937984496124031,
+                  "f1": 0.7793880837359098
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.3684210526315789,
+                  "recall": 0.07954545454545454,
+                  "f1": 0.1308411214953271
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0.25,
+                  "recall": 0.045454545454545456,
+                  "f1": 0.07692307692307693
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 242,
+                  "-": 10,
+                  "+": 6
+                },
+                "-": {
+                  "0": 81,
+                  "-": 7,
+                  "+": 0
+                },
+                "+": {
+                  "0": 40,
+                  "-": 2,
+                  "+": 2
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 196,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.09678282846559791,
+          "spearmanByCell": {
+            "K": 0.08937960192550155,
+            "H": 0.10818147511652655
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 479,
+            "accuracy": 0.6141025641025641,
+            "macroF1": 0.32186428715466825,
+            "balancedAccuracy": 0.3541532402434658,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6336088154269972,
+                "recall": 0.9387755102040817,
+                "f1": 0.756578947368421
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.3684210526315789,
+                "recall": 0.07368421052631578,
+                "f1": 0.12280701754385964
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.3125,
+                "recall": 0.05,
+                "f1": 0.08620689655172414
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 460,
+                "-": 20,
+                "+": 10
+              },
+              "-": {
+                "0": 175,
+                "-": 14,
+                "+": 1
+              },
+              "+": {
+                "0": 91,
+                "-": 4,
+                "+": 5
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 196,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "shuffledCalibrationNativeC": {
+          "activeNativeC": "exact:95",
+          "combined": {
+            "n": 780,
+            "correct": 479,
+            "accuracy": 0.6141025641025641,
+            "macroF1": 0.32186428715466825,
+            "balancedAccuracy": 0.3541532402434658,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6336088154269972,
+                "recall": 0.9387755102040817,
+                "f1": 0.756578947368421
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.3684210526315789,
+                "recall": 0.07368421052631578,
+                "f1": 0.12280701754385964
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.3125,
+                "recall": 0.05,
+                "f1": 0.08620689655172414
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 460,
+                "-": 20,
+                "+": 10
+              },
+              "-": {
+                "0": 175,
+                "-": 14,
+                "+": 1
+              },
+              "+": {
+                "0": 91,
+                "-": 4,
+                "+": 5
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 228,
+              "accuracy": 0.5846153846153846,
+              "macroF1": 0.3140751961941801,
+              "balancedAccuracy": 0.3539513506552046,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.6005509641873278,
+                  "recall": 0.9396551724137931,
+                  "f1": 0.7327731092436974
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0.3684210526315789,
+                  "recall": 0.06862745098039216,
+                  "f1": 0.11570247933884298
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0.375,
+                  "recall": 0.05357142857142857,
+                  "f1": 0.09375
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 218,
+                  "-": 10,
+                  "+": 4
+                },
+                "-": {
+                  "0": 94,
+                  "-": 7,
+                  "+": 1
+                },
+                "+": {
+                  "0": 51,
+                  "-": 2,
+                  "+": 3
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 251,
+              "accuracy": 0.6435897435897436,
+              "macroF1": 0.32905076071810463,
+              "balancedAccuracy": 0.354328165374677,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6666666666666666,
+                  "recall": 0.937984496124031,
+                  "f1": 0.7793880837359098
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0.3684210526315789,
+                  "recall": 0.07954545454545454,
+                  "f1": 0.1308411214953271
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0.25,
+                  "recall": 0.045454545454545456,
+                  "f1": 0.07692307692307693
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 242,
+                  "-": 10,
+                  "+": 6
+                },
+                "-": {
+                  "0": 81,
+                  "-": 7,
+                  "+": 0
+                },
+                "+": {
+                  "0": 40,
+                  "-": 2,
+                  "+": 2
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 196,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": 0.09678282846559791,
+          "spearmanByCell": {
+            "K": 0.08937960192550155,
+            "H": 0.10818147511652655
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 479,
+            "accuracy": 0.6141025641025641,
+            "macroF1": 0.32186428715466825,
+            "balancedAccuracy": 0.3541532402434658,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6336088154269972,
+                "recall": 0.9387755102040817,
+                "f1": 0.756578947368421
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.3684210526315789,
+                "recall": 0.07368421052631578,
+                "f1": 0.12280701754385964
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.3125,
+                "recall": 0.05,
+                "f1": 0.08620689655172414
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 460,
+                "-": 20,
+                "+": 10
+              },
+              "-": {
+                "0": 175,
+                "-": 14,
+                "+": 1
+              },
+              "+": {
+                "0": 91,
+                "-": 4,
+                "+": 5
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 196,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "matchedStatisticalReference": {
+          "alwaysNeutral": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "substitutionDistanceCell": {
+            "n": 780,
+            "correct": 478,
+            "accuracy": 0.6128205128205129,
+            "macroF1": 0.3432304664197232,
+            "balancedAccuracy": 0.36484783387039027,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6406926406926406,
+                "recall": 0.9061224489795918,
+                "f1": 0.7506339814032121
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4444444444444444,
+                "recall": 0.16842105263157894,
+                "f1": 0.24427480916030533
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.13333333333333333,
+                "recall": 0.02,
+                "f1": 0.034782608695652174
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 444,
+                "-": 36,
+                "+": 10
+              },
+              "-": {
+                "0": 155,
+                "-": 32,
+                "+": 3
+              },
+              "+": {
+                "0": 94,
+                "-": 4,
+                "+": 2
+              }
+            }
+          },
+          "majorityFromTrain": "0"
+        }
+      }
+    },
+    {
+      "mode": "alt-only-true-last",
+      "jobId": 137313010764,
+      "training": {
+        "oneOriginalBrain": true,
+        "sameRealBiologicalInputBytesForAllModes": true,
+        "nativeCObservesOnlyGenuineOutcome": false,
+        "nativeCObservesOnlyAltBase": true,
+        "allOtherBrainOrgansStillLiveEveryInputAndRealLabel": true,
+        "actualBrainLivedSymbols": 22340,
+        "originalCObserveCalls": 2234,
+        "originalCMaxLag": 8,
+        "originalSelfSelectedC": "exact:71",
+        "originalCActiveAfterScoring": "exact:71",
+        "originalCNativeModelCount": 765,
+        "noExternalTrainablePredictionHead": true
+      },
+      "source": {
+        "repo": "scottiadamson/Vex-seq",
+        "pinnedCommit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+        "originalSha256": {
+          "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+          "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+          "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+          "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+        },
+        "trueSNVs": 1960,
+        "trainVariants": 1117,
+        "trainOriginalEventGroups": 67,
+        "calibrationVariants": 186,
+        "calibrationEventGroups": 10,
+        "devVariants": 390,
+        "devOriginalEventGroups": 16,
+        "finalVariantsLocked": 267,
+        "finalEventGroups": 17,
+        "calibrationOriginalSourceEventIDs": [
+          25,
+          42,
+          43,
+          53,
+          59,
+          60,
+          65,
+          72,
+          73,
+          98
+        ],
+        "actualTrainSourceEvents": [
+          5,
+          83,
+          101,
+          55,
+          61,
+          86,
+          1,
+          27,
+          66,
+          52,
+          13,
+          109,
+          79,
+          49,
+          80,
+          69,
+          37,
+          9,
+          21,
+          22,
+          90,
+          74,
+          40,
+          46,
+          51,
+          36,
+          0,
+          87,
+          76,
+          44,
+          108,
+          103,
+          68,
+          14,
+          89,
+          84,
+          99,
+          106,
+          107,
+          32,
+          88,
+          78,
+          15,
+          3,
+          10,
+          23,
+          30,
+          24,
+          12,
+          81,
+          45,
+          26,
+          33,
+          17,
+          34,
+          63,
+          100,
+          82,
+          70,
+          93,
+          6,
+          77,
+          104,
+          47,
+          2,
+          58,
+          16
+        ]
+      },
+      "calibration": {
+        "selfSelectedBeforeCalibration": "exact:71",
+        "nCandidateMasks": 60,
+        "selectedByTruth": {
+          "id": "exact:103",
+          "mask": 103,
+          "kind": "exact",
+          "selectedTokens": [
+            "cell",
+            "ALT",
+            "REF3",
+            "REF0",
+            "mutationOffset"
+          ],
+          "correctCalibrationMacroF1": 0.24774774774774774,
+          "calibrationAccuracy": 0.5913978494623656,
+          "shuffledCalibrationMacroF1": 0.24774774774774774
+        },
+        "selectedByShuffledTruth": {
+          "id": "exact:103",
+          "mask": 103,
+          "kind": "exact",
+          "selectedTokens": [
+            "cell",
+            "ALT",
+            "REF3",
+            "REF0",
+            "mutationOffset"
+          ],
+          "correctCalibrationMacroF1": 0.24774774774774774,
+          "calibrationAccuracy": 0.5913978494623656,
+          "shuffledCalibrationMacroF1": 0.24774774774774774
+        },
+        "maxLag": 8,
+        "trainOnlyCOutcomeCount": 2234,
+        "calibrationCases": 372,
+        "calibrationLabels": {
+          "0": 220,
+          "-": 85,
+          "+": 67
+        },
+        "topFiveReal": [
+          {
+            "id": "exact:103",
+            "mask": 103,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.24774774774774774,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.24774774774774774
+          },
+          {
+            "id": "exact:107",
+            "mask": 107,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF2",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.24774774774774774,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.24774774774774774
+          },
+          {
+            "id": "exact:111",
+            "mask": 111,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF2",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.24774774774774774,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.24774774774774774
+          },
+          {
+            "id": "exact:115",
+            "mask": 115,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF1",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.24774774774774774,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.24774774774774774
+          },
+          {
+            "id": "exact:119",
+            "mask": 119,
+            "kind": "exact",
+            "selectedTokens": [
+              "cell",
+              "ALT",
+              "REF3",
+              "REF1",
+              "REF0",
+              "mutationOffset"
+            ],
+            "correctCalibrationMacroF1": 0.24774774774774774,
+            "calibrationAccuracy": 0.5913978494623656,
+            "shuffledCalibrationMacroF1": 0.24774774774774774
+          }
+        ],
+        "nativeCandidateIds": [
+          "exact:71",
+          "fold:71",
+          "exact:75",
+          "fold:75",
+          "exact:79",
+          "fold:79",
+          "exact:83",
+          "fold:83",
+          "exact:87",
+          "fold:87",
+          "exact:91",
+          "fold:91",
+          "exact:95",
+          "fold:95",
+          "exact:99",
+          "fold:99",
+          "exact:103",
+          "fold:103",
+          "exact:107",
+          "fold:107",
+          "exact:111",
+          "fold:111",
+          "exact:115",
+          "fold:115",
+          "exact:119",
+          "fold:119",
+          "exact:123",
+          "fold:123",
+          "exact:127",
+          "fold:127",
+          "exact:199",
+          "fold:199",
+          "exact:203",
+          "fold:203",
+          "exact:207",
+          "fold:207",
+          "exact:211",
+          "fold:211",
+          "exact:215",
+          "fold:215",
+          "exact:219",
+          "fold:219",
+          "exact:223",
+          "fold:223",
+          "exact:227",
+          "fold:227",
+          "exact:231",
+          "fold:231",
+          "exact:235",
+          "fold:235",
+          "exact:239",
+          "fold:239",
+          "exact:243",
+          "fold:243",
+          "exact:247",
+          "fold:247",
+          "exact:251",
+          "fold:251",
+          "exact:255",
+          "fold:255"
+        ]
+      },
+      "evaluation": {
+        "auto": {
+          "activeNativeC": "exact:71",
+          "combined": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 232,
+              "accuracy": 0.5948717948717949,
+              "macroF1": 0.24866023579849947,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5948717948717949,
+                  "recall": 1,
+                  "f1": 0.7459807073954984
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 232,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 102,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 56,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 258,
+              "accuracy": 0.6615384615384615,
+              "macroF1": 0.2654320987654321,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6615384615384615,
+                  "recall": 1,
+                  "f1": 0.7962962962962963
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 258,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 88,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 44,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": -0.01866830120069805,
+          "spearmanByCell": {
+            "K": -0.05111532340938005,
+            "H": 0.03464632181175301
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "calibrationNativeC": {
+          "activeNativeC": "exact:103",
+          "combined": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 232,
+              "accuracy": 0.5948717948717949,
+              "macroF1": 0.24866023579849947,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5948717948717949,
+                  "recall": 1,
+                  "f1": 0.7459807073954984
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 232,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 102,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 56,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 258,
+              "accuracy": 0.6615384615384615,
+              "macroF1": 0.2654320987654321,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6615384615384615,
+                  "recall": 1,
+                  "f1": 0.7962962962962963
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 258,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 88,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 44,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": -0.01866830120069805,
+          "spearmanByCell": {
+            "K": -0.05111532340938005,
+            "H": 0.03464632181175301
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "shuffledCalibrationNativeC": {
+          "activeNativeC": "exact:103",
+          "combined": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "perCell": {
+            "K": {
+              "n": 390,
+              "correct": 232,
+              "accuracy": 0.5948717948717949,
+              "macroF1": 0.24866023579849947,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 232,
+                  "precision": 0.5948717948717949,
+                  "recall": 1,
+                  "f1": 0.7459807073954984
+                },
+                {
+                  "label": "-",
+                  "support": 102,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 56,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 232,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 102,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 56,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            },
+            "H": {
+              "n": 390,
+              "correct": 258,
+              "accuracy": 0.6615384615384615,
+              "macroF1": 0.2654320987654321,
+              "balancedAccuracy": 0.3333333333333333,
+              "perClass": [
+                {
+                  "label": "0",
+                  "support": 258,
+                  "precision": 0.6615384615384615,
+                  "recall": 1,
+                  "f1": 0.7962962962962963
+                },
+                {
+                  "label": "-",
+                  "support": 88,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                },
+                {
+                  "label": "+",
+                  "support": 44,
+                  "precision": 0,
+                  "recall": 0,
+                  "f1": 0
+                }
+              ],
+              "confusion": {
+                "0": {
+                  "0": 258,
+                  "-": 0,
+                  "+": 0
+                },
+                "-": {
+                  "0": 88,
+                  "-": 0,
+                  "+": 0
+                },
+                "+": {
+                  "0": 44,
+                  "-": 0,
+                  "+": 0
+                }
+              }
+            }
+          },
+          "biologicalPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          },
+          "spearmanCombined": -0.01866830120069805,
+          "spearmanByCell": {
+            "K": -0.05111532340938005,
+            "H": 0.03464632181175301
+          },
+          "swappedCell": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "swappedPairs": {
+            "nPairs": 390,
+            "truthDifferentPairs": 91,
+            "predictedDifferentPairs": 0,
+            "bothCellOutcomesCorrect": 200,
+            "bothCellOutcomesCorrectWhenTruthDiffers": 0,
+            "correctlyChangedCellResponse": 0
+          }
+        },
+        "matchedStatisticalReference": {
+          "alwaysNeutral": {
+            "n": 780,
+            "correct": 490,
+            "accuracy": 0.6282051282051282,
+            "macroF1": 0.25721784776902884,
+            "balancedAccuracy": 0.3333333333333333,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6282051282051282,
+                "recall": 1,
+                "f1": 0.7716535433070866
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0,
+                "recall": 0,
+                "f1": 0
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 490,
+                "-": 0,
+                "+": 0
+              },
+              "-": {
+                "0": 190,
+                "-": 0,
+                "+": 0
+              },
+              "+": {
+                "0": 100,
+                "-": 0,
+                "+": 0
+              }
+            }
+          },
+          "substitutionDistanceCell": {
+            "n": 780,
+            "correct": 478,
+            "accuracy": 0.6128205128205129,
+            "macroF1": 0.3432304664197232,
+            "balancedAccuracy": 0.36484783387039027,
+            "perClass": [
+              {
+                "label": "0",
+                "support": 490,
+                "precision": 0.6406926406926406,
+                "recall": 0.9061224489795918,
+                "f1": 0.7506339814032121
+              },
+              {
+                "label": "-",
+                "support": 190,
+                "precision": 0.4444444444444444,
+                "recall": 0.16842105263157894,
+                "f1": 0.24427480916030533
+              },
+              {
+                "label": "+",
+                "support": 100,
+                "precision": 0.13333333333333333,
+                "recall": 0.02,
+                "f1": 0.034782608695652174
+              }
+            ],
+            "confusion": {
+              "0": {
+                "0": 444,
+                "-": 36,
+                "+": 10
+              },
+              "-": {
+                "0": 155,
+                "-": 32,
+                "+": 3
+              },
+              "+": {
+                "0": 94,
+                "-": 4,
+                "+": 2
+              }
+            }
+          },
+          "majorityFromTrain": "0"
+        }
+      }
+    }
+  ]
+}
