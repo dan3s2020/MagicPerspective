@@ -1,0 +1,58 @@
+name: Vexseq native C8 original Brain authentic balanced cell-specific functional effects
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-CELL-CONDITIONED-20261122
+    paths:
+      - .github/workflows/vexseq-native-real-balanced-cell-effects.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-native-functional-effect-class-prior-intervention:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [condition-true-balanced-last, condition-blind-balanced-last]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Actual pinned K562 HepG2 mutation and splicing laboratory data
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Verify original code and registered genuine-measurement intervention
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/conditioned/run-balanced-cell-effects.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/conditioned/CLASS_EXPOSURE_PRETEST.md
+      - name: Train original Brain on balanced authentic assay exposure and score unseen event dev
+        shell: bash
+        env:
+          VEXSEQ_CELL_PHASE: dev
+          VEXSEQ_CELL_RAW_RESULT_FILE: /tmp/vexseq-original-balanced-cell-effect.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/conditioned/run-balanced-cell-effects.mjs comparison-checkouts/vexseq '${{ matrix.mode }}' | tee /tmp/vexseq-original-balanced-cell-effect.log
+      - name: Preserve genuine repeated example audit and original Brain confusions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vexseq-original-cell-balanced-${{ matrix.mode }}
+          path: |
+            /tmp/vexseq-original-balanced-cell-effect.json
+            /tmp/vexseq-original-balanced-cell-effect.log
+          if-no-files-found: warn
