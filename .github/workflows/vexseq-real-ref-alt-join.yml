@@ -1,0 +1,51 @@
+name: Vex-seq authentic functional variant REF ALT assay pairing audit
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
+    paths:
+      - .github/workflows/vexseq-real-ref-alt-join.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-real-ref-alt-join:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Obtain pinned original experimental splicing variant source
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Syntax and source requirements
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/audit-reference-alternative-pairs.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/AUDIT_PROVENANCE.md
+      - name: Validate biological original-reference to variant pairing and measured ΔPSI
+        shell: bash
+        env:
+          VEXSEQ_JOIN_AUDIT_FILE: /tmp/vexseq-real-ref-alt-pairs.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/audit-reference-alternative-pairs.mjs comparison-checkouts/vexseq | tee /tmp/vexseq-real-ref-alt-audit.log
+      - name: Preserve all unmatched source and matched-effect evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vexseq-authentic-ref-alt-assay-join
+          path: |
+            /tmp/vexseq-real-ref-alt-pairs.json
+            /tmp/vexseq-real-ref-alt-audit.log
+          if-no-files-found: warn
