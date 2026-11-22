@@ -1,0 +1,66 @@
+name: MFASS original native C8 multi-perspective LeanC.top actual rare functional variants
+on:
+  push:
+    branches:
+      - research/MFASS-NATIVE-MULTI-PERSPECTIVE-C8-20261123
+    paths:
+      - .github/workflows/mfass-genuine-native-multi-perspective.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-mfass-native-multibelief-calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original human MFASS experimental variant effects and genuine REF ALT source
+        uses: actions/checkout@v4
+        with:
+          repository: KosuriLab/MFASS
+          ref: 9a8e4f27106be52aeb11acad27f95f5cded663a8
+          path: comparison-checkouts/mfass-source
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            processed_data/snv/snv_data_clean.txt
+      - name: Independently corrected canonical exon-gene connected MFASS grouping
+        uses: actions/checkout@v4
+        with:
+          repository: rewire-bio/rewire-benchmarks
+          ref: 68d1ee53a0fcd1104d9f427d68dedffdccf2c47f
+          path: comparison-checkouts/mfass-benchmark
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            benchmarks/mfass/splits/split-v2.tsv
+      - name: Validate FROZEN original C8 native mixture and source data contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/mfass/native-mixture/run-original-native-multi-perspective.mjs
+          node --check research/genome-native-brain-20261119/mfass/mfass-source.mjs
+          test -f research/genome-native-brain-20261119/mfass/native-mixture/PRETEST.md
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/lean-c.mjs
+          sha256sum comparison-checkouts/mfass-source/processed_data/snv/snv_data_clean.txt comparison-checkouts/mfass-benchmark/benchmarks/mfass/splits/split-v2.tsv
+      - name: One original V42 Brain learns 14498 real outcomes, chooses internal native C belief mixture by 2421 gene-heldout calibration, evaluates 2490 other gene groups
+        shell: bash
+        env:
+          MFASS_NATIVE_PHASE: internal-dev
+          MFASS_NATIVE_DEV_RAW: /tmp/mfass-original-native-belief-mixture.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/mfass/native-mixture/run-original-native-multi-perspective.mjs comparison-checkouts/mfass-source comparison-checkouts/mfass-benchmark outcome-c | tee /tmp/mfass-original-native-belief-mixture.log
+      - name: Preserve original native multibelief scores, all calibrated masks and genuine per-variant assays
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-native-MFASS-mutational-MoG-perspectives
+          path: |
+            /tmp/mfass-original-native-belief-mixture.json
+            /tmp/mfass-original-native-belief-mixture.log
+          if-no-files-found: warn
