@@ -1,0 +1,57 @@
+name: Genuine native Brain donor GT to acceptor AG transfer matched-shot
+on:
+  push:
+    branches:
+      - research/HS3D-DONOR-TO-ACCEPTOR-NATIVE-TRANSFER-20261122
+    paths:
+      - .github/workflows/hs3d-native-donor-acceptor-transfer.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-cross-biological-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode: [donor-pretrained, fresh-acceptor]
+        adapt: [0, 40, 200, 600, 1200]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned authentic HS3D donor and acceptor TRAIN only
+        uses: actions/checkout@v4
+        with:
+          repository: OluwadareLab/EnsembleSplice
+          ref: e04aa5aeb4035adac9ce6c65c2143c2ef7163332
+          path: comparison-checkouts/hs3d
+          sparse-checkout: |
+            ENSdatasets/hs3d_bal/Train
+      - name: Validate original native Brain transfer code and biological data
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/hs3d/transfer/run-transfer.mjs
+          test -f research/genome-native-brain-20261119/hs3d/transfer/PRETEST_PROTOCOL.md
+          test ! -d comparison-checkouts/hs3d/ENSdatasets/hs3d_bal/Test
+          sha256sum comparison-checkouts/hs3d/ENSdatasets/hs3d_bal/Train/{Donor,Acceptor}_Train_{Positive,Negative}.txt
+      - name: Same original Brain GT pretrained vs fresh on AG real human splice data
+        shell: bash
+        env:
+          TRANSFER_RAW_FILE: /tmp/native-gt-ag-transfer.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/hs3d/transfer/run-transfer.mjs comparison-checkouts/hs3d/ENSdatasets/hs3d_bal '${{ matrix.mode }}' '${{ matrix.adapt }}' | tee /tmp/native-gt-ag-transfer.log
+      - name: Keep full original Brain policy and per-example transfer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-gt-ag-${{ matrix.mode }}-adapt-${{ matrix.adapt }}
+          path: |
+            /tmp/native-gt-ag-transfer.json
+            /tmp/native-gt-ag-transfer.log
+          if-no-files-found: warn
