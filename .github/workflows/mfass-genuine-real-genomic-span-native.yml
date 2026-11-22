@@ -1,0 +1,69 @@
+name: MFASS original Brain 170nt REAL local versus remote splice-junction DNA native C8 fusion
+on:
+  push:
+    branches:
+      - research/MFASS-NATIVE-REAL-GENOMIC-SPAN-C8-20261122
+    paths:
+      - .github/workflows/mfass-genuine-real-genomic-span-native.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-body-real-170nt-physical-allele-and-junction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        mode: [paired-local-ref-alt, paired-alt-real-junction, paired-alt-non-junction, paired-ref-real-junction]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pinned original human MFASS assay REF ALT 170nt physical genomic material
+        uses: actions/checkout@v4
+        with:
+          repository: KosuriLab/MFASS
+          ref: 9a8e4f27106be52aeb11acad27f95f5cded663a8
+          path: comparison-checkouts/mfass-source
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            processed_data/snv/snv_data_clean.txt
+      - name: Original separate gene-exon grouping canonical corrected source
+        uses: actions/checkout@v4
+        with:
+          repository: rewire-bio/rewire-benchmarks
+          ref: 68d1ee53a0fcd1104d9f427d68dedffdccf2c47f
+          path: comparison-checkouts/mfass-benchmark
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            benchmarks/mfass/splits/split-v2.tsv
+      - name: Enforce original V42 Brain and pre-frozen real molecular view experiment
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/mfass/physical-span/run-native-real-genome-span.mjs
+          node --check research/genome-native-brain-20261119/mfass/mfass-source.mjs
+          test -f research/genome-native-brain-20261119/mfass/physical-span/PRETEST.md
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+      - name: Observe TWO actual 4bp human source DNA locations within 170nt and learn actual rare disruption outcome in original Brain
+        shell: bash
+        env:
+          MFASS_NATIVE_PHASE: internal-dev
+          MFASS_NATIVE_DEV_RAW: /tmp/MFASS-real-genome-physical-two-view.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/mfass/physical-span/run-native-real-genome-span.mjs comparison-checkouts/mfass-source comparison-checkouts/mfass-benchmark '${{ matrix.mode }}' | tee /tmp/MFASS-real-genome-physical-two-view.log
+      - name: Preserve authentic source, physical view targets, original native AP scores and all per-sample predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-native-MFASS-real-genomic-span-${{ matrix.mode }}
+          path: |
+            /tmp/MFASS-real-genome-physical-two-view.json
+            /tmp/MFASS-real-genome-physical-two-view.log
+          if-no-files-found: warn
