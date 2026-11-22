@@ -1,0 +1,62 @@
+name: Real MFASS 27733 human functional variants native benchmark provenance audit
+on:
+  push:
+    branches:
+      - research/MFASS-GENOMIC-EFFECTS-NATIVE-BRAIN-20261122
+    paths:
+      - .github/workflows/mfass-real-27733-native-benchmark-source-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-functional-human-allele-and-gene-group-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Obtain original pinned actual human MFASS assay sequences (170nt REF and ALT)
+        uses: actions/checkout@v4
+        with:
+          repository: KosuriLab/MFASS
+          ref: 9a8e4f27106be52aeb11acad27f95f5cded663a8
+          path: comparison-checkouts/mfass-source
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            processed_data/snv/snv_data_clean.txt
+      - name: Obtain original independent corrected connected-exon-gene benchmark split
+        uses: actions/checkout@v4
+        with:
+          repository: rewire-bio/rewire-benchmarks
+          ref: 68d1ee53a0fcd1104d9f427d68dedffdccf2c47f
+          path: comparison-checkouts/mfass-benchmark
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            benchmarks/mfass/splits/split-v2.tsv
+      - name: Check source and frozen independent biology protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/mfass/audit-authentic-mfass.mjs
+          test -f research/genome-native-brain-20261119/mfass/PRETEST_SOURCE_AUDIT.md
+          sha256sum comparison-checkouts/mfass-source/processed_data/snv/snv_data_clean.txt comparison-checkouts/mfass-benchmark/benchmarks/mfass/splits/split-v2.tsv
+      - name: Validate original 27733 authentic REF ALT experimental effects and all corrected gene connected split labels
+        shell: bash
+        env:
+          MFASS_AUDIT_JSON: /tmp/mfass-actual-source-170nt-audit.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/mfass/audit-authentic-mfass.mjs comparison-checkouts/mfass-source comparison-checkouts/mfass-benchmark | tee /tmp/mfass-actual-source-170nt-audit.log
+      - name: Preserve real published allele / reverse complement / independent gene group audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authentic-MFASS-27733-170nt-gene-group-validation
+          path: |
+            /tmp/mfass-actual-source-170nt-audit.json
+            /tmp/mfass-actual-source-170nt-audit.log
+          if-no-files-found: warn
