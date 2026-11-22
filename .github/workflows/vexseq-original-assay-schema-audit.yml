@@ -1,0 +1,50 @@
+name: Vex-seq genuine human splice variant experimental dataset audit
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
+    paths:
+      - .github/workflows/vexseq-original-assay-schema-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect-public-functional-variant-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout untouched published Vex-seq primary assay sequences and measurements
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/Vex-seq_positions.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/read_counts_PSI_values.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+            preprocess_data/variants.txt
+      - name: Check audit and scientific provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/audit-source.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/AUDIT_PROVENANCE.md
+      - name: Report exact published sequence and quantitative assay schemas
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/audit-source.mjs comparison-checkouts/vexseq | tee /tmp/real-vexseq-schema.log
+      - name: Preserve actual source audit output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-vexseq-variant-source-audit
+          path: /tmp/real-vexseq-schema.log
+          if-no-files-found: warn
