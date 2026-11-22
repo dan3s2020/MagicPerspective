@@ -5,6 +5,7 @@ on:
       - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
     paths:
       - .github/workflows/vexseq-real-functional-effect-native-dev.yml
+      - research/genome-native-brain-20261119/variant-effects/vexseq/run-native-functional-effect.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -39,6 +40,7 @@ jobs:
           set -euo pipefail
           node --check research/genome-native-brain-20261119/variant-effects/vexseq/vexseq-source.mjs
           node --check research/genome-native-brain-20261119/variant-effects/vexseq/run-native-functional-effect.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
           test -f research/genome-native-brain-20261119/variant-effects/vexseq/PRETEST_NATIVE_VARIANT_EFFECT.md
       - name: Train the ORIGINAL V42 Brain on real REF ALT variants and laboratory effects, group-heldout dev
         shell: bash
