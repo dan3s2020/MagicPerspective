@@ -4,7 +4,7 @@
 // No external learned predictor is connected to the original Brain.
 import fs from "node:fs";
 import crypto from "node:crypto";
-import {Brain} from "../../../v17/transcend/torus-aether/devour/brain.mjs";
+import {Brain} from "../../../../v17/transcend/torus-aether/devour/brain.mjs";
 import {loadVexseq,summarize} from "./vexseq-source.mjs";
 
 const MODES={
