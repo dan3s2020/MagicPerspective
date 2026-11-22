@@ -1,0 +1,59 @@
+name: Original V42 FULL Brain biological outcome calibration of native C masks
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FULL-BRAIN-OUTCOME-SELECT-20261122
+    paths:
+      - .github/workflows/vexseq-original-full-brain-outcome-selection.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-full-native-brain-biology-perspective-selection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        mode: [global-true-first, outcome-true-first, outcome-true-last, outcome-blind-last, alt-only-true-last]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original authenticated biological Vexseq REF ALT K562 and HepG2 effect source
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Validate exact source and frozen full-chain original-native protocol
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/full-chain-select/run-full-brain-native-select.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/full-chain-select/PRETEST.md
+          test -f v17/transcend/torus-aether/emergent.mjs
+      - name: Train original Brain and select native C masks on full original Brain outcomes, never touching dev/final learning
+        shell: bash
+        env:
+          VEXSEQ_OUTCOME_PHASE: dev
+          VEXSEQ_OUTCOME_RAW_FILE: /tmp/vexseq-original-full-chain-calibration.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/full-chain-select/run-full-brain-native-select.mjs comparison-checkouts/vexseq '${{ matrix.mode }}' | tee /tmp/vexseq-original-full-chain-calibration.log
+      - name: Archive full native biology mask selection and per-example genuine measured effects
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vexseq-full-native-Brain-C-outcome-${{ matrix.mode }}
+          path: |
+            /tmp/vexseq-original-full-chain-calibration.json
+            /tmp/vexseq-original-full-chain-calibration.log
+          if-no-files-found: warn
