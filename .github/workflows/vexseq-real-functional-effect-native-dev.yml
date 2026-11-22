@@ -1,0 +1,59 @@
+name: Real laboratory Vex-seq functional REF ALT effects native original Brain C8/C9
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
+    paths:
+      - .github/workflows/vexseq-real-functional-effect-native-dev.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-authentic-laboratory-variant-effect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        mode: [native-C8-pair, native-C9-position, native-C9-corrupted-position, native-C9-position-R3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned real Vex-seq REF ALT construct DNA and measured RNA-seq exon effects
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Check exact original Brain and frozen laboratory task contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/vexseq-source.mjs
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/run-native-functional-effect.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/PRETEST_NATIVE_VARIANT_EFFECT.md
+      - name: Train the ORIGINAL V42 Brain on real REF ALT variants and laboratory effects, group-heldout dev
+        shell: bash
+        env:
+          VEXSEQ_PHASE: dev
+          VEXSEQ_NATIVE_RESULT_FILE: /tmp/vexseq-original-Brain-variant-outcomes.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/run-native-functional-effect.mjs comparison-checkouts/vexseq '${{ matrix.mode }}' | tee /tmp/vexseq-native-variant-outcomes.log
+      - name: Preserve measured target, true variant comparisons, and per-example original-native predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vexseq-native-original-functional-${{ matrix.mode }}
+          path: |
+            /tmp/vexseq-original-Brain-variant-outcomes.json
+            /tmp/vexseq-native-variant-outcomes.log
+          if-no-files-found: warn
