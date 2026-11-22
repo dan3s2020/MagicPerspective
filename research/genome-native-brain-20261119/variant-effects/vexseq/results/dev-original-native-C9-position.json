@@ -1,0 +1,297 @@
+{
+  "status": "EXECUTED_REAL_ASSAY_NATIVE_BRAIN_DELTA_PSI_CATEGORY_NOT_ALPHA_GENOME",
+  "task": "Real experimentally measured Vex-seq REF vs ALT variant effects on exon inclusion",
+  "phase": "DEVELOPMENT_EVENT_GROUP_HELDOUT_NOT_FINAL",
+  "mode": "native-C9-position",
+  "config": {
+    "cap": 9,
+    "kind": "position",
+    "off": [
+      "R2",
+      "R3"
+    ]
+  },
+  "originalBrainUnmodified": true,
+  "nativeTraining": {
+    "records": 1303,
+    "livedSymbols": 14333,
+    "selectedC": "exact:89",
+    "maxLag": 9,
+    "originalNativeModelCandidates": null
+  },
+  "publishedSource": {
+    "commit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+    "hashes": {
+      "preprocess_data/68_97_final_sequences_fixed.tsv": "1eec399464a1ed35ec745033df8164d6f9011f328b8cee0b5a1074777bd87d2f",
+      "processed_files/delta_PSI_values.tsv": "2f4269237c252f852deb3956e43f38a2a3a138a9508c15ece352eb37c19ae326",
+      "processed_files/control_variant_pairs.csv": "de54bbf187bb89c24d47015424ebf7e86b49af9dd1c02bb1338135e2890411ce",
+      "processed_files/Vex-seq_positions.tsv": "9b165057203da5dd6c4d7191c2eb91fb6b6d798c71f2ba0212789b283441b4c3"
+    },
+    "validatedVariants": 1960,
+    "events": 110,
+    "rejected": {
+      "notSNV": 95,
+      "controlUnavailable": 0,
+      "multipleSequence": 0,
+      "lengthMismatch": 0,
+      "notOneBase": 0,
+      "unknownAllele": 0,
+      "nonCanonicalDNA": 0,
+      "missingDistance": 0,
+      "invalidEffect": 0,
+      "missingControlGroup": 0,
+      "sourceStrandMismatch": 0
+    },
+    "train": {
+      "n": 1303,
+      "groups": 77,
+      "labels": {
+        "0": 729,
+        "+": 269,
+        "-": 305
+      },
+      "strands": {
+        "forward": 780,
+        "reverse": 523
+      },
+      "mutationPositions": {
+        "min": 1,
+        "max": 165
+      },
+      "measuredEffect": {
+        "min": -85.34348007943147,
+        "max": 51.28235052495923
+      }
+    },
+    "dev": {
+      "n": 390,
+      "groups": 16,
+      "labels": {
+        "0": 257,
+        "+": 43,
+        "-": 90
+      },
+      "strands": {
+        "forward": 315,
+        "reverse": 75
+      },
+      "mutationPositions": {
+        "min": 1,
+        "max": 164
+      },
+      "measuredEffect": {
+        "min": -83.0311998660604,
+        "max": 30.661467029868934
+      }
+    },
+    "finalLocked": true,
+    "finalCount": 267
+  },
+  "native": {
+    "n": 390,
+    "correct": 252,
+    "accuracy": 0.6461538461538462,
+    "macroF1": 0.26833118556701036,
+    "balancedAccuracy": 0.3292549358697218,
+    "perClass": [
+      {
+        "label": "0",
+        "support": 257,
+        "precision": 0.6553524804177546,
+        "recall": 0.9766536964980544,
+        "f1": 0.784375
+      },
+      {
+        "label": "-",
+        "support": 90,
+        "precision": 0.14285714285714285,
+        "recall": 0.011111111111111112,
+        "f1": 0.020618556701030927
+      },
+      {
+        "label": "+",
+        "support": 43,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0
+      }
+    ],
+    "confusion": {
+      "0": {
+        "0": 251,
+        "-": 6,
+        "+": 0
+      },
+      "-": {
+        "0": 89,
+        "-": 1,
+        "+": 0
+      },
+      "+": {
+        "0": 43,
+        "-": 0,
+        "+": 0
+      }
+    },
+    "continuousDeltaPSIRankSpearman": 0.061008724679817466,
+    "strongEffectSignedClassExactAccuracy": 0.007518796992481203,
+    "strongEffectN": 133
+  },
+  "baselines": {
+    "majority": {
+      "classLabel": "0",
+      "n": 390,
+      "correct": 257,
+      "accuracy": 0.658974358974359,
+      "macroF1": 0.26481195260175167,
+      "balancedAccuracy": 0.3333333333333333,
+      "perClass": [
+        {
+          "label": "0",
+          "support": 257,
+          "precision": 0.658974358974359,
+          "recall": 1,
+          "f1": 0.794435857805255
+        },
+        {
+          "label": "-",
+          "support": 90,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        },
+        {
+          "label": "+",
+          "support": 43,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        }
+      ],
+      "confusion": {
+        "0": {
+          "0": 257,
+          "-": 0,
+          "+": 0
+        },
+        "-": {
+          "0": 90,
+          "-": 0,
+          "+": 0
+        },
+        "+": {
+          "0": 43,
+          "-": 0,
+          "+": 0
+        }
+      }
+    },
+    "substitution": {
+      "n": 390,
+      "correct": 251,
+      "accuracy": 0.6435897435897436,
+      "macroF1": 0.28088588543691256,
+      "balancedAccuracy": 0.33277129269347167,
+      "perClass": [
+        {
+          "label": "0",
+          "support": 257,
+          "precision": 0.6631016042780749,
+          "recall": 0.9649805447470817,
+          "f1": 0.786053882725832
+        },
+        {
+          "label": "-",
+          "support": 90,
+          "precision": 0.1875,
+          "recall": 0.03333333333333333,
+          "f1": 0.05660377358490566
+        },
+        {
+          "label": "+",
+          "support": 43,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        }
+      ],
+      "confusion": {
+        "0": {
+          "0": 248,
+          "-": 9,
+          "+": 0
+        },
+        "-": {
+          "0": 87,
+          "-": 3,
+          "+": 0
+        },
+        "+": {
+          "0": 39,
+          "-": 4,
+          "+": 0
+        }
+      }
+    },
+    "substitutionDistance": {
+      "n": 390,
+      "correct": 251,
+      "accuracy": 0.6435897435897436,
+      "macroF1": 0.34073914293931545,
+      "balancedAccuracy": 0.36165153480328577,
+      "perClass": [
+        {
+          "label": "0",
+          "support": 257,
+          "precision": 0.6723646723646723,
+          "recall": 0.9182879377431906,
+          "f1": 0.7763157894736842
+        },
+        {
+          "label": "-",
+          "support": 90,
+          "precision": 0.46875,
+          "recall": 0.16666666666666666,
+          "f1": 0.2459016393442623
+        },
+        {
+          "label": "+",
+          "support": 43,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        }
+      ],
+      "confusion": {
+        "0": {
+          "0": 236,
+          "-": 15,
+          "+": 6
+        },
+        "-": {
+          "0": 74,
+          "-": 15,
+          "+": 1
+        },
+        "+": {
+          "0": 41,
+          "-": 2,
+          "+": 0
+        }
+      }
+    }
+  },
+  "biologicalCaveats": [
+    "3-class ±5 percentage point outcome (not quantitative effect regression)",
+    "In vitro reporter assay",
+    "locus-group heldout, homology-independent status unknown",
+    "no AlphaGenome 2 API or matched outputs",
+    "native perspective manually centered at the measured variant"
+  ],
+  "targetHiddenAtInference": true,
+  "finalTestNotAccessed": true,
+  "provenance": {
+    "githubRun": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45052650881",
+    "jobId": 137300959705
+  }
+}
