@@ -1,0 +1,47 @@
+name: Real Vex-seq ref alt candidate construct and allele resolution
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
+    paths:
+      - .github/workflows/vexseq-resolve-construct-pairs.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  resolve-real-constructs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Checkout pinned original Adamson Vex-seq functional assay design
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Check exact biological construct matching implementation
+        run: node --check research/genome-native-brain-20261119/variant-effects/vexseq/resolve-construct-pairs.mjs
+      - name: Determine authentic paired DNA and experimentally measured ΔPSI
+        shell: bash
+        env:
+          VEXSEQ_RESOLUTION_FILE: /tmp/vexseq-construct-resolution.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/resolve-construct-pairs.mjs comparison-checkouts/vexseq | tee /tmp/vexseq-construct-resolution.log
+      - name: Archive all valid and rejected variant pairing diagnostic counts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vex-seq-construct-resolution-original
+          path: |
+            /tmp/vexseq-construct-resolution.json
+            /tmp/vexseq-construct-resolution.log
+          if-no-files-found: warn
