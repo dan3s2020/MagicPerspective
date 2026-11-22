@@ -1,0 +1,55 @@
+name: ONE SHOT frozen true Vex-seq 267 heldout variants original Brain 17 events
+on:
+  push:
+    branches:
+      - research/VEXSEQ-FROZEN-ONE-SHOT-NATIVE-CONFIRM-20261122
+    paths:
+      - .github/workflows/vexseq-frozen-original-brain-one-shot-final.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  one-shot-biological-event-confirmation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download exact original published Vexseq REF ALT experimental K562 HepG2 assay
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Enforce frozen pre-test protocol and locked original native Brain code
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/one-shot-final/FROZEN_BEFORE_ANY_FINAL_LABEL.md
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/one-shot-final/run-frozen-original-brain.mjs
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/lean-c.mjs
+      - name: Train ORIGINAL one Brain then one-shot score 17 event-disjoint original Vexseq FINAL groups
+        shell: bash
+        env:
+          VEXSEQ_OUTCOME_PHASE: final
+          VEXSEQ_OUTCOME_RAW_FILE: /tmp/frozen-original-Brain-Vexseq-final-534.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/one-shot-final/run-frozen-original-brain.mjs comparison-checkouts/vexseq outcome-true-first | tee /tmp/frozen-original-Brain-Vexseq-final-534.log
+      - name: Preserve complete original native predictions, known independent empirical controls and event bootstrap
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FROZEN-ONE-SHOT-ORIGINAL-NATIVE-BRAIN-VEXSEQ-FINAL-534
+          path: |
+            /tmp/frozen-original-Brain-Vexseq-final-534.json
+            /tmp/frozen-original-Brain-Vexseq-final-534.log
+          if-no-files-found: warn
