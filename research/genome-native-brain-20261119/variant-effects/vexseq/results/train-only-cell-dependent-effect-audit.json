@@ -1,0 +1,156 @@
+{
+  "status": "VERIFIED_REAL_VEXSEQ_TRAIN_ONLY_CELL_CONDITIONED_SPLICE_VARIANT_EFFECT_AUDIT",
+  "source": "scottiadamson/Vex-seq",
+  "sourceCommit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+  "trainingSnvs": 1303,
+  "events": 77,
+  "devLabelsNotReported": true,
+  "finalLabelsNotReported": true,
+  "threshold": "±5 original ΔPSI percentage points",
+  "labels": {
+    "K": {
+      "0": 650,
+      "+": 304,
+      "-": 349
+    },
+    "H": {
+      "0": 762,
+      "+": 249,
+      "-": 292
+    },
+    "aggregate": {
+      "0": 729,
+      "+": 269,
+      "-": 305
+    }
+  },
+  "oppositeStrong": 10,
+  "nearlyNeutralButCellStrong": 188,
+  "differentClass": 340,
+  "cellStrongOnlyOne": 330,
+  "interpretation": "Laboratory cell-conditional label divergence audit; no original Brain trained; not AlphaGenome 2 comparison",
+  "representativeTrainingExamples": [
+    {
+      "id": "chr10_114724330_G_A",
+      "event": 2,
+      "deltaK": 2.584874355161915,
+      "deltaH": -7.865798107876458,
+      "deltaAggregate": -2.6404618763572714,
+      "classes": {
+        "K": "0",
+        "H": "-",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724342_T_C",
+      "event": 2,
+      "deltaK": 8.044485556172063,
+      "deltaH": -1.8662617054898192,
+      "deltaAggregate": 3.089111925341122,
+      "classes": {
+        "K": "+",
+        "H": "0",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724349_C_T",
+      "event": 2,
+      "deltaK": 2.3685444070360404,
+      "deltaH": -7.804010446674511,
+      "deltaAggregate": -2.717733019819235,
+      "classes": {
+        "K": "0",
+        "H": "-",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724354_A_G",
+      "event": 2,
+      "deltaK": 7.128070016443985,
+      "deltaH": -0.5966234757542139,
+      "deltaAggregate": 3.2657232703448855,
+      "classes": {
+        "K": "+",
+        "H": "0",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724358_C_T",
+      "event": 2,
+      "deltaK": -7.802650776690484,
+      "deltaH": -1.9894700758433288,
+      "deltaAggregate": -4.8960604262669065,
+      "classes": {
+        "K": "-",
+        "H": "0",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724377_A_C",
+      "event": 2,
+      "deltaK": 5.487807594568963,
+      "deltaH": -1.7093355038629312,
+      "deltaAggregate": 1.889236045353016,
+      "classes": {
+        "K": "+",
+        "H": "0",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724378_G_C",
+      "event": 2,
+      "deltaK": -2.217550061109165,
+      "deltaH": -5.382982886279535,
+      "deltaAggregate": -3.80026647369435,
+      "classes": {
+        "K": "0",
+        "H": "-",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_114724403_C_T",
+      "event": 2,
+      "deltaK": 5.4691325265011415,
+      "deltaH": -2.050176220471002,
+      "deltaAggregate": 1.7094781530150698,
+      "classes": {
+        "K": "+",
+        "H": "0",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_33134133_C_G",
+      "event": 108,
+      "deltaK": -8.182264715002809,
+      "deltaH": 6.836381825999297,
+      "deltaAggregate": -0.6729414445017561,
+      "classes": {
+        "K": "-",
+        "H": "+",
+        "aggregate": "0"
+      }
+    },
+    {
+      "id": "chr10_33134250_C_T",
+      "event": 108,
+      "deltaK": 3.1071020926549053,
+      "deltaH": -6.641872278664742,
+      "deltaAggregate": -1.7673850930049184,
+      "classes": {
+        "K": "0",
+        "H": "-",
+        "aggregate": "0"
+      }
+    }
+  ],
+  "measuredInCI": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45053038114",
+  "scientificReference": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5984807/"
+}
