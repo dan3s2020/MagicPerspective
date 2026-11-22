@@ -1,0 +1,70 @@
+name: MFASS real 27733 human variant ORIGINAL Brain rare splicing effect gene-group DEV
+on:
+  push:
+    branches:
+      - research/MFASS-GENOMIC-EFFECTS-NATIVE-BRAIN-20261122
+    paths:
+      - .github/workflows/mfass-original-native-gene-disjoint-dev.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-one-brain-real-mfass-splice-effects:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        mode: [outcome-c, alt-c, global-c]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original human MFASS real splicing reporter variants
+        uses: actions/checkout@v4
+        with:
+          repository: KosuriLab/MFASS
+          ref: 9a8e4f27106be52aeb11acad27f95f5cded663a8
+          path: comparison-checkouts/mfass-source
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            processed_data/snv/snv_data_clean.txt
+      - name: Independently corrected canonical gene-connected exon grouping
+        uses: actions/checkout@v4
+        with:
+          repository: rewire-bio/rewire-benchmarks
+          ref: 68d1ee53a0fcd1104d9f427d68dedffdccf2c47f
+          path: comparison-checkouts/mfass-benchmark
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            benchmarks/mfass/splits/split-v2.tsv
+      - name: Check frozen original native source, true data and rare outcome scoring
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/mfass/mfass-source.mjs
+          node --check research/genome-native-brain-20261119/mfass/run-original-native-mfass.mjs
+          test -f research/genome-native-brain-20261119/mfass/PRETEST_NATIVE_INTERNAL_DEVELOPMENT.md
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          sha256sum comparison-checkouts/mfass-source/processed_data/snv/snv_data_clean.txt comparison-checkouts/mfass-benchmark/benchmarks/mfass/splits/split-v2.tsv
+      - name: Learn genuine 170nt MFASS REF ALT SNV outcomes in original V42 Brain and score only source TRAIN internal gene-group DEV
+        shell: bash
+        env:
+          MFASS_NATIVE_PHASE: internal-dev
+          MFASS_NATIVE_DEV_RAW: /tmp/mfass-real-original-native-dev.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/mfass/run-original-native-mfass.mjs comparison-checkouts/mfass-source comparison-checkouts/mfass-benchmark '${{ matrix.mode }}' | tee /tmp/mfass-real-original-native-dev.log
+      - name: Preserve exact source, native model, AP, complete genuine scores and negative controls
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genuine-original-MFASS-native-development-${{ matrix.mode }}
+          path: |
+            /tmp/mfass-real-original-native-dev.json
+            /tmp/mfass-real-original-native-dev.log
+          if-no-files-found: warn
