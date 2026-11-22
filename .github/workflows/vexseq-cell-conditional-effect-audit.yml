@@ -1,0 +1,52 @@
+name: Original Vexseq laboratory K and H condition-specific effect TRAIN audit
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
+    paths:
+      - .github/workflows/vexseq-cell-conditional-effect-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  genuine-cell-conditioned-splicing-effect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original published Vex-seq variant effects and authentic paired DNA
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Validate source and preregistered biological test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/audit-cell-conditioned-train.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/CELL_CONDITIONING_PRETEST.md
+      - name: Count actual measured K vs H different genetic effects on training variants ONLY
+        shell: bash
+        env:
+          VEXSEQ_CELL_AUDIT_JSON: /tmp/vexseq-K-H-actual-biological-difference.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/audit-cell-conditioned-train.mjs comparison-checkouts/vexseq | tee /tmp/vexseq-real-cell-difference.log
+      - name: Preserve original assay K H biological condition result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-vexseq-cell-effect-TRAIN-only
+          path: |
+            /tmp/vexseq-K-H-actual-biological-difference.json
+            /tmp/vexseq-real-cell-difference.log
+          if-no-files-found: warn
