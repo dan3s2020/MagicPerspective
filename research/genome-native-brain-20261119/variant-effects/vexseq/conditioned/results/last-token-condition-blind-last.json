@@ -1,0 +1,378 @@
+{
+  "status": "EXECUTED_AUTHENTIC_CELL_CONDITIONAL_NATIVE_C8_VARIANT_EFFECT",
+  "mode": "condition-blind-last",
+  "originalBrainSourceUnmodified": true,
+  "science": "K562 versus HepG2 real Vex-seq in-vitro variant ΔPSI",
+  "source": {
+    "repo": "scottiadamson/Vex-seq",
+    "commit": "36d9c4a6e5e74def46b3cada69d3166f08c54bd5",
+    "verifiedSNVs": 1960,
+    "originalControlGroups": 110,
+    "trainGroups": 77,
+    "devGroups": 16,
+    "finalGroups": 17
+  },
+  "frozenInputEncoding": "real splice distance bin + actual mutation offset + 4 REF DNA bases + actual ALT mutation base + K/H or X (cell tag last)",
+  "training": {
+    "originalVariants": 1303,
+    "measuredCellCases": 2606,
+    "originalLivedSymbols": 26060,
+    "selectedC": "exact:150"
+  },
+  "evaluation": {
+    "originalVariants": 390,
+    "measuredCellCases": 780,
+    "combined": {
+      "n": 780,
+      "correct": 473,
+      "accuracy": 0.6064102564102564,
+      "macroF1": 0.2942139713299588,
+      "balancedAccuracy": 0.33895452918009306,
+      "perClass": [
+        {
+          "label": "0",
+          "support": 490,
+          "recall": 0.9326530612244898,
+          "precision": 0.6277472527472527,
+          "f1": 0.7504105090311987
+        },
+        {
+          "label": "-",
+          "support": 190,
+          "recall": 0.08421052631578947,
+          "precision": 0.3076923076923077,
+          "f1": 0.1322314049586777
+        },
+        {
+          "label": "+",
+          "support": 100,
+          "recall": 0,
+          "precision": 0,
+          "f1": 0
+        }
+      ],
+      "confusion": {
+        "0": {
+          "0": 457,
+          "-": 33,
+          "+": 0
+        },
+        "-": {
+          "0": 174,
+          "-": 16,
+          "+": 0
+        },
+        "+": {
+          "0": 97,
+          "-": 3,
+          "+": 0
+        }
+      }
+    },
+    "byCell": {
+      "K": {
+        "n": 390,
+        "correct": 225,
+        "accuracy": 0.5769230769230769,
+        "macroF1": 0.28848573825503354,
+        "balancedAccuracy": 0.33975659229208927,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 232,
+            "recall": 0.9310344827586207,
+            "precision": 0.5934065934065934,
+            "f1": 0.7248322147651006
+          },
+          {
+            "label": "-",
+            "support": 102,
+            "recall": 0.08823529411764706,
+            "precision": 0.34615384615384615,
+            "f1": 0.140625
+          },
+          {
+            "label": "+",
+            "support": 56,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 216,
+            "-": 16,
+            "+": 0
+          },
+          "-": {
+            "0": 93,
+            "-": 9,
+            "+": 0
+          },
+          "+": {
+            "0": 55,
+            "-": 1,
+            "+": 0
+          }
+        }
+      },
+      "H": {
+        "n": 390,
+        "correct": 248,
+        "accuracy": 0.6358974358974359,
+        "macroF1": 0.2992422105639232,
+        "balancedAccuracy": 0.3378846605590791,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 258,
+            "recall": 0.9341085271317829,
+            "precision": 0.6620879120879121,
+            "f1": 0.77491961414791
+          },
+          {
+            "label": "-",
+            "support": 88,
+            "recall": 0.07954545454545454,
+            "precision": 0.2692307692307692,
+            "f1": 0.12280701754385964
+          },
+          {
+            "label": "+",
+            "support": 44,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 241,
+            "-": 17,
+            "+": 0
+          },
+          "-": {
+            "0": 81,
+            "-": 7,
+            "+": 0
+          },
+          "+": {
+            "0": 42,
+            "-": 2,
+            "+": 0
+          }
+        }
+      }
+    },
+    "swappedTags": {
+      "n": 780,
+      "correct": 473,
+      "accuracy": 0.6064102564102564,
+      "macroF1": 0.2942139713299588,
+      "balancedAccuracy": 0.33895452918009306,
+      "perClass": [
+        {
+          "label": "0",
+          "support": 490,
+          "recall": 0.9326530612244898,
+          "precision": 0.6277472527472527,
+          "f1": 0.7504105090311987
+        },
+        {
+          "label": "-",
+          "support": 190,
+          "recall": 0.08421052631578947,
+          "precision": 0.3076923076923077,
+          "f1": 0.1322314049586777
+        },
+        {
+          "label": "+",
+          "support": 100,
+          "recall": 0,
+          "precision": 0,
+          "f1": 0
+        }
+      ],
+      "confusion": {
+        "0": {
+          "0": 457,
+          "-": 33,
+          "+": 0
+        },
+        "-": {
+          "0": 174,
+          "-": 16,
+          "+": 0
+        },
+        "+": {
+          "0": 97,
+          "-": 3,
+          "+": 0
+        }
+      }
+    },
+    "controls": {
+      "alwaysNeutral": {
+        "n": 780,
+        "correct": 490,
+        "accuracy": 0.6282051282051282,
+        "macroF1": 0.25721784776902884,
+        "balancedAccuracy": 0.3333333333333333,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 490,
+            "recall": 1,
+            "precision": 0.6282051282051282,
+            "f1": 0.7716535433070866
+          },
+          {
+            "label": "-",
+            "support": 190,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          },
+          {
+            "label": "+",
+            "support": 100,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 490,
+            "-": 0,
+            "+": 0
+          },
+          "-": {
+            "0": 190,
+            "-": 0,
+            "+": 0
+          },
+          "+": {
+            "0": 100,
+            "-": 0,
+            "+": 0
+          }
+        }
+      },
+      "perCellMajority": {
+        "n": 780,
+        "correct": 490,
+        "accuracy": 0.6282051282051282,
+        "macroF1": 0.25721784776902884,
+        "balancedAccuracy": 0.3333333333333333,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 490,
+            "recall": 1,
+            "precision": 0.6282051282051282,
+            "f1": 0.7716535433070866
+          },
+          {
+            "label": "-",
+            "support": 190,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          },
+          {
+            "label": "+",
+            "support": 100,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 490,
+            "-": 0,
+            "+": 0
+          },
+          "-": {
+            "0": 190,
+            "-": 0,
+            "+": 0
+          },
+          "+": {
+            "0": 100,
+            "-": 0,
+            "+": 0
+          }
+        }
+      },
+      "substitutionDistanceCell": {
+        "n": 780,
+        "correct": 482,
+        "accuracy": 0.617948717948718,
+        "macroF1": 0.3418858229151101,
+        "balancedAccuracy": 0.3676333691371285,
+        "perClass": [
+          {
+            "label": "0",
+            "support": 490,
+            "recall": 0.9081632653061225,
+            "precision": 0.6439942112879884,
+            "f1": 0.7535986452159187
+          },
+          {
+            "label": "-",
+            "support": 190,
+            "recall": 0.19473684210526315,
+            "precision": 0.45121951219512196,
+            "f1": 0.27205882352941174
+          },
+          {
+            "label": "+",
+            "support": 100,
+            "recall": 0,
+            "precision": 0,
+            "f1": 0
+          }
+        ],
+        "confusion": {
+          "0": {
+            "0": 445,
+            "-": 39,
+            "+": 6
+          },
+          "-": {
+            "0": 152,
+            "-": 37,
+            "+": 1
+          },
+          "+": {
+            "0": 94,
+            "-": 6,
+            "+": 0
+          }
+        }
+      }
+    },
+    "conditionDisagreementsInTruth": 91,
+    "conditionDisagreementsPredicted": 0,
+    "conditionPairBothCorrectWhenTruthDifferent": 0,
+    "spearmanCombined": 0.08185957815945413,
+    "spearmanByCell": {
+      "K": 0.07507209678824076,
+      "H": 0.09078647021395049
+    }
+  },
+  "noOfficialFinalScoring": true,
+  "officialAlphaGenome2Comparison": false,
+  "interpretationLimitations": [
+    "Only one original Brain shared K/H",
+    "Manual cell and splice-distance features",
+    "in-vitro reporter assay not endogenous tissue causal expression",
+    "no external model learned head",
+    "16 dev events only"
+  ],
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45053656147",
+  "jobId": 137304049709
+}
