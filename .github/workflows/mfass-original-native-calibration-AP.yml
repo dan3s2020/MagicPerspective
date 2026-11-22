@@ -1,0 +1,65 @@
+name: MFASS genuine original Brain native C8 rare-effect AP calibration on 150 blind gene groups
+on:
+  push:
+    branches:
+      - research/MFASS-NATIVE-AP-PERSPECTIVE-CALIBRATION-20261122
+    paths:
+      - .github/workflows/mfass-original-native-calibration-AP.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-brain-native-biological-AP-calibrated-perspectives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pinned real MFASS original reference and mutated human reporter DNA
+        uses: actions/checkout@v4
+        with:
+          repository: KosuriLab/MFASS
+          ref: 9a8e4f27106be52aeb11acad27f95f5cded663a8
+          path: comparison-checkouts/mfass-source
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            processed_data/snv/snv_data_clean.txt
+      - name: Frozen canonical source connected gene and exon grouping
+        uses: actions/checkout@v4
+        with:
+          repository: rewire-bio/rewire-benchmarks
+          ref: 68d1ee53a0fcd1104d9f427d68dedffdccf2c47f
+          path: comparison-checkouts/mfass-benchmark
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            benchmarks/mfass/splits/split-v2.tsv
+      - name: Verify exactly the original V42 Brain, published assay and frozen rare-effect mask calibration contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/mfass/perspective-calibration/run-original-brain-AP-select.mjs
+          node --check research/genome-native-brain-20261119/mfass/mfass-source.mjs
+          test -f research/genome-native-brain-20261119/mfass/perspective-calibration/PRETEST.md
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/epistemic-text/engine.mjs
+      - name: Full original Brain train 14498 real MFASS SNVs then calibrate 120 native C masks on 2421 separate gene effects, blind dev 2490
+        env:
+          MFASS_NATIVE_PHASE: internal-dev
+          MFASS_NATIVE_DEV_RAW: /tmp/MFASS-real-AP-original-Brain-calibration.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/mfass/perspective-calibration/run-original-brain-AP-select.mjs comparison-checkouts/mfass-source comparison-checkouts/mfass-benchmark outcome-c | tee /tmp/MFASS-real-AP-original-Brain-calibration.log
+      - name: Preserve real gene-group source, native C mask, shuffled-label controls and original per-variant continuous scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genuine-MFASS-original-Brain-native-AP-calibration-gene-blind
+          path: |
+            /tmp/MFASS-real-AP-original-Brain-calibration.json
+            /tmp/MFASS-real-AP-original-Brain-calibration.log
+          if-no-files-found: warn
