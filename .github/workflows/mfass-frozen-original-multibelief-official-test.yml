@@ -1,0 +1,66 @@
+name: ONE SHOT original native Brain MFASS-v2 frozen K5 mixture OFFICIAL 8324 human variants
+on:
+  push:
+    branches:
+      - research/MFASS-NATIVE-MULTIBELIEF-FROZEN-FINAL-20261123
+    paths:
+      - .github/workflows/mfass-frozen-original-multibelief-official-test.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  official-frozen-original-native-mfass:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original pinned 27733 human MFASS 170nt reference alternate sequence and experimental strong LOF
+        uses: actions/checkout@v4
+        with:
+          repository: KosuriLab/MFASS
+          ref: 9a8e4f27106be52aeb11acad27f95f5cded663a8
+          path: comparison-checkouts/mfass-source
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            processed_data/snv/snv_data_clean.txt
+      - name: Canonical independent corrected source gene and exon connected holdout v2
+        uses: actions/checkout@v4
+        with:
+          repository: rewire-bio/rewire-benchmarks
+          ref: 68d1ee53a0fcd1104d9f427d68dedffdccf2c47f
+          path: comparison-checkouts/mfass-benchmark
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            benchmarks/mfass/splits/split-v2.tsv
+      - name: Verify preregistered frozen K5 native mixture, source validation and zero model substitution
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/mfass/native-mixture/final/mfass-source-one-shot-final.mjs
+          node --check research/genome-native-brain-20261119/mfass/native-mixture/final/run-original-native-mfass-frozen-final.mjs
+          test -f research/genome-native-brain-20261119/mfass/native-mixture/final/FROZEN_ONE_SHOT_PROTOCOL.md
+          test -f v17/transcend/torus-aether/devour/brain.mjs
+          test -f v17/transcend/torus-aether/torus.mjs
+          sha256sum comparison-checkouts/mfass-source/processed_data/snv/snv_data_clean.txt comparison-checkouts/mfass-benchmark/benchmarks/mfass/splits/split-v2.tsv
+      - name: EXACT ONE SHOT frozen original native Brain on all 8324 official gene separated MFASS human mutations
+        shell: bash
+        env:
+          MFASS_NATIVE_PHASE: official-final
+          MFASS_NATIVE_DEV_RAW: /tmp/frozen-MFASS-original-native-8324-variants.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/mfass/native-mixture/final/run-original-native-mfass-frozen-final.mjs comparison-checkouts/mfass-source comparison-checkouts/mfass-benchmark outcome-c | tee /tmp/frozen-MFASS-original-native-8324-variants.log
+      - name: Archive all authentic heldout source scores and original Brain gene-cluster bootstrap with calibration provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MFASS-FROZEN-ORIGINAL-NATIVE-MIXTURE-8324-ONE-SHOT
+          path: |
+            /tmp/frozen-MFASS-original-native-8324-variants.json
+            /tmp/frozen-MFASS-original-native-8324-variants.log
+          if-no-files-found: warn
