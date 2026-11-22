@@ -1,0 +1,59 @@
+name: Vexseq one original Brain K562 HepG2 conditional measured genetic effects
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-CELL-CONDITIONED-20261122
+    paths:
+      - .github/workflows/vexseq-native-cell-conditional-C8.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-shared-native-brain-cell-variant:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        mode: [condition-true, condition-blind]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original published true human REF ALT and K562 HepG2 ΔPSI
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Validate source and frozen condition-sensitive architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/vexseq-source.mjs
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/conditioned/run-original-cell-conditional.mjs
+          test -f research/genome-native-brain-20261119/variant-effects/vexseq/conditioned/PRETEST.md
+      - name: One original native C8 Brain learns true K and H variant effects, labels hidden in evaluation
+        shell: bash
+        env:
+          VEXSEQ_CELL_PHASE: dev
+          VEXSEQ_CELL_RAW_RESULT_FILE: /tmp/Vexseq-Original-Cell-Conditional-Brain.json
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/conditioned/run-original-cell-conditional.mjs comparison-checkouts/vexseq '${{ matrix.mode }}' | tee /tmp/Vexseq-Original-Cell-Conditional-Brain.log
+      - name: Preserve authentic target and original Brain conditional output predictions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vexseq-native-actual-cell-conditioned-${{ matrix.mode }}
+          path: |
+            /tmp/Vexseq-Original-Cell-Conditional-Brain.json
+            /tmp/Vexseq-Original-Cell-Conditional-Brain.log
+          if-no-files-found: warn
