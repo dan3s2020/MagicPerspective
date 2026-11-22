@@ -1,0 +1,52 @@
+name: Actual 1960 Vex-seq REF ALT stranded functional variant pair verification
+on:
+  push:
+    branches:
+      - research/VEXSEQ-NATIVE-FUNCTIONAL-VARIANTS-20261122
+    paths:
+      - .github/workflows/vexseq-true-stranded-pairs.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-actual-splicing-effect-pairs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pinned original Adamson Vex-seq splicing assay
+        uses: actions/checkout@v4
+        with:
+          repository: scottiadamson/Vex-seq
+          ref: 36d9c4a6e5e74def46b3cada69d3166f08c54bd5
+          path: comparison-checkouts/vexseq
+          sparse-checkout: |
+            processed_files/delta_PSI_values.tsv
+            processed_files/control_variant_pairs.csv
+            processed_files/Vex-seq_positions.tsv
+            preprocess_data/68_97_final_sequences_fixed.tsv
+      - name: Verify source and DNA/allele mappings
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/vexseq-source.mjs
+          node --check research/genome-native-brain-20261119/variant-effects/vexseq/verify-true-variants.mjs
+      - name: Validate orientation-corrected actual REF ALT construct pairs and heldout groups
+        env:
+          VEXSEQ_SOURCE_VALIDATION_JSON: /tmp/vexseq-real-measured-pairs.json
+        shell: bash
+        run: |
+          set -eo pipefail
+          node research/genome-native-brain-20261119/variant-effects/vexseq/verify-true-variants.mjs comparison-checkouts/vexseq | tee /tmp/vexseq-real-variant-pairs.log
+      - name: Archive original published biological pairing validation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-real-vexseq-paired-assay
+          path: |
+            /tmp/vexseq-real-measured-pairs.json
+            /tmp/vexseq-real-variant-pairs.log
+          if-no-files-found: warn
