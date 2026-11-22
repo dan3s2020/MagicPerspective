@@ -130,3 +130,20 @@ The true next target is to make the SAME original organism select **outcome-spec
 - [Source context: published Vex-seq](https://pmc.ncbi.nlm.nih.gov/articles/PMC5984807/)
 
 **These are measured results, not a simulation or claim of AlphaGenome 2 parity.**
+
+## 2026-11-23 — MFASS-v2 official gene-group one-shot native multi-perspective result
+
+**Important NEW source-verified result (not AlphaGenome 2 parity):** Original unchanged V42 MagicPerspective Brain, original `LeanC.top` multi-perspective mixture calibrated using 2,421 real human MFASS variants from 150 independently heldout connected gene/exon groups, selected pre-frozen five native C beliefs (three genuinely different informational masks) with equal weights. Authentic source TRAIN14,498 variants/827 connected groups. The method was committed BEFORE the one-and-only official MFASS-v2 TEST on **8,324 real genetically modified human reporter constructs, including 315 experimentally strong splice disruptions across 463 separate gene/exon-connected groups**.
+
+**Real official score:** native original five-belief mixture **Average Precision 0.15488**, **32 authentic disruptions in top100** (precision@1000.320); original native single mask AP0.11821/top10026; same source TRAIN-only simple region/distance/REF>ALT frequency control AP0.10650/top100≈24.05; deliberately source-calibration-label-shuffled native mixture AP0.11598/top10022. All are EXACT same genuine official 8,324 cohort. 1,000 pre-frozen connected-gene/exon-group paired bootstrap resamples: true native-minus-simple-control AP **+0.04838 [95% percentile +0.01806,+0.08331]**. Genuine independent test improvement, not just repeated DEV scores. **Native AUROC remains slightly worse than simple control:0.69160 versus0.70308**.
+
+**Do not overclaim:** stronger independently published corrected MFASS-v2 `k-mer/position` baseline scores **AP0.286 and P@1000.610 on the SAME 8,324**, which our original native organism has NOT reached. SpliceAI/Pangolin specialists score higher with incomplete source coverage; AlphaGenome 2 was NOT evaluated directly. 170nt original assay DNA was used to verify real mutations, but the model currently observes only four REF nucleotides plus actual ALT and physical metadata. The selection objective is experimenter-designed calibration of ORIGINAL learned native perspectives, not fully autonomous skill invention.
+
+- [Full scientific report, every control, precision and limitations](./mfass/native-mixture/final/FINAL_RESULTS.md)
+- [Original pre-frozen protocol commit](./mfass/native-mixture/final/FROZEN_ONE_SHOT_PROTOCOL.md)
+- [Actual official one-shot GitHub Actions](https://github.com/dan3s2020/MagicPerspective/actions/runs/45084113611)
+- [Machine-readable raw original-native official results and gene-cluster uncertainty](./mfass/native-mixture/final/results/FROZEN-ORIGINAL-V42-MFASS-8324-OFFICIAL.json)
+- [Native code using existing `LeanC.top` and original Brain](./mfass/native-mixture/final/run-original-native-mfass-frozen-final.mjs)
+- [Original independent development evidence](./mfass/native-mixture/RESULTS_DEVELOPMENT.md)
+
+**Next real capability gate:** learn complementary native perspective selection *within the same organism* instead of human-selected calibration, and extend the observed biological context while finding a genuinely new independent variant-effect assay. **Never re-use the already-scored MFASS-v2 official 8,324 to tune further**.
