@@ -1,0 +1,1908 @@
+{
+  "run": "https://github.com/dan3s2020/MagicPerspective/actions/runs/45051631165",
+  "date": "2026-11-22",
+  "pretest": "research/genome-native-brain-20261119/hs3d/transfer/PRETEST_PROTOCOL.md",
+  "conclusion": "NEGATIVE_TRANSFER: original donor-pretrained native Brain with internal 12-view policy loses to freshly trained Brain on same acceptor dev400 at every matched adaptation count",
+  "scope": "Human HS3D original Train partition only, original native V42 Brain, not independent AlphaGenome2",
+  "outcomes": [
+    {
+      "jobId": 137297808617,
+      "mode": "donor-pretrained",
+      "adapt": 0,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 1200,
+        "donorCalibration": 200,
+        "acceptorExamples": 0,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 14400,
+        "acceptorViewActions": 0,
+        "livedSymbols": 100800,
+        "donorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 153
+        },
+        "acceptorReward": null,
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "stage": "afterDonor",
+            "lived": 100800,
+            "policy": [
+              0.11432919153025396,
+              -0.13855839376593593,
+              0.3493958059346615,
+              0.23506661440440663,
+              0.0295612496293198,
+              0.5193260049406682
+            ],
+            "updates": 2400
+          }
+        ],
+        "originalNativePolicyFinal": [
+          0.11432919153025396,
+          -0.13855839376593593,
+          0.3493958059346615,
+          0.23506661440440663,
+          0.0295612496293198,
+          0.5193260049406682
+        ],
+        "nativePolicyUpdates": 2400
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 182,
+          "accuracy": 0.455,
+          "balancedAccuracy": 0.455,
+          "macroF1": 0.4526876051316814,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.46017699115044247,
+              "recall": 0.52,
+              "f1": 0.48826291079812206
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.4482758620689655,
+              "recall": 0.39,
+              "f1": 0.41711229946524064
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 104,
+              "N": 96
+            },
+            "N": {
+              "P": 122,
+              "N": 78
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 201,
+          "accuracy": 0.5025,
+          "balancedAccuracy": 0.5025,
+          "macroF1": 0.5024968906055662,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5024875621890548,
+              "recall": 0.505,
+              "f1": 0.5037406483790524
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5025125628140703,
+              "recall": 0.5,
+              "f1": 0.5012531328320802
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 101,
+              "N": 99
+            },
+            "N": {
+              "P": 100,
+              "N": 100
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 210,
+          "accuracy": 0.525,
+          "balancedAccuracy": 0.525,
+          "macroF1": 0.5247029393370857,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5238095238095238,
+              "recall": 0.55,
+              "f1": 0.5365853658536586
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5263157894736842,
+              "recall": 0.5,
+              "f1": 0.5128205128205128
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 110,
+              "N": 90
+            },
+            "N": {
+              "P": 100,
+              "N": 100
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 179,
+          "accuracy": 0.4475,
+          "balancedAccuracy": 0.4475,
+          "macroF1": 0.4334459177983862,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.4233576642335766,
+              "recall": 0.29,
+              "f1": 0.34421364985163205
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.4600760456273764,
+              "recall": 0.605,
+              "f1": 0.5226781857451404
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 58,
+              "N": 142
+            },
+            "N": {
+              "P": 79,
+              "N": 121
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808541,
+      "mode": "fresh-acceptor",
+      "adapt": 0,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 0,
+        "donorCalibration": 0,
+        "acceptorExamples": 0,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 0,
+        "acceptorViewActions": 0,
+        "livedSymbols": 0,
+        "donorReward": null,
+        "acceptorReward": null,
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [],
+        "originalNativePolicyFinal": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "nativePolicyUpdates": 0
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 200,
+          "accuracy": 0.5,
+          "balancedAccuracy": 0.5,
+          "macroF1": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5,
+              "recall": 1,
+              "f1": 0.6666666666666666
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 200,
+              "N": 0
+            },
+            "N": {
+              "P": 200,
+              "N": 0
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 200,
+          "accuracy": 0.5,
+          "balancedAccuracy": 0.5,
+          "macroF1": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5,
+              "recall": 1,
+              "f1": 0.6666666666666666
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 200,
+              "N": 0
+            },
+            "N": {
+              "P": 200,
+              "N": 0
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 200,
+          "accuracy": 0.5,
+          "balancedAccuracy": 0.5,
+          "macroF1": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5,
+              "recall": 1,
+              "f1": 0.6666666666666666
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 200,
+              "N": 0
+            },
+            "N": {
+              "P": 200,
+              "N": 0
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 200,
+          "accuracy": 0.5,
+          "balancedAccuracy": 0.5,
+          "macroF1": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5,
+              "recall": 1,
+              "f1": 0.6666666666666666
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 200,
+              "N": 0
+            },
+            "N": {
+              "P": 200,
+              "N": 0
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808278,
+      "mode": "donor-pretrained",
+      "adapt": 40,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 1200,
+        "donorCalibration": 200,
+        "acceptorExamples": 40,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 14400,
+        "acceptorViewActions": 480,
+        "livedSymbols": 104160,
+        "donorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 153
+        },
+        "acceptorReward": {
+          "rewards": 480,
+          "preRewardCorrect": 22
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "stage": "afterDonor",
+            "lived": 100800,
+            "policy": [
+              0.11432919153025396,
+              -0.13855839376593593,
+              0.3493958059346615,
+              0.23506661440440663,
+              0.0295612496293198,
+              0.5193260049406682
+            ],
+            "updates": 2400
+          }
+        ],
+        "originalNativePolicyFinal": [
+          -0.03754572409175179,
+          -0.10742972984018637,
+          0.3084352845814953,
+          0.345981008673246,
+          -0.0443231437318234,
+          0.33566777220323435
+        ],
+        "nativePolicyUpdates": 2880
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 193,
+          "accuracy": 0.4825,
+          "balancedAccuracy": 0.48250000000000004,
+          "macroF1": 0.48156357420590945,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.4808743169398907,
+              "recall": 0.44,
+              "f1": 0.4595300261096606
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.4838709677419355,
+              "recall": 0.525,
+              "f1": 0.5035971223021583
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 88,
+              "N": 112
+            },
+            "N": {
+              "P": 95,
+              "N": 105
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 194,
+          "accuracy": 0.485,
+          "balancedAccuracy": 0.485,
+          "macroF1": 0.485,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.485,
+              "recall": 0.485,
+              "f1": 0.485
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.485,
+              "recall": 0.485,
+              "f1": 0.485
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 97,
+              "N": 103
+            },
+            "N": {
+              "P": 103,
+              "N": 97
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 204,
+          "accuracy": 0.51,
+          "balancedAccuracy": 0.51,
+          "macroF1": 0.5098897251881673,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5097087378640777,
+              "recall": 0.525,
+              "f1": 0.5172413793103449
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5103092783505154,
+              "recall": 0.495,
+              "f1": 0.5025380710659898
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 105,
+              "N": 95
+            },
+            "N": {
+              "P": 101,
+              "N": 99
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 183,
+          "accuracy": 0.4575,
+          "balancedAccuracy": 0.4575,
+          "macroF1": 0.44458308537935365,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.43884892086330934,
+              "recall": 0.305,
+              "f1": 0.35988200589970504
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.4674329501915709,
+              "recall": 0.61,
+              "f1": 0.5292841648590022
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 61,
+              "N": 139
+            },
+            "N": {
+              "P": 78,
+              "N": 122
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808596,
+      "mode": "fresh-acceptor",
+      "adapt": 40,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 0,
+        "donorCalibration": 0,
+        "acceptorExamples": 40,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 0,
+        "acceptorViewActions": 480,
+        "livedSymbols": 3360,
+        "donorReward": null,
+        "acceptorReward": {
+          "rewards": 480,
+          "preRewardCorrect": 23
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [],
+        "originalNativePolicyFinal": [
+          0.11934722658614778,
+          -0.08628180854324179,
+          0.018469444250669906,
+          -0.10087778233547841,
+          0.05724212257380794,
+          0.07642621898828665
+        ],
+        "nativePolicyUpdates": 480
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 215,
+          "accuracy": 0.5375,
+          "balancedAccuracy": 0.5375000000000001,
+          "macroF1": 0.45070851179120985,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.520891364902507,
+              "recall": 0.935,
+              "f1": 0.669051878354204
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.6829268292682927,
+              "recall": 0.14,
+              "f1": 0.23236514522821577
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 187,
+              "N": 13
+            },
+            "N": {
+              "P": 172,
+              "N": 28
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 219,
+          "accuracy": 0.5475,
+          "balancedAccuracy": 0.5475,
+          "macroF1": 0.545428860244489,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5418502202643172,
+              "recall": 0.615,
+              "f1": 0.5761124121779859
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5549132947976878,
+              "recall": 0.48,
+              "f1": 0.514745308310992
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 123,
+              "N": 77
+            },
+            "N": {
+              "P": 104,
+              "N": 96
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 219,
+          "accuracy": 0.5475,
+          "balancedAccuracy": 0.5475,
+          "macroF1": 0.5471575378880278,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5450236966824644,
+              "recall": 0.575,
+              "f1": 0.559610705596107
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5502645502645502,
+              "recall": 0.52,
+              "f1": 0.5347043701799485
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 115,
+              "N": 85
+            },
+            "N": {
+              "P": 96,
+              "N": 104
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 200,
+          "accuracy": 0.5,
+          "balancedAccuracy": 0.5,
+          "macroF1": 0.3333333333333333,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5,
+              "recall": 1,
+              "f1": 0.6666666666666666
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 0,
+              "N": 200
+            },
+            "N": {
+              "P": 0,
+              "N": 200
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808581,
+      "mode": "donor-pretrained",
+      "adapt": 200,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 1200,
+        "donorCalibration": 200,
+        "acceptorExamples": 200,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 14400,
+        "acceptorViewActions": 2400,
+        "livedSymbols": 117600,
+        "donorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 153
+        },
+        "acceptorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 115
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "stage": "afterDonor",
+            "lived": 100800,
+            "policy": [
+              0.11432919153025396,
+              -0.13855839376593593,
+              0.3493958059346615,
+              0.23506661440440663,
+              0.0295612496293198,
+              0.5193260049406682
+            ],
+            "updates": 2400
+          }
+        ],
+        "originalNativePolicyFinal": [
+          0.13375611736641058,
+          -0.047470724222016314,
+          0.3543571222601552,
+          0.22060100489374249,
+          0.03434952635720962,
+          0.38229944449150277
+        ],
+        "nativePolicyUpdates": 4800
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 180,
+          "accuracy": 0.45,
+          "balancedAccuracy": 0.45,
+          "macroF1": 0.44801284624648735,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.45535714285714285,
+              "recall": 0.51,
+              "f1": 0.4811320754716981
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.4431818181818182,
+              "recall": 0.39,
+              "f1": 0.4148936170212766
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 102,
+              "N": 98
+            },
+            "N": {
+              "P": 122,
+              "N": 78
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 201,
+          "accuracy": 0.5025,
+          "balancedAccuracy": 0.5025,
+          "macroF1": 0.5024720140507903,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5024630541871922,
+              "recall": 0.51,
+              "f1": 0.5062034739454094
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5025380710659898,
+              "recall": 0.495,
+              "f1": 0.4987405541561713
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 102,
+              "N": 98
+            },
+            "N": {
+              "P": 101,
+              "N": 99
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 196,
+          "accuracy": 0.49,
+          "balancedAccuracy": 0.49,
+          "macroF1": 0.48968105065666045,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.49047619047619045,
+              "recall": 0.515,
+              "f1": 0.5024390243902439
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.48947368421052634,
+              "recall": 0.465,
+              "f1": 0.47692307692307695
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 103,
+              "N": 97
+            },
+            "N": {
+              "P": 107,
+              "N": 93
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 182,
+          "accuracy": 0.455,
+          "balancedAccuracy": 0.45499999999999996,
+          "macroF1": 0.4432952833320565,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.43661971830985913,
+              "recall": 0.31,
+              "f1": 0.36257309941520466
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.46511627906976744,
+              "recall": 0.6,
+              "f1": 0.5240174672489083
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 62,
+              "N": 138
+            },
+            "N": {
+              "P": 80,
+              "N": 120
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808477,
+      "mode": "fresh-acceptor",
+      "adapt": 200,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 0,
+        "donorCalibration": 0,
+        "acceptorExamples": 200,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 0,
+        "acceptorViewActions": 2400,
+        "livedSymbols": 16800,
+        "donorReward": null,
+        "acceptorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 116
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [],
+        "originalNativePolicyFinal": [
+          0.12372492990020428,
+          -0.26256078659195325,
+          0.20204742979110302,
+          0.07832249989089995,
+          0.053642915291728044,
+          0.1262769533416788
+        ],
+        "nativePolicyUpdates": 2400
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 269,
+          "accuracy": 0.6725,
+          "balancedAccuracy": 0.6725000000000001,
+          "macroF1": 0.6661888835801879,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.6352941176470588,
+              "recall": 0.81,
+              "f1": 0.7120879120879121
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.7379310344827587,
+              "recall": 0.535,
+              "f1": 0.6202898550724638
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 162,
+              "N": 38
+            },
+            "N": {
+              "P": 93,
+              "N": 107
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 219,
+          "accuracy": 0.5475,
+          "balancedAccuracy": 0.5475,
+          "macroF1": 0.5459989590583868,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5426008968609866,
+              "recall": 0.605,
+              "f1": 0.5721040189125296
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5536723163841808,
+              "recall": 0.49,
+              "f1": 0.519893899204244
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 121,
+              "N": 79
+            },
+            "N": {
+              "P": 102,
+              "N": 98
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 222,
+          "accuracy": 0.555,
+          "balancedAccuracy": 0.5549999999999999,
+          "macroF1": 0.554899852466805,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5533980582524272,
+              "recall": 0.57,
+              "f1": 0.5615763546798029
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5567010309278351,
+              "recall": 0.54,
+              "f1": 0.5482233502538071
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 114,
+              "N": 86
+            },
+            "N": {
+              "P": 92,
+              "N": 108
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 235,
+          "accuracy": 0.5875,
+          "balancedAccuracy": 0.5874999999999999,
+          "macroF1": 0.5874355368026254,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5853658536585366,
+              "recall": 0.6,
+              "f1": 0.5925925925925926
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5897435897435898,
+              "recall": 0.575,
+              "f1": 0.5822784810126582
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 120,
+              "N": 80
+            },
+            "N": {
+              "P": 85,
+              "N": 115
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808506,
+      "mode": "donor-pretrained",
+      "adapt": 600,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 1200,
+        "donorCalibration": 200,
+        "acceptorExamples": 600,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 14400,
+        "acceptorViewActions": 7200,
+        "livedSymbols": 151200,
+        "donorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 153
+        },
+        "acceptorReward": {
+          "rewards": 7200,
+          "preRewardCorrect": 393
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "stage": "afterDonor",
+            "lived": 100800,
+            "policy": [
+              0.11432919153025396,
+              -0.13855839376593593,
+              0.3493958059346615,
+              0.23506661440440663,
+              0.0295612496293198,
+              0.5193260049406682
+            ],
+            "updates": 2400
+          }
+        ],
+        "originalNativePolicyFinal": [
+          0.3812847947858993,
+          0.02487086876821195,
+          0.8431282020625287,
+          0.4618434072766263,
+          0.12862961661680117,
+          0.37444974912937334
+        ],
+        "nativePolicyUpdates": 9600
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 235,
+          "accuracy": 0.5875,
+          "balancedAccuracy": 0.5875,
+          "macroF1": 0.587063836176962,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5935828877005348,
+              "recall": 0.555,
+              "f1": 0.5736434108527132
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5821596244131455,
+              "recall": 0.62,
+              "f1": 0.6004842615012107
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 111,
+              "N": 89
+            },
+            "N": {
+              "P": 76,
+              "N": 124
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 188,
+          "accuracy": 0.47,
+          "balancedAccuracy": 0.47000000000000003,
+          "macroF1": 0.4665861513687601,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.4642857142857143,
+              "recall": 0.39,
+              "f1": 0.42391304347826086
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.47413793103448276,
+              "recall": 0.55,
+              "f1": 0.5092592592592593
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 78,
+              "N": 122
+            },
+            "N": {
+              "P": 90,
+              "N": 110
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 195,
+          "accuracy": 0.4875,
+          "balancedAccuracy": 0.4875,
+          "macroF1": 0.4873429987933805,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.48704663212435234,
+              "recall": 0.47,
+              "f1": 0.47837150127226463
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.48792270531400966,
+              "recall": 0.505,
+              "f1": 0.4963144963144963
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 94,
+              "N": 106
+            },
+            "N": {
+              "P": 99,
+              "N": 101
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 230,
+          "accuracy": 0.575,
+          "balancedAccuracy": 0.575,
+          "macroF1": 0.5702621400945423,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5949367088607594,
+              "recall": 0.47,
+              "f1": 0.5251396648044693
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5619834710743802,
+              "recall": 0.68,
+              "f1": 0.6153846153846154
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 94,
+              "N": 106
+            },
+            "N": {
+              "P": 64,
+              "N": 136
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808448,
+      "mode": "fresh-acceptor",
+      "adapt": 600,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 0,
+        "donorCalibration": 0,
+        "acceptorExamples": 600,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 0,
+        "acceptorViewActions": 7200,
+        "livedSymbols": 50400,
+        "donorReward": null,
+        "acceptorReward": {
+          "rewards": 7200,
+          "preRewardCorrect": 414
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [],
+        "originalNativePolicyFinal": [
+          0.4327701676521228,
+          -0.7070202152737282,
+          0.6245246228455504,
+          0.19175445519342285,
+          0.05764631378339142,
+          0.23344358569663828
+        ],
+        "nativePolicyUpdates": 7200
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 303,
+          "accuracy": 0.7575,
+          "balancedAccuracy": 0.7575,
+          "macroF1": 0.7566955747439974,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.7309417040358744,
+              "recall": 0.815,
+              "f1": 0.7706855791962175
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.7909604519774012,
+              "recall": 0.7,
+              "f1": 0.7427055702917772
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 163,
+              "N": 37
+            },
+            "N": {
+              "P": 60,
+              "N": 140
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 215,
+          "accuracy": 0.5375,
+          "balancedAccuracy": 0.5375000000000001,
+          "macroF1": 0.5372657407812704,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5358851674641149,
+              "recall": 0.56,
+              "f1": 0.5476772616136919
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5392670157068062,
+              "recall": 0.515,
+              "f1": 0.5268542199488491
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 112,
+              "N": 88
+            },
+            "N": {
+              "P": 97,
+              "N": 103
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 208,
+          "accuracy": 0.52,
+          "balancedAccuracy": 0.52,
+          "macroF1": 0.519026027706105,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.518348623853211,
+              "recall": 0.565,
+              "f1": 0.5406698564593302
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.521978021978022,
+              "recall": 0.475,
+              "f1": 0.4973821989528796
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 113,
+              "N": 87
+            },
+            "N": {
+              "P": 105,
+              "N": 95
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 265,
+          "accuracy": 0.6625,
+          "balancedAccuracy": 0.6625000000000001,
+          "macroF1": 0.6585541665876282,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.7070063694267515,
+              "recall": 0.555,
+              "f1": 0.6218487394957983
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.6337448559670782,
+              "recall": 0.77,
+              "f1": 0.6952595936794582
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 111,
+              "N": 89
+            },
+            "N": {
+              "P": 46,
+              "N": 154
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808603,
+      "mode": "donor-pretrained",
+      "adapt": 1200,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 1200,
+        "donorCalibration": 200,
+        "acceptorExamples": 1200,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 14400,
+        "acceptorViewActions": 14400,
+        "livedSymbols": 201600,
+        "donorReward": {
+          "rewards": 2400,
+          "preRewardCorrect": 153
+        },
+        "acceptorReward": {
+          "rewards": 14400,
+          "preRewardCorrect": 855
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [
+          {
+            "stage": "afterDonor",
+            "lived": 100800,
+            "policy": [
+              0.11432919153025396,
+              -0.13855839376593593,
+              0.3493958059346615,
+              0.23506661440440663,
+              0.0295612496293198,
+              0.5193260049406682
+            ],
+            "updates": 2400
+          }
+        ],
+        "originalNativePolicyFinal": [
+          0.5663521333625522,
+          -0.23034536618570037,
+          1.270272944426674,
+          0.7039208110641272,
+          0.18191033630571413,
+          -0.06881161809168096
+        ],
+        "nativePolicyUpdates": 16800
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 258,
+          "accuracy": 0.645,
+          "balancedAccuracy": 0.645,
+          "macroF1": 0.644857943177271,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.6394230769230769,
+              "recall": 0.665,
+              "f1": 0.6519607843137255
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.6510416666666666,
+              "recall": 0.625,
+              "f1": 0.6377551020408163
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 133,
+              "N": 67
+            },
+            "N": {
+              "P": 75,
+              "N": 125
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 206,
+          "accuracy": 0.515,
+          "balancedAccuracy": 0.515,
+          "macroF1": 0.5135284234810301,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5168539325842697,
+              "recall": 0.46,
+              "f1": 0.48677248677248675
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5135135135135135,
+              "recall": 0.57,
+              "f1": 0.5402843601895735
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 92,
+              "N": 108
+            },
+            "N": {
+              "P": 86,
+              "N": 114
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 207,
+          "accuracy": 0.5175,
+          "balancedAccuracy": 0.5175000000000001,
+          "macroF1": 0.5174969843561522,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5174129353233831,
+              "recall": 0.52,
+              "f1": 0.5187032418952618
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5175879396984925,
+              "recall": 0.515,
+              "f1": 0.5162907268170426
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 104,
+              "N": 96
+            },
+            "N": {
+              "P": 97,
+              "N": 103
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 244,
+          "accuracy": 0.61,
+          "balancedAccuracy": 0.6100000000000001,
+          "macroF1": 0.6088166704280449,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.6235955056179775,
+              "recall": 0.555,
+              "f1": 0.5873015873015873
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5990990990990991,
+              "recall": 0.665,
+              "f1": 0.6303317535545023
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 111,
+              "N": 89
+            },
+            "N": {
+              "P": 67,
+              "N": 133
+            }
+          }
+        }
+      },
+      "counts": 400
+    },
+    {
+      "jobId": 137297808499,
+      "mode": "fresh-acceptor",
+      "adapt": 1200,
+      "source": {
+        "donor": {
+          "P": "c50c3971f32a630d355b6df4bfe31a7308a894f1b2d6df30f755dbaa9f3fe2a5",
+          "N": "8c4e672df334c5facc45def15796b6b1c8caf4c91ba449e591e76b563d564524"
+        },
+        "acceptor": {
+          "P": "0ab13d13acd8c1078762eec1469703458da9f5bffea8c523b6338c775ea3f43e",
+          "N": "7c8172f967c361c4377ecdb5bfbedccd76e75e3303ec590123b3dee61453babd"
+        }
+      },
+      "train": {
+        "donorExamples": 0,
+        "donorCalibration": 0,
+        "acceptorExamples": 1200,
+        "acceptorDevelopment": 400,
+        "donorViewActions": 0,
+        "acceptorViewActions": 14400,
+        "livedSymbols": 100800,
+        "donorReward": null,
+        "acceptorReward": {
+          "rewards": 14400,
+          "preRewardCorrect": 851
+        },
+        "originalNativePolicyInitial": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "checkpoints": [],
+        "originalNativePolicyFinal": [
+          0.6155476994410366,
+          -0.9028870106263318,
+          1.0289749538147086,
+          0.4134272543736639,
+          0.17198910541132922,
+          -0.2510886128446221
+        ],
+        "nativePolicyUpdates": 14400
+      },
+      "score": {
+        "nativePolicy": {
+          "n": 400,
+          "correct": 296,
+          "accuracy": 0.74,
+          "balancedAccuracy": 0.74,
+          "macroF1": 0.734416098470339,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.686046511627907,
+              "recall": 0.885,
+              "f1": 0.7729257641921398
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.8380281690140845,
+              "recall": 0.595,
+              "f1": 0.695906432748538
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 177,
+              "N": 23
+            },
+            "N": {
+              "P": 81,
+              "N": 119
+            }
+          }
+        },
+        "fixed70": {
+          "n": 400,
+          "correct": 211,
+          "accuracy": 0.5275,
+          "balancedAccuracy": 0.5275,
+          "macroF1": 0.5268346111719606,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.5297297297297298,
+              "recall": 0.49,
+              "f1": 0.509090909090909
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.5255813953488372,
+              "recall": 0.565,
+              "f1": 0.5445783132530121
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 98,
+              "N": 102
+            },
+            "N": {
+              "P": 87,
+              "N": 113
+            }
+          }
+        },
+        "fixed72": {
+          "n": 400,
+          "correct": 226,
+          "accuracy": 0.565,
+          "balancedAccuracy": 0.565,
+          "macroF1": 0.565,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.565,
+              "recall": 0.565,
+              "f1": 0.565
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.565,
+              "recall": 0.565,
+              "f1": 0.565
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 113,
+              "N": 87
+            },
+            "N": {
+              "P": 87,
+              "N": 113
+            }
+          }
+        },
+        "confidence": {
+          "n": 400,
+          "correct": 276,
+          "accuracy": 0.69,
+          "balancedAccuracy": 0.69,
+          "macroF1": 0.6884735202492211,
+          "perClass": [
+            {
+              "label": "P",
+              "support": 200,
+              "precision": 0.7209302325581395,
+              "recall": 0.62,
+              "f1": 0.6666666666666666
+            },
+            {
+              "label": "N",
+              "support": 200,
+              "precision": 0.6666666666666666,
+              "recall": 0.76,
+              "f1": 0.7102803738317757
+            }
+          ],
+          "confusion": {
+            "P": {
+              "P": 124,
+              "N": 76
+            },
+            "N": {
+              "P": 48,
+              "N": 152
+            }
+          }
+        }
+      },
+      "counts": 400
+    }
+  ]
+}
