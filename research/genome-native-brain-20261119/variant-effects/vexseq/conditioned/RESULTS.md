@@ -85,3 +85,53 @@ A research-worthy result would demonstrate the original native organism choosing
 - Final 267 variants/17 source events are intentionally **not scored**; development outcomes do not justify an AlphaGenome 2 superiority claim.
 - This is a within published in-vitro reporter experiment, not validated human clinical inference or matching AlphaGenome 2 outputs.
 - No original Braivour weights/active user processes were modified.
+
+## 6. Completed 2606-example same-budget authentic class-exposure experiment
+
+The two PRE-REGISTERED balanced native arms finished successfully. Only original TRAIN source true K562/HepG2 measured classes were re-sampled. **No invented DNA or false effect labels**; original `Brain.live` received exactly 26,060 total symbol observations in every arm. The balanced scheduler exposed **2,064 unique real (variant,cell) observations** among 2,606 exposure slots, with source-real repeats and under-sampling rather than additional data.
+
+| Original V42 C8, true observed REF/ALT × cell-specific experimental ΔPSI | DEV780 accuracy | DEV780 macro-F1 | Correct strong negatives / 190 | Correct strong positives / 100 | Both K/H outcomes correct on 91 discordant real variants |
+|---|---:|---:|---:|---:|---:|
+| True K/H tag LAST, **unbalanced authentic source exposure** | 62.56% | 29.62% | 11 | 1 | 0 |
+| Constant X tag LAST, unbalanced | 60.64% | 29.42% | 16 | 0 | 0 |
+| True K/H tag LAST, **balanced repeated authentic exposure** | **34.36%** | **30.95%** | 73 | 29 | **1** |
+| Constant X tag LAST, same balanced real exposure | **38.97%** | **35.49%** | **79** | **37** | 0 |
+| External real mutation+position+cell contingency control | 61.79% | 34.19% | varies by class | **0 positive classes correct** | not measured |
+| Always-neutral rule | **62.82%** | 25.72% | 0 | 0 | 0 |
+
+New authentic-label balancing makes the native organism **capable of emitting and correctly detecting positive and negative changes**: without the balancing it previously almost never classified a positive. But the native learner now emits large effects extremely often when the authentic assay says neutral, so global accuracy collapses. Even the **best F1 macro from the balanced family comes from a model that is literally NOT GIVEN K562/HepG2 identity** (constant X), despite genuine cell-dependent biology. It cannot predict different outcomes for the same variant in two different cellular conditions.
+
+**Therefore this is not a successful tissue-conditioned variant-effect predictor.** The apparent 35.49% development macro-F1 of the constant-cell control slightly exceeds the empirical 34.19% contingency control, but on only 16 source-event DEV groups and with extremely low 38.97% accuracy, that does not demonstrate generalization or useful cell specificity. The balanced true-cell model correctly predicted both experimental cell outcomes on only **1/91** genuine discordant DEV variants. This isolated the **class-exposure sensitivity** but did not solve biological conditional learning.
+
+**Full actual results:** https://github.com/dan3s2020/MagicPerspective/actions/runs/45053855283
+- [balanced true K/H original native](./results/class-balanced-condition-true-last.json)
+- [balanced constant-cell control](./results/class-balanced-condition-blind-last.json)
+- [frozen real class-exposure rationale and limits](./CLASS_EXPOSURE_PRETEST.md).
+
+## 7. The critical mechanistic clue: original native C selects incomplete causal information
+
+We inspected exact original V42 code:
+- `Brain.ctxOf()` maps `ctx[0]` to the MOST RECENT input byte.
+- `LeanC.keyN()` retains only `ctx[i]` where the active program's bit mask contains bit `i`.
+- Original `LeanC.reframe()` scores native programs by overall next-character prediction accuracy on **every lived symbol**, with a small complexity penalty; it is NOT specifically optimizing correct biological effect at the final label position.
+
+Actual best native C programs selected during these authentic experiments:
+
+| Native input ordering / source train exposure | Original selected C program | Exact symbols visible in this selected C program | Important omitted biological evidence |
+|---|---|---|---|
+| Original true K/H first | `exact:194` bits 1,6,7 | REF base3, splice-distance bin, K/H identity | **ALT mutated base**, mutation offset |
+| Original true K/H last | `exact:150` bits 1,2,4,7 | ALT mutated base, REF base3, REF base1, splice-distance bin | **K/H identity**, mutation offset |
+| Balanced true K/H last | `exact:46` bits 1,2,3,5 | ALT mutated base, REF base3, REF base2, REF base0 | **K/H identity**, mutation offset, splice-distance bin |
+
+**Causally important observation:** none of the *selected native C* programs in these three actual experiments jointly observes cell identity, allele change and location. It cannot implement the full condition-specific mutation effect from those bits alone, however many times a target label is repeated. The original A organs may still see or contribute other information; **this is a precise constraint on the selected C perspective, not proof the entire original Brain has no relevant information**.
+
+This gives a mechanistic research target that is genuinely more meaningful than changing a seed or inflating the training set: permit the original organism to develop **task/outcome-conditioned joint perspectives** so that the variables needed together survive the native readout, while keeping its physical-world memory/updates intrinsic. The existing `LeanC` candidate universe may already contain joint masks, but the **selection objective across all lived text/DNA characters** can prefer easily predicted background patterns to biologically essential cause/effect associations. A direct intervention on native candidate selection and heldout biological effect F1 is necessary before claiming causality.
+
+**Scientific next architecture gate, not executed in this document:**
+1. Keep original `Brain.live`, `Brain.predict`, `Discoverer` and native C models; add *typed biological outcome moments* to native attention selection, using only training- or separately heldout CALIBRATION-event reward, not DEV/FINAL labels. Avoid a separate trained classifier masquerading as the organism.
+2. Preserve real joint input `(REF, ALT, mutation position, cell condition)` across native C and A perspectives, ideally over 20+ actual genomic nucleotides via original body movement rather than only local 4-base windows.
+3. Evaluate against the original neutral, substitution+distance+cell, and conventional full-context position-weight controls on the SAME biological reporter data. Gate on **actual correct distinct K vs H outcomes** and strong positive+negative effect recall, not just macro-F1.
+4. Only then fix an original native checkpoint and evaluate **once** on the still-unopened 267 variant, 17-event FINAL, followed by an external independently measured assay to establish generalization.
+5. There is STILL NO AlphaGenome 2 official API comparison or evidence of model superiority.
+
+**The established result is strong diagnosis, not a solved human-genomic predictor:** we now know precisely that the native organism has different, measurable responses to cell identity placement and class exposure, but cannot yet robustly use the joint biological information required for conditional effect prediction.
